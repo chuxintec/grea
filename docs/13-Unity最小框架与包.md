@@ -1,6 +1,6 @@
 # Unity 最小框架与包（M2）
 
-M2 在 grea 内提供自有包源码、分层装配示例和隔离测试入口。所有包版本为 `0.1.0`，尚未发布到 UPM Registry；`grea` 产品版本与既有 Release 不变。Prefab、工程生成器、完整参考游戏和已有工程迁移属于 M3–M5。
+M2 在 grea 内提供自有包源码、分层装配示例和隔离测试入口。M2 首版包为 `0.1.0`，当前 M3 源码已演进到 `0.2.0`，尚未发布到 UPM Registry；`grea` 产品版本与既有 Release 不变。生成器与 Prefab 见 [M3](14-Unity生成器与通用Prefab.md)；完整参考游戏和已有工程迁移属于 M4/M5。
 
 ## 包与依赖
 
@@ -49,6 +49,6 @@ M2 原生测试覆盖服务重复初始化/逆序失败清理、关闭期间取�
 
 这些是 A0 结构和 A2/A3 的**包/组件局部证据**，不是工程整体通过。A1 生成幂等/恢复未实现；A4 Player 构建、真实设备输入、渲染管线画面、实际音频、Player 关闭重开、IL2CPP、Windows 和 A5 迁移未执行。文件存档只做合成数据与隔离 QA 目录，真实断电/多写者/旧版存档迁移未验；损坏或未知版本拒绝覆盖。计数示例不证明已有游戏规则等价，也不达到“两类业务试点”的通用组件稳定门槛。
 
-M1 的 `validate_unity_project` / `plan_unity_project` 继续保持只读静态语义，其 `not_run` 指当前被检查工程未做原生验证。`frameworkPackages` 的解析/安装、embedded 包来源盘点仍未接入 M1，所以会继续返回 `FRAMEWORK_NOT_IMPLEMENTED`，不能直接用本测试工程充当 M1 已合规工程。包实测不会让 `generationReady` 自动变成 true；本轮无新增 CLI/MCP 产品操作。准备脚本是仓库测试工具，不是产品生成器。
+M3 独立生成接口不改变 M1 的 `validate_unity_project` / `plan_unity_project`，两者继续保持只读静态语义，其 `not_run` 指当前被检查工程未做原生验证。`frameworkPackages` 的解析/安装、embedded 包来源盘点仍未接入 M1，所以会继续返回 `FRAMEWORK_NOT_IMPLEMENTED`，不能直接用本测试工程充当 M1 已合规工程。包实测不会让 M1 的 `generationReady` 自动变成 true；M2 阶段无新增 CLI/MCP 产品操作，M3 另行提供生成入口。准备脚本是仓库测试工具，不是产品生成器。
 
 包测试与程序集配置依据已核对 [Unity 6000.6 包测试文档](https://docs.unity3d.com/6000.6/Documentation/Manual/cus-tests.html) 和 [asmdef 格式](https://docs.unity3d.com/6000.6/Documentation/Manual/assembly-definition-file-format.html)；本项目包拆分和生命周期 API 是 grea 的设计选择。

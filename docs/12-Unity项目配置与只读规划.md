@@ -1,6 +1,6 @@
 # Unity 项目配置与只读规划（M1）
 
-M1 已提供 `validate-unity-project`、`plan-unity-project`；MCP 名称为 `validate_unity_project`、`plan_unity_project`。两个入口共用实现，只读指定项目，结果输出到 stdout，不创建目录、生成代码/Prefab、安装依赖、打开 Unity 或修改项目。`generate-unity-project` 尚不存在。
+M1 已提供 `validate-unity-project`、`plan-unity-project`；MCP 名称为 `validate_unity_project`、`plan_unity_project`。两个入口共用实现，只读指定项目，结果输出到 stdout，不创建目录、生成代码/Prefab、安装依赖、打开 Unity 或修改项目。实际写入使用独立的 [M3 生成契约](14-Unity生成器与通用Prefab.md)，不能执行 M1 的设计计划。
 
 工程标准见 [标准 v1](../skill/references/20-标准工程目录与类型归类.md)，后续阶段见 [落地计划](11-Unity工程标准落地计划.md)。
 

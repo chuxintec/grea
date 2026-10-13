@@ -1,7 +1,11 @@
 {
   "name": "Grea.Editor",
   "references": [
-    "Grea.Foundation.Runtime"
+    "Grea.Foundation.Runtime",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.Core.Runtime"
   ],
   "includePlatforms": [
     "Editor"

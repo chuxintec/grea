@@ -1,0 +1,5 @@
+{
+  "name": "Grea.Generation.Support",
+  "references": ["Grea.Foundation.Runtime"],
+  "autoReferenced": false
+}

@@ -48,3 +48,7 @@ Unity 包库存及恢复方法统一见 [备份说明](tools/unity/packages/READ
 `check_game_build_skill`、`decode-doctor`、`android_emulator_arm32_legacy` 是兼容别名；新调用使用正式入口。registry_doctor 是旧参数诊断入口，默认只查存在。更多映射见 [迁移说明](docs/3-迁移与兼容.md)。
 
 host_support 表示登记的平台条件，不表示已原生实测；Windows 不能执行本机另行安装的 Mac 二进制。配置方法统一在 [使用说明](docs/0-使用说明.md#8-windows-原生工具配置)，限制见 [平台结论](docs/5-工具整合与跨平台.md#平台结论)。
+
+## Unity M3 生成与恢复
+
+`plan_unity_generation` 只读规划/盘点；`generate_unity_project` 仅生成新工程或校验自己的生成清单；`recover_unity_generation` 核验并续作明确的中断记录。写入操作运行 Unity 并生成缓存，不能当成 M1 的只读工具。参见 [M3 使用说明](docs/14-Unity生成器与通用Prefab.md)。

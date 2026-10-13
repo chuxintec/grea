@@ -1,0 +1,24 @@
+using System;
+using System.Collections;
+using Grea.Foundation.Runtime;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace __NAMESPACE__.Bootstrap
+{
+    // Seed-once: owned by this project after first generation.
+    public sealed class ProjectBootstrap : MonoBehaviour
+    {
+        public BootstrapConfig config;
+        bool started;
+        IEnumerator Start()
+        {
+            if (started) yield break;
+            started = true;
+            if (!config) throw new InvalidOperationException("ProjectBootstrap.config");
+            foreach (var field in config.Errors()) throw new InvalidOperationException("BootstrapConfig." + field);
+            if (!SceneManager.GetSceneByPath(config.entryScene).isLoaded)
+                yield return SceneManager.LoadSceneAsync(config.entryScene, LoadSceneMode.Additive);
+        }
+    }
+}

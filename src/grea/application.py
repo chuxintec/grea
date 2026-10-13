@@ -5,7 +5,7 @@ from jsonschema import Draft202012Validator
 from . import __version__
 from .contracts import CONTRACTS,ENVELOPE_SCHEMA,catalog
 from .common import GreaError,envelope,digest,package_root,implementation_identity
-from . import registry,artifacts,cases,workflows,runner,unity_projects
+from . import registry,artifacts,cases,workflows,runner,unity_projects,unity_generation
 
 def doctor(tool_ids=None,probe=False,cancel=None):
     entries=[registry.tool(x) for x in tool_ids] if tool_ids else registry.load()
@@ -82,6 +82,11 @@ def dispatch(operation,arguments=_OMITTED,cancel=None):
             status = 'partial' if report['findings'] else 'ok'
             limitations = report['limitations'] if operation=='plan_unity_project' else []
             limits = {key: args[key] for key in ('max_files','max_bytes')}
+        elif operation in ('plan_unity_generation','generate_unity_project','recover_unity_generation'):
+            handler = {'plan_unity_generation': unity_generation.plan_generation, 'generate_unity_project': unity_generation.generate_project,
+                       'recover_unity_generation': unity_generation.recover_generation}[operation]
+            result = handler(**args, cancel=cancel)
+            if result.get('seedChanges') or result.get('humanFiles'): status='partial'
         elif operation=='plan_workflow':result=workflows.plan(**args)
         elif operation=='run_tool':
             result,evidence,error=runner.execute(**args,cancel=cancel);status=result['status'];limits={k:args[k] for k in ('timeout_seconds','max_output_bytes','max_inline_bytes')}

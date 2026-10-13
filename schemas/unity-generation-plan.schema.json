@@ -1,0 +1,269 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "generatorVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+    },
+    "template": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "recipeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "planId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "target": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "new",
+        "adopt"
+      ]
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "create",
+        "verify",
+        "preserve"
+      ]
+    },
+    "profileSha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "snapshotSha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sourceFiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024,
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "seedChanges": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "minItems": 0,
+      "maxItems": 1000,
+      "uniqueItems": true
+    },
+    "humanFiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "minItems": 0,
+      "maxItems": 1000,
+      "uniqueItems": true
+    },
+    "generationReady": {
+      "type": "boolean"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "minItems": 0,
+      "maxItems": 1000,
+      "uniqueItems": true
+    },
+    "requiredEditorAssets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "minItems": 0,
+      "maxItems": 1000,
+      "uniqueItems": true
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "review",
+              "preserve"
+            ]
+          },
+          "logicalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "expectedBeforeHash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024,
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner": {
+            "type": "string",
+            "enum": [
+              "seed-once",
+              "generated",
+              "human",
+              "package"
+            ]
+          },
+          "preserveGuid": {
+            "type": "boolean"
+          },
+          "requiredBindings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "minItems": 0,
+            "maxItems": 1000,
+            "uniqueItems": true
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "validationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "minItems": 1,
+            "maxItems": 1000,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "action",
+          "logicalId",
+          "target",
+          "expectedBeforeHash",
+          "owner",
+          "preserveGuid",
+          "requiredBindings",
+          "reason",
+          "validationIds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 100000,
+      "uniqueItems": true
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": [
+          "generated",
+          "package",
+          "seed-once",
+          "human"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "generatorVersion",
+    "template",
+    "recipeId",
+    "planId",
+    "projectId",
+    "target",
+    "mode",
+    "action",
+    "profileSha256",
+    "snapshotSha256",
+    "sourceFiles",
+    "seedChanges",
+    "humanFiles",
+    "generationReady",
+    "limitations",
+    "requiredEditorAssets",
+    "items",
+    "ownership"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

@@ -2746,7 +2746,500 @@
         "idempotentHint": true,
         "openWorldHint": false
       }
+    },
+    {
+      "name": "plan_unity_generation",
+      "description": "Plan M3 create-only recipe or read-only adopt. No Unity process or writes.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_root": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path.",
+            "default": "grea-project.json"
+          },
+          "mode": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "new",
+              "adopt"
+            ],
+            "default": "new"
+          }
+        },
+        "required": [
+          "project_root"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "generate_unity_project",
+      "description": "Generate a new staged Unity project with Editor-created prefabs, verify and publish. Existing owned projects are verified without overwrites.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_root": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path.",
+            "default": "grea-project.json"
+          },
+          "run_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project-root-relative new evidence directory, or exact previous run for recovery."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 240,
+            "maximum": 3600
+          },
+          "max_output_bytes": {
+            "type": "integer",
+            "minimum": 1024,
+            "default": 16777216,
+            "maximum": 1073741824
+          },
+          "max_inline_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "default": 32768,
+            "maximum": 1048576
+          },
+          "plan_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "project_root",
+          "run_dir",
+          "plan_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "process"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "recover_unity_generation",
+      "description": "Resume a specific interrupted M3 run after identity checks. Conflicts are retained; no automatic deletion or overwrite.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_root": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path.",
+            "default": "grea-project.json"
+          },
+          "run_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project-root-relative new evidence directory, or exact previous run for recovery."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 240,
+            "maximum": 3600
+          },
+          "max_output_bytes": {
+            "type": "integer",
+            "minimum": 1024,
+            "default": 16777216,
+            "maximum": 1073741824
+          },
+          "max_inline_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "default": 32768,
+            "maximum": 1048576
+          }
+        },
+        "required": [
+          "project_root",
+          "run_dir"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "process"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
     }
   ],
-  "sha256": "8cbf5f914ccaa0284a9c038b4567b8419c465d9a0ea0ec0ff1839cd7866fc5ed"
+  "sha256": "a96ae28a5ab72732f38f668fac0e9baa46a80a2300268c229f171ce65183ccfd"
 }

@@ -5,8 +5,9 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "com.grea.foundation": "0.1.0",
-        "com.grea.ui.ugui": "0.1.0"
+        "com.grea.foundation": "0.2.0",
+        "com.grea.ui.ugui": "0.2.0",
+        "com.unity.render-pipelines.universal": "17.6.0"
       }
     },
     "com.grea.foundation": {
@@ -22,7 +23,7 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "com.grea.foundation": "0.1.0",
+        "com.grea.foundation": "0.2.0",
         "com.unity.ugui": "2.6.0"
       }
     },

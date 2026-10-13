@@ -1,4 +1,4 @@
-# Grea Foundation 0.1.0
+# Grea Foundation 0.2.0
 
 MIT 自有源码；M2 候选基础包。最低声明 Unity 6000.6，当前测试组合为 6000.6.2f1/macOS arm64。其他 Editor、Player、IL2CPP 和移动平台未验证。没有 DI 容器、全局单例或隐式服务查找。
 
@@ -24,3 +24,5 @@ MIT 自有源码；M2 候选基础包。最低声明 Unity 6000.6，当前测试
 存档根必须是应用独占、无链接的可信目录；单写者，非跨进程锁。SHA256 用于损坏检测，不是认证/加密。原档损坏/未知版本时拒绝覆盖；`ReadBackup()` 只读备份，恢复与业务 DTO 迁移由项目显式决定。遗留 `.pending` 阻止新写入，保留中断证据。此处实测文件替换和中断夹具，不宣称真实断电、跨平台原子性或旧游戏存档兼容。UI 不直接调用此适配器。
 
 `Tests/Editor/FoundationTests.cs` 包含正常与失败用例；Test Framework 1.8.0 为测试工程依赖，不强制业务项目启用测试包。没有内置配置资产、Prefab、玩家数据或第三方二进制。
+
+M3 增加 BootstrapConfig（entryScene/playerSaveNamespace/qaSaveNamespace），保存启动配置，不含运行状态；Errors() 报告缺失字段和 QA 命名冲突。

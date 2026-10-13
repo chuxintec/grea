@@ -93,11 +93,23 @@ MANIFEST = obj({'schemaVersion': SCHEMA_VERSION, 'standardVersion': {'const': ST
                 'files': array(obj({'logicalId': text(), 'path': PATH, 'sha256': HASH,
                                     'metaSha256': NULL_HASH, 'guid': {'anyOf': [text(r'^[0-9a-f]{32}$'), {'type': 'null'}]},
                                     'fileIds': array(text(r'^-?\d+$')), 'owner': enum('seed-once', 'generated', 'human', 'package')}), maximum=100000)})
+# Optional in the original document contract; mandatory for the M3 create-only executor.
+MANIFEST['properties']['recipeId'] = HASH
+
+GENERATION_PLAN = obj({
+    'schemaVersion': SCHEMA_VERSION, 'generatorVersion': VERSION, 'template': deepcopy(PROFILE['properties']['template']),
+    'recipeId': HASH, 'planId': HASH, 'projectId': text(), 'target': PATH, 'mode': enum('new','adopt'),
+    'action': enum('create','verify','preserve'), 'profileSha256': HASH, 'snapshotSha256': HASH,
+    'sourceFiles': {'type':'object','additionalProperties':HASH}, 'seedChanges': array(PATH), 'humanFiles': array(PATH),
+    'generationReady': {'type':'boolean'}, 'limitations': array(text()), 'requiredEditorAssets': array(PATH),
+    'items': array(PLAN_ITEM, maximum=100000),
+    'ownership': {'type':'object','additionalProperties':enum('generated','package','seed-once','human')},
+})
 
 
 def documents():
     return {f'unity-{name}.schema.json': dict(deepcopy(value), **{'$schema': DRAFT})
-            for name, value in [('project', PROFILE), ('plan', PLAN), ('manifest', MANIFEST), ('report', REPORT)]}
+            for name, value in [('project', PROFILE), ('plan', PLAN), ('manifest', MANIFEST), ('report', REPORT), ('generation-plan', GENERATION_PLAN)]}
 
 
 REFERENCE = {

@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-13",
+  "milestone": "M3",
+  "status": "pass",
+  "scope": "Create-only generator and generated Prefab/scene identity and component acceptance; no existing games",
+  "baseRevision": "bec3ba5b83d94ab03b9b9212f6252eea2ff95d7b",
+  "branch": "codex/unity-engineering-standard-v1",
+  "standardVersion": "1.0.0",
+  "generatorVersion": "0.1.0",
+  "template": {
+    "id": "grea-minimal-2d",
+    "version": "0.1.0"
+  },
+  "packages": [
+    {
+      "name": "com.grea.editor",
+      "version": "0.2.0",
+      "treeSha256": "1481a8652c6177fd72fad11891c56143799764597ec82d00554c1571cfe8f8cb",
+      "files": 19
+    },
+    {
+      "name": "com.grea.foundation",
+      "version": "0.2.0",
+      "treeSha256": "afe4bb0eaa960166226626b739bf5fff1d94a5416c8d353d759945b6ce33f255",
+      "files": 34
+    },
+    {
+      "name": "com.grea.ui.ugui",
+      "version": "0.2.0",
+      "treeSha256": "a4dadc6bf86c2bb2b8b0d36fb6772bb7f1c22cb97fc134a3038c0608dbd7ec5e",
+      "files": 28
+    }
+  ],
+  "environment": {
+    "editor": "6000.6.2f1",
+    "host": "macOS arm64",
+    "urp": "17.6.0",
+    "ugui": "2.6.0",
+    "testFramework": "1.8.0",
+    "execution": "batchmode nographics",
+    "player": "not_run"
+  },
+  "source": {
+    "generatorPythonSha256": "fbc9f0e6f09f3727a5af997aa1eccb5ab6a8338ae351936dcbfaede044ec1698",
+    "compiledPackageCSharpSha256": {
+      "com.grea.foundation/Runtime/BootstrapConfig.cs": "e711ff91b8b856fd007be8a6b8076d2e88e7c4a6623239138882997763691368",
+      "com.grea.foundation/Runtime/AssetCatalog.cs": "69044182c27a24558e68d6bb0203b8a84a04f8c3101ef07bf12c9e88e9766840",
+      "com.grea.foundation/Runtime/IBindingCheck.cs": "d137a7691f8147b3dc984b29bd3fe88783f747a715a411e807b63af9bf4b39a2",
+      "com.grea.foundation/Runtime/AudioPlayer.cs": "5e5a6e10d3737dd8167132a17dcace7157ae0834b57e6d209bb99d5fa5b8bf78",
+      "com.grea.foundation/Runtime/FileSaveStore.cs": "79132f1d5e1de81d8b5092d814c0bdaf33d41d54a5e00804e082745ac8a1f5cc",
+      "com.grea.foundation/Tests/Editor/FoundationTests.cs": "cef9c097ffdd70bebde1d330cc2beec211fcde9d7fd276083e978d5746694088",
+      "com.grea.foundation/Runtime/Contracts/LifetimeScope.cs": "e5966d2f2be814b0e25ee01fbc6e44306b8502a3f7889e3a67d224bd9ca29d4d",
+      "com.grea.foundation/Runtime/Contracts/ServiceScope.cs": "aeba81846a9253cc4004b9d9f61040b540324e6db243883c63720f2ec21c0456",
+      "com.grea.foundation/Runtime/Contracts/DiagnosticBuffer.cs": "82a1087092d80513e438307a9ef739592a8a3ff7e16b2fa8fd76dd26948e7903",
+      "com.grea.ui.ugui/Runtime/ScreenHost.cs": "67a599afe44a6224e6a1e256487ef61e424ffeaa6fa995f8cd55cc836c0bcd68",
+      "com.grea.ui.ugui/Runtime/CommandButton.cs": "a3e8cf612e9228ee4eb0ca50929f29dcff33bd8ab07a96c427a86bb2849223fe",
+      "com.grea.ui.ugui/Runtime/UIHost.cs": "0a905e9b3609c81d9ba7a9f916e29f65fc7d0e90fbd4ef99ed18c9c2d8d6f4da",
+      "com.grea.ui.ugui/Runtime/ModalPanel.cs": "e02ab673c484eb305f7df905dc09bb05be127a4a0e54eadeffbf7dee55e66b0c",
+      "com.grea.ui.ugui/Tests/Runtime/UiTests.cs": "32815bf47a91f081802919dcaa0975b9e5a10b59b2ed4bc432625456a7f6deee",
+      "com.grea.ui.ugui/Tests/Editor/PlayReentryTests.cs": "2431b2f28253dd9264f8cade8cfba125343377d59363df989054c060ec799f71",
+      "com.grea.editor/Editor/BindingValidator.cs": "7f8999f949804d76ec78acb9225a8bb05ddd2e3822cc4d878d3e9682923bab4c",
+      "com.grea.editor/Editor/ProjectGenerator.cs": "5f2c86d60d3abd16dae9c0b5d7a0047353f5be9b544708fbc5b7ac888450e174",
+      "com.grea.editor/Tests/Editor/BindingTests.cs": "bed26afe1681af1594b5da8d0f1b4d7844a3108be0072a71f0000dada71ab6d1"
+    },
+    "profileSha256": "af99a0760ae3db8dfd2815d1533d5ea535c46a34d2ddb24ec0203f63adb88e0c"
+  },
+  "python": {
+    "total": 137,
+    "passed": 135,
+    "skipped": 2,
+    "newM3Tests": 16,
+    "logSha256": "1bdfe657004dc9010ddf6c4f1a8c946155c3178d601fc9ba4f8bce63a8a3bb6c",
+    "skipReasons": [
+      "Existing optional ffmpeg/ffprobe integration",
+      "Existing optional NSIS integration"
+    ],
+    "mockedEditorIsNotNativeEvidence": true
+  },
+  "native": {
+    "editMode": {
+      "status": "pass",
+      "total": 31,
+      "passed": 31,
+      "xmlSha256": "9110c410e2f4e823cd365f49148b19d8d29e5092f6d8e2f064edde3e5bba9571",
+      "tests": [
+        "Game.Tests.CompositionTests.FailedPersistenceDoesNotCommitRuntimeState",
+        "Game.Tests.CompositionTests.SessionPauseExitAndNewSessionReloadState",
+        "Game.Tests.CompositionTests.UnknownDtoIsNotSilentlyReset",
+        "Grea.Tests.BindingTests.NoBindingComponentsIsValid",
+        "Grea.Tests.BindingTests.ReportsExactObjectComponentFieldWithoutChangingHierarchy",
+        "Grea.Tests.FoundationTests.CatalogTypeMissingAndDestroyedAssetsFailWithoutLeaking",
+        "Grea.Tests.FoundationTests.CleanupContinuesAfterFailure",
+        "Grea.Tests.FoundationTests.CorruptSaveAndInterruptedWritePreserveOriginal",
+        "Grea.Tests.FoundationTests.DiagnosticsAreBoundedAndCopied",
+        "Grea.Tests.FoundationTests.DuplicateServiceRejected",
+        "Grea.Tests.FoundationTests.FailedServiceCleansPartialAndSuccessfulServices",
+        "Grea.Tests.FoundationTests.LeaseDoubleReturnAndChildCleanupDoNotAccumulate",
+        "Grea.Tests.FoundationTests.LifetimeReleasesReverseAndInvalidatesBeforeCleanup",
+        "Grea.Tests.FoundationTests.SaveRejectsNamespaceAndPayloadErrors",
+        "Grea.Tests.FoundationTests.SaveReopenBackupAndQaIsolation",
+        "Grea.Tests.FoundationTests.ServicesStartOnceAndStopReverse",
+        "Grea.Tests.FoundationTests.StopWaitsForInitializerAndRejectsLateSuccess",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(1)",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(2)",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(3)",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(4)",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(5)",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(6)",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(7)",
+        "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(8)",
+        "Grea.Generation.Tests.GeneratorTests.InterruptedUncommittedAssetIsRetainedAndNotReplayed",
+        "Grea.Generation.Tests.GeneratorTests.ModifiedGeneratedAssetAndMissingManifestRefuseOverwrite",
+        "Grea.Generation.Tests.GeneratorTests.OldGeneratorAndMissingTypeRejectedBeforeAssetWrites",
+        "Grea.Generation.Tests.GeneratorTests.RepeatedGenerationKeepsAssetBytesGuidsAndBindings",
+        "Grea.Generation.Tests.GeneratorTests.VariantOverridesSurviveAndBindingFailuresAreReadOnly",
+        "Grea.Tests.PlayReentryTests.TwoRealPlayEntriesUnbindOnExitWithoutDomainOrSceneReload"
+      ]
+    },
+    "playMode": {
+      "status": "pass",
+      "total": 10,
+      "passed": 10,
+      "xmlSha256": "16cc7c7df1e33336c53005caf322ae7bfe1e197fcfea4f51b6fd643f242b5ef1",
+      "tests": [
+        "Grea.Generation.Tests.GeneratedPrefabTests.BootstrapLoadsEntryAndOwnsExactlyOneEventSystemOnReentry",
+        "Grea.Generation.Tests.GeneratedPrefabTests.GeneratedHostOpensClosesReopensAndCleansUp",
+        "Grea.Tests.UiTests.CommandFailureIsObservedAndButtonRecovers",
+        "Grea.Tests.UiTests.DisabledViewStopsRequestsAndAudioIsReleasedOnScopeExit",
+        "Grea.Tests.UiTests.MissingBindingFailsBeforeListening",
+        "Grea.Tests.UiTests.ModalReopensAndRestoresFocusWithoutOldTasksOrListeners",
+        "Grea.Tests.UiTests.PanelInvalidBindingAndHostInvalidTargetAreExplicit",
+        "Grea.Tests.UiTests.ParentExitCancelsPendingCommandAndRejectsLateUpdate",
+        "Grea.Tests.UiTests.RebindAndRapidClickRunOnceAndLateCompletionCannotTouchNewBinding",
+        "Grea.Tests.UiTests.ScreenHostReplacesAndClosesActivePanel"
+      ]
+    }
+  },
+  "generation": {
+    "status": "pass",
+    "planItems": 104,
+    "managedFiles": 160,
+    "manifestSha256": "681bd95d9a590db74a774c6e5b49ba7e7d1d479c347d18104625e65b9a26c6a5",
+    "recipeId": "df5c325c7e12ff51ef9654ecfba958e8b6f06d28501b729c87d562076d6122ab",
+    "assetJournalSha256": "99bf08953f3f5d0b794a9a4dc698f1719ce80e1f7be16bc7a31fb5d62f810f73",
+    "assets": [
+      {
+        "path": "Assets/GreaGenerated/ButtonShell.prefab",
+        "guidRecorded": true,
+        "fileIdCount": 6,
+        "hasZeroFileId": false
+      },
+      {
+        "path": "Assets/GreaGenerated/ModalShell.prefab",
+        "guidRecorded": true,
+        "fileIdCount": 15,
+        "hasZeroFileId": false
+      },
+      {
+        "path": "Assets/GreaGenerated/UIHost.prefab",
+        "guidRecorded": true,
+        "fileIdCount": 37,
+        "hasZeroFileId": false
+      },
+      {
+        "path": "Assets/GreaGenerated/BootstrapConfig.asset",
+        "guidRecorded": true,
+        "fileIdCount": 1,
+        "hasZeroFileId": false
+      },
+      {
+        "path": "Assets/GreaGenerated/Renderer.asset",
+        "guidRecorded": true,
+        "fileIdCount": 1,
+        "hasZeroFileId": false
+      },
+      {
+        "path": "Assets/GreaGenerated/Pipeline.asset",
+        "guidRecorded": true,
+        "fileIdCount": 1,
+        "hasZeroFileId": false
+      },
+      {
+        "path": "Assets/Game/Scenes/Bootstrap.unity",
+        "guidRecorded": true,
+        "fileIdCount": 3,
+        "hasZeroFileId": false
+      },
+      {
+        "path": "Assets/Game/Scenes/Entry.unity",
+        "guidRecorded": true,
+        "fileIdCount": 41,
+        "hasZeroFileId": false
+      }
+    ],
+    "engineGeneratedExtras": [
+      "Assets/DefaultVolumeProfile.asset",
+      "Assets/UniversalRenderPipelineGlobalSettings.asset"
+    ],
+    "repeat": "unchanged",
+    "repeatBytesChanged": false,
+    "postPublicationReceiptRecovery": "pass",
+    "repeatComparedFiles": 160,
+    "nativeEditorReceiptSha256": "32aa95bbc405fe1152ed764d84e4834b8fc5907ecb221506a8e492756d4c3016"
+  },
+  "recovery": {
+    "python": [
+      "partial source copy",
+      "prepared",
+      "settled Editor failure",
+      "verified before publication",
+      "published before final receipt"
+    ],
+    "nativeCompletedAssetCheckpoints": 8,
+    "pendingAsset": "refused and preserved",
+    "unknownLiveProcess": "refused and preserved",
+    "generatedOrPackageOrMetaConflict": "refused and preserved",
+    "seedOnceHumanEdits": "preserved; marked partial",
+    "variantOverrides": "preserved in native tests",
+    "rollbackDeletion": "not implemented",
+    "missingPublishedTarget": "refused; no automatic recreation or false success"
+  },
+  "compatibility": {
+    "existingOperationContractsUnchanged": 17,
+    "existingProviderRecordsUnchanged": 55,
+    "newOperations": [
+      "plan_unity_generation",
+      "generate_unity_project",
+      "recover_unity_generation"
+    ],
+    "manifestChange": "optional recipeId added; mandatory for M3 execution"
+  },
+  "backup": {
+    "archives": 6,
+    "missing": 0,
+    "catalogSha256": "c4e007810111dfaa06ecea2348d3361641bcc1a2d0bfaad607edb65732cb5cae",
+    "rawBackupsDistributed": false
+  },
+  "gates": {
+    "A0": "pass for fixed recipe and assembly boundaries",
+    "A1": "pass for create-only generation and tested recovery boundaries",
+    "A2": "pass for generated scene/prefab compile and binding checks",
+    "A3": "partial: generated host lifecycle and entry reload tested; full gameplay loop belongs to M4",
+    "A4": "not_run",
+    "A5": "not_run"
+  },
+  "existingGamesModified": false,
+  "productVersionChanged": false,
+  "pushed": false,
+  "maintenance": {
+    "contracts": "pass",
+    "skillCheck": "pass",
+    "skillSync": "pass",
+    "publicTreeAudit": {
+      "status": "pass",
+      "files": 323,
+      "findings": 0
+    },
+    "markdownLinks": {
+      "files": 56,
+      "links": 298,
+      "broken": 0
+    }
+  },
+  "notVerified": [
+    "Existing-game writes/refactor",
+    "Template upgrades or field-level merges",
+    "Full reference gameplay loop",
+    "Target Player build, physical input, visual/audio parity and Player close/reopen",
+    "Windows/Linux Unity execution or IL2CPP",
+    "Power-loss durability or hostile concurrent filesystem writers",
+    "Offline clean-machine restore"
+  ],
+  "rawEvidence": "Ignored .private/unity-m3; raw logs and private package backups excluded from public source"
+}

@@ -49,7 +49,7 @@ class UnityFrameworkTests(unittest.TestCase):
                         self.assertTrue(assemblies[ref]['noEngineReferences'])
                     visit(ref)
                 else:
-                    self.assertEqual(ref, 'UnityEngine.UI')
+                    self.assertIn(ref, {'UnityEngine.UI', 'Unity.RenderPipelines.Universal.Runtime', 'Unity.RenderPipelines.Core.Runtime'})
             visiting.remove(name)
             done.add(name)
 

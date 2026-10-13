@@ -1854,6 +1854,136 @@
         "windows_status": "portable_unverified",
         "verification": "Static Python capability; target Unity runtime is not checked."
       }
+    },
+    {
+      "id": "plan_unity_generation",
+      "category": "helper",
+      "effects": [
+        "filesystem_read"
+      ],
+      "probe": [
+        "{python}",
+        "{grea}/launch.py",
+        "plan-unity-generation",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch.py",
+          "plan-unity-generation"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "check_level": "static-only",
+      "formats": "M3 profile, ownership manifest and journal",
+      "side_effects": "Read-only; JSON plan to stdout.",
+      "usage": "Unity M3: see docs/14-Unity生成器与通用Prefab.md.",
+      "output_schema": "schemas/result.schema.json",
+      "tested_samples": "See docs/validation/2026-10-13-unity-m3.json for scoped evidence.",
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "M3 mutation targets the exact macOS reference Editor; other platforms not executed."
+      },
+      "limitations": [
+        "Create-only M3 recipe; no existing-game refactor or Player acceptance."
+      ]
+    },
+    {
+      "id": "generate_unity_project",
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "editor_process"
+      ],
+      "probe": [
+        "{python}",
+        "{grea}/launch.py",
+        "generate-unity-project",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch.py",
+          "generate-unity-project"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "check_level": "editor_compile_bindings",
+      "formats": "M3 profile, ownership manifest and journal",
+      "side_effects": "Creates an isolated staged project, restores Unity dependencies and runs Editor; publishes only a new target.",
+      "usage": "Unity M3: see docs/14-Unity生成器与通用Prefab.md.",
+      "output_schema": "schemas/result.schema.json",
+      "tested_samples": "See docs/validation/2026-10-13-unity-m3.json for scoped evidence.",
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64"
+        ],
+        "windows_status": "unsupported",
+        "verification": "M3 mutation targets the exact macOS reference Editor; other platforms not executed."
+      },
+      "limitations": [
+        "Create-only M3 recipe; no existing-game refactor or Player acceptance."
+      ]
+    },
+    {
+      "id": "recover_unity_generation",
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "editor_process"
+      ],
+      "probe": [
+        "{python}",
+        "{grea}/launch.py",
+        "recover-unity-generation",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch.py",
+          "recover-unity-generation"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "check_level": "editor_compile_bindings",
+      "formats": "M3 profile, ownership manifest and journal",
+      "side_effects": "Creates an isolated staged project, restores Unity dependencies and runs Editor; publishes only a new target.",
+      "usage": "Unity M3: see docs/14-Unity生成器与通用Prefab.md.",
+      "output_schema": "schemas/result.schema.json",
+      "tested_samples": "See docs/validation/2026-10-13-unity-m3.json for scoped evidence.",
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64"
+        ],
+        "windows_status": "unsupported",
+        "verification": "M3 mutation targets the exact macOS reference Editor; other platforms not executed."
+      },
+      "limitations": [
+        "Create-only M3 recipe; no existing-game refactor or Player acceptance."
+      ]
     }
   ],
   "product": "grea",

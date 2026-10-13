@@ -1,6 +1,6 @@
-# Grea uGUI 0.1.0
+# Grea uGUI 0.2.0
 
-MIT 自有源码。依赖 Foundation 0.1.0 和 uGUI 2.6.0；实测 Editor 6000.6.2f1 的组件 PlayMode，不代表视觉/输入设备/目标 Player 验收。包只含脚本，Prefab 生成属于 M3。
+MIT 自有源码。依赖 Foundation 0.2.0 和 uGUI 2.6.0；实测 Editor 6000.6.2f1 的组件 PlayMode，不代表视觉/输入设备/目标 Player 验收。包包含组件源码；M3 通过 Editor API 生成 UIHost、ModalShell 和 ButtonShell，不分发手写 YAML。
 
 | 组件 | 必需字段与契约 | 最小用例及失败 |
 | --- | --- | --- |
@@ -13,3 +13,5 @@ MIT 自有源码。依赖 Foundation 0.1.0 和 uGUI 2.6.0；实测 Editor 6000.6
 基础用法：创建 `LifetimeScope`；用 `CommandButton.Configure(button)` 绑定 Button；用 `Bind(scope, stamp => { stamp.ThrowIfStale(); session.Execute(); return Task.CompletedTask; })` 发出请求；页面退出调用 scope.Dispose 和 Unbind，重开使用新 scope。不得通过 onClick 直接修改持久化 DTO。持有 `ModalPanel.VisibleScope` 的异步内容请求在关闭后失效。
 
 最小运行/失败例见 `Tests/Runtime/UiTests.cs`：重复绑定、快速点击、错误、缺引用、弹窗反复打开/焦点恢复、禁用解绑、音频退出清理。程序化事件测试不等于鼠标/触摸/键盘输入或遮罩视觉验证。返回键、手柄导航、动画、叠栈、对象池、列表和自动加载未实现。
+
+M3 增加 UIHost：显式绑定 canvas/pageLayer/modalLayer/toastLayer/events/openButton/modal；Start 或重新启用后绑定开窗按钮，禁用/销毁取消作用域并关闭弹窗。每个宿主只拥有一个 EventSystem；项目不得重复实例化宿主。组件缺字段会明确报错。生成器按这些字段回读校验。

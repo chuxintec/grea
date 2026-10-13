@@ -58,6 +58,16 @@ CONTRACTS.update({
  'plan_unity_project': ('Create a deterministic design-only Unity plan on stdout. No generation or project writes; generationReady is always false in M1.', obj(dict(_UNITY_INPUT, expected_plan_id={'type':'string','pattern':'^[0-9a-f]{64}$'}), ['project_root']), ['filesystem_read']),
 })
 
+_GEN = {'project_root': PATH, 'profile': dict(PATH, default='grea-project.json')}
+_GEN_RUN = dict(_GEN, run_dir=string('Project-root-relative new evidence directory, or exact previous run for recovery.'),
+                timeout_seconds=integer(240, 1, 3600), max_output_bytes=integer(16777216, 1024, 1073741824),
+                max_inline_bytes=integer(32768, 256, 1048576))
+CONTRACTS.update({
+ 'plan_unity_generation': ('Plan M3 create-only recipe or read-only adopt. No Unity process or writes.', obj(dict(_GEN, mode=dict(string(enum=('new','adopt')), default='new')), ['project_root']), ['filesystem_read']),
+ 'generate_unity_project': ('Generate a new staged Unity project with Editor-created prefabs, verify and publish. Existing owned projects are verified without overwrites.', obj(dict(_GEN_RUN, plan_id={'type':'string','pattern':'^[0-9a-f]{64}$'}), ['project_root','run_dir','plan_id']), ['filesystem_read','filesystem_write','process']),
+ 'recover_unity_generation': ('Resume a specific interrupted M3 run after identity checks. Conflicts are retained; no automatic deletion or overwrite.', obj(_GEN_RUN, ['project_root','run_dir']), ['filesystem_read','filesystem_write','process']),
+})
+
 ERROR_SCHEMA = obj({'code': string(), 'message':string(), 'retryable':{'type':'boolean'}, 'details':{'type':'object'}, 'next_action':string()}, ['code','message','retryable','details','next_action'])
 ENVELOPE_SCHEMA = obj({
  'schema_version':{'const':1}, 'product':{'const':'grea'}, 'version':string(), 'operation':string(), 'run_id':string(),
@@ -69,5 +79,5 @@ ENVELOPE_SCHEMA = obj({
 def catalog():
     return [{'name': name, 'description': description, 'inputSchema': schema,
              'outputSchema': ENVELOPE_SCHEMA, 'effects': effects,
-             'annotations': {'readOnlyHint': not any(x in effects for x in ('filesystem_write','process','process_when_probe_requested')), 'destructiveHint': name=='run_tool', 'idempotentHint': name in ('session','list_tools','describe_tool','plan_workflow','inspect_target','case_status','validate_unity_project','plan_unity_project'), 'openWorldHint':name=='run_tool'}}
+             'annotations': {'readOnlyHint': not any(x in effects for x in ('filesystem_write','process','process_when_probe_requested')), 'destructiveHint': name=='run_tool', 'idempotentHint': name in ('session','list_tools','describe_tool','plan_workflow','inspect_target','case_status','validate_unity_project','plan_unity_project','plan_unity_generation'), 'openWorldHint':name in ('run_tool','generate_unity_project','recover_unity_generation')}}
             for name,(description,schema,effects) in CONTRACTS.items()]

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "standardVersion": "1.0.0",
+  "projectId": "fixture",
+  "namespace": "Fixture",
+  "paths": {
+    "unityProject": "UnityProject",
+    "evidenceRoot": "Evidence",
+    "buildRoot": "Build"
+  },
+  "toolchain": {
+    "editorVersion": "6000.6.2f1",
+    "renderPipeline": "urp",
+    "ui": "ugui",
+    "input": "legacy",
+    "targetPlatform": "macOS",
+    "architecture": "arm64",
+    "scriptingBackend": "Mono",
+    "packages": {
+      "com.unity.render-pipelines.universal": "17.6.0",
+      "com.unity.ugui": "2.6.0"
+    }
+  },
+  "dependencyLock": {
+    "manifestSha256": null,
+    "packagesLockSha256": null
+  },
+  "template": {
+    "id": "grea-minimal-2d",
+    "version": "0.1.0"
+  },
+  "frameworkPackages": [],
+  "features": [
+    "lifecycle",
+    "ui",
+    "resources",
+    "audio",
+    "save",
+    "diagnostics"
+  ],
+  "modules": [
+    {
+      "name": "Counter",
+      "layers": [
+        "Domain",
+        "Gameplay",
+        "Presentation",
+        "Services"
+      ]
+    }
+  ],
+  "scenes": {
+    "bootstrap": "Assets/Game/Scenes/Bootstrap.unity",
+    "entry": "Assets/Game/Scenes/Entry.unity"
+  },
+  "assetBackend": "catalog",
+  "saveNamespace": "fixture-player",
+  "qaSaveNamespace": "fixture-qa",
+  "exceptions": []
+}

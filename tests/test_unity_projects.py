@@ -295,14 +295,14 @@ class UnityProjectTests(unittest.TestCase):
                 with self.assertRaises(OSError):reader.read('UnityProject/Assets/value.asset')
             self.assertEqual(reader.data,{})
 
-    def test_only_read_only_operations_registered(self):
+    def test_m1_operations_remain_readonly_after_m3_registration(self):
         by_name={x['name']:x for x in catalog()}
-        self.assertNotIn('generate_unity_project',by_name)
+        self.assertFalse(by_name['generate_unity_project']['annotations']['readOnlyHint'])
         for name in ['plan_unity_project','validate_unity_project']:
             self.assertEqual(by_name[name]['effects'],['filesystem_read'])
             self.assertTrue(by_name[name]['annotations']['readOnlyHint'])
             self.assertTrue(by_name[name]['annotations']['idempotentHint'])
-        self.assertEqual(dispatch('generate_unity_project',{})['error']['code'],'UNKNOWN_OPERATION')
+        self.assertEqual(dispatch('generate_unity_project',{})['error']['code'],'INVALID_ARGUMENTS')
 
     def test_mcp_cli_parity_for_success_findings_and_error(self):
         async def check():
