@@ -10,6 +10,5 @@ Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools/)，通过
 | unity/audit、unity/packages | Editor 审计和包安装辅助 C# |
 | unity/spine | Spine 运行时构建配置与许可；不附带 vendor |
 | dotnet | 托管程序集清理工具源码 |
-| artifacts | 保留的 JavaScript 静态文件构建辅助 |
 
 按任务选工具见 [工具目录](../TOOLS.md)，参数见 [工具说明](../docs/tools/制品与资源检查.md)，第三方接入见 [providers](../docs/providers/README.md)。脚本路径不是工具身份；正式调用使用已登记 ID。

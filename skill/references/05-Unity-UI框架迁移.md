@@ -1,6 +1,6 @@
 # Unity · UI框架迁移
 
-工具推荐：unity_asset_ledger记录迁移，官方UI技能与Unity Editor API生成资源，RecoveryRuntimeAudit.cs（Editor C#）及真实输入回归。 入口和限制见 [工具清单](工具-选择与调用.md)。
+工具推荐：unity_asset_ledger记录迁移，官方UI技能与Unity Editor API生成资源，RecoveryRuntimeAudit.cs（Editor C#）及真实输入回归。 入口和限制见 [工具清单](02-工具-选择与调用.md)。
 
 在用户明确要求将已恢复界面迁移到uGUI等另一框架时使用。先确认迁移范围、编辑目标和行为基线，保留原资源与证据；不要把所有恢复任务默认变成框架替换，也不要求最终生产继续依赖旧框架。
 

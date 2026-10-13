@@ -2164,6 +2164,44 @@
         "windows_status": "portable_unverified",
         "verification": "Existing implementation migrated; module/fixture checks do not establish native provider or target-platform success."
       }
+    },
+    {
+      "id": "static_asset_copy",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "static_asset_copy",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "Copy explicit FROM=TO mappings unchanged into a new or empty disjoint output; see docs/tools/制品与资源检查.md.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "static_asset_copy"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "filesystem_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Standard-library Python; native validation on macOS only."
+      },
+      "limitations": [
+        "Copy only; no bundling, compilation or runtime acceptance.",
+        "Preflight rejects source symlinks, traversal and overlapping mappings; copy-time failure retains partial output. Cooperative filesystem only."
+      ]
     }
   ],
   "product": "grea",

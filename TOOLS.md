@@ -9,16 +9,16 @@
 | 任务 | 推荐操作或工具 ID | 详细说明／限制 |
 | --- | --- | --- |
 | 检查包体身份与库存 | inspect-target；解包用 `unpack_xapk` | [通用脚本参数](docs/tools/制品与资源检查.md)；库存不等于已提取全部资源 |
-| 原生运行与画面证据 | `adb`、`scrcpy`、`video_manifest`、`video_sheet` | [取证流程](skill/references/恢复-原版运行与内容取证.md)；版本探测不连接或操作游戏 |
+| 原生运行与画面证据 | `adb`、`scrcpy`、`video_manifest`、`video_sheet` | [取证流程](skill/references/03-恢复-原版运行与内容取证.md)；版本探测不连接或操作游戏 |
 | Unity 资源与字段恢复 | `assetripper`、`unitypy` | 原 Prefab／引用关系优先；UnityPy 是独立运行时中的库，不是通用执行命令 |
-| IL2CPP／托管代码分析 | `cpp2il`、`ilspy`；按缺口使用 `il2cppdumper`、`ghidra`、`il2cpp-inspector` | [代码恢复流程](skill/references/Unity-工程重建与恢复.md)、[Redux 边界](docs/providers/IL2CPP解析器接入.md) |
+| IL2CPP／托管代码分析 | `cpp2il`、`ilspy`；按缺口使用 `il2cppdumper`、`ghidra`、`il2cpp-inspector` | [代码恢复流程](skill/references/05-Unity-工程重建与恢复.md)、[Redux 边界](docs/providers/IL2CPP解析器接入.md) |
 | Assets 身份台账 | snapshot-unity-assets；高级用法 `unity_asset_ledger` | [脚本契约](docs/tools/制品与资源检查.md#unity-资产迁移台账与预检) |
 | 文本 GUID 依赖闭包 | audit-unity-dependencies | [脚本契约](docs/tools/制品与资源检查.md#unity-导出依赖审计)；动态依赖另验 |
 | 玩法轨迹差分 | compare-gameplay-traces；严格事件 schema 用 `compare_events` | [事件契约](docs/tools/规则与格式检查.md#事件schema)；不重排事件 |
 | 原始浮点纹理／VAT | inspect-numeric-texture | [数值纹理要求](docs/tools/规则与格式检查.md#数值纹理)；普通 PNG 不等同原始数值 |
 | 图片透明度、媒体与压缩 | `image_alpha_audit`、`video_manifest`、`ffmpeg`、`ffprobe`、`pngquant` | [脚本契约](docs/tools/制品与资源检查.md)；部分登记仅提供探测，调用能力以 describe-tool 为准 |
 | Shader 分析 | `glslangValidator`、`spirv-cross`、`spirv-val`、`spirv-dis` | [Shader 专项说明](docs/tools/Shader工具.md) |
-| Unity Editor 操作与回读 | `unity_cli`、`unity_pipeline`；Editor 资源审计 | [连接流程](skill/references/Unity-编辑器连接与任务执行.md)、[实际资源回读](tools/unity/audit/README.md)；Pipeline 使用官方专用接口 |
+| Unity Editor 操作与回读 | `unity_cli`、`unity_pipeline`；Editor 资源审计 | [连接流程](skill/references/05-Unity-编辑器连接与任务执行.md)、[实际资源回读](tools/unity/audit/README.md)；Pipeline 使用官方专用接口 |
 | Unity 包与 Spine 运行时恢复 | 包备份、`spine38`、`spine41` | [包备份](tools/unity/packages/README.md)、[Spine 3.8](tools/unity/spine/Spine38/README.md)、[Spine 4.1](tools/unity/spine/Spine41/README.md)；版本不可随意互换 |
 | 构建产物核对与 Windows 封装 | `verify_payload_tree`、`package_windows_portable`、`nsis` | [脚本契约](docs/tools/制品与资源检查.md)；封装成功不等于 Windows 运行通过 |
 | 诊断、技能检查与有界测试 | doctor、`check_grea_skill` | [维护说明](docs/维护指南.md)、[测试内存工具](scripts/testing/README.md) |
@@ -62,3 +62,5 @@ host_support 表示登记的平台条件，不表示已原生实测；Windows �
 `unity_pilot` 提供 snapshot/clone/verify，冻结明确输入、独立复制并验证原工程未变化；不启动 Unity，不迁移源工程。默认程序集可选桥接包、两类模块迁移的验收与回退边界见 [迁移说明](docs/Unity隔离迁移指南.md)。私有游戏的快照、补丁、截图和 Player 不进入公共分发。
 
 `shader_probe` 与 `unity_package_backup` 将已有 Shader 探针和包备份实现接入统一调度；先通过 `describe-tool` 查看边界，再使用 `run-tool` 执行。
+
+`static_asset_copy` 按显式路径映射复制静态文件，使用 Python 标准库；参数、退出码和复制边界见 [静态文件映射复制](docs/tools/制品与资源检查.md#静态文件映射复制)。

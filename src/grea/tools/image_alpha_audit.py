@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only PNG/image alpha audit after ComfyUI slicing. Requires Pillow.
+"""Read-only PNG/image alpha audit after asset slicing. Requires Pillow.
 
 Reports size, hash, alpha bounds and opaque border pixels. Does not crop, remove
 backgrounds, infer body anchors, or certify a button's visual correctness.

@@ -39,7 +39,7 @@ Windows 将 `./bin/grea` 换为 `bin\grea.cmd`。也可以下载 [Release 完整
 | [工具目录](TOOLS.md) | 按任务选工具，区分自带实现与外部依赖 |
 | [恢复技能](skill/SKILL.md) | 让 Agent 按当前目标加载流程；[安装技能](docs/工作区接入.md#接入已有工作区) |
 | [第三方依赖](THIRD_PARTY.md) | 官方来源、许可与本机接入；专题集中在 [providers](docs/providers) |
-| [Unity 工程规范](skill/references/Unity-工程结构与开发规范.md) | [配置与检查](docs/Unity项目配置与检查.md)、[框架与组件](docs/Unity框架与通用组件.md)、[生成与恢复](docs/Unity工程生成与恢复.md)、[参考游戏](docs/Unity参考游戏.md)、[隔离迁移](docs/Unity隔离迁移指南.md) |
+| [Unity 工程规范](skill/references/05-Unity-工程结构与开发规范.md) | [配置与检查](docs/Unity项目配置与检查.md)、[框架与组件](docs/Unity框架与通用组件.md)、[生成与恢复](docs/Unity工程生成与恢复.md)、[参考游戏](docs/Unity参考游戏.md)、[隔离迁移](docs/Unity隔离迁移指南.md) |
 | [贡献指南](CONTRIBUTING.md) | 开发、测试和提交；[自动发布](docs/Release自动发布.md) |
 
 ## 仓库结构

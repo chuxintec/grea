@@ -1,6 +1,6 @@
 # Unity 框架与通用组件
 
-当前 Foundation、uGUI、Editor 包版本为 `0.2.0`，以自有源码随 grea 分发，尚未发布到 UPM Registry。已有默认程序集可选用桥接包 `0.1.0`。工程规则以 [Unity 开发规范](../skill/references/Unity-工程结构与开发规范.md) 为准；本页说明实际 API、安装和测试。
+当前 Foundation、uGUI、Editor 包版本为 `0.2.0`，以自有源码随 grea 分发，尚未发布到 UPM Registry。已有默认程序集可选用桥接包 `0.1.0`。工程规则以 [Unity 开发规范](../skill/references/05-Unity-工程结构与开发规范.md) 为准；本页说明实际 API、安装和测试。
 
 ## 包与依赖
 

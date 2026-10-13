@@ -1,6 +1,6 @@
 # grea 维护验证
 
-技能维护的场景数据统一在 tests/scenarios，检查入口位于 scripts；本页是维护验证入口，不规定游戏开发流程。静态通过与 Agent 行为正确分别记录。
+技能维护的场景数据统一在 tests/scenarios，检查实现位于 src/grea/tools，通过统一工具 ID 调用；本页是维护验证入口，不规定游戏开发流程。静态通过与 Agent 行为正确分别记录。
 
 ## 静态检查
 
@@ -18,7 +18,7 @@ Python 3.9+，标准库，无安装/网络/Editor/收费调用。可从其他 cw
 
 ## 任务场景走查
 
-[scenarios.json](scenarios.json) 保存稳定的请求、最小前提、预期模式、可观察结果和应阻止的范围扩大。编号用于跟踪，不表示关卡或开发阶段。
+[scenarios.json](scenarios.json) 保存稳定的请求、最小前提、预期模式、可观察结果和应阻止的范围扩大。场景编号用于跟踪，不表示关卡或开发阶段。primary_references 保存完整规范路径；参考文档前缀是类别编号，不能单独定位模块。
 
 1. 维护者从每条请求出发，读候选入口和实际需要的参考，记录其决定、所依据的段落、剩余歧义及是否扩大任务。不能只检查是否出现某个词。
 2. 保留各场景的 observed_decision、evidence、result 和 evaluation_method；`maintainer-walkthrough` 表示文档决策走查，不写成已运行独立 Agent 或游戏。

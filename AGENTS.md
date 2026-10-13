@@ -9,4 +9,4 @@
 - 游戏项目、工作区 memory、用户 .agents／.codex 配置位于仓库外，不是本仓库维护或发布内容。可选接入见 docs/工作区接入.md。
 - 本机依赖、第三方二进制、包备份与凭据不得提交；公开树不使用 Git LFS。提交推送依当前用户授权执行。
 
-- 开发规范以 skill/references 为权威，采用 `<类别>-<模块>.md` 命名；docs 维护产品使用说明，历史阶段记录归 docs/history。Skill 版本见 skill/version.json，独立制品由 scripts/build_skill.py 构建。
+- 开发规范以 skill/references 为权威，采用 `<类别编号>-<类别>-<模块>.md` 命名；docs 维护产品使用说明，历史阶段记录归 docs/history。Skill 版本见 skill/version.json，独立制品由 scripts/build_skill.py 构建。
