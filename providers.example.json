@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "providers": {
+    "assetripper": {
+      "systems": ["Windows"],
+      "architectures": ["amd64", "x86_64"],
+      "command": ["C:\\Tools\\AssetRipper\\AssetRipper.GUI.Free.exe"],
+      "probe": ["C:\\Tools\\AssetRipper\\AssetRipper.GUI.Free.exe", "--version"]
+    },
+    "adb": {
+      "systems": ["Windows"],
+      "command": ["C:\\Android\\platform-tools\\adb.exe"],
+      "probe": ["C:\\Android\\platform-tools\\adb.exe", "version"]
+    }
+  }
+}

@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+system_bin="${GREA_SYSTEM_BIN:-$(brew --prefix)/bin}"
+exec "$system_bin/rizin" "$@"

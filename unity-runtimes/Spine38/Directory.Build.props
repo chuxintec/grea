@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <FileVersion>0.0.0.0</FileVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>UNITY_5_3_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2018_1_OR_NEWER;UNITY_2018_2_OR_NEWER;UNITY_2018_3_OR_NEWER;UNITY_2018_4_OR_NEWER;UNITY_2019_1_OR_NEWER;UNITY_2019_3_OR_NEWER;UNITY_2020_1_OR_NEWER;UNITY_2020_2_OR_NEWER;UNITY_2021_1_OR_NEWER;UNITY_2021_2_OR_NEWER;UNITY_2022_1_OR_NEWER</DefineConstants>
+    <UnityEditorPath Condition="'$(UnityEditorPath)' == ''">/Applications/Unity/Hub/Editor/6000.6.2f1/Unity.app</UnityEditorPath>
+    <UnityManaged Condition="'$(UnityManaged)' == ''">$(UnityEditorPath)/Contents/Resources/Scripting/Managed/UnityEngine</UnityManaged>
+    <UnityProjectLibrary Condition="'$(UnityProjectLibrary)' == ''">$(MSBuildThisFileDirectory)Library</UnityProjectLibrary>
+    <DefineConstants>$(DefineConstants);UNITY_2017_1_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityManaged)/*.dll" />
+    <Reference Include="UnityEngine.UI"><HintPath>$(UnityProjectLibrary)/ScriptAssemblies/UnityEngine.UI.dll</HintPath></Reference>
+    <Reference Include="Unity.Timeline"><HintPath>$(UnityProjectLibrary)/ScriptAssemblies/Unity.Timeline.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

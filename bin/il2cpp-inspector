@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Pinned official Redux CLI. Local dynamic port; watchdog kills a stuck child."""
+import os,sys,subprocess
+from pathlib import Path
+root=Path(__file__).resolve().parents[1];args=sys.argv[1:];seconds=180
+if args[:1]==['--watchdog-seconds']:
+ try:seconds=int(args[1]);args=args[2:];assert seconds>0
+ except (IndexError,ValueError,AssertionError):sys.exit('Positive --watchdog-seconds required')
+env=dict(os.environ);env.update(DOTNET_ROOT=str(root/'dotnet-runtime/10'),DOTNET_ROOT_ARM64=str(root/'dotnet-runtime/10'),DOTNET_BUNDLE_EXTRACT_BASE_DIR=str(root/'.cache/inspector-bundle'),ASPNETCORE_URLS='http://127.0.0.1:0')
+binary=root/'il2cpp-dotnet/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI'
+try:raise SystemExit(subprocess.run([str(binary),*args],env=env,timeout=seconds).returncode)
+except subprocess.TimeoutExpired:
+ print('Redux watchdog expired; child killed. Outputs may be partial; inspect log and validate before use.',file=sys.stderr);raise SystemExit(124)

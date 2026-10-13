@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Generate portable operation contracts from the shared source; --check never writes."""
+import argparse,json,sys
+from pathlib import Path
+root=Path(__file__).resolve().parents[1];sys.path.insert(0,str(root/'src'))
+from grea.contracts import catalog,ENVELOPE_SCHEMA
+from grea.common import digest
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');a=p.parse_args()
+value={'schema_version':1,'operations':catalog()};value['sha256']=digest(value)
+outputs={'operations.json':value,'result.schema.json':dict(ENVELOPE_SCHEMA,**{'$schema':'https://json-schema.org/draft/2020-12/schema'})}
+failed=[]
+for name,value in outputs.items():
+ path=root/'schemas'/name;content=json.dumps(value,ensure_ascii=False,indent=2)+'\n'
+ if a.check:
+  if not path.exists() or path.read_text()!=content:failed.append(name)
+ else:path.write_text(content)
+print(json.dumps({'ok':not failed,'drifted':failed,'written':[] if a.check else list(outputs)}))
+raise SystemExit(1 if failed else 0)

@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+task_tools_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}"
+exec "$task_tools_root/android-emulator-legacy/android-9.0.0_r1/emulator" "$@"

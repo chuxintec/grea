@@ -1,0 +1,18 @@
+{
+  "project": "grea",
+  "review_date": "2026-10-12",
+  "rea": {
+    "url": "https://github.com/morluto/rea",
+    "commit": "edf46248f2a44b4e5776518489fee09d0fc4516b",
+    "source_package_version": "6.4.0",
+    "license": "MIT",
+    "adoption": "Architecture and contract design studied; no REA engine implementation copied or installed.",
+    "reviewed_files": ["docs/tool-design.md", "docs/mcp-contracts.md", "docs/architecture.mermaid", "docs/reconstruction-readiness.md", "docs/reconstruction-obligation-ledgers.md", "docs/testing.md", "src/domain/evidence.ts", "src/server/toolResult.ts", "src/contracts/errorSchemas.ts"]
+  },
+  "mcp_sdk": {
+    "upstream": "https://github.com/modelcontextprotocol/python-sdk",
+    "version": "2.3.0",
+    "license": "MIT",
+    "installed_from": "PyPI; exact transitive resolutions in uv.lock"
+  }
+}

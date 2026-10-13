@@ -1,0 +1,12 @@
+brew "apktool"
+brew "binwalk"
+brew "dotnet@8"
+brew "jadx"
+brew "rizin"
+brew "sevenzip"
+brew "ghidra"
+brew "glslang"
+brew "spirv-cross"
+brew "spirv-tools"
+
+brew "git-lfs"

@@ -1,0 +1,1784 @@
+{
+  "schema_version": 2,
+  "path_tokens": {
+    "tools": "registry parent directory",
+    "home": "current user home",
+    "grea": "registry parent directory",
+    "python": "active grea interpreter"
+  },
+  "tools": [
+    {
+      "id": "assetripper",
+      "probe": [
+        "{grea}/bin/assetripper",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "Unity assets/bundles",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"assetripper\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/assetripper"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
+      ]
+    },
+    {
+      "id": "cpp2il",
+      "probe": [
+        "{grea}/bin/cpp2il",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "IL2CPP binary+metadata",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"cpp2il\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/cpp2il"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/il2cpp-dotnet/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
+      ]
+    },
+    {
+      "id": "ilspy",
+      "probe": [
+        "{grea}/bin/ilspy",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "Managed DLL",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"ilspy\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/ilspy"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/il2cpp-dotnet/ILSpy/ilspycmd"
+      ]
+    },
+    {
+      "id": "apktool",
+      "probe": [
+        "{grea}/bin/apktool",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "APK resources",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"apktool\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/apktool"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "jadx",
+      "probe": [
+        "{grea}/bin/jadx",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "DEX/APK",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"jadx\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/jadx"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "rizin",
+      "probe": [
+        "{grea}/bin/rizin",
+        "-v"
+      ],
+      "check_level": "launch/version",
+      "formats": "ELF/PE/Mach-O",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"rizin\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/rizin"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "binwalk",
+      "probe": [
+        "{grea}/bin/binwalk",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "Binary blob",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"binwalk\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/binwalk"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "7zz",
+      "probe": [
+        "{grea}/bin/7zz",
+        "i"
+      ],
+      "check_level": "launch/version",
+      "formats": "Archives",
+      "side_effects": "probe only; normal tool execution writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"7zz\"}",
+      "output_schema": "upstream CLI; pin help before use",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/7zz"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "ffmpeg",
+      "probe": [
+        "ffmpeg",
+        "-version"
+      ],
+      "check_level": "launch/version",
+      "formats": "see upstream help",
+      "usage": "ffmpeg -version",
+      "side_effects": "version probe only; no device attachment",
+      "output_schema": "upstream version text",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": null,
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "ffprobe",
+      "probe": [
+        "ffprobe",
+        "-version"
+      ],
+      "check_level": "launch/version",
+      "formats": "see upstream help",
+      "usage": "ffprobe -version",
+      "side_effects": "version probe only; no device attachment",
+      "output_schema": "upstream version text",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": null,
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "scrcpy",
+      "probe": [
+        "scrcpy",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "see upstream help",
+      "usage": "grea describe-tool {\"tool_id\": \"scrcpy\"}",
+      "side_effects": "version probe only; no device attachment",
+      "output_schema": "upstream version text",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "scrcpy"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "adb",
+      "probe": [
+        "{home}/Library/Android/sdk/platform-tools/adb",
+        "version"
+      ],
+      "check_level": "launch/version",
+      "formats": "see upstream help",
+      "usage": "grea describe-tool {\"tool_id\": \"adb\"}",
+      "side_effects": "version probe only; no device attachment",
+      "output_schema": "upstream version text",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{home}/Library/Android/sdk/platform-tools/adb"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "nsis",
+      "probe": [
+        "makensis",
+        "-VERSION"
+      ],
+      "check_level": "launch/version",
+      "formats": "see upstream help",
+      "usage": "grea describe-tool {\"tool_id\": \"nsis\"}",
+      "side_effects": "version probe only; no device attachment",
+      "output_schema": "upstream version text",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "makensis"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "frida",
+      "probe": [
+        "{grea}/frida/.venv/bin/python",
+        "-c",
+        "import frida;print(frida.__version__)"
+      ],
+      "check_level": "launch/version",
+      "formats": "see upstream help",
+      "usage": "grea describe-tool {\"tool_id\": \"frida\"}",
+      "side_effects": "version probe only; no device attachment",
+      "output_schema": "upstream version text",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/frida/.venv/bin/frida"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "unitypy",
+      "probe": [
+        "{grea}/python-runtime/.venv/bin/python",
+        "-c",
+        "import UnityPy,cryptography; print(UnityPy.__version__,cryptography.__version__)"
+      ],
+      "check_level": "launch/version",
+      "formats": "see upstream help",
+      "usage": "{grea}/python-runtime/.venv/bin/python -c import UnityPy,cryptography; print(UnityPy.__version__,cryptography.__version__)",
+      "side_effects": "version probe only; no device attachment",
+      "output_schema": "upstream version text",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": null,
+      "category": "unity-runtime",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "spine38",
+      "files": [
+        "{grea}/unity-runtimes/Spine38/vendor/core/Animation.cs"
+      ],
+      "check_level": "presence-only",
+      "formats": "source/runtime or native analysis",
+      "side_effects": "none in probe",
+      "usage": "read local README/help before executing",
+      "output_schema": "presence boolean",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": null,
+      "category": "unity-runtime",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "spine41",
+      "files": [
+        "{grea}/unity-runtimes/Spine41/vendor/core/Animation.cs"
+      ],
+      "check_level": "presence-only",
+      "formats": "source/runtime or native analysis",
+      "side_effects": "none in probe",
+      "usage": "read local README/help before executing",
+      "output_schema": "presence boolean",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": null,
+      "category": "unity-runtime",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "ghidra",
+      "files": [
+        "{grea}/bin/ghidra-headless"
+      ],
+      "check_level": "launcher-presence",
+      "formats": "source/runtime or native analysis",
+      "side_effects": "none in probe",
+      "usage": "Set GHIDRA_HOME or use the installed Homebrew formula; launcher presence does not prove engine readiness.",
+      "output_schema": "presence boolean",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/ghidra-headless"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "blender",
+      "check_level": "presence-only",
+      "formats": "source/runtime or native analysis",
+      "side_effects": "none in probe",
+      "usage": "Configure the native Blender executable explicitly through GREA_PROVIDERS.",
+      "output_schema": "presence boolean",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": null,
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "il2cppdumper",
+      "files": [
+        "{grea}/il2cpp-dotnet/Il2CppDumper/Il2CppDumper/bin/Release/net8.0/Il2CppDumper.dll"
+      ],
+      "check_level": "presence-only",
+      "formats": "source/runtime or native analysis",
+      "side_effects": "none in probe",
+      "usage": "read local README/help before executing",
+      "output_schema": "presence boolean",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": null,
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "unity_asset_ledger",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/unity_asset_ledger.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "Unity Assets and ledger JSON",
+      "side_effects": "read-only snapshots and explicit new reports; no migration",
+      "usage": "grea describe-tool {\"tool_id\": \"unity_asset_ledger\"}",
+      "output_schema": "JSON; grea/game-building/CATALOG.md",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/unity_asset_ledger.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "unity_dependency_audit",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/unity_dependency_audit.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "see skill tool catalog",
+      "side_effects": "help only; execution per skill contract",
+      "usage": "grea describe-tool {\"tool_id\": \"unity_dependency_audit\"}",
+      "output_schema": "existing skill contract",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/unity_dependency_audit.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "compare_traces",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/compare_traces.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "see skill tool catalog",
+      "side_effects": "help only; execution per skill contract",
+      "usage": "grea describe-tool {\"tool_id\": \"compare_traces\"}",
+      "output_schema": "existing skill contract",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/compare_traces.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "video_manifest",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/video_manifest.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "see skill tool catalog",
+      "side_effects": "help only; execution per skill contract",
+      "usage": "grea describe-tool {\"tool_id\": \"video_manifest\"}",
+      "output_schema": "existing skill contract",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/video_manifest.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "verify_payload_tree",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/verify_payload_tree.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "see skill tool catalog",
+      "side_effects": "help only; execution per skill contract",
+      "usage": "grea describe-tool {\"tool_id\": \"verify_payload_tree\"}",
+      "output_schema": "existing skill contract",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/verify_payload_tree.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "package_windows_portable",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/package_windows_portable.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "see skill tool catalog",
+      "side_effects": "help only; execution per skill contract",
+      "usage": "grea describe-tool {\"tool_id\": \"package_windows_portable\"}",
+      "output_schema": "existing skill contract",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/package_windows_portable.py"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "audit_numeric_texture",
+      "probe": [
+        "python3",
+        "{grea}/recovery/audit_numeric_texture.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "raw floats / JSONL / explicitly trusted Laya parser",
+      "side_effects": "read-only except explicit new report; Laya loads selected local Python",
+      "usage": "grea describe-tool {\"tool_id\": \"audit_numeric_texture\"}",
+      "output_schema": "JSON; see recovery/README.md",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/recovery/audit_numeric_texture.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "compare_events",
+      "probe": [
+        "python3",
+        "{grea}/recovery/compare_events.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "raw floats / JSONL / explicitly trusted Laya parser",
+      "side_effects": "read-only except explicit new report; Laya loads selected local Python",
+      "usage": "grea describe-tool {\"tool_id\": \"compare_events\"}",
+      "output_schema": "JSON; see recovery/README.md",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/recovery/compare_events.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "laya_contract_audit",
+      "probe": [
+        "python3",
+        "{grea}/recovery/laya_contract_audit.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "raw floats / JSONL / explicitly trusted Laya parser",
+      "side_effects": "read-only except explicit new report; Laya loads selected local Python",
+      "usage": "grea describe-tool {\"tool_id\": \"laya_contract_audit\"}",
+      "output_schema": "JSON; see recovery/README.md",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/recovery/laya_contract_audit.py"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write",
+        "executes_explicit_project_parser"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "glslangValidator",
+      "probe": [
+        "{grea}/bin/glslangValidator",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "SPIR-V/GLES",
+      "side_effects": "probe only; analysis writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"glslangValidator\"}",
+      "output_schema": "upstream CLI; tools P1 README",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/glslangValidator"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "spirv-cross",
+      "probe": [
+        "{grea}/bin/spirv-cross",
+        "--revision"
+      ],
+      "check_level": "launch/version",
+      "formats": "SPIR-V/GLES",
+      "side_effects": "probe only; analysis writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"spirv-cross\"}",
+      "output_schema": "upstream CLI; tools P1 README",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/spirv-cross"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "spirv-val",
+      "probe": [
+        "{grea}/bin/spirv-val",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "SPIR-V/GLES",
+      "side_effects": "probe only; analysis writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"spirv-val\"}",
+      "output_schema": "upstream CLI; tools P1 README",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/spirv-val"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "il2cpp-inspector",
+      "probe": [
+        "{grea}/bin/il2cpp-inspector",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "IL2CPP binary+metadata",
+      "side_effects": "probe only; analysis writes explicit output",
+      "usage": "grea describe-tool {\"tool_id\": \"il2cpp-inspector\"}",
+      "output_schema": "upstream CLI; tools P1 README",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{grea}/bin/il2cpp-inspector"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/il2cpp-dotnet/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
+        "{grea}/dotnet-runtime/10/dotnet"
+      ]
+    },
+    {
+      "id": "image_alpha_audit",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/image_alpha_audit.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "Pillow supported raster images; Pillow required",
+      "side_effects": "reads images; writes explicit new JSON only",
+      "usage": "grea describe-tool {\"tool_id\": \"image_alpha_audit\"}",
+      "output_schema": "JSON; grea/game-building/CATALOG.md",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/image_alpha_audit.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "pngquant",
+      "probe": [
+        "pngquant",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "formats": "PNG RGBA to indexed PNG",
+      "side_effects": "probe only; compression writes explicitly selected output",
+      "usage": "grea describe-tool {\"tool_id\": \"pngquant\"}",
+      "output_schema": "PNG plus process exit code; version 3.0.3 verified",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "pngquant"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "android_emulator_arm32_legacy",
+      "check_level": "presence-only in doctor; project launch and ABI separately verified",
+      "formats": "Android ARM32 AVD; official Emulator 27.3.5",
+      "side_effects": "launch writes only specified AVD; installs require session authorization",
+      "usage": "Compatibility alias; use android-emulator-arm32. No independent execution definition.",
+      "output_schema": "upstream emulator and adb; explicit serial required",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "category": "provider",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "alias_of": "android-emulator-arm32",
+      "deprecated": true
+    },
+    {
+      "id": "check_game_build_skill",
+      "check_level": "help-only",
+      "formats": "local Markdown skill, recovery dispatcher and registry JSON; Python 3.9+",
+      "side_effects": "read-only; no tool execution, network or file writes; JSON to stdout",
+      "usage": "Compatibility alias; use check_grea_skill. No independent execution definition.",
+      "output_schema": "JSON and exits 0=static checks pass, 1=findings, 2=input error; grea/game-building/skill-checks/README.md",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "deprecated_alias_for": "check_grea_skill",
+      "alias_of": "check_grea_skill",
+      "deprecated": true
+    },
+    {
+      "id": "video_sheet",
+      "probe": [
+        "{python}",
+        "{grea}/game-building/scripts/video_sheet.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "grea describe-tool {\"tool_id\": \"video_sheet\"}",
+      "side_effects": "See canonical helper contract; read inputs and write explicit outputs.",
+      "formats": "See helper --help",
+      "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/video_sheet.py"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "read_elf_values",
+      "probe": [
+        "{python}",
+        "{grea}/game-building/scripts/read_elf_values.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "grea describe-tool {\"tool_id\": \"read_elf_values\"}",
+      "side_effects": "See canonical helper contract; read inputs and write explicit outputs.",
+      "formats": "See helper --help",
+      "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/read_elf_values.py"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "unpack_xapk",
+      "probe": [
+        "{python}",
+        "{grea}/game-building/scripts/unpack_xapk.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "grea describe-tool {\"tool_id\": \"unpack_xapk\"}",
+      "side_effects": "See canonical helper contract; read inputs and write explicit outputs.",
+      "formats": "See helper --help",
+      "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/unpack_xapk.py"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "registry_doctor",
+      "probe": [
+        "{python}",
+        "{grea}/recovery/registry_doctor.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "grea describe-tool {\"tool_id\": \"registry_doctor\"}",
+      "side_effects": "See canonical helper contract; read inputs and write explicit outputs.",
+      "formats": "See helper --help",
+      "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/recovery/registry_doctor.py"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "android-emulator-arm32",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/android-emulator-arm32"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/android-emulator-arm32"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Read the wrapper and provider help before executing.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "unsupported_legacy_bundle",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Bundled Darwin legacy emulator cannot run on Windows; install an official Windows emulator and separately verify ARM32 compatibility. Do not substitute silently."
+      },
+      "required_files": [
+        "{grea}/android-emulator-legacy/android-9.0.0_r1/emulator"
+      ]
+    },
+    {
+      "id": "assembly-sanitizer",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/assembly-sanitizer"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/assembly-sanitizer"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Read the wrapper and provider help before executing.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/dotnet-recovery/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
+      ]
+    },
+    {
+      "id": "decode-doctor",
+      "category": "provider",
+      "check_level": "presence-only",
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Compatibility alias; use registry_doctor. No independent execution definition.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "alias_of": "registry_doctor",
+      "deprecated": true
+    },
+    {
+      "id": "spirv-dis",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/spirv-dis"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/spirv-dis"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Read the wrapper and provider help before executing.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "unity-export-assets",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/unity-export-assets"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/unity-export-assets"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Configure this compatibility ID with an explicitly supplied project adapter through GREA_PROVIDERS. No project implementation is distributed.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/wechat-mini-program/export_all_bundle_assets.py",
+        "{grea}/python-runtime/.venv/bin/python"
+      ],
+      "distribution": "local-only project adapter; implementation excluded from public source"
+    },
+    {
+      "id": "unity-export-config",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/unity-export-config"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/unity-export-config"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Read the wrapper and provider help before executing.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/python-runtime/.venv/bin/python"
+      ]
+    },
+    {
+      "id": "webgl-xxtea-decrypt",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/webgl-xxtea-decrypt"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/webgl-xxtea-decrypt"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Configure this compatibility ID with an explicitly supplied project adapter through GREA_PROVIDERS. No project implementation is distributed.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/wechat-mini-program/decrypt_webgl_xxtea.py",
+        "{grea}/python-runtime/.venv/bin/python"
+      ],
+      "distribution": "local-only project adapter; implementation excluded from public source"
+    },
+    {
+      "id": "wxapkg-decrypt",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/wxapkg-decrypt"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/wxapkg-decrypt"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Read the wrapper and provider help before executing.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/python-runtime/.venv/bin/python"
+      ]
+    },
+    {
+      "id": "wxapkg-unpack",
+      "category": "provider",
+      "check_level": "presence-only",
+      "files": [
+        "{grea}/bin/wxapkg-unpack"
+      ],
+      "execution": {
+        "command": [
+          "{grea}/bin/wxapkg-unpack"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "provider_declared_effects"
+      ],
+      "usage": "Read the wrapper and provider help before executing.",
+      "limitations": [
+        "No generic --help probe assumed for this wrapper."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      },
+      "required_files": [
+        "{grea}/python-runtime/.venv/bin/python"
+      ]
+    },
+    {
+      "id": "check_grea_skill",
+      "probe": [
+        "python3",
+        "{grea}/game-building/scripts/check_game_build_skill.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "formats": "local Markdown skill, recovery dispatcher and registry JSON; Python 3.9+",
+      "side_effects": "read-only; no tool execution, network or file writes; JSON to stdout",
+      "usage": "grea legacy check_grea_skill --workspace-root /path/Games --json",
+      "output_schema": "JSON and exits 0=static checks pass, 1=findings, 2=input error; grea/game-building/skill-checks/README.md",
+      "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/game-building/scripts/check_game_build_skill.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "unity_cli",
+      "category": "editor",
+      "probe": [
+        "{home}/.unity/bin/unity",
+        "--version"
+      ],
+      "check_level": "launch/version",
+      "execution": {
+        "command": [
+          "{home}/.unity/bin/unity"
+        ],
+        "finding_exit_codes": []
+      },
+      "effects": [
+        "editor_process",
+        "project_mutation_by_command"
+      ],
+      "usage": "Use the current official Unity CLI skill/schema and bind a specific project.",
+      "limitations": [
+        "Installed CLI does not establish a connected Editor/Pipeline."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin"
+        ],
+        "architectures": [],
+        "windows_status": "native_configuration_required",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    },
+    {
+      "id": "unity_pipeline",
+      "category": "editor",
+      "execution": null,
+      "check_level": "project-scoped",
+      "effects": [
+        "editor_mutation_by_command"
+      ],
+      "usage": "Discover the live Editor/Pipeline schema through the official Unity tools.",
+      "limitations": [
+        "Not a standalone executable; requires a ready Editor and project package."
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS only; Windows/Linux not executed",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+      }
+    }
+  ],
+  "product": "grea",
+  "product_version": "0.1.0",
+  "version": "0.1.1"
+}

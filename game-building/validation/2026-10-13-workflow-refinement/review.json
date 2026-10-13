@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-13",
+  "scope": "workflow documentation maintenance",
+  "basis": "Reviewed a user-referenced development conversation, project plans, retrospective, acceptance records, provenance, selected implementation and delivery reports. Source project details stay outside the product repository.",
+  "decisions": [
+    {
+      "decision": "extend",
+      "topic": "隐藏入口可达性",
+      "references": [
+        "1"
+      ],
+      "boundary": "三类证据联合判断，未知仍待核对"
+    },
+    {
+      "decision": "extend",
+      "topic": "适配层重复调用与状态复用",
+      "references": [
+        "14"
+      ],
+      "boundary": "源版本及实际调用方确定契约，夹具不替代运行"
+    },
+    {
+      "decision": "extend",
+      "topic": "UI 尺寸、文字、进度条和文本输入",
+      "references": [
+        "5"
+      ],
+      "boundary": "按源模式及实际输入类型验证，不套用固定尺寸或根因"
+    },
+    {
+      "decision": "extend",
+      "topic": "普通构建、深层 QA、自动输入和离线失败",
+      "references": [
+        "8"
+      ],
+      "boundary": "授权范围、构建身份和输入方式分别核对"
+    },
+    {
+      "decision": "extend",
+      "topic": "安装封装与试玩交付",
+      "references": [
+        "23"
+      ],
+      "boundary": "仅按当前交付要求执行"
+    },
+    {
+      "decision": "reuse-existing",
+      "topic": "当前结论与历史快照、完整 payload 身份、分层验收",
+      "references": [
+        "8",
+        "16",
+        "23"
+      ],
+      "boundary": "本轮不新增同义规则"
+    },
+    {
+      "decision": "keep-project-local",
+      "topic": "专用解析器、适配运行时、录屏器、安装脚本和 QA 数值",
+      "boundary": "无异项目输入验证，不登记为通用工具"
+    },
+    {
+      "decision": "do-not-generalize-causality",
+      "topic": "大步长滚轮空白与录制超时偏差",
+      "boundary": "仅形成检查条件，原因未隔离，不规定固定修复"
+    }
+  ],
+  "checks": {
+    "source_skill_structure": "passed with existing system Python; repository venv lacks PyYAML; no dependency installed",
+    "source_check_grea_skill": {
+      "ok": true,
+      "markdown_files": 24,
+      "local_links": 148,
+      "errors": 0,
+      "warnings": 0
+    },
+    "temporary_sync_and_check": "passed",
+    "installed_sync_and_check": "passed; five changed references",
+    "installed_skill_structure": "passed",
+    "installed_actual_path_links": {
+      "ok": true,
+      "local_links": 148
+    },
+    "installed_legacy_checker_limitation": "check_grea_skill --skill-dir remaps a candidate to repository skill/ before resolving links. A rebased installed copy produces link_outside_workspace errors. Source check and actual installed path/anchor checks passed; checker implementation unchanged.",
+    "scenario_integrity": "24 unique IDs with resolvable primary reference routes",
+    "preexisting_edits": "fingerprints unchanged"
+  },
+  "evaluation_method": "maintainer-walkthrough",
+  "evaluations": [
+    {
+      "case_id": "R02",
+      "observed_decision": "局部外观修复只进入受影响 UI 与回归，新加的文本、长列表、封装条款按触发条件适用。",
+      "evidence": [
+        "skill/references/5-界面与交互.md",
+        "skill/references/8-验收与协作.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R06",
+      "observed_decision": "跨引擎恢复核对源对象及运行语义；新增 Cocos 来源路由不表示取得原作者 Unity 工程。",
+      "evidence": [
+        "skill/references/14-跨引擎恢复与运行契约.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R08",
+      "observed_decision": "Mac 预览只做本期构建与必要运行；安装程序、长录制及 Windows 不自动纳入。",
+      "evidence": [
+        "skill/references/23-构建输出与版本发布.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R10",
+      "observed_decision": "规则通过不能关闭已承诺但未运行的原版视觉；按维度保留待验。",
+      "evidence": [
+        "skill/references/8-验收与协作.md",
+        "skill/references/16-开发计划与状态维护.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R15",
+      "observed_decision": "保留 Windows 失败与旧版本身份，不把成功平台或解包报告转换为双平台通过。",
+      "evidence": [
+        "skill/references/23-构建输出与版本发布.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R18",
+      "observed_decision": "目前三类证据支持休眠记录；若远端开关仍影响判断则保留待核对，不开放页面，也不宣称永远不可达。",
+      "evidence": [
+        "skill/references/1-原生内容取证.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R19",
+      "observed_decision": "从首次异常和源调用语义隔离缓存重播及回收；契约检查后回到真实入口，不推断所有空白同因。",
+      "evidence": [
+        "skill/references/14-跨引擎恢复与运行契约.md",
+        "skill/references/5-界面与交互.md",
+        "skill/references/8-验收与协作.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R20",
+      "observed_decision": "先核对目标构建、焦点和事件链，手动/自动分别记录；不改变生产失焦行为制造通过。",
+      "evidence": [
+        "skill/references/5-界面与交互.md",
+        "skill/references/8-验收与协作.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R21",
+      "observed_decision": "检查明确失败、次数资源与返回路径，并消费异步拒绝；本地提示和消费不因 SDK 禁用而被禁止。",
+      "evidence": [
+        "skill/references/8-验收与协作.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R22",
+      "observed_decision": "预置高级档证明对应分支；最终普通包需隔离空档和已有档实测，测试启用门控和重开幂等单独核对。",
+      "evidence": [
+        "skill/references/8-验收与协作.md",
+        "skill/references/23-构建输出与版本发布.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R23",
+      "observed_decision": "封装副本排除调试备份并回读；Mac 交付入口可运行验收，Windows 安装/卸载无主机保持未运行。",
+      "evidence": [
+        "skill/references/23-构建输出与版本发布.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    },
+    {
+      "case_id": "R24",
+      "observed_decision": "预检后集中录制，探测实际时长、抽看关键段并解码；标明 QA/buildId、仅入口展示项及剪辑与缺陷。",
+      "evidence": [
+        "skill/references/23-构建输出与版本发布.md",
+        "skill/references/1-原生内容取证.md",
+        "skill/references/8-验收与协作.md"
+      ],
+      "result": "pass",
+      "evaluation_method": "maintainer-walkthrough"
+    }
+  ],
+  "file_sha256": {
+    "skill/SKILL.md": "b57beea715b09097b5e30f350ffb66a3817b5e9f86439a31e8c01ec4ee2e8352",
+    "skill/references/1-原生内容取证.md": "cc91453b288667231147ba3fd16981d0c8d2c1631a54c4d768cac95ab32abbfc",
+    "skill/references/5-界面与交互.md": "1ad4ce07509071ea9e4336938ebcc01da5719b4294cc5d8edcdc8b01c4605f0b",
+    "skill/references/8-验收与协作.md": "2185ea1c32508e77dc87bb15a6f9324a2ec61c3204274a04984b2d04f41346d6",
+    "skill/references/14-跨引擎恢复与运行契约.md": "30015337f75de89c4d758327ea131f8037c508fa312f636de30cf18eb907d5fe",
+    "skill/references/23-构建输出与版本发布.md": "c2d8232fdb3d2ceb7af404e134920fbfeebb85dc7a1dd0de29f6f4d39847dc4f",
+    "game-building/skill-checks/scenarios.json": "ba83489eab40c323de64ad51968a0e0ac82cb924c6c756acee91f2c168d3f604"
+  },
+  "not_executed": [
+    "independent agent evaluation",
+    "Unity or game runtime tests",
+    "new builds, installation or recording",
+    "Git commit/push",
+    "remote memory write"
+  ],
+  "limits": [
+    "Retrospective evidence was reviewed, not re-executed.",
+    "Static checks and maintainer walkthroughs do not establish independent agent behavior or gameplay parity."
+  ]
+}

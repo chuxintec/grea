@@ -1,0 +1,110 @@
+{
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "product": {
+      "const": "grea"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": ""
+    },
+    "operation": {
+      "type": "string",
+      "minLength": 1,
+      "description": ""
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": ""
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "partial",
+        "error"
+      ]
+    },
+    "result": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "limits": {
+      "type": "object"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "description": ""
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1,
+              "description": ""
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "details": {
+              "type": "object"
+            },
+            "next_action": {
+              "type": "string",
+              "minLength": 1,
+              "description": ""
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "retryable",
+            "details",
+            "next_action"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "product",
+    "version",
+    "operation",
+    "run_id",
+    "status",
+    "result",
+    "evidence",
+    "limitations",
+    "limits",
+    "error"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

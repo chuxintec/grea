@@ -1,0 +1,2386 @@
+{
+  "schema_version": 1,
+  "operations": [
+    {
+      "name": "session",
+      "description": "Inspect grea identity, catalog digest and readiness without launching providers.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_tools",
+      "description": "List the complete registered provider/helper inventory, including unavailable entries.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "describe_tool",
+      "description": "Read one registered tool contract, effects, command and limitations.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tool_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Exact tool ID from list_tools; no implicit provider substitution."
+          }
+        },
+        "required": [
+          "tool_id"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "doctor",
+      "description": "Inspect installation presence; only run explicit selected version/help probes when probe=true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tool_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Exact tool ID from list_tools; no implicit provider substitution."
+            }
+          },
+          "probe": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "process_when_probe_requested"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "inspect_target",
+      "description": "Inventory a supplied artifact with content digests and explicit partial coverage; never execute it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "max_files": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1000,
+            "maximum": 100000
+          },
+          "max_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 268435456,
+            "maximum": 17179869184
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "plan_workflow",
+      "description": "Select scoped Unity recovery steps, evidence dimensions, tools and canonical references; does not execute the plan.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "recover",
+              "fix",
+              "reskin",
+              "refactor",
+              "performance",
+              "deliver",
+              "maintain"
+            ]
+          },
+          "source_engine": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "unity",
+              "laya",
+              "other"
+            ]
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "run_tool",
+      "description": "Run one exact registered command with explicit argv and a new log directory; preserve nonzero/timeout/partial outcomes. Does not grant approval or assert game parity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tool_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Exact tool ID from list_tools; no implicit provider substitution."
+          },
+          "arguments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "run_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 120,
+            "maximum": 3600
+          },
+          "max_output_bytes": {
+            "type": "integer",
+            "minimum": 1024,
+            "default": 16777216,
+            "maximum": 1073741824
+          },
+          "max_inline_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "default": 32768,
+            "maximum": 1048576
+          }
+        },
+        "required": [
+          "tool_id",
+          "arguments",
+          "run_dir"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "process",
+        "filesystem_write",
+        "provider_declared_effects"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "init_case",
+      "description": "Create a project-local immutable baseline and explicit required acceptance dimensions. Existing cases are not overwritten.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "mode": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "recover",
+              "fix",
+              "reskin",
+              "refactor",
+              "performance",
+              "deliver",
+              "maintain"
+            ]
+          },
+          "required_dimensions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": "",
+              "enum": [
+                "rules",
+                "runtime",
+                "visual",
+                "identity",
+                "performance",
+                "platform"
+              ]
+            }
+          }
+        },
+        "required": [
+          "project_dir",
+          "source",
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_write"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_evidence",
+      "description": "Register an existing evidence file and its source/candidate role with a verified digest. The role is caller-declared, not authenticated original gameplay.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "case_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project .grea case directory, or its owning project directory."
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "original_static",
+              "original_runtime",
+              "candidate_runtime",
+              "approved_design",
+              "test_report",
+              "build_manifest"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          }
+        },
+        "required": [
+          "case_dir",
+          "kind",
+          "path",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read",
+        "filesystem_write"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "record_verification",
+      "description": "Record an explicit reviewer verdict for one dimension, bound to existing evidence IDs. It records a claim; it does not run tests or inspect images.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "case_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project .grea case directory, or its owning project directory."
+          },
+          "dimension": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "rules",
+              "runtime",
+              "visual",
+              "identity",
+              "performance",
+              "platform"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "passed",
+              "failed",
+              "not_run",
+              "not_applicable"
+            ]
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": ""
+            }
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          }
+        },
+        "required": [
+          "case_dir",
+          "dimension",
+          "status",
+          "evidence_ids",
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_write"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "case_status",
+      "description": "Recheck source/evidence integrity and report declared verdicts, missing coverage and contradictions. Static evidence cannot substitute for runtime/visual proof.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "case_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project .grea case directory, or its owning project directory."
+          }
+        },
+        "required": [
+          "case_dir"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "audit_unity_dependencies",
+      "description": "Audit a Unity Assets text-GUID dependency closure from explicit root assets. Dynamic references still require Editor verification.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "run_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 120,
+            "maximum": 3600
+          },
+          "max_output_bytes": {
+            "type": "integer",
+            "minimum": 1024,
+            "default": 16777216,
+            "maximum": 1073741824
+          },
+          "max_inline_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "default": 32768,
+            "maximum": 1048576
+          },
+          "assets": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "roots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": ""
+            },
+            "minItems": 1
+          },
+          "output": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          }
+        },
+        "required": [
+          "assets",
+          "roots",
+          "output",
+          "run_dir"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "process"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "snapshot_unity_assets",
+      "description": "Snapshot Unity asset paths, GUIDs, contents and Resources keys without moving assets or modifying Unity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "run_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 120,
+            "maximum": 3600
+          },
+          "max_output_bytes": {
+            "type": "integer",
+            "minimum": 1024,
+            "default": 16777216,
+            "maximum": 1073741824
+          },
+          "max_inline_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "default": 32768,
+            "maximum": 1048576
+          },
+          "assets": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "output": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          }
+        },
+        "required": [
+          "assets",
+          "output",
+          "run_dir"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "process"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "compare_gameplay_traces",
+      "description": "Find the first divergence between two ordered gameplay JSONL traces at explicit JSON Pointer fields. Does not establish correct sampling or reorder concurrent events.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "run_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 120,
+            "maximum": 3600
+          },
+          "max_output_bytes": {
+            "type": "integer",
+            "minimum": 1024,
+            "default": 16777216,
+            "maximum": 1073741824
+          },
+          "max_inline_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "default": 32768,
+            "maximum": 1048576
+          },
+          "before": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "after": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "before",
+          "after",
+          "fields",
+          "run_dir"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "process"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "inspect_numeric_texture",
+      "description": "Validate raw floating-point texture bytes (VAT/numeric maps); ordinary PNG imagery is not equivalent numeric evidence.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "run_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 120,
+            "maximum": 3600
+          },
+          "max_output_bytes": {
+            "type": "integer",
+            "minimum": 1024,
+            "default": 16777216,
+            "maximum": 1073741824
+          },
+          "max_inline_bytes": {
+            "type": "integer",
+            "minimum": 256,
+            "default": 32768,
+            "maximum": 1048576
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "channels": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 4,
+            "maximum": 4
+          },
+          "dtype": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "f16",
+              "f32"
+            ]
+          },
+          "endian": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "little",
+              "big"
+            ],
+            "default": "little"
+          },
+          "candidate": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          }
+        },
+        "required": [
+          "source",
+          "width",
+          "height",
+          "channels",
+          "dtype",
+          "run_dir"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "process"
+      ],
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    }
+  ],
+  "sha256": "69fb9ae1a24747ac62074dd54859b06ef1a5c65411a4ba65fffd4e3397128f93"
+}

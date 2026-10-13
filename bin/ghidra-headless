@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+ghidra_root="${GHIDRA_HOME:-$(brew --prefix ghidra)/libexec}"
+exec "$ghidra_root/support/analyzeHeadless" "$@"

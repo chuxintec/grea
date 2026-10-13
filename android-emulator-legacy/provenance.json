@@ -1,0 +1,8 @@
+{
+  "source": "https://android.googlesource.com/platform/prebuilts/android-emulator/+archive/refs/tags/android-9.0.0_r1/darwin-x86_64.tar.gz",
+  "version": "27.3.5",
+  "sha256": "29003cb3930280ef39444037fe0bd039f2af872d088eb1705c3f610fed6bf379",
+  "host": "darwin-x86_64; host translation availability requires separate validation",
+  "image": "system-images;android-25;google_apis;armeabi-v7a revision 18",
+  "verification": "Verify emulator boot, ADB connection and target application behavior in the deployment environment."
+}

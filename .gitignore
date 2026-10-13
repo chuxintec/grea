@@ -1,0 +1,71 @@
+.cache/
+python-runtime/.venv/
+outputs/
+**/bin/
+**/obj/
+
+# Shared launchers are source files, not build outputs.
+!/bin/
+!/bin/**
+# AssetRipper extraction workspace and local logs.
+unity-assets/AssetRipper-2.0.0/temp/
+unity-assets/AssetRipper-2.0.0/Logs/
+
+# Explicit host-local provider paths are not portable repository configuration.
+providers.local.json
+
+# Standalone repository exclusions (formerly inherited from Games).
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+.env
+.env.*
+!.env.example
+
+# External workspace state is not product source.
+/.agents/
+/.codex/
+/memory/
+/projects/
+
+# Private recovery material and host-local third-party installations.
+/.private/
+/dotnet-runtime/
+/unity-assets/
+/il2cpp-dotnet/Cpp2IL/
+/il2cpp-dotnet/ILSpy/
+/il2cpp-dotnet/Il2CppDumper/
+/il2cpp-dotnet/Il2CppInspectorRedux/2026.2/
+/android-emulator-legacy/android-*/
+/android-emulator-legacy/*.tar.gz
+/frida/frida-server-*
+/unity-packages/snapshots/
+/unity-packages/plugins/
+/unity-runtimes/*/vendor/
+
+# Project-derived adapters are kept locally for existing callers, not published.
+/wechat-mini-program/decrypt_package_manifest.js
+/wechat-mini-program/parse_package_manifest.py
+/wechat-mini-program/validate_delivery.py
+/wechat-mini-program/decrypt_webgl_xxtea.py
+/wechat-mini-program/export_all_bundle_assets.py
+
+# Generated files and local diagnostics.
+*.log
+*.pdb
+*.tmp
+*.bak
+*.swp
+*~
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+TestResults/
+
+# Superseded private-inventory audit; public releases have their own report.
+/validation/redaction-summary.json

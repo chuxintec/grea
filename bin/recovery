@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Compatibility argv/exit-code entry; grea registry is the single dispatch source."""
+import os,sys
+from pathlib import Path
+root=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(root/'src'))
+from grea.registry import load
+from grea.cli import legacy_main
+from grea.common import GreaError
+if len(sys.argv)<2 or sys.argv[1] in ('-h','--help'):
+    print('Compatibility: recovery TOOL [args]. Canonical entry: grea/bin/grea\nTools: '+', '.join(e['id'] for e in load() if e.get('execution')))
+    raise SystemExit(0)
+raise SystemExit(legacy_main(sys.argv[1],sys.argv[2:]))
