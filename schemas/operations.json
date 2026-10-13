@@ -2380,7 +2380,373 @@
         "idempotentHint": false,
         "openWorldHint": false
       }
+    },
+    {
+      "name": "validate_unity_project",
+      "description": "Read-only M1 profile/path/dependency/assembly checks. No Unity launch, writes or runtime acceptance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_root": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project-root-relative profile JSON path; absolute paths are rejected.",
+            "default": "grea-project.json"
+          },
+          "mode": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "new",
+              "adopt",
+              "refactor"
+            ],
+            "default": "adopt"
+          },
+          "scope": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": ""
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true
+          },
+          "baseline": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project-root-relative existing file within evidenceRoot; caller-declared behavioral baseline."
+          },
+          "max_files": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 2000,
+            "maximum": 100000
+          },
+          "max_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 67108864,
+            "maximum": 1073741824
+          }
+        },
+        "required": [
+          "project_root"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "plan_unity_project",
+      "description": "Create a deterministic design-only Unity plan on stdout. No generation or project writes; generationReady is always false in M1.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project_root": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project-root-relative profile JSON path; absolute paths are rejected.",
+            "default": "grea-project.json"
+          },
+          "mode": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "new",
+              "adopt",
+              "refactor"
+            ],
+            "default": "adopt"
+          },
+          "scope": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "description": ""
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true
+          },
+          "baseline": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project-root-relative existing file within evidenceRoot; caller-declared behavioral baseline."
+          },
+          "max_files": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 2000,
+            "maximum": 100000
+          },
+          "max_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 67108864,
+            "maximum": 1073741824
+          },
+          "expected_plan_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "project_root"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [
+        "filesystem_read"
+      ],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
     }
   ],
-  "sha256": "69fb9ae1a24747ac62074dd54859b06ef1a5c65411a4ba65fffd4e3397128f93"
+  "sha256": "8cbf5f914ccaa0284a9c038b4567b8419c465d9a0ea0ec0ff1839cd7866fc5ed"
 }

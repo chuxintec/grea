@@ -1,0 +1,537 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "standardVersion": {
+      "const": "1.0.0"
+    },
+    "plannerVersion": {
+      "const": "1.0.0"
+    },
+    "planId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "new",
+        "adopt",
+        "refactor"
+      ]
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "profileSha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "snapshotSha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "inputsSha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "template": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "minItems": 1,
+      "maxItems": 1000,
+      "uniqueItems": true
+    },
+    "baseline": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "file",
+                "directory"
+              ]
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "sha256": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024,
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "guid": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024,
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "path",
+            "kind",
+            "bytes",
+            "sha256",
+            "guid"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "review",
+              "preserve"
+            ]
+          },
+          "logicalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "expectedBeforeHash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024,
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner": {
+            "type": "string",
+            "enum": [
+              "seed-once",
+              "generated",
+              "human",
+              "package"
+            ]
+          },
+          "preserveGuid": {
+            "type": "boolean"
+          },
+          "requiredBindings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "minItems": 0,
+            "maxItems": 1000,
+            "uniqueItems": true
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "validationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "minItems": 1,
+            "maxItems": 1000,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "action",
+          "logicalId",
+          "target",
+          "expectedBeforeHash",
+          "owner",
+          "preserveGuid",
+          "requiredBindings",
+          "reason",
+          "validationIds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 100000,
+      "uniqueItems": true
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "minItems": 0,
+      "maxItems": 1000,
+      "uniqueItems": true
+    },
+    "generationReady": {
+      "const": false
+    },
+    "report": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "integer",
+          "const": 1
+        },
+        "standardVersion": {
+          "const": "1.0.0"
+        },
+        "plannerVersion": {
+          "const": "1.0.0"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "new",
+            "adopt",
+            "refactor"
+          ]
+        },
+        "profileSha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "snapshotSha256": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "minItems": 1,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "inventory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "file",
+                  "directory"
+                ]
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sha256": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024,
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "guid": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024,
+                    "pattern": "^[0-9a-f]{32}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "path",
+              "kind",
+              "bytes",
+              "sha256",
+              "guid"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 100000,
+          "uniqueItems": true
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "error",
+                  "warning"
+                ]
+              },
+              "path": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "ruleId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              }
+            },
+            "required": [
+              "code",
+              "severity",
+              "path",
+              "message",
+              "ruleId"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 10000,
+          "uniqueItems": true
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "fail",
+                  "not_run",
+                  "not_applicable"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              }
+            },
+            "required": [
+              "id",
+              "status",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "capability": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "staticPlanning": {
+              "type": "string",
+              "enum": [
+                "supported",
+                "unsupported"
+              ]
+            },
+            "editor": {
+              "const": "not_run"
+            },
+            "playMode": {
+              "const": "not_run"
+            },
+            "player": {
+              "const": "not_run"
+            },
+            "generation": {
+              "const": "not_implemented"
+            }
+          },
+          "required": [
+            "id",
+            "staticPlanning",
+            "editor",
+            "playMode",
+            "player",
+            "generation"
+          ],
+          "additionalProperties": false
+        },
+        "staticStatus": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        },
+        "compliance": {
+          "const": "not_assessed"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "standardVersion",
+        "plannerVersion",
+        "mode",
+        "profileSha256",
+        "snapshotSha256",
+        "scope",
+        "inventory",
+        "findings",
+        "checks",
+        "capability",
+        "staticStatus",
+        "compliance",
+        "limitations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "standardVersion",
+    "plannerVersion",
+    "planId",
+    "mode",
+    "projectId",
+    "profileSha256",
+    "snapshotSha256",
+    "inputsSha256",
+    "template",
+    "scope",
+    "baseline",
+    "items",
+    "blockers",
+    "generationReady",
+    "report"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

@@ -1,0 +1,399 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "standardVersion": {
+      "const": "1.0.0"
+    },
+    "projectId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "namespace": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*$"
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "unityProject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "evidenceRoot": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "buildRoot": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "unityProject",
+        "evidenceRoot",
+        "buildRoot"
+      ],
+      "additionalProperties": false
+    },
+    "toolchain": {
+      "type": "object",
+      "properties": {
+        "editorVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^\\d{4}\\.\\d+\\.\\d+[abfp]\\d+$"
+        },
+        "renderPipeline": {
+          "type": "string",
+          "enum": [
+            "urp",
+            "hdrp",
+            "builtin"
+          ]
+        },
+        "ui": {
+          "type": "string",
+          "enum": [
+            "ugui",
+            "uitk"
+          ]
+        },
+        "input": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "input-system"
+          ]
+        },
+        "targetPlatform": {
+          "type": "string",
+          "enum": [
+            "macOS",
+            "Windows",
+            "Linux",
+            "Android",
+            "iOS",
+            "WebGL"
+          ]
+        },
+        "architecture": {
+          "type": "string",
+          "enum": [
+            "arm64",
+            "x86_64",
+            "universal",
+            "wasm"
+          ]
+        },
+        "scriptingBackend": {
+          "type": "string",
+          "enum": [
+            "Mono",
+            "IL2CPP"
+          ]
+        },
+        "packages": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z][a-z0-9.-]+$": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024,
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            }
+          },
+          "additionalProperties": false,
+          "maxProperties": 100
+        }
+      },
+      "required": [
+        "editorVersion",
+        "renderPipeline",
+        "ui",
+        "input",
+        "targetPlatform",
+        "architecture",
+        "scriptingBackend",
+        "packages"
+      ],
+      "additionalProperties": false
+    },
+    "dependencyLock": {
+      "type": "object",
+      "properties": {
+        "manifestSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024,
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packagesLockSha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024,
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "manifestSha256",
+        "packagesLockSha256"
+      ],
+      "additionalProperties": false
+    },
+    "template": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "frameworkPackages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^com\\.grea\\.[a-z0-9.-]+$"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+          },
+          "sha256": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 20,
+      "uniqueItems": true
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "lifecycle",
+          "ui",
+          "resources",
+          "audio",
+          "save",
+          "diagnostics"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 20,
+      "uniqueItems": true
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Domain",
+                "Gameplay",
+                "Presentation",
+                "Services",
+                "Diagnostics"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "name",
+          "layers"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "scenes": {
+      "type": "object",
+      "properties": {
+        "bootstrap": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "entry": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "bootstrap",
+        "entry"
+      ],
+      "additionalProperties": false
+    },
+    "assetBackend": {
+      "type": "string",
+      "enum": [
+        "catalog",
+        "resources",
+        "addressables",
+        "assetbundle"
+      ]
+    },
+    "saveNamespace": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "qaSaveNamespace": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[a-zA-Z0-9_.-]+$"
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ruleId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^(STR|ARC|LIF|DAT|CMP|PFB|SCR|GEN|ACC|UPG)-\\d{2}$"
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "alternative": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "verification": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "reviewTrigger": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "ruleId",
+          "scope",
+          "reason",
+          "alternative",
+          "verification",
+          "owner",
+          "reviewTrigger"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 100,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "standardVersion",
+    "projectId",
+    "namespace",
+    "paths",
+    "toolchain",
+    "dependencyLock",
+    "template",
+    "frameworkPackages",
+    "features",
+    "modules",
+    "scenes",
+    "assetBackend",
+    "saveNamespace",
+    "qaSaveNamespace",
+    "exceptions"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

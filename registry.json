@@ -1776,6 +1776,84 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       }
+    },
+    {
+      "id": "validate_unity_project",
+      "category": "helper",
+      "effects": [
+        "filesystem_read"
+      ],
+      "probe": [
+        "{python}",
+        "{grea}/launch.py",
+        "validate-unity-project",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch.py",
+          "validate-unity-project"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "check_level": "static-only",
+      "formats": "Unity project profile and bounded filesystem inventory",
+      "side_effects": "Reads selected local files; JSON to stdout; no Editor or writes",
+      "usage": "grea validate-unity-project --input /path/request.json",
+      "output_schema": "schemas/unity-report.schema.json inside the public result envelope",
+      "tested_samples": "Synthetic isolated projects; no Unity Editor, Player or existing-game acceptance.",
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Static Python capability; target Unity runtime is not checked."
+      }
+    },
+    {
+      "id": "plan_unity_project",
+      "category": "helper",
+      "effects": [
+        "filesystem_read"
+      ],
+      "probe": [
+        "{python}",
+        "{grea}/launch.py",
+        "plan-unity-project",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch.py",
+          "plan-unity-project"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "check_level": "static-only",
+      "formats": "Unity project profile and bounded filesystem inventory",
+      "side_effects": "Reads selected local files; JSON to stdout; no Editor or writes",
+      "usage": "grea plan-unity-project --input /path/request.json",
+      "output_schema": "schemas/unity-plan.schema.json inside the public result envelope",
+      "tested_samples": "Synthetic isolated projects; no Unity Editor, Player or existing-game acceptance.",
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Static Python capability; target Unity runtime is not checked."
+      }
     }
   ],
   "product": "grea",

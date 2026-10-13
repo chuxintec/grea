@@ -5,7 +5,7 @@ from jsonschema import Draft202012Validator
 from . import __version__
 from .contracts import CONTRACTS,ENVELOPE_SCHEMA,catalog
 from .common import GreaError,envelope,digest,package_root,implementation_identity
-from . import registry,artifacts,cases,workflows,runner
+from . import registry,artifacts,cases,workflows,runner,unity_projects
 
 def doctor(tool_ids=None,probe=False,cancel=None):
     entries=[registry.tool(x) for x in tool_ids] if tool_ids else registry.load()
@@ -75,6 +75,13 @@ def dispatch(operation,arguments=_OMITTED,cancel=None):
         elif operation=='inspect_target':
             result=artifacts.inspect_target(**args);limits={k:args[k] for k in ('max_files','max_bytes')};status='partial' if result['coverage']=='partial' else 'ok'
             evidence=[{'kind':'static_inventory','identity':result['target'],'coverage':result['coverage']}]
+        elif operation in ('validate_unity_project','plan_unity_project'):
+            handler = unity_projects.validate_project if operation=='validate_unity_project' else unity_projects.plan_project
+            result = handler(**args, cancel=cancel)
+            report = result if operation=='validate_unity_project' else result['report']
+            status = 'partial' if report['findings'] else 'ok'
+            limitations = report['limitations'] if operation=='plan_unity_project' else []
+            limits = {key: args[key] for key in ('max_files','max_bytes')}
         elif operation=='plan_workflow':result=workflows.plan(**args)
         elif operation=='run_tool':
             result,evidence,error=runner.execute(**args,cancel=cancel);status=result['status'];limits={k:args[k] for k in ('timeout_seconds','max_output_bytes','max_inline_bytes')}

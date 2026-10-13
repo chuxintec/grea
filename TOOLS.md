@@ -24,6 +24,10 @@
 | 诊断、技能检查与有界测试 | doctor、`check_grea_skill` | [维护说明](docs/6-维护说明.md)、[测试内存工具](scripts/testing/README.md) |
 | 特定来源格式和历史工具 | `laya_contract_audit`、wxapkg 系列、旧 ARM32 模拟器 | [条件性恢复工具](docs/tools/2-恢复检查.md)、[旧模拟器](docs/providers/3-Android旧模拟器.md)；不作为默认路线 |
 
+## Unity 工程静态规划
+
+`validate_unity_project` / `plan_unity_project` 已提供 M1 配置、依赖和显式程序集检查与只读设计计划。用法见 [M1 说明](docs/12-Unity项目配置与只读规划.md)；不启动 Editor，不写目标，不提供工程生成或运行验收。
+
 ## 工具存在于哪里
 
 - 公开 grea 子目录：通用源码、脚本、适配入口及说明。第三方程序、运行时和包备份可在本机保留，但不随 Git 分发，见 [依赖说明](THIRD_PARTY.md)。

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "milestone": "M1",
+  "status": "complete_static_scope",
+  "date": "2026-10-13",
+  "checks": {
+    "unittest": {
+      "run": 115,
+      "passed": 113,
+      "skipped": 2,
+      "new_m1_tests": 27,
+      "result": "passed"
+    },
+    "compatibility": {
+      "unchanged_operations": 15,
+      "unchanged_tools": 53,
+      "new_operations": [
+        "validate_unity_project",
+        "plan_unity_project"
+      ],
+      "generation_registered": false
+    },
+    "read_only": {
+      "result": "passed",
+      "evidence": "TemporaryDirectory byte/mode inventories before and after new/adopt/refactor and CLI/MCP calls; no target writes."
+    },
+    "cli_mcp_parity": {
+      "result": "passed",
+      "outcomes": [
+        "ok",
+        "partial",
+        "error"
+      ],
+      "connection": "fresh stdio clients"
+    },
+    "containment": {
+      "result": "passed",
+      "cases": [
+        "traversal",
+        "reserved_names",
+        "overlapping_paths",
+        "static_symlinks",
+        "POSIX_ancestor_symlink_race",
+        "resource_limits",
+        "cancel",
+        "stale_plan",
+        "concurrent_input_change"
+      ]
+    }
+  },
+  "environment_metadata": {
+    "editorVersion": "6000.6.2f1",
+    "platformModulesPresent": [
+      "MacStandaloneSupport"
+    ],
+    "runtimeExecuted": false,
+    "files": {
+      "Unity.app/Contents/Info.plist": "e6f5e717862cfd07b4dd42673d07cbedd3e5cbc6d2678b75b8ad59ebc40d13bf",
+      "Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.render-pipelines.universal/package.json": "c6e945128e0005106ecf104e4f3f0c1e59c3f349cbf4b7e487cc0033ea8958ce",
+      "Unity.app/Contents/Resources/PackageManager/BuiltInPackages/com.unity.ugui/package.json": "817628b5ad7fd255e49b12d168872ba0904fcee1cf6d5e58ed78b1c0e9acdf6e"
+    }
+  },
+  "not_run": [
+    "Unity Editor launch/license/connection/import/compilation",
+    "Unity PlayMode and Player",
+    "Existing game project migration or acceptance",
+    "Native Windows testing",
+    "M2-M5 implementation"
+  ],
+  "boundaries": [
+    "All project fixtures are synthetic and isolated; no existing game project was read or modified for tests.",
+    "Template is a design recipe, not executable assets. generationReady is always false.",
+    "Manifest schema is defined; manifest merging/application awaits M3.",
+    "Static declared/explicit assembly checks are not full standard compliance.",
+    "Known unsupported package sources and unresolved assemblies are returned as findings."
+  ],
+  "source_sha256": {
+    "src/grea/unity_projects.py": "2ff43ed130e7d3fa452121a67391b1f87ed670bac7a5dca78e452a46d844fc56",
+    "src/grea/unity_project_contracts.py": "8121504c432d6d25c982fc875b8c21985b1c703ec4102e50a7cd12cfaf75acf9",
+    "src/grea/contracts.py": "76c31a2e5389cd8dd2d62b6dd9776647b268c8cd35527bbc09e150d87fa8d856",
+    "src/grea/application.py": "976df979e9b84d09ff9325c2cc31a5ceaa7466dc0720fc93c271c7bed878fb5a",
+    "registry.json": "58d7d85e81c75d881fbecdb9dbdcec94854bdae65882c8354bcaf74adf19b652",
+    "scripts/generate_contracts.py": "7f1c8720a5bf9071ffa3f73f62df1483a1fdb64347dec7d5874fd3a8133b0fad",
+    "tests/test_unity_projects.py": "f448327e434550220fa5d3f924e632fb81b81cb46e4272e6700d89fe7cd43e80",
+    "tests/fixtures/unity-project-v1.json": "0fcf491c544da9275a01ea9cbf5c9be27a2c44c9ac13638e286e6a985de3c243"
+  }
+}

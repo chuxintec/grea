@@ -46,6 +46,18 @@ CONTRACTS.update({
  'inspect_numeric_texture': ('Validate raw floating-point texture bytes (VAT/numeric maps); ordinary PNG imagery is not equivalent numeric evidence.', obj(dict(_RUN, source=PATH, width=integer(1), height=integer(1), channels=integer(4,1,4), dtype=string(enum=('f16','f32')), endian=dict(string(enum=('little','big')),default='little'), candidate=PATH), ['source','width','height','channels','dtype','run_dir']), ['filesystem_read','filesystem_write','process']),
 })
 
+# Unity M1 only exposes read-only operations; generation is intentionally absent.
+from .unity_project_contracts import documents as unity_documents, capability_matrix
+_UNITY_INPUT = {'project_root': PATH, 'profile': dict(PATH, default='grea-project.json', description='Project-root-relative profile JSON path; absolute paths are rejected.'),
+                'mode': dict(string(enum=('new','adopt','refactor')), default='adopt'),
+                'scope': dict(array(string()), minItems=1, maxItems=100, uniqueItems=True),
+                'baseline': string('Project-root-relative existing file within evidenceRoot; caller-declared behavioral baseline.'), 'max_files': integer(2000,1,100000),
+                'max_bytes': integer(67108864,1,1073741824)}
+CONTRACTS.update({
+ 'validate_unity_project': ('Read-only M1 profile/path/dependency/assembly checks. No Unity launch, writes or runtime acceptance.', obj(_UNITY_INPUT, ['project_root']), ['filesystem_read']),
+ 'plan_unity_project': ('Create a deterministic design-only Unity plan on stdout. No generation or project writes; generationReady is always false in M1.', obj(dict(_UNITY_INPUT, expected_plan_id={'type':'string','pattern':'^[0-9a-f]{64}$'}), ['project_root']), ['filesystem_read']),
+})
+
 ERROR_SCHEMA = obj({'code': string(), 'message':string(), 'retryable':{'type':'boolean'}, 'details':{'type':'object'}, 'next_action':string()}, ['code','message','retryable','details','next_action'])
 ENVELOPE_SCHEMA = obj({
  'schema_version':{'const':1}, 'product':{'const':'grea'}, 'version':string(), 'operation':string(), 'run_id':string(),
@@ -57,5 +69,5 @@ ENVELOPE_SCHEMA = obj({
 def catalog():
     return [{'name': name, 'description': description, 'inputSchema': schema,
              'outputSchema': ENVELOPE_SCHEMA, 'effects': effects,
-             'annotations': {'readOnlyHint': not any(x in effects for x in ('filesystem_write','process','process_when_probe_requested')), 'destructiveHint': name=='run_tool', 'idempotentHint': name in ('session','list_tools','describe_tool','plan_workflow','inspect_target','case_status'), 'openWorldHint':name=='run_tool'}}
+             'annotations': {'readOnlyHint': not any(x in effects for x in ('filesystem_write','process','process_when_probe_requested')), 'destructiveHint': name=='run_tool', 'idempotentHint': name in ('session','list_tools','describe_tool','plan_workflow','inspect_target','case_status','validate_unity_project','plan_unity_project'), 'openWorldHint':name=='run_tool'}}
             for name,(description,schema,effects) in CONTRACTS.items()]

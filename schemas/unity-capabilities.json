@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "standardVersion": "1.0.0",
+  "plannerVersion": "1.0.0",
+  "scope": "Static profile validation and design-only plans; no Unity runtime support claim.",
+  "combinations": [
+    {
+      "id": "unity-6000.6.2f1-urp17.6-ugui2.6-macos-arm64-mono",
+      "toolchain": {
+        "editorVersion": "6000.6.2f1",
+        "renderPipeline": "urp",
+        "ui": "ugui",
+        "input": "legacy",
+        "targetPlatform": "macOS",
+        "architecture": "arm64",
+        "scriptingBackend": "Mono",
+        "packages": {
+          "com.unity.render-pipelines.universal": "17.6.0",
+          "com.unity.ugui": "2.6.0"
+        }
+      },
+      "assetBackend": "catalog",
+      "template": {
+        "id": "grea-minimal-2d",
+        "version": "0.1.0-design"
+      },
+      "evidence": {
+        "editorAndPackageMetadata": "observed_on_2026-10-13",
+        "staticPlanning": "synthetic_tests",
+        "editor": "not_run",
+        "playMode": "not_run",
+        "player": "not_run",
+        "generation": "not_implemented"
+      }
+    }
+  ]
+}
