@@ -1,4 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
- <PropertyGroup><AssemblyName>spine-csharp</AssemblyName></PropertyGroup>
- <ItemGroup><Compile Include="../vendor/core/**/*.cs" /></ItemGroup>
-</Project>

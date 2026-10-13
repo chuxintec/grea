@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><AssemblyName>spine-timeline</AssemblyName></PropertyGroup>
+ <ItemGroup><Compile Include="$(SpineVendorRoot)/timeline/**/*.cs" /><ProjectReference Include="../unity/unity.csproj" /></ItemGroup>
+</Project>

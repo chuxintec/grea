@@ -6,7 +6,7 @@ grea 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许
 
 ## Python 依赖
 
-主运行时由 `uv sync --frozen` 按 [uv.lock](uv.lock) 安装；包自带的许可证和 notice 应保留。顶层依赖为 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)、[jsonschema](https://github.com/python-jsonschema/jsonschema) 和 [Pillow](https://github.com/python-pillow/Pillow)。可选提取环境的版本在 [requirements.txt](python-runtime/requirements.txt)，包含 [UnityPy](https://github.com/K0lb3/UnityPy) 与 [cryptography](https://github.com/pyca/cryptography)。
+主运行时由 `uv sync --frozen` 按 [uv.lock](uv.lock) 安装；包自带的许可证和 notice 应保留。顶层依赖为 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)、[jsonschema](https://github.com/python-jsonschema/jsonschema) 和 [Pillow](https://github.com/python-pillow/Pillow)。可选提取环境的版本在 [requirements.txt](tools/requirements-extraction.txt)，包含 [UnityPy](https://github.com/K0lb3/UnityPy) 与 [cryptography](https://github.com/pyca/cryptography)。
 
 ## 可选提供方
 
@@ -17,7 +17,7 @@ grea 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许
 | 托管代码分析 | [ILSpy](https://github.com/icsharpcode/ILSpy) | 安装官方 CLI，配置 `ilspy` |
 | .NET | [.NET](https://dotnet.microsoft.com/download) | 安装工具所需版本；本仓库不携带运行时 |
 | Android 取证 | [Android SDK](https://developer.android.com/tools)、[scrcpy](https://github.com/Genymobile/scrcpy)、[Frida](https://github.com/frida/frida) | 按设备与系统安装；登记版本，显式授权实际操作 |
-| Spine | [官方 runtimes](https://github.com/EsotericSoftware/spine-runtimes)、[许可条款](https://esotericsoftware.com/spine-runtimes-license) | 自行获取匹配源版本；本地构建说明见 `unity-runtimes` |
+| Spine | [官方 runtimes](https://github.com/EsotericSoftware/spine-runtimes)、[许可条款](https://esotericsoftware.com/spine-runtimes-license) | 自行获取匹配源版本；本地构建说明见 [Spine 3.8](tools/unity/spine/Spine38/README.md)／[Spine 4.1](tools/unity/spine/Spine41/README.md) |
 | Unity 包 | [Unity Package Manager](https://docs.unity3d.com/Manual/Packages.html) | 按目标项目 manifest/lock 解析，私人备份不公开 |
 | 系统工具 | [Brewfile](Brewfile)、[工具目录](TOOLS.md) | 使用官方安装渠道；不把某台主机的安装复制成产品默认依赖 |
 

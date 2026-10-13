@@ -1,4 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
- <PropertyGroup><AssemblyName>spine-unity</AssemblyName></PropertyGroup>
- <ItemGroup><Compile Include="../vendor/unity/**/*.cs" /><ProjectReference Include="../core/core.csproj" /></ItemGroup>
-</Project>

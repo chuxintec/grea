@@ -69,3 +69,8 @@ TestResults/
 
 # Superseded private-inventory audit; public releases have their own report.
 /validation/redaction-summary.json
+
+# Optional local vendor input and private copies of retired directory layouts.
+/tools/unity/spine/*/vendor/
+/dotnet-recovery/
+/game-building/

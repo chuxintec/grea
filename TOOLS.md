@@ -8,34 +8,34 @@
 
 | 任务 | 推荐操作或工具 ID | 详细说明／限制 |
 | --- | --- | --- |
-| 检查包体身份与库存 | inspect-target；解包用 `unpack_xapk` | [通用脚本参数](game-building/CATALOG.md)；库存不等于已提取全部资源 |
+| 检查包体身份与库存 | inspect-target；解包用 `unpack_xapk` | [通用脚本参数](docs/tools/1-制品工具.md)；库存不等于已提取全部资源 |
 | 原生运行与画面证据 | `adb`、`scrcpy`、`video_manifest`、`video_sheet` | [取证流程](skill/references/1-原生内容取证.md)；版本探测不连接或操作游戏 |
 | Unity 资源与字段恢复 | `assetripper`、`unitypy` | 原 Prefab／引用关系优先；UnityPy 是独立运行时中的库，不是通用执行命令 |
-| IL2CPP／托管代码分析 | `cpp2il`、`ilspy`；按缺口使用 `il2cppdumper`、`ghidra`、`il2cpp-inspector` | [代码恢复流程](skill/references/12-工程重建与代码恢复.md)、[Redux 边界](il2cpp-dotnet/Il2CppInspectorRedux/README.md) |
-| Assets 身份台账 | snapshot-unity-assets；高级用法 `unity_asset_ledger` | [脚本契约](game-building/CATALOG.md#unity-资产迁移台账与预检) |
-| 文本 GUID 依赖闭包 | audit-unity-dependencies | [脚本契约](game-building/CATALOG.md#unity-导出依赖审计)；动态依赖另验 |
-| 玩法轨迹差分 | compare-gameplay-traces；严格事件 schema 用 `compare_events` | [事件契约](recovery/README.md#事件schema)；不重排事件 |
-| 原始浮点纹理／VAT | inspect-numeric-texture | [数值纹理要求](recovery/README.md#数值纹理)；普通 PNG 不等同原始数值 |
-| 图片透明度、媒体与压缩 | `image_alpha_audit`、`video_manifest`、`ffmpeg`、`ffprobe`、`pngquant` | [脚本契约](game-building/CATALOG.md)；部分登记仅提供探测，调用能力以 describe-tool 为准 |
-| Shader 分析 | `glslangValidator`、`spirv-cross`、`spirv-val`、`spirv-dis` | [Shader 专项说明](shader-toolchain/README.md) |
-| Unity Editor 操作与回读 | `unity_cli`、`unity_pipeline`；Editor 资源审计 | [连接流程](skill/references/11-Unity工具执行路线.md)、[实际资源回读](unity-audit/README.md)；Pipeline 使用官方专用接口 |
-| Unity 包与 Spine 运行时恢复 | 包备份、`spine38`、`spine41` | [包备份](unity-packages/README.md)、[Spine 3.8](unity-runtimes/Spine38/README.md)、[Spine 4.1](unity-runtimes/Spine41/README.md)；版本不可随意互换 |
-| 构建产物核对与 Windows 封装 | `verify_payload_tree`、`package_windows_portable`、`nsis` | [脚本契约](game-building/CATALOG.md)；封装成功不等于 Windows 运行通过 |
-| 诊断、技能检查与有界测试 | doctor、`check_grea_skill` | [维护说明](docs/6-维护说明.md)、[测试内存工具](test-runner/README.md) |
-| 特定来源格式和历史工具 | `laya_contract_audit`、wxapkg 系列、旧 ARM32 模拟器 | [条件性恢复工具](recovery/README.md)、[旧模拟器](android-emulator-legacy/README.md)；不作为默认路线 |
+| IL2CPP／托管代码分析 | `cpp2il`、`ilspy`；按缺口使用 `il2cppdumper`、`ghidra`、`il2cpp-inspector` | [代码恢复流程](skill/references/12-工程重建与代码恢复.md)、[Redux 边界](docs/providers/2-IL2CPP辅助解析器.md) |
+| Assets 身份台账 | snapshot-unity-assets；高级用法 `unity_asset_ledger` | [脚本契约](docs/tools/1-制品工具.md#unity-资产迁移台账与预检) |
+| 文本 GUID 依赖闭包 | audit-unity-dependencies | [脚本契约](docs/tools/1-制品工具.md#unity-导出依赖审计)；动态依赖另验 |
+| 玩法轨迹差分 | compare-gameplay-traces；严格事件 schema 用 `compare_events` | [事件契约](docs/tools/2-恢复检查.md#事件schema)；不重排事件 |
+| 原始浮点纹理／VAT | inspect-numeric-texture | [数值纹理要求](docs/tools/2-恢复检查.md#数值纹理)；普通 PNG 不等同原始数值 |
+| 图片透明度、媒体与压缩 | `image_alpha_audit`、`video_manifest`、`ffmpeg`、`ffprobe`、`pngquant` | [脚本契约](docs/tools/1-制品工具.md)；部分登记仅提供探测，调用能力以 describe-tool 为准 |
+| Shader 分析 | `glslangValidator`、`spirv-cross`、`spirv-val`、`spirv-dis` | [Shader 专项说明](tools/shaders/README.md) |
+| Unity Editor 操作与回读 | `unity_cli`、`unity_pipeline`；Editor 资源审计 | [连接流程](skill/references/11-Unity工具执行路线.md)、[实际资源回读](tools/unity/audit/README.md)；Pipeline 使用官方专用接口 |
+| Unity 包与 Spine 运行时恢复 | 包备份、`spine38`、`spine41` | [包备份](tools/unity/packages/README.md)、[Spine 3.8](tools/unity/spine/Spine38/README.md)、[Spine 4.1](tools/unity/spine/Spine41/README.md)；版本不可随意互换 |
+| 构建产物核对与 Windows 封装 | `verify_payload_tree`、`package_windows_portable`、`nsis` | [脚本契约](docs/tools/1-制品工具.md)；封装成功不等于 Windows 运行通过 |
+| 诊断、技能检查与有界测试 | doctor、`check_grea_skill` | [维护说明](docs/6-维护说明.md)、[测试内存工具](scripts/testing/README.md) |
+| 特定来源格式和历史工具 | `laya_contract_audit`、wxapkg 系列、旧 ARM32 模拟器 | [条件性恢复工具](docs/tools/2-恢复检查.md)、[旧模拟器](docs/providers/3-Android旧模拟器.md)；不作为默认路线 |
 
 ## 工具存在于哪里
 
 - 公开 grea 子目录：通用源码、脚本、适配入口及说明。第三方程序、运行时和包备份可在本机保留，但不随 Git 分发，见 [依赖说明](THIRD_PARTY.md)。
 - 系统安装：部分 Homebrew 工具、Unity Editor、Android SDK、Blender 等；克隆仓库不会自动安装。
 - 项目内部：项目专用适配器、真实证据、分析输出和游戏制品，不搬到通用工具目录。
-- legacy-source：历史来源参考，可能依赖退役项目，不是可直接运行的通用入口。
+- 通用实现按用途集中在 [tools](tools/README.md)，第三方专题见 [接入说明](docs/providers/README.md)。
 
 ## 版本、库存与能力状态
 
 依赖来源清单、Unity 包 catalog 和匿名验证摘要只描述各自记录范围。需要当前状态时，仅对本次依赖执行 doctor。detected、probe_passed、Editor 连接、真实样本成功分开报告。
 
-Unity 包库存及恢复方法统一见 [备份说明](unity-packages/README.md)。新项目以自己的 manifest／lock 和 Editor 版本为准，不把备份日期的版本当作推荐最新版本。
+Unity 包库存及恢复方法统一见 [备份说明](tools/unity/packages/README.md)。新项目以自己的 manifest／lock 和 Editor 版本为准，不把备份日期的版本当作推荐最新版本。
 
 ## 兼容与平台
 

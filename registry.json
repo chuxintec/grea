@@ -660,19 +660,19 @@
       "id": "unity_asset_ledger",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/unity_asset_ledger.py",
+        "{grea}/tools/artifacts/unity_asset_ledger.py",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "Unity Assets and ledger JSON",
       "side_effects": "read-only snapshots and explicit new reports; no migration",
       "usage": "grea describe-tool {\"tool_id\": \"unity_asset_ledger\"}",
-      "output_schema": "JSON; grea/game-building/CATALOG.md",
+      "output_schema": "JSON; grea/docs/tools/1-制品工具.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/unity_asset_ledger.py"
+          "{grea}/tools/artifacts/unity_asset_ledger.py"
         ],
         "finding_exit_codes": [
           1
@@ -699,7 +699,7 @@
       "id": "unity_dependency_audit",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/unity_dependency_audit.py",
+        "{grea}/tools/artifacts/unity_dependency_audit.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -711,7 +711,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/unity_dependency_audit.py"
+          "{grea}/tools/artifacts/unity_dependency_audit.py"
         ],
         "finding_exit_codes": [
           1
@@ -738,7 +738,7 @@
       "id": "compare_traces",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/compare_traces.py",
+        "{grea}/tools/artifacts/compare_traces.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -750,7 +750,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/compare_traces.py"
+          "{grea}/tools/artifacts/compare_traces.py"
         ],
         "finding_exit_codes": [
           1
@@ -777,7 +777,7 @@
       "id": "video_manifest",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/video_manifest.py",
+        "{grea}/tools/artifacts/video_manifest.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -789,7 +789,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/video_manifest.py"
+          "{grea}/tools/artifacts/video_manifest.py"
         ],
         "finding_exit_codes": [
           1
@@ -816,7 +816,7 @@
       "id": "verify_payload_tree",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/verify_payload_tree.py",
+        "{grea}/tools/artifacts/verify_payload_tree.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -828,7 +828,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/verify_payload_tree.py"
+          "{grea}/tools/artifacts/verify_payload_tree.py"
         ],
         "finding_exit_codes": [
           1
@@ -855,7 +855,7 @@
       "id": "package_windows_portable",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/package_windows_portable.py",
+        "{grea}/tools/artifacts/package_windows_portable.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -867,7 +867,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/package_windows_portable.py"
+          "{grea}/tools/artifacts/package_windows_portable.py"
         ],
         "finding_exit_codes": []
       },
@@ -892,19 +892,19 @@
       "id": "audit_numeric_texture",
       "probe": [
         "python3",
-        "{grea}/recovery/audit_numeric_texture.py",
+        "{grea}/tools/recovery/audit_numeric_texture.py",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"audit_numeric_texture\"}",
-      "output_schema": "JSON; see recovery/README.md",
+      "output_schema": "JSON; see docs/tools/2-恢复检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/recovery/audit_numeric_texture.py"
+          "{grea}/tools/recovery/audit_numeric_texture.py"
         ],
         "finding_exit_codes": [
           1
@@ -931,19 +931,19 @@
       "id": "compare_events",
       "probe": [
         "python3",
-        "{grea}/recovery/compare_events.py",
+        "{grea}/tools/recovery/compare_events.py",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"compare_events\"}",
-      "output_schema": "JSON; see recovery/README.md",
+      "output_schema": "JSON; see docs/tools/2-恢复检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/recovery/compare_events.py"
+          "{grea}/tools/recovery/compare_events.py"
         ],
         "finding_exit_codes": [
           1
@@ -970,19 +970,19 @@
       "id": "laya_contract_audit",
       "probe": [
         "python3",
-        "{grea}/recovery/laya_contract_audit.py",
+        "{grea}/tools/recovery/laya_contract_audit.py",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"laya_contract_audit\"}",
-      "output_schema": "JSON; see recovery/README.md",
+      "output_schema": "JSON; see docs/tools/2-恢复检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/recovery/laya_contract_audit.py"
+          "{grea}/tools/recovery/laya_contract_audit.py"
         ],
         "finding_exit_codes": []
       },
@@ -1152,19 +1152,19 @@
       "id": "image_alpha_audit",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/image_alpha_audit.py",
+        "{grea}/tools/artifacts/image_alpha_audit.py",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "Pillow supported raster images; Pillow required",
       "side_effects": "reads images; writes explicit new JSON only",
       "usage": "grea describe-tool {\"tool_id\": \"image_alpha_audit\"}",
-      "output_schema": "JSON; grea/game-building/CATALOG.md",
+      "output_schema": "JSON; grea/docs/tools/1-制品工具.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/image_alpha_audit.py"
+          "{grea}/tools/artifacts/image_alpha_audit.py"
         ],
         "finding_exit_codes": [
           1
@@ -1242,7 +1242,7 @@
       "formats": "local Markdown skill, recovery dispatcher and registry JSON; Python 3.9+",
       "side_effects": "read-only; no tool execution, network or file writes; JSON to stdout",
       "usage": "Compatibility alias; use check_grea_skill. No independent execution definition.",
-      "output_schema": "JSON and exits 0=static checks pass, 1=findings, 2=input error; grea/game-building/skill-checks/README.md",
+      "output_schema": "JSON and exits 0=static checks pass, 1=findings, 2=input error; grea/tests/scenarios/README.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "category": "helper",
       "effects": [
@@ -1257,7 +1257,7 @@
       "id": "video_sheet",
       "probe": [
         "{python}",
-        "{grea}/game-building/scripts/video_sheet.py",
+        "{grea}/tools/artifacts/video_sheet.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -1268,7 +1268,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/video_sheet.py"
+          "{grea}/tools/artifacts/video_sheet.py"
         ],
         "finding_exit_codes": []
       },
@@ -1293,7 +1293,7 @@
       "id": "read_elf_values",
       "probe": [
         "{python}",
-        "{grea}/game-building/scripts/read_elf_values.py",
+        "{grea}/tools/artifacts/read_elf_values.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -1304,7 +1304,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/read_elf_values.py"
+          "{grea}/tools/artifacts/read_elf_values.py"
         ],
         "finding_exit_codes": []
       },
@@ -1329,7 +1329,7 @@
       "id": "unpack_xapk",
       "probe": [
         "{python}",
-        "{grea}/game-building/scripts/unpack_xapk.py",
+        "{grea}/tools/artifacts/unpack_xapk.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -1340,7 +1340,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/unpack_xapk.py"
+          "{grea}/tools/artifacts/unpack_xapk.py"
         ],
         "finding_exit_codes": []
       },
@@ -1365,7 +1365,7 @@
       "id": "registry_doctor",
       "probe": [
         "{python}",
-        "{grea}/recovery/registry_doctor.py",
+        "{grea}/scripts/registry_doctor.py",
         "--help"
       ],
       "check_level": "help-only",
@@ -1376,7 +1376,7 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/recovery/registry_doctor.py"
+          "{grea}/scripts/registry_doctor.py"
         ],
         "finding_exit_codes": []
       },
@@ -1463,7 +1463,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/dotnet-recovery/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
+        "{grea}/tools/dotnet/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
       ]
     },
     {
@@ -1686,19 +1686,19 @@
       "id": "check_grea_skill",
       "probe": [
         "python3",
-        "{grea}/game-building/scripts/check_game_build_skill.py",
+        "{grea}/scripts/check_skill.py",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "local Markdown skill, recovery dispatcher and registry JSON; Python 3.9+",
       "side_effects": "read-only; no tool execution, network or file writes; JSON to stdout",
       "usage": "grea legacy check_grea_skill --workspace-root /path/Games --json",
-      "output_schema": "JSON and exits 0=static checks pass, 1=findings, 2=input error; grea/game-building/skill-checks/README.md",
+      "output_schema": "JSON and exits 0=static checks pass, 1=findings, 2=input error; grea/tests/scenarios/README.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/game-building/scripts/check_game_build_skill.py"
+          "{grea}/scripts/check_skill.py"
         ],
         "finding_exit_codes": [
           1

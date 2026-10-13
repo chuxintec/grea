@@ -1,41 +1,61 @@
-# grea · 游戏逆向与恢复工具
+# grea · 依据证据恢复 Unity 游戏
 
-grea（Game Reverse Engineering and Assembly）将 Unity 游戏恢复流程、通用脚本和第三方工具组织为统一的 CLI／MCP 工具。适用于原包分析、资源与代码恢复、已有工程修复、换皮、重构、性能分析和交付。
+grea 把原包分析、资源检查、恢复流程和验收记录组织成一套 **CLI / MCP 工具与 Agent 技能**。它帮助你追踪“原版依据是什么、哪些资源已恢复、哪些行为仍待验证”，并提供可直接运行的通用检查工具。
 
-**第一次使用，请从 [使用说明](docs/0-使用说明.md) 开始。** 其中包含安装、路径约定、macOS／Windows 启动、实际调用示例、MCP 配置和常见错误。
-
-## 从哪里开始
-
-| 你要做什么 | 读取入口 |
+| 你可以做什么 | 项目提供什么 |
 | --- | --- |
-| 安装、启动、完成第一次调用 | [使用说明](docs/0-使用说明.md) |
-| 根据任务选择工具 | [工具目录](TOOLS.md) |
-| 让 Agent 按游戏恢复流程工作 | [规范技能](skill/SKILL.md) |
-| 理解参数、输出、退出码和证据记录 | [接口与证据契约](docs/2-接口与证据契约.md) |
-| 确认 Windows／macOS 支持范围 | [跨平台说明](docs/5-工具整合与跨平台.md#平台结论) |
-| 修改工具、文档或发布版本 | [维护说明](docs/6-维护说明.md) |
-| 查架构依据、旧路径或测试历史 | [架构](docs/1-架构与REA借鉴.md)、[迁移](docs/3-迁移与兼容.md)、[验证记录](docs/4-验证与限制.md) |
+| 检查 Unity 资产与构建产物 | 资产台账、GUID 依赖审计、文件哈希与包体差异、数值纹理检查 |
+| 对照恢复结果 | 事件轨迹差分、图片透明度检查、录像信息与关键帧整理 |
+| 组织恢复工作 | 原版取证、资源与规则恢复、真实输入、视觉音频及目标平台的分层验收规范 |
+| 接入 Agent 或外部工具 | CLI 与 MCP 共用执行层；外部工具按明确配置接入 |
 
-## 已部署环境快速检查
+## 快速开始
 
-以下命令从**grea 仓库根目录**执行；该目录直接包含 pyproject.toml、bin 和 src。
+准备 Git 和 [uv](https://docs.astral.sh/uv/)，然后：
 
 ```sh
+git clone https://github.com/chuxintec/grea.git
+cd grea
+uv sync --frozen
 ./bin/grea session
+./bin/grea list-tools
 ```
 
-Windows 使用 `bin\grea.cmd session`。若提示运行时缺失，按使用说明安装，不直接复制另一台机器的虚拟环境。
+Windows 将 `./bin/grea` 换为 `bin\grea.cmd`。也可以下载 [Release 完整使用包](https://github.com/chuxintec/grea/releases)，解压后从 `uv sync --frozen` 开始。
 
-工具探测、代码测试和真实游戏验收是不同结果。grea 不会仅凭文件数、哈希或人工填写的“通过”判断游戏已还原。Windows 目前只有部分可移植能力，完整限制见跨平台说明。
+`session` 检查环境，不启动 Unity；可选工具显示 `unavailable` 时，按需安装并配置该工具。先查看一个仓库自带工具的参数：
 
-本仓库是 grea 的唯一维护源；业务项目、记忆和客户端配置不随仓库分发。接入说明见 [独立仓库与工作区接入](docs/7-独立仓库与工作区接入.md)。
+```sh
+./bin/grea describe-tool '{"tool_id":"unity_dependency_audit"}'
+./bin/grea legacy unity_dependency_audit --help
+```
 
-分发内容与包备份的隐私边界见 [可分发内容与脱敏规范](docs/8-可分发内容与脱敏规范.md)。
+完整调用示例、MCP 配置和 Windows 参数写法见 [使用说明](docs/0-使用说明.md)。macOS 与 Linux 有核心测试记录；Windows 原生验证和部分运行能力仍受限，详见 [平台说明](docs/5-工具整合与跨平台.md#平台结论)。
 
-## 开源与依赖
+## 找到需要的内容
 
-grea 自有代码与文档采用 [MIT](LICENSE)。公开仓库不附带第三方二进制、Unity 包快照、Spine vendor 或项目专用解析器；按 [第三方依赖说明](THIRD_PARTY.md) 安装并配置本次需要的工具。贡献前请阅读 [贡献指南](CONTRIBUTING.md)。
+| 入口 | 用途 |
+| --- | --- |
+| [工具目录](TOOLS.md) | 按任务选工具，区分自带实现与外部依赖 |
+| [恢复技能](skill/SKILL.md) | 让 Agent 按当前目标加载流程；[安装技能](docs/7-独立仓库与工作区接入.md#接入已有工作区) |
+| [第三方依赖](THIRD_PARTY.md) | 官方来源、许可与本机接入；专题集中在 [providers](docs/providers/) |
+| [贡献指南](CONTRIBUTING.md) | 开发、测试和提交；[自动发布](docs/10-自动发布.md) |
 
-首次公开的清理范围、验证与限制见 [开源发布审查](docs/9-开源发布审查.md)。
+## 仓库结构
 
-维护者推送版本标签后自动测试、打包并发布 Release；rc 版本标为预发行，详见 [自动发布](docs/10-自动发布.md)。
+```text
+src/grea/   CLI、MCP、契约与受控执行核心
+tools/      按用途分类的通用工具和 Unity 辅助代码
+skill/      恢复流程规范与专题参考
+docs/       用户教程、工具契约、第三方接入及维护文档
+tests/      核心与工具回归、技能场景
+scripts/    仓库检查、技能同步和 Release 自动化
+bin/        启动器与兼容入口
+schemas/    生成的公共接口定义
+```
+
+工具 ID 和别名由 `registry.json` 统一维护；移动实现文件不改变调用 ID。实际运行和验收需结合当前项目证据：工具存在、测试通过或构建成功，都不等于游戏已恢复完成。
+
+## 许可与分发
+
+自有代码与文档采用 [MIT](LICENSE)。不附带游戏包、商业素材、第三方程序、Unity 包快照或 Spine vendor；使用者按授权和 [第三方说明](THIRD_PARTY.md) 准备自己的输入与依赖。项目数据、私人配置和本机缓存不进入公开包。

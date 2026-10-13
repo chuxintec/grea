@@ -1,7 +1,7 @@
 import importlib.util,json,struct,subprocess,sys,tempfile,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-def run(name,*args):return subprocess.run([sys.executable,str(ROOT/'recovery'/name),*map(str,args)],cwd=tempfile.gettempdir(),capture_output=True,text=True)
+def run(name,*args):return subprocess.run([sys.executable,str(ROOT/'tools/recovery'/name),*map(str,args)],cwd=tempfile.gettempdir(),capture_output=True,text=True)
 class P0(unittest.TestCase):
  def test_numeric(self):
   with tempfile.TemporaryDirectory() as tmp:
