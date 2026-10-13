@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from grea import registry
-from grea.common import package_root
+from grea.common import GreaError, package_root
 
 ROOT = package_root()
 
@@ -35,12 +35,25 @@ class LayoutCompatibilityTests(unittest.TestCase):
                 if not command or command[0] != '{python}':
                     continue
                 with self.subTest(tool_id=entry['id']):
+                    unsupported = None
+                    try:
+                        registry.check_host(entry)
+                    except GreaError as error:
+                        if error.code not in ('UNSUPPORTED_HOST', 'UNSUPPORTED_ARCH'):
+                            raise
+                        unsupported = error.code
                     process = subprocess.run(
                         [sys.executable, str(ROOT / 'launch.py'), 'legacy', entry['id'], '--help'],
                         cwd=cwd, capture_output=True, text=True, timeout=20,
                     )
-                    self.assertEqual(process.returncode, 0, process.stderr)
-                    self.assertIn('usage:', process.stdout.lower())
+                    if unsupported:
+                        # Help must respect the same registered platform boundary as execution.
+                        self.assertEqual(process.returncode, 2, process.stderr)
+                        self.assertIn(unsupported + ':', process.stderr)
+                        self.assertNotIn('usage:', process.stdout.lower())
+                    else:
+                        self.assertEqual(process.returncode, 0, process.stderr)
+                        self.assertIn('usage:', process.stdout.lower())
 
 
 if __name__ == '__main__':
