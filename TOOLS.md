@@ -56,3 +56,7 @@ host_support 表示登记的平台条件，不表示已原生实测；Windows �
 ## Unity M4 参考分发
 
 `unity_reference` 提供固定参考源码的 prepare/archive/verify/restore，内嵌自有包、校验锁和 SHA-256；不启动 Unity。独立恢复、测试与 Player 实玩证据见 [M4 说明](docs/15-Unity参考游戏与Player验收.md)。参考游戏通过不改变任意项目的 M1 静态报告。
+
+## Unity M5 隔离试点
+
+`unity_pilot` 提供 snapshot/clone/verify，冻结明确输入、独立复制并验证原工程未变化；不启动 Unity，不迁移源工程。默认程序集可选桥接包、两类模块迁移的验收与回退边界见 [M5 说明](docs/16-Unity隔离试点与迁移验收.md)。私有游戏的快照、补丁、截图和 Player 不进入公共分发。

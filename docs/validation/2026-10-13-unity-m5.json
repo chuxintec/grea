@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "milestone": "M5",
+  "standardVersion": "1.0.0",
+  "status": "passed_scoped_pilots",
+  "scope": "Two isolated module migrations; no whole-game parity or original-project migration",
+  "generatedUtc": "2026-10-13T13:47:18.740569+00:00",
+  "editor": "6000.6.2f1",
+  "cli": "1.0.0-beta.8",
+  "target": {
+    "platform": "macOS",
+    "architecture": "arm64",
+    "backend": "Mono",
+    "buildKind": "private Development/QA"
+  },
+  "foundationVersion": "0.2.0",
+  "adapterVersion": "0.1.0",
+  "python": {
+    "total": 150,
+    "passed": 148,
+    "skipped": 2,
+    "failed": 0,
+    "interpreter": "repository .venv"
+  },
+  "pilots": {
+    "multi-entity": {
+      "sourceInputFiles": 2934,
+      "sourceTreeSha256": "4a1b31046dfe9ec6db061259b482edbf45299195dca92643434c8085c7df016b",
+      "sourceUnchanged": true,
+      "existingNonCodeAssetsAndMetaUnchanged": true,
+      "productionFilesChanged": 2,
+      "productionFilesAdded": 0,
+      "runs": {
+        "baseline": {
+          "playMode": {
+            "passed": 4,
+            "failed": 0
+          },
+          "buildId": "717f3b9de8b14400a8978ec9b98415cf",
+          "executableSha256": "265c1f8401d80d5dc9c6d313a6f05dffd0884406601da2bc6b2ed075ee8652d9",
+          "playerTreeSha256": "dd4c1f694b0c12c621c1b4ff4782f8a32cfde467bd3cd8c270be680d95f5f685",
+          "buildSucceeded": true,
+          "buildEndedUtc": "2026-10-13T13:25:28.375Z",
+          "playModeXmlSha256": "a2319d34cb7e90f7a48dc2270b7207787efab32e5246a83bc4c571ffc2f60a80"
+        },
+        "candidate": {
+          "playMode": {
+            "passed": 4,
+            "failed": 0
+          },
+          "buildId": "dca72eb3c96a46e6998c9779ae5be135",
+          "executableSha256": "b1e12a0842a321077c01481d4c46b5771a6b2a93d7db46c4c2843d5fda0483da",
+          "playerTreeSha256": "4f3ae53d210a5b0ed02d3cf95d6c7263c4156d258469147dea43d03dec3d9b3d",
+          "buildSucceeded": true,
+          "buildEndedUtc": "2026-10-13T13:27:39.032Z",
+          "playModeXmlSha256": "b8c083f5ee7bca0fa597980e92a14d5ddb1ee1c752165b16ca5d5ff4d3b46569"
+        }
+      },
+      "packageTreeSha256": {
+        "com.grea.foundation": "afe4bb0eaa960166226626b739bf5fff1d94a5416c8d353d759945b6ce33f255",
+        "com.grea.adapters.predefined": "cabf0f934faea4ff5178a91de8afe4b9759d209f15f6cd4a24c3bf1c22ab1c8d"
+      },
+      "patchManifestSha256": "6a2621dc6ac1e5f1ba16dbeca7b276cdeeb587412026804ff075375b381c3f5c",
+      "rollbackSourceIdentityPassed": true,
+      "repeatPatchChanges": 0,
+      "manualFeedback": "正常",
+      "playerRoutesEach": 5,
+      "nativeEvents": 47,
+      "nativeEventActions": [
+        "mega-merge",
+        "pointer-up",
+        "start"
+      ],
+      "closeReopen": {
+        "level": 2,
+        "music": true
+      },
+      "ruleEvidence": "Unchanged rule/RNG source, frozen queue/park/speed oracles and route invariants; not frame-identical wall-clock traces"
+    },
+    "dynamic-ui": {
+      "sourceInputFiles": 13936,
+      "sourceTreeSha256": "1ef70a66c2aa5b133cb44e7b37311966c4cb086cb838dc83911c56759b15ef87",
+      "sourceUnchanged": true,
+      "existingNonCodeAssetsAndMetaUnchanged": true,
+      "productionFilesChanged": 1,
+      "productionFilesAdded": 1,
+      "runs": {
+        "baseline": {
+          "playMode": {
+            "passed": 3,
+            "failed": 0
+          },
+          "buildId": "4f1e7b12cb894d99abf733ef0eb8e438",
+          "executableSha256": "845668ae8b1c813e59c97309c8924bd1ad82a1c3f3986fa7fae11da4b2743ad9",
+          "playerTreeSha256": "49ad5fa3f4bbb8050d7a38efaa347e1ddde759d52a17a9744cbe139f1b02d078",
+          "buildSucceeded": true,
+          "buildEndedUtc": "2026-10-13T13:25:50.263Z",
+          "playModeXmlSha256": "ee24331bdaec64b1cf9b419c9fbccf7ae658f4f59f5286aca23a9b996de1146f"
+        },
+        "candidate": {
+          "playMode": {
+            "passed": 3,
+            "failed": 0
+          },
+          "buildId": "2f385e5b796442689b1f49783b0b4ecf",
+          "executableSha256": "34320e5f963fb6ddb80b62745eb718958e930a3ca31c384229ade33592ac7cfc",
+          "playerTreeSha256": "5574552f968066d7284847a14dfc554f7090a531530115ddebee6977fdea6a78",
+          "buildSucceeded": true,
+          "buildEndedUtc": "2026-10-13T13:28:00.846Z",
+          "playModeXmlSha256": "bdff1718a00b678d8d4a4afe4e99961e45bba38db2e4ed9dae60977afe4d5bca"
+        }
+      },
+      "packageTreeSha256": {
+        "com.grea.foundation": "afe4bb0eaa960166226626b739bf5fff1d94a5416c8d353d759945b6ce33f255",
+        "com.grea.adapters.predefined": "cabf0f934faea4ff5178a91de8afe4b9759d209f15f6cd4a24c3bf1c22ab1c8d"
+      },
+      "patchManifestSha256": "b9d5e51fe373ba69a3fb704f0eb460b637ed50526fc58b7940e5d9d0f7911fe3",
+      "rollbackSourceIdentityPassed": true,
+      "repeatPatchChanges": 0,
+      "manualFeedback": "全部正常",
+      "fixedRuleTrace": {
+        "sha256": "1333566247b3ed6b55c8911c18478e7b1382b714b2d675b5bc156a1af3280409",
+        "byteIdentical": true,
+        "stages": 8,
+        "battleFrames": 7200,
+        "finalRandomCalls": 2473,
+        "errors": 0,
+        "renderingHost": "fake; not native input"
+      },
+      "nativeClicks": 14,
+      "nativeInputs": {
+        "touchstart": 2,
+        "drag_begin": 2,
+        "touchmove": 54,
+        "touchcancel": 2,
+        "drag_end": 2
+      },
+      "closeReopen": {
+        "ready": true,
+        "error": "",
+        "musicVolume": 0.4863073,
+        "settingsBytesPreserved": true
+      }
+    }
+  },
+  "limitations": [
+    "Original-game parity not re-established",
+    "M1 support matrix unchanged",
+    "No full refactor generator",
+    "No Windows/Linux/IL2CPP/mobile/performance certification",
+    "QA Players and project-specific fixtures remain private",
+    "Rollback identity verified; rollback Player not separately executed",
+    "Manual feedback supports bounded visual/audio verdict, not measured full perceptual parity"
+  ],
+  "privateEvidenceIndexSha256": "c518522a98b1dfcf851edcb46696cadcacf6d2c40fef393a653c140e3ef49002"
+}

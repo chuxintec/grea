@@ -1,0 +1,6 @@
+{
+  "name": "Grea.Adapters.Predefined",
+  "references": ["Grea.Foundation.Contracts"],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

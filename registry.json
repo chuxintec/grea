@@ -2019,6 +2019,44 @@
       "limitations": [
         "Source distribution only; Unity restore/build/test is an explicit separate operation."
       ]
+    },
+    {
+      "id": "unity_pilot",
+      "probe": [
+        "{python}",
+        "{grea}/scripts/unity_pilot.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "Freeze selected authoring inputs, create isolated copies and verify source identity; see docs/16-Unity隔离试点与迁移验收.md.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/scripts/unity_pilot.py"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "filesystem_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Python isolation tests on macOS; two scoped Unity pilots on macOS. Other native hosts unverified."
+      },
+      "limitations": [
+        "Never migrates source or starts Unity. Snapshots contain local paths and must remain private for private inputs.",
+        "Cooperative local filesystem only; reject symlinks and detect drift, not an adversarial concurrent-writer sandbox."
+      ]
     }
   ],
   "product": "grea",

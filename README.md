@@ -39,7 +39,7 @@ Windows 将 `./bin/grea` 换为 `bin\grea.cmd`。也可以下载 [Release 完整
 | [工具目录](TOOLS.md) | 按任务选工具，区分自带实现与外部依赖 |
 | [恢复技能](skill/SKILL.md) | 让 Agent 按当前目标加载流程；[安装技能](docs/7-独立仓库与工作区接入.md#接入已有工作区) |
 | [第三方依赖](THIRD_PARTY.md) | 官方来源、许可与本机接入；专题集中在 [providers](docs/providers/) |
-| [Unity 工程标准 v1](skill/references/20-标准工程目录与类型归类.md) | [落地计划](docs/11-Unity工程标准落地计划.md)、[M1 配置与只读规划](docs/12-Unity项目配置与只读规划.md)、[M2 最小框架包](docs/13-Unity最小框架与包.md)、[M3 生成器与 Prefab](docs/14-Unity生成器与通用Prefab.md)、[M4 参考游戏与 Player](docs/15-Unity参考游戏与Player验收.md) |
+| [Unity 工程标准 v1](skill/references/20-标准工程目录与类型归类.md) | [落地计划](docs/11-Unity工程标准落地计划.md)、[M1 配置与只读规划](docs/12-Unity项目配置与只读规划.md)、[M2 最小框架包](docs/13-Unity最小框架与包.md)、[M3 生成器与 Prefab](docs/14-Unity生成器与通用Prefab.md)、[M4 参考游戏与 Player](docs/15-Unity参考游戏与Player验收.md)、[M5 隔离试点](docs/16-Unity隔离试点与迁移验收.md) |
 | [贡献指南](CONTRIBUTING.md) | 开发、测试和提交；[自动发布](docs/10-自动发布.md) |
 
 ## 仓库结构
