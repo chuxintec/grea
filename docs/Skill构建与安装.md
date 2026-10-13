@@ -1,6 +1,6 @@
 # Skill 构建与安装
 
-Skill 的唯一源码是 `skill/`。恢复流程和开发规范在 `SKILL.md` 与 `references/`，不从安装副本反向修改。当前版本为 **2026.10.13rc2**，由 [version.json](../skill/version.json) 声明；首次独立制品沿用当前 grea 版本。发布新版本时同时更新其中的 `version` 与 `greaVersion`，发布构建强制核对它们和产品版本一致。
+Skill 的唯一源码是 `skill/`。恢复流程和开发规范在 `SKILL.md` 与 `references/`，不从安装副本反向修改。当前版本为 **2026.10.13rc3**，由 [version.json](../skill/version.json) 声明；首次独立制品沿用当前 grea 版本。发布新版本时同时更新其中的 `version` 与 `greaVersion`，发布构建强制核对它们和产品版本一致。
 
 ## 两种交付
 
@@ -22,8 +22,8 @@ Skill 包不附带 Python 环境或 Unity；阅读流程不需要完整仓库，
 在干净、已提交的 grea 源码中执行，输出目录必须不存在：
 
 ```sh
-python3 scripts/build_skill.py --tag v2026.10.13-rc2 --out dist/skill-check
-python3 scripts/build_skill.py --tag v2026.10.13-rc2 --out dist/skill-check \
+python3 scripts/build_skill.py --tag v2026.10.13-rc3 --out dist/skill-check
+python3 scripts/build_skill.py --tag v2026.10.13-rc3 --out dist/skill-check \
   --verify --extract /absolute/new-skill-install
 ```
 

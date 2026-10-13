@@ -243,7 +243,7 @@ wheels = [
 
 [[package]]
 name = "grea"
-version = "2026.10.13rc2"
+version = "2026.10.13rc3"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
