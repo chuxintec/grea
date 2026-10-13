@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "scope": "Unity engineering standard v1 documentation only",
+  "evaluation_method": "maintainer-walkthrough",
+  "independent_agent_run": false,
+  "unity_editor_run": false,
+  "game_projects_modified": false,
+  "cases": [
+    {
+      "id": "R25",
+      "observed_decision": "仅在新分支编写规范与计划，明确 M1–M5 未实施；不向现有工程写入，不注册拟议生成命令。",
+      "evidence": [
+        "skill/references/20-标准工程目录与类型归类.md#规范范围与版本",
+        "skill/references/20-标准工程目录与类型归类.md#自动生成契约"
+      ],
+      "result": "walkthrough_pass"
+    },
+    {
+      "id": "R26",
+      "observed_decision": "沿用 UI Toolkit 与当前管线，配置锁定并记录例外；首个参考组合不形成对现有工程的替换要求。",
+      "evidence": [
+        "skill/references/20-标准工程目录与类型归类.md#规范范围与版本",
+        "skill/references/20-标准工程目录与类型归类.md#升级与例外"
+      ],
+      "result": "walkthrough_pass"
+    },
+    {
+      "id": "R27",
+      "observed_decision": "先根据清单识别人工变化；无字段级合并时整项冲突，不覆盖基础 Prefab 或项目 Variant。",
+      "evidence": [
+        "skill/references/20-标准工程目录与类型归类.md#通用-prefab",
+        "skill/references/20-标准工程目录与类型归类.md#自动生成契约"
+      ],
+      "result": "walkthrough_pass"
+    },
+    {
+      "id": "R28",
+      "observed_decision": "文件/GUID 幂等和运行对象/监听幂等分开；重复请求是运行层失败，不能由相同文件哈希抵消。",
+      "evidence": [
+        "skill/references/20-标准工程目录与类型归类.md#生命周期与数据契约",
+        "skill/references/20-标准工程目录与类型归类.md#验收规则"
+      ],
+      "result": "walkthrough_pass"
+    },
+    {
+      "id": "R29",
+      "observed_decision": "锁定可分发依赖并独立恢复；开发机私有软链接构成未通过项，Player 未执行保持 not_run。",
+      "evidence": [
+        "skill/references/20-标准工程目录与类型归类.md#工作区与项目边界",
+        "skill/references/20-标准工程目录与类型归类.md#验收规则"
+      ],
+      "result": "walkthrough_pass"
+    }
+  ],
+  "limitations": [
+    "Document decisions and static checks only; no generated framework, Prefab or project was executed.",
+    "M1-M5 remain unimplemented; this summary is not Unity or Player acceptance."
+  ],
+  "checks": {
+    "source_markdown_links": {
+      "status": "pass",
+      "files": 60,
+      "links": 293,
+      "original_heading_anchors_preserved": true
+    },
+    "skill_static": {
+      "status": "pass",
+      "files": 24,
+      "links": 170,
+      "errors": [],
+      "warnings": []
+    },
+    "skill_creator_structure": {
+      "status": "pass"
+    },
+    "checker_regressions": {
+      "status": "pass",
+      "tests": 6
+    },
+    "skill_sync_regressions": {
+      "status": "pass",
+      "tests": 3
+    },
+    "public_contracts": {
+      "status": "pass",
+      "drift": false
+    },
+    "unity_and_framework_execution": {
+      "status": "not_run",
+      "reason": "Documentation-only task; implementation not started."
+    }
+  },
+  "source_sha256": {
+    "README.md": "0cf03b5f4e458bc0042c04cb4e87277d7aff8c5caf7a1239ce0e7917d9084bc2",
+    "docs/6-维护说明.md": "d2c18e2770a22d290868a66b20c493773dbf9bf52bf3a93988f11df0ed33db0a",
+    "docs/11-Unity工程标准落地计划.md": "375cf809babc3206b3d97e796cb902f0e54fda2e7a1fea892d15b7a2f000ad08",
+    "skill/SKILL.md": "50f3c2617c7b26b6202d7be7fbf06ba8740fb72646d68688be20dad97814d408",
+    "skill/references/12-工程重建与代码恢复.md": "daf3c78f13e0b61bf6e1f93e9e8f7ca3ed0f1502b8b1f94b6651febad040f2e0",
+    "skill/references/17-Unity工程重构与资产治理.md": "be2d6a909c88617c40618b78bfe4b4083b751b01fe2e41957536590180516782",
+    "skill/references/20-标准工程目录与类型归类.md": "a8b210608bc7979c2e31b6c5d9cdc25c71aa60afeaba7559f41809550c1bc75d",
+    "tests/scenarios/README.md": "1a608b181a180e3b4547792358e79cb8cc084638578f3900a8572270982efd54",
+    "tests/scenarios/scenarios.json": "8b70222df2775415b3790f2e05a957fae949c61ef6095df07bf8a6ef314ddade"
+  }
+}

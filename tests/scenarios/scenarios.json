@@ -426,6 +426,96 @@
         "把高级开发包视频当普通包验收",
         "用计划时长代替实测或隐去剪辑和已知问题"
       ]
+    },
+    {
+      "id": "R25",
+      "request": "在新 Git 分支制定 Unity 工程标准和落地计划，暂不改现有工程。",
+      "setup": "已有 grea 规范；尚无框架包和工程生成器。",
+      "expected_mode": "工具/技能规范维护",
+      "primary_reference_numbers": [
+        "20",
+        "15"
+      ],
+      "observable_outcomes": [
+        "在 grea 新分支落盘标准、阶段门槛和未实现状态",
+        "核对引用与静态检查，游戏工程不写入"
+      ],
+      "prohibited_scope_expansion": [
+        "创建或迁移 Unity 工程",
+        "提前注册不存在的生成命令或宣称框架实测通过"
+      ]
+    },
+    {
+      "id": "R26",
+      "request": "整理已有 UI Toolkit 工程，沿用当前渲染管线和界面实现。",
+      "setup": "默认参考组合拟用 uGUI；当前工程功能基线已确认。",
+      "expected_mode": "结构重构",
+      "primary_reference_numbers": [
+        "20",
+        "17"
+      ],
+      "observable_outcomes": [
+        "配置保留原技术栈，盘点目录与程序集并记录实际例外",
+        "只规划获准的结构范围，不将尚未验证的组合标为支持"
+      ],
+      "prohibited_scope_expansion": [
+        "自动生成 uGUI UIHost 替换现有界面",
+        "为符合默认配置升级 Unity 或替换渲染管线"
+      ]
+    },
+    {
+      "id": "R27",
+      "request": "重新生成弹窗，但保留我改过的基础 Prefab 字段和项目 Variant。",
+      "setup": "已有上次生成清单，基础资产已被人工修改；字段级合并尚未实现。",
+      "expected_mode": "结构重构/生成契约",
+      "primary_reference_numbers": [
+        "20",
+        "17"
+      ],
+      "observable_outcomes": [
+        "写入前比较身份与所有权，指出具体冲突和可审阅差异",
+        "保留人工字节及 Variant；未实现生成能力时只制定迁移方案"
+      ],
+      "prohibited_scope_expansion": [
+        "整份覆盖 Prefab 或 Apply All 到基础资产",
+        "把再生成当成删除清单外资产的授权"
+      ]
+    },
+    {
+      "id": "R28",
+      "request": "证明相同输入下重复生成工程不会造成重复状态。",
+      "setup": "两次生成文本哈希相同，但第二次进入有重复监听。",
+      "expected_mode": "生成与生命周期验收",
+      "primary_reference_numbers": [
+        "20",
+        "8"
+      ],
+      "observable_outcomes": [
+        "文本/GUID 稳定与运行初始化、对象/监听计数分别验收",
+        "识别一次输入产生两次请求为失败，不能用文件哈希判定整体通过"
+      ],
+      "prohibited_scope_expansion": [
+        "用目录和文本一致宣称完全幂等",
+        "跳过关闭重入只测试新建对象"
+      ]
+    },
+    {
+      "id": "R29",
+      "request": "让另一台机器能使用参考工程的完整包。",
+      "setup": "开发机通过指向 grea 私有库存的软链接取得资源；目标平台尚未运行。",
+      "expected_mode": "分发验收",
+      "primary_reference_numbers": [
+        "20",
+        "23"
+      ],
+      "observable_outcomes": [
+        "检查许可证和锁定依赖，去除维护者路径依赖并从独立副本恢复",
+        "Editor、目标 Player 和原游戏验收分层；未运行项如实记录"
+      ],
+      "prohibited_scope_expansion": [
+        "把私人原包或商业素材补进公共框架",
+        "以开发机编译成功替代可恢复性或目标平台运行"
+      ]
     }
   ]
 }
