@@ -19,11 +19,12 @@ class SkillDistributionTests(unittest.TestCase):
         value={'version':'1.2.3rc1','greaVersion':'1.2.3rc1','requiredOperations':['session']}
         return {k:(v.encode(),0o100644) for k,v in {
             'skill/SKILL.md':'---\nname: grea\ndescription: Test\n---\n[流程](references/Unity-恢复.md) [说明](../docs/使用.md#示例)\n',
+            'skill/.gitignore':'__pycache__/\n',
             'skill/references/Unity-恢复.md':'# 恢复\n[入口](../SKILL.md)\n',
             'skill/version.json':json.dumps(value),'docs/使用.md':'# 示例\n','LICENSE':'MIT\n'}.items()}
     def test_versioned_relocatable_and_reproducible(self):
         source=self.source();files=build_skill.render(source,'1.2.3rc1','a'*40)
-        entry=files['grea/SKILL.md'].decode();self.assertIn('/'+'a'*40+'/',entry);self.assertNotIn('../docs/',entry)
+        entry=files['grea/SKILL.md'].decode();self.assertIn('/'+'a'*40+'/',entry);self.assertNotIn('../docs/',entry);self.assertNotIn('grea/.gitignore',files)
         manifest=json.loads(files['grea/skill-manifest.json']);self.assertEqual(manifest['version'],'1.2.3rc1');self.assertEqual(len(manifest['files']),4)
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp).resolve();a=root/'a.zip';b=root/'b.zip';stamp=datetime(2026,10,13,tzinfo=timezone.utc)

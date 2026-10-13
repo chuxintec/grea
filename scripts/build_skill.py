@@ -28,6 +28,8 @@ def render(source, version, revision):
         if not name.startswith('skill/'):
             continue
         local = name[len('skill/'):]
+        if any(part.startswith('.') for part in PurePosixPath(local).parts):
+            continue  # Repository configuration is not installed Skill content.
         if mode != 0o100644 or local.startswith('/') or '..' in PurePosixPath(local).parts:
             raise ValueError('Skill accepts regular documentation files only')
         if not local.endswith(('.md', '.json', '.yaml', '.yml')):
