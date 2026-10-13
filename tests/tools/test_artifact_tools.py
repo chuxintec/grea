@@ -12,7 +12,7 @@ import sys
 import tempfile
 import unittest
 
-SCRIPTS = Path(__file__).resolve().parents[2] / 'tools/artifacts'
+SCRIPTS = Path(__file__).resolve().parents[2] / 'src/grea/tools'
 INTEGRATION = False
 EXE = None
 

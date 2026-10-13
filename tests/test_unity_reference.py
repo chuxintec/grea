@@ -9,7 +9,7 @@ import re
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
-spec=importlib.util.spec_from_file_location('reference',ROOT/'scripts/unity_reference.py');ref=importlib.util.module_from_spec(spec);spec.loader.exec_module(ref)
+spec=importlib.util.spec_from_file_location('reference',ROOT/'src/grea/tools/unity_reference.py');ref=importlib.util.module_from_spec(spec);spec.loader.exec_module(ref)
 
 
 class ReferenceDistributionTests(unittest.TestCase):

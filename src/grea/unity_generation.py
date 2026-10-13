@@ -1,4 +1,4 @@
-"""M3 create-only, staged Unity generation. Never edits an adopted game project."""
+"""工程生成 create-only, staged Unity generation. Never edits an adopted game project."""
 import contextlib
 import hashlib
 import json
@@ -56,20 +56,20 @@ def _profile(reader, profile):
     if overlaps(p['paths']['evidenceRoot'], p['paths']['buildRoot']) or overlaps(unity, profile):
         raise GreaError('PATH_CONFLICT', 'Overlapping configured paths.')
     if p['toolchain'] != REFERENCE['toolchain'] or p['assetBackend'] != 'catalog':
-        raise GreaError('UNSUPPORTED_COMBINATION', 'M3 supports only the locked Unity/URP/uGUI/macOS reference combination.')
+        raise GreaError('UNSUPPORTED_COMBINATION', '工程生成 supports only the locked Unity/URP/uGUI/macOS reference combination.')
     if p['template'] != TEMPLATE or p['modules'] != MODULES:
-        raise GreaError('UNSUPPORTED_TEMPLATE', 'M3 requires template 0.1.0 and the single Counter composition module.')
+        raise GreaError('UNSUPPORTED_TEMPLATE', '工程生成 requires template 0.1.0 and the single Counter composition module.')
     if set(p['features']) != {'lifecycle', 'ui', 'resources', 'audio', 'save', 'diagnostics'} or p['frameworkPackages'] or p['exceptions']:
-        raise GreaError('UNSUPPORTED_TEMPLATE', 'M3 recipe locks all six features and bundled packages; overrides/exceptions are unsupported.')
+        raise GreaError('UNSUPPORTED_TEMPLATE', '工程生成 recipe locks all six features and bundled packages; overrides/exceptions are unsupported.')
     for name in ('saveNamespace', 'qaSaveNamespace'):
         if not re.fullmatch(r'[a-z][a-z0-9-]{0,47}', p[name]):
-            raise GreaError('INVALID_PROFILE', 'M3 save namespaces must match the file save adapter.')
+            raise GreaError('INVALID_PROFILE', '工程生成 save namespaces must match the file save adapter.')
     if p['saveNamespace'].casefold() == p['qaSaveNamespace'].casefold() or any(re.fullmatch(r'(con|prn|aux|nul|com[0-9]|lpt[0-9])', p[n]) for n in ('saveNamespace','qaSaveNamespace')):
         raise GreaError('INVALID_PROFILE', 'QA namespace must differ from player namespace.')
     for path in p['scenes'].values():
         relative(path)
         if not path.startswith('Assets/Game/Scenes/') or not path.endswith('.unity'):
-            raise GreaError('INVALID_PROFILE', 'M3 scenes must be .unity assets under Assets/Game/Scenes/.')
+            raise GreaError('INVALID_PROFILE', '工程生成 scenes must be .unity assets under Assets/Game/Scenes/.')
     if p['scenes']['bootstrap'].casefold() == p['scenes']['entry'].casefold():
         raise GreaError('PATH_CONFLICT', 'Bootstrap and entry must be distinct.')
     if any(p['dependencyLock'].values()):
@@ -87,7 +87,7 @@ def _recipe(p):
             raise GreaError('UNSAFE_TEMPLATE', 'Template contains a symlink.')
         if source.is_file():
             files['Packages/' + source.relative_to(package_dir).as_posix()] = source.read_bytes()
-    sample = root / 'tools/unity/templates/m2-composition/Assets/Game'
+    sample = root / 'tools/unity/templates/counter-composition/Assets/Game'
     for source in sorted(sample.rglob('*')):
         if source.is_symlink():
             raise GreaError('UNSAFE_TEMPLATE', 'Sample contains a symlink.')
@@ -96,7 +96,7 @@ def _recipe(p):
     assembly_path = 'Assets/Game/Bootstrap/Game.Bootstrap.asmdef'
     assembly = json.loads(files[assembly_path]); assembly['references'].append('Grea.Foundation.Runtime')
     files[assembly_path] = encoded(assembly)
-    seed = root / 'tools/unity/templates/m3-minimal/ProjectBootstrap.cs.txt'
+    seed = root / 'tools/unity/templates/minimal-project/ProjectBootstrap.cs.txt'
     files['Assets/Game/Bootstrap/ProjectBootstrap.cs'] = seed.read_text().replace('__NAMESPACE__', p['namespace']).encode()
     files['Packages/manifest.json'] = encoded({'dependencies': {'com.unity.render-pipelines.universal': '17.6.0', 'com.unity.ugui': '2.6.0', 'com.unity.modules.audio': '1.0.0'}})
     # Unity resolves the same pinned built-in package graph; tests are opt-in, not player dependencies.
@@ -162,7 +162,7 @@ def plan_generation(project_root, profile='grea-project.json', mode='new', cance
     if mode == 'adopt':
         action = 'preserve'
     elif mode != 'new':
-        raise GreaError('UNSUPPORTED_MODE', 'M3 does not support refactor writes.')
+        raise GreaError('UNSUPPORTED_MODE', '工程生成 does not support refactor writes.')
     elif (reader.root / unity).exists():
         if MANIFEST not in current:
             raise GreaError('OWNERSHIP_CONFLICT', 'Existing targets without a generation manifest are never overwritten, including empty targets.')
@@ -207,7 +207,7 @@ def _atomic(path, value):
 @contextlib.contextmanager
 def _lock(root):
     if os.name != 'posix':
-        raise GreaError('UNSUPPORTED_PLATFORM', 'M3 mutation currently requires POSIX locking.')
+        raise GreaError('UNSUPPORTED_PLATFORM', '工程生成 mutation currently requires POSIX locking.')
     import fcntl
     fd = os.open(root / '.grea-generation.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     try:

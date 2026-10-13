@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = (Path(__file__).resolve().parents[2] / 'scripts/check_skill.py')
+SCRIPT = (Path(__file__).resolve().parents[2] / 'src/grea/tools/check_skill.py')
 
 
 class SkillChecks(unittest.TestCase):

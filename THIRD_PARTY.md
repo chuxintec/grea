@@ -29,4 +29,4 @@ grea 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许
 
 [UPSTREAM.json](UPSTREAM.json) 记录 REA 架构参考与 MCP SDK 来源。REA 用于设计研究，未复制其引擎实现。新增第三方源码前必须独立核对来源、许可和通知保留要求，不能只修改署名后纳入 MIT。
 
-本机可选依赖统一放在 `.private/providers/` 或 `.private/runtimes/`，备份放 `.private/backups/`。目录约定见 [迁移说明](docs/3-迁移与兼容.md#本机依赖目录)；它们均不随公开包分发。
+本机可选依赖统一放在 `.private/providers/` 或 `.private/runtimes/`，备份放 `.private/backups/`。目录约定见 [迁移说明](docs/兼容与迁移指南.md#本机依赖目录)；它们均不随公开包分发。

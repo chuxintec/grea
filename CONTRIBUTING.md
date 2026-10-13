@@ -1,8 +1,8 @@
 # 贡献指南
 
-从 [使用说明](docs/0-使用说明.md) 配置 Python 环境。维护约定见 [维护说明](docs/6-维护说明.md)，游戏流程在 `skill/`，执行契约在 `src/grea/contracts.py`，工具目录在 `registry.json`。
+从 [使用说明](docs/使用指南.md) 配置 Python 环境。维护约定见 [维护说明](docs/维护指南.md)，游戏流程在 `skill/`，执行契约在 `src/grea/contracts.py`，工具目录在 `registry.json`。
 
-完整维护测试和发布工具使用 Python 3.12；运行时最低版本仍以 pyproject.toml 为准。标签发布及只验证不发布的入口见 [自动发布](docs/10-自动发布.md)。
+完整维护测试和发布工具使用 Python 3.12；运行时最低版本仍以 pyproject.toml 为准。标签发布及只验证不发布的入口见 [自动发布](docs/Release自动发布.md)。
 
 提交聚焦于一个问题，说明实际行为变化、验证和未执行范围。不要提交游戏包、第三方安装程序、商业素材、玩家存档、账号信息、设备标识、本机绝对路径或原始业务日志。测试使用合成夹具；依赖与许可见 [第三方说明](THIRD_PARTY.md)。
 

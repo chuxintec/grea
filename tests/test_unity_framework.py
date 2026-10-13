@@ -8,8 +8,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES = ROOT / 'tools/unity/framework/packages'
-SAMPLE = ROOT / 'tools/unity/templates/m2-composition/Assets'
-spec = importlib.util.spec_from_file_location('prepare_m2', ROOT / 'scripts/testing/prepare-unity-m2.py')
+SAMPLE = ROOT / 'tools/unity/templates/counter-composition/Assets'
+spec = importlib.util.spec_from_file_location('prepare_m2', ROOT / 'scripts/testing/prepare-unity-framework.py')
 prepare_m2 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(prepare_m2)
 

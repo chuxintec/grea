@@ -39,7 +39,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/providers/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
@@ -77,7 +77,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
@@ -115,7 +115,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/ILSpy/ilspycmd"
@@ -153,7 +153,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -188,7 +188,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -223,7 +223,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -258,7 +258,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -293,7 +293,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -322,7 +322,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -351,7 +351,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -385,7 +385,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -417,7 +417,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -451,7 +451,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -484,7 +484,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -512,7 +512,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -540,7 +540,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -568,7 +568,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -602,7 +602,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -625,7 +625,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -653,26 +653,28 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "unity_asset_ledger",
       "probe": [
         "python3",
-        "{grea}/tools/artifacts/unity_asset_ledger.py",
+        "{grea}/launch_tool.py",
+        "unity_asset_ledger",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "Unity Assets and ledger JSON",
       "side_effects": "read-only snapshots and explicit new reports; no migration",
       "usage": "grea describe-tool {\"tool_id\": \"unity_asset_ledger\"}",
-      "output_schema": "JSON; grea/docs/tools/1-制品工具.md",
+      "output_schema": "JSON; grea/docs/tools/制品与资源检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/unity_asset_ledger.py"
+          "{grea}/launch_tool.py",
+          "unity_asset_ledger"
         ],
         "finding_exit_codes": [
           1
@@ -692,14 +694,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "unity_dependency_audit",
       "probe": [
         "python3",
-        "{grea}/tools/artifacts/unity_dependency_audit.py",
+        "{grea}/launch_tool.py",
+        "unity_dependency_audit",
         "--help"
       ],
       "check_level": "help-only",
@@ -711,7 +714,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/unity_dependency_audit.py"
+          "{grea}/launch_tool.py",
+          "unity_dependency_audit"
         ],
         "finding_exit_codes": [
           1
@@ -731,14 +735,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "compare_traces",
       "probe": [
         "python3",
-        "{grea}/tools/artifacts/compare_traces.py",
+        "{grea}/launch_tool.py",
+        "compare_traces",
         "--help"
       ],
       "check_level": "help-only",
@@ -750,7 +755,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/compare_traces.py"
+          "{grea}/launch_tool.py",
+          "compare_traces"
         ],
         "finding_exit_codes": [
           1
@@ -770,14 +776,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "video_manifest",
       "probe": [
         "python3",
-        "{grea}/tools/artifacts/video_manifest.py",
+        "{grea}/launch_tool.py",
+        "video_manifest",
         "--help"
       ],
       "check_level": "help-only",
@@ -789,7 +796,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/video_manifest.py"
+          "{grea}/launch_tool.py",
+          "video_manifest"
         ],
         "finding_exit_codes": [
           1
@@ -809,14 +817,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "verify_payload_tree",
       "probe": [
         "python3",
-        "{grea}/tools/artifacts/verify_payload_tree.py",
+        "{grea}/launch_tool.py",
+        "verify_payload_tree",
         "--help"
       ],
       "check_level": "help-only",
@@ -828,7 +837,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/verify_payload_tree.py"
+          "{grea}/launch_tool.py",
+          "verify_payload_tree"
         ],
         "finding_exit_codes": [
           1
@@ -848,14 +858,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "package_windows_portable",
       "probe": [
         "python3",
-        "{grea}/tools/artifacts/package_windows_portable.py",
+        "{grea}/launch_tool.py",
+        "package_windows_portable",
         "--help"
       ],
       "check_level": "help-only",
@@ -867,7 +878,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/package_windows_portable.py"
+          "{grea}/launch_tool.py",
+          "package_windows_portable"
         ],
         "finding_exit_codes": []
       },
@@ -885,26 +897,28 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "audit_numeric_texture",
       "probe": [
         "python3",
-        "{grea}/tools/recovery/audit_numeric_texture.py",
+        "{grea}/launch_tool.py",
+        "audit_numeric_texture",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"audit_numeric_texture\"}",
-      "output_schema": "JSON; see docs/tools/2-恢复检查.md",
+      "output_schema": "JSON; see docs/tools/规则与格式检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/recovery/audit_numeric_texture.py"
+          "{grea}/launch_tool.py",
+          "audit_numeric_texture"
         ],
         "finding_exit_codes": [
           1
@@ -924,26 +938,28 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "compare_events",
       "probe": [
         "python3",
-        "{grea}/tools/recovery/compare_events.py",
+        "{grea}/launch_tool.py",
+        "compare_events",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"compare_events\"}",
-      "output_schema": "JSON; see docs/tools/2-恢复检查.md",
+      "output_schema": "JSON; see docs/tools/规则与格式检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/recovery/compare_events.py"
+          "{grea}/launch_tool.py",
+          "compare_events"
         ],
         "finding_exit_codes": [
           1
@@ -963,26 +979,28 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "laya_contract_audit",
       "probe": [
         "python3",
-        "{grea}/tools/recovery/laya_contract_audit.py",
+        "{grea}/launch_tool.py",
+        "laya_contract_audit",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"laya_contract_audit\"}",
-      "output_schema": "JSON; see docs/tools/2-恢复检查.md",
+      "output_schema": "JSON; see docs/tools/规则与格式检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/recovery/laya_contract_audit.py"
+          "{grea}/launch_tool.py",
+          "laya_contract_audit"
         ],
         "finding_exit_codes": []
       },
@@ -1001,7 +1019,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1036,7 +1054,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1071,7 +1089,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1106,7 +1124,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1141,7 +1159,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
@@ -1152,19 +1170,21 @@
       "id": "image_alpha_audit",
       "probe": [
         "python3",
-        "{grea}/tools/artifacts/image_alpha_audit.py",
+        "{grea}/launch_tool.py",
+        "image_alpha_audit",
         "--help"
       ],
       "check_level": "help-only",
       "formats": "Pillow supported raster images; Pillow required",
       "side_effects": "reads images; writes explicit new JSON only",
       "usage": "grea describe-tool {\"tool_id\": \"image_alpha_audit\"}",
-      "output_schema": "JSON; grea/docs/tools/1-制品工具.md",
+      "output_schema": "JSON; grea/docs/tools/制品与资源检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/image_alpha_audit.py"
+          "{grea}/launch_tool.py",
+          "image_alpha_audit"
         ],
         "finding_exit_codes": [
           1
@@ -1184,7 +1204,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1218,7 +1238,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1257,7 +1277,8 @@
       "id": "video_sheet",
       "probe": [
         "{python}",
-        "{grea}/tools/artifacts/video_sheet.py",
+        "{grea}/launch_tool.py",
+        "video_sheet",
         "--help"
       ],
       "check_level": "help-only",
@@ -1268,7 +1289,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/video_sheet.py"
+          "{grea}/launch_tool.py",
+          "video_sheet"
         ],
         "finding_exit_codes": []
       },
@@ -1286,14 +1308,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "read_elf_values",
       "probe": [
         "{python}",
-        "{grea}/tools/artifacts/read_elf_values.py",
+        "{grea}/launch_tool.py",
+        "read_elf_values",
         "--help"
       ],
       "check_level": "help-only",
@@ -1304,7 +1327,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/read_elf_values.py"
+          "{grea}/launch_tool.py",
+          "read_elf_values"
         ],
         "finding_exit_codes": []
       },
@@ -1322,14 +1346,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "unpack_xapk",
       "probe": [
         "{python}",
-        "{grea}/tools/artifacts/unpack_xapk.py",
+        "{grea}/launch_tool.py",
+        "unpack_xapk",
         "--help"
       ],
       "check_level": "help-only",
@@ -1340,7 +1365,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/tools/artifacts/unpack_xapk.py"
+          "{grea}/launch_tool.py",
+          "unpack_xapk"
         ],
         "finding_exit_codes": []
       },
@@ -1358,14 +1384,15 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
       "id": "registry_doctor",
       "probe": [
         "{python}",
-        "{grea}/scripts/registry_doctor.py",
+        "{grea}/launch_tool.py",
+        "registry_doctor",
         "--help"
       ],
       "check_level": "help-only",
@@ -1376,7 +1403,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/scripts/registry_doctor.py"
+          "{grea}/launch_tool.py",
+          "registry_doctor"
         ],
         "finding_exit_codes": []
       },
@@ -1394,7 +1422,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1460,7 +1488,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/tools/dotnet/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
@@ -1510,7 +1538,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1540,7 +1568,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/adapters/wechat/export_all_bundle_assets.py",
@@ -1575,7 +1603,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
@@ -1608,7 +1636,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/adapters/wechat/decrypt_webgl_xxtea.py",
@@ -1643,7 +1671,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
@@ -1676,7 +1704,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
@@ -1686,7 +1714,8 @@
       "id": "check_grea_skill",
       "probe": [
         "python3",
-        "{grea}/scripts/check_skill.py",
+        "{grea}/launch_tool.py",
+        "check_skill",
         "--help"
       ],
       "check_level": "help-only",
@@ -1698,7 +1727,8 @@
       "execution": {
         "command": [
           "{python}",
-          "{grea}/scripts/check_skill.py"
+          "{grea}/launch_tool.py",
+          "check_skill"
         ],
         "finding_exit_codes": [
           1
@@ -1718,7 +1748,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1750,7 +1780,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1774,7 +1804,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       }
     },
     {
@@ -1880,7 +1910,7 @@
       "check_level": "static-only",
       "formats": "M3 profile, ownership manifest and journal",
       "side_effects": "Read-only; JSON plan to stdout.",
-      "usage": "Unity M3: see docs/14-Unity生成器与通用Prefab.md.",
+      "usage": "Unity generation: see docs/Unity工程生成与恢复.md.",
       "output_schema": "schemas/result.schema.json",
       "tested_samples": "See docs/validation/2026-10-13-unity-m3.json for scoped evidence.",
       "host_support": {
@@ -1894,7 +1924,7 @@
         "verification": "M3 mutation targets the exact macOS reference Editor; other platforms not executed."
       },
       "limitations": [
-        "Create-only M3 recipe; no existing-game refactor or Player acceptance."
+        "Create-only generation recipe; no existing-game refactor or Player acceptance."
       ]
     },
     {
@@ -1924,7 +1954,7 @@
       "check_level": "editor_compile_bindings",
       "formats": "M3 profile, ownership manifest and journal",
       "side_effects": "Creates an isolated staged project, restores Unity dependencies and runs Editor; publishes only a new target.",
-      "usage": "Unity M3: see docs/14-Unity生成器与通用Prefab.md.",
+      "usage": "Unity generation: see docs/Unity工程生成与恢复.md.",
       "output_schema": "schemas/result.schema.json",
       "tested_samples": "See docs/validation/2026-10-13-unity-m3.json for scoped evidence.",
       "host_support": {
@@ -1938,7 +1968,7 @@
         "verification": "M3 mutation targets the exact macOS reference Editor; other platforms not executed."
       },
       "limitations": [
-        "Create-only M3 recipe; no existing-game refactor or Player acceptance."
+        "Create-only generation recipe; no existing-game refactor or Player acceptance."
       ]
     },
     {
@@ -1968,7 +1998,7 @@
       "check_level": "editor_compile_bindings",
       "formats": "M3 profile, ownership manifest and journal",
       "side_effects": "Creates an isolated staged project, restores Unity dependencies and runs Editor; publishes only a new target.",
-      "usage": "Unity M3: see docs/14-Unity生成器与通用Prefab.md.",
+      "usage": "Unity generation: see docs/Unity工程生成与恢复.md.",
       "output_schema": "schemas/result.schema.json",
       "tested_samples": "See docs/validation/2026-10-13-unity-m3.json for scoped evidence.",
       "host_support": {
@@ -1982,22 +2012,24 @@
         "verification": "M3 mutation targets the exact macOS reference Editor; other platforms not executed."
       },
       "limitations": [
-        "Create-only M3 recipe; no existing-game refactor or Player acceptance."
+        "Create-only generation recipe; no existing-game refactor or Player acceptance."
       ]
     },
     {
       "id": "unity_reference",
       "probe": [
         "{python}",
-        "{grea}/scripts/unity_reference.py",
+        "{grea}/launch_tool.py",
+        "unity_reference",
         "--help"
       ],
       "check_level": "help-only",
-      "usage": "Prepare/archive/verify/restore the M4 reference source; see docs/15-Unity参考游戏与Player验收.md.",
+      "usage": "Prepare/archive/verify/restore the reference reference source; see docs/Unity参考游戏.md.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/scripts/unity_reference.py"
+          "{grea}/launch_tool.py",
+          "unity_reference"
         ],
         "finding_exit_codes": []
       },
@@ -2024,15 +2056,17 @@
       "id": "unity_pilot",
       "probe": [
         "{python}",
-        "{grea}/scripts/unity_pilot.py",
+        "{grea}/launch_tool.py",
+        "unity_pilot",
         "--help"
       ],
       "check_level": "help-only",
-      "usage": "Freeze selected authoring inputs, create isolated copies and verify source identity; see docs/16-Unity隔离试点与迁移验收.md.",
+      "usage": "Freeze selected authoring inputs, create isolated copies and verify source identity; see docs/Unity隔离迁移指南.md.",
       "execution": {
         "command": [
           "{python}",
-          "{grea}/scripts/unity_pilot.py"
+          "{grea}/launch_tool.py",
+          "unity_pilot"
         ],
         "finding_exit_codes": [
           1
@@ -2057,6 +2091,79 @@
         "Never migrates source or starts Unity. Snapshots contain local paths and must remain private for private inputs.",
         "Cooperative local filesystem only; reject symlinks and detect drift, not an adversarial concurrent-writer sandbox."
       ]
+    },
+    {
+      "id": "shader_probe",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "shader_probe",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "Probe combined GLES sources through explicitly installed shader compilers.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "shader_probe"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "filesystem_write",
+        "subprocess"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Existing implementation migrated; module/fixture checks do not establish native provider or target-platform success."
+      }
+    },
+    {
+      "id": "unity_package_backup",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "package_backup",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "Snapshot selected UPM dependencies or prepare a verified restore plan; no Editor execution.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "package_backup"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "filesystem_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Existing implementation migrated; module/fixture checks do not establish native provider or target-platform success."
+      }
     }
   ],
   "product": "grea",

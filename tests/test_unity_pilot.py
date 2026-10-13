@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-spec=importlib.util.spec_from_file_location('pilot',ROOT/'scripts/unity_pilot.py');pilot=importlib.util.module_from_spec(spec);spec.loader.exec_module(pilot)
+spec=importlib.util.spec_from_file_location('pilot',ROOT/'src/grea/tools/unity_pilot.py');pilot=importlib.util.module_from_spec(spec);spec.loader.exec_module(pilot)
 
 class PilotIsolationTests(unittest.TestCase):
     def setUp(self):

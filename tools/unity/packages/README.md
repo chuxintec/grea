@@ -7,7 +7,7 @@
 ## 生成新备份
 
 ```sh
-python3 tools/unity/packages/package_backup.py snapshot --project /path/UnityProject --output /path/grea/.private/backups/unity-packages/snapshots/new-date
+./bin/grea legacy unity_package_backup snapshot --project /path/UnityProject --output /path/grea/.private/backups/unity-packages/snapshots/new-date
 ```
 
 以项目真实Unity根为输入；检查Packages/lock及Library/PackageCache/embedded packages。逐文件SHA-256验证归档后写目录；catalog已存在拒绝覆盖。snapshot只读取项目，不执行包内代码。
@@ -15,7 +15,7 @@ python3 tools/unity/packages/package_backup.py snapshot --project /path/UnityPro
 ## 后续项目安装
 
 ```sh
-python3 tools/unity/packages/package_backup.py plan --backup /path/snapshots/2026-09-22 --package com.unity.memoryprofiler@1.1.12 --output /tmp/new-install-plan.json
+./bin/grea legacy unity_package_backup plan --backup /path/snapshots/2026-09-22 --package com.unity.memoryprofiler@1.1.12 --output /tmp/new-install-plan.json
 ```
 
 plan校验归档哈希，并按保存的实际解析依赖生成file:包路径；发现版本冲突、缺失或同版本多份内容会拒绝猜测。不要手改manifest安装。将 `InstallBackupPlan.cs` 复制到**目标项目**的 Assets/Editor/Tooling，先备份其Packages清单，再通过Unity二进制批处理调用 `-executeMethod InstallBackupPlan.Install -toolingPlan /tmp/new-install-plan.json`，**不加-quit**。异步UPM完成后脚本退出，日志 `BACKUP_INSTALL_OK`。活编辑器存在时使用其已验证脚本接口，不另外开同一工程。

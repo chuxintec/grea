@@ -39,5 +39,5 @@ def envelope(operation,result=None,*,status='ok',evidence=None,limitations=None,
 
 def implementation_identity():
     root=Path(__file__).resolve().parent
-    hashes={p.name:hash_file(p)['sha256'] for p in sorted(root.glob('*.py'))}
+    hashes={p.relative_to(root).as_posix():hash_file(p)['sha256'] for p in sorted(root.rglob('*.py'))}
     return {'version':__version__,'core_sha256':digest(hashes),'files':len(hashes)}

@@ -18,7 +18,7 @@ spec.loader.exec_module(release)
 class BundleTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.root = Path(self.tmp.name) / 'repo'
+        self.root = Path(self.tmp.name).resolve() / 'repo'
         self.root.mkdir()
         self.patch = patch.object(release, 'ROOT', self.root)
         self.patch.start()
@@ -30,13 +30,17 @@ class BundleTests(unittest.TestCase):
         (self.root / 'pyproject.toml').write_text('[project]\nname="grea"\nversion="2026.10.13rc1"\nrequires-python=">=3.10"\n')
         (self.root / 'uv.lock').write_text('[[package]]\nname="grea"\nversion="2026.10.13rc1"\n')
         (self.root / '中文.md').write_text('中文说明\n')
+        (self.root / 'skill').mkdir()
+        (self.root / 'skill/SKILL.md').write_text('---\nname: grea\ndescription: Fixture\n---\n[说明](../中文.md)\n')
+        (self.root / 'skill/version.json').write_text(json.dumps({'version':'2026.10.13rc1','greaVersion':'2026.10.13rc1','requiredOperations':['session']}))
+        (self.root / 'LICENSE').write_text('MIT fixture')
         (self.root / 'launcher').write_text('#!/bin/sh\nexit 0\n')
         (self.root / 'launcher').chmod(0o755)
         self.git('add', '.')
         self.git('-c', 'commit.gpgsign=false', 'commit', '-qm', 'fixture')
         self.git('tag', 'v2026.10.13-rc1')
         self.tag = 'v2026.10.13-rc1'
-        self.out = Path(self.tmp.name) / 'out'
+        self.out = Path(self.tmp.name).resolve() / 'out'
 
     def tearDown(self):
         self.patch.stop()
@@ -53,7 +57,9 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(a, b)
         self.assertEqual((self.out / a['artifacts'][0]['name']).read_bytes(), (other / b['artifacts'][0]['name']).read_bytes())
         dest = self.out.with_name('extract')
-        release.verify(self.tag, self.out, dest)
+        release.verify(self.tag, self.out, dest, self.out.with_name('skill-extract'))
+        self.assertTrue((self.out.with_name('skill-extract')/'grea/SKILL.md').is_file())
+        self.assertEqual(a['artifacts'][1]['kind'],'skill')
         top = dest / ('grea-' + self.tag)
         self.assertEqual((top / '中文.md').read_text(), '中文说明\n')
         self.assertTrue((top / 'launcher').stat().st_mode & 0o111)
@@ -104,7 +110,7 @@ class PublishTests(unittest.TestCase):
     def scenario(self, prerelease=True, existing=None, fail_upload=False, corrupt_download=False, remote_sha='source'):
         temp = tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup)
         out = Path(temp.name)
-        names = ['bundle.zip', 'release-manifest.json', 'SHA256SUMS']
+        names = ['bundle.zip', 'skill.zip', 'release-manifest.json', 'SHA256SUMS']
         for n in names:(out / n).write_text(n)
         (out / 'release-notes.md').write_text('notes')
         state = {'release': existing, 'patches': [], 'uploads': []}
@@ -135,7 +141,7 @@ class PublishTests(unittest.TestCase):
 
     def test_rc_published_only_after_verified_uploads(self):
         state=self.scenario()
-        self.assertEqual(len(state['uploads']),3)
+        self.assertEqual(len(state['uploads']),4)
         self.assertEqual(state['patches'],[{'draft':False,'prerelease':True,'make_latest':'false'}])
 
     def test_stable_release_classification(self):
@@ -157,8 +163,8 @@ class PublishTests(unittest.TestCase):
             return {'id':1,'tag_name':'v1.2.3-rc1','draft':draft,'prerelease':True,'html_url':'https://example.com/release',
                     'assets':[{'name':n,'size':len(n),'state':'uploaded'} for n in names]}
         s=self.scenario(existing=existing(True,['bundle.zip']))
-        self.assertEqual(s['uploads'],['release-manifest.json','SHA256SUMS'])
-        s=self.scenario(existing=existing(False,['bundle.zip','release-manifest.json','SHA256SUMS']))
+        self.assertEqual(s['uploads'],['skill.zip','release-manifest.json','SHA256SUMS'])
+        s=self.scenario(existing=existing(False,['bundle.zip','skill.zip','release-manifest.json','SHA256SUMS']))
         self.assertEqual(s['uploads'],[]);self.assertEqual(s['patches'],[])
         with self.assertRaises(ValueError):self.scenario(existing=existing(False,['bundle.zip']))
         with self.assertRaises(ValueError):self.scenario(existing=existing(True,['unrecognized']))

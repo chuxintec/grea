@@ -46,11 +46,11 @@ class PlatformTests(unittest.TestCase):
                 self.assertEqual(dispatch('session')['error']['code'],'INVALID_PROVIDER_CONFIG')
 
     def test_doctor_default_is_presence_only(self):
-        p=subprocess.run([sys.executable,str(ROOT/'scripts/registry_doctor.py'),'--json'],capture_output=True,text=True)
+        p=subprocess.run([sys.executable,str(ROOT/'src/grea/tools/registry_doctor.py'),'--json'],capture_output=True,text=True)
         self.assertIn(p.returncode,(0,1),p.stderr)
         report=json.loads(p.stdout)
         self.assertTrue(all(row['level'] in ('presence','host') for row in report['result']['checks']))
-        p=subprocess.run([sys.executable,str(ROOT/'scripts/registry_doctor.py'),'--json','--probe'],capture_output=True,text=True)
+        p=subprocess.run([sys.executable,str(ROOT/'src/grea/tools/registry_doctor.py'),'--json','--probe'],capture_output=True,text=True)
         self.assertEqual(json.loads(p.stdout)['error']['code'],'EXPLICIT_SELECTION_REQUIRED')
 
     def test_platform_tools_name_not_rewritten(self):
@@ -62,7 +62,7 @@ class PlatformTests(unittest.TestCase):
             a=Path(d)/'a.jsonl';b=Path(d)/'b.jsonl'
             a.write_text('{"seq":1,"event":"start","state":{"n":1}}\n')
             b.write_text(a.read_text())
-            cmd=[sys.executable,str(ROOT/'tools/recovery/compare_events.py'),str(a),str(b)]
+            cmd=[sys.executable,str(ROOT/'src/grea/tools/compare_events.py'),str(a),str(b)]
             self.assertEqual(subprocess.run(cmd,capture_output=True).returncode,0)
             b.write_text('{"seq":1,"event":"start","state":{"n":2}}\n')
             self.assertEqual(subprocess.run(cmd,capture_output=True).returncode,1)

@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 from audit_public_tree import inspect
+import build_skill
 
 ROOT = Path(__file__).resolve().parents[1]
 TAG = re.compile(r'v(\d+\.\d+\.\d+)(?:-rc([1-9]\d*))?')
@@ -72,6 +73,7 @@ def sha256(path):
 def prepare(tag, out, require_tag=False):
     package, prerelease, sha, python = identity(tag, require_tag)
     files = source_files()
+    skill_files = build_skill.render(files, package, sha)
     timestamp = datetime.fromtimestamp(int(git('show', '-s', '--format=%ct', 'HEAD')), timezone.utc)
     out.mkdir(parents=True, exist_ok=False)
     archive = out / f'grea-{tag}.zip'
@@ -82,6 +84,8 @@ def prepare(tag, out, require_tag=False):
             info.external_attr = mode << 16
             info.compress_type = zipfile.ZIP_DEFLATED
             z.writestr(info, data)
+    skill_archive = out / f'grea-skill-{tag}.zip'
+    build_skill.write_archive(skill_archive, skill_files, timestamp)
     manifest = {
         'schema_version': 1, 'product': 'grea', 'release_version': tag,
         'package_version': package, 'prerelease': prerelease, 'source_revision': sha,
@@ -89,7 +93,10 @@ def prepare(tag, out, require_tag=False):
         'requirements': {'python_declared': python, 'install': 'uv sync --frozen',
                          'uv_lock_sha256': hashlib.sha256(files['uv.lock'][0]).hexdigest()},
         'artifacts': [{'name': archive.name, 'bytes': archive.stat().st_size,
-                       'sha256': sha256(archive), 'files': len(files), 'root_directory': f'grea-{tag}'}],
+                       'sha256': sha256(archive), 'files': len(files), 'root_directory': f'grea-{tag}'},
+                      {'name': skill_archive.name, 'kind': 'skill', 'version': package,
+                       'bytes': skill_archive.stat().st_size, 'sha256': sha256(skill_archive),
+                       'files': len(skill_files), 'root_directory': 'grea'}],
         'validation': {'workflow': '.github/workflows/release.yml',
                        'publication_gates': ['source audit', 'core tests and stdio MCP', 'contract and skill checks',
                                              'fresh extracted bundle install and tests', 'uploaded asset download comparison'],
@@ -97,27 +104,27 @@ def prepare(tag, out, require_tag=False):
         'distribution': 'Public source only; optional third-party providers installed separately. See THIRD_PARTY.md.',
     }
     (out / 'release-manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
-    (out / 'SHA256SUMS').write_text(''.join(sha256(p) + '  ' + p.name + '\n' for p in (archive, out / 'release-manifest.json')))
+    (out / 'SHA256SUMS').write_text(''.join(sha256(p) + '  ' + p.name + '\n' for p in (archive, skill_archive, out / 'release-manifest.json')))
     (out / 'release-notes.md').write_text(
         f'grea {tag}\n\n' + ('预发行版本。' if prerelease else '正式版本。') +
         f'完整源码使用包，Python/CLI 版本 `{package}`。\n\n'
-        '附件：完整 ZIP、release-manifest.json、SHA256SUMS。\n\n'
+        f'附件：完整 ZIP、独立 Skill ZIP（版本 {package}）、release-manifest.json、SHA256SUMS。\n\n'
         f'解压并进入 `grea-{tag}`，运行 `uv sync --frozen`，再运行 `./bin/grea session`；'
         'Windows 入口为 `bin\\grea.cmd session`。macOS 可用系统 Archive Utility 或 ditto 解压中文文件名。\n\n'
         '公开包不包含第三方程序、Unity 包快照、Spine vendor、虚拟环境或项目材料。'
         '来源与许可证见 THIRD_PARTY.md，自有代码采用 MIT。\n\n'
         '发布由测试、契约/技能检查及解压包安装验证把关；Windows 原生运行、Unity Editor 和游戏验收未执行。'
-        '平台限制见 docs/5-工具整合与跨平台.md。\n\n'
+        '平台限制见 docs/工具集成与平台支持.md。\n\n'
         f'源码提交：`{sha}`。\n')
     return manifest
 
 
-def verify(tag, out, extract=None):
+def verify(tag, out, extract=None, extract_skill=None):
     package, prerelease, sha, _ = identity(tag)
     manifest = json.loads((out / 'release-manifest.json').read_text())
     if (manifest['release_version'], manifest['source_revision'], manifest['prerelease'], manifest['package_version']) != (tag, sha, prerelease, package):
         raise ValueError('Manifest identity mismatch.')
-    names = [f'grea-{tag}.zip', 'release-manifest.json']
+    names = [f'grea-{tag}.zip', f'grea-skill-{tag}.zip', 'release-manifest.json']
     checksums = ''.join(sha256(out / n) + '  ' + n + '\n' for n in names)
     if (out / 'SHA256SUMS').read_text() != checksums:
         raise ValueError('Checksum mismatch.')
@@ -126,8 +133,16 @@ def verify(tag, out, extract=None):
     if (row['name'], row['bytes'], row['sha256']) != (names[0], archive.stat().st_size, sha256(archive)):
         raise ValueError('Archive identity mismatch.')
     files = source_files()
-    if len(manifest['artifacts']) != 1 or row['files'] != len(files) or row['root_directory'] != f'grea-{tag}':
+    if len(manifest['artifacts']) != 2 or row['files'] != len(files) or row['root_directory'] != f'grea-{tag}':
         raise ValueError('Manifest file inventory mismatch.')
+    skill_files = build_skill.render(files, package, sha)
+    skill_row = manifest['artifacts'][1]
+    expected_skill_row = {'name': names[1], 'kind': 'skill', 'version': package,
+                          'bytes': (out/names[1]).stat().st_size, 'sha256': sha256(out/names[1]),
+                          'files': len(skill_files), 'root_directory': 'grea'}
+    if skill_row != expected_skill_row:
+        raise ValueError('Skill manifest identity mismatch')
+    build_skill.verify_archive(out/names[1], skill_files)
     with zipfile.ZipFile(archive) as z:
         expected = {f'grea-{tag}/{p}' for p in files}
         if set(z.namelist()) != expected or len(z.namelist()) != len(expected):
@@ -146,6 +161,8 @@ def verify(tag, out, extract=None):
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(z.read(info))
                 dest.chmod((info.external_attr >> 16) & 0o777)
+    if extract_skill is not None:
+        build_skill.verify_archive(out/names[1], skill_files, extract_skill)
     return names + ['SHA256SUMS']
 
 
@@ -226,12 +243,13 @@ if __name__ == '__main__':
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--require-tag', action='store_true')
     parser.add_argument('--extract', type=Path)
+    parser.add_argument('--extract-skill', type=Path)
     parser.add_argument('--repo')
     args = parser.parse_args()
     if args.action == 'prepare':
         result = prepare(args.tag, args.out, args.require_tag)
     elif args.action == 'verify':
-        result = verify(args.tag, args.out, args.extract)
+        result = verify(args.tag, args.out, args.extract, args.extract_skill)
     else:
         if not args.repo:
             parser.error('--repo required for publish')

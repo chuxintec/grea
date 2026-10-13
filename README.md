@@ -30,35 +30,37 @@ Windows 将 `./bin/grea` 换为 `bin\grea.cmd`。也可以下载 [Release 完整
 ./bin/grea legacy unity_dependency_audit --help
 ```
 
-完整调用示例、MCP 配置和 Windows 参数写法见 [使用说明](docs/0-使用说明.md)。macOS 与 Linux 有核心测试记录；Windows 原生验证和部分运行能力仍受限，详见 [平台说明](docs/5-工具整合与跨平台.md#平台结论)。
+完整调用示例、MCP 配置和 Windows 参数写法见 [使用说明](docs/使用指南.md)。macOS 与 Linux 有核心测试记录；Windows 原生验证和部分运行能力仍受限，详见 [平台说明](docs/工具集成与平台支持.md#平台结论)。
 
 ## 找到需要的内容
 
 | 入口 | 用途 |
 | --- | --- |
 | [工具目录](TOOLS.md) | 按任务选工具，区分自带实现与外部依赖 |
-| [恢复技能](skill/SKILL.md) | 让 Agent 按当前目标加载流程；[安装技能](docs/7-独立仓库与工作区接入.md#接入已有工作区) |
-| [第三方依赖](THIRD_PARTY.md) | 官方来源、许可与本机接入；专题集中在 [providers](docs/providers/) |
-| [Unity 工程标准 v1](skill/references/20-标准工程目录与类型归类.md) | [落地计划](docs/11-Unity工程标准落地计划.md)、[M1 配置与只读规划](docs/12-Unity项目配置与只读规划.md)、[M2 最小框架包](docs/13-Unity最小框架与包.md)、[M3 生成器与 Prefab](docs/14-Unity生成器与通用Prefab.md)、[M4 参考游戏与 Player](docs/15-Unity参考游戏与Player验收.md)、[M5 隔离试点](docs/16-Unity隔离试点与迁移验收.md) |
-| [贡献指南](CONTRIBUTING.md) | 开发、测试和提交；[自动发布](docs/10-自动发布.md) |
+| [恢复技能](skill/SKILL.md) | 让 Agent 按当前目标加载流程；[安装技能](docs/工作区接入.md#接入已有工作区) |
+| [第三方依赖](THIRD_PARTY.md) | 官方来源、许可与本机接入；专题集中在 [providers](docs/providers) |
+| [Unity 工程规范](skill/references/Unity-工程结构与开发规范.md) | [配置与检查](docs/Unity项目配置与检查.md)、[框架与组件](docs/Unity框架与通用组件.md)、[生成与恢复](docs/Unity工程生成与恢复.md)、[参考游戏](docs/Unity参考游戏.md)、[隔离迁移](docs/Unity隔离迁移指南.md) |
+| [贡献指南](CONTRIBUTING.md) | 开发、测试和提交；[自动发布](docs/Release自动发布.md) |
 
 ## 仓库结构
 
 ```text
-src/grea/   CLI、MCP、契约与受控执行核心
-tools/      按用途分类的通用工具和 Unity 辅助代码
+src/grea/   CLI、MCP、契约与产品功能；tools/ 子包为通用 Python 模块
+tools/      Unity C# 包、模板及其他非 Python 工具源码
 skill/      恢复流程规范与专题参考
 docs/       用户教程、工具契约、第三方接入及维护文档
 tests/      核心与工具回归、技能场景
 scripts/    仓库检查、技能同步和 Release 自动化
 bin/        启动器与兼容入口
-schemas/    生成的公共接口定义
+schemas/    生成的接口/配置契约与能力目录，说明见 schemas/README.md
 ```
 
-本机第三方依赖与备份集中在被忽略的 `.private/`，见 [本机目录约定](docs/3-迁移与兼容.md#本机依赖目录)。
+本机第三方依赖与备份集中在被忽略的 `.private/`，见 [本机目录约定](docs/兼容与迁移指南.md#本机依赖目录)。
 
 工具 ID 和别名由 `registry.json` 统一维护；移动实现文件不改变调用 ID。实际运行和验收需结合当前项目证据：工具存在、测试通过或构建成功，都不等于游戏已恢复完成。
 
 ## 许可与分发
 
 自有代码与文档采用 [MIT](LICENSE)。不附带游戏包、商业素材、第三方程序、Unity 包快照或 Spine vendor；使用者按授权和 [第三方说明](THIRD_PARTY.md) 准备自己的输入与依赖。项目数据、私人配置和本机缓存不进入公开包。
+
+独立 Skill 制品为 `grea-skill-<tag>.zip`，明确版本与工具依赖，安装见 [Skill 分发](docs/Skill构建与安装.md)。历史阶段记录单独保留在 [history](docs/history/README.md)，日常使用无需理解阶段编号。

@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 from PIL import Image
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools/artifacts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src/grea/tools'))
 from image_alpha_audit import inspect_image
 
 
@@ -23,7 +23,7 @@ class AlphaAuditTests(unittest.TestCase):
     def test_cli_transparency_failure_and_exclusive_output(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp); path=root/'opaque.png'; Image.new('RGB',(3,3),'white').save(path)
-            script=(Path(__file__).resolve().parents[2] / 'tools/artifacts/image_alpha_audit.py')
+            script=(Path(__file__).resolve().parents[2] / 'src/grea/tools/image_alpha_audit.py')
             args=[sys.executable,str(script),'--images',str(path),'--require-transparency','--output',str(root/'report.json')]
             self.assertEqual(subprocess.run(args,cwd=root,capture_output=True).returncode,1)
             original=(root/'report.json').read_bytes()
@@ -46,14 +46,14 @@ class AlphaAuditTests(unittest.TestCase):
     def test_empty_image_requires_review(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);p=root/'blank.png';Image.new('RGBA',(2,2)).save(p)
-            args=[sys.executable,str((Path(__file__).resolve().parents[2] / 'tools/artifacts/image_alpha_audit.py')),'--images',str(p),'--output',str(root/'report.json')]
+            args=[sys.executable,str((Path(__file__).resolve().parents[2] / 'src/grea/tools/image_alpha_audit.py')),'--images',str(p),'--output',str(root/'report.json')]
             self.assertEqual(subprocess.run(args,cwd=root,capture_output=True).returncode,1)
             self.assertEqual(json.loads((root/'report.json').read_text())['issues'][0]['kind'],'fully_transparent_image')
 
     def test_corrupt_input_is_reported_without_writing_output(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);p=root/'bad.png';p.write_bytes(b'not an image')
-            args=[sys.executable,str((Path(__file__).resolve().parents[2] / 'tools/artifacts/image_alpha_audit.py')),'--images',str(p),'--output',str(root/'report.json')]
+            args=[sys.executable,str((Path(__file__).resolve().parents[2] / 'src/grea/tools/image_alpha_audit.py')),'--images',str(p),'--output',str(root/'report.json')]
             self.assertEqual(subprocess.run(args,cwd=root,capture_output=True).returncode,2)
             self.assertFalse((root/'report.json').exists())
 

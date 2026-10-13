@@ -6,10 +6,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools/artifacts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src/grea/tools'))
 from unity_asset_ledger import snapshot, compare, check_plan, verify_moves
 
-SCRIPT = (Path(__file__).resolve().parents[2] / 'tools/artifacts/unity_asset_ledger.py')
+SCRIPT = (Path(__file__).resolve().parents[2] / 'src/grea/tools/unity_asset_ledger.py')
 class LedgerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)

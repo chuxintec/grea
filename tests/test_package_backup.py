@@ -1,6 +1,6 @@
 import tarfile,json,subprocess,sys,tempfile,unittest
 from pathlib import Path
-SCRIPT=Path(__file__).resolve().parents[1]/'tools/unity/packages/package_backup.py'
+SCRIPT=Path(__file__).resolve().parents[1]/'src/grea/tools/package_backup.py'
 class BackupTests(unittest.TestCase):
  def test_two_projects_and_restore_plan(self):
   with tempfile.TemporaryDirectory() as tmp:

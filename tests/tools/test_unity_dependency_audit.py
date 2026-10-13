@@ -1,6 +1,6 @@
 import tempfile,subprocess,json,sys
 from pathlib import Path
-script=str((Path(__file__).resolve().parents[2] / 'tools/artifacts/unity_dependency_audit.py'))
+script=str((Path(__file__).resolve().parents[2] / 'src/grea/tools/unity_dependency_audit.py'))
 import unittest
 
 class DependencyAuditTests(unittest.TestCase):

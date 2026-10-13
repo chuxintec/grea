@@ -1,14 +1,15 @@
-# 通用工具实现
+# 非 Python 工具与 Unity 源码
 
-日常通过仓库根的 `bin/grea` 调用，以 [工具目录](../TOOLS.md) 选择工具、[registry.json](../registry.json) 查询实际入口。这里保存实现，不另设一套工具 ID。
+Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools/)，通过 `bin/grea` 和 [registry.json](../registry.json) 调度；本目录保存其他技术栈的源码与构建输入，不建立第二套工具 ID。
 
 | 目录 | 内容 |
 | --- | --- |
-| artifacts | 资产台账、依赖审计、文件与图像检查、录像信息、解包和封装；共享文件身份与报告模块 |
-| recovery | 数值纹理、严格事件差分和显式项目解析器检查 |
-| unity | Editor 资源审计、包备份/恢复、Profiler 安装和 Spine 构建配置 |
+| unity/framework | Foundation、uGUI、Editor 包源码、稳定 meta 与包测试 |
+| unity/adapters | 可选程序集适配包 |
+| unity/templates | 按用途命名的计数装配与最小工程模板 |
+| unity/audit、unity/packages | Editor 审计和包安装辅助 C# |
+| unity/spine | Spine 运行时构建配置与许可；不附带 vendor |
 | dotnet | 托管程序集清理工具源码 |
-| shaders | Shader 分阶段编译与反射探针 |
-| wechat | 已授权离线包的解密、解包及 TextAsset 导出 |
+| artifacts | 保留的 JavaScript 静态文件构建辅助 |
 
-自带脚本与外部依赖分别判断。第三方接入说明集中在 [docs/providers](../docs/providers/)，许可与安装边界见 [THIRD_PARTY](../THIRD_PARTY.md)。工具测试统一在 [tests/tools](../tests/tools/)；维护脚本在 [scripts](../scripts/)。
+按任务选工具见 [工具目录](../TOOLS.md)，参数见 [工具说明](../docs/tools/制品与资源检查.md)，第三方接入见 [providers](../docs/providers/README.md)。脚本路径不是工具身份；正式调用使用已登记 ID。
