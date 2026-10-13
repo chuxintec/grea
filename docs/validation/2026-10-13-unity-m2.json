@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-13",
+  "milestone": "M2",
+  "status": "pass",
+  "scope": "Minimal source packages, isolated assembly sample and package-level native tests only",
+  "branch": "codex/unity-engineering-standard-v1",
+  "baseRevision": "642fe45",
+  "standardVersion": "1.0.0",
+  "productReleaseChanged": false,
+  "environment": {
+    "editor": "6000.6.2f1",
+    "os": "Darwin",
+    "architecture": "arm64",
+    "urp": "17.6.0",
+    "ugui": "2.6.0",
+    "testFramework": "1.8.0",
+    "mode": "batchmode nographics",
+    "renderPipelineConfigured": false,
+    "inputDeviceExecuted": false,
+    "playerExecuted": false,
+    "licensing": "CLI sandbox reported unavailable; unsandboxed Editor successfully executed with existing local license; no activation performed"
+  },
+  "packages": [
+    {
+      "name": "com.grea.editor",
+      "version": "0.1.0",
+      "files": 17,
+      "treeSha256": "345b797fb311b662bc75f52ff252358896e7ef8e659070ee8a7980b6a4873693",
+      "sourceFiles": {
+        "Editor/BindingValidator.cs": "7f8999f949804d76ec78acb9225a8bb05ddd2e3822cc4d878d3e9682923bab4c",
+        "Editor/BindingValidator.cs.meta": "66497884ec1a75f0eb6d3b1ca70db67784f246d8a9a3d9429de08d58843dbcbb",
+        "Editor/Grea.Editor.asmdef": "76f0a56bcc03da8f955655395d58e9f24656519880f966edb1f1bf41a871482e",
+        "Editor/Grea.Editor.asmdef.meta": "b2f909c2e45cce3ce7285157026349845c7892207c43f243c344dde571efc10c",
+        "Editor.meta": "38943c3c5161388342c199581064f25d238bba925f6aac8664f4686a8394cbad",
+        "LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+        "LICENSE.md.meta": "39c76aaf297d5b7c9741b6442afeef6623af4c0832c52784967fc006438b8fbe",
+        "README.md": "3ede2422ef1d8584cd86ce13d3026f44864c80f8446279f7a1ca804bb06f8392",
+        "README.md.meta": "eddd85ad7ea19878c7c71dc7cee109119d77df4764fbc1d926435e3f7c2ad0f7",
+        "Tests/Editor/BindingTests.cs": "bed26afe1681af1594b5da8d0f1b4d7844a3108be0072a71f0000dada71ab6d1",
+        "Tests/Editor/BindingTests.cs.meta": "1876fd110a014a8010bc4db76855053d8f3e9223eedcb6c575e7e1ed61cfc347",
+        "Tests/Editor/Grea.Editor.Tests.asmdef": "c9498e26f56a260631de60eee703cbcbeca1c1864dd5c6ca3d9a684d00a48957",
+        "Tests/Editor/Grea.Editor.Tests.asmdef.meta": "dd36a6fe379c2fb3c9488b392d5ff2806ce9c2a3191bd830ae976aa5be59eb21",
+        "Tests/Editor.meta": "c37c4d86594a2d820331f3ce78080563aad5ff6b349940eafe37108bb1d2a6d3",
+        "Tests.meta": "e1939122a3cb8f595d2cfc539a73c400b85c17a6e6f24aa95964e2be403eff15",
+        "package.json": "b11d2d41a032270e9b4d3a8ae471f6bac5ea3a27f3f0f39b897c833661cd67e0",
+        "package.json.meta": "88b6eda01113ec229496503e419bde29d62e0438b604dd35653b2886bb16f6a0"
+      }
+    },
+    {
+      "name": "com.grea.foundation",
+      "version": "0.1.0",
+      "files": 32,
+      "treeSha256": "01d5dbce3f5c619254f29a5c4dc69211ce74df157868d77d47358a0e92433d54",
+      "sourceFiles": {
+        "LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+        "LICENSE.md.meta": "0f5eadf1b560e948483800bf47edae52fcfe256619ed4d21e5329647a06f2bef",
+        "README.md": "8b64749d1cd5475054eab8024af0fd2401cf91c1f8fb1034631a8d671376e04c",
+        "README.md.meta": "55809760d5545191ae3633a443ca88976d62dce6380767ab458a903c92018641",
+        "Runtime/AssetCatalog.cs": "69044182c27a24558e68d6bb0203b8a84a04f8c3101ef07bf12c9e88e9766840",
+        "Runtime/AssetCatalog.cs.meta": "f5f1b6d82af86460d1fd9c42389d8d326e86486187974287836e6fa8d26b8831",
+        "Runtime/AudioPlayer.cs": "5e5a6e10d3737dd8167132a17dcace7157ae0834b57e6d209bb99d5fa5b8bf78",
+        "Runtime/AudioPlayer.cs.meta": "a65ae7904cf821868e6d983f5b55ac026dafa304825921b80ab05b6b6ec06a7d",
+        "Runtime/Contracts/DiagnosticBuffer.cs": "82a1087092d80513e438307a9ef739592a8a3ff7e16b2fa8fd76dd26948e7903",
+        "Runtime/Contracts/DiagnosticBuffer.cs.meta": "94cce8bc405cfe325a042ebb0b50fa6f8d50dec6e991ccde731145b6f5862b74",
+        "Runtime/Contracts/Grea.Foundation.Contracts.asmdef": "06c03101f53f4bd63a3fd20c0b9dc465beae5c646064874319aac4a8ba1dce00",
+        "Runtime/Contracts/Grea.Foundation.Contracts.asmdef.meta": "42056bf0976d9d93e66bf1382f1d2311474c17085d1b1dd7b30618794fd95730",
+        "Runtime/Contracts/LifetimeScope.cs": "e5966d2f2be814b0e25ee01fbc6e44306b8502a3f7889e3a67d224bd9ca29d4d",
+        "Runtime/Contracts/LifetimeScope.cs.meta": "4ff9522c319a231ecdc2d2fd3b3c0815ecddbec1f9de8d8426a61af4cd0bb9c8",
+        "Runtime/Contracts/ServiceScope.cs": "aeba81846a9253cc4004b9d9f61040b540324e6db243883c63720f2ec21c0456",
+        "Runtime/Contracts/ServiceScope.cs.meta": "230123bcd3a97fe9cfacd316b560e914be2e9d748eef5c8b8ffe0db3c0945f03",
+        "Runtime/Contracts.meta": "380d80618ad2a3b3106b5f4793e039bd1bb9d5f5ffbe74b8d2dd0dd4fb6a55ae",
+        "Runtime/FileSaveStore.cs": "79132f1d5e1de81d8b5092d814c0bdaf33d41d54a5e00804e082745ac8a1f5cc",
+        "Runtime/FileSaveStore.cs.meta": "6a6db4f3c64f5a5fd548e3bd18e81aeadb45d6b3d66a30acc92b79e99b99a844",
+        "Runtime/Grea.Foundation.Runtime.asmdef": "d9c41c4d57a02b0472d3253ff0591959a61fecad6537cb6f6e7ec4d98298fac7",
+        "Runtime/Grea.Foundation.Runtime.asmdef.meta": "4ea95ddddd60d9abe31cbe18b544fb38287b9b2715058806c34449924a68c57f",
+        "Runtime/IBindingCheck.cs": "d137a7691f8147b3dc984b29bd3fe88783f747a715a411e807b63af9bf4b39a2",
+        "Runtime/IBindingCheck.cs.meta": "1b3ba4b5c6106a792a27d89a75f947ff0aedaf78ff614206583651c2997d983e",
+        "Runtime.meta": "ca36adc7ac502a545568d8adf81bf2a07ec1b2ec3d8d809d96561a9e0a988fe6",
+        "Tests/Editor/FoundationTests.cs": "cef9c097ffdd70bebde1d330cc2beec211fcde9d7fd276083e978d5746694088",
+        "Tests/Editor/FoundationTests.cs.meta": "b17d6d54c18d653d68f2719f8dd8dd96eef814cde720d686b57a98b67a118cc7",
+        "Tests/Editor/Grea.Foundation.Tests.asmdef": "31ef05763134af04ac0e07ab713594bef6a9e27c1073ee725077b2f5b90163eb",
+        "Tests/Editor/Grea.Foundation.Tests.asmdef.meta": "704b99299591387916faa467c49c43721d26d40e6fcc8989463ffc73706b0abe",
+        "Tests/Editor.meta": "6589395938066cfcd99922e786644bdafe86ed31165096f403bfa69281cb7ff0",
+        "Tests.meta": "fd43fcc2f57318bdac9b13acf088cf07818b775c0c5948d466f543fd8385a900",
+        "package.json": "1bd094fc1c5b332dc9dcbba5ff18e9854aa5cfd001bdf71412de4a4adaba51e7",
+        "package.json.meta": "a4b01b9dac386cc13da5d928ae5f319bdbb46b049f4b1bb3bbf145188f001d3e"
+      }
+    },
+    {
+      "name": "com.grea.ui.ugui",
+      "version": "0.1.0",
+      "files": 26,
+      "treeSha256": "4dd612384dc604bf83ae75303a1619b1683ea09193fcfde6631a21557aea8611",
+      "sourceFiles": {
+        "LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+        "LICENSE.md.meta": "55ba1da8a70899e4d36a0a42f4478ba0f00176e4e278a64935b66885dbef4045",
+        "README.md": "d1dd3bbaaf1b4b659e21e58aad6afd04af6870acbda9e5d3f84c1468a3d8f3ba",
+        "README.md.meta": "d800919b67ff46dd9f8c3125d659bf4c458667e2ea927e1d7a2e5e6c79fe03c7",
+        "Runtime/CommandButton.cs": "a3e8cf612e9228ee4eb0ca50929f29dcff33bd8ab07a96c427a86bb2849223fe",
+        "Runtime/CommandButton.cs.meta": "3473e344f82c626ac7063dc8a46121d283ae61f65f96c23b8df7a3b3b7e0d2b0",
+        "Runtime/Grea.UI.UGUI.asmdef": "3ae14c17856ca0f990967808fdf4eeaa2efb5a3e6a49d41f242d458678285130",
+        "Runtime/Grea.UI.UGUI.asmdef.meta": "17b39eff6985e4c98afc1611ecbdbf6d79abb2bf3e46faad7821a304bdf45613",
+        "Runtime/ModalPanel.cs": "e02ab673c484eb305f7df905dc09bb05be127a4a0e54eadeffbf7dee55e66b0c",
+        "Runtime/ModalPanel.cs.meta": "1ac56b30313910e6bf72842f91347d1b86fcdb8c7e7349880989c5c1c9dca9c0",
+        "Runtime/ScreenHost.cs": "67a599afe44a6224e6a1e256487ef61e424ffeaa6fa995f8cd55cc836c0bcd68",
+        "Runtime/ScreenHost.cs.meta": "05f94ebe85fc24e690dc63356615e89e1259ca5c4438889adf91b1a8e3e738bb",
+        "Runtime.meta": "7e62c92944fdd7092d5acc8cf680f16ae1e391b79fc44beb84b595913f49865a",
+        "Tests/Editor/Grea.UI.EditorTests.asmdef": "d56f4a06b8cccdab00cd95e6bfdefc7f47227f061cf098ae6c9a7d380d530cad",
+        "Tests/Editor/Grea.UI.EditorTests.asmdef.meta": "464d9626a3bc9e9ea52fcc2eb81b37b151178a837665fbba84786e5bdfdca331",
+        "Tests/Editor/PlayReentryTests.cs": "2431b2f28253dd9264f8cade8cfba125343377d59363df989054c060ec799f71",
+        "Tests/Editor/PlayReentryTests.cs.meta": "d673c5196c5b2718e80de96a34fcdd9a0e97721a704d1932f1e7c84a70583c92",
+        "Tests/Editor.meta": "0bce0bce31e27c113c1cf691cc1a54e64dc6312a66c219055447ea7b7b0570eb",
+        "Tests/Runtime/Grea.UI.Tests.asmdef": "36f23f61780efda811fafb37fc2d46d21266d07c48aa9603dce65124450fef57",
+        "Tests/Runtime/Grea.UI.Tests.asmdef.meta": "bd3c3b0374574a809c0ee968683e11fedf2c7633f9bb9162da7437ac9741917e",
+        "Tests/Runtime/UiTests.cs": "32815bf47a91f081802919dcaa0975b9e5a10b59b2ed4bc432625456a7f6deee",
+        "Tests/Runtime/UiTests.cs.meta": "816ffcb69e09dcbdd88845a9fd57f8227e9ff0c1fb69196ab06f5aabc8efbcc7",
+        "Tests/Runtime.meta": "097018399ed25713841c02ee420d14d51265ab0cf059071cea2f04cfc3550ac6",
+        "Tests.meta": "c48a4cf4889ce7c835ce8601cd0ec256050c001384232706d8cf8b4c26c4b778",
+        "package.json": "cf23437eb59eab3f06f7f3a0c0dc35a1d239d5e7fcdc66ab98bf5c58abd0fc32",
+        "package.json.meta": "065df7c57a40ea177462621d5ebc8ab5924c75e8103ced54f6a92093ff2708d3"
+      }
+    }
+  ],
+  "assemblyCount": 14,
+  "dependencyLockSha256": "bbf0a45f81ba569d3507a607a2481656f23c58b78a94ba490b75957400739220",
+  "nativeTests": {
+    "cleanFullEditMode": {
+      "result": "pass",
+      "total": 18,
+      "passed": 18,
+      "skipped": 0,
+      "xmlSha256": "fdfc70f63747d0125e4cdc46e37572e7395a2f295c58c62c65e7c18b5b3033f1",
+      "tests": [
+        {
+          "name": "Game.Tests.CompositionTests.FailedPersistenceDoesNotCommitRuntimeState",
+          "result": "Passed"
+        },
+        {
+          "name": "Game.Tests.CompositionTests.SessionPauseExitAndNewSessionReloadState",
+          "result": "Passed"
+        },
+        {
+          "name": "Game.Tests.CompositionTests.UnknownDtoIsNotSilentlyReset",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.BindingTests.NoBindingComponentsIsValid",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.BindingTests.ReportsExactObjectComponentFieldWithoutChangingHierarchy",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.CatalogTypeMissingAndDestroyedAssetsFailWithoutLeaking",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.CleanupContinuesAfterFailure",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.CorruptSaveAndInterruptedWritePreserveOriginal",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.DiagnosticsAreBoundedAndCopied",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.DuplicateServiceRejected",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.FailedServiceCleansPartialAndSuccessfulServices",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.LeaseDoubleReturnAndChildCleanupDoNotAccumulate",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.LifetimeReleasesReverseAndInvalidatesBeforeCleanup",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.SaveRejectsNamespaceAndPayloadErrors",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.SaveReopenBackupAndQaIsolation",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.ServicesStartOnceAndStopReverse",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.StopWaitsForInitializerAndRejectsLateSuccess",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.PlayReentryTests.TwoRealPlayEntriesUnbindOnExitWithoutDomainOrSceneReload",
+          "result": "Passed"
+        }
+      ]
+    },
+    "cleanFullPlayMode": {
+      "result": "pass",
+      "total": 8,
+      "passed": 8,
+      "skipped": 0,
+      "xmlSha256": "c71bfe891b5f2eaa0605e9f5833682719ad1161cc9b07a94f1fe1aa9f3300f12",
+      "tests": [
+        {
+          "name": "Grea.Tests.UiTests.CommandFailureIsObservedAndButtonRecovers",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.UiTests.DisabledViewStopsRequestsAndAudioIsReleasedOnScopeExit",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.UiTests.MissingBindingFailsBeforeListening",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.UiTests.ModalReopensAndRestoresFocusWithoutOldTasksOrListeners",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.UiTests.PanelInvalidBindingAndHostInvalidTargetAreExplicit",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.UiTests.ParentExitCancelsPendingCommandAndRejectsLateUpdate",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.UiTests.RebindAndRapidClickRunOnceAndLateCompletionCannotTouchNewBinding",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.UiTests.ScreenHostReplacesAndClosesActivePanel",
+          "result": "Passed"
+        }
+      ]
+    },
+    "packagesWithoutGameEditMode": {
+      "result": "pass",
+      "total": 15,
+      "passed": 15,
+      "skipped": 0,
+      "xmlSha256": "1edf38ba3d55301546b1151f69043996fe72d44d68e95864762ff2ef3ebcb89b",
+      "tests": [
+        {
+          "name": "Grea.Tests.BindingTests.NoBindingComponentsIsValid",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.BindingTests.ReportsExactObjectComponentFieldWithoutChangingHierarchy",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.CatalogTypeMissingAndDestroyedAssetsFailWithoutLeaking",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.CleanupContinuesAfterFailure",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.CorruptSaveAndInterruptedWritePreserveOriginal",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.DiagnosticsAreBoundedAndCopied",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.DuplicateServiceRejected",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.FailedServiceCleansPartialAndSuccessfulServices",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.LeaseDoubleReturnAndChildCleanupDoNotAccumulate",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.LifetimeReleasesReverseAndInvalidatesBeforeCleanup",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.SaveRejectsNamespaceAndPayloadErrors",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.SaveReopenBackupAndQaIsolation",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.ServicesStartOnceAndStopReverse",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.FoundationTests.StopWaitsForInitializerAndRejectsLateSuccess",
+          "result": "Passed"
+        },
+        {
+          "name": "Grea.Tests.PlayReentryTests.TwoRealPlayEntriesUnbindOnExitWithoutDomainOrSceneReload",
+          "result": "Passed"
+        }
+      ]
+    }
+  },
+  "integrity": {
+    "isolatedFullSourceAndMetaFiles": 107,
+    "sourceOrMetaDrift": [],
+    "dependencyLockUnchanged": true,
+    "metaOrigin": "Generated by Unity import, copied back once and preserved on clean reimport",
+    "externalPackagePaths": false,
+    "newProjectReusedLibrary": false,
+    "officialUpmDownloadCacheMayBeReused": true,
+    "existingGamesModified": false
+  },
+  "pythonTests": {
+    "status": "pass",
+    "total": 121,
+    "passed": 119,
+    "skipped": 2,
+    "newM2Tests": 6,
+    "skipReasons": [
+      "Existing optional ffmpeg/ffprobe integration",
+      "Existing optional real NSIS integration"
+    ],
+    "logSha256": "29eda2fb88d65ab62a5633d8e7774e6e91afe5f4d911d1e4cd780c05027e7d13"
+  },
+  "gates": {
+    "M2": "pass",
+    "A0": "pass_for_package_assembly_and_distribution_checks",
+    "A1": "not_run",
+    "A2": "pass_for_package_compile_and_binding_unit_tests_only",
+    "A3": "pass_for_component_tests_only",
+    "A4": "not_run",
+    "A5": "not_run"
+  },
+  "reentry": {
+    "realPlayEntries": 2,
+    "domainReload": false,
+    "sceneReload": false,
+    "settingsRestored": true
+  },
+  "dependencyBackup": {
+    "archives": 6,
+    "missing": 0,
+    "catalogSha256": "d1a1c5c59628d8ed7d23ae59c4c242e2724f3d48178c1dbae040a80d780a2e80",
+    "distribution": "private_only",
+    "restoreDocumentation": "tools/unity/packages/README.md",
+    "officialRegistryRestorePlan": "hash-verified plan prepared for 3 registry packages; restore execution not run"
+  },
+  "compatibility": {
+    "publicOperationsChanged": false,
+    "registryToolIdsChanged": false,
+    "m1FrameworkResolution": "not_implemented",
+    "m1MessageClarified": true,
+    "generator": "not_implemented"
+  },
+  "notVerified": [
+    "Prefab generation and asset ownership/rollback",
+    "URP visual output",
+    "physical pointer/keyboard/touch input",
+    "audible audio output",
+    "target Player build and close/reopen",
+    "real power loss and concurrent save writers",
+    "legacy save migration",
+    "other platforms or IL2CPP",
+    "two distinct game pilots",
+    "offline or clean-machine dependency restore"
+  ],
+  "rawEvidence": "Retained locally under ignored .private/unity-m2; public report includes only sanitized test names and fingerprints",
+  "maintenance": {
+    "generatedContracts": "pass_no_drift",
+    "skillChecker": "pass",
+    "skillSync": "pass",
+    "localMarkdownLinks": {
+      "files": 55,
+      "links": 284,
+      "broken": 0
+    },
+    "publicTreeAudit": {
+      "status": "pass",
+      "scope": "Git index bytes",
+      "findings": 0
+    }
+  }
+}

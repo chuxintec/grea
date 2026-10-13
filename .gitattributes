@@ -7,3 +7,5 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.cmd text eol=crlf
+# Preserve Unity-imported meta bytes, including spaces after empty YAML values.
+*.meta text eol=lf whitespace=-blank-at-eol

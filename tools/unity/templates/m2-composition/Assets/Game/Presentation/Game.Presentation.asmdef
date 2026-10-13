@@ -1,0 +1,11 @@
+{
+  "name": "Game.Presentation",
+  "references": [
+    "Game.Gameplay",
+    "Grea.Foundation.Contracts",
+    "Grea.UI.UGUI"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

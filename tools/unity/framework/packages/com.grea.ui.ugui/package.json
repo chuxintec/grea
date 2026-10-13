@@ -1,0 +1,12 @@
+{
+  "name": "com.grea.ui.ugui",
+  "version": "0.1.0",
+  "displayName": "com.grea.ui.ugui",
+  "description": "Grea M2 minimal framework candidate; see package documentation for validation boundaries.",
+  "unity": "6000.6",
+  "license": "MIT",
+  "dependencies": {
+    "com.grea.foundation": "0.1.0",
+    "com.unity.ugui": "2.6.0"
+  }
+}

@@ -16,7 +16,7 @@ from .unity_project_contracts import (
 
 LIMITATIONS = [
     'Static filesystem observations only; no Editor, package restore, imports, code execution or project writes.',
-    'Plans are design-only: framework packages, asset generation and transactional apply are not implemented.',
+    'Plans are design-only: framework package resolution, asset generation and transactional apply are not implemented.',
     'GUID text and assembly references do not prove fileID bindings, dynamic loading, compilation or gameplay parity.',
     'Editor, PlayMode, Player and existing-game behavior acceptance remain not_run.',
     'Exceptions are recorded but do not suppress findings in M1.',
@@ -326,7 +326,7 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
     if not known:
         finding('UNSUPPORTED_COMBINATION', profile, 'This combination is not in the M1 static reference matrix; it will not be substituted.', 'GEN-01')
     if p['frameworkPackages']:
-        finding('FRAMEWORK_NOT_IMPLEMENTED', profile, 'No grea Unity framework package is implemented or supplied by M1.', 'CMP-01')
+        finding('FRAMEWORK_NOT_IMPLEMENTED', profile, 'M1 does not resolve or install framework packages; M2 package tests are separate evidence.', 'CMP-01')
     if mode != 'new':
         for value in p['scenes'].values():
             rel = at(value)

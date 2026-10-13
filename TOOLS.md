@@ -28,6 +28,8 @@
 
 `validate_unity_project` / `plan_unity_project` 已提供 M1 配置、依赖和显式程序集检查与只读设计计划。用法见 [M1 说明](docs/12-Unity项目配置与只读规划.md)；不启动 Editor，不写目标，不提供工程生成或运行验收。
 
+[M2 最小框架包](docs/13-Unity最小框架与包.md) 提供 Foundation/uGUI/Editor C# 源码与包测试；使用独立隔离测试入口，不新增 registry 工具 ID，不改变上述静态操作的运行证据。
+
 ## 工具存在于哪里
 
 - 公开 grea 子目录：通用源码、脚本、适配入口及说明。第三方程序、运行时和包备份可在本机保留，但不随 Git 分发，见 [依赖说明](THIRD_PARTY.md)。

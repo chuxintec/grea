@@ -1,0 +1,11 @@
+{
+  "name": "Grea.Editor",
+  "references": [
+    "Grea.Foundation.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

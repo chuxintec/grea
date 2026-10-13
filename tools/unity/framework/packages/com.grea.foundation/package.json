@@ -1,0 +1,11 @@
+{
+  "name": "com.grea.foundation",
+  "version": "0.1.0",
+  "displayName": "com.grea.foundation",
+  "description": "Grea M2 minimal framework candidate; see package documentation for validation boundaries.",
+  "unity": "6000.6",
+  "license": "MIT",
+  "dependencies": {
+    "com.unity.modules.audio": "1.0.0"
+  }
+}

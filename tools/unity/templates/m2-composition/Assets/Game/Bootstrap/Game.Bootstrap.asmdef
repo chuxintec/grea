@@ -1,0 +1,14 @@
+{
+  "name": "Game.Bootstrap",
+  "references": [
+    "Game.Domain",
+    "Game.Gameplay",
+    "Game.Services",
+    "Game.Presentation",
+    "Grea.Foundation.Contracts",
+    "Grea.UI.UGUI"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

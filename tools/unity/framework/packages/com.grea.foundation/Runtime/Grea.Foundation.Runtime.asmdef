@@ -1,0 +1,9 @@
+{
+  "name": "Grea.Foundation.Runtime",
+  "references": [
+    "Grea.Foundation.Contracts"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

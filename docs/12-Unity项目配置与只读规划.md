@@ -22,7 +22,7 @@ Schema 与矩阵的源定义在 `src/grea/unity_project_contracts.py`，经 `con
 
 首个参考组合：Unity `6000.6.2f1`、URP `17.6.0`、uGUI `2.6.0`、legacy input、Catalog、macOS arm64/Mono。编辑器和内置包版本来自 2026-10-13 的本机只读元数据核对；macOS 模块目录存在。**没有打开 Editor、验证许可或运行 Player**。矩阵仅把静态规划标为支持；Editor、PlayMode、Player 为 not_run，generation 为 not_implemented。
 
-`grea-minimal-2d / 0.1.0-design` 是设计配方标识，尚无可执行模板或框架包。未知模板、其它组合、声明尚未实现的框架包会产生发现，不自动换成默认组合。M1 仅核对固定 registry/built-in 风格的包版本与锁；Git/local/file 等依赖来源尚不解析，也不读取它们指向的工程外目录。
+`grea-minimal-2d / 0.1.0-design` 是设计配方标识，尚无可执行生成模板。[M2 框架包](13-Unity最小框架与包.md) 已独立提供源码与组件测试，但 M1 不解析/安装框架包；填写 frameworkPackages 仍会返回 `FRAMEWORK_NOT_IMPLEMENTED`。未知模板、其它组合也会产生发现，不自动换成默认组合。M1 仅核对固定 registry/built-in 风格的包版本与锁；embedded/Git/local/file 等依赖来源尚不解析，也不读取它们指向的工程外目录。
 
 ## 2. 调用
 

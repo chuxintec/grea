@@ -1,0 +1,11 @@
+{
+  "name": "Game.Services",
+  "references": [
+    "Game.Domain",
+    "Game.Gameplay",
+    "Grea.Foundation.Contracts"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": false,
+  "noEngineReferences": true
+}

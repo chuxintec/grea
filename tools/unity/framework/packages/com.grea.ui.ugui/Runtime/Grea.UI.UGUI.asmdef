@@ -1,0 +1,11 @@
+{
+  "name": "Grea.UI.UGUI",
+  "references": [
+    "Grea.Foundation.Contracts",
+    "Grea.Foundation.Runtime",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}
