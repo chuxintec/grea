@@ -61,6 +61,13 @@ jobs:
           path: dist/release/*
           if-no-files-found: error
           retention-days: 14
+      - name: Download staged CI assets for readback
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-${{ github.sha }}
+          path: dist/roundtrip
+      - name: Verify transferred assets
+        run: .venv/bin/python scripts/release.py verify --tag "$RELEASE_TAG" --out dist/roundtrip
   publish:
     if: github.event_name == 'push'
     needs: build
