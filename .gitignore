@@ -31,8 +31,9 @@ node_modules/
 /memory/
 /projects/
 
-# Private recovery material and host-local third-party installations.
+# Local dependencies, backups, private adapters and migration receipts.
 /.private/
+# Legacy exclusions also protect unmigrated private checkouts.
 /dotnet-runtime/
 /unity-assets/
 /il2cpp-dotnet/Cpp2IL/

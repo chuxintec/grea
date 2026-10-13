@@ -1,4 +1,4 @@
 #!/bin/sh
 set -eu
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-exec "$root/python-runtime/.venv/bin/python" "$root/wechat-mini-program/decrypt_webgl_xxtea.py" "$@"
+exec "$root/.private/runtimes/python/.venv/bin/python" "$root/.private/adapters/wechat/decrypt_webgl_xxtea.py" "$@"

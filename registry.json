@@ -42,7 +42,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
+        "{grea}/.private/providers/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
       ]
     },
     {
@@ -80,7 +80,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/il2cpp-dotnet/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
+        "{grea}/.private/providers/il2cpp/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
       ]
     },
     {
@@ -118,7 +118,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/il2cpp-dotnet/ILSpy/ilspycmd"
+        "{grea}/.private/providers/il2cpp/ILSpy/ilspycmd"
       ]
     },
     {
@@ -457,7 +457,7 @@
     {
       "id": "frida",
       "probe": [
-        "{grea}/frida/.venv/bin/python",
+        "{grea}/.private/providers/frida/.venv/bin/python",
         "-c",
         "import frida;print(frida.__version__)"
       ],
@@ -469,7 +469,7 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{grea}/frida/.venv/bin/frida"
+          "{grea}/.private/providers/frida/.venv/bin/frida"
         ],
         "finding_exit_codes": []
       },
@@ -490,13 +490,13 @@
     {
       "id": "unitypy",
       "probe": [
-        "{grea}/python-runtime/.venv/bin/python",
+        "{grea}/.private/runtimes/python/.venv/bin/python",
         "-c",
         "import UnityPy,cryptography; print(UnityPy.__version__,cryptography.__version__)"
       ],
       "check_level": "launch/version",
       "formats": "see upstream help",
-      "usage": "{grea}/python-runtime/.venv/bin/python -c import UnityPy,cryptography; print(UnityPy.__version__,cryptography.__version__)",
+      "usage": "{grea}/.private/runtimes/python/.venv/bin/python -c import UnityPy,cryptography; print(UnityPy.__version__,cryptography.__version__)",
       "side_effects": "version probe only; no device attachment",
       "output_schema": "upstream version text",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
@@ -518,7 +518,7 @@
     {
       "id": "spine38",
       "files": [
-        "{grea}/unity-runtimes/Spine38/vendor/core/Animation.cs"
+        "{grea}/.private/providers/spine/Spine38/vendor/core/Animation.cs"
       ],
       "check_level": "presence-only",
       "formats": "source/runtime or native analysis",
@@ -546,7 +546,7 @@
     {
       "id": "spine41",
       "files": [
-        "{grea}/unity-runtimes/Spine41/vendor/core/Animation.cs"
+        "{grea}/.private/providers/spine/Spine41/vendor/core/Animation.cs"
       ],
       "check_level": "presence-only",
       "formats": "source/runtime or native analysis",
@@ -631,7 +631,7 @@
     {
       "id": "il2cppdumper",
       "files": [
-        "{grea}/il2cpp-dotnet/Il2CppDumper/Il2CppDumper/bin/Release/net8.0/Il2CppDumper.dll"
+        "{grea}/.private/providers/il2cpp/Il2CppDumper/Il2CppDumper/bin/Release/net8.0/Il2CppDumper.dll"
       ],
       "check_level": "presence-only",
       "formats": "source/runtime or native analysis",
@@ -1144,8 +1144,8 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/il2cpp-dotnet/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
-        "{grea}/dotnet-runtime/10/dotnet"
+        "{grea}/.private/providers/il2cpp/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
+        "{grea}/.private/runtimes/dotnet/10/dotnet"
       ]
     },
     {
@@ -1427,7 +1427,7 @@
         "remediation": "Bundled Darwin legacy emulator cannot run on Windows; install an official Windows emulator and separately verify ARM32 compatibility. Do not substitute silently."
       },
       "required_files": [
-        "{grea}/android-emulator-legacy/android-9.0.0_r1/emulator"
+        "{grea}/.private/providers/android-emulator/android-9.0.0_r1/emulator"
       ]
     },
     {
@@ -1543,8 +1543,8 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/wechat-mini-program/export_all_bundle_assets.py",
-        "{grea}/python-runtime/.venv/bin/python"
+        "{grea}/.private/adapters/wechat/export_all_bundle_assets.py",
+        "{grea}/.private/runtimes/python/.venv/bin/python"
       ],
       "distribution": "local-only project adapter; implementation excluded from public source"
     },
@@ -1578,7 +1578,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/python-runtime/.venv/bin/python"
+        "{grea}/.private/runtimes/python/.venv/bin/python"
       ]
     },
     {
@@ -1611,8 +1611,8 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/wechat-mini-program/decrypt_webgl_xxtea.py",
-        "{grea}/python-runtime/.venv/bin/python"
+        "{grea}/.private/adapters/wechat/decrypt_webgl_xxtea.py",
+        "{grea}/.private/runtimes/python/.venv/bin/python"
       ],
       "distribution": "local-only project adapter; implementation excluded from public source"
     },
@@ -1646,7 +1646,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/python-runtime/.venv/bin/python"
+        "{grea}/.private/runtimes/python/.venv/bin/python"
       ]
     },
     {
@@ -1679,7 +1679,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/5-工具整合与跨平台.md."
       },
       "required_files": [
-        "{grea}/python-runtime/.venv/bin/python"
+        "{grea}/.private/runtimes/python/.venv/bin/python"
       ]
     },
     {

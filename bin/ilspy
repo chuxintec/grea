@@ -2,4 +2,4 @@
 set -eu
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 export DOTNET_ROOT="${DOTNET_ROOT:-$(brew --prefix dotnet@8)/libexec}"
-exec "$root/il2cpp-dotnet/ILSpy/ilspycmd" "$@"
+exec "$root/.private/providers/il2cpp/ILSpy/ilspycmd" "$@"

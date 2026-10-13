@@ -7,7 +7,7 @@
 ## 生成新备份
 
 ```sh
-python3 tools/unity/packages/package_backup.py snapshot --project /path/UnityProject --output /path/grea/unity-packages/snapshots/new-date
+python3 tools/unity/packages/package_backup.py snapshot --project /path/UnityProject --output /path/grea/.private/backups/unity-packages/snapshots/new-date
 ```
 
 以项目真实Unity根为输入；检查Packages/lock及Library/PackageCache/embedded packages。逐文件SHA-256验证归档后写目录；catalog已存在拒绝覆盖。snapshot只读取项目，不执行包内代码。

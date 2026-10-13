@@ -10,4 +10,4 @@ Compatibility: core grants InternalsVisibleTo(spine-unity), matching upstream sh
 
 公开仓库仅保留构建配置与原许可文本，`vendor/` 源码及编译产物不分发。自行取得上述固定提交，按构建文件所列路径准备 core/unity（适用时 timeline）源码。既有本机兼容调整不随 vendor 分发；更换 Unity 版本后须独立检查 API 兼容性，不保证直接构建通过。
 
-构建配置位于本目录。使用 `-p:SpineVendorRoot=/absolute/spine/vendor` 指定第三方源码目录；未设置时兼容仓库根下原有的本机 `unity-runtimes/Spine38/vendor`，该目录不随 Git 分发。
+构建配置位于本目录。使用 `-p:SpineVendorRoot=/absolute/spine/vendor` 指定第三方源码目录；未设置时使用仓库根下的本机 `.private/providers/spine/Spine38/vendor`，该目录不随 Git 分发。

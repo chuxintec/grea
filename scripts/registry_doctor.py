@@ -24,7 +24,7 @@ def main(argv=None):
     if args.verify_frida_pair and report['result'] is not None:
         readme=(ROOT/'docs/providers/1-Frida.md').read_text()
         version=re.search(r'with `frida` ([\d.]+)',readme)
-        archive=ROOT/'frida'/f'frida-server-{version[1] if version else "missing"}-android-arm64.xz'
+        archive=ROOT/'.private/providers/frida'/f'frida-server-{version[1] if version else "missing"}-android-arm64.xz'
         client=next((x for x in report['result']['checks'] if x['tool_id']=='frida'),{})
         matched=bool(version and archive.is_file() and version[1] in client.get('output','') and hashlib.sha256(archive.read_bytes()).hexdigest() in readme)
         report['result']['frida_pair']={'matched':matched,'server_executed':False}

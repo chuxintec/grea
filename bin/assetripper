@@ -1,4 +1,4 @@
 #!/bin/sh
 set -eu
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-exec "$root/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free" "$@"
+exec "$root/.private/providers/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free" "$@"
