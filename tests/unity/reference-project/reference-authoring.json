@@ -1,0 +1,29 @@
+{
+    "version": "1.0.0",
+    "files": [
+        {
+            "path": "Assets/Reference/Content/ReferenceView.prefab",
+            "sha256": "2939995b19fa0383b58ed29cb39e00958461fd5e50ee96e2085862aff3e82b9e"
+        },
+        {
+            "path": "Assets/Reference/Content/ReferenceView.prefab.meta",
+            "sha256": "9d745aca3f97bcdbabf9dd743459ab89c24b3b9966f8a4b7cf27c9c4c8b0e699"
+        },
+        {
+            "path": "Assets/Reference/Content/ReferenceConfig.asset",
+            "sha256": "4d2e6d0fa0acad781f3fe32256699615c5383358c2b0207a9c9e408cc509d610"
+        },
+        {
+            "path": "Assets/Reference/Content/ReferenceConfig.asset.meta",
+            "sha256": "3479e9eb315f1bbddc915a410197262b614db94e5a6ee2ae888892d689b34c69"
+        },
+        {
+            "path": "Assets/Reference/Scenes/Reference.unity",
+            "sha256": "2906e317666fb6df18ebeb667287593fa4ca081e895abbed6e1746920b52ce49"
+        },
+        {
+            "path": "Assets/Reference/Scenes/Reference.unity.meta",
+            "sha256": "383c23c616dfc4b5c787f269e487c968b8d5614b6a1399fd940e04fee3130a3e"
+        }
+    ]
+}

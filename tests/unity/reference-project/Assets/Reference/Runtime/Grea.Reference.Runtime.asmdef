@@ -1,0 +1,13 @@
+{
+  "name": "Grea.Reference.Runtime",
+  "references": [
+    "Grea.Reference.Domain",
+    "Grea.Foundation.Contracts",
+    "Grea.Foundation.Runtime",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI"
+  ],
+  "noEngineReferences": false,
+  "includePlatforms": [],
+  "autoReferenced": false
+}

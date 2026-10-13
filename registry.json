@@ -1984,6 +1984,41 @@
       "limitations": [
         "Create-only M3 recipe; no existing-game refactor or Player acceptance."
       ]
+    },
+    {
+      "id": "unity_reference",
+      "probe": [
+        "{python}",
+        "{grea}/scripts/unity_reference.py",
+        "--help"
+      ],
+      "check_level": "help-only",
+      "usage": "Prepare/archive/verify/restore the M4 reference source; see docs/15-Unity参考游戏与Player验收.md.",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/scripts/unity_reference.py"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "filesystem_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux",
+          "Windows"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Python archive integrity checks; native Unity reference acceptance only on macOS arm64."
+      },
+      "limitations": [
+        "Source distribution only; Unity restore/build/test is an explicit separate operation."
+      ]
     }
   ],
   "product": "grea",

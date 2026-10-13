@@ -9,3 +9,7 @@
 *.cmd text eol=crlf
 # Preserve Unity-imported meta bytes, including spaces after empty YAML values.
 *.meta text eol=lf whitespace=-blank-at-eol
+# Preserve Editor-serialized reference assets instead of hand-normalizing YAML.
+tests/unity/reference-project/**/*.prefab text eol=lf whitespace=-blank-at-eol
+tests/unity/reference-project/**/*.unity text eol=lf whitespace=-blank-at-eol
+tests/unity/reference-project/**/*.asset text eol=lf whitespace=-blank-at-eol

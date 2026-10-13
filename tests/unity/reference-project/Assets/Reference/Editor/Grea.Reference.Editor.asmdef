@@ -1,0 +1,13 @@
+{
+  "name": "Grea.Reference.Editor",
+  "references": [
+    "Grea.Reference.Runtime",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI"
+  ],
+  "noEngineReferences": false,
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}

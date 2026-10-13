@@ -52,3 +52,7 @@ host_support 表示登记的平台条件，不表示已原生实测；Windows �
 ## Unity M3 生成与恢复
 
 `plan_unity_generation` 只读规划/盘点；`generate_unity_project` 仅生成新工程或校验自己的生成清单；`recover_unity_generation` 核验并续作明确的中断记录。写入操作运行 Unity 并生成缓存，不能当成 M1 的只读工具。参见 [M3 使用说明](docs/14-Unity生成器与通用Prefab.md)。
+
+## Unity M4 参考分发
+
+`unity_reference` 提供固定参考源码的 prepare/archive/verify/restore，内嵌自有包、校验锁和 SHA-256；不启动 Unity。独立恢复、测试与 Player 实玩证据见 [M4 说明](docs/15-Unity参考游戏与Player验收.md)。参考游戏通过不改变任意项目的 M1 静态报告。

@@ -35,7 +35,7 @@ Scene/Prefab/ScriptableObject 都通过 AssetDatabase、PrefabUtility、EditorSc
 
 URP 还会通过自身 Editor 逻辑创建根级 DefaultVolumeProfile 和 UniversalRenderPipelineGlobalSettings；这两项按实际输出登记为 generated，保留其默认路径，不冒称所有 Engine 默认资产已归入 GreaGenerated。
 
-这是有源码和配置的最小生成工程，按钮只演示弹窗生命周期，Counter 示例尚未装配成完整玩法。没有正式画面、字体主题、Toast 内容、复杂列表或生产存档迁移；M4 才负责完整闭环和 Player。按钮外观只使用 Unity 原生 Image，无外部素材。
+这是有源码和配置的最小生成工程，按钮只演示弹窗生命周期，Counter 示例尚未装配成完整玩法。没有正式画面、字体主题、Toast 内容、复杂列表或生产存档迁移；完整闭环和 Player 已由独立的 [M4 参考工程](15-Unity参考游戏与Player验收.md) 验收，不能把其结果外推到每个 M3 生成工程。按钮外观只使用 Unity 原生 Image，无外部素材。
 
 ## 执行、重复生成与冲突
 

@@ -125,5 +125,16 @@ REFERENCE = {
 
 def capability_matrix():
     return {'schemaVersion': 1, 'standardVersion': STANDARD_VERSION, 'plannerVersion': PLANNER_VERSION,
-            'scope': 'Static profile validation and design-only plans; no Unity runtime support claim.',
-            'combinations': [deepcopy(REFERENCE)]}
+            'scope': 'M1 combinations describe static planning only. Named reference game evidence is scoped separately and never applied to arbitrary projects.',
+            'combinations': [deepcopy(REFERENCE)],
+            'referenceGames': [{
+                'id': 'signal-garden', 'version': '1.0.0',
+                'editor': '6000.6.2f1', 'urp': '17.6.0', 'ugui': '2.6.0',
+                'testFramework': '1.8.0', 'frameworkPackages': '0.2.0',
+                'template': {'id': 'grea-minimal-2d', 'version': '0.1.0'},
+                'target': 'macOS', 'architecture': 'arm64', 'backend': 'Mono',
+                'managedStripping': 'Medium', 'input': 'legacy',
+                'evidence': 'docs/validation/2026-10-13-unity-m4.json',
+                'gates': {'A0': 'pass', 'A1': 'pass', 'A2': 'pass', 'A3': 'pass', 'A4': 'pass', 'A5': 'not_run'},
+                'scope': 'Self-authored reference only; human Player input and scoped output evidence. No original-game parity, offline restore or other platform/backend claim.'
+            }]}

@@ -1,0 +1,9 @@
+{
+  "name": "Grea.Reference.Domain",
+  "references": [
+    "Grea.Foundation.Contracts"
+  ],
+  "noEngineReferences": true,
+  "includePlatforms": [],
+  "autoReferenced": false
+}

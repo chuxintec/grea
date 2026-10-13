@@ -1,0 +1,629 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-13",
+  "milestone": "M4",
+  "status": "pass",
+  "scope": "Signal Garden reference game 1.0.0 only; no existing games",
+  "baseRevision": "650eb4882a40c1d99c92750f331b2d63630f52d0",
+  "branch": "codex/unity-engineering-standard-v1",
+  "standardVersion": "1.0.0",
+  "template": {
+    "id": "grea-minimal-2d",
+    "version": "0.1.0"
+  },
+  "generatorVersion": "0.1.0",
+  "frameworkLock": {
+    "schemaVersion": 1,
+    "packages": {
+      "com.grea.editor": {
+        "version": "0.2.0",
+        "treeSha256": "1481a8652c6177fd72fad11891c56143799764597ec82d00554c1571cfe8f8cb"
+      },
+      "com.grea.foundation": {
+        "version": "0.2.0",
+        "treeSha256": "afe4bb0eaa960166226626b739bf5fff1d94a5416c8d353d759945b6ce33f255"
+      },
+      "com.grea.ui.ugui": {
+        "version": "0.2.0",
+        "treeSha256": "a4dadc6bf86c2bb2b8b0d36fb6772bb7f1c22cb97fc134a3038c0608dbd7ec5e"
+      }
+    }
+  },
+  "environment": {
+    "editor": "6000.6.2f1",
+    "unityCli": "1.0.0-beta.8",
+    "host": "macOS arm64",
+    "target": "StandaloneOSX",
+    "architecture": "arm64",
+    "backend": "Mono",
+    "managedStripping": "Medium",
+    "urp": "17.6.0",
+    "ugui": "2.6.0",
+    "testFramework": "1.8.0",
+    "input": "legacy"
+  },
+  "source": {
+    "referenceFiles": {
+      "Assets/DefaultVolumeProfile.asset": "c7e8964367521cbfeaf58275c82ecf453bb466e8cd560c1d1a93e744a03cd090",
+      "Assets/DefaultVolumeProfile.asset.meta": "0f67a5e130030bbb36cd9ae29b9ace0eb721faf0430b77a8722ee3b48fc0ece5",
+      "Assets/GreaGenerated.meta": "999413ad66f13b7c4d14d00d51c1fdade4333274d117f7eb34703b4fd7c0d7cc",
+      "Assets/GreaGenerated/ButtonShell.prefab": "c2531a53bc998e570c2cae38628bcc390e7894237eedf15762225523ff122e1b",
+      "Assets/GreaGenerated/ButtonShell.prefab.meta": "09125d50c914bde132fb3d7f45a42d763f941a7cb1d0cc17959590e9cbcdf769",
+      "Assets/GreaGenerated/ModalShell.prefab": "305e0abdac6c08259e05684adf0f4b9922c0eb13a6eae72ba372ead7774aad43",
+      "Assets/GreaGenerated/ModalShell.prefab.meta": "43d2fe26ad8456f27a987ed1575a94aa03304cc35008716d6d4492b7d756c3cd",
+      "Assets/GreaGenerated/Pipeline.asset": "4b8290384caf815457b7326b890ad24531317f91a6b14d5535a35b24ce7e4eba",
+      "Assets/GreaGenerated/Pipeline.asset.meta": "daa3264e8d81b6c2f1ded7d7785d9f6227faeba1bc7dffac078c0ecaf33d29e0",
+      "Assets/GreaGenerated/Renderer.asset": "2af40cc6bac1e6307abb453218ad75d928d095b68f31cfcd4c5c29ec4b770e19",
+      "Assets/GreaGenerated/Renderer.asset.meta": "e05cdc0880ebffb64926b46b0222713cae0297a7bea7d8f8d1f42c36ceb4ca4b",
+      "Assets/GreaGenerated/UIHost.prefab": "93cdef531223b18a15761707aaeb3a8db3148a6c42347425849765a7b8f28599",
+      "Assets/GreaGenerated/UIHost.prefab.meta": "3113c7783a4a70f4a85abd665fa39f8a789cbba7bef97e72b7052418a43a3053",
+      "Assets/Reference.meta": "1700e86cf5ea4dbecd0bf05f21205a94ba83264ba0b716ef04ff4b24de26df64",
+      "Assets/Reference/Content.meta": "ea914da6ce522d398d9cd096739fb0bcfb365a1dff0bd058113204ed74cf5086",
+      "Assets/Reference/Content/ReferenceConfig.asset": "4d2e6d0fa0acad781f3fe32256699615c5383358c2b0207a9c9e408cc509d610",
+      "Assets/Reference/Content/ReferenceConfig.asset.meta": "3479e9eb315f1bbddc915a410197262b614db94e5a6ee2ae888892d689b34c69",
+      "Assets/Reference/Content/ReferenceView.prefab": "2939995b19fa0383b58ed29cb39e00958461fd5e50ee96e2085862aff3e82b9e",
+      "Assets/Reference/Content/ReferenceView.prefab.meta": "9d745aca3f97bcdbabf9dd743459ab89c24b3b9966f8a4b7cf27c9c4c8b0e699",
+      "Assets/Reference/Domain.meta": "4de639fc668668906f0de1668e9a7d34d24c583ddeef5fb8087ae4536d8aa41b",
+      "Assets/Reference/Domain/Grea.Reference.Domain.asmdef": "c10937eba2877b14a7e9a76295743526a70b5f4b2e8d8698e165e2ab7a705a48",
+      "Assets/Reference/Domain/Grea.Reference.Domain.asmdef.meta": "a3dfc7e2ffb4835cb7a012bfcaa938e21ce77959338d6020d6dfb54f3d29f87f",
+      "Assets/Reference/Domain/SignalSession.cs": "d8e5ac4e3b185f8ab3f52bbc1ee8a3733be1c573d0121f976ab7c7a293f8d317",
+      "Assets/Reference/Domain/SignalSession.cs.meta": "be44bb86a3fbca5d2e854c47be137c457f5c3f6127d22af7183880c5c7ab30c5",
+      "Assets/Reference/Editor.meta": "08ecbd274790babc532800fdb1c0f0d81c1583be7900f01941419053600bc1ce",
+      "Assets/Reference/Editor/Grea.Reference.Editor.asmdef": "d2cd3cf935f79e978d8673fbb6ccbea4e2cd3997a13e9e2a58fe0e2fecbde9e4",
+      "Assets/Reference/Editor/Grea.Reference.Editor.asmdef.meta": "d9450fedf48082bfbea14c5ea28b86f8b03ebb9933736c7e554ae67048ff712f",
+      "Assets/Reference/Editor/ReferenceBuilder.cs": "f09b9eefd15b0ffc7319f872ba28ca4ddabbe4967d305a5cb84419aebbcd42a0",
+      "Assets/Reference/Editor/ReferenceBuilder.cs.meta": "f6ffdcc92f72a69ab675ac565e8c6ac60506d6849c747bd4d800fbb950217341",
+      "Assets/Reference/Runtime.meta": "e70ed98ac16dc032b3fdc11f02807f1156f10cef72a4bd8853cf84b31ebce7da",
+      "Assets/Reference/Runtime/Grea.Reference.Runtime.asmdef": "beeaae6accd8d9ff79844145ffb5b6fab5a5afc08b007b022e8bb0ef77ad80eb",
+      "Assets/Reference/Runtime/Grea.Reference.Runtime.asmdef.meta": "3e3d96363c75afc3098f621c0d985d7359c2ad409b15fa42a45b7d86fbbdaa51",
+      "Assets/Reference/Runtime/ReferenceApp.cs": "6627d77c995b98a3a9099e74aa71082a58f48c717cba3f01a73dc449d5a3e265",
+      "Assets/Reference/Runtime/ReferenceApp.cs.meta": "9c51092dfe1595a38aa4de8ad4b8fc69efb8ecff8630cd5bb01518d3a23f4ee3",
+      "Assets/Reference/Runtime/ReferenceConfig.cs": "e0cf367ff432b5c1b6759d7a47ca3a1e883901892679fd59747895d6017910e4",
+      "Assets/Reference/Runtime/ReferenceConfig.cs.meta": "32ac5b53289ea31fe5ecd872896a64cbdb32d029abb9d39e213fe5bc4e92260b",
+      "Assets/Reference/Runtime/ReferenceTrace.cs": "7392dd3a318161eb292982483c8ead2a17c7946a22dfd4abb6deaf9db04e609b",
+      "Assets/Reference/Runtime/ReferenceTrace.cs.meta": "5343a81c1cf8d95471d18d04de155dcc335d411b674bc43689a15a87042a3078",
+      "Assets/Reference/Runtime/ReferenceView.cs": "b7ef8cb0e8d95eec97a1ca1ddae1825b659cb8068c75bf6b801c131783b051e9",
+      "Assets/Reference/Runtime/ReferenceView.cs.meta": "03bed40407f5e3c18f775444025c9d571d948730e406b009eba560d737214a49",
+      "Assets/Reference/Scenes.meta": "62cc2b42da001b267bfa47ba59ba68a55966e15ca1d15e49ebe72ac0b3ad6c68",
+      "Assets/Reference/Scenes/Reference.unity": "2906e317666fb6df18ebeb667287593fa4ca081e895abbed6e1746920b52ce49",
+      "Assets/Reference/Scenes/Reference.unity.meta": "383c23c616dfc4b5c787f269e487c968b8d5614b6a1399fd940e04fee3130a3e",
+      "Assets/Reference/Tests.meta": "3d5d05a3c861860aff04b2984c09f9168b32dadfa93cc37f9b806b6606c074dd",
+      "Assets/Reference/Tests/Editor.meta": "12964b7d4ec99d8611b1ae1fe8689d2876eafa095c28d82abde0267725534edb",
+      "Assets/Reference/Tests/Editor/Grea.Reference.EditTests.asmdef": "0873597ab0b24ad3483b15c7a30d2b46eb2a6ff75b490452a5b435d4fc11d17e",
+      "Assets/Reference/Tests/Editor/Grea.Reference.EditTests.asmdef.meta": "c8cfde00b42cc48410163c05907930060adecbc136d4f84f8d5cb77fa8434352",
+      "Assets/Reference/Tests/Editor/SignalSessionTests.cs": "a72e0cf25be20746cc8a205061119ba58490b6e7ae25279cafffb5cbd5a836a5",
+      "Assets/Reference/Tests/Editor/SignalSessionTests.cs.meta": "475be7ce9e401ccb793b00712dd4327ed963d0f47871e2ef2b579f3b8e97cb5a",
+      "Assets/Reference/Tests/Runtime.meta": "1d6538902554475b28936dbdf2e52bd1ebd275eafb1323fc92129f31afad5707",
+      "Assets/Reference/Tests/Runtime/Grea.Reference.PlayTests.asmdef": "9dda5c7b7c7e3b9be18cf9cadb9518bfda88d507d08c442c3a084eb31ecec4d1",
+      "Assets/Reference/Tests/Runtime/Grea.Reference.PlayTests.asmdef.meta": "d3b7fbc3bb30df1f2babf9c26301b6e8d6e024b29af9c5cdd2218e0b42e57c24",
+      "Assets/Reference/Tests/Runtime/ReferenceLoopTests.cs": "bdba0e31c962db9f2472e531da12fc3751a98bcd6d2036b4a484d9db75454d31",
+      "Assets/Reference/Tests/Runtime/ReferenceLoopTests.cs.meta": "8a543a402209b8fae713f7f50487934d88dc3c3881ab9f7114a44ff6d2c16889",
+      "Assets/UniversalRenderPipelineGlobalSettings.asset": "7cc2ed15d9bd472607388431639ef1fcb4729cb8c1f34a748e47b563fce1196e",
+      "Assets/UniversalRenderPipelineGlobalSettings.asset.meta": "2c3effdbba08e0ffc3b8b781ceeca531fa68622b6f517c0627343d884d6c5d30",
+      "Packages/com.grea.editor/Editor.meta": "38943c3c5161388342c199581064f25d238bba925f6aac8664f4686a8394cbad",
+      "Packages/com.grea.editor/Editor/BindingValidator.cs": "7f8999f949804d76ec78acb9225a8bb05ddd2e3822cc4d878d3e9682923bab4c",
+      "Packages/com.grea.editor/Editor/BindingValidator.cs.meta": "66497884ec1a75f0eb6d3b1ca70db67784f246d8a9a3d9429de08d58843dbcbb",
+      "Packages/com.grea.editor/Editor/Grea.Editor.asmdef": "98b93529fa9f3aed65d28d44891c8b4c243353bedba5ce3063afba4e842df977",
+      "Packages/com.grea.editor/Editor/Grea.Editor.asmdef.meta": "b2f909c2e45cce3ce7285157026349845c7892207c43f243c344dde571efc10c",
+      "Packages/com.grea.editor/Editor/ProjectGenerator.cs": "5f2c86d60d3abd16dae9c0b5d7a0047353f5be9b544708fbc5b7ac888450e174",
+      "Packages/com.grea.editor/Editor/ProjectGenerator.cs.meta": "7c50d6760b4c46b5d2078d860b9074f8ce8fb82e90afbd1b3e559b0648a3753c",
+      "Packages/com.grea.editor/LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+      "Packages/com.grea.editor/LICENSE.md.meta": "39c76aaf297d5b7c9741b6442afeef6623af4c0832c52784967fc006438b8fbe",
+      "Packages/com.grea.editor/README.md": "2e419d71b3cb3fa2e2e0a1c20a554766ee1a614bc5928cab72060bdb35e69ffc",
+      "Packages/com.grea.editor/README.md.meta": "eddd85ad7ea19878c7c71dc7cee109119d77df4764fbc1d926435e3f7c2ad0f7",
+      "Packages/com.grea.editor/Tests.meta": "e1939122a3cb8f595d2cfc539a73c400b85c17a6e6f24aa95964e2be403eff15",
+      "Packages/com.grea.editor/Tests/Editor.meta": "c37c4d86594a2d820331f3ce78080563aad5ff6b349940eafe37108bb1d2a6d3",
+      "Packages/com.grea.editor/Tests/Editor/BindingTests.cs": "bed26afe1681af1594b5da8d0f1b4d7844a3108be0072a71f0000dada71ab6d1",
+      "Packages/com.grea.editor/Tests/Editor/BindingTests.cs.meta": "1876fd110a014a8010bc4db76855053d8f3e9223eedcb6c575e7e1ed61cfc347",
+      "Packages/com.grea.editor/Tests/Editor/Grea.Editor.Tests.asmdef": "c9498e26f56a260631de60eee703cbcbeca1c1864dd5c6ca3d9a684d00a48957",
+      "Packages/com.grea.editor/Tests/Editor/Grea.Editor.Tests.asmdef.meta": "dd36a6fe379c2fb3c9488b392d5ff2806ce9c2a3191bd830ae976aa5be59eb21",
+      "Packages/com.grea.editor/package.json": "7e8c83823952e9a19c916324c8ff3408d2a9b34a41ebcb26c323386f163a17c9",
+      "Packages/com.grea.editor/package.json.meta": "88b6eda01113ec229496503e419bde29d62e0438b604dd35653b2886bb16f6a0",
+      "Packages/com.grea.foundation/LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+      "Packages/com.grea.foundation/LICENSE.md.meta": "0f5eadf1b560e948483800bf47edae52fcfe256619ed4d21e5329647a06f2bef",
+      "Packages/com.grea.foundation/README.md": "6b3b083cf304f4e28f11145e2ce1b1ab52064e3810faf30d5532eaad0f088ff4",
+      "Packages/com.grea.foundation/README.md.meta": "55809760d5545191ae3633a443ca88976d62dce6380767ab458a903c92018641",
+      "Packages/com.grea.foundation/Runtime.meta": "ca36adc7ac502a545568d8adf81bf2a07ec1b2ec3d8d809d96561a9e0a988fe6",
+      "Packages/com.grea.foundation/Runtime/AssetCatalog.cs": "69044182c27a24558e68d6bb0203b8a84a04f8c3101ef07bf12c9e88e9766840",
+      "Packages/com.grea.foundation/Runtime/AssetCatalog.cs.meta": "f5f1b6d82af86460d1fd9c42389d8d326e86486187974287836e6fa8d26b8831",
+      "Packages/com.grea.foundation/Runtime/AudioPlayer.cs": "5e5a6e10d3737dd8167132a17dcace7157ae0834b57e6d209bb99d5fa5b8bf78",
+      "Packages/com.grea.foundation/Runtime/AudioPlayer.cs.meta": "a65ae7904cf821868e6d983f5b55ac026dafa304825921b80ab05b6b6ec06a7d",
+      "Packages/com.grea.foundation/Runtime/BootstrapConfig.cs": "e711ff91b8b856fd007be8a6b8076d2e88e7c4a6623239138882997763691368",
+      "Packages/com.grea.foundation/Runtime/BootstrapConfig.cs.meta": "da5fbe88e4f79a79befa97b4f804c5c4d3d58a486b65c111790f4813166aed5a",
+      "Packages/com.grea.foundation/Runtime/Contracts.meta": "380d80618ad2a3b3106b5f4793e039bd1bb9d5f5ffbe74b8d2dd0dd4fb6a55ae",
+      "Packages/com.grea.foundation/Runtime/Contracts/DiagnosticBuffer.cs": "82a1087092d80513e438307a9ef739592a8a3ff7e16b2fa8fd76dd26948e7903",
+      "Packages/com.grea.foundation/Runtime/Contracts/DiagnosticBuffer.cs.meta": "94cce8bc405cfe325a042ebb0b50fa6f8d50dec6e991ccde731145b6f5862b74",
+      "Packages/com.grea.foundation/Runtime/Contracts/Grea.Foundation.Contracts.asmdef": "06c03101f53f4bd63a3fd20c0b9dc465beae5c646064874319aac4a8ba1dce00",
+      "Packages/com.grea.foundation/Runtime/Contracts/Grea.Foundation.Contracts.asmdef.meta": "42056bf0976d9d93e66bf1382f1d2311474c17085d1b1dd7b30618794fd95730",
+      "Packages/com.grea.foundation/Runtime/Contracts/LifetimeScope.cs": "e5966d2f2be814b0e25ee01fbc6e44306b8502a3f7889e3a67d224bd9ca29d4d",
+      "Packages/com.grea.foundation/Runtime/Contracts/LifetimeScope.cs.meta": "4ff9522c319a231ecdc2d2fd3b3c0815ecddbec1f9de8d8426a61af4cd0bb9c8",
+      "Packages/com.grea.foundation/Runtime/Contracts/ServiceScope.cs": "aeba81846a9253cc4004b9d9f61040b540324e6db243883c63720f2ec21c0456",
+      "Packages/com.grea.foundation/Runtime/Contracts/ServiceScope.cs.meta": "230123bcd3a97fe9cfacd316b560e914be2e9d748eef5c8b8ffe0db3c0945f03",
+      "Packages/com.grea.foundation/Runtime/FileSaveStore.cs": "79132f1d5e1de81d8b5092d814c0bdaf33d41d54a5e00804e082745ac8a1f5cc",
+      "Packages/com.grea.foundation/Runtime/FileSaveStore.cs.meta": "6a6db4f3c64f5a5fd548e3bd18e81aeadb45d6b3d66a30acc92b79e99b99a844",
+      "Packages/com.grea.foundation/Runtime/Grea.Foundation.Runtime.asmdef": "d9c41c4d57a02b0472d3253ff0591959a61fecad6537cb6f6e7ec4d98298fac7",
+      "Packages/com.grea.foundation/Runtime/Grea.Foundation.Runtime.asmdef.meta": "4ea95ddddd60d9abe31cbe18b544fb38287b9b2715058806c34449924a68c57f",
+      "Packages/com.grea.foundation/Runtime/IBindingCheck.cs": "d137a7691f8147b3dc984b29bd3fe88783f747a715a411e807b63af9bf4b39a2",
+      "Packages/com.grea.foundation/Runtime/IBindingCheck.cs.meta": "1b3ba4b5c6106a792a27d89a75f947ff0aedaf78ff614206583651c2997d983e",
+      "Packages/com.grea.foundation/Tests.meta": "fd43fcc2f57318bdac9b13acf088cf07818b775c0c5948d466f543fd8385a900",
+      "Packages/com.grea.foundation/Tests/Editor.meta": "6589395938066cfcd99922e786644bdafe86ed31165096f403bfa69281cb7ff0",
+      "Packages/com.grea.foundation/Tests/Editor/FoundationTests.cs": "cef9c097ffdd70bebde1d330cc2beec211fcde9d7fd276083e978d5746694088",
+      "Packages/com.grea.foundation/Tests/Editor/FoundationTests.cs.meta": "b17d6d54c18d653d68f2719f8dd8dd96eef814cde720d686b57a98b67a118cc7",
+      "Packages/com.grea.foundation/Tests/Editor/Grea.Foundation.Tests.asmdef": "31ef05763134af04ac0e07ab713594bef6a9e27c1073ee725077b2f5b90163eb",
+      "Packages/com.grea.foundation/Tests/Editor/Grea.Foundation.Tests.asmdef.meta": "704b99299591387916faa467c49c43721d26d40e6fcc8989463ffc73706b0abe",
+      "Packages/com.grea.foundation/package.json": "510362647df18319d33268f481dc4c74df23384a1872fd6d85ac6cd3d0d674b9",
+      "Packages/com.grea.foundation/package.json.meta": "a4b01b9dac386cc13da5d928ae5f319bdbb46b049f4b1bb3bbf145188f001d3e",
+      "Packages/com.grea.ui.ugui/LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+      "Packages/com.grea.ui.ugui/LICENSE.md.meta": "55ba1da8a70899e4d36a0a42f4478ba0f00176e4e278a64935b66885dbef4045",
+      "Packages/com.grea.ui.ugui/README.md": "6124c91d4f9af13ae25be1c5062ce6a30d4ed18935bbdde3df5af93f60cc9a90",
+      "Packages/com.grea.ui.ugui/README.md.meta": "d800919b67ff46dd9f8c3125d659bf4c458667e2ea927e1d7a2e5e6c79fe03c7",
+      "Packages/com.grea.ui.ugui/Runtime.meta": "7e62c92944fdd7092d5acc8cf680f16ae1e391b79fc44beb84b595913f49865a",
+      "Packages/com.grea.ui.ugui/Runtime/CommandButton.cs": "a3e8cf612e9228ee4eb0ca50929f29dcff33bd8ab07a96c427a86bb2849223fe",
+      "Packages/com.grea.ui.ugui/Runtime/CommandButton.cs.meta": "3473e344f82c626ac7063dc8a46121d283ae61f65f96c23b8df7a3b3b7e0d2b0",
+      "Packages/com.grea.ui.ugui/Runtime/Grea.UI.UGUI.asmdef": "3ae14c17856ca0f990967808fdf4eeaa2efb5a3e6a49d41f242d458678285130",
+      "Packages/com.grea.ui.ugui/Runtime/Grea.UI.UGUI.asmdef.meta": "17b39eff6985e4c98afc1611ecbdbf6d79abb2bf3e46faad7821a304bdf45613",
+      "Packages/com.grea.ui.ugui/Runtime/ModalPanel.cs": "e02ab673c484eb305f7df905dc09bb05be127a4a0e54eadeffbf7dee55e66b0c",
+      "Packages/com.grea.ui.ugui/Runtime/ModalPanel.cs.meta": "1ac56b30313910e6bf72842f91347d1b86fcdb8c7e7349880989c5c1c9dca9c0",
+      "Packages/com.grea.ui.ugui/Runtime/ScreenHost.cs": "67a599afe44a6224e6a1e256487ef61e424ffeaa6fa995f8cd55cc836c0bcd68",
+      "Packages/com.grea.ui.ugui/Runtime/ScreenHost.cs.meta": "05f94ebe85fc24e690dc63356615e89e1259ca5c4438889adf91b1a8e3e738bb",
+      "Packages/com.grea.ui.ugui/Runtime/UIHost.cs": "0a905e9b3609c81d9ba7a9f916e29f65fc7d0e90fbd4ef99ed18c9c2d8d6f4da",
+      "Packages/com.grea.ui.ugui/Runtime/UIHost.cs.meta": "605f3bda64dec1aa745d79c19b19636c37800ef14927fe7b6664d7f42fcd625c",
+      "Packages/com.grea.ui.ugui/Tests.meta": "c48a4cf4889ce7c835ce8601cd0ec256050c001384232706d8cf8b4c26c4b778",
+      "Packages/com.grea.ui.ugui/Tests/Editor.meta": "0bce0bce31e27c113c1cf691cc1a54e64dc6312a66c219055447ea7b7b0570eb",
+      "Packages/com.grea.ui.ugui/Tests/Editor/Grea.UI.EditorTests.asmdef": "d56f4a06b8cccdab00cd95e6bfdefc7f47227f061cf098ae6c9a7d380d530cad",
+      "Packages/com.grea.ui.ugui/Tests/Editor/Grea.UI.EditorTests.asmdef.meta": "464d9626a3bc9e9ea52fcc2eb81b37b151178a837665fbba84786e5bdfdca331",
+      "Packages/com.grea.ui.ugui/Tests/Editor/PlayReentryTests.cs": "2431b2f28253dd9264f8cade8cfba125343377d59363df989054c060ec799f71",
+      "Packages/com.grea.ui.ugui/Tests/Editor/PlayReentryTests.cs.meta": "d673c5196c5b2718e80de96a34fcdd9a0e97721a704d1932f1e7c84a70583c92",
+      "Packages/com.grea.ui.ugui/Tests/Runtime.meta": "097018399ed25713841c02ee420d14d51265ab0cf059071cea2f04cfc3550ac6",
+      "Packages/com.grea.ui.ugui/Tests/Runtime/Grea.UI.Tests.asmdef": "36f23f61780efda811fafb37fc2d46d21266d07c48aa9603dce65124450fef57",
+      "Packages/com.grea.ui.ugui/Tests/Runtime/Grea.UI.Tests.asmdef.meta": "bd3c3b0374574a809c0ee968683e11fedf2c7633f9bb9162da7437ac9741917e",
+      "Packages/com.grea.ui.ugui/Tests/Runtime/UiTests.cs": "32815bf47a91f081802919dcaa0975b9e5a10b59b2ed4bc432625456a7f6deee",
+      "Packages/com.grea.ui.ugui/Tests/Runtime/UiTests.cs.meta": "816ffcb69e09dcbdd88845a9fd57f8227e9ff0c1fb69196ab06f5aabc8efbcc7",
+      "Packages/com.grea.ui.ugui/package.json": "ea91dff910f44f6c0f9e56ddb5bfe20abe8d6cf4bf44cb5dbb6c574d7fc9d913",
+      "Packages/com.grea.ui.ugui/package.json.meta": "065df7c57a40ea177462621d5ebc8ab5924c75e8103ced54f6a92093ff2708d3",
+      "Packages/manifest.json": "29a35915871222a1b938b07d97a9599f4498dabbb4b0908e189ed90662e1d245",
+      "Packages/packages-lock.json": "268eefb4003f13e9acdbaf3d0cbde3741a08d866d5d07cc89f9dc60c4ebddec0",
+      "ProjectSettings/AudioManager.asset": "9543c41dbfc7d3951217c4dd9481ed026eb8e529b85ecf4463969a0fea747729",
+      "ProjectSettings/ClusterInputManager.asset": "40e65dd214bf254955d2c8829ca8ce2130fd3510485560ce012e9a1ddd93e623",
+      "ProjectSettings/DynamicsManager.asset": "785919ec02924b9125bd572087d9e3ceb1844b1cceb3ff6144c1c1f56cd79047",
+      "ProjectSettings/EditorBuildSettings.asset": "fd4065b113ad224e0b350c98baddb1f22a5d43309cbc1a73f451519085115acf",
+      "ProjectSettings/EditorSettings.asset": "9ec69aa9706b50c1104067e9347ce1ec23d8f9ad0ea996ea1eeb64c5d01d41f8",
+      "ProjectSettings/GraphicsSettings.asset": "293ff9e346783db5d25fe9b4ab11e0765a1bcc8d04d758fc88c251fc878d90f2",
+      "ProjectSettings/InputManager.asset": "d0f454ddb880912abcae92e3e12957a7446786ba89e24937e019ff3bbc0d4300",
+      "ProjectSettings/MemorySettings.asset": "25fb3fdd1ce94347ccdcf23d5d5e446055ca81d8b3756a7df85d614645a71ac4",
+      "ProjectSettings/MultiplayerManager.asset": "aba89fd1a1ddad182727ad82727e536d27372e90328a8196da2a4560398983dd",
+      "ProjectSettings/NavMeshAreas.asset": "7ebbf8f53b8033104e1878b95ca07a28d0954092d81c220f14196a42f651e658",
+      "ProjectSettings/Physics2DSettings.asset": "7280037ac908e26d4519825446c92c80a8520308016b171522760b535aadcbc0",
+      "ProjectSettings/PhysicsCoreProjectSettings2D.asset": "bedc5339a832c60dc3f11b84abc4f4384dbfa20b0cd9ad6c444b907e751fc35e",
+      "ProjectSettings/PresetManager.asset": "29c125923fe6e29f90190d4fce1c82d660e7051546e2c9d02908d18c9cf2436c",
+      "ProjectSettings/ProjectAuditorSettings.asset": "9e68444b9bda981e2927a98df9edf69ea88362f0c6b7f3c81b39b9d515d2a416",
+      "ProjectSettings/ProjectSettings.asset": "254d101d20a8acf25d5a882a84268fc5dc94994da311de3454cd4b03ebf58afe",
+      "ProjectSettings/ProjectVersion.txt": "783f2de974f75156071dec6bb0c52e1004fd919a5078f7f84c75a936d3d787c0",
+      "ProjectSettings/QualitySettings.asset": "f1f893b1be47ad2442f58338dd7c860dc1986bb317e2f5bb31084454ffabbf4c",
+      "ProjectSettings/SceneTemplateSettings.json": "bb9098b3bfcde78d93e264b96f7b77b5430e64e8c57a7aad7f5a5d9c3945e16a",
+      "ProjectSettings/ShaderGraphSettings.asset": "6fead5a816c4eed70f224d5472340ecf1ea0b4de4f87d5926bb17fa10ffb3dc9",
+      "ProjectSettings/TagManager.asset": "996628fdc904025b83606bbfbda4fe08c0bbe916475146110e77cdc2f22c2013",
+      "ProjectSettings/TimeManager.asset": "3396f52fdc16d445024e01d7a2d99db6f0a37569d1d73c0302e9ffb857d90287",
+      "ProjectSettings/UnityConnectSettings.asset": "bfd9b4ad7ba0f6044f0957cd427df1d8e49dcf9453fdfc35dac74c64bbffa8f3",
+      "ProjectSettings/VFXManager.asset": "d2937fe93ff49c2ce60f888056b70ebc0a1df7dd5e22dab3fa41678c2a3f3858",
+      "ProjectSettings/VersionControlSettings.asset": "e199cdfa6a8f2bf33cfd47e549198f13e3eb2a5099e908fdb4e0f14d939ccc6b"
+    },
+    "distributionScriptSha256": "31652e554c97ca59f85383b60b68b5ceb9cfee99f369ffbda7f4e8896974711c",
+    "profileSha256": "af99a0760ae3db8dfd2815d1533d5ea535c46a34d2ddb24ec0203f63adb88e0c",
+    "dirtyBuild": true,
+    "canonicalAndStagedBytesMatchArchive": true,
+    "sourceIdentityNote": "Build executed before M4 commit. Final source Assets/ProjectSettings matched build inputs; framework lock checked. Parent HEAD alone is not the new source identity."
+  },
+  "python": {
+    "total": 144,
+    "passed": 142,
+    "skipped": 2,
+    "newM4Tests": 7,
+    "logSha256": "08854a89dd2e7cd2fe0b38fd3f8c91b82a691d28f5d6cea4e0bb259c144619ec",
+    "skipReasons": [
+      "Existing optional ffmpeg/ffprobe integration",
+      "Existing optional NSIS integration"
+    ]
+  },
+  "native": {
+    "editMode": {
+      "status": "pass",
+      "total": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "xmlSha256": "547a3f333d669127f9d21e90a9fd8a68c077442cfa44197840f52b7f518086d6",
+      "tests": [
+        "Grea.Tests.BindingTests.NoBindingComponentsIsValid",
+        "Grea.Tests.BindingTests.ReportsExactObjectComponentFieldWithoutChangingHierarchy",
+        "Grea.Tests.FoundationTests.CatalogTypeMissingAndDestroyedAssetsFailWithoutLeaking",
+        "Grea.Tests.FoundationTests.CleanupContinuesAfterFailure",
+        "Grea.Tests.FoundationTests.CorruptSaveAndInterruptedWritePreserveOriginal",
+        "Grea.Tests.FoundationTests.DiagnosticsAreBoundedAndCopied",
+        "Grea.Tests.FoundationTests.DuplicateServiceRejected",
+        "Grea.Tests.FoundationTests.FailedServiceCleansPartialAndSuccessfulServices",
+        "Grea.Tests.FoundationTests.LeaseDoubleReturnAndChildCleanupDoNotAccumulate",
+        "Grea.Tests.FoundationTests.LifetimeReleasesReverseAndInvalidatesBeforeCleanup",
+        "Grea.Tests.FoundationTests.SaveRejectsNamespaceAndPayloadErrors",
+        "Grea.Tests.FoundationTests.SaveReopenBackupAndQaIsolation",
+        "Grea.Tests.FoundationTests.ServicesStartOnceAndStopReverse",
+        "Grea.Tests.FoundationTests.StopWaitsForInitializerAndRejectsLateSuccess",
+        "Grea.Reference.Tests.SignalSessionTests.CompletePauseReturnReenterAndReload",
+        "Grea.Reference.Tests.SignalSessionTests.FailedFinalSaveDoesNotAwardWinOrAdvanceScore",
+        "Grea.Reference.Tests.SignalSessionTests.InvalidConfigurationIsExplicit",
+        "Grea.Reference.Tests.SignalSessionTests.InvalidSaveIsNeverReplaced(\"bad\")",
+        "Grea.Reference.Tests.SignalSessionTests.InvalidSaveIsNeverReplaced(\"signal:2:8\")",
+        "Grea.Reference.Tests.SignalSessionTests.InvalidSaveIsNeverReplaced(\"signal:1:-1\")",
+        "Grea.Tests.PlayReentryTests.TwoRealPlayEntriesUnbindOnExitWithoutDomainOrSceneReload"
+      ]
+    },
+    "playMode": {
+      "status": "pass",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "xmlSha256": "380c45a232d6f4d8cff6e63fd2f21c4c725ca5bf5d027811906c6653d5696edd",
+      "tests": [
+        "Grea.Reference.Tests.ReferenceLoopTests.ExitAndPauseCancelLateCollection",
+        "Grea.Reference.Tests.ReferenceLoopTests.FullLoopIncludingRepeatedGameAndPause",
+        "Grea.Reference.Tests.ReferenceLoopTests.InitializationFailureCleansAndDoesNotCreateImplicitDefaults",
+        "Grea.Reference.Tests.ReferenceLoopTests.RepeatedUiEntryDoesNotDuplicateClickHandlers",
+        "Grea.Reference.Tests.ReferenceLoopTests.VisibleStartButtonReceivesRaycastAndPointerClick",
+        "Grea.Tests.UiTests.CommandFailureIsObservedAndButtonRecovers",
+        "Grea.Tests.UiTests.DisabledViewStopsRequestsAndAudioIsReleasedOnScopeExit",
+        "Grea.Tests.UiTests.MissingBindingFailsBeforeListening",
+        "Grea.Tests.UiTests.ModalReopensAndRestoresFocusWithoutOldTasksOrListeners",
+        "Grea.Tests.UiTests.PanelInvalidBindingAndHostInvalidTargetAreExplicit",
+        "Grea.Tests.UiTests.ParentExitCancelsPendingCommandAndRejectsLateUpdate",
+        "Grea.Tests.UiTests.RebindAndRapidClickRunOnceAndLateCompletionCannotTouchNewBinding",
+        "Grea.Tests.UiTests.ScreenHostReplacesAndClosesActivePanel"
+      ]
+    }
+  },
+  "generation": {
+    "m3Base": "generated",
+    "m3Repeat": "unchanged",
+    "referenceAuthorRepeat": {
+      "files": 56,
+      "identical": true,
+      "beforeSha256": "c350e0e5aba5f6ae4cda581a596a9416f8b551ffd074d2b3b0aacc5f88540971",
+      "afterSha256": "c350e0e5aba5f6ae4cda581a596a9416f8b551ffd074d2b3b0aacc5f88540971"
+    },
+    "crossPathRestore": "170 archive entries verified in new directories including spaces and Unicode",
+    "existingAssetConflict": "Author rejects changed recorded asset/meta; no field merge or upgrade"
+  },
+  "distribution": {
+    "source": {
+      "file": "grea-signal-garden-1.0.0-source.zip",
+      "sha256": "1386704d60b08752195cdf93e709b00e251116e45c8abd0dec887d92faef1522",
+      "bytes": 135200,
+      "entries": 170,
+      "selfContainedOwnPackages": true,
+      "includesUnityPackageSnapshots": false,
+      "includesLibrary": false
+    },
+    "player": {
+      "file": "grea-signal-garden-1.0.0-macos-arm64.zip",
+      "sha256": "98253d194bf81887ae274d0a8dd5a55d832605838f9cc59647b3d85402326513",
+      "bytes": 20754349,
+      "restoredFilesAndModesVerified": 132,
+      "officialNoticeFiles": 17,
+      "compiledInputFilesCompared": 80,
+      "build": {
+        "result": "Succeeded",
+        "buildId": "5101cecfdbae42c0a09f0c8c263e39ef",
+        "editor": "6000.6.2f1",
+        "architecture": "arm64",
+        "backend": "Mono",
+        "bytes": 54091015
+      },
+      "managedAssemblyCount": 68,
+      "testOrEditorAssemblies": []
+    },
+    "offlineCleanMachine": "not_run",
+    "developerIdNotarization": "not_run"
+  },
+  "playerAcceptance": {
+    "status": "pass",
+    "inputMethod": "Human mouse input, engine pointer/raycast and gameplay trace; agent observed menus and closed final run via OS menu. Synthetic coordinate attempts did not count as passed input.",
+    "humanFeedback": [
+      "顺畅",
+      "正常"
+    ],
+    "diagnosticRun": {
+      "sha256": "08d47783ec41a6c7833fcaa30cac0ca89033e43ecf6b530367134779ca6bbcc0",
+      "buildId": "5e178ce100574631b3b3851b0436af12",
+      "events": {
+        "ready": 1,
+        "pointer_down": 16,
+        "pointer_up": 15,
+        "begin": 1,
+        "collect": 5,
+        "audio_signal": 5,
+        "pause": 1,
+        "resume": 1,
+        "complete": 1,
+        "menu": 1,
+        "quit_requested": 1,
+        "shutdown": 1
+      },
+      "states": [
+        {
+          "eventId": "ready",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 0
+        },
+        {
+          "eventId": "begin",
+          "phase": "Playing",
+          "score": 0,
+          "wins": 0
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 1,
+          "wins": 0
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 2,
+          "wins": 0
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 3,
+          "wins": 0
+        },
+        {
+          "eventId": "pause",
+          "phase": "Paused",
+          "score": 3,
+          "wins": 0
+        },
+        {
+          "eventId": "resume",
+          "phase": "Playing",
+          "score": 3,
+          "wins": 0
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 4,
+          "wins": 0
+        },
+        {
+          "eventId": "collect",
+          "phase": "Complete",
+          "score": 5,
+          "wins": 1
+        },
+        {
+          "eventId": "complete",
+          "phase": "Complete",
+          "score": 5,
+          "wins": 1
+        },
+        {
+          "eventId": "menu",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 1
+        },
+        {
+          "eventId": "quit_requested",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 1
+        },
+        {
+          "eventId": "shutdown",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 1
+        }
+      ],
+      "pointerTargets": [
+        "Menu",
+        "Pause",
+        "Quit",
+        "Resume",
+        "Signal",
+        "Start"
+      ],
+      "maxAudioRms": 0.06548874080181122
+    },
+    "finalRestoredPlayer": {
+      "sha256": "7a4c75bc75ff017c2f98270e420af0562764219468603b4ca24fa52d1c37b1eb",
+      "buildId": "5101cecfdbae42c0a09f0c8c263e39ef",
+      "events": {
+        "ready": 1,
+        "pointer_down": 11,
+        "begin": 2,
+        "pointer_up": 11,
+        "collect": 6,
+        "audio_signal": 6,
+        "complete": 1,
+        "pause": 1,
+        "menu": 1,
+        "quit_requested": 1,
+        "shutdown": 1
+      },
+      "states": [
+        {
+          "eventId": "ready",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 1
+        },
+        {
+          "eventId": "begin",
+          "phase": "Playing",
+          "score": 0,
+          "wins": 1
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 1,
+          "wins": 1
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 2,
+          "wins": 1
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 3,
+          "wins": 1
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 4,
+          "wins": 1
+        },
+        {
+          "eventId": "collect",
+          "phase": "Complete",
+          "score": 5,
+          "wins": 2
+        },
+        {
+          "eventId": "complete",
+          "phase": "Complete",
+          "score": 5,
+          "wins": 2
+        },
+        {
+          "eventId": "begin",
+          "phase": "Playing",
+          "score": 0,
+          "wins": 2
+        },
+        {
+          "eventId": "collect",
+          "phase": "Playing",
+          "score": 1,
+          "wins": 2
+        },
+        {
+          "eventId": "pause",
+          "phase": "Paused",
+          "score": 1,
+          "wins": 2
+        },
+        {
+          "eventId": "menu",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 2
+        },
+        {
+          "eventId": "quit_requested",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 2
+        },
+        {
+          "eventId": "shutdown",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 2
+        }
+      ],
+      "pointerTargets": [
+        "Again",
+        "Leave",
+        "Pause",
+        "Quit",
+        "Signal",
+        "Start"
+      ],
+      "maxAudioRms": 0.06548874080181122
+    },
+    "finalReopen": {
+      "sha256": "944c3a7f1794e9b5492fea682d798c8263d5b70d611c5c7f223f895cdbed943d",
+      "buildId": "5101cecfdbae42c0a09f0c8c263e39ef",
+      "events": {
+        "ready": 1,
+        "shutdown": 1
+      },
+      "states": [
+        {
+          "eventId": "ready",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 2
+        },
+        {
+          "eventId": "shutdown",
+          "phase": "Menu",
+          "score": 0,
+          "wins": 2
+        }
+      ],
+      "pointerTargets": [],
+      "maxAudioRms": 0.0
+    },
+    "saveSha256": "fc6eeca07b4a9aeecb8322f35a45a6dca318978f7700ff748ca44ce6502b4634",
+    "screenshots": {
+      "restored-menu.png": "f5cfc8940116787d92a6aae45c9f63347e96fc091679dfda1c9821d9d16d0bcd",
+      "reopened-menu.png": "7e805bfdceae9b1aac79bb5dbfbe515ed9bffe56bea3ce1c130bd7e02412d308"
+    },
+    "visualScope": "Agent inspected startup/reopened menu; human reported normal for requested gameplay/result/reentry. No original-game visual parity claim.",
+    "audioScope": "Nonzero mixer RMS in actual Player; no independent loudspeaker/listening measurement.",
+    "automationIssue": "Synthetic click events reached Unity, but polled pointer coordinates did not match target buttons. Human input closed this gate; external root cause not conclusively identified."
+  },
+  "compatibility": {
+    "existingProviderRecordsUnchanged": 58,
+    "newToolId": "unity_reference",
+    "existingOperationContractsUnchanged": 20,
+    "m1RuntimeEvidenceUnchanged": "not_run"
+  },
+  "gates": {
+    "A0": "pass: fixed reference configuration, meta/GUID and assembly boundaries",
+    "A1": "pass: repeated baseline/authoring, archive identity and restore; M3 recovery tests retained",
+    "A2": "pass: locked import/compile and reference bindings",
+    "A3": "pass: tested loop, lifetime/cancellation and save boundaries",
+    "A4": "pass: scoped macOS arm64/Mono reference with human input and independent restore",
+    "A5": "not_run"
+  },
+  "existingGamesModified": false,
+  "productVersionChanged": false,
+  "pushed": false,
+  "notVerified": [
+    "Existing-game migration, source parity or two-project adoption",
+    "Windows/Linux Player or IL2CPP",
+    "Offline clean-machine restore",
+    "Developer ID, notarization and Gatekeeper on another machine",
+    "Production save migrations or power-loss durability",
+    "Exhaustive aspect ratios, accessibility, human audio perception or performance budgets"
+  ],
+  "rawEvidence": "Ignored .private/unity-m4; logs, saves, images, caches and local binaries excluded from Git",
+  "maintenance": {
+    "contracts": "pass",
+    "skillCheck": "pass",
+    "skillSync": "pass",
+    "unifiedRunTool": "pass",
+    "publicTreeAudit": {
+      "status": "pass",
+      "files": 413,
+      "findings": 0
+    },
+    "markdownLinks": {
+      "files": 73,
+      "links": 334,
+      "broken": 0
+    },
+    "diffCheck": "pass; preserve Unity serialized empty-value whitespace via scoped gitattributes"
+  }
+}
