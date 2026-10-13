@@ -1,0 +1,84 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version to validate (dry run only; no tag or release is created)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+env:
+  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.deleted == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: '0.12.21'
+          python-version: '3.12'
+      - run: uv sync --frozen
+      - name: Check source and contracts
+        run: |
+          .venv/bin/python scripts/audit_public_tree.py
+          .venv/bin/python scripts/generate_contracts.py --check
+          ./bin/grea legacy check_grea_skill --workspace-root . --json
+      - name: Test source
+        run: .venv/bin/python -m unittest discover -s tests -v
+      - name: Build version-matched source bundle
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          args=()
+          if [[ "$EVENT_NAME" == push ]]; then args+=(--require-tag); fi
+          .venv/bin/python scripts/release.py prepare --tag "$RELEASE_TAG" --out dist/release "${args[@]}"
+          .venv/bin/python scripts/release.py verify --tag "$RELEASE_TAG" --out dist/release --extract "$RUNNER_TEMP/grea-extracted"
+      - name: Install and test extracted bundle
+        run: |
+          bundle="$RUNNER_TEMP/grea-extracted/grea-$RELEASE_TAG"
+          test -f "$bundle/pyproject.toml"
+          cd "$bundle"
+          uv sync --frozen
+          ./bin/grea session
+          .venv/bin/python -m unittest discover -s tests -v
+          .venv/bin/python scripts/generate_contracts.py --check
+          ./bin/grea legacy check_grea_skill --workspace-root . --json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ github.sha }}
+          path: dist/release/*
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-${{ github.sha }}
+          path: dist/release
+      - name: Publish verified assets through a draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: python3 scripts/release.py publish --tag "$RELEASE_TAG" --out dist/release --repo "$REPOSITORY"

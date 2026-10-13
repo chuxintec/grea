@@ -37,3 +37,5 @@ Windows 使用 `bin\grea.cmd session`。若提示运行时缺失，按使用说�
 grea 自有代码与文档采用 [MIT](LICENSE)。公开仓库不附带第三方二进制、Unity 包快照、Spine vendor 或项目专用解析器；按 [第三方依赖说明](THIRD_PARTY.md) 安装并配置本次需要的工具。贡献前请阅读 [贡献指南](CONTRIBUTING.md)。
 
 首次公开的清理范围、验证与限制见 [开源发布审查](docs/9-开源发布审查.md)。
+
+维护者推送版本标签后自动测试、打包并发布 Release；rc 版本标为预发行，详见 [自动发布](docs/10-自动发布.md)。
