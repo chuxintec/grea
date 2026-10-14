@@ -1,16 +1,16 @@
 # 标签触发的 Release 发布
 
-[Release workflow](../.github/workflows/release.yml) 在推送 `v*` 标签时运行。仅接受 `vX.Y.Z` 与 `vX.Y.Z-rcN`（N 从 1 开始）；例如 `v2026.10.13-rc3` 是预发行，`v2026.10.13` 是正式版本。非法标签或版本不一致会失败，不创建公开 Release。
+[Release workflow](../.github/workflows/release.yml) 在推送 `v*` 标签时运行。仅接受 `vX.Y.Z` 与 `vX.Y.Z-rcN`（N 从 1 开始）；例如 `v2026.10.14-rc1` 是预发行，`v2026.10.13` 是正式版本。非法标签或版本不一致会失败，不创建公开 Release。
 
 ## 准备版本并推送标签
 
-1. 更新 `pyproject.toml` 、`src/grea/__init__.py` 以及 `skill/version.json` 中的版本；标签 `v2026.10.13-rc3` 对应 Python 版本 `2026.10.13rc3`，正式标签对应 `2026.10.13`。
+1. 更新 `pyproject.toml` 、`src/grea/__init__.py` 以及 `skill/version.json` 中的版本；标签 `v2026.10.14-rc1` 对应 Python 版本 `2026.10.14rc1`，正式标签对应 `2026.10.13`。
 2. 运行 `uv lock` 更新根包版本，核对没有意外依赖升级，提交并合入待发布代码。
 3. 标签指向包含本工作流的发布提交。核对版本后执行：
 
 ```sh
-git tag -a v2026.10.13-rc3 -m "grea v2026.10.13-rc3"
-git push origin main v2026.10.13-rc3
+git tag -a v2026.10.14-rc1 -m "grea v2026.10.14-rc1"
+git push origin main v2026.10.14-rc1
 ```
 
 示例版本须替换为实际目标，不重复使用或移动已发布标签。推送代码不触发 Release，推送版本标签才触发。工作流使用 GitHub 自动提供的令牌，不需要个人访问令牌；发布 job 才授予 `contents: write`，构建 job 只读。
@@ -44,8 +44,8 @@ gh workflow run release.yml --ref main -f tag=v2026.10.13-rc1
 本地辅助命令要求 Python 3.11+，仓库已提交且工作树干净：
 
 ```sh
-python3 scripts/release.py prepare --tag v2026.10.13-rc3 --out dist/release --require-tag
-python3 scripts/release.py verify --tag v2026.10.13-rc3 --out dist/release --extract /tmp/grea-release-check --extract-skill /tmp/grea-skill-check
+python3 scripts/release.py prepare --tag v2026.10.14-rc1 --out dist/release --require-tag
+python3 scripts/release.py verify --tag v2026.10.14-rc1 --out dist/release --extract /tmp/grea-release-check --extract-skill /tmp/grea-skill-check
 ```
 
 输出和解压目录必须尚不存在。`prepare`/`verify` 不替代工作流测试，也不发布；`publish` 是写入 GitHub 的维护入口，日常交给标签工作流执行。
