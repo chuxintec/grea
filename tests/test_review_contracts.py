@@ -27,7 +27,9 @@ class ReviewContractTests(unittest.TestCase):
         with self.assertRaises(GreaError): cases.init_case(self.root,source,'recover')
 
     def test_system_wrapper_presence_checks_actual_target(self):
-        with patch('grea.registry.platform.system',return_value='Darwin'), patch.dict(os.environ,{'GREA_SYSTEM_BIN':str(self.root)}):
+        with patch('grea.registry.platform.system',return_value='Darwin'), \
+                patch('grea.registry.platform.machine',return_value='arm64'), \
+                patch.dict(os.environ,{'GREA_SYSTEM_BIN':str(self.root)}):
             entry = registry.tool('jadx')
             self.assertEqual(registry.presence(entry)['state'],'unavailable')
             exe = self.root/'jadx';exe.write_text('#!/bin/sh\nexit 0\n');exe.chmod(0o755)
