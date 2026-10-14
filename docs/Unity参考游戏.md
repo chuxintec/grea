@@ -14,7 +14,7 @@ Signal Garden 是 grea 的自有最小参考游戏：收集五个信号，支持
 | 输入 / Player | Legacy Input、macOS arm64、Mono、Medium 托管裁剪 |
 | grea 产品版本 | 2026.10.13rc2 开发快照；随后整合入 rc3 |
 
-当前参考源码版本为 **1.0.1**，随附框架锁更新为 **0.2.1**；本次组件与生成回归不能替代当前参考 Player 的重新验收。上表及既有 JSON 保留历史身份。
+当前参考源码版本为 **1.0.1**，随附框架锁更新为 **0.2.1**；2026-10-14 已完成该版本独立恢复、Editor 测试、macOS arm64 Player 构建、人工输入、关闭重开与失焦回归，见 [1.0.1 验收摘要](validation/2026-10-14-reference-player-1.0.1.json)。上表及既有 JSON 保留历史身份。
 
 [参考源码](../tests/unity/reference-project/README.md) 按 Domain / Runtime / Editor / Tests 分层。Domain 不引用 UnityEngine，Runtime 装配 UI、会话作用域、音频和存档，Editor 负责资产创建、绑定回读与固定目标构建。Content 与 Scenes 是通过 Unity API 创建并纳管的资产，不手写 Unity YAML。作为仓库内测试夹具，业务根命名为 `Assets/Reference`，采用独立命名空间；这不是对现有游戏目录的自动迁移。
 
@@ -70,12 +70,12 @@ open -n /absolute/build/SignalGarden.app --args --grea-qa-root /absolute/evidenc
 
 QA trace 位于 `runs/<run-id>.jsonl`，最多 512 条，包含 buildId、阶段、分数、完成次数、窗口焦点、窗口内输入坐标/射线命中和游戏音频 RMS。普通运行不写该 trace，不收集系统音频或账户数据。相同 run ID 拒绝覆盖。QA 与玩家分别使用 `saves/signal-qa` 和 `saves/signal-player`，存档 DTO 为 `signal:1:<完成次数>`。未知版本/损坏/未完成写入保留原件，显示错误，不静默重置。
 
-本轮自动化鼠标事件到达 Unity 后读到的坐标与目标按钮不一致；人工实玩使用真实指针并保留命中/事件证据。不能把直接调用 onClick、通过测试或只启动进程替代这层证据。音频 RMS 证明游戏混音器有输出，不代表扬声器听感或原版音频一致性。
+本机自动化鼠标事件到达 Unity 后读到的坐标与目标按钮不一致；人工实玩使用真实指针并保留命中/事件证据。不能把直接调用 onClick、通过测试或只启动进程替代这层证据。音频 RMS 证明游戏混音器有输出，不代表扬声器听感或原版音频一致性。
 
-实际结果、源码/制品/测试哈希和未验项统一见 [参考游戏验收摘要](validation/2026-10-13-unity-m4.json)。静态检查 API 的运行状态不会因为这个参考游戏通过而自动变成 pass；能力矩阵仅对命名的参考游戏和精确版本组合登记证据。
+1.0.0 历史结果见 [原验收摘要](validation/2026-10-13-unity-m4.json)；当前 1.0.1 的源码/制品/测试身份和限制见 [更新验收摘要](validation/2026-10-14-reference-player-1.0.1.json)。静态检查 API 的运行状态不会因为这个参考游戏通过而自动变成 pass；能力矩阵仅对命名的参考游戏和精确版本组合登记证据。
 
 ## 升级与回退
 
-参考游戏 1.0.0、模板 0.1.0 和包 0.2.0 是独立版本。framework.lock.json 不匹配时停止打包，要求显式评审升级；不能静默用新包覆盖旧包。升级应在新目录保留旧源 ZIP、校验值、制品和存档副本，记录版本/依赖差异，再按上述层级重新验收。回退为恢复旧 ZIP 和已验证 Player；不要删除原存档。未来 DTO 改版必须提供明确迁移策略，当前不承诺跨 DTO 版本自动回退。隔离迁移将验证两类获准业务工程，不能把本次参考成功外推为所有项目可迁移。
+当前参考游戏 1.0.1、模板 0.1.0 和包 0.2.1 是独立版本；1.0.0/0.2.0 的旧验收记录保留。framework.lock.json 不匹配时停止打包，要求显式评审升级；不能静默用新包覆盖旧包。升级应在新目录保留旧源 ZIP、校验值、制品和存档副本，记录版本/依赖差异，再按上述层级重新验收。回退为恢复旧 ZIP 和已验证 Player；不要删除原存档。未来 DTO 改版必须提供明确迁移策略，当前不承诺跨 DTO 版本自动回退。隔离迁移将验证两类获准业务工程，不能把本次参考成功外推为所有项目可迁移。
 
 Unity API 依据：[BuildPipeline.BuildPlayer](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/BuildPipeline.BuildPlayer.html)、[托管代码裁剪](https://docs.unity3d.com/6000.6/Documentation/Manual/managed-code-stripping-configure.html)、[AudioListener.GetOutputData](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/AudioListener.GetOutputData.html)。

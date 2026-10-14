@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-14",
+  "product": "grea-signal-garden",
+  "referenceVersion": "1.0.1",
+  "frameworkVersion": "0.2.1",
+  "sourceCommit": "9e6090102328d6dc56d0d31ba7f7c9f5ad0861ed",
+  "verifiedBranchCommit": "c569f9db3a30762ec46fd8ab0f5049729f0c0aad",
+  "sourceDistribution": {
+    "files": 170,
+    "archiveSha256": "4b1e066b4048691bdf84abdfae43d0b48f666df60469b2b68b3b4a3f1347ad9d",
+    "restoredWithoutSourceSymlinks": true,
+    "compiledCodeMatchesArchive": true,
+    "officialPackages": "restored using local Editor/license and available UPM cache; not a clean-host or offline proof"
+  },
+  "unityTests": {
+    "editmode": {
+      "total": 23,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "reportSha256": "b2f7a541bd92facd6c5740e96f1164554ef631acde43818b6addf0f958f87752"
+    },
+    "playmode": {
+      "total": 14,
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0,
+      "reportSha256": "1d526b2edf8ff132fc8d65be1e6ba13e9fa15e4fbb26d15927a38c929e209291"
+    }
+  },
+  "player": {
+    "result": "Succeeded",
+    "version": "1.0.1",
+    "buildId": "99d06763689a4d728e7d78c55557fc26",
+    "editor": "6000.6.2f1",
+    "architecture": "arm64",
+    "backend": "Mono",
+    "bytes": 54091415,
+    "managedStripping": "Medium",
+    "input": "legacy",
+    "archiveSha256": "217f98f151d169838fd0002ad5dbd5c1f8bf63090bb1575b93e192d107ddee74",
+    "integrity": {
+      "files": 112,
+      "treeSha256": "1702e90243ede3cbce3c8ceb1d3f1d1f53fafd5ba22deefcff7563f973b86ee4",
+      "identicalAfterUnpack": true,
+      "machO": "arm64",
+      "testAssemblies": []
+    }
+  },
+  "acceptance": {
+    "physicalInput": "human mouse actions confirmed by engine pointer raycast trace",
+    "flow": [
+      "start",
+      "collect",
+      "pause/resume",
+      "complete exactly once",
+      "play again",
+      "cancel unfinished run",
+      "quit",
+      "reopen with one completed run",
+      "focus-loss pause",
+      "resume and cancel",
+      "quit"
+    ],
+    "humanFeedback": "正常 (both main-loop and focus-loss requests)",
+    "visual": "User reported normal; reopened menu independently observed RUNS COMPLETED 1.",
+    "audio": {
+      "nonzeroMixerSamples": 6,
+      "maxObservedRms": 0.06790907680988312,
+      "boundary": "Game mixer output measured; user replied normal to combined controls/display/audio request; no separate speaker-quality measurement."
+    },
+    "savedCompletedRuns": 1,
+    "reopenedCompletedRuns": 1,
+    "cancelDidNotAwardWin": true,
+    "qaNamespaceIsolated": true,
+    "focusPauseConfirmed": true,
+    "playerLogs": "No exception/error matches in normal, reopened or focus acceptance runs.",
+    "traceSha256": {
+      "first": "fe69774600a37261e90bf972ac8c49f62bae4194364805a6b59c989e8d0e78e4",
+      "reopened": "3e29dca2e72c93d2a7909c3b2aa6fd2c5a7c0293743ea64f9c76a7d8abc528ce",
+      "focus": "02c02ce4a4801099f7458c48e128079fce79b6316146778a46622488653df487"
+    },
+    "saveSha256": "f849c7fd6b4ca9e4c952844fc3bd630ff578fdc94d3703ff49c39396fc027460"
+  },
+  "ci": {
+    "run": "https://github.com/chuxintec/grea/actions/runs/38510847331",
+    "commit": "c569f9db3a30762ec46fd8ab0f5049729f0c0aad",
+    "conclusion": "success",
+    "jobs": {
+      "ubuntu24Python312": "177 tests; 174 passed, 3 skipped (including case-insensitive-volume fixture)",
+      "macos14Python311": "177 tests; 175 passed, 2 optional integration skips",
+      "python310": "15 core tests and 3 stdio MCP tests passed",
+      "windows2022Python312": "frozen install and grea.cmd session passed"
+    }
+  },
+  "limits": [
+    "No merge, release, tag movement or public Player upload.",
+    "No Windows/Linux Player, IL2CPP, performance budget, notarization or cross-machine Gatekeeper acceptance.",
+    "Not original-game parity or acceptance of other projects.",
+    "Automated mouse attempt missed the Unity window; excluded from acceptance. Human input traces were used."
+  ],
+  "originalProjectsModified": false
+}

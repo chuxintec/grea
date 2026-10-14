@@ -26,4 +26,4 @@ The source ZIP and player archive are generated local artifacts, not a GitHub re
 
 See THIRD_PARTY.md for dependency notices and framework.lock.json for the exact own-package source identities.
 
-本分支框架锁更新为 0.2.1；历史 Player 验收针对 1.0.0，本次组件回归不替代 1.0.1 的 Player 验收。
+本分支框架锁为 0.2.1；2026-10-14 的 1.0.1 独立恢复 Player 已通过 macOS arm64/Mono 实玩、关闭重开和失焦回归。历史 1.0.0 证据保留，实际构建身份与限制见 grea 文档中的本次验收摘要。

@@ -138,4 +138,14 @@ def capability_matrix():
                 'evidence': 'docs/validation/2026-10-13-unity-m4.json',
                 'gates': {'A0': 'pass', 'A1': 'pass', 'A2': 'pass', 'A3': 'pass', 'A4': 'pass', 'A5': 'not_run'},
                 'scope': 'Self-authored reference only; human Player input and scoped output evidence. No original-game parity, offline restore or other platform/backend claim.'
+            }, {
+                'id': 'signal-garden', 'version': '1.0.1',
+                'editor': '6000.6.2f1', 'urp': '17.6.0', 'ugui': '2.6.0',
+                'testFramework': '1.8.0', 'frameworkPackages': '0.2.1',
+                'template': {'id': 'grea-minimal-2d', 'version': '0.1.0'},
+                'target': 'macOS', 'architecture': 'arm64', 'backend': 'Mono',
+                'managedStripping': 'Medium', 'input': 'legacy',
+                'evidence': 'docs/validation/2026-10-14-reference-player-1.0.1.json',
+                'gates': {'A0': 'pass', 'A1': 'pass', 'A2': 'pass', 'A3': 'pass', 'A4': 'pass', 'A5': 'not_run'},
+                'scope': 'Isolated restored source and independently unpacked Player only; human input, reopen, focus-loss and mixer evidence. No other project/platform, offline or performance claim.'
             }]}
