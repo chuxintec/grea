@@ -15,6 +15,11 @@ spec=importlib.util.spec_from_file_location('reference',ROOT/'src/grea/tools/uni
 class ReferenceDistributionTests(unittest.TestCase):
     def test_reference_metadata_and_assembly_boundaries(self):
         files=ref.source_files();guids=set();assemblies={}
+        version=json.loads(files['distribution-manifest.json'])['version']
+        builder=files['Assets/Reference/Editor/ReferenceBuilder.cs'].decode()
+        self.assertIn('PlayerVersion = "'+version+'"',builder)
+        self.assertIn('PlayerSettings.bundleVersion=PlayerVersion',builder)
+        self.assertIn('version=PlayerVersion',builder)
         for name,data in files.items():
             if name.endswith('.meta'):
                 guid=re.search(rb'^guid: ([0-9a-f]{32})$',data,re.M)

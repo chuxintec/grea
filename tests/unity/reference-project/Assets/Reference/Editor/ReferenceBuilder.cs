@@ -17,6 +17,7 @@ namespace Grea.Reference.Editor
 {
     public static class ReferenceBuilder
     {
+        public const string PlayerVersion = "1.0.1";
         public const string ScenePath = "Assets/Reference/Scenes/Reference.unity";
         public const string ViewPath = "Assets/Reference/Content/ReferenceView.prefab";
         public const string ConfigPath = "Assets/Reference/Content/ReferenceConfig.asset";
@@ -118,7 +119,7 @@ namespace Grea.Reference.Editor
         }
         static void ConfigurePlayer()
         {
-            PlayerSettings.companyName="Grea";PlayerSettings.productName="Grea Signal Garden";PlayerSettings.bundleVersion="1.0.0";
+            PlayerSettings.companyName="Grea";PlayerSettings.productName="Grea Signal Garden";PlayerSettings.bundleVersion=PlayerVersion;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Standalone,"org.grea.signalgarden");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
             PlayerSettings.SetArchitecture(NamedBuildTarget.Standalone,1);
@@ -140,9 +141,9 @@ namespace Grea.Reference.Editor
                 var tests = Directory.GetFiles(managed,"*.dll").Select(Path.GetFileName).Where(x => x.Contains(".Tests.") || x.EndsWith(".Tests.dll") || x.Contains("TestRunner") || x.StartsWith("nunit") || x.StartsWith("UnityEditor")).ToArray();
                 if (tests.Length > 0) throw new InvalidOperationException("TEST_ASSEMBLIES_IN_PLAYER: " + string.Join(", ", tests));
             }
-            File.WriteAllText(Path.Combine(Path.GetDirectoryName(output),"player-build.json"),JsonUtility.ToJson(new BuildReceipt{result=report.summary.result.ToString(),buildId=report.summary.guid.ToString(),bytes=report.summary.totalSize,editor=Application.unityVersion,architecture="arm64",backend="Mono"},true));
+            File.WriteAllText(Path.Combine(Path.GetDirectoryName(output),"player-build.json"),JsonUtility.ToJson(new BuildReceipt{result=report.summary.result.ToString(),version=PlayerVersion,buildId=report.summary.guid.ToString(),bytes=report.summary.totalSize,editor=Application.unityVersion,architecture="arm64",backend="Mono"},true));
             if(report.summary.result!=BuildResult.Succeeded)throw new InvalidOperationException("PLAYER_BUILD_FAILED");
         }
-        [Serializable] public sealed class BuildReceipt { public string result,buildId,editor,architecture,backend; public ulong bytes; }
+        [Serializable] public sealed class BuildReceipt { public string result,version,buildId,editor,architecture,backend; public ulong bytes; }
     }
 }
