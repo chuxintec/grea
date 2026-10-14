@@ -1,13 +1,13 @@
 {
   "name": "com.grea.editor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "displayName": "com.grea.editor",
-  "description": "Grea M2 minimal framework candidate; see package documentation for validation boundaries.",
+  "description": "Grea minimal framework candidate; see package documentation for validation boundaries.",
   "unity": "6000.6",
   "license": "MIT",
   "dependencies": {
-    "com.grea.foundation": "0.2.0",
-    "com.grea.ui.ugui": "0.2.0",
+    "com.grea.foundation": "0.2.1",
+    "com.grea.ui.ugui": "0.2.1",
     "com.unity.render-pipelines.universal": "17.6.0"
   }
 }

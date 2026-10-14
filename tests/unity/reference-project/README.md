@@ -1,4 +1,4 @@
-# Signal Garden — grea reference game 1.0.0
+# Signal Garden — grea reference game 1.0.1
 
 Collect five mint signals, pause/resume, finish a run, return to the menu and play again. Completed runs persist between launches. Original geometric UI and synthesized tone; game and framework sources are MIT licensed. Unity runtime, built-in font and official Unity packages retain their own licenses.
 
@@ -25,3 +25,5 @@ Invalid/unknown saves and pending interrupted writes are retained and reported, 
 The source ZIP and player archive are generated local artifacts, not a GitHub release. Codesigning/notarization, other platforms, IL2CPP, existing-game parity and multi-project adoption are separate validation scopes.
 
 See THIRD_PARTY.md for dependency notices and framework.lock.json for the exact own-package source identities.
+
+本分支框架锁更新为 0.2.1；历史 Player 验收针对 1.0.0，本次组件回归不替代 1.0.1 的 Player 验收。

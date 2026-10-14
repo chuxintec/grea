@@ -154,7 +154,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "apktool"
     },
     {
       "id": "jadx",
@@ -189,7 +190,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "jadx"
     },
     {
       "id": "rizin",
@@ -224,7 +226,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "rizin"
     },
     {
       "id": "binwalk",
@@ -259,7 +262,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "binwalk"
     },
     {
       "id": "7zz",
@@ -294,7 +298,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "7zz"
     },
     {
       "id": "ffmpeg",
@@ -1055,7 +1060,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "glslangValidator"
     },
     {
       "id": "spirv-cross",
@@ -1090,7 +1096,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "spirv-cross"
     },
     {
       "id": "spirv-val",
@@ -1125,7 +1132,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "spirv-val"
     },
     {
       "id": "il2cpp-inspector",
@@ -1539,7 +1547,8 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "system_binary": "spirv-dis"
     },
     {
       "id": "unity-export-assets",

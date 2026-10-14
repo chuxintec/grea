@@ -20,7 +20,7 @@
 
 标准版本、框架包版本、模板版本、生成器版本和游戏发布版本分别锁定。标准的破坏性契约修改升主版本；兼容新增升次版本；不改语义的修正升补丁版本。项目升级必须选择目标版本及迁移说明，不随 grea 更新自动升级所有项目。
 
-项目根的 `grea-project.json` 保存机器可读选择；项目 `Docs/PROJECT-STRUCTURE.md` 解释实际所有权与例外，引用该配置，不能再手工维护另一套版本值。静态规划已提供 [项目 Schema](../../schemas/unity-project.schema.json) 及 [静态能力矩阵](../../schemas/unity-capabilities.json)，经统一契约生成；未注册生成能力。
+项目根的 `grea-project.json` 保存机器可读选择；项目 `Docs/PROJECT-STRUCTURE.md` 解释实际所有权与例外，引用该配置，不能再手工维护另一套版本值。静态规划已提供 [项目 Schema](../../schemas/unity-project.schema.json) 及 [静态能力矩阵](../../schemas/unity-capabilities.json)，经统一契约生成；新工程生成与恢复使用独立操作和 planId，见 [生成与恢复](../../docs/Unity工程生成与恢复.md)。
 
 | 字段组 | 必填内容及约束 |
 | --- | --- |
@@ -32,7 +32,7 @@
 | 生成 | templateVersion、generatorVersion、模块清单、生成物归属；执行后关联实际生成清单 |
 | 例外 | ruleId、scope、reason、替代约束、验证方法、owner、reviewTrigger；采用前由项目维护者确认 |
 
-先验证所选组合是否在能力矩阵中。能力矩阵至少区分“未实现、已生成、Editor 编译通过、PlayMode 通过、目标 Player 通过”，附实际版本和证据。首个静态规划静态参考组合锁定 Unity 6000.6.2f1、URP 17.6.0、uGUI 2.6.0、legacy input、Catalog、macOS arm64/Mono；静态规划不运行 Editor/Player。基础框架另有该 Editor 的包编译、组件 PlayMode 和重入证据，但未创建 URP 渲染资产/生成工程，Player 验证仍未运行。此选择不是已经支持整个 Unity 6 系列，也不要求已有工程迁移 UI 或渲染管线。
+先验证所选组合是否在能力矩阵中。能力矩阵至少区分“未实现、已生成、Editor 编译通过、PlayMode 通过、目标 Player 通过”，附实际版本和证据。静态参考组合锁定 Unity 6000.6.2f1、URP 17.6.0、uGUI 2.6.0、legacy input、Catalog、macOS arm64/Mono；静态规划不运行 Editor/Player。基础框架另有该 Editor 的包编译、组件 PlayMode 和重入证据，生成器另有 URP 资产创建与绑定校验；参考游戏的历史 Player 验收只覆盖其固定源码。此选择不是已经支持整个 Unity 6 系列，也不要求已有工程迁移 UI 或渲染管线。
 
 ## 工作区与项目边界
 
@@ -46,13 +46,12 @@
   <游戏工程名>/                    # 既有工程名沿用
     Assets/
       Game/
-        Runtime/
-          Bootstrap/               # 应用入口、依赖装配与顶层作用域
-          Domain/<模块>/           # 状态、规则与业务不变量
-          Gameplay/<模块>/         # 用例、会话流程、业务端口
-          Presentation/<模块>/     # UI、场景视图、输入表现和动画桥接
-          Services/<能力>/         # 平台、存档、资源等端口实现
-          Diagnostics/             # 项目状态快照与诊断适配
+        Bootstrap/               # 应用入口、依赖装配与顶层作用域
+        Domain/<模块>/           # 状态、规则与业务不变量
+        Gameplay/<模块>/         # 用例、会话流程、业务端口
+        Presentation/<模块>/     # UI、场景视图、输入表现和动画桥接
+        Services/<能力>/         # 平台、存档、资源等端口实现
+        Diagnostics/             # 项目状态快照与诊断适配
         Content/
           Prefabs/<模块>/          # 需要生成时再分 Generated、Variants
           Config/<模块>/           # 配置资产与运行数据分离
@@ -64,6 +63,7 @@
           Generators/ Validators/ Build/
         Tests/
           EditMode/ PlayMode/
+      GreaGenerated/               # 固定示例配方的生成专属资产；由所有权清单管理
       ThirdParty/                  # 必须留在 Assets 的供应方资源
       Plugins/                     # 存在平台插件时使用 Unity 导入约定
     Packages/                      # manifest、lock；按需嵌入已锁定包
@@ -75,6 +75,8 @@
   Build/                           # 严格沿用构建规范
 ```
 
+单模块 Counter 示例省略层内 `<模块>` 子目录；多模块按上述层内目录划分。其生成专属 Prefab、URP 和 BootstrapConfig 位于 `Assets/GreaGenerated/`，项目业务 seed-once 代码位于 `Assets/Game/<Layer>/`。这是本标准认可的最小配方布局，不要求添加 Runtime 包裹层；既有工程不能为符合树形图自动搬迁。
+
 **STR-01 所有权**：Game 只保存该项目的运行与编辑必需内容。第三方代码、通用框架和项目业务分别维护；不能把原导出树换一个 Recovered/Original 名称后直接当成标准化结果。原始导出完整保留在 Analysis，只读证据不进入生成覆盖范围。
 
 **STR-02 职责唯一**：新内容统一用 Game/Editor，不另建第二个日常 Editor 入口。UI 代码归 Presentation 下实际模块；输入设备实现归 Services/Input，输入到业务命令的转换归 Presentation。配置数据归 Content/Config，解析/校验代码归消费它的模块；不再并列含义重叠的 Runtime/UI、Runtime/Config、Runtime/Levels。已有路径可登记例外，不能自动迁移。
@@ -85,13 +87,13 @@
 
 ### 通用包的维护位置
 
-自有框架源码在 grea 的 `tools/unity/framework/packages/`，基础框架已交付 foundation、ui.ugui 和只读 editor 三包；`tools/unity/templates/counter-composition/` 保存有测试的分层装配示例，不是可执行生成模板。只按实际内容建目录；工程生成的实际创建/恢复范围见 [生成器与 Prefab](../../docs/Unity工程生成与恢复.md)，不先拆大量微包。
+自有框架源码在 grea 的 `tools/unity/framework/packages/`，基础框架已交付 foundation、ui.ugui 和 editor 三包（校验与受限生成）；`tools/unity/templates/counter-composition/` 保存有测试的分层装配示例，也是 `grea-minimal-2d/0.1.0` 的 seed-once 源码输入。只按实际内容建目录；工程生成的实际创建/恢复范围见 [生成器与 Prefab](../../docs/Unity工程生成与恢复.md)，不先拆大量微包。
 
 | 候选包 | 内容和依赖边界 |
 | --- | --- |
 | com.grea.foundation | 纯契约与最小生命周期/诊断实现；不包含项目玩法、UI 技术栈或商业服务 |
 | com.grea.ui.ugui | 可选 uGUI 视图组件和无项目素材的基础 Prefab；显式依赖 foundation 与锁定 UI 包 |
-| com.grea.authoring | Editor 内的生成、绑定与校验；不进入 Player，不携带原包或业务适配器 |
+| com.grea.editor | Editor 内的生成、绑定与校验；不进入 Player，不携带原包或业务适配器 |
 
 包内按实际内容建立 Runtime、Editor、Tests、Samples~、Documentation~，附 package.json、许可证和依赖范围。包目录规则参考 [Unity Package layout](https://docs.unity3d.com/6000.0/Documentation/Manual/cus-layout.html)。项目修改放自身扩展/Variant；不能直接修改 PackageCache，也不靠复制第二份同 GUID 资产来定制。
 
@@ -268,7 +270,7 @@ new 只允许空的新工程目标，不能覆盖已存在 Unity 工程；adopt 
 
 每个计划项至少包含 action、logicalId、source/target、expectedBeforeHash（新文件为不存在）、owner、preserveGuid、requiredBindings、reason、validationIds。所有输出解析后均在授权根内；拒绝绝对路径注入、.. 越界、符号链接逃逸、大小写/Unicode 冲突和 Windows 保留名。历史证据只引用，不改写。
 
-工程生成生成清单位于 Unity 工程根 `Tools/Generated/manifests/`，记录相对路径、逻辑资产 ID、实际 GUID/必要 fileID、内容及 meta 哈希、seed-once/generated/human/package 所有权、生成版本和前次清单身份。它是项目恢复所需元数据，可按项目规则纳管；运行日志与含机器路径的过程回执放本次项目 Evidence，不随公共 grea 分发。时间戳和 runId 属于执行回执，不写入每个再生资产造成无意义差异。
+工程生成清单位于 Unity 工程根 `Tools/Generated/manifests/`，记录相对路径、逻辑资产 ID、实际 GUID/必要 fileID、内容及 meta 哈希、seed-once/generated/human/package 所有权、生成版本和前次清单身份。它是项目恢复所需元数据，可按项目规则纳管；运行日志与含机器路径的过程回执放本次项目 Evidence，不随公共 grea 分发。时间戳和 runId 属于执行回执，不写入每个再生资产造成无意义差异。
 
 **GEN-02 重复生成**：输入和模板版本相同且生成物未变时，第二次执行不改文件内容、不更换 GUID、不增加对象/监听/配置、不新建另一套目录。新资产仅首次生成身份并写入清单；跨全新工程不要求相同 GUID，但归一化结构和绑定应等价。同工程重复运行必须保留已有身份。
 
@@ -359,3 +361,5 @@ A5 仅针对获准的既有工程迁移；参考工程不能代替它。无法�
 - Editor 资产移动入口见 [AssetDatabase.MoveAsset](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/AssetDatabase.MoveAsset.html)；移动 API 成功不证明动态加载键和行为不变。
 
 实施前核对实际版本对应文档和能力；官方功能存在不等于 grea 生成器、公共组件或目标平台已实测。
+
+存档恢复由应用显式调用 `FileSaveStore.Recover()`：校验通过的 pending 优先提交，损坏副本隔离保留，主档损坏可从有效 backup 恢复；没有有效副本时拒绝覆盖。`CommandButton` 隐藏时取消当前绑定与旧操作，重显时仅对仍存活的 owner 恢复绑定；显式 Unbind 或 owner 退出后不得复活。

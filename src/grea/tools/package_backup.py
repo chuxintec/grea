@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Snapshot installed non-builtin UPM packages and prepare verified offline install plans."""
-import argparse,hashlib,json,tarfile,tempfile,os
+import argparse,hashlib,json,tarfile,tempfile,os,re
 from pathlib import Path
+from grea.safe_paths import disjoint, relative_name
 
 def sha(p,private_markers=()):
  h=hashlib.sha256()
@@ -18,7 +19,18 @@ def public_member(member):
  return member
 
 def snapshot(projects,dest):
- dest.mkdir(parents=True,exist_ok=True);(dest/'archives').mkdir(exist_ok=True);items={};inventories=[];missing=[]
+ dest=disjoint(dest,*projects)
+ if dest.exists():raise ValueError('Output must be a new directory')
+ # Validate every identity before creating any archives.
+ for project in projects:
+  lock=json.loads((project/'Packages/packages-lock.json').read_text())['dependencies']
+  for name in lock:
+   if not re.fullmatch(r'[a-z][a-z0-9._-]+',name):raise ValueError('Invalid package name')
+  for base in [project/'Library/PackageCache',project/'Packages']:
+   for metadata in base.glob('*/package.json'):
+    pkg=json.loads(metadata.read_text())
+    if not re.fullmatch(r'[a-z][a-z0-9._-]+',pkg['name']) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?',pkg['version']):raise ValueError('Invalid package identity')
+ dest.mkdir(parents=True);(dest/'archives').mkdir();items={};inventories=[];missing=[]
  for source_index,project in enumerate(projects,1):
   private_markers=tuple(str(x).encode() for x in (project.resolve(),Path.home()) if len(str(x))>3)
   lock=json.loads((project/'Packages/packages-lock.json').read_text())['dependencies'];candidates={}
@@ -40,11 +52,11 @@ def snapshot(projects,dest):
    path,pkg=found;key=name+'@'+pkg['version'];inv['packages'].append(key)
    fingerprint=[]
    for f in sorted(path.rglob('*')):
-    if f.is_symlink():fingerprint.append([str(f.relative_to(path)),'link:'+os.readlink(f)])
-    elif f.is_file():fingerprint.append([str(f.relative_to(path)),sha(f,private_markers)])
+    if f.is_symlink():fingerprint.append([f.relative_to(path).as_posix(),'link:'+os.readlink(f)])
+    elif f.is_file():fingerprint.append([f.relative_to(path).as_posix(),sha(f,private_markers)])
    tree=hashlib.sha256(json.dumps(fingerprint).encode()).hexdigest();identity=key+'-'+tree[:12]
    if identity not in items:
-    archive=dest/'archives'/(identity+'.tgz')
+    archive=dest/'archives'/relative_name(identity+'.tgz')
     if not archive.exists():
      with tempfile.NamedTemporaryFile(dir=archive.parent,delete=False) as f:tmp=Path(f.name)
      try:
@@ -56,10 +68,12 @@ def snapshot(projects,dest):
         obj=tf.extractfile('package/'+rel);h=hashlib.sha256()
         for b in iter(lambda:obj.read(1048576),b''):h.update(b)
         if h.hexdigest()!=digest:raise ValueError('Archive mismatch '+rel)
-      tmp.rename(archive)
+      with tmp.open('rb') as incoming, archive.open('xb') as outgoing:
+       import shutil
+       shutil.copyfileobj(incoming,outgoing)
      finally:
       if tmp.exists():tmp.unlink()
-    items[identity]={'id':key,'name':name,'version':pkg['version'],'archive':str(archive.relative_to(dest)),'sha256':sha(archive),'tree_sha256':tree,'dependencies':pkg.get('dependencies',{}),'resolved_dependencies':{n:lock[n]['version'] for n in pkg.get('dependencies',{}) if n in lock and lock[n].get('source')!='builtin'},'source_project':source_id,'source_path':str(path.relative_to(project)),'file_count':len(fingerprint)}
+    items[identity]={'id':key,'name':name,'version':pkg['version'],'archive':archive.relative_to(dest).as_posix(),'sha256':sha(archive),'tree_sha256':tree,'dependencies':pkg.get('dependencies',{}),'resolved_dependencies':{n:lock[n]['version'] for n in pkg.get('dependencies',{}) if n in lock and lock[n].get('source')!='builtin'},'source_project':source_id,'source_path':path.relative_to(project).as_posix(),'file_count':len(fingerprint)}
   inventories.append(inv)
  report={'schema_version':1,'packages':list(items.values()),'projects':inventories,'missing':missing,'boundary':'Installed source archives, not game assets. Built-in modules require matching Editor.'}
  with (dest/'catalog.json').open('x') as f:json.dump(report,f,indent=2)
@@ -89,6 +103,7 @@ def plan(backup,requested,output):
   p=(backup/x['archive']).resolve()
   if backup.resolve() not in p.parents or sha(p)!=x['sha256']:raise ValueError('Archive integrity failure')
   packages.append('file:'+str(p))
+ output=disjoint(output,backup)
  with output.open('x') as f:json.dump({'packages':packages,'ids':[x['id'] for x in selected.values()]},f,indent=2)
  print('Prepared verified plan:',output)
 

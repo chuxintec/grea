@@ -20,9 +20,9 @@ Schema 与矩阵的源定义在 `src/grea/unity_project_contracts.py`，经 `con
 
 所有字段显式提供：身份/namespace、paths、toolchain、dependencyLock、template、frameworkPackages、features、modules、scenes、assetBackend、玩家/QA save namespace、exceptions。路径相对项目根；场景和 scope 相对 Unity 工程。静态规划的模块名和 namespace 使用 ASCII C# 标识符，目录支持中文和空格，同一模块不能大小写碰撞；QA 与玩家存储标识必须不同。lifecycle 必选，ui 需要 resources。exceptions 只记录，不抑制静态规划的发现。
 
-首个参考组合：Unity `6000.6.2f1`、URP `17.6.0`、uGUI `2.6.0`、legacy input、Catalog、macOS arm64/Mono。编辑器和内置包版本来自 2026-10-13 的本机只读元数据核对；macOS 模块目录存在。**没有打开 Editor、验证许可或运行 Player**。矩阵仅把静态规划标为支持；Editor、PlayMode、Player 为 not_run，generation 为 not_implemented。
+首个参考组合：Unity `6000.6.2f1`、URP `17.6.0`、uGUI `2.6.0`、legacy input、Catalog、macOS arm64/Mono。编辑器和内置包版本来自 2026-10-13 的本机只读元数据核对；macOS 模块目录存在。**没有打开 Editor、验证许可或运行 Player**。矩阵仅把静态规划标为支持；Editor、PlayMode、Player 为 not_run，generation 为 not_run。
 
-`grea-minimal-2d / 0.1.0-design` 是设计配方标识，尚无可执行生成模板。[基础框架框架包](Unity框架与通用组件.md) 已独立提供源码与组件测试，但静态规划不解析/安装框架包；填写 frameworkPackages 仍会返回 `FRAMEWORK_NOT_IMPLEMENTED`。未知模板、其它组合也会产生发现，不自动换成默认组合。静态规划仅核对固定 registry/built-in 风格的包版本与锁；embedded/Git/local/file 等依赖来源尚不解析，也不读取它们指向的工程外目录。
+`grea-minimal-2d / 0.1.0` 与生成器共用配置。旧 `0.1.0-design` 配置仍可只读检查，但不进入生成器。静态规划不安装依赖；frameworkPackages 自定义覆盖返回 `FRAMEWORK_OVERRIDE_UNSUPPORTED`。生成工程的嵌入包及 null 锁指纹必须先通过自身所有权清单核验；普通采用工程仍须提供准确 manifest/lock 指纹，不接受任意本地/Git 依赖。静态计划的 `USE_GENERATION_PLAN` 表示需要另行请求生成计划，不表示生成器不存在。
 
 ## 2. 调用
 
@@ -59,7 +59,7 @@ baseline 只核对文件存在与哈希，不认证其来源或行为结论。sc
 
 报告的 `staticStatus` 只覆盖声明输入、文件系统与显式 asmdef 元数据。`compliance` 始终为 `not_assessed`，A1–A5 均为 not_run；A0 的局部检查不能代替 Editor 导入类型、动态资源寻址或生命周期验证。
 
-所有计划 `generationReady=false`，blockers 至少包含 `GENERATION_NOT_IMPLEMENTED`。create 是设计意图；不会生成 .cs 内容、.meta、GUID 或 Prefab。已有文件默认 human；静态规划不读取/合并历史生成所有权清单，不声称能保护字段级人工覆盖——这些由工程生成实施。
+所有计划 `generationReady=false`，blockers 至少包含 `USE_GENERATION_PLAN`。create 是设计意图；不会生成 .cs 内容、.meta、GUID 或 Prefab。已有文件默认 human；已生成工程先验证自身所有权清单，普通工程不会套用或合并他人的清单；静态规划不声称能保护字段级人工覆盖。
 
 planId 绑定 profile 原始字节、范围/模式、相对文件库存、目录成员/缺失状态、meta/GUID、依赖与版本文件、baseline、参考矩阵及规划器/文档契约身份。重复请求在输入不变时结果稳定。将上次 planId 放入 `expected_plan_id` 重检；变化返回 STALE_PLAN。该检查是当前观察，不是对未来写入的授权或文件锁；未来生成仍须重新验证输入。
 

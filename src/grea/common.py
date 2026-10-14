@@ -1,5 +1,5 @@
 """Small shared identities and explicit errors; no process or client policy here."""
-import hashlib,json,os,uuid
+import hashlib,json,os,uuid,ctypes
 from pathlib import Path
 from datetime import datetime,timezone
 from . import __version__
@@ -41,3 +41,21 @@ def implementation_identity():
     root=Path(__file__).resolve().parent
     hashes={p.relative_to(root).as_posix():hash_file(p)['sha256'] for p in sorted(root.rglob('*.py'))}
     return {'version':__version__,'core_sha256':digest(hashes),'files':len(hashes)}
+
+
+def publish_directory(source, target):
+    """Atomic directory move which cannot replace even a concurrently created empty target."""
+    import sys
+    library = ctypes.CDLL(None, use_errno=True)
+    if sys.platform == 'darwin':
+        call = library.renamex_np
+        call.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
+        result = call(os.fsencode(source), os.fsencode(target), 4)  # RENAME_EXCL
+    elif sys.platform.startswith('linux') and hasattr(library, 'renameat2'):
+        call = library.renameat2
+        call.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+        result = call(-100, os.fsencode(source), -100, os.fsencode(target), 1)  # RENAME_NOREPLACE
+    else:
+        raise GreaError('UNSUPPORTED_PLATFORM', 'Atomic no-replace directory publication is unavailable.')
+    if result:
+        raise GreaError('PUBLICATION_FAILED', 'Atomic publication refused; staged project retained.', details={'errno': ctypes.get_errno()})

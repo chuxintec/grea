@@ -1,6 +1,6 @@
-"""Versioned Unity M1 document contracts; exported by generate_contracts.py.
+"""Versioned Unity project document contracts; exported by generate_contracts.py.
 
-These describe read-only planning, not an implemented Unity asset generator.
+Static plans and executable generation plans are distinct contracts.
 """
 from copy import deepcopy
 
@@ -8,7 +8,8 @@ DRAFT = 'https://json-schema.org/draft/2020-12/schema'
 STANDARD_VERSION = '1.0.0'
 PLANNER_VERSION = '1.0.0'
 TEMPLATE_ID = 'grea-minimal-2d'
-TEMPLATE_VERSION = '0.1.0-design'
+TEMPLATE_VERSION = '0.1.0'
+LEGACY_TEMPLATE = {'id': TEMPLATE_ID, 'version': '0.1.0-design'}
 LAYERS = ('Domain', 'Gameplay', 'Presentation', 'Services', 'Diagnostics')
 FEATURES = ('lifecycle', 'ui', 'resources', 'audio', 'save', 'diagnostics')
 
@@ -70,7 +71,7 @@ FINDING = obj({'code': text(), 'severity': enum('error', 'warning'), 'path': {'t
 CHECK = obj({'id': text(), 'status': enum('pass', 'fail', 'not_run', 'not_applicable'), 'reason': text()})
 CAPABILITY = obj({'id': {'type': ['string', 'null']}, 'staticPlanning': enum('supported', 'unsupported'),
                   'editor': {'const': 'not_run'}, 'playMode': {'const': 'not_run'}, 'player': {'const': 'not_run'},
-                  'generation': {'const': 'not_implemented'}})
+                  'generation': {'const': 'not_run'}})
 REPORT = obj({'schemaVersion': SCHEMA_VERSION, 'standardVersion': {'const': STANDARD_VERSION},
               'plannerVersion': {'const': PLANNER_VERSION}, 'mode': enum('new', 'adopt', 'refactor'),
               'profileSha256': HASH, 'snapshotSha256': HASH, 'scope': array(PATH, 1),
@@ -119,13 +120,13 @@ REFERENCE = {
                   'packages': {'com.unity.render-pipelines.universal': '17.6.0', 'com.unity.ugui': '2.6.0'}},
     'assetBackend': 'catalog', 'template': {'id': TEMPLATE_ID, 'version': TEMPLATE_VERSION},
     'evidence': {'editorAndPackageMetadata': 'observed_on_2026-10-13', 'staticPlanning': 'synthetic_tests',
-                 'editor': 'not_run', 'playMode': 'not_run', 'player': 'not_run', 'generation': 'not_implemented'},
+                 'editor': 'not_run', 'playMode': 'not_run', 'player': 'not_run', 'generation': 'not_run'},
 }
 
 
 def capability_matrix():
     return {'schemaVersion': 1, 'standardVersion': STANDARD_VERSION, 'plannerVersion': PLANNER_VERSION,
-            'scope': 'M1 combinations describe static planning only. Named reference game evidence is scoped separately and never applied to arbitrary projects.',
+            'scope': 'Combination observations describe static planning only; executable create-only generation is exposed separately. Named reference game evidence is scoped separately and never applied to arbitrary projects.',
             'combinations': [deepcopy(REFERENCE)],
             'referenceGames': [{
                 'id': 'signal-garden', 'version': '1.0.0',

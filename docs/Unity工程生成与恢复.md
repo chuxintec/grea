@@ -6,7 +6,7 @@
 
 复制 [工程生成配置夹具](../tests/fixtures/unity-generation-v1.json) 到一个独立项目根，命名 `grea-project.json`。根目录需已存在，配置中的 `UnityProject` 目标必须不存在，空目录也不覆盖。Evidence、Build 与 Unity 工程分开，路径都相对该根，不允许 symlink、路径穿越或大小写/Unicode 冲突。
 
-精确组合：Unity 6000.6.2f1、URP 17.6.0、uGUI 2.6.0、legacy input、Catalog、macOS arm64/Mono。模板为 `grea-minimal-2d/0.1.0`，生成器 `0.1.0`，自有 Foundation/uGUI/Editor 包 `0.2.0`。当前仅支持夹具中的 Counter 四层模块选择和六项 features，不静默忽略未知模块；Bootstrap 为固定装配层。项目 ID、namespace、场景名与存档 namespace 可配置。依赖包来自随 grea 分发的源码和锁定的官方包，不接受用户替换 frameworkPackages 或例外。
+精确组合：Unity 6000.6.2f1、URP 17.6.0、uGUI 2.6.0、legacy input、Catalog、macOS arm64/Mono。模板为 `grea-minimal-2d/0.1.0`，生成器 `0.1.1`，自有 Foundation/uGUI/Editor 包 `0.2.1`。当前仅支持夹具中的 Counter 四层模块选择和六项 features，不静默忽略未知模块；Bootstrap 为固定装配层。项目 ID、namespace、场景名与存档 namespace 可配置。依赖包来自随 grea 分发的源码和锁定的官方包，不接受用户替换 frameworkPackages 或例外。
 
 `dependencyLock` 两项为 null，首次生成使用随模板提供的锁定依赖，最终 manifest/lock 的实际字节写入所有权清单。目标平台选择是生成配置，不是 Player 已验证声明。其他平台上的 plan 可只读运行，写入端当前依赖 macOS 原生 Unity 环境；不自动安装 Editor、激活许可或更换版本。
 
@@ -35,7 +35,7 @@ Scene/Prefab/ScriptableObject 都通过 AssetDatabase、PrefabUtility、EditorSc
 
 URP 还会通过自身 Editor 逻辑创建根级 DefaultVolumeProfile 和 UniversalRenderPipelineGlobalSettings；这两项按实际输出登记为 generated，保留其默认路径，不冒称所有 Engine 默认资产已归入 GreaGenerated。
 
-这是有源码和配置的最小生成工程，按钮只演示弹窗生命周期，Counter 示例尚未装配成完整玩法。没有正式画面、字体主题、Toast 内容、复杂列表或生产存档迁移；完整闭环和 Player 已由独立的 [参考游戏参考工程](Unity参考游戏.md) 验收，不能把其结果外推到每个工程生成生成工程。按钮外观只使用 Unity 原生 Image，无外部素材。
+这是有源码和配置的最小生成工程，按钮只演示弹窗生命周期，Counter 示例尚未装配成完整玩法。没有正式画面、字体主题、Toast 内容、复杂列表或生产存档迁移；完整闭环和 Player 已由独立的 [参考游戏工程](Unity参考游戏.md) 验收，不能把其结果外推到每个生成工程。按钮外观只使用 Unity 原生 Image，无外部素材。
 
 ## 执行、重复生成与冲突
 
@@ -90,3 +90,5 @@ Python 事务测试模拟 Editor，不算原生证据；另有 Unity 实际生�
 当前验收限定工程生成：生成/身份与局部 Editor/组件运行。参考游戏完整游戏闭环、目标 Player、真实输入/视觉/音频与关闭重开，及隔离迁移原游戏等价性均未完成。
 
 API 依据：[PrefabUtility.SaveAsPrefabAsset](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/PrefabUtility.SaveAsPrefabAsset.html)、[GUID/local fileID 回读](https://docs.unity3d.com/6000.6/Documentation/ScriptReference/AssetDatabase.TryGetGUIDAndLocalFileIdentifier.html)。Scene 对象使用 GlobalObjectId 回读，不能用普通资产批量加载 API 代替场景加载。
+
+Editor journal 必须含 `errorCount: 0` 且 complete=true 才能发布。错误记录或缺少该字段的旧 journal 不能经恢复变成成功；保留失败现场并重新规划新尝试。Run 显式返回 Editor 退出码。本机 `unity run --help` 明确其以 batch mode 运行，原报告关于缺少 batch mode 的推测不成立。

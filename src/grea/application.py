@@ -14,6 +14,7 @@ def doctor(tool_ids=None,probe=False,cancel=None):
     for entry in entries:
         if cancel is not None and cancel.is_set():raise GreaError('CANCELLED','Diagnostic selection cancelled.')
         item={'tool_id':entry['id'],**registry.presence(entry)}
+        if entry.get('acquisition'):item['acquisition']=entry['acquisition']
         if probe:
             try:
                 with tempfile.TemporaryDirectory(prefix='grea-doctor-') as temp:
@@ -65,7 +66,13 @@ def dispatch(operation,arguments=_OMITTED,cancel=None):
             return out
         evidence=[];limits={};limitations=[];status='ok';error=None
         if operation=='session':
-            entries=registry.inventory();result={'version':__version__,'implementation':implementation_identity(),'package_root':str(package_root()),'catalog_sha256':digest({'operations':catalog(),'providers':registry.load()}),'operations':[x['name'] for x in catalog()],'providers':[{k:v for k,v in x.items() if k in ('id','category','availability')} for x in entries],'live_unity_connection':'not_checked'}
+            skill_path=Path(args.get('skill_dir',package_root()/'skill')).expanduser()
+            skill_version=json.loads((skill_path/'version.json').read_text())
+            required=skill_version.get('requiredOperations')
+            if (skill_version.get('greaVersion')!=__version__ or not isinstance(required,list)
+                    or not all(isinstance(name,str) and name in CONTRACTS for name in required)):
+                raise GreaError('SKILL_VERSION_MISMATCH','Skill requires another grea version or unavailable operations.')
+            entries=registry.inventory();result={'version':__version__,'implementation':implementation_identity(),'package_root':str(package_root()),'catalog_sha256':digest({'operations':catalog(),'providers':registry.load()}),'operations':[x['name'] for x in catalog()],'providers':[{k:v for k,v in x.items() if k in ('id','category','availability')} for x in entries],'live_unity_connection':'not_checked','skill':{'version':skill_version.get('version'),'greaVersion':skill_version['greaVersion'],'compatibility':'matched','scope':'explicit_install' if 'skill_dir' in args else 'bundled_source'}}
         elif operation=='list_tools':result={'tools':registry.inventory(**args),'catalog_sha256':digest(registry.load())}
         elif operation=='describe_tool':
             entry=registry.tool(**args);result={'tool':entry,'availability':registry.presence(entry)}

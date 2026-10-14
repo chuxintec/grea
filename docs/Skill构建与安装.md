@@ -30,3 +30,8 @@ python3 scripts/build_skill.py --tag v2026.10.13-rc3 --out dist/skill-check \
 命令只在本地构建与核验，不创建标签、不上传。构建读取 Git 提交对象，版本不匹配、缺失引用、包外本地路径或校验失败都会停止。
 
 Release 流程同时构建两个 ZIP，生成同一制品清单和校验文件，并独立解压 Skill 检查内容与可迁移链接。相同提交重复构建应字节一致；未来结构调整仍保留完整包的既有入口与工具 ID。
+
+
+开发安装保留本地仓库链接，Release 安装使用固定提交 URL；两种形式的使用场景不同，保留各自链接转换和测试。版本相同不表示不同提交字节相同，升级时还须核对 sourceRevision／安装来源。同步前用 `--check` 查看差异；生成副本中不存手工内容。
+
+安装身份可通过 `./bin/grea session '{"skill_dir":"/absolute/skills/grea"}'` 显式检查。默认 session 检查随源码附带的 Skill，不自动推断客户端实际加载了哪个目录。

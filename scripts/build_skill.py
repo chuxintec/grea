@@ -98,8 +98,9 @@ def verify_archive(path, expected, extract=None):
         # Verification completes before any extraction write.
         if extract is not None:
             extract = Path(extract).absolute()
-            if extract.exists() or any(p.is_symlink() for p in (extract, *extract.parents)):
+            if extract.exists() or extract.is_symlink() or any(p.is_symlink() and not p.exists() for p in extract.parents):
                 raise ValueError('Skill extraction requires a new non-symlink directory')
+            extract = extract.resolve()
             extract.mkdir(parents=True)
             for name, data in expected.items():
                 target = extract / name; target.parent.mkdir(parents=True, exist_ok=True)

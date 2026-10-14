@@ -24,13 +24,13 @@ TOOL = string('Exact tool ID from list_tools; no implicit provider substitution.
 CASE = string('Project .grea case directory, or its owning project directory.')
 
 CONTRACTS = {
- 'session': ('Inspect grea identity, catalog digest and readiness without launching providers.', obj(), []),
+ 'session': ('Inspect grea identity, catalog digest and readiness without launching providers; optionally check an installed Skill.', obj({'skill_dir': PATH}), []),
  'list_tools': ('List the complete registered provider/helper inventory, including unavailable entries.', obj({'category': string()}), []),
  'describe_tool': ('Read one registered tool contract, effects, command and limitations.', obj({'tool_id': TOOL}, ['tool_id']), []),
  'doctor': ('Inspect installation presence; only run explicit selected version/help probes when probe=true.', obj({'tool_ids': array(TOOL), 'probe': {'type':'boolean','default':False}}), ['process_when_probe_requested']),
  'inspect_target': ('Inventory a supplied artifact with content digests and explicit partial coverage; never execute it.', obj({'path': PATH, 'max_files': integer(1000,1,100000), 'max_bytes': integer(268435456,1,17179869184)}, ['path']), ['filesystem_read']),
  'plan_workflow': ('Select scoped Unity recovery steps, evidence dimensions, tools and canonical references; does not execute the plan.', obj({'mode': string(enum=MODES), 'source_engine': string(enum=('unity','laya','other'))}, ['mode']), []),
- 'run_tool': ('Run one exact registered command with explicit argv and a new log directory; preserve nonzero/timeout/partial outcomes. Does not grant approval or assert game parity.', obj({'tool_id': TOOL, 'arguments': array({'type':'string'}), 'run_dir': PATH, 'timeout_seconds': integer(120,1,3600), 'max_output_bytes': integer(16777216,1024,1073741824), 'max_inline_bytes': integer(32768,256,1048576)}, ['tool_id','arguments','run_dir']), ['process','filesystem_write','provider_declared_effects']),
+ 'run_tool': ('Run one exact registered command with explicit argv and a new log directory; preserve nonzero/timeout/partial outcomes. Does not grant approval or assert game parity.', obj({'tool_id': TOOL, 'arguments': array({'type':'string'}), 'working_directory': string('Optional existing absolute cwd; default is the new run directory. argv is never guessed or rewritten.'), 'run_dir': PATH, 'timeout_seconds': integer(120,1,3600), 'max_output_bytes': integer(16777216,1024,1073741824), 'max_inline_bytes': integer(32768,256,1048576)}, ['tool_id','arguments','run_dir']), ['process','filesystem_write','provider_declared_effects']),
  'init_case': ('Create a project-local immutable baseline and explicit required acceptance dimensions. Existing cases are not overwritten.', obj({'project_dir': PATH, 'source': PATH, 'mode': string(enum=MODES), 'required_dimensions': array(string(enum=DIMENSIONS))}, ['project_dir','source','mode']), ['filesystem_write']),
  'add_evidence': ('Register an existing evidence file and its source/candidate role with a verified digest. The role is caller-declared, not authenticated original gameplay.', obj({'case_dir': CASE,'kind':string(enum=KINDS),'path':PATH,'description':string()}, ['case_dir','kind','path','description']), ['filesystem_read','filesystem_write']),
  'record_verification': ('Record an explicit reviewer verdict for one dimension, bound to existing evidence IDs. It records a claim; it does not run tests or inspect images.', obj({'case_dir':CASE,'dimension':string(enum=DIMENSIONS),'status':string(enum=('passed','failed','not_run','not_applicable')),'evidence_ids':array(string()),'note':string()}, ['case_dir','dimension','status','evidence_ids','note']), ['filesystem_write']),
@@ -46,7 +46,7 @@ CONTRACTS.update({
  'inspect_numeric_texture': ('Validate raw floating-point texture bytes (VAT/numeric maps); ordinary PNG imagery is not equivalent numeric evidence.', obj(dict(_RUN, source=PATH, width=integer(1), height=integer(1), channels=integer(4,1,4), dtype=string(enum=('f16','f32')), endian=dict(string(enum=('little','big')),default='little'), candidate=PATH), ['source','width','height','channels','dtype','run_dir']), ['filesystem_read','filesystem_write','process']),
 })
 
-# Unity M1 only exposes read-only operations; generation is intentionally absent.
+# Static inspection and generation have separate operation and plan contracts.
 from .unity_project_contracts import documents as unity_documents, capability_matrix
 _UNITY_INPUT = {'project_root': PATH, 'profile': dict(PATH, default='grea-project.json', description='Project-root-relative profile JSON path; absolute paths are rejected.'),
                 'mode': dict(string(enum=('new','adopt','refactor')), default='adopt'),
@@ -54,8 +54,8 @@ _UNITY_INPUT = {'project_root': PATH, 'profile': dict(PATH, default='grea-projec
                 'baseline': string('Project-root-relative existing file within evidenceRoot; caller-declared behavioral baseline.'), 'max_files': integer(2000,1,100000),
                 'max_bytes': integer(67108864,1,1073741824)}
 CONTRACTS.update({
- 'validate_unity_project': ('Read-only M1 profile/path/dependency/assembly checks. No Unity launch, writes or runtime acceptance.', obj(_UNITY_INPUT, ['project_root']), ['filesystem_read']),
- 'plan_unity_project': ('Create a deterministic design-only Unity plan on stdout. No generation or project writes; generationReady is always false in M1.', obj(dict(_UNITY_INPUT, expected_plan_id={'type':'string','pattern':'^[0-9a-f]{64}$'}), ['project_root']), ['filesystem_read']),
+ 'validate_unity_project': ('Read-only profile/path/dependency/assembly checks. No Unity launch, writes or runtime acceptance.', obj(_UNITY_INPUT, ['project_root']), ['filesystem_read']),
+ 'plan_unity_project': ('Create a deterministic design-only Unity plan on stdout. No generation or project writes; generationReady is always false for this read-only operation.', obj(dict(_UNITY_INPUT, expected_plan_id={'type':'string','pattern':'^[0-9a-f]{64}$'}), ['project_root']), ['filesystem_read']),
 })
 
 _GEN = {'project_root': PATH, 'profile': dict(PATH, default='grea-project.json')}
@@ -63,9 +63,9 @@ _GEN_RUN = dict(_GEN, run_dir=string('Project-root-relative new evidence directo
                 timeout_seconds=integer(240, 1, 3600), max_output_bytes=integer(16777216, 1024, 1073741824),
                 max_inline_bytes=integer(32768, 256, 1048576))
 CONTRACTS.update({
- 'plan_unity_generation': ('Plan M3 create-only recipe or read-only adopt. No Unity process or writes.', obj(dict(_GEN, mode=dict(string(enum=('new','adopt')), default='new')), ['project_root']), ['filesystem_read']),
+ 'plan_unity_generation': ('Plan create-only recipe or read-only adopt. No Unity process or writes.', obj(dict(_GEN, mode=dict(string(enum=('new','adopt')), default='new')), ['project_root']), ['filesystem_read']),
  'generate_unity_project': ('Generate a new staged Unity project with Editor-created prefabs, verify and publish. Existing owned projects are verified without overwrites.', obj(dict(_GEN_RUN, plan_id={'type':'string','pattern':'^[0-9a-f]{64}$'}), ['project_root','run_dir','plan_id']), ['filesystem_read','filesystem_write','process']),
- 'recover_unity_generation': ('Resume a specific interrupted M3 run after identity checks. Conflicts are retained; no automatic deletion or overwrite.', obj(_GEN_RUN, ['project_root','run_dir']), ['filesystem_read','filesystem_write','process']),
+ 'recover_unity_generation': ('Resume a specific interrupted generation run after identity checks. Conflicts are retained; no automatic deletion or overwrite.', obj(_GEN_RUN, ['project_root','run_dir']), ['filesystem_read','filesystem_write','process']),
 })
 
 ERROR_SCHEMA = obj({'code': string(), 'message':string(), 'retryable':{'type':'boolean'}, 'details':{'type':'object'}, 'next_action':string()}, ['code','message','retryable','details','next_action'])

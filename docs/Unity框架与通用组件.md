@@ -1,6 +1,6 @@
 # Unity 框架与通用组件
 
-当前 Foundation、uGUI、Editor 包版本为 `0.2.0`，以自有源码随 grea 分发，尚未发布到 UPM Registry。已有默认程序集可选用桥接包 `0.1.0`。工程规则以 [Unity 开发规范](../skill/references/05-Unity-工程结构与开发规范.md) 为准；本页说明实际 API、安装和测试。
+当前 Foundation、uGUI、Editor 包版本为 `0.2.1`，以自有源码随 grea 分发，尚未发布到 UPM Registry。已有默认程序集可选用桥接包 `0.1.0`。工程规则以 [Unity 开发规范](../skill/references/05-Unity-工程结构与开发规范.md) 为准；本页说明实际 API、安装和测试。
 
 ## 包与依赖
 
@@ -52,3 +52,5 @@ unity test .private/framework-check/new-project --mode PlayMode \
 工程生成独立生成接口不改变静态规划的 `validate_unity_project` / `plan_unity_project`，两者继续保持只读静态语义，其 `not_run` 指当前被检查工程未做原生验证。`frameworkPackages` 的解析/安装、embedded 包来源盘点仍未接入静态规划，所以会继续返回 `FRAMEWORK_NOT_IMPLEMENTED`，不能直接用本测试工程充当静态规划已合规工程。包实测不会让静态规划的 `generationReady` 自动变成 true；生成有独立 CLI/MCP 接口。准备脚本是仓库测试工具，不是产品生成器。
 
 包测试与程序集配置依据已核对 [Unity 6000.6 包测试文档](https://docs.unity3d.com/6000.6/Documentation/Manual/cus-tests.html) 和 [asmdef 格式](https://docs.unity3d.com/6000.6/Documentation/Manual/assembly-definition-file-format.html)；本项目包拆分和生命周期 API 是 grea 的设计选择。
+
+`FileSaveStore.Recover()` 是显式恢复入口，返回 pending-committed、main-preserved、backup-restored 或 empty；损坏副本以唯一 `.corrupt-*` 名称保留，没有有效恢复副本时抛错。`CommandButton` 隐藏时取消旧命令，重显时仅恢复存活 owner 的绑定。0.2.1 不自动迁移已经复制到游戏中的旧包。

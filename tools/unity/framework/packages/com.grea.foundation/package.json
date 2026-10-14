@@ -1,8 +1,8 @@
 {
   "name": "com.grea.foundation",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "displayName": "com.grea.foundation",
-  "description": "Grea M2 minimal framework candidate; see package documentation for validation boundaries.",
+  "description": "Grea minimal framework candidate; see package documentation for validation boundaries.",
   "unity": "6000.6",
   "license": "MIT",
   "dependencies": {

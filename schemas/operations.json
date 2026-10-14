@@ -3,10 +3,16 @@
   "operations": [
     {
       "name": "session",
-      "description": "Inspect grea identity, catalog digest and readiness without launching providers.",
+      "description": "Inspect grea identity, catalog digest and readiness without launching providers; optionally check an installed Skill.",
       "inputSchema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "skill_dir": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explicit local path; do not substitute a historical path."
+          }
+        },
         "required": [],
         "additionalProperties": false
       },
@@ -851,6 +857,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "working_directory": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional existing absolute cwd; default is the new run directory. argv is never guessed or rewritten."
           },
           "run_dir": {
             "type": "string",
@@ -2383,7 +2394,7 @@
     },
     {
       "name": "validate_unity_project",
-      "description": "Read-only M1 profile/path/dependency/assembly checks. No Unity launch, writes or runtime acceptance.",
+      "description": "Read-only profile/path/dependency/assembly checks. No Unity launch, writes or runtime acceptance.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2564,7 +2575,7 @@
     },
     {
       "name": "plan_unity_project",
-      "description": "Create a deterministic design-only Unity plan on stdout. No generation or project writes; generationReady is always false in M1.",
+      "description": "Create a deterministic design-only Unity plan on stdout. No generation or project writes; generationReady is always false for this read-only operation.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2749,7 +2760,7 @@
     },
     {
       "name": "plan_unity_generation",
-      "description": "Plan M3 create-only recipe or read-only adopt. No Unity process or writes.",
+      "description": "Plan create-only recipe or read-only adopt. No Unity process or writes.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3074,7 +3085,7 @@
     },
     {
       "name": "recover_unity_generation",
-      "description": "Resume a specific interrupted M3 run after identity checks. Conflicts are retained; no automatic deletion or overwrite.",
+      "description": "Resume a specific interrupted generation run after identity checks. Conflicts are retained; no automatic deletion or overwrite.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -3241,5 +3252,5 @@
       }
     }
   ],
-  "sha256": "a96ae28a5ab72732f38f668fac0e9baa46a80a2300268c229f171ce65183ccfd"
+  "sha256": "f922ede0ce8f4d60f35b9602d66ca6673e585d9f472dcbc22a98f7ebe765d1eb"
 }

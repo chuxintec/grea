@@ -2,9 +2,9 @@
 
 Signal Garden 是 grea 的自有最小参考游戏：收集五个信号，支持暂停/恢复、结算、返回、重开与完成次数存档。它用于验证标准、框架、Prefab 和分发链路，不能替代任何原版游戏的一致性验收。既有工程的两个隔离模块试点已完成，范围见 [隔离迁移指南](Unity隔离迁移指南.md)。
 
-## 固定组合与源码边界
+## 历史验收组合与当前源码边界
 
-| 项目 | 本轮配置 |
+| 项目 | 2026-10-13 历史验收配置 |
 | --- | --- |
 | 工程标准 / 参考游戏 | 1.0.0 / 1.0.0 |
 | 工程生成模板 / 生成器 | grea-minimal-2d 0.1.0 / 0.1.0 |
@@ -12,11 +12,13 @@ Signal Garden 是 grea 的自有最小参考游戏：收集五个信号，支持
 | Editor / CLI | 6000.6.2f1 / 1.0.0-beta.8 |
 | 官方依赖 | URP 17.6.0、uGUI 2.6.0、Test Framework 1.8.0；传递依赖见 packages-lock.json |
 | 输入 / Player | Legacy Input、macOS arm64、Mono、Medium 托管裁剪 |
-| grea 产品版本 | 2026.10.13rc2 保持不变；本阶段不发布 Release 或移动标签 |
+| grea 产品版本 | 2026.10.13rc2 开发快照；随后整合入 rc3 |
+
+当前参考源码版本为 **1.0.1**，随附框架锁更新为 **0.2.1**；本次组件与生成回归不能替代当前参考 Player 的重新验收。上表及既有 JSON 保留历史身份。
 
 [参考源码](../tests/unity/reference-project/README.md) 按 Domain / Runtime / Editor / Tests 分层。Domain 不引用 UnityEngine，Runtime 装配 UI、会话作用域、音频和存档，Editor 负责资产创建、绑定回读与固定目标构建。Content 与 Scenes 是通过 Unity API 创建并纳管的资产，不手写 Unity YAML。作为仓库内测试夹具，业务根命名为 `Assets/Reference`，采用独立命名空间；这不是对现有游戏目录的自动迁移。
 
-基础工程由工程生成生成；参考场景是单场景入口，在运行时实例化 ReferenceView Prefab。按钮嵌套复用工程生成 ButtonShell，UIHost / ModalShell 保留在源码中用于检查，未引用的资产不进入 Player。状态切换不重复订阅按钮，离开/暂停使待处理收集失效，失败存档不计入成功次数。所有画面几何和提示音由自有代码生成；未包含游戏包、私人插件、外部美术或字体文件。文字使用 Unity 内置 LegacyRuntime 字体，第三方许可不受 MIT 覆盖。
+基础工程由生成器生成；参考场景是单场景入口，在运行时实例化 ReferenceView Prefab。按钮嵌套复用工程生成 ButtonShell，UIHost / ModalShell 保留在源码中用于检查，未引用的资产不进入 Player。状态切换不重复订阅按钮，离开/暂停使待处理收集失效，失败存档不计入成功次数。所有画面几何和提示音由自有代码生成；未包含游戏包、私人插件、外部美术或字体文件。文字使用 Unity 内置 LegacyRuntime 字体，第三方许可不受 MIT 覆盖。
 
 ## 创建、分发和独立恢复
 

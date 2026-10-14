@@ -7,6 +7,10 @@ def load():
     value=json.loads((package_root()/'registry.json').read_text())
     entries=value['tools'];ids=[x['id'] for x in entries]
     if len(ids)!=len(set(ids)):raise GreaError('INVALID_REGISTRY','Duplicate tool IDs.')
+    lock_path=package_root()/'providers.lock.json'
+    acquisition={x['tool_id']:x for x in json.loads(lock_path.read_text())['providers']} if lock_path.is_file() else {}
+    for entry in entries:
+        if entry['id'] in acquisition:entry['acquisition']=acquisition[entry['id']]
     by_id={x['id']:x for x in entries}
     overrides={}
     if os.environ.get('GREA_PROVIDERS'):
@@ -27,7 +31,7 @@ def load():
         entry=dict(by_id[key])
         if entry.get('alias_of'):
             canonical=resolve(entry['alias_of'],(*seen,key))
-            for field in ('execution','probe','files','required_files','host_support','configuration_source'):entry[field]=canonical.get(field)
+            for field in ('execution','probe','files','required_files','host_support','configuration_source','system_binary'):entry[field]=canonical.get(field)
             entry['canonical_id']=canonical.get('canonical_id',canonical['id'])
         if key in overrides:
             override=overrides[key]
@@ -37,6 +41,7 @@ def load():
             entry['files']=[]
             entry['required_files']=[]
             entry['host_support']={'systems':override['systems'],'architectures':override.get('architectures',[]),'verification':'explicit local configuration; runtime not checked'}
+            entry['system_binary']=None
             entry['configuration_source']=str(Path(os.environ['GREA_PROVIDERS']).expanduser().resolve())
         return entry
     return [resolve(key) for key in sorted(by_id)]
@@ -71,8 +76,16 @@ def command(entry,probe=False):
 def presence(entry):
     try:
         argv=command(entry,probe=not bool(entry.get('execution')))
+        if entry.get('system_binary'):
+            directory=os.environ.get('GREA_SYSTEM_BIN')
+            brew=shutil.which('brew') if directory is None else None
+            if directory is None and brew and Path(brew).parent.name=='bin':directory=str(Path(brew).parent)
+            if directory is None:return {'state':'manual','level':'presence','runtime':'not_checked','reason':'Set GREA_SYSTEM_BIN to check the wrapper target without executing Homebrew.'}
+            target=Path(directory)/entry['system_binary']
+            available=target.is_file() and os.access(target,os.X_OK)
+            return {'state':'detected' if available else 'unavailable','level':'presence','runtime':'not_checked','executable':str(target),'wrapper':argv[0]}
         # Interpreter availability alone does not establish that its script/dll exists.
-        missing=[x for x in argv[1:] if x.startswith('/') and x.endswith(('.py','.dll','.mjs','.js')) and not Path(x).is_file()]
+        missing=[x for x in argv[1:] if Path(x).is_absolute() and x.endswith(('.py','.dll','.mjs','.js')) and not Path(x).is_file()]
         if missing:return {'state':'unavailable','level':'presence','missing':missing,'runtime':'not_checked'}
         return {'state':'detected','level':'presence','executable':argv[0],'runtime':'not_checked'}
     except GreaError as e:

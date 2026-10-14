@@ -1,6 +1,6 @@
-# M2 分层装配示例
+# Counter 分层装配示例
 
-这是 seed-once 候选源码示例，使用自有合成计数业务。不是生成模板版本 `grea-minimal-2d/0.1.0-design` 的执行实现，不含 Scene/Prefab，也不代表完整可玩的参考工程（M4）。不将它复制到既有游戏。
+这是 `grea-minimal-2d/0.1.0` 生成配方的 seed-once 源码，使用自有合成计数业务。Scene/Prefab 由 Editor 生成器另行创建；本示例不代表完整可玩的参考游戏。不将它复制到既有游戏。
 
 Domain 定义不可变状态；Gameplay 拥有状态与暂停/退出规则及持久化端口；Services 实现有版本的合成 DTO；Presentation 把按钮请求传给 Gameplay；Bootstrap 显式构造这些对象并持有生命周期。Domain/Gameplay/Services 均无 Unity 类型引用；基础包不引用 Game。
 

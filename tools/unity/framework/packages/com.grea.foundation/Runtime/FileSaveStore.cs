@@ -40,6 +40,41 @@ namespace Grea.Foundation.Runtime
         public string Read() => File.Exists(path) ? Decode(path) : null;
         // Recovery is explicit and read-only; never silently overwrite a damaged save.
         public string ReadBackup() => File.Exists(path + ".backup") ? Decode(path + ".backup") : null;
+        static bool Valid(string file)
+        {
+            if (!File.Exists(file)) return false;
+            try { Decode(file); return true; }
+            catch (InvalidDataException) { return false; }
+            catch (DecoderFallbackException) { return false; }
+        }
+        static void Quarantine(string file)
+        { File.Move(file, file + ".corrupt-" + Guid.NewGuid().ToString("N")); }
+        // Explicit application decision; never invoked implicitly by Read/Write.
+        // A checksum-valid pending write takes precedence over the previous main save.
+        public string Recover()
+        {
+            var pending = path + ".pending";
+            if (File.Exists(pending))
+            {
+                if (Valid(pending))
+                {
+                    if (File.Exists(path) && !Valid(path)) Quarantine(path);
+                    if (File.Exists(path)) File.Replace(pending, path, path + ".backup");
+                    else File.Move(pending, path);
+                    return "pending-committed";
+                }
+                Quarantine(pending);
+            }
+            if (!File.Exists(path)) return "empty";
+            if (Valid(path)) return "main-preserved";
+            var backup = path + ".backup";
+            if (!Valid(backup)) throw new InvalidDataException("No valid recovery copy; damaged main preserved");
+            File.Copy(backup, pending, false);
+            Decode(pending);
+            Quarantine(path);
+            File.Move(pending, path);
+            return "backup-restored";
+        }
         public void Write(string value)
         {
             if (value == null) throw new ArgumentNullException(nameof(value));

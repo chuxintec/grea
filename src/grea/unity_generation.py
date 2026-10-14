@@ -14,8 +14,8 @@ from . import runner, registry
 from .unity_projects import Reader, relative, overlaps, strict_json, KEYWORDS
 from .unity_project_contracts import PROFILE, REFERENCE, MANIFEST as MANIFEST_SCHEMA
 
-VERSION = '0.1.0'
-TEMPLATE = {'id': 'grea-minimal-2d', 'version': VERSION}
+VERSION = '0.1.1'
+TEMPLATE = {'id': 'grea-minimal-2d', 'version': '0.1.0'}
 MANIFEST = 'Tools/Generated/manifests/project.json'
 MODULES = [{'name': 'Counter', 'layers': ['Domain', 'Gameplay', 'Presentation', 'Services']}]
 LIMITS = ['Creates only a new staged project or verifies its own unchanged generated project.',
@@ -241,22 +241,7 @@ def _assert_no_editor(stage):
         raise GreaError('EDITOR_BUSY', 'Editor lock remains; verify that Editor has exited before recovery.')
 
 
-def _publish_new(source, target):
-    """Atomic directory move which cannot replace even a concurrently created empty target."""
-    import sys
-    library = ctypes.CDLL(None, use_errno=True)
-    if sys.platform == 'darwin':
-        call = library.renamex_np
-        call.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
-        result = call(os.fsencode(source), os.fsencode(target), 4)  # RENAME_EXCL
-    elif sys.platform.startswith('linux') and hasattr(library, 'renameat2'):
-        call = library.renameat2
-        call.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
-        result = call(-100, os.fsencode(source), -100, os.fsencode(target), 1)  # RENAME_NOREPLACE
-    else:
-        raise GreaError('UNSUPPORTED_PLATFORM', 'Atomic no-replace directory publication is unavailable.')
-    if result:
-        raise GreaError('PUBLICATION_FAILED', 'Atomic publication refused; staged project retained.', details={'errno': ctypes.get_errno()})
+from .common import publish_directory as _publish_new
 
 
 def _prepare(stage, p, state, cancel):
@@ -348,6 +333,11 @@ def _advance(root, out, p, state, timeout, output_budget, inline_budget, cancel)
                 try: os.killpg(group, 0)
                 except ProcessLookupError: pass
                 else: raise GreaError('EDITOR_BUSY', 'Prior Editor process group still exists.')
+        journal_path = stage / 'Tools/Generated/editor-journal.json'
+        if journal_path.exists():
+            prior_journal = strict_json(journal_path.read_bytes(), 'editor-journal')
+            if type(prior_journal.get('errorCount')) is not int or prior_journal['errorCount'] != 0:
+                raise GreaError('RECOVERY_REQUIRED', 'Prior Editor errors or legacy journal cannot be replayed as success; preserve this attempt.')
         current = _stage_snapshot(stage)
         if state['phase'] == 'editor_running' and current != state.get('failedSnapshot'):
             raise GreaError('RECOVERY_REQUIRED', 'No matching settled failure snapshot; preserve possible concurrent/interrupted changes for review.')
@@ -368,7 +358,8 @@ def _advance(root, out, p, state, timeout, output_budget, inline_budget, cancel)
                             details={'reason': receipt.get('reason'), 'run_dir': str(out)}, next_action='Use recover_unity_generation only after the Editor has exited; never rerun generation blindly.')
         _assert_no_editor(stage)
         journal = strict_json((stage / 'Tools/Generated/editor-journal.json').read_bytes(), 'editor-journal')
-        if not journal.get('complete') or journal.get('pending') or journal.get('identity') != state['recipeId']:
+        if (not journal.get('complete') or journal.get('pending') or journal.get('identity') != state['recipeId']
+                or type(journal.get('errorCount')) is not int or journal['errorCount'] != 0):
             raise GreaError('VERIFICATION_FAILED', 'Editor did not produce a completed binding receipt.')
         expected = {f'Assets/GreaGenerated/{n}' for n in ('ButtonShell.prefab', 'ModalShell.prefab', 'UIHost.prefab', 'BootstrapConfig.asset', 'Renderer.asset', 'Pipeline.asset')} | set(p['scenes'].values())
         if {a['path'] for a in journal['assets']} != expected:

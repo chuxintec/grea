@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "complete": false,
+  "scope": "Selected local adapters only. This is an identity inventory, not a complete install lock.",
+  "providers": [
+    {
+      "tool_id": "assetripper",
+      "upstream": "https://github.com/AssetRipper/AssetRipper",
+      "license_url": "https://github.com/AssetRipper/AssetRipper/blob/master/LICENSE.md",
+      "adapter_expected_version": "2.0.0",
+      "platform": [
+        "Darwin"
+      ],
+      "architectures": [
+        "arm64",
+        "aarch64"
+      ],
+      "artifact_url": null,
+      "status": "local_identity_only",
+      "files": [
+        {
+          "file": "AssetRipper.GUI.Free",
+          "sha256": "895f7dea4ba64cffb24529c3d12bdd7fe5bc3700f02a41811547ee4179100140",
+          "bytes": 151494376
+        }
+      ],
+      "boundary": "Local adapter bytes observed on 2026-10-14; not an upstream download checksum or reproducible build claim. Select an upstream artifact and independently verify before installation."
+    },
+    {
+      "tool_id": "cpp2il",
+      "upstream": "https://github.com/SamboyCoding/Cpp2IL",
+      "license_url": "https://github.com/SamboyCoding/Cpp2IL/blob/development/LICENSE",
+      "adapter_expected_version": "2022.1.0-pre-release.21",
+      "platform": [
+        "Darwin"
+      ],
+      "architectures": [
+        "arm64",
+        "aarch64"
+      ],
+      "artifact_url": null,
+      "status": "local_identity_only",
+      "files": [
+        {
+          "file": "Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc",
+          "sha256": "83ae049dc5f7057461a214965fc9c28768cc76892ab5bdadb699566edcf15300",
+          "bytes": 15768240
+        }
+      ],
+      "boundary": "Local adapter bytes observed on 2026-10-14; not an upstream download checksum or reproducible build claim. Select an upstream artifact and independently verify before installation."
+    },
+    {
+      "tool_id": "il2cppdumper",
+      "upstream": "https://github.com/Perfare/Il2CppDumper",
+      "license_url": "https://github.com/Perfare/Il2CppDumper/blob/master/LICENSE",
+      "adapter_expected_version": "local-build",
+      "platform": [
+        "Darwin",
+        "Windows",
+        "Linux"
+      ],
+      "architectures": [],
+      "artifact_url": null,
+      "status": "upstream_only",
+      "files": [],
+      "boundary": "No artifact identity recorded. Upstream link is not a pinned installation; reconstruct the build and record its inputs before claiming reproducibility."
+    }
+  ]
+}

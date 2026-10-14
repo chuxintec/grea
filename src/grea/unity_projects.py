@@ -1,4 +1,4 @@
-"""Bounded, read-only Unity project inspection and non-executable M1 plans."""
+"""Bounded, read-only Unity project inspection and non-executable inspection plans."""
 import hashlib
 import json
 import os
@@ -11,15 +11,15 @@ from collections import deque
 from jsonschema import Draft202012Validator
 from .common import GreaError, digest
 from .unity_project_contracts import (
-    PROFILE, REPORT, PLAN, REFERENCE, STANDARD_VERSION, PLANNER_VERSION, documents,
+    PROFILE, REPORT, PLAN, REFERENCE, STANDARD_VERSION, PLANNER_VERSION, LEGACY_TEMPLATE, documents,
 )
 
 LIMITATIONS = [
     'Static filesystem observations only; no Editor, package restore, imports, code execution or project writes.',
-    'Plans are design-only: framework package resolution, asset generation and transactional apply are not implemented.',
+    'This operation is read-only; use plan_unity_generation and generate_unity_project for the separate create-only recipe.',
     'GUID text and assembly references do not prove fileID bindings, dynamic loading, compilation or gameplay parity.',
     'Editor, PlayMode, Player and existing-game behavior acceptance remain not_run.',
-    'Exceptions are recorded but do not suppress findings in M1.',
+    'Exceptions are recorded but do not suppress findings in static inspection.',
     'A supplied baseline is hashed as caller-provided evidence; its behavioral claims are not verified.',
 ]
 KEYWORDS = set('abstract as base bool break byte case catch char checked class const continue decimal default delegate do double else enum event explicit extern false finally fixed float for foreach goto if implicit in int interface internal is lock long namespace new null object operator out override params private protected public readonly ref return sbyte sealed short sizeof stackalloc static string struct switch this throw true try typeof uint ulong unchecked unsafe ushort using virtual void volatile while'.split())
@@ -290,6 +290,10 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
             raise GreaError('INVALID_PROJECT_PATH', 'Baseline must be an explicit file within evidenceRoot.')
         reader.read(baseline)
         base_identity = reader.identities[baseline]
+    generated = False
+    if mode == 'adopt' and scope is None and reader.path(at('Tools/Generated/manifests/project.json')).is_file():
+        from .unity_generation import plan_generation
+        generated = plan_generation(project_root, profile, cancel=cancel)['action'] == 'verify'
     version_path = at(specials[0])
     if version_path in reader.data:
         match = re.search(rb'^m_EditorVersion: ([^\r\n]+)', reader.data[version_path], re.M)
@@ -297,7 +301,7 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
             finding('EDITOR_VERSION_MISMATCH', version_path, 'Declared and recorded Editor versions differ.', 'GEN-01')
     manifest_path, lock_path = at(specials[1]), at(specials[2])
     for rel, field in [(manifest_path, 'manifestSha256'), (lock_path, 'packagesLockSha256')]:
-        if rel in reader.data and reader.identities[rel]['sha256'] != p['dependencyLock'][field]:
+        if rel in reader.data and reader.identities[rel]['sha256'] != p['dependencyLock'][field] and not (generated and p['dependencyLock'][field] is None):
             finding('DEPENDENCY_LOCK_MISMATCH', rel, 'Profile fingerprint does not match this dependency input.', 'GEN-01')
     if manifest_path in reader.data and lock_path in reader.data:
         manifest = strict_json(reader.data[manifest_path], manifest_path)
@@ -308,7 +312,7 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
             finding('INVALID_DEPENDENCIES', manifest_path, 'Manifest and lock must contain dependency objects.', 'GEN-01')
         else:
             for name, locked_item in locked.items():
-                if not isinstance(locked_item, dict) or locked_item.get('source') not in ('registry', 'builtin'):
+                if not isinstance(locked_item, dict) or (locked_item.get('source') not in ('registry', 'builtin') and not (generated and name.startswith('com.grea.') and locked_item.get('source') == 'embedded')):
                     finding('UNSUPPORTED_DEPENDENCY_SOURCE', lock_path, 'Lock entry has no supported registry/builtin source: '+name, 'STR-04')
             for name, expected in p['toolchain']['packages'].items():
                 item = locked.get(name)
@@ -316,17 +320,17 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
                     finding('MISSING_OR_MISMATCHED_PACKAGE', manifest_path, 'Required package does not match profile: '+name, 'GEN-01')
             for name, version in dependencies.items():
                 if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?', version):
-                    finding('UNSUPPORTED_DEPENDENCY_SOURCE', manifest_path, 'M1 does not resolve local, Git or unpinned dependency: '+name, 'STR-04')
+                    finding('UNSUPPORTED_DEPENDENCY_SOURCE', manifest_path, 'Static inspection does not resolve local, Git or unpinned dependency: '+name, 'STR-04')
                 elif not isinstance(locked.get(name), dict) or locked[name].get('version') != version:
                     finding('MISSING_LOCK_ENTRY', lock_path, 'Direct package is absent or mismatched in lock: '+name, 'GEN-01')
-    template_ok = p['template'] == REFERENCE['template']
+    template_ok = p['template'] in (REFERENCE['template'], LEGACY_TEMPLATE)
     if not template_ok:
-        finding('UNKNOWN_TEMPLATE', profile, 'Only the registered design recipe is recognized; no executable template is available.', 'GEN-01')
+        finding('UNKNOWN_TEMPLATE', profile, 'Only the registered recipe or legacy design profile is recognized.', 'GEN-01')
     known = template_ok and p['toolchain'] == REFERENCE['toolchain'] and p['assetBackend'] == REFERENCE['assetBackend']
     if not known:
-        finding('UNSUPPORTED_COMBINATION', profile, 'This combination is not in the M1 static reference matrix; it will not be substituted.', 'GEN-01')
+        finding('UNSUPPORTED_COMBINATION', profile, 'This combination is not in the static reference matrix; it will not be substituted.', 'GEN-01')
     if p['frameworkPackages']:
-        finding('FRAMEWORK_NOT_IMPLEMENTED', profile, 'M1 does not resolve or install framework packages; M2 package tests are separate evidence.', 'CMP-01')
+        finding('FRAMEWORK_OVERRIDE_UNSUPPORTED', profile, 'Explicit framework overrides are not resolved by this static operation; bundled recipe packages are verified by ownership.', 'CMP-01')
     if mode != 'new':
         for value in p['scenes'].values():
             rel = at(value)
@@ -341,13 +345,13 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
     inventory = sorted(reader.identities.values(), key=lambda x: x['path'])
     snapshot = digest({'inventory': inventory, 'directories': reader.directories, 'absent': sorted(reader.missing)})
     capability = {'id': REFERENCE['id'] if known else None, 'staticPlanning': 'supported' if known else 'unsupported',
-                  'editor': 'not_run', 'playMode': 'not_run', 'player': 'not_run', 'generation': 'not_implemented'}
+                  'editor': 'not_run', 'playMode': 'not_run', 'player': 'not_run', 'generation': 'not_run'}
     report = {'schemaVersion': 1, 'standardVersion': STANDARD_VERSION, 'plannerVersion': PLANNER_VERSION,
               'mode': mode, 'profileSha256': reader.identities[profile]['sha256'], 'snapshotSha256': snapshot,
               'scope': roots, 'inventory': inventory, 'findings': findings,
-              'checks': [{'id': 'A0', 'status': 'fail' if findings else 'pass', 'reason': 'M1 declared inputs, paths and explicit assembly metadata only.'},
-                         *[{'id': level, 'status': 'not_run', 'reason': 'Not implemented or executed in M1.'} for level in ('A1', 'A2', 'A3', 'A4', 'A5')]],
-              'capability': capability, 'staticStatus': 'fail' if findings else 'pass',
+              'checks': [{'id': 'A0', 'status': 'fail' if any(f['severity']=='error' for f in findings) else 'pass', 'reason': 'Declared inputs, paths and explicit assembly metadata only.'},
+                         *[{'id': level, 'status': 'not_run', 'reason': 'Not implemented or executed in static inspection.'} for level in ('A1', 'A2', 'A3', 'A4', 'A5')]],
+              'capability': capability, 'staticStatus': 'fail' if any(f['severity']=='error' for f in findings) else 'pass',
               'compliance': 'not_assessed', 'limitations': LIMITATIONS}
     Draft202012Validator(REPORT).validate(report)
     return p, report, reader, at, base_identity
@@ -454,9 +458,16 @@ def plan_project(project_root, profile='grea-project.json', mode='adopt', scope=
         items.append({'action': action, 'logicalId': logical, 'target': target,
                       'expectedBeforeHash': before['sha256'] if before else None, 'owner': owner,
                       'preserveGuid': True, 'requiredBindings': list(bindings),
-                      'reason': 'Design intent only; M1 does not write, move, delete or overwrite this target.',
+                      'reason': 'Design intent only; this operation does not write, move, delete or overwrite this target.',
                       'validationIds': ['GEN-02', 'GEN-03', 'PFB-04']})
-    if mode == 'new' and report['staticStatus'] == 'pass':
+    if mode == 'new' and report['staticStatus'] == 'pass' and p['template'] == REFERENCE['template']:
+        from .unity_generation import _profile, _recipe
+        recipe = _recipe(_profile(reader, profile))
+        for name in sorted(recipe):
+            item(at(name), 'recipe:'+name, 'package' if name.startswith('Packages/') else 'seed-once')
+        for name, path in p['scenes'].items():
+            item(at(path), 'scene:'+name, 'generated', ['Editor-generated bindings'])
+    elif mode == 'new' and report['staticStatus'] == 'pass':
         item(at('ProjectSettings/ProjectVersion.txt'), 'project:editor', 'generated')
         item(at('Packages/manifest.json'), 'project:packages', 'generated')
         item(at('Assets/Game/Runtime/Bootstrap/Bootstrap.cs'), 'project:bootstrap', 'seed-once')
@@ -477,7 +488,7 @@ def plan_project(project_root, profile='grea-project.json', mode='adopt', scope=
               'mode': mode, 'projectId': p['projectId'], 'profileSha256': report['profileSha256'],
               'snapshotSha256': report['snapshotSha256'], 'inputsSha256': digest(inputs),
               'template': p['template'], 'scope': report['scope'], 'baseline': base, 'items': items,
-              'blockers': sorted(set(['GENERATION_NOT_IMPLEMENTED'] + [f['code'] for f in report['findings']])),
+              'blockers': sorted(set(['USE_GENERATION_PLAN'] + [f['code'] for f in report['findings']])),
               'generationReady': False, 'report': report}
     result['planId'] = digest(result)
     if expected_plan_id is not None and expected_plan_id != result['planId']:

@@ -20,7 +20,7 @@ namespace Grea.Editor
     // Only invoked by the grea-owned staged project. Existing assets are never overwritten.
     public static class ProjectGenerator
     {
-        public const string Version = "0.1.0";
+        public const string Version = "0.1.1";
         public const string BasePath = "Assets/GreaGenerated";
         [Serializable] public sealed class Request
         {
@@ -35,6 +35,7 @@ namespace Grea.Editor
         {
             public string generatorVersion, identity, pending;
             public bool complete;
+            public int errorCount;
             public List<AssetRecord> assets = new List<AssetRecord>();
         }
         public static string Hash(string path)
@@ -69,10 +70,17 @@ namespace Grea.Editor
             var journal = File.Exists(journalPath) ? JsonUtility.FromJson<Journal>(File.ReadAllText(journalPath)) :
                 new Journal { generatorVersion = Version, identity = request.identity };
             if (journal.generatorVersion != Version || journal.identity != request.identity) throw new InvalidOperationException("STALE_GENERATOR");
+            if (journal.errorCount != 0) throw new InvalidOperationException("RECOVERY_REQUIRED: previous Editor errors require a new reviewed attempt");
             if (!string.IsNullOrEmpty(journal.pending)) throw new InvalidOperationException("RECOVERY_REQUIRED: pending asset " + journal.pending);
             foreach (var item in journal.assets)
                 if (!File.Exists(item.path) || Hash(item.path) != item.sha256 || !File.Exists(item.path + ".meta") || Hash(item.path + ".meta") != item.metaSha256)
                     throw new InvalidOperationException("OWNERSHIP_CONFLICT: " + item.path);
+            void Observe(string message, string trace, LogType type)
+            { if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) journal.errorCount++; }
+            journal.complete = false;
+            Application.logMessageReceived += Observe;
+            try
+            {
             void Create(string path, Action action)
             {
                 if (journal.assets.Any(x => x.path == path)) return;
@@ -124,7 +132,14 @@ namespace Grea.Editor
             QualitySettings.renderPipeline = null;
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(request.bootstrapScene, true), new EditorBuildSettingsScene(request.entryScene, true) };
             Validate(request);
-            journal.complete = true; AtomicJson(journalPath, journal);
+            if (journal.errorCount != 0) throw new InvalidOperationException("EDITOR_ERRORS: inspect preserved log");
+            journal.complete = true;
+            }
+            finally
+            {
+                Application.logMessageReceived -= Observe;
+                AtomicJson(journalPath, journal);
+            }
         }
         static GameObject Rect(string name, Transform parent = null)
         { var go = new GameObject(name, typeof(RectTransform)); if (parent) go.transform.SetParent(parent, false); return go; }
@@ -184,17 +199,16 @@ namespace Grea.Editor
         }
         public static void Run()
         {
-            var project = Path.GetDirectoryName(Application.dataPath);
-            var request = JsonUtility.FromJson<Request>(File.ReadAllText(Path.Combine(project, "Tools/Generated/request.json")));
-            int errors = 0;
-            void Observe(string message, string trace, LogType type) { if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) errors++; }
-            Application.logMessageReceived += Observe;
+            int code = 1;
             try
             {
+                var project = Path.GetDirectoryName(Application.dataPath);
+                var request = JsonUtility.FromJson<Request>(File.ReadAllText(Path.Combine(project, "Tools/Generated/request.json")));
                 Generate(request, Path.Combine(project, "Tools/Generated/editor-journal.json"));
-                if (errors != 0) throw new InvalidOperationException("EDITOR_ERRORS: inspect preserved log");
+                code = 0;
             }
-            finally { Application.logMessageReceived -= Observe; }
+            catch (Exception error) { Debug.LogException(error); }
+            finally { EditorApplication.Exit(code); }
         }
     }
 }

@@ -19,10 +19,13 @@ def terminate(proc):
     try:proc.wait(timeout=1)
     except subprocess.TimeoutExpired:pass
 
-def execute(tool_id,arguments,run_dir,timeout_seconds=120,max_output_bytes=16777216,max_inline_bytes=32768,cancel=None,probe=False):
+def execute(tool_id,arguments,run_dir,timeout_seconds=120,max_output_bytes=16777216,max_inline_bytes=32768,cancel=None,probe=False,working_directory=None):
     entry=tool(tool_id);argv=command(entry,probe=probe)+arguments;out=Path(run_dir).expanduser()
     if out.exists() or out.is_symlink():raise GreaError('OUTPUT_EXISTS','Use a new run directory for every attempt.')
     if not out.parent.is_dir():raise GreaError('INVALID_OUTPUT','Run directory parent must already exist.')
+    cwd = Path(working_directory).expanduser() if working_directory is not None else None
+    if cwd is not None and (not cwd.is_absolute() or not cwd.is_dir()):
+        raise GreaError('INVALID_WORKING_DIRECTORY','working_directory must be an existing absolute directory.')
     bindings=[]
     for value in argv[:2]:
         path=Path(value)
@@ -36,7 +39,7 @@ def execute(tool_id,arguments,run_dir,timeout_seconds=120,max_output_bytes=16777
     out=out.parent.resolve()/out.name;out.mkdir();start=time.monotonic();began=now()
     count=0;lock=threading.Lock();overflow=threading.Event();threads=[];reason=None
     try:
-        proc=subprocess.Popen(argv,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=str(out),start_new_session=os.name=='posix')
+        proc=subprocess.Popen(argv,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,cwd=str(cwd.resolve() if cwd else out),start_new_session=os.name=='posix')
     except OSError as e:
         write_new(out/'run.json',{'schema_version':1,'tool_id':tool_id,'status':'launch_failed','error':str(e),'started_at':began})
         raise GreaError('LAUNCH_FAILED',str(e),details={'run_dir':str(out)})
@@ -79,7 +82,7 @@ def execute(tool_id,arguments,run_dir,timeout_seconds=120,max_output_bytes=16777
     if not inline_truncated and previews['stdout'].strip():
         try:parsed=json.loads(previews['stdout'],parse_constant=lambda value: (_ for _ in ()).throw(ValueError('Non-JSON constant '+value)))
         except ValueError:pass
-    result={'tool_id':tool_id,'provider_contract_sha256':digest(entry),'implementation':implementation,'entrypoint_identities':bindings,'identity_observed_at':'before_launch','limits':limits,'cleanup_attempted':bool(reason),'command':argv,'exit_code':code,'status':status,'reason':reason,'run_dir':str(out),'started_at':began,'finished_at':now(),'duration_seconds':round(time.monotonic()-start,3),'captured_bytes':count,'capture_complete':not reason,'inline_truncated':inline_truncated,'stdout':previews['stdout'],'stderr':previews['stderr'],'parsed_stdout':parsed,'process_group':proc.pid if os.name=='posix' else None,'cleanup_scope':'owned_process_group' if os.name=='posix' else 'owned_process_only'}
+    result={'tool_id':tool_id,'provider_contract_sha256':digest(entry),'implementation':implementation,'entrypoint_identities':bindings,'identity_observed_at':'before_launch','limits':limits,'cleanup_attempted':bool(reason),'command':argv,'working_directory':str(cwd.resolve() if cwd else out),'exit_code':code,'status':status,'reason':reason,'run_dir':str(out),'started_at':began,'finished_at':now(),'duration_seconds':round(time.monotonic()-start,3),'captured_bytes':count,'capture_complete':not reason,'inline_truncated':inline_truncated,'stdout':previews['stdout'],'stderr':previews['stderr'],'parsed_stdout':parsed,'process_group':proc.pid if os.name=='posix' else None,'cleanup_scope':'owned_process_group' if os.name=='posix' else 'owned_process_only'}
     write_new(out/'run.json',result)
     logs.append(dict(hash_file(out/'run.json'),kind='run_receipt'))
     error=None

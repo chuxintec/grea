@@ -38,6 +38,18 @@ namespace Grea.Tests
             button.onClick.Invoke(); Assert.AreEqual(2, calls);
             view.Unbind(); button.onClick.Invoke(); Assert.AreEqual(2, calls);
         }
+        [UnityTest] public IEnumerator HideShowRestoresBindingButRejectsLateCommandsAndDisposedOwner()
+        {
+            var view = MakeButton(out var button); int calls = 0;
+            var gate = new TaskCompletionSource<bool>(); OperationStamp old = default;
+            view.Bind(scope, stamp => { calls++; old = stamp; return calls == 1 ? gate.Task : Task.CompletedTask; });
+            button.onClick.Invoke(); view.gameObject.SetActive(false); Assert.IsFalse(old.IsCurrent);
+            button.onClick.Invoke(); Assert.AreEqual(1, calls);
+            view.gameObject.SetActive(true); button.onClick.Invoke(); Assert.AreEqual(2, calls);
+            gate.SetResult(true); yield return null; Assert.IsTrue(button.interactable);
+            view.gameObject.SetActive(false); scope.Dispose(); view.gameObject.SetActive(true);
+            button.onClick.Invoke(); Assert.AreEqual(2, calls);
+        }
         [UnityTest] public IEnumerator CommandFailureIsObservedAndButtonRecovers()
         {
             var view = MakeButton(out var button);

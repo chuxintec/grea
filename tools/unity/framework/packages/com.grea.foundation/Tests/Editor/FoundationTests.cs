@@ -122,6 +122,25 @@ namespace Grea.Tests
             File.WriteAllText(path, "bad"); Assert.Throws<InvalidDataException>(() => store.Read());
             Assert.Throws<InvalidDataException>(() => store.Write("default")); Assert.AreEqual("bad", File.ReadAllText(path));
         }
+        [Test] public void ExplicitRecoveryUnblocksWritesAndPreservesDamagedCopies()
+        {
+            var store = new FileSaveStore(root, "player", "qa", true); store.Write("old"); store.Write("current");
+            var path = Path.Combine(root, "qa", "save.v1");
+            File.WriteAllText(path + ".pending", "interrupted");
+            Assert.AreEqual("main-preserved", store.Recover()); store.Write("next");
+            Assert.AreEqual(1, Directory.GetFiles(Path.GetDirectoryName(path), "*.corrupt-*").Length);
+            File.WriteAllText(path, "bad");
+            Assert.AreEqual("backup-restored", store.Recover()); Assert.AreEqual("current", store.Read());
+            store.Write("recovered"); Assert.AreEqual("recovered", store.Read());
+        }
+        [Test] public void ValidPendingCommitsAndMissingBackupNeverDestroysCorruptMain()
+        {
+            var store = new FileSaveStore(root, "player", "qa", true); store.Write("pending-value");
+            var path = Path.Combine(root, "qa", "save.v1"); File.Move(path, path + ".pending");
+            Assert.AreEqual("pending-committed", store.Recover()); Assert.AreEqual("pending-value", store.Read());
+            File.WriteAllText(path, "bad"); Assert.Throws<InvalidDataException>(() => store.Recover());
+            Assert.AreEqual("bad", File.ReadAllText(path));
+        }
         [Test] public void SaveRejectsNamespaceAndPayloadErrors()
         {
             Assert.Throws<ArgumentException>(() => new FileSaveStore(root, "qa", "qa", true));

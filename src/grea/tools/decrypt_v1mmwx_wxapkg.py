@@ -10,9 +10,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 from pathlib import Path
+from grea.safe_paths import disjoint, write_bytes_new
 
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives.padding import PKCS7
 
 
 HEADER = b"V1MMWX"
@@ -21,6 +20,8 @@ IV = b"the iv: 16 bytes"
 
 
 def decrypt(appid: str, encrypted: bytes) -> bytes:
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.primitives.padding import PKCS7
     if not encrypted.startswith(HEADER):
         raise ValueError("input does not start with V1MMWX")
     if len(appid) < 2:
@@ -55,10 +56,13 @@ def main() -> None:
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
 
+    args.output = disjoint(args.output, args.input)
+    if args.output.exists():
+        raise ValueError("Output already exists")
     source = args.input.read_bytes()
     clear = decrypt(args.appid, source)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_bytes(clear)
+    write_bytes_new(args.output, clear)
     print(f"input_bytes={len(source)}")
     print(f"input_sha256={hashlib.sha256(source).hexdigest()}")
     print(f"output_bytes={len(clear)}")

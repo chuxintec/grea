@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "standardVersion": "1.0.0",
   "plannerVersion": "1.0.0",
-  "scope": "M1 combinations describe static planning only. Named reference game evidence is scoped separately and never applied to arbitrary projects.",
+  "scope": "Combination observations describe static planning only; executable create-only generation is exposed separately. Named reference game evidence is scoped separately and never applied to arbitrary projects.",
   "combinations": [
     {
       "id": "unity-6000.6.2f1-urp17.6-ugui2.6-macos-arm64-mono",
@@ -22,7 +22,7 @@
       "assetBackend": "catalog",
       "template": {
         "id": "grea-minimal-2d",
-        "version": "0.1.0-design"
+        "version": "0.1.0"
       },
       "evidence": {
         "editorAndPackageMetadata": "observed_on_2026-10-13",
@@ -30,7 +30,7 @@
         "editor": "not_run",
         "playMode": "not_run",
         "player": "not_run",
-        "generation": "not_implemented"
+        "generation": "not_run"
       }
     }
   ],

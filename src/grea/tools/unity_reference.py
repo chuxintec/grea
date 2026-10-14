@@ -59,7 +59,7 @@ def source_files():
     files['LICENSE.md']=(ROOT/'LICENSE').read_bytes()
     files['.gitignore']=b'/Library/\n/Temp/\n/Logs/\n/Obj/\n/UserSettings/\n/Build/\n*.csproj\n*.sln\n.DS_Store\n'
     if sum(map(len,files.values()))>MAX_BYTES: raise ValueError('Source budget exceeded')
-    manifest={'schemaVersion':1,'product':'grea-signal-garden','version':'1.0.0','editor':'6000.6.2f1','target':'macOS-arm64-Mono',
+    manifest={'schemaVersion':1,'product':'grea-signal-garden','version':'1.0.1','editor':'6000.6.2f1','target':'macOS-arm64-Mono',
               'files':{name:{'bytes':len(data),'sha256':sha(data)} for name,data in sorted(files.items())}}
     files[MANIFEST]=(json.dumps(manifest,indent=2)+'\n').encode()
     return files

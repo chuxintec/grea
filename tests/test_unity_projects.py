@@ -88,7 +88,7 @@ class UnityProjectTests(unittest.TestCase):
         self.assertEqual(fingerprint(self.root),before)
         self.assertFalse((self.root/'UnityProject').exists())
         self.assertFalse(one['result']['generationReady'])
-        self.assertEqual(one['result']['blockers'],['GENERATION_NOT_IMPLEMENTED'])
+        self.assertEqual(one['result']['blockers'],['USE_GENERATION_PLAN'])
         self.assertTrue(one['result']['items'])
         Draft202012Validator(documents()['unity-plan.schema.json']).validate(one['result'])
         self.assertEqual(one['result']['report']['capability']['editor'],'not_run')
@@ -141,7 +141,7 @@ class UnityProjectTests(unittest.TestCase):
         self.profile['toolchain']['ui']='uitk';self.profile['template']['id']='unknown'
         self.profile['frameworkPackages']=[{'name':'com.grea.foundation','version':'1.0.0','sha256':'0'*64}];self.save_profile()
         result=self.call('plan_unity_project')
-        self.assertEqual(self.finding_codes(result),{'UNKNOWN_TEMPLATE','UNSUPPORTED_COMBINATION','FRAMEWORK_NOT_IMPLEMENTED'})
+        self.assertEqual(self.finding_codes(result),{'UNKNOWN_TEMPLATE','UNSUPPORTED_COMBINATION','FRAMEWORK_OVERRIDE_UNSUPPORTED'})
         self.assertEqual(result['result']['items'],[])
         self.assertEqual(result['result']['report']['capability']['staticPlanning'],'unsupported')
 

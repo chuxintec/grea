@@ -12,18 +12,11 @@ import re
 import shutil
 import stat
 import sys
-
-
-def _overlap(first, second):
-    return first == second or first in second.parents or second in first.parents
+from grea.safe_paths import overlaps as _overlap, relative_name, unique_paths
 
 
 def _relative(value):
-    path = Path(value)
-    if (not value or path.is_absolute() or PureWindowsPath(value).drive or PureWindowsPath(value).root
-            or '..' in re.split(r'[\\/]', value) or str(path) == '.'):
-        raise ValueError('Expected relative path: ' + value)
-    return path
+    return relative_name(value)
 
 
 def _tree(path):
@@ -89,6 +82,7 @@ def copy_assets(source, output, mappings):
         if any(_overlap(destination, previous[1]) for previous in selected):
             raise ValueError('Overlapping destination mappings')
         selected.append((input_path, destination, original, target))
+    unique_paths([item[3] for item in selected])
     # Recheck after preflight; do not overwrite intervening user output.
     _empty_output(output)
     output.mkdir(parents=True, exist_ok=True)

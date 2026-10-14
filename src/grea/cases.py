@@ -1,7 +1,7 @@
 """Project-local immutable baseline, evidence records and explicit reviewer assertions."""
-import json,uuid,time,contextlib
+import json,uuid,time,contextlib,tempfile,shutil
 from pathlib import Path
-from .common import GreaError,hash_file,digest,write_new,now
+from .common import GreaError,hash_file,digest,write_new,now,publish_directory
 from .workflows import WORKFLOWS
 
 def locate(path):
@@ -40,12 +40,16 @@ def init_case(project_dir,source,mode,required_dimensions=None):
     if not dims or len(dims)!=len(set(dims)):raise GreaError('INVALID_REQUIREMENTS','Required dimensions must be nonempty and unique.')
     root=project.resolve()/'.grea'
     if root.exists() or root.is_symlink():raise GreaError('OUTPUT_EXISTS','Project already has a case; preserve it rather than overwrite.')
-    root.mkdir()
-    (root/'.lock').touch(exist_ok=False)
-    (root/'evidence').mkdir();(root/'verifications').mkdir()
     value={'schema_version':1,'created_at':now(),'nonce':uuid.uuid4().hex,'project_dir':str(project.resolve()),'mode':mode,'source':identity,'required_dimensions':dims}
     value['case_id']='case_'+digest(value)
-    write_new(root/'case.json',value)
+    stage=Path(tempfile.mkdtemp(prefix='.grea-init-',dir=project.resolve()))
+    try:
+        (stage/'.lock').touch(exist_ok=False)
+        (stage/'evidence').mkdir();(stage/'verifications').mkdir()
+        write_new(stage/'case.json',value)
+        publish_directory(stage,root)
+    finally:
+        if stage.exists():shutil.rmtree(stage)
     return {'case_dir':str(root),'case':value,'acceptance':'not_run'}
 
 def read_record(path,prefix):

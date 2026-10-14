@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import shutil
+from grea.safe_paths import canonical_path, disjoint, relative_name
 
 
 def sha(path):
@@ -21,23 +22,15 @@ def sha(path):
 
 
 def relative(value):
-    path = PurePosixPath(value)
-    if not value or path.is_absolute() or '\\' in value or any(x in ('', '.', '..') for x in value.split('/')):
-        raise ValueError('Expected a normalized relative path')
-    return path.as_posix()
+    return relative_name(value).as_posix()
 
 
 def safe_root(value):
-    path = Path(value).expanduser().absolute()
-    if any(p.is_symlink() for p in (path, *path.parents)):
-        raise ValueError('Symlink path components are not allowed')
-    return Path(os.path.abspath(path))
+    return canonical_path(value)
 
 
 def outside(output, source):
-    output = safe_root(output)
-    if output == source or source in output.parents or output in source.parents:
-        raise ValueError('Output must be outside source and not its ancestor')
+    output = disjoint(output, source)
     if output.exists():
         raise ValueError('Output already exists')
     return output
@@ -46,7 +39,10 @@ def outside(output, source):
 def inventory(root, includes):
     files = {}
     for name in includes:
-        top = safe_root(root / relative(name))
+        selected = root / relative(name)
+        if any(p.is_symlink() for p in (selected, *selected.parents) if p != root and root in p.parents):
+            raise ValueError('Symlink input is unsupported')
+        top = safe_root(selected)
         if not top.exists():
             raise ValueError('Missing selected input: ' + name)
         # Reject links instead of following them into another project/cache.

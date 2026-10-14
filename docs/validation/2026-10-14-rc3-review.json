@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-14",
+  "baseline": "bd9b5ca6c4455f637747a861523a20b78bdeff0d",
+  "branch": "codex/rc3-review-fixes",
+  "scope": "Isolated grea synthetic projects only; existing game projects unchanged.",
+  "python": {
+    "total": 177,
+    "passed": 175,
+    "skipped": 2
+  },
+  "unity": {
+    "editor": "6000.6.2f1",
+    "target": "macOS arm64 Editor",
+    "tests": {
+      "editmode": {
+        "total": 34,
+        "passed": 34,
+        "failed": 0,
+        "sha256": "818b2422fcbe2ebc72e9c71220d19f53c58b3cf91612d36a0376d8fcc493b242"
+      },
+      "playmode": {
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "sha256": "06b061cbaf0cd3cfabf7ba4ace1396d00d44b3696927aeba05d2eb27631de676"
+      }
+    },
+    "frameworkSourceIdentity": "952bebc735d29e6e2649e0cd4dad417b4c2ff8f4ed6734926a38748aeb6caf5f",
+    "frameworkVersion": "0.2.1",
+    "generatorVersion": "0.1.1",
+    "templateVersion": "0.1.0",
+    "generation": "real Editor compile and binding validation passed",
+    "generatedProjectStaticStatus": "pass",
+    "generatedProjectStaticWarnings": 6
+  },
+  "notExecuted": [
+    "updated reference game Player",
+    "physical input and visual/audio acceptance",
+    "new GitHub CI matrix",
+    "clean-host third-party restoration"
+  ],
+  "remaining": [
+    "providers.lock.json is an incomplete local identity inventory, not a reproducible upstream download lock",
+    "Experimental component redesign, editor package splitting, artifact signing and broad formatting remain deferred"
+  ],
+  "evidenceBoundary": "Source and native component checks are scoped to this branch. Historical Player records remain unchanged; no rc4 release or promotion is implied."
+}

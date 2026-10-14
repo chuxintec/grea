@@ -14,6 +14,8 @@ namespace Grea.UI.UGUI
     {
         [SerializeField] Button button;
         LifetimeScope binding;
+        LifetimeScope owner, resumeOwner;
+        Func<OperationStamp, Task> resumeCommand;
         Func<OperationStamp, Task> command;
         bool busy;
         bool originalInteractable;
@@ -25,7 +27,10 @@ namespace Grea.UI.UGUI
         {
             Unbind();
             if (!button) throw new InvalidOperationException("CommandButton.button is required");
+            if (owner == null || !owner.IsAlive) throw new InvalidOperationException("Command owner must be alive");
             this.command = command ?? throw new ArgumentNullException(nameof(command));
+            this.owner = owner;
+            if (!isActiveAndEnabled) { resumeOwner = owner; resumeCommand = command; return; }
             binding = owner.CreateChild();
             originalInteractable = button.interactable;
             button.onClick.AddListener(Click);
@@ -63,11 +68,23 @@ namespace Grea.UI.UGUI
         }
         public void Unbind()
         {
+            resumeOwner = null; resumeCommand = null; owner = null;
             var previous = binding; binding = null;
             if (busy) Outcome = CommandOutcome.Cancelled;
             try { previous?.Dispose(); } finally { command = null; busy = false; }
         }
-        void OnDisable() => Unbind();
+        void OnDisable()
+        {
+            var previousOwner = owner; var previousCommand = command;
+            Unbind();
+            resumeOwner = previousOwner; resumeCommand = previousCommand;
+        }
+        void OnEnable()
+        {
+            var previousOwner = resumeOwner; var previousCommand = resumeCommand;
+            resumeOwner = null; resumeCommand = null;
+            if (previousOwner != null && previousOwner.IsAlive && previousCommand != null) Bind(previousOwner, previousCommand);
+        }
         void OnDestroy() => Unbind();
         public IEnumerable<string> MissingBindings() { if (!button) yield return nameof(button); }
     }

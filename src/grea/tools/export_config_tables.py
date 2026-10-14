@@ -8,7 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 
-import UnityPy
+from grea.safe_paths import relative_name, unique_paths, disjoint, write_bytes_new
 
 
 def raw_script(value: object) -> bytes:
@@ -27,24 +27,30 @@ def main() -> None:
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
 
+    import UnityPy
+    args.output = disjoint(args.output, args.bundle)
+    environment = UnityPy.load(str(args.bundle))
+    assets = [obj for obj in environment.objects if obj.type.name == "TextAsset"]
+    selected = [(obj, obj.read()) for obj in assets]
+    names = [relative_name(asset.m_Name) for _, asset in selected]
+    if any(len(name.parts) != 1 for name in names):
+        raise ValueError("TextAsset names must be single portable filenames")
+    unique_paths(names)
+    args.output.mkdir(parents=True, exist_ok=False)
     raw_dir = args.output / "raw"
     json_dir = args.output / "json"
     raw_dir.mkdir(parents=True, exist_ok=True)
     json_dir.mkdir(parents=True, exist_ok=True)
 
-    environment = UnityPy.load(str(args.bundle))
     index: list[dict[str, object]] = []
     level_summary: dict[str, object] = {}
     parsed_tables: dict[str, object] = {}
 
-    for obj in environment.objects:
-        if obj.type.name != "TextAsset":
-            continue
-        asset = obj.read()
+    for obj, asset in selected:
         name = asset.m_Name
         payload = raw_script(asset.m_Script)
         raw_path = raw_dir / f"{name}.bytes"
-        raw_path.write_bytes(payload)
+        write_bytes_new(raw_path, payload)
 
         entry: dict[str, object] = {
             "name": name,
@@ -66,7 +72,7 @@ def main() -> None:
             json_path = json_dir / f"{name}.json"
             # Preserve the publisher's compact formatting while dropping the
             # UTF-8 BOM so ordinary JSON tools can open the file directly.
-            json_path.write_text(text, encoding="utf-8", newline="")
+            write_bytes_new(json_path, text.encode("utf-8"))
             entry["json_valid"] = True
             entry["json_file"] = str(json_path.relative_to(args.output))
             if isinstance(parsed, dict):

@@ -7,6 +7,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace Grea.Generation.Tests
@@ -33,6 +34,19 @@ namespace Grea.Generation.Tests
             UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline = null;
             AssetDatabase.DeleteAsset(TestRoot); AssetDatabase.DeleteAsset(ProjectGenerator.BasePath);
             if (File.Exists(Journal)) File.Delete(Journal);
+        }
+        [Test] public void LoggedErrorIsPersistedAndCannotBecomeRecoverySuccess()
+        {
+            LogAssert.Expect(LogType.Error, "synthetic import failure");
+            bool injected = false;
+            Assert.Throws<InvalidOperationException>(() => ProjectGenerator.Generate(Request, Journal, step => {
+                if (!injected) { injected = true; Debug.LogError("synthetic import failure"); }
+            }));
+            var record = JsonUtility.FromJson<ProjectGenerator.Journal>(File.ReadAllText(Journal));
+            Assert.IsFalse(record.complete); Assert.AreEqual(1, record.errorCount);
+            var before = File.ReadAllBytes(Journal);
+            Assert.Throws<InvalidOperationException>(() => ProjectGenerator.Generate(Request, Journal));
+            CollectionAssert.AreEqual(before, File.ReadAllBytes(Journal));
         }
         [Test] public void RepeatedGenerationKeepsAssetBytesGuidsAndBindings()
         {

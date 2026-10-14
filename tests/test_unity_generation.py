@@ -41,7 +41,7 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(tool_id, 'unity_cli'); self.assertIn('-executeMethod', arguments)
         stage = Path(arguments[1]); request = json.loads((stage / 'Tools/Generated/request.json').read_text())
         assets = [f'Assets/GreaGenerated/{n}' for n in ('ButtonShell.prefab','ModalShell.prefab','UIHost.prefab','BootstrapConfig.asset','Renderer.asset','Pipeline.asset')] + list(self.profile['scenes'].values())
-        journal = {'generatorVersion':g.VERSION, 'identity':request['identity'], 'complete':True, 'pending':'', 'assets':[]}
+        journal = {'generatorVersion':g.VERSION, 'identity':request['identity'], 'complete':True, 'errorCount':0, 'pending':'', 'assets':[]}
         for index, name in enumerate(assets):
             path=stage/name; path.parent.mkdir(parents=True,exist_ok=True)
             path.write_text('synthetic '+name); meta=Path(str(path)+'.meta'); meta.write_text('guid: '+f'{index:032x}'+'\n')
@@ -49,6 +49,39 @@ class GenerationTests(unittest.TestCase):
         (stage/'Tools/Generated/editor-journal.json').write_bytes(g.encoded(journal))
         Path(run_dir).mkdir(); (Path(run_dir)/'run.json').write_text('{"exit_code":0}')
         return {'exit_code':0, 'status':'ok'}, [], None
+
+    def test_same_profile_static_plan_and_generated_tree_agree(self):
+        from grea.unity_projects import validate_project, plan_project
+        import hashlib
+        self.assertEqual(validate_project(self.root,mode='new')['staticStatus'],'pass')
+        static = plan_project(self.root,mode='new')
+        self.assertIn('UnityProject/Assets/Game/Bootstrap/ProjectBootstrap.cs',[x['target'] for x in static['items']])
+        def imported(*args,**kwargs):
+            result=self.fake_editor(*args,**kwargs)
+            assets=Path(args[1][1])/'Assets'
+            for path in list(assets.rglob('*')):
+                if path.suffix!='.meta' and not Path(str(path)+'.meta').exists():
+                    Path(str(path)+'.meta').write_text('guid: '+hashlib.md5(str(path).encode()).hexdigest()+'\n')
+            return result
+        with patch.object(g.runner,'execute',side_effect=imported):self.generate()
+        report=validate_project(self.root)
+        self.assertEqual(report['staticStatus'],'pass',report['findings'])
+        self.assertEqual(report['capability']['generation'],'not_run')
+
+    def test_editor_errors_cannot_be_recovered_or_published(self):
+        def failed_editor(*args, **kwargs):
+            result = self.fake_editor(*args, **kwargs)
+            journal_path = Path(args[1][1])/'Tools/Generated/editor-journal.json'
+            journal = json.loads(journal_path.read_text()); journal['errorCount'] = 1
+            journal_path.write_text(json.dumps(journal))
+            return result
+        with patch.object(g.runner, 'execute', side_effect=failed_editor):
+            with self.assertRaises(GreaError) as error: self.generate()
+        self.assertEqual(error.exception.code, 'VERIFICATION_FAILED')
+        with patch.object(g.runner, 'execute') as run:
+            with self.assertRaises(GreaError) as error: g.recover_generation(self.root, 'Evidence/run')
+            self.assertEqual(error.exception.code, 'RECOVERY_REQUIRED'); run.assert_not_called()
+        self.assertFalse((self.root/'UnityProject').exists())
 
     def test_plan_deterministic_readonly_and_adopt_never_claims_generation(self):
         before=list(self.root.rglob('*')); one=self.plan(); self.assertEqual(one,self.plan()); self.assertEqual(before,list(self.root.rglob('*')))
