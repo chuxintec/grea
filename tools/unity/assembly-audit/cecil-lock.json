@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "package": "Mono.Cecil",
+  "version": "0.11.6",
+  "target": "lib/netstandard2.0/Mono.Cecil.dll",
+  "sha256": "831dca77470d85cb6ffbea3072daa7a3df5b7c9fcfd9c3f43674a9be99d4bfcf",
+  "license": "MIT",
+  "source": "https://www.nuget.org/packages/Mono.Cecil/0.11.6"
+}

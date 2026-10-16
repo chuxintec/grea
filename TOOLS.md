@@ -11,6 +11,9 @@
 | 检查包体身份与库存 | inspect-target；解包用 `unpack_xapk` | [通用脚本参数](docs/tools/制品与资源检查.md)；库存不等于已提取全部资源 |
 | 原生运行与画面证据 | `adb`、`scrcpy`、`video_manifest`、`video_sheet` | [取证流程](plugin/skills/grea-evidence/references/03-恢复-原版运行与内容取证.md)；版本探测不连接或操作游戏 |
 | Unity 资源与字段恢复 | `assetripper`、`unitypy` | 原 Prefab／引用关系优先；UnityPy 是独立运行时中的库，不是通用执行命令 |
+| Cocos 结构与脚本身份取证 | `cocos_assets`、`cocos_modules` | [范围与安装](docs/providers/cocos-static.md)；动态拼表候选保持 partial，不执行源代码 |
+| 原生退出与 Player 元数据 | `unity_native_exit`、`unity_player_audit`；Editor companion | [三层证据](docs/providers/unity-native-exit.md)；静态无命中不等于原生化通过 |
+| 强类型配置和有限原生资源制作 | `unity_config_candidate`、`unity_native_assets`；Editor companion | [制作链](docs/providers/unity-authoring.md)；候选冲突保护，原生资产单独回读；Spine 仅页闭包 |
 | IL2CPP／托管代码分析 | `cpp2il`、`ilspy`；按缺口使用 `il2cppdumper`、`ghidra`、`il2cpp-inspector` | [代码恢复流程](plugin/skills/grea-unity-recovery/references/05-Unity-工程重建与恢复.md)、[Redux 边界](docs/providers/IL2CPP解析器接入.md) |
 | Assets 身份台账 | snapshot-unity-assets；高级用法 `unity_asset_ledger` | [脚本契约](docs/tools/制品与资源检查.md#unity-资产迁移台账与预检) |
 | 文本 GUID 依赖闭包 | audit-unity-dependencies | [脚本契约](docs/tools/制品与资源检查.md#unity-导出依赖审计)；动态依赖另验 |

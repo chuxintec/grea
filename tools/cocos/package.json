@@ -1,0 +1,8 @@
+{
+  "name": "grea-cocos-static-index",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline AST-only module identity index; source JavaScript is never executed",
+  "license": "MIT",
+  "dependencies": {"acorn": "8.15.0"}
+}

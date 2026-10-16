@@ -1,0 +1,12 @@
+[
+  {
+    "Id": "intro",
+    "Enabled": false,
+    "Text": null
+  },
+  {
+    "Id": "empty",
+    "Enabled": true,
+    "Text": ""
+  }
+]

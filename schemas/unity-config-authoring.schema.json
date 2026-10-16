@@ -1,0 +1,68 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "namespace",
+    "name",
+    "key",
+    "fields"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "namespace": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+          },
+          "type": {
+            "enum": [
+              "int",
+              "string",
+              "bool"
+            ]
+          },
+          "nullable": {
+            "type": "boolean"
+          },
+          "min": {
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
+          },
+          "max": {
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 64
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

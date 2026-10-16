@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "sprites": [
+    {
+      "name": "Trim",
+      "image": "atlas.png",
+      "rect": [
+        0,
+        0,
+        2,
+        3
+      ],
+      "rotated_cw": true,
+      "original_size": [
+        5,
+        4
+      ],
+      "offset": [
+        1,
+        1
+      ],
+      "pivot": [
+        0.25,
+        0.75
+      ],
+      "border": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "pixels_per_unit": 100
+    }
+  ],
+  "targets": [
+    {
+      "path": "Widget",
+      "scale": [
+        2,
+        3,
+        1
+      ]
+    },
+    {
+      "path": "Other",
+      "scale": [
+        1,
+        2,
+        1
+      ]
+    }
+  ],
+  "clips": [
+    {
+      "name": "Move",
+      "duration": 1,
+      "loop": true,
+      "curves": [
+        {
+          "target": "Widget",
+          "property": "m_LocalPosition.x",
+          "keys": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              4
+            ]
+          ]
+        },
+        {
+          "target": "Other",
+          "property": "m_LocalScale.y",
+          "keys": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              4
+            ]
+          ]
+        }
+      ],
+      "events": [
+        {
+          "time": 0.5,
+          "function": "Pulse"
+        }
+      ]
+    },
+    {
+      "name": "Return",
+      "duration": 1,
+      "loop": false,
+      "curves": [
+        {
+          "target": "Widget",
+          "property": "m_LocalPosition.x",
+          "keys": [
+            [
+              0,
+              4
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      ],
+      "events": []
+    }
+  ]
+}

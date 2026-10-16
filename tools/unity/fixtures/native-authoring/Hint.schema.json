@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "namespace": "Own.Configuration",
+  "name": "Hint",
+  "key": "Id",
+  "fields": [
+    {
+      "name": "Id",
+      "type": "string"
+    },
+    {
+      "name": "Enabled",
+      "type": "bool"
+    },
+    {
+      "name": "Text",
+      "type": "string",
+      "nullable": true
+    }
+  ]
+}

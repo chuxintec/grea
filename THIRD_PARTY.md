@@ -38,3 +38,11 @@ grea 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许
 本机可选依赖统一放在 `.private/providers/` 或 `.private/runtimes/`，备份放 `.private/backups/`。目录约定见 [迁移说明](docs/兼容与迁移指南.md#本机依赖目录)；它们均不随公开包分发。
 
 AssemblySanitizer 使用 [Mono.Cecil 0.11.6](https://github.com/jbevain/cecil)（MIT）；通过 NuGet 恢复，保留其许可通知。
+
+## 可选静态解析与元数据依赖
+
+- Acorn 8.15.0，MIT；npm 固定版本及完整性见 tools/cocos/package-lock.json。来源 https://www.npmjs.com/package/acorn/v/8.15.0 。只用于 AST 解析，不执行输入 JS；node_modules 不随 Git 或 Python 核心插件分发。
+- Mono.Cecil 0.11.6，MIT；官方 NuGet 包元数据声明该许可，固定内容哈希见 tools/unity/assembly-audit/packages.lock.json。来源 https://www.nuget.org/packages/Mono.Cecil/0.11.6 。只读 DLL 元数据；.NET SDK、Cecil 二进制与本机构建输出不随源码分发，未来分发二进制需一并保留上游许可。
+- Cocos 引擎参考文件和原游戏代码/素材仅为私有协议研究输入，不复制进上述实现、公开 fixtures、运行时或插件。解析器为独立实现，不重新授权来源代码。
+
+有限制作链使用已锁定的 Pillow 处理自有/授权图片，Unity Editor API 创建原生资产；没有新增 Spine runtime 分发。Spine 页闭包检查不建立运行时授权，匹配来源与适用许可应另核验，见 [制作边界](docs/providers/unity-authoring.md)。

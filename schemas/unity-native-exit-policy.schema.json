@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "exits"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "exits": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "relative_path",
+          "symbol",
+          "mechanism",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "relative_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "mechanism": {
+            "enum": [
+              "full_source_graph",
+              "source_identity_binding",
+              "source_lifecycle",
+              "dynamic_configuration",
+              "source_animation",
+              "source_resource_catalog"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
