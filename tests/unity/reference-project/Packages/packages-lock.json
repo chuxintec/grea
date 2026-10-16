@@ -6,7 +6,7 @@
       "source": "embedded",
       "dependencies": {
         "com.grea.foundation": "0.2.1",
-        "com.grea.ui.ugui": "0.2.1",
+        "com.grea.ui.ugui": "0.3.0",
         "com.unity.render-pipelines.universal": "17.6.0"
       }
     },

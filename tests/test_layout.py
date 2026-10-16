@@ -37,9 +37,9 @@ class LayoutCompatibilityTests(unittest.TestCase):
                 with self.subTest(tool_id=entry['id']):
                     unsupported = None
                     try:
-                        registry.check_host(entry)
+                        registry.command(entry)
                     except GreaError as error:
-                        if error.code not in ('UNSUPPORTED_HOST', 'UNSUPPORTED_ARCH'):
+                        if error.code not in ('UNSUPPORTED_HOST', 'UNSUPPORTED_ARCH', 'PROVIDER_UNAVAILABLE'):
                             raise
                         unsupported = error.code
                     process = subprocess.run(
@@ -47,7 +47,7 @@ class LayoutCompatibilityTests(unittest.TestCase):
                         cwd=cwd, capture_output=True, text=True, timeout=20,
                     )
                     if unsupported:
-                        # Help must respect the same registered platform boundary as execution.
+                        # Help respects platform and optional-provider availability; no silent fallback.
                         self.assertEqual(process.returncode, 2, process.stderr)
                         self.assertIn(unsupported + ':', process.stderr)
                         self.assertNotIn('usage:', process.stdout.lower())

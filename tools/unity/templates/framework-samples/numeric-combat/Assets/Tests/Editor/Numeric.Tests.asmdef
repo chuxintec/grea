@@ -1,0 +1,26 @@
+{
+  "name": "Numeric.Tests",
+  "references": [
+    "Numeric.Domain",
+    "Numeric.Gameplay",
+    "Numeric.Services",
+    "Numeric.Bootstrap",
+    "Numeric.Presentation",
+    "Grea.Foundation.Contracts",
+    "Grea.Foundation.Runtime",
+    "Grea.UI.UGUI",
+    "Grea.Editor",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
+}

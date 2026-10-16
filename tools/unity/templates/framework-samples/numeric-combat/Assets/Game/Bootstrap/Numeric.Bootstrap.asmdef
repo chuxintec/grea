@@ -1,0 +1,16 @@
+{
+  "name": "Numeric.Bootstrap",
+  "references": [
+    "Numeric.Domain",
+    "Numeric.Gameplay",
+    "Numeric.Services",
+    "Numeric.Presentation",
+    "Grea.Foundation.Runtime",
+    "Grea.Foundation.Contracts",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": []
+}

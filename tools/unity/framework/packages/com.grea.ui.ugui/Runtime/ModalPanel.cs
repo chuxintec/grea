@@ -15,6 +15,13 @@ namespace Grea.UI.UGUI
         [SerializeField] Button closeButton;
         [SerializeField] Selectable firstSelected;
         [SerializeField] EventSystem events;
+        [SerializeField] RectTransform contentSlot;
+        [SerializeField] Text title;
+        public RectTransform ContentSlot => contentSlot;
+        public Text Title => title;
+        public Button CloseButton => closeButton;
+        public void ConfigureContentSlots(RectTransform body, Text heading)
+        { if (!body) throw new ArgumentNullException(nameof(body)); contentSlot = body; title = heading; }
         LifetimeScope visible;
         public bool IsOpen => visible != null && visible.IsAlive;
         public LifetimeScope VisibleScope => IsOpen ? visible : throw new InvalidOperationException("Panel is closed");

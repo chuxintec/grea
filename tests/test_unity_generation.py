@@ -50,6 +50,25 @@ class GenerationTests(unittest.TestCase):
         Path(run_dir).mkdir(); (Path(run_dir)/'run.json').write_text('{"exit_code":0}')
         return {'exit_code':0, 'status':'ok'}, [], None
 
+    def test_recipe_boundary_violation_is_rejected_before_planning_writes(self):
+        distribution = self.root / 'distribution'
+        for relative in ('tools/unity/framework', 'tools/unity/templates/counter-composition', 'tools/unity/templates/minimal-project'):
+            shutil.copytree(ROOT / relative, distribution / relative)
+        domain = distribution / 'tools/unity/templates/counter-composition/Assets/Game/Domain/CounterState.cs'
+        domain.write_text('using UnityEngine;\n' + domain.read_text())
+        with patch.object(g, 'package_root', return_value=distribution):
+            with self.assertRaises(GreaError) as error:
+                self.plan()
+        self.assertEqual(error.exception.code, 'FRAMEWORK_BOUNDARY')
+        self.assertFalse((self.root / 'UnityProject').exists())
+
+    def test_boundary_implementation_changes_invalidate_recipe_identity(self):
+        first = self.plan()
+        with patch.object(g, 'boundary_implementation_hash', return_value='0' * 64):
+            second = self.plan()
+        self.assertNotEqual(first['recipeId'], second['recipeId'])
+        self.assertNotEqual(first['planId'], second['planId'])
+
     def test_same_profile_static_plan_and_generated_tree_agree(self):
         from grea.unity_projects import validate_project, plan_project
         import hashlib

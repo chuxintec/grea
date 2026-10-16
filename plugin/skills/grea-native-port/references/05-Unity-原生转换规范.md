@@ -8,7 +8,8 @@
 
 交付的是一个 Unity 开发者打开即可按常规方式维护的工程：
 
-- Prefab、Scene、ScriptableObject、AnimationClip 是唯一真源。在 Inspector 修改后进入 Play 即生效；不需要 Capture、回写、重新生成或重放源对象图。
+- UI、Scene、动画以原生 Prefab/Scene/AnimationClip 为制作源，正常嵌套 Prefab/Variant 合法；人工编辑直接 Play 生效，不靠来源模板/节点图与工作 View 双真源或 Capture 回写。
+- 每张配置表可选择 Excel、结构化 JSON 或 SO 中一种作为唯一 authoring source。外部制作源单向生成强类型 C#/SO，记录输入/Schema/输出哈希及所有权，人工改动冲突不得覆盖；选择 SO 制作时 Inspector 修改直接生效。不能同时把外部表和生成 SO 都当作可随意编辑的真源，也不能把任意 Row JSON 换成 `.asset` 后称为强类型原生配置。
 - 运行时只使用 Unity 生命周期、uGUI/TMP 等原生组件和下文选型基线中的官方或主流插件。
 - 类型、资源和节点按游戏语义命名（`ShopView`、`RuneSlot`、`DailySignTable`）。源引擎的 uuid、类型名和脚本名只出现在 Analysis 的映射表里。
 - 源引擎只作为**行为与资源的来源**，不作为运行时模型。
@@ -41,7 +42,7 @@
 | 异步与定时 | `Awaitable`、Coroutine，配合 `destroyCancellationToken` 取消 | 项目已用时可选 UniTask |
 | 资源加载 | 直接序列化引用 | 动态或大量资源用 Addressables，使用语义地址；不用 `Resources` 存放目录式 Catalog |
 | 场景 | Boot 加内容场景，用 SceneManager 切换；常驻对象 `DontDestroyOnLoad` | 需要叠加时用 Additive |
-| 配置 | 强类型字段的 ScriptableObject | 表格经 Editor 导入器生成 SO |
+| 配置 | 强类型字段/DTO 与原生序列化资产 | 项目明确唯一 Excel/结构化 JSON/SO 制作源；需要时通过 Editor 导入器生成 SO，消费者不运行源引擎配置解析器 |
 | 输入 | Input System + EventSystem（`InputSystemUIInputModule`）；指针用 `IPointer*Handler` | — |
 | 对象池 | `UnityEngine.Pool.ObjectPool<T>`，带显式复位 | — |
 | 音频 | AudioSource + AudioMixer，由音频服务管理 | — |
@@ -96,6 +97,6 @@
 | --- | --- |
 | 守卫 | 禁止项扫描零违规，或只剩登记过的白名单且没有新增 |
 | 原版对照 | 规则 oracle 测试通过；同状态截图、录像和关键帧对照通过；真实输入通过。分层记录方式见 [分层验收](../../../shared/08-验收-测试与结果交付.md) |
-| 原生可维护 | 在 Inspector 修改 Prefab 或 SO 后直接 Play 即生效；在 Editor 打开场景和 Prefab 能看到真实界面；没有重新生成步骤；转换器目录删除后仍能编译和构建 |
+| 原生可维护 | 人工维护的 UI/Scene/动画及选择 SO 制作的配置可直接编辑/Play；外部配置源走明确单向候选流程，不能重建源对象图；实际界面可编辑可见，移除转换器后仍编译/构建 |
 
 三道门分别报告；任何一道不通过都不能称为原生转换完成。构建成功、测试数量或旧解释器已移除，都不能替代原生可维护门。

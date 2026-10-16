@@ -1,4 +1,4 @@
-# Grea Foundation 0.2.0
+# Grea Foundation 0.2.1
 
 MIT 自有源码；M2 候选基础包。最低声明 Unity 6000.6，当前测试组合为 6000.6.2f1/macOS arm64。其他 Editor、Player、IL2CPP 和移动平台未验证。没有 DI 容器、全局单例或隐式服务查找。
 

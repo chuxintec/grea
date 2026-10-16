@@ -9,6 +9,12 @@ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='
 value={'schema_version':1,'operations':catalog()};value['sha256']=digest(value)
 outputs={'operations.json':value,'result.schema.json':dict(ENVELOPE_SCHEMA,**{'$schema':'https://json-schema.org/draft/2020-12/schema'})}
 outputs.update(unity_documents())
+from grea.cocos_contracts import documents as cocos_documents
+outputs.update(cocos_documents())
+from grea.native_exit_contracts import documents as native_exit_documents
+outputs.update(native_exit_documents())
+from grea.authoring_contracts import documents as authoring_documents
+outputs.update(authoring_documents())
 outputs['unity-capabilities.json']=capability_matrix()
 failed=[]
 for name,value in outputs.items():

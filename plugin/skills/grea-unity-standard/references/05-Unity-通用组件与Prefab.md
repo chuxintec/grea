@@ -7,7 +7,7 @@
 
 ## 通用组件
 
-以下是 v1 候选能力及准入契约；实际已实现类型见 [基础框架包说明](../../../../docs/Unity框架与通用组件.md)，例如 LifetimeScope/ServiceScope、CommandButton/ModalPanel/ScreenHost、Catalog 句柄、AudioPlayer、FileSaveStore 和 DiagnosticBuffer。候选名不保证有同名类；池化/列表/异步资源后端/复杂导航仍为计划项，不生成空类。
+以下是 v1 候选能力及准入契约；实际已实现类型见 [基础框架包说明](../../../../docs/Unity框架与通用组件.md)，例如 LifetimeScope/ServiceScope、CommandButton/ButtonPressFeedback/ModalPanel/ScreenHost、Catalog 句柄、AudioPlayer、FileSaveStore 和 DiagnosticBuffer。候选名不保证有同名类；池化/列表/异步资源后端/复杂导航仍为计划项，不生成空类。
 
 | 能力与候选类型 | 输入/所有权 | 输出、故障与最低验收 |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ grea 的 `com.grea.*` 包（foundation、ui.ugui、editor）是**薄胶水**：�
 | 能力 | 主流或原生方案 | grea 组件的定位 | 选择规则 |
 | --- | --- | --- | --- |
 | 依赖装配与作用域 | 构造参数与序列化引用；VContainer | `LifetimeScope`、`ServiceScope`：代次、逆序释放、启动失败清理 | 组合根较小时用 grea 作用域；组合根膨胀改用 VContainer，二者不并存 |
-| 页面与弹窗 | uGUI Canvas、Prefab、项目已有 UI 框架 | `ScreenHost`、`ModalPanel`：替换、排队、焦点恢复的最小实现 | 项目已有 UI 框架时沿用它；UI Toolkit 项目不使用 |
+| 页面与弹窗 | uGUI Canvas、Prefab、项目已有 UI 框架 | `ScreenHost`、`ModalPanel`：单页面替换、单弹窗生命周期与焦点恢复；未实现排队或模态栈 | 项目已有 UI 框架时沿用它；UI Toolkit 项目不使用 |
 | 按钮命令 | uGUI `Button.onClick` | `CommandButton`：异步命令的防重入、隐藏取消与重绑 | 同步点击直接用 `Button`；需要防重入的异步命令再用 |
 | 资源寻址 | 直接序列化引用；Addressables | `AssetCatalog`：对显式引用集合的句柄与计数 | 少量静态资源用序列化引用或 Catalog；动态或大量资源用 Addressables，项目内只保留一种寻址机制 |
 | 音频 | AudioSource + AudioMixer | `AudioPlayer`：可停止句柄、作用域退出清理 | 混音、分组和参数始终在 AudioMixer |
@@ -52,7 +52,11 @@ grea 的 `com.grea.*` 包（foundation、ui.ugui、editor）是**薄胶水**：�
 3. 新组件通过 CMP-01 准入，并在 [基础框架包说明](../../../../docs/Unity框架与通用组件.md) 登记它对应的主流方案。
 4. 同一项目中，每项能力只保留一种实现：采用主流方案后，相应 grea 组件不再挂载或装配。
 
-已实现组件的两条行为约定：存档恢复由应用显式调用 `FileSaveStore.Recover()`，校验通过的 pending 优先提交，损坏副本隔离保留，主档损坏时从有效 backup 恢复，没有有效副本时拒绝覆盖；`CommandButton` 隐藏时取消当前绑定与旧操作，重新显示时只为仍存活的 owner 恢复绑定，显式 Unbind 或 owner 退出后保持解绑。
+已实现组件的行为约定：存档恢复由应用显式调用 `FileSaveStore.Recover()`，校验通过的 pending 优先提交，损坏副本隔离保留，主档损坏时从有效 backup 恢复，没有有效副本时拒绝覆盖；`CommandButton` 隐藏时取消当前绑定与旧操作，重新显示时只为仍存活的 owner 恢复绑定，显式 Unbind 或 owner 退出后保持解绑。
+
+有限按压使用 `ButtonPressFeedback`，明确引用独立视觉子节点，点击区域保持稳定；业务仍由 Unity Button/CommandButton 拥有。退出、拖动、失焦、禁用应取消表现，其他指针不能释放当前按压；不将源引擎 Tween/输入缓存搬成通用框架。命令临时不可交互时保留原导航选择；完成不抢回用户或新弹窗已经取得的焦点。接口事件测试、操作系统键盘和鼠标分别验收，不能互相替代。
+
+基础包与两个自有不同结构消费者的当前实现和版本见 [框架说明](../../../../docs/Unity框架与通用组件.md)，实证边界见 [提炼验收](../../../../docs/validation/2026-10-16-unity-framework-extraction.json)。合成战斗/拼图通过不能推出原游戏完整一致性、其他输入后端或其他平台已通过；品类玩法仍归各项目 Domain/Gameplay。
 
 ## 通用 Prefab
 
@@ -71,3 +75,6 @@ grea 的 `com.grea.*` 包（foundation、ui.ugui、editor）是**薄胶水**：�
 **PFB-03 变体与生成**：基础生成资产和人工修改分离；有需要时用 Generated 与 Variants 子目录。生成器只更新自己拥有的字段/文件；没有字段级所有权实现时，整个被人工改动的资产均视为冲突。根/插槽结构变更必须检查所有受影响 Variant。Unity Variant 继承基础资产并保存覆盖，但不保证任意基础结构变更都安全，见 [官方 Prefab Variants](https://docs.unity3d.com/6000.0/Documentation/Manual/PrefabVariants.html)。
 
 **PFB-04 引用与验收**：通过 Editor 的 AssetDatabase/PrefabUtility 创建、移动与绑定，保留 .meta、GUID 和需要稳定的局部 fileID。不能在活工程外部拼 YAML 或手写随机 GUID 来修复引用。必须验证 Missing Script、空引用、材质/字体/图集、Canvas/Camera/排序，以及实例化→显示→关闭→再次显示→销毁的真实生命周期；静态合法不代表最终画面正确。
+
+
+**PFB-04 安全区与输入边界**：安全区与窗口矩形必须先统一坐标原点和像素单位；公共布局先求交再归一化，非法/非有限/无交集不得写坏旧布局。平台逻辑像素、物理像素和左上角原点转换放在平台适配器。弹窗遮罩只阻挡射线，不自动构成键盘模态边界；只有关闭按钮的壳不自动导航到背景，项目为实际内容按钮配置显式内部导航，或采用已有 UI 框架的等价策略。长文本、人工改色/尺寸、保存重开和再生成拒绝覆盖均需按实际启用能力验收。

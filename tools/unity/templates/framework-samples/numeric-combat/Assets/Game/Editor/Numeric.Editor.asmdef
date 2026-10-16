@@ -1,0 +1,16 @@
+{
+  "name": "Numeric.Editor",
+  "references": [
+    "Numeric.Bootstrap",
+    "Numeric.Presentation",
+    "Grea.Editor",
+    "Grea.Foundation.Runtime",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": [
+    "Editor"
+  ]
+}

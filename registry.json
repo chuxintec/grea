@@ -2211,6 +2211,263 @@
         "Copy only; no bundling, compilation or runtime acceptance.",
         "Preflight rejects source symlinks, traversal and overlapping mappings; copy-time failure retains partial output. Cooperative filesystem only."
       ]
+    },
+    {
+      "id": "cocos_assets",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "cocos_assets",
+        "--help"
+      ],
+      "check_level": "synthetic-and-private-replay",
+      "formats": "Cocos 2.4 compiled-v1 / explicit pack and selected bundle import assets",
+      "side_effects": "Read explicit sources; create a new candidate directory only; never execute input JS or modify Unity",
+      "usage": "grea run-tool with explicit --input/--output and --adapter; see docs/providers/cocos-static.md",
+      "output_schema": "Versioned structural evidence JSON; see docs/providers/cocos-static.md",
+      "tested_samples": "Own synthetic success/failure inputs; private replay hashes and limitations in docs/validation/2026-10-16-project-tools.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "cocos_assets"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS arm64 only; other hosts not run",
+        "remediation": "See docs/providers/cocos-static.md; optional AST provider requires Node and npm ci with the pinned lock."
+      },
+      "required_files": []
+    },
+    {
+      "id": "cocos_modules",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "cocos_modules",
+        "--help"
+      ],
+      "check_level": "synthetic-and-private-replay",
+      "formats": "ECMAScript 2020 literal loader tables; obfuscated factory candidates remain partial",
+      "side_effects": "Read explicit sources; create a new candidate directory only; never execute input JS or modify Unity",
+      "usage": "grea run-tool with explicit --input/--output and --adapter; see docs/providers/cocos-static.md",
+      "output_schema": "Versioned structural evidence JSON; see docs/providers/cocos-static.md",
+      "tested_samples": "Own synthetic success/failure inputs; private replay hashes and limitations in docs/validation/2026-10-16-project-tools.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "cocos_modules"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write",
+        "process"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS arm64 only; other hosts not run",
+        "remediation": "See docs/providers/cocos-static.md; optional AST provider requires Node and npm ci with the pinned lock."
+      },
+      "required_files": [
+        "{grea}/tools/cocos/node_modules/acorn/package.json"
+      ]
+    },
+    {
+      "id": "unity_native_exit",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "unity_native_exit",
+        "--help"
+      ],
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "formats": "Unity Assets C# lexical candidates and text GUID roots; never a complete native-pass verdict",
+      "side_effects": "Read explicitly selected source/metadata; create a new report; no inspected DLL execution or project mutation",
+      "usage": "grea run-tool with explicit policy and source paths; see docs/providers/unity-native-exit.md",
+      "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
+      "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "unity_native_exit"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
+      },
+      "required_files": []
+    },
+    {
+      "id": "unity_player_audit",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "unity_player_audit",
+        "--help"
+      ],
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "formats": "Mono managed DLL metadata with explicit complete manifest and policy; IL2CPP unsupported",
+      "side_effects": "Read explicitly selected source/metadata; create a new report; no inspected DLL execution or project mutation",
+      "usage": "grea run-tool with explicit policy and source paths; see docs/providers/unity-native-exit.md",
+      "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
+      "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "unity_player_audit"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write",
+        "process"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
+      },
+      "required_files": [
+        "{grea}/tools/unity/assembly-audit/bin/Release/net8.0/Grea.AssemblyAudit.dll",
+        "{grea}/tools/unity/assembly-audit/bin/Release/net8.0/Mono.Cecil.dll"
+      ]
+    },
+    {
+      "id": "unity_config_candidate",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "unity_config_candidate",
+        "--help"
+      ],
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "formats": "Closed scalar schema + JSON rows → strongly typed C#/Editor-only importer candidates; no runtime JSON",
+      "side_effects": "Read explicit inputs; create candidate output directory, repeat identical candidates unchanged; refuse manual conflicts. Editor companion requires explicit isolated project and creates native assets.",
+      "usage": "See docs/providers/unity-authoring.md",
+      "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
+      "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "unity_config_candidate"
+        ],
+        "finding_exit_codes": []
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
+      },
+      "required_files": []
+    },
+    {
+      "id": "unity_native_assets",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "unity_native_assets",
+        "--help"
+      ],
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "formats": "Finite Sprite trim/rotation/border and explicit linear Transform clip recipe; Spine closure check only",
+      "side_effects": "Read explicit inputs; create candidate output directory, repeat identical candidates unchanged; refuse manual conflicts. Editor companion requires explicit isolated project and creates native assets.",
+      "usage": "See docs/providers/unity-authoring.md",
+      "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
+      "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "unity_native_assets"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
+      },
+      "required_files": []
     }
   ],
   "product": "grea",

@@ -91,6 +91,8 @@ Unity生成的YAML/meta可能含合法行尾空格；源码/文档格式检查�
 
 `unity_asset_ledger compare` 会把计划内移动也报告为变化；不要把退出 1 一律当失败或忽略。用 `verify-moves --before ... --after ... --plan ... --output ...` 核对计划内文件的 GUID、内容/meta 哈希与 Resources 相对键；再审查 compare 的目录增删和计划外变化。该只读检查不证明 Unity 类型、名称和子资源加载。
 
+需要子资源与实际 Editor 类型证据时，使用 NativeExitEditorAudit 的 GUID/local fileID、Sprite 几何及对象依赖观察，再由 `unity_asset_ledger compare-editor` 对照前后报告。自动 Assets Resources 根排除 Editor 目录，Package Resources 与动态键仍显式传入。观察始终为 editor_observed；静态、Editor、实际 Player 和玩法验收分别记录。新配置或资源转换可使用显式有限候选工具，先在自有样本验证 schema、人工冲突、关闭重开、直接 Play 与删除转换器后的构建；不得把有限切片推定为全 Cocos 转换能力。调用边界见[制作链](../../../../docs/providers/unity-authoring.md)。
+
 精确文件路径替换、可证明一致的目录前缀替换与动态拼接分别审查。迁移脚本本身、旧提交 git-show 路径、原包证据不能一起全局替换。重跑须按 GUID 核对原路径、显式过渡路径或目标路径，并拒绝占用目标；脚本编译失败后先修错误，不重复运行整个迁移。
 
 类型整理的返工依据见 [历史来源（外部历史资料）](../../../../docs/工作区接入.md#外部经验和项目资料)。

@@ -6,6 +6,10 @@ import json
 import re
 import subprocess
 from pathlib import PurePosixPath
+from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
+from grea.brand_assets import validate_asset
 
 
 FORBIDDEN_PARTS = {'.private', '.git', '.venv', 'node_modules', '__pycache__',
@@ -33,6 +37,13 @@ def inspect(path, data, mode='100644'):
         issues.append({'code': 'private_or_generated_path'})
     if len(data) > 2 * 1024 * 1024:
         issues.append({'code': 'oversized_source'})
+    if str(name).startswith('plugin/assets/') and name.suffix.lower() in ('.png','.svg'):
+        try:
+            if mode!='100644':raise ValueError('Brand assets must be non-executable regular files')
+            validate_asset(str(name),data)
+        except Exception:
+            return issues+[{'code':'invalid_brand_asset'}]
+        if name.suffix=='.png':return issues
     try:
         text = data.decode('utf-8')
         if '\0' in text:

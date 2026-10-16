@@ -1,0 +1,11 @@
+{
+  "name": "Numeric.Services",
+  "references": [
+    "Numeric.Domain",
+    "Numeric.Gameplay",
+    "Grea.Foundation.Contracts"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": true,
+  "includePlatforms": []
+}

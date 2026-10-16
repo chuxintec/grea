@@ -20,7 +20,7 @@ namespace Grea.Editor
     // Only invoked by the grea-owned staged project. Existing assets are never overwritten.
     public static class ProjectGenerator
     {
-        public const string Version = "0.1.1";
+        public const string Version = "0.1.2";
         public const string BasePath = "Assets/GreaGenerated";
         [Serializable] public sealed class Request
         {
@@ -145,36 +145,62 @@ namespace Grea.Editor
         { var go = new GameObject(name, typeof(RectTransform)); if (parent) go.transform.SetParent(parent, false); return go; }
         static void Stretch(GameObject go)
         { var r = (RectTransform)go.transform; r.anchorMin = Vector2.zero; r.anchorMax = Vector2.one; r.offsetMin = r.offsetMax = Vector2.zero; }
+        static Text Label(string name, Transform parent, string value, int size = 32)
+        {
+            var go = Rect(name, parent); Stretch(go);
+            var text = go.AddComponent<Text>(); text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.text = value; text.fontSize = size; text.alignment = TextAnchor.MiddleCenter;
+            text.color = Color.white; text.raycastTarget = false; return text;
+        }
         static GameObject MakeButton(string name)
         {
-            var go = Rect(name); ((RectTransform)go.transform).sizeDelta = new Vector2(220, 64);
-            var image = go.AddComponent<Image>(); image.color = new Color(.15f, .45f, .7f);
+            var go = Rect(name); ((RectTransform)go.transform).sizeDelta = new Vector2(440, 100);
+            var hit = go.AddComponent<Image>(); hit.color = Color.clear;
+            var visual = Rect("Visual", go.transform); Stretch(visual);
+            var image = visual.AddComponent<Image>(); image.color = new Color(.15f, .45f, .7f); image.raycastTarget = false;
             var button = go.AddComponent<Button>(); button.targetGraphic = image;
+            Label("Label", visual.transform, name);
+            var icon = Rect("Icon", visual.transform); var rect = (RectTransform)icon.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(.1f, .5f); rect.sizeDelta = new Vector2(48, 48);
+            icon.AddComponent<Image>().raycastTarget = false; icon.SetActive(false);
             go.AddComponent<CommandButton>().Configure(button);
+            go.AddComponent<ButtonPressFeedback>().Configure(button, visual.transform, .92f, .08f);
             return go;
         }
         static GameObject MakeModal()
         {
             var root = Rect("ModalShell"); Stretch(root);
             var content = Rect("Content", root.transform); Stretch(content);
-            var blocker = Rect("Blocker", content.transform); Stretch(blocker); blocker.AddComponent<Image>().color = new Color(0, 0, 0, .7f);
-            var close = MakeButton("Close"); close.transform.SetParent(content.transform, false);
-            root.AddComponent<ModalPanel>().Configure(content, blocker, close.GetComponent<Button>(), close.GetComponent<Button>(), null);
+            var blocker = Rect("Blocker", content.transform); Stretch(blocker); blocker.AddComponent<Image>().color = new Color(0, 0, 0, .75f);
+            var frame = Rect("Frame", content.transform); ((RectTransform)frame.transform).sizeDelta = new Vector2(900, 1000);
+            frame.AddComponent<Image>().color = new Color(.08f, .12f, .18f);
+            var title = Label("Title", frame.transform, "PAUSED", 44);
+            var titleRect = (RectTransform)title.transform; titleRect.anchorMin = new Vector2(0, .8f); titleRect.anchorMax = Vector2.one;
+            var body = Rect("Body", frame.transform); Stretch(body);
+            ((RectTransform)body.transform).offsetMin = new Vector2(40, 180); ((RectTransform)body.transform).offsetMax = new Vector2(-40, -200);
+            var close = MakeButton("Close"); close.transform.SetParent(frame.transform, false);
+            ((RectTransform)close.transform).anchoredPosition = new Vector2(0, -380);
+            var navigation = close.GetComponent<Button>().navigation; navigation.mode = Navigation.Mode.None;
+            close.GetComponent<Button>().navigation = navigation;
+            var panel = root.AddComponent<ModalPanel>(); panel.Configure(content, blocker, close.GetComponent<Button>(), close.GetComponent<Button>(), null);
+            panel.ConfigureContentSlots((RectTransform)body.transform, title);
             content.SetActive(false); return root;
         }
         static GameObject MakeHost()
         {
             var root = Rect("UIHost"); var canvas = root.AddComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            root.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            var scaler = root.AddComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080, 2340); scaler.matchWidthOrHeight = .5f;
             root.AddComponent<GraphicRaycaster>();
             var host = root.AddComponent<UIHost>(); host.canvas = canvas;
-            host.pageLayer = (RectTransform)Rect("Pages", root.transform).transform; Stretch(host.pageLayer.gameObject);
-            host.modalLayer = (RectTransform)Rect("Modals", root.transform).transform; Stretch(host.modalLayer.gameObject);
-            host.toastLayer = (RectTransform)Rect("Toasts", root.transform).transform; Stretch(host.toastLayer.gameObject);
+            host.safeAreaRoot = (RectTransform)Rect("SafeArea", root.transform).transform; Stretch(host.safeAreaRoot.gameObject);
+            host.pageLayer = (RectTransform)Rect("Pages", host.safeAreaRoot).transform; Stretch(host.pageLayer.gameObject);
+            host.modalLayer = (RectTransform)Rect("Modals", host.safeAreaRoot).transform; Stretch(host.modalLayer.gameObject);
+            host.toastLayer = (RectTransform)Rect("Toasts", host.safeAreaRoot).transform; Stretch(host.toastLayer.gameObject);
             var events = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule)); events.transform.SetParent(root.transform, false); host.events = events.GetComponent<EventSystem>();
             var button = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(BasePath + "/ButtonShell.prefab")); button.transform.SetParent(host.pageLayer, false); host.openButton = button.GetComponent<CommandButton>();
             var modal = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(BasePath + "/ModalShell.prefab")); modal.transform.SetParent(host.modalLayer, false); host.modal = modal.GetComponent<ModalPanel>();
-            var close = modal.GetComponentInChildren<Button>(true); var content = modal.transform.Find("Content").gameObject;
+            var close = host.modal.CloseButton; var content = modal.transform.Find("Content").gameObject;
             host.modal.Configure(content, content.transform.Find("Blocker").gameObject, close, close, host.events);
             PrefabUtility.RecordPrefabInstancePropertyModifications(host.modal);
             return root;
@@ -184,11 +210,14 @@ namespace Grea.Editor
         public static void Validate(Request request)
         {
             var host = AssetDatabase.LoadAssetAtPath<GameObject>(BasePath + "/UIHost.prefab");
+            if (host && !host.GetComponent<UIHost>().safeAreaRoot) throw new InvalidOperationException("BINDING_FAILED: " + BasePath + "/UIHost.prefab UIHost.safeAreaRoot");
             if (!host || BindingValidator.Inspect(host).Count != 0 || host.GetComponentsInChildren<EventSystem>(true).Length != 1)
                 throw new InvalidOperationException("BINDING_FAILED: UIHost");
             var button = AssetDatabase.LoadAssetAtPath<GameObject>(BasePath + "/ButtonShell.prefab");
             if (!button || BindingValidator.Inspect(button).Count != 0) throw new InvalidOperationException("BINDING_FAILED: ButtonShell");
             var modal = AssetDatabase.LoadAssetAtPath<GameObject>(BasePath + "/ModalShell.prefab");
+            if (modal && !modal.GetComponent<ModalPanel>().ContentSlot) throw new InvalidOperationException("BINDING_FAILED: " + BasePath + "/ModalShell.prefab ModalPanel.contentSlot");
+            if (modal && !modal.GetComponent<ModalPanel>().Title) throw new InvalidOperationException("BINDING_FAILED: " + BasePath + "/ModalShell.prefab ModalPanel.title");
             if (!modal || BindingValidator.Inspect(modal).Any(x => x.Field != "events")) throw new InvalidOperationException("BINDING_FAILED: ModalShell");
             var scene = EditorSceneManager.OpenScene(request.bootstrapScene, OpenSceneMode.Single);
             var components = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<MonoBehaviour>(true)).Where(x => x && x.GetType().FullName == request.bootstrapType).ToArray();

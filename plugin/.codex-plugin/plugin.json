@@ -35,6 +35,10 @@
       "把这个 Cocos Creator 微信小游戏转换为原生 Unity 工程。",
       "审计这个 Unity 项目里残留的 Cocos 中间件，并给出原生化方案。",
       "对照原版修复战斗结算和奖励弹窗的差异。"
-    ]
+    ],
+    "composerIcon": "./assets/icon_64.png",
+    "logo": "./assets/logo_light_512.png",
+    "logoDark": "./assets/logo_dark_512.png",
+    "brandColor": "#20C8A0"
   }
 }

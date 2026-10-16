@@ -1,12 +1,12 @@
 {
   "dependencies": {
     "com.grea.editor": {
-      "version": "file:com.grea.editor",
+      "version": "0.3.0",
       "depth": 0,
       "source": "embedded",
       "dependencies": {
         "com.grea.foundation": "0.2.1",
-        "com.grea.ui.ugui": "0.2.1",
+        "com.grea.ui.ugui": "0.3.0",
         "com.unity.render-pipelines.universal": "17.6.0"
       }
     },
@@ -19,7 +19,7 @@
       }
     },
     "com.grea.ui.ugui": {
-      "version": "file:com.grea.ui.ugui",
+      "version": "0.3.0",
       "depth": 0,
       "source": "embedded",
       "dependencies": {

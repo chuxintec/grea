@@ -13,8 +13,14 @@ from .common import GreaError, digest, package_root, write_new
 from . import runner, registry
 from .unity_projects import Reader, relative, overlaps, strict_json, KEYWORDS
 from .unity_project_contracts import PROFILE, REFERENCE, MANIFEST as MANIFEST_SCHEMA
+from .tools import unity_framework_audit
+from .tools.unity_framework_audit import inspect as inspect_framework
 
-VERSION = '0.1.1'
+def boundary_implementation_hash():
+    return hashlib.sha256(Path(unity_framework_audit.__file__).read_bytes()).hexdigest()
+
+
+VERSION = '0.1.2'
 TEMPLATE = {'id': 'grea-minimal-2d', 'version': '0.1.0'}
 MANIFEST = 'Tools/Generated/manifests/project.json'
 MODULES = [{'name': 'Counter', 'layers': ['Domain', 'Gameplay', 'Presentation', 'Services']}]
@@ -82,6 +88,9 @@ def _recipe(p):
     root = package_root()
     files = {}
     package_dir = root / 'tools/unity/framework/packages'
+    boundary = inspect_framework(package_dir, root / 'tools/unity/templates/counter-composition/Assets')
+    if not boundary['ok']:
+        raise GreaError('FRAMEWORK_BOUNDARY', 'Bundled template violates source/assembly boundaries.', details={'findings': boundary['findings']})
     for source in sorted(package_dir.rglob('*')):
         if source.is_symlink():
             raise GreaError('UNSAFE_TEMPLATE', 'Template contains a symlink.')
@@ -155,7 +164,7 @@ def plan_generation(project_root, profile='grea-project.json', mode='new', cance
     reader = _reader(project_root, cancel); p = _profile(reader, profile)
     unity = p['paths']['unityProject']; files = _recipe(p)
     source = {name: sha(value) for name, value in files.items()}
-    identity = digest({'generator': VERSION, 'implementation': sha(Path(__file__).read_bytes()), 'profile': p,
+    identity = digest({'generator': VERSION, 'implementation': sha(Path(__file__).read_bytes()), 'boundaryImplementation': boundary_implementation_hash(), 'profile': p,
                        'source': source, 'provider': registry.tool('unity_cli')})
     current = _inventory(reader, unity)
     changed = []; unknown = []; manifest = None

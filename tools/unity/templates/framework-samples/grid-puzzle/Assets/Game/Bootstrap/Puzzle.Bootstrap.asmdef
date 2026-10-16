@@ -1,0 +1,16 @@
+{
+  "name": "Puzzle.Bootstrap",
+  "references": [
+    "Puzzle.Domain",
+    "Puzzle.Gameplay",
+    "Puzzle.Services",
+    "Puzzle.Presentation",
+    "Grea.Foundation.Runtime",
+    "Grea.Foundation.Contracts",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": []
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Numeric.Gameplay",
+  "references": [
+    "Numeric.Domain"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": true,
+  "includePlatforms": []
+}
