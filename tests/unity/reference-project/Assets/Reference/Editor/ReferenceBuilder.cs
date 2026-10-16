@@ -17,7 +17,7 @@ namespace Grea.Reference.Editor
 {
     public static class ReferenceBuilder
     {
-        public const string PlayerVersion = "1.0.1";
+        public const string PlayerVersion = "1.0.2-candidate";
         public const string ScenePath = "Assets/Reference/Scenes/Reference.unity";
         public const string ViewPath = "Assets/Reference/Content/ReferenceView.prefab";
         public const string ConfigPath = "Assets/Reference/Content/ReferenceConfig.asset";

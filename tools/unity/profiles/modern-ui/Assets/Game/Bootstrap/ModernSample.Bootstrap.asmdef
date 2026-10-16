@@ -1,0 +1,13 @@
+{
+  "name": "ModernSample.Bootstrap",
+  "references": [
+    "ModernSample.Domain",
+    "ModernSample.Gameplay",
+    "ModernSample.Services",
+    "ModernSample.Presentation",
+    "Grea.Foundation.Runtime",
+    "Grea.Foundation.Contracts"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

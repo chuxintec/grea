@@ -179,5 +179,25 @@ namespace Grea.Tests
             Assert.Throws<InvalidDataException>(() => store.Recover());
             Assert.AreEqual("unknown-version", File.ReadAllText(path + ".backup"));
         }
+        [Test] public void RecoveryMatrixAndUnknownVersionPreserveCopies()
+        {
+            for(int main=0;main<3;main++) for(int pending=0;pending<3;pending++) for(int backup=0;backup<3;backup++)
+            {
+                var folder=Path.Combine(root,$"matrix-{main}-{pending}-{backup}");
+                var store=new FileSaveStore(folder,"player","qa",true);store.Write("valid");
+                var path=Path.Combine(folder,"qa","save.v1");var valid=File.ReadAllText(path);File.Delete(path);
+                void Set(string file,int state) { if(state!=0)File.WriteAllText(file,state==1?valid:"corrupt"); }
+                Set(path,main);Set(path+".pending",pending);Set(path+".backup",backup);
+                if(pending==1) Assert.AreEqual("pending-committed",store.Recover());
+                else if(main==1) Assert.AreEqual("main-preserved",store.Recover());
+                else if(backup==1) Assert.AreEqual("backup-restored",store.Recover());
+                else if(main+pending+backup==0) Assert.AreEqual("empty",store.Recover());
+                else Assert.Throws<InvalidDataException>(()=>store.Recover());
+            }
+            var unknown=new FileSaveStore(root,"player","qa",true);unknown.Write("current");
+            var mainPath=Path.Combine(root,"qa","save.v1");var original=File.ReadAllBytes(mainPath);
+            File.WriteAllText(mainPath+".backup","grea-save:999\nopaque");
+            Assert.Throws<NotSupportedException>(()=>unknown.Recover());CollectionAssert.AreEqual(original,File.ReadAllBytes(mainPath));
+        }
     }
 }

@@ -31,3 +31,5 @@ npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
 退出 0=当前声明范围完整，1=unsupported/partial，2=输入/依赖/IO/预算错误；统一执行层仍保留外层回执、stdout、stderr 和报告，不把 0 等同于原生 Unity 转换通过。遇到歧义、未知 loader、重复身份或损坏数据应审查报告，不改成 glob 第一项或执行 JS 来隐藏缺口。
 
 所有公开 fixtures 为自有合成数据。私有资源回放只是有限格式回归；旧导出来自旧 reader，并非独立 oracle。精确边界见 [工具验收记录](../validation/2026-10-16-project-tools.json)。
+
+Creator 3.4.1 需要显式新适配器，见 [3.4.1/CCON](cocos3-evidence.md)。本文 2.4 结论不覆盖其他版本。

@@ -337,15 +337,18 @@ def main(argv=None):
     group=p.add_mutually_exclusive_group(required=True);group.add_argument('--input',type=Path);group.add_argument('--config',type=Path)
     p.add_argument('--output',type=Path,required=True);p.add_argument('--asset-index',type=int,action='append')
     p.add_argument('--pack-adapter',choices=ADAPTERS[1:],default=ADAPTERS[1])
-    p.add_argument('--adapter',choices=ADAPTERS,default=ADAPTERS[0]);p.add_argument('--max-bytes',type=int,default=32*1024*1024);p.add_argument('--max-output-bytes',type=int,default=64*1024*1024)
+    p.add_argument('--adapter',choices=ADAPTERS+('cocos-3.4.1-index-v1','cocos-3.4.1-ccon-json-v1'),default=ADAPTERS[0]);p.add_argument('--max-bytes',type=int,default=32*1024*1024);p.add_argument('--max-output-bytes',type=int,default=64*1024*1024)
     a=p.parse_args(argv)
     try:
-        if a.config:
+        if a.adapter.startswith('cocos-3.4.1-'):
+            from grea.tools.cocos3_evidence import export
+            report=export(a.config or a.input,a.output,a.adapter,a.asset_index)
+        elif a.config:
             report=export_bundle(a.config,a.asset_index,a.output,a.pack_adapter,a.max_output_bytes)
         else:
             if a.asset_index: fail('INVALID_SELECTION','$','asset-index requires config')
             report=export_document(a.input,a.output,a.adapter,a.max_bytes,a.max_output_bytes)
-    except (ParseError,OSError) as error:
+    except (ParseError,OSError,ValueError,TypeError,KeyError) as error:
         report=error_report('cocos_assets','cocos-2.4-bundle-config-v1' if a.config else a.adapter,error)
         print(json.dumps(report,ensure_ascii=False));return 1 if report['status']=='unsupported' else 2
     print(json.dumps(report,ensure_ascii=False));return 0

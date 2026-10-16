@@ -516,6 +516,72 @@
         "plugin/skills/grea-unity-standard/references/05-Unity-工程结构与开发规范.md",
         "plugin/skills/grea-delivery/references/09-交付-游戏构建与版本发布.md"
       ]
+    },
+    {
+      "id": "R-AUDIT-01",
+      "request": "这个 Cocos 项目只评估开发成本。",
+      "setup": "源包可读，未授权游戏开发。",
+      "expected_mode": "只读评估",
+      "observable_outcomes": [
+        "assess 身份门；未知范围单列"
+      ],
+      "prohibited_scope_expansion": [
+        "要求原生 Player 先通过",
+        "推荐 AssetRipper 解析 Cocos"
+      ],
+      "primary_references": [
+        "plugin/skills/grea-native-port/references/05-Unity-原生转换规范.md",
+        "plugin/shared/08-验收-测试与结果交付.md"
+      ]
+    },
+    {
+      "id": "R-AUDIT-02",
+      "request": "把旧节点图解释器重命名为 Native 后是否完成？",
+      "setup": "原机制仍在 Player 内。",
+      "expected_mode": "原生机制退出审计",
+      "observable_outcomes": [
+        "按机制与调用链继续判未退出"
+      ],
+      "prohibited_scope_expansion": [
+        "凭类型名通过原生门"
+      ],
+      "primary_references": [
+        "plugin/skills/grea-native-port/references/05-Unity-原生转换规范.md",
+        "plugin/shared/08-验收-测试与结果交付.md"
+      ]
+    },
+    {
+      "id": "R-AUDIT-03",
+      "request": "配置继续使用 Excel 导 JSON。",
+      "setup": "每张表已有唯一制作源。",
+      "expected_mode": "配置制作与强类型消费",
+      "observable_outcomes": [
+        "保留单向生成与强类型消费"
+      ],
+      "prohibited_scope_expansion": [
+        "强制改为 Inspector-only",
+        "删除持续导表工具"
+      ],
+      "primary_references": [
+        "plugin/skills/grea-native-port/references/05-Unity-原生转换规范.md",
+        "plugin/shared/08-验收-测试与结果交付.md"
+      ]
+    },
+    {
+      "id": "R-AUDIT-04",
+      "request": "旧包验收通过，代码刚改完是否可发布？",
+      "setup": "旧录像和测试未对应新候选。",
+      "expected_mode": "新候选构建验收",
+      "observable_outcomes": [
+        "新 revision；受影响门待验"
+      ],
+      "prohibited_scope_expansion": [
+        "把旧截图升级为新包通过"
+      ],
+      "primary_references": [
+        "plugin/skills/grea-native-port/references/05-Unity-原生转换规范.md",
+        "plugin/shared/08-验收-测试与结果交付.md"
+      ]
     }
   ]
 }

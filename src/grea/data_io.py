@@ -48,7 +48,7 @@ def decode(raw, max_nodes=100000, max_depth=32):
     return value
 
 
-def load(path, max_bytes=8 * 1024 * 1024, max_nodes=100000):
+def read_bytes(path, max_bytes=8 * 1024 * 1024):
     path = Path(path).absolute()
     if any(p.is_symlink() for p in (path, *path.parents)) or not path.is_file():
         raise ValueError('Expected a regular input without links')
@@ -60,4 +60,9 @@ def load(path, max_bytes=8 * 1024 * 1024, max_nodes=100000):
     after = path.stat()
     if len(raw) > max_bytes or (before.st_size, before.st_mtime_ns, before.st_ino) != (after.st_size, after.st_mtime_ns, after.st_ino):
         raise ValueError('Input changed or exceeded budget during read')
+    return raw
+
+
+def load(path, max_bytes=8 * 1024 * 1024, max_nodes=100000):
+    raw = read_bytes(path, max_bytes)
     return decode(raw, max_nodes), sha(raw)

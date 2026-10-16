@@ -11,7 +11,9 @@
 | 检查包体身份与库存 | inspect-target；解包用 `unpack_xapk` | [通用脚本参数](docs/tools/制品与资源检查.md)；库存不等于已提取全部资源 |
 | 原生运行与画面证据 | `adb`、`scrcpy`、`video_manifest`、`video_sheet` | [取证流程](plugin/skills/grea-evidence/references/03-恢复-原版运行与内容取证.md)；版本探测不连接或操作游戏 |
 | Unity 资源与字段恢复 | `assetripper`、`unitypy` | 原 Prefab／引用关系优先；UnityPy 是独立运行时中的库，不是通用执行命令 |
-| Cocos 结构与脚本身份取证 | `cocos_assets`、`cocos_modules` | [范围与安装](docs/providers/cocos-static.md)；动态拼表候选保持 partial，不执行源代码 |
+| 配置、UI 表现与性能预检 | `config_preflight`、`presentation_audit`、`performance_compare` | [显式契约与范围](docs/providers/observation-tools.md)；未知/无效状态不按零处理 |
+| 证据闭包与前后清单变化 | `evidence_manifest` | [输入契约](schemas/evidence-manifest.schema.json)；删除身份仍显示，当前闭包与范围差异分开 |
+| Cocos 结构与脚本身份取证 | `cocos_assets`、`cocos_modules` | [2.4 范围与安装](docs/providers/cocos-static.md)、[3.4.1/CCON/System.register](docs/providers/cocos3-evidence.md)；动态拼表候选保持 partial，不执行源代码 |
 | 原生退出与 Player 元数据 | `unity_native_exit`、`unity_player_audit`；Editor companion | [三层证据](docs/providers/unity-native-exit.md)；静态无命中不等于原生化通过 |
 | 强类型配置和有限原生资源制作 | `unity_config_candidate`、`unity_native_assets`；Editor companion | [制作链](docs/providers/unity-authoring.md)；候选冲突保护，原生资产单独回读；Spine 仅页闭包 |
 | IL2CPP／托管代码分析 | `cpp2il`、`ilspy`；按缺口使用 `il2cppdumper`、`ghidra`、`il2cpp-inspector` | [代码恢复流程](plugin/skills/grea-unity-recovery/references/05-Unity-工程重建与恢复.md)、[Redux 边界](docs/providers/IL2CPP解析器接入.md) |
@@ -29,7 +31,7 @@
 
 ## Unity 工程静态规划
 
-`validate_unity_project` / `plan_unity_project` 已提供 项目配置、依赖和显式程序集检查与只读设计计划。用法见 [配置与检查](docs/Unity项目配置与检查.md)；不启动 Editor，不写目标，不提供工程生成或运行验收。
+`validate_unity_project` / `plan_unity_project` 已提供 项目配置、依赖和显式程序集检查与只读设计计划。用法见 [配置与检查](docs/Unity项目配置与检查.md)；这两个静态操作不启动 Editor、不写目标；需要生成时使用下面独立的生成操作，运行验收另做。
 
 [框架与通用组件](docs/Unity框架与通用组件.md) 提供 Foundation/uGUI/Editor C# 源码与包测试；使用独立隔离测试入口，不新增 registry 工具 ID，不改变上述静态操作的运行证据。
 
@@ -67,3 +69,5 @@ host_support 表示登记的平台条件，不表示已原生实测；Windows �
 `shader_probe` 与 `unity_package_backup` 将已有 Shader 探针和包备份实现接入统一调度；先通过 `describe-tool` 查看边界，再使用 `run-tool` 执行。
 
 `static_asset_copy` 按显式路径映射复制静态文件，使用 Python 标准库；参数、退出码和复制边界见 [静态文件映射复制](docs/tools/制品与资源检查.md#静态文件映射复制)。
+
+当前整改能力与未验项见 [审计整改执行记录](docs/design/audit-remediation-20261016.md)。新 TMP/Input System 配方见 [Modern UI v1](tools/unity/profiles/modern-ui/README.md)，旧 reference 证据不能沿用到新配方。

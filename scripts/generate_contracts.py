@@ -15,6 +15,8 @@ from grea.native_exit_contracts import documents as native_exit_documents
 outputs.update(native_exit_documents())
 from grea.authoring_contracts import documents as authoring_documents
 outputs.update(authoring_documents())
+from grea.evidence_contracts import documents as evidence_documents
+outputs.update(evidence_documents())
 outputs['unity-capabilities.json']=capability_matrix()
 failed=[]
 for name,value in outputs.items():

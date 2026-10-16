@@ -1,6 +1,6 @@
 {
   "name": "com.grea.foundation",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "displayName": "com.grea.foundation",
   "description": "Grea minimal framework candidate; see package documentation for validation boundaries.",
   "unity": "6000.6",

@@ -7,7 +7,8 @@ from pathlib import Path
 import sys
 from PIL import Image
 from grea.safe_paths import relative_name,unique_paths
-from grea.tools.unity_config_candidate import load,encode,sha,identifier,write_candidate
+from grea.data_io import load,encode,sha
+from grea.authoring_output import identifier,write_candidate
 
 
 def closed(value,fields):

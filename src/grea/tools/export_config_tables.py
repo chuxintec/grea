@@ -14,7 +14,7 @@ ADAPTERS = ('generic', 'level-datas-v1')
 
 def raw_script(value):
     if isinstance(value, str):
-        return value.encode('utf-8')
+        return value.encode('utf-8', errors='surrogateescape')
     return bytes(value)
 
 
@@ -141,7 +141,17 @@ def main():
     parser.add_argument('--adapter', choices=ADAPTERS, default='generic')
     args = parser.parse_args()
     import UnityPy  # Optional provider; generic grea does not install it implicitly.
-    report, summary = export_environment(UnityPy.load(str(args.bundle)), args.bundle, args.output, args.adapter)
+    try:
+        import contextlib
+        import sys
+        with contextlib.redirect_stdout(sys.stderr):
+            environment = UnityPy.load(str(args.bundle))
+    except (ValueError, IndexError, KeyError, NotImplementedError) as error:
+        print(json.dumps(dict(status='provider_decode_failed',provider='UnityPy',provider_version=UnityPy.__version__,
+                              source_sha256=hash_file(args.bundle)['sha256'],error_type=type(error).__name__,
+                              scope='Provider could not decode the input; unsupported format and damaged input are not distinguished. No export or business validation occurred.')))
+        return 2
+    report, summary = export_environment(environment, args.bundle, args.output, args.adapter)
     print(json.dumps(dict(text_assets=report['text_asset_count'], json_tables=report['json_table_count'],
                           business_validation=summary['status'])))
     return 1 if summary['status'] == 'needs_review' else 0

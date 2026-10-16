@@ -43,7 +43,28 @@
       },
       "required_files": [
         "{grea}/.private/providers/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/providers/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Unity assets/bundles"
+      }
     },
     {
       "id": "cpp2il",
@@ -81,7 +102,28 @@
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/providers/il2cpp/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "IL2CPP binary+metadata"
+      }
     },
     {
       "id": "ilspy",
@@ -119,7 +161,28 @@
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/ILSpy/ilspycmd"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/providers/il2cpp/ILSpy/ilspycmd"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Managed DLL"
+      }
     },
     {
       "id": "apktool",
@@ -155,7 +218,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "apktool"
+      "system_binary": "apktool",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/apktool"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "APK resources"
+      }
     },
     {
       "id": "jadx",
@@ -191,7 +275,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "jadx"
+      "system_binary": "jadx",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/jadx"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "DEX/APK"
+      }
     },
     {
       "id": "rizin",
@@ -227,7 +332,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "rizin"
+      "system_binary": "rizin",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/rizin"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "ELF/PE/Mach-O"
+      }
     },
     {
       "id": "binwalk",
@@ -263,7 +389,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "binwalk"
+      "system_binary": "binwalk",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/binwalk"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Binary blob"
+      }
     },
     {
       "id": "7zz",
@@ -299,7 +446,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "7zz"
+      "system_binary": "7zz",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/7zz"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Archives"
+      }
     },
     {
       "id": "ffmpeg",
@@ -328,6 +496,27 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "ffmpeg"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "see upstream help"
       }
     },
     {
@@ -357,6 +546,27 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "ffprobe"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "see upstream help"
       }
     },
     {
@@ -391,6 +601,27 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "scrcpy"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "see upstream help"
       }
     },
     {
@@ -423,6 +654,27 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{home}/Library/Android/sdk/platform-tools/adb"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "see upstream help"
       }
     },
     {
@@ -457,6 +709,27 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "makensis"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "see upstream help"
       }
     },
     {
@@ -490,6 +763,27 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/providers/frida/.venv/bin/python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "see upstream help"
       }
     },
     {
@@ -518,6 +812,27 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "dependency_library",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python + UnityPy"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "see upstream help"
       }
     },
     {
@@ -546,6 +861,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "dependency_library",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "Unity Editor",
+          "matching Spine runtime source"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "source/runtime or native analysis"
       }
     },
     {
@@ -574,6 +911,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "dependency_library",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "Unity Editor",
+          "matching Spine runtime source"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "source/runtime or native analysis"
       }
     },
     {
@@ -608,6 +967,27 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "ghidra provider (see acquisition/usage)"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "source/runtime or native analysis"
       }
     },
     {
@@ -631,6 +1011,27 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "provider_inventory",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "blender provider (see acquisition/usage)"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "source/runtime or native analysis"
       }
     },
     {
@@ -659,6 +1060,27 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "provider_inventory",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "il2cppdumper provider (see acquisition/usage)"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "source/runtime or native analysis"
       }
     },
     {
@@ -700,6 +1122,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Unity Assets and ledger JSON"
       }
     },
     {
@@ -741,6 +1185,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "see skill tool catalog"
       }
     },
     {
@@ -782,6 +1248,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "see skill tool catalog"
       }
     },
     {
@@ -823,6 +1311,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "see skill tool catalog"
       }
     },
     {
@@ -864,6 +1374,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "see skill tool catalog"
       }
     },
     {
@@ -903,6 +1435,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "see skill tool catalog"
       }
     },
     {
@@ -944,6 +1498,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "raw floats / JSONL / explicitly trusted Laya parser"
       }
     },
     {
@@ -985,6 +1561,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "raw floats / JSONL / explicitly trusted Laya parser"
       }
     },
     {
@@ -1025,6 +1623,29 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write",
+          "executes_explicit_project_parser"
+        ],
+        "support_formats": "raw floats / JSONL / explicitly trusted Laya parser"
       }
     },
     {
@@ -1061,7 +1682,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "glslangValidator"
+      "system_binary": "glslangValidator",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/glslangValidator"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "SPIR-V/GLES"
+      }
     },
     {
       "id": "spirv-cross",
@@ -1097,7 +1739,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "spirv-cross"
+      "system_binary": "spirv-cross",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/spirv-cross"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "SPIR-V/GLES"
+      }
     },
     {
       "id": "spirv-val",
@@ -1133,7 +1796,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "spirv-val"
+      "system_binary": "spirv-val",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/bin/spirv-val"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "SPIR-V/GLES"
+      }
     },
     {
       "id": "il2cpp-inspector",
@@ -1172,7 +1856,29 @@
       "required_files": [
         "{grea}/.private/providers/il2cpp/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
         "{grea}/.private/runtimes/dotnet/10/dotnet"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/providers/il2cpp/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
+          "{grea}/.private/runtimes/dotnet/10/dotnet"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "IL2CPP binary+metadata"
+      }
     },
     {
       "id": "image_alpha_audit",
@@ -1213,6 +1919,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Pillow supported raster images; Pillow required"
       }
     },
     {
@@ -1247,6 +1975,27 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "pngquant"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "PNG RGBA to indexed PNG"
       }
     },
     {
@@ -1262,7 +2011,28 @@
         "provider_declared_effects"
       ],
       "alias_of": "android-emulator-arm32",
-      "deprecated": true
+      "deprecated": true,
+      "capability": {
+        "implementation": "alias",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "android-emulator-arm32"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Android ARM32 AVD; official Emulator 27.3.5"
+      }
     },
     {
       "id": "check_game_build_skill",
@@ -1279,7 +2049,29 @@
       ],
       "deprecated_alias_for": "check_grea_skill",
       "alias_of": "check_grea_skill",
-      "deprecated": true
+      "deprecated": true,
+      "capability": {
+        "implementation": "alias",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "check_grea_skill"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "local Markdown skill, recovery dispatcher and registry JSON; Python 3.9+"
+      }
     },
     {
       "id": "video_sheet",
@@ -1317,6 +2109,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "See helper --help"
       }
     },
     {
@@ -1355,6 +2169,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "See helper --help"
       }
     },
     {
@@ -1366,9 +2202,9 @@
         "--help"
       ],
       "check_level": "help-only",
-      "usage": "grea describe-tool {\"tool_id\": \"unpack_xapk\"}",
+      "usage": "SOURCE --output NEW_DIRECTORY [--scope assets|all-entries] [--max-files N] [--max-bytes N]",
       "side_effects": "See canonical helper contract; read inputs and write explicit outputs.",
-      "formats": "See helper --help",
+      "formats": "APK or XAPK with APK entries; explicit assets/all-entries scope, OBB preserved opaque",
       "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
       "execution": {
         "command": [
@@ -1393,7 +2229,35 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
-      }
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "apk-assets",
+          "apk-all-entries",
+          "xapk-assets",
+          "xapk-all-entries"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "APK or XAPK with APK entries; explicit assets/all-entries scope, OBB preserved opaque"
+      },
+      "tested_samples": "tests/test_xapk_extraction.py; complete inventory does not prove game recovery"
     },
     {
       "id": "registry_doctor",
@@ -1431,6 +2295,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "See helper --help"
       }
     },
     {
@@ -1464,7 +2350,28 @@
       },
       "required_files": [
         "{grea}/.private/providers/android-emulator/android-9.0.0_r1/emulator"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/providers/android-emulator/android-9.0.0_r1/emulator"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "assembly-sanitizer",
@@ -1500,7 +2407,28 @@
       },
       "required_files": [
         "{grea}/tools/dotnet/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/tools/dotnet/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "decode-doctor",
@@ -1514,7 +2442,28 @@
         "No generic --help probe assumed for this wrapper."
       ],
       "alias_of": "registry_doctor",
-      "deprecated": true
+      "deprecated": true,
+      "capability": {
+        "implementation": "alias",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "registry_doctor"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "spirv-dis",
@@ -1548,7 +2497,28 @@
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
       },
-      "system_binary": "spirv-dis"
+      "system_binary": "spirv-dis",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "spirv-dis provider (see acquisition/usage)"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "unity-export-assets",
@@ -1583,7 +2553,29 @@
         "{grea}/.private/adapters/wechat/export_all_bundle_assets.py",
         "{grea}/.private/runtimes/python/.venv/bin/python"
       ],
-      "distribution": "local-only project adapter; implementation excluded from public source"
+      "distribution": "local-only project adapter; implementation excluded from public source",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/adapters/wechat/export_all_bundle_assets.py",
+          "{grea}/.private/runtimes/python/.venv/bin/python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "unity-export-config",
@@ -1596,7 +2588,9 @@
         "command": [
           "{grea}/bin/unity-export-config"
         ],
-        "finding_exit_codes": []
+        "finding_exit_codes": [
+          1
+        ]
       },
       "effects": [
         "provider_declared_effects"
@@ -1616,7 +2610,34 @@
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [
+          "textasset-generic",
+          "level-datas-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "{grea}/.private/runtimes/python/.venv/bin/python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Observed TextAsset bytes; generic extraction by default; explicit level-datas-v1 for legacy table checks"
+      },
+      "formats": "Observed TextAsset bytes; generic extraction by default; explicit level-datas-v1 for legacy table checks",
+      "side_effects": "Read bundle, create a new output directory. No inferred source path or default business validation.",
+      "output_schema": "TABLE_INDEX.json schema_version 2; LEVEL_TABLE_SUMMARY.json with explicit applicability."
     },
     {
       "id": "webgl-xxtea-decrypt",
@@ -1651,7 +2672,29 @@
         "{grea}/.private/adapters/wechat/decrypt_webgl_xxtea.py",
         "{grea}/.private/runtimes/python/.venv/bin/python"
       ],
-      "distribution": "local-only project adapter; implementation excluded from public source"
+      "distribution": "local-only project adapter; implementation excluded from public source",
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/adapters/wechat/decrypt_webgl_xxtea.py",
+          "{grea}/.private/runtimes/python/.venv/bin/python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "wxapkg-decrypt",
@@ -1684,7 +2727,28 @@
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/runtimes/python/.venv/bin/python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "wxapkg-unpack",
@@ -1717,7 +2781,28 @@
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
-      ]
+      ],
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "{grea}/.private/runtimes/python/.venv/bin/python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "provider_declared_effects"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "check_grea_skill",
@@ -1758,6 +2843,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "local Markdown skill, recovery dispatcher and registry JSON; Python 3.9+"
       }
     },
     {
@@ -1790,6 +2897,29 @@
         "windows_status": "native_configuration_required",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "editor_only",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "Unity Editor",
+          "com.unity.pipeline"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "editor_process",
+          "project_mutation_by_command"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
       }
     },
     {
@@ -1814,6 +2944,28 @@
         "windows_status": "portable_unverified",
         "verification": "macOS only; Windows/Linux not executed",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+      },
+      "capability": {
+        "implementation": "editor_only",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "Unity Editor",
+          "com.unity.pipeline"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "editor_mutation_by_command"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
       }
     },
     {
@@ -1853,6 +3005,27 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Static Python capability; target Unity runtime is not checked."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read"
+        ],
+        "support_formats": "Unity project profile and bounded filesystem inventory"
       }
     },
     {
@@ -1892,6 +3065,27 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Static Python capability; target Unity runtime is not checked."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read"
+        ],
+        "support_formats": "Unity project profile and bounded filesystem inventory"
       }
     },
     {
@@ -1934,7 +3128,28 @@
       },
       "limitations": [
         "Create-only generation recipe; no existing-game refactor or Player acceptance."
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read"
+        ],
+        "support_formats": "M3 profile, ownership manifest and journal"
+      }
     },
     {
       "id": "generate_unity_project",
@@ -1978,7 +3193,30 @@
       },
       "limitations": [
         "Create-only generation recipe; no existing-game refactor or Player acceptance."
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "filesystem_write",
+          "editor_process"
+        ],
+        "support_formats": "M3 profile, ownership manifest and journal"
+      }
     },
     {
       "id": "recover_unity_generation",
@@ -2022,7 +3260,30 @@
       },
       "limitations": [
         "Create-only generation recipe; no existing-game refactor or Player acceptance."
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "filesystem_write",
+          "editor_process"
+        ],
+        "support_formats": "M3 profile, ownership manifest and journal"
+      }
     },
     {
       "id": "unity_reference",
@@ -2059,7 +3320,29 @@
       },
       "limitations": [
         "Source distribution only; Unity restore/build/test is an explicit separate operation."
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "filesystem_write"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "unity_pilot",
@@ -2099,7 +3382,29 @@
       "limitations": [
         "Never migrates source or starts Unity. Snapshots contain local paths and must remain private for private inputs.",
         "Cooperative local filesystem only; reject symlinks and detect drift, not an adversarial concurrent-writer sandbox."
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "filesystem_write"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "shader_probe",
@@ -2136,6 +3441,29 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Existing implementation migrated; module/fixture checks do not establish native provider or target-platform success."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "filesystem_write",
+          "subprocess"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
       }
     },
     {
@@ -2172,6 +3500,28 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Existing implementation migrated; module/fixture checks do not establish native provider or target-platform success."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "filesystem_write"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
       }
     },
     {
@@ -2210,7 +3560,29 @@
       "limitations": [
         "Copy only; no bundling, compilation or runtime acceptance.",
         "Preflight rejects source symlinks, traversal and overlapping mappings; copy-time failure retains partial output. Cooperative filesystem only."
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "filesystem_write"
+        ],
+        "support_formats": "Only the documented provider interface; inspect usage before execution"
+      }
     },
     {
       "id": "cocos_assets",
@@ -2221,7 +3593,7 @@
         "--help"
       ],
       "check_level": "synthetic-and-private-replay",
-      "formats": "Cocos 2.4 compiled-v1 / explicit pack and selected bundle import assets",
+      "formats": "Cocos 2.4 compiled-v1 / explicit pack and selected bundle import assets; explicit Creator 3.4.1 index/CCON JSON v1 (no CCONB or curve execution)",
       "side_effects": "Read explicit sources; create a new candidate directory only; never execute input JS or modify Unity",
       "usage": "grea run-tool with explicit --input/--output and --adapter; see docs/providers/cocos-static.md",
       "output_schema": "Versioned structural evidence JSON; see docs/providers/cocos-static.md",
@@ -2252,7 +3624,35 @@
         "verification": "macOS arm64 only; other hosts not run",
         "remediation": "See docs/providers/cocos-static.md; optional AST provider requires Node and npm ci with the pinned lock."
       },
-      "required_files": []
+      "required_files": [],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "cocos-2.4-compiled-v1",
+          "cocos-2.4-pack-v1",
+          "cocos-2.4-texture-pack-v1",
+          "cocos-3.4.1-index-v1",
+          "cocos-3.4.1-ccon-json-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Cocos 2.4 compiled-v1 / explicit pack and selected bundle import assets; explicit Creator 3.4.1 index/CCON JSON v1 (no CCONB or curve execution)"
+      }
     },
     {
       "id": "cocos_modules",
@@ -2297,7 +3697,36 @@
       },
       "required_files": [
         "{grea}/tools/cocos/node_modules/acorn/package.json"
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "browserify-table-v1",
+          "define-browserify-v1",
+          "define-factory-candidates-v1",
+          "system-register-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "node",
+          "acorn-8.15.0"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write",
+          "process"
+        ],
+        "support_formats": "ECMAScript 2020 literal loader tables; obfuscated factory candidates remain partial"
+      }
     },
     {
       "id": "unity_native_exit",
@@ -2339,7 +3768,32 @@
         "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
         "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
-      "required_files": []
+      "required_files": [],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "unity-native-exit-policy-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python",
+          "unity-editor-for-confirmation"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Unity Assets C# lexical candidates and text GUID roots; never a complete native-pass verdict"
+      }
     },
     {
       "id": "unity_player_audit",
@@ -2385,7 +3839,33 @@
       "required_files": [
         "{grea}/tools/unity/assembly-audit/bin/Release/net8.0/Grea.AssemblyAudit.dll",
         "{grea}/tools/unity/assembly-audit/bin/Release/net8.0/Mono.Cecil.dll"
-      ]
+      ],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "mono-managed-assemblies"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "dotnet-8",
+          "Mono.Cecil-0.11.6"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write",
+          "process"
+        ],
+        "support_formats": "Mono managed DLL metadata with explicit complete manifest and policy; IL2CPP unsupported"
+      }
     },
     {
       "id": "unity_config_candidate",
@@ -2425,7 +3905,31 @@
         "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
         "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
-      "required_files": []
+      "required_files": [],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "unity-config-authoring-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Closed scalar schema + JSON rows → strongly typed C#/Editor-only importer candidates; no runtime JSON"
+      }
     },
     {
       "id": "unity_native_assets",
@@ -2467,7 +3971,291 @@
         "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
         "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
-      "required_files": []
+      "required_files": [],
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "unity-native-assets-v1",
+          "spine-json-text-atlas"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python",
+          "pillow",
+          "unity-editor-for-import"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Finite Sprite trim/rotation/border and explicit linear Transform clip recipe; Spine closure check only"
+      }
+    },
+    {
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "macOS arm64 only; Editor/Player and optional metadata reader separately verified",
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
+      },
+      "id": "evidence_manifest",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "evidence_manifest",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "evidence_manifest"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "Versioned flat-v1 or layers-v1 manifest with explicit local root",
+      "usage": "--root ROOT --manifest FILE --adapter flat-v1|layers-v1 --output NEW_REPORT [--previous FILE]",
+      "output_schema": "schemas/evidence-manifest.schema.json (input); JSON report includes current_closure, manifest_diff and hash coverage.",
+      "side_effects": "Read explicit local files and write one new report. No network.",
+      "tested_samples": "tests/test_evidence_manifest.py and tests/test_audit_regressions.py; execution evidence is versioned separately.",
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "flat-v1",
+          "layers-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Versioned flat-v1 or layers-v1 manifest with explicit local root"
+      }
+    },
+    {
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Python fixtures on macOS; other hosts not run",
+        "remediation": "See docs/providers/observation-tools.md"
+      },
+      "id": "config_preflight",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "config_preflight",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "config_preflight"
+        ],
+        "finding_exit_codes": []
+      },
+      "formats": "typed-json-v1 explicit table contracts, JSON exports and reference rules",
+      "usage": "--contract CONTRACT --output NEW_REPORT",
+      "output_schema": "Versioned JSON report; see docs/providers/observation-tools.md",
+      "side_effects": "Read explicit local files and write one new report. No network.",
+      "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "typed-json-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "typed-json-v1 explicit table contracts, JSON exports and reference rules"
+      }
+    },
+    {
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Python fixtures on macOS; other hosts not run",
+        "remediation": "See docs/providers/observation-tools.md"
+      },
+      "id": "presentation_audit",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "presentation_audit",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "presentation_audit"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "presentation-observation-v1 actual per-frame component state",
+      "usage": "--input CAPTURE --output NEW_REPORT",
+      "output_schema": "Versioned JSON report; see docs/providers/observation-tools.md",
+      "side_effects": "Read explicit local files and write one new report. No network.",
+      "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "presentation-observation-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "presentation-observation-v1 actual per-frame component state"
+      }
+    },
+    {
+      "check_level": "synthetic-and-isolated-native-evidence",
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Python fixtures on macOS; other hosts not run",
+        "remediation": "See docs/providers/observation-tools.md"
+      },
+      "id": "performance_compare",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "performance_compare",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "performance_compare"
+        ],
+        "finding_exit_codes": []
+      },
+      "formats": "performance-run-v1 fixed workload and measurement identities",
+      "usage": "--before RUN --after RUN --output NEW_DIRECTORY",
+      "output_schema": "Versioned JSON report; see docs/providers/observation-tools.md",
+      "side_effects": "Read explicit local files and write one new report. No network.",
+      "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "performance-run-v1"
+        ],
+        "format_scope": "explicit_adapters",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "performance-run-v1 fixed workload and measurement identities"
+      }
     }
   ],
   "product": "grea",

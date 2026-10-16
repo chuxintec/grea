@@ -1,0 +1,14 @@
+{
+  "name": "ModernSample.Presentation",
+  "references": [
+    "ModernSample.Domain",
+    "ModernSample.Gameplay",
+    "Grea.Foundation.Contracts",
+    "Grea.UI.UGUI",
+    "Grea.UI.Modern",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

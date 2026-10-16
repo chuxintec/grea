@@ -128,6 +128,7 @@ def capability_matrix():
     return {'schemaVersion': 1, 'standardVersion': STANDARD_VERSION, 'plannerVersion': PLANNER_VERSION,
             'scope': 'Combination observations describe static planning only; executable create-only generation is exposed separately. Named reference game evidence is scoped separately and never applied to arbitrary projects.',
             'combinations': [deepcopy(REFERENCE)],
+            'profileRecipes': [{'id':'modern-ui-v1','version':'0.1.0','status':'candidate','renderPipeline':'builtin','ui':'ugui-tmp','input':'input-system','editor':'6000.6.2f1','definition':'tools/unity/profiles/modern-ui/profile.json','validation':'docs/design/audit-remediation-20261016.md','scope':'Opt-in sample preparation only; not a supported plan_unity_project generation override.'}],
             'referenceGames': [{
                 'id': 'signal-garden', 'version': '1.0.0',
                 'editor': '6000.6.2f1', 'urp': '17.6.0', 'ugui': '2.6.0',

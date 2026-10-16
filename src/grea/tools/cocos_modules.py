@@ -10,7 +10,7 @@ import sys
 from grea.tools.cocos_assets import ParseError, fail, safe_path, error_report
 
 ROOT=Path(__file__).resolve().parents[3]
-ADAPTERS=('browserify-table-v1','define-browserify-v1','define-factory-candidates-v1')
+ADAPTERS=('browserify-table-v1','define-browserify-v1','define-factory-candidates-v1','system-register-v1')
 
 
 def index_source(raw,adapter):

@@ -39,18 +39,25 @@ namespace Grea.Foundation.Runtime
                 throw new InvalidDataException("Save version or checksum mismatch; original preserved");
             return parts[2];
         }
+        static bool Exists(string file)
+        {
+            try { File.GetAttributes(file); return true; }
+            catch (FileNotFoundException) { return false; }
+            catch (DirectoryNotFoundException) { return false; }
+            // Access failures must not become an empty/new save.
+        }
         public string Read()
         {
-            if (File.Exists(path)) return Decode(path);
-            if (File.Exists(path + ".pending") || File.Exists(path + ".backup"))
+            if (Exists(path)) return Decode(path);
+            if (Exists(path + ".pending") || Exists(path + ".backup"))
                 throw new InvalidDataException("Main save is missing; explicit recovery is required");
             return null;
         }
         // Recovery is explicit and read-only; never silently overwrite a damaged save.
-        public string ReadBackup() => File.Exists(path + ".backup") ? Decode(path + ".backup") : null;
+        public string ReadBackup() => Exists(path + ".backup") ? Decode(path + ".backup") : null;
         static bool Valid(string file)
         {
-            if (!File.Exists(file)) return false;
+            if (!Exists(file)) return false;
             try { Decode(file); return true; }
             catch (InvalidDataException) { return false; }
             catch (DecoderFallbackException) { return false; }
@@ -64,18 +71,18 @@ namespace Grea.Foundation.Runtime
             var pending = path + ".pending";
             var backup = path + ".backup";
             // Classify all copies before mutation. Unknown versions and I/O failures propagate.
-            var hasMain = File.Exists(path);
-            var hasPending = File.Exists(pending);
-            var hasBackup = File.Exists(backup);
+            var hasMain = Exists(path);
+            var hasPending = Exists(pending);
+            var hasBackup = Exists(backup);
             var validMain = Valid(path);
             var validPending = Valid(pending);
             var validBackup = Valid(backup);
-            if (File.Exists(pending))
+            if (Exists(pending))
             {
                 if (validPending)
                 {
-                    if (File.Exists(path) && !Valid(path)) Quarantine(path);
-                    if (File.Exists(path)) File.Replace(pending, path, path + ".backup");
+                    if (Exists(path) && !Valid(path)) Quarantine(path);
+                    if (Exists(path)) File.Replace(pending, path, path + ".backup");
                     else File.Move(pending, path);
                     return "pending-committed";
                 }
@@ -86,7 +93,7 @@ namespace Grea.Foundation.Runtime
             if (!validBackup) throw new InvalidDataException("No valid recovery copy; damaged copies preserved");
             File.Copy(backup, pending, false);
             Decode(pending);
-            if (File.Exists(path)) Quarantine(path);
+            if (Exists(path)) Quarantine(path);
             File.Move(pending, path);
             return "backup-restored";
         }
@@ -95,8 +102,8 @@ namespace Grea.Foundation.Runtime
             if (value == null) throw new ArgumentNullException(nameof(value));
             var bytes = new UTF8Encoding(false, true).GetBytes(value);
             if (bytes.Length > MaxBytes) throw new ArgumentException("Save exceeds budget");
-            if (File.Exists(path)) Decode(path); // Corrupt/unknown originals require explicit recovery.
-            else if (File.Exists(path + ".backup"))
+            if (Exists(path)) Decode(path); // Corrupt/unknown originals require explicit recovery.
+            else if (Exists(path + ".backup"))
                 throw new InvalidDataException("Main save is missing; recover backup before writing");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var temp = path + ".pending";
@@ -107,7 +114,7 @@ namespace Grea.Foundation.Runtime
                 stream.Write(envelope, 0, envelope.Length); stream.Flush(true);
             }
             Decode(temp);
-            if (File.Exists(path)) File.Replace(temp, path, path + ".backup");
+            if (Exists(path)) File.Replace(temp, path, path + ".backup");
             else File.Move(temp, path);
         }
     }

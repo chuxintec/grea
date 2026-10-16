@@ -1,0 +1,418 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "scope",
+    "layers"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "source": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "layer": {
+                "enum": [
+                  "source",
+                  "cache",
+                  "cdn",
+                  "chunk",
+                  "export",
+                  "build",
+                  "capture"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "payload": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "maxItems": 100000
+        },
+        "cache": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "layer": {
+                "enum": [
+                  "source",
+                  "cache",
+                  "cdn",
+                  "chunk",
+                  "export",
+                  "build",
+                  "capture"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "payload": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "maxItems": 100000
+        },
+        "cdn": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "layer": {
+                "enum": [
+                  "source",
+                  "cache",
+                  "cdn",
+                  "chunk",
+                  "export",
+                  "build",
+                  "capture"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "payload": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "maxItems": 100000
+        },
+        "chunk": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "layer": {
+                "enum": [
+                  "source",
+                  "cache",
+                  "cdn",
+                  "chunk",
+                  "export",
+                  "build",
+                  "capture"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "payload": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "maxItems": 100000
+        },
+        "export": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "layer": {
+                "enum": [
+                  "source",
+                  "cache",
+                  "cdn",
+                  "chunk",
+                  "export",
+                  "build",
+                  "capture"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "payload": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "maxItems": 100000
+        },
+        "build": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "layer": {
+                "enum": [
+                  "source",
+                  "cache",
+                  "cdn",
+                  "chunk",
+                  "export",
+                  "build",
+                  "capture"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "payload": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "maxItems": 100000
+        },
+        "capture": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "layer": {
+                "enum": [
+                  "source",
+                  "cache",
+                  "cdn",
+                  "chunk",
+                  "export",
+                  "build",
+                  "capture"
+                ]
+              },
+              "variant": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "payload": {
+                "type": "boolean"
+              },
+              "path": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "maxItems": 100000
+        }
+      }
+    }
+  }
+}

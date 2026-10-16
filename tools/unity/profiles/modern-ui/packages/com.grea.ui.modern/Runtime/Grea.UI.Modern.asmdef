@@ -1,0 +1,1 @@
+{"name":"Grea.UI.Modern","references":["Grea.Foundation.Contracts","Grea.Foundation.Runtime","Grea.UI.UGUI","UnityEngine.UI","Unity.TextMeshPro","Unity.InputSystem"],"autoReferenced":false}

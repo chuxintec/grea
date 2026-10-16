@@ -11,7 +11,7 @@
 - UI、Scene、动画以原生 Prefab/Scene/AnimationClip 为制作源，正常嵌套 Prefab/Variant 合法；人工编辑直接 Play 生效，不靠来源模板/节点图与工作 View 双真源或 Capture 回写。
 - 每张配置表可选择 Excel、结构化 JSON 或 SO 中一种作为唯一 authoring source。外部制作源单向生成强类型 C#/SO，记录输入/Schema/输出哈希及所有权，人工改动冲突不得覆盖；选择 SO 制作时 Inspector 修改直接生效。不能同时把外部表和生成 SO 都当作可随意编辑的真源，也不能把任意 Row JSON 换成 `.asset` 后称为强类型原生配置。
 - 运行时只使用 Unity 生命周期、uGUI/TMP 等原生组件和下文选型基线中的官方或主流插件。
-- 类型、资源和节点按游戏语义命名（`ShopView`、`RuneSlot`、`DailySignTable`）。源引擎的 uuid、类型名和脚本名只出现在 Analysis 的映射表里。
+- 类型、资源和节点按游戏语义命名（`ShopView`、`RuneSlot`、`DailySignTable`）。来源映射保留在 Analysis；原有领域名称、存档兼容 ID、Unity GUID 和合法第三方数据不因拼写相同而违规，判断依据是运行机制与实际调用者。
 - 源引擎只作为**行为与资源的来源**，不作为运行时模型。
 
 ## 规则语义与引擎语义
@@ -53,11 +53,11 @@
 
 主流插件能满足的需求直接使用主流插件。grea 自有的通用框架包只作为薄胶水，每项能力在项目中只保留一种实现；各 grea 组件对应的主流方案与选择规则见 [自研框架与主流插件的关系](../../grea-unity-standard/references/05-Unity-通用组件与Prefab.md#自研框架与主流插件的关系)。新装包的许可证登记见 [许可证与再分发](../../grea-delivery/references/09-交付-许可证与再分发.md#3-第三方包)。
 
-## 一次性转换器
+## 来源迁移器与日常制作流水线
 
-- 转换器（布局烘焙、动画曲线转换、导表、Sprite 切图）放在项目 `Tools/`，或 `Assets/Game/Editor/Conversion/` 这类一次性目录。转换器输入源数据，输出原生资产，通过 AssetDatabase/PrefabUtility 写入。
-- 转换完成后，生产程序集、Prefab 和场景都不依赖转换器。转换器目录可整体删除，工程仍能编译、运行和构建。
-- 再次运行转换器只输出候选（写到 `Library/` 或独立目录），检测到人工修改就拒绝覆盖。Build 只校验和打包已有资源，不调用转换器。
+- 源引擎迁移器（源布局烘焙、源动画转换、首次配置切换、源 Sprite 切图）放在项目 `Tools/`，或 `Assets/Game/Editor/Conversion/` 这类一次性目录。转换器输入源数据，输出原生资产，通过 AssetDatabase/PrefabUtility 写入。
+- 源引擎迁移完成后，生产程序集、Prefab 和场景不依赖该迁移器；移除它后，已有原生资产仍能编译、运行和构建。日常 Excel/JSON 导表、Unity Importer 等制作工具可以长期维护，采用明确的唯一制作源、生成所有权和回读校验，不解释源引擎节点图。
+- 再次运行转换器只输出候选（写到 `Library/` 或独立目录），检测到人工修改就拒绝覆盖。Build 校验和打包已有资源，不重新运行来源迁移器；日常制作工具的生成策略由项目声明，人工编辑冲突必须保留。
 - 源 uuid 到 Unity GUID 与路径、源名到语义名的映射表，以及转换器未覆盖的特性清单，都保存在 Analysis。
 - 不建立通用万能转换器。只覆盖本项目实际用到的源组件，未支持项报错。
 
@@ -65,15 +65,15 @@
 
 以下内容不得出现在交付的生产工程（`Assets/` 中的运行程序集、Prefab、场景和资源）中：
 
-1. 源引擎类型字符串（`cc.`、`sp.`、`Laya.`、`fgui.`、`egret.`）、源 uuid 字面量、以源脚本名命名的类型或枚举。
+1. 用源引擎类型、uuid、脚本名作运行时类型分发、节点身份或资源调度的兼容机制。扫描这些拼写只能生成审查线索；正常领域名、存档 ID、Spine JSON、有限业务 Tick 以及 Unity GUID 不因名称相似而禁止。改名后的源引擎解释器仍属违规。
 2. 为保存源节点身份而挂在 Prefab 上的组件（如 SourceIdentity、SourceWidget、SourceBehaviour），以及运行时依据数据描述构建或改写 UI 树的 ViewDefinition 一类结构。
 3. 按节点索引、uuid 或字符串路径绑定事件或控件；控件统一用 `[SerializeField]` 引用。
 4. 自研的 director、帧循环参与者注册、调度器、微任务队列、Tween/Action 系统、Widget/Layout 布局算法、Label 度量算法，用来替代 Unity 已有能力。
-5. 在 ScriptableObject 中保存 JSON 字符串作为配置。
+5. 将任意 `key + json` 行或完整源对象图塞入 ScriptableObject，并继续在 Player 中动态解释为生产规则。合法强类型 DTO 的 JSON 序列化、文本字段和第三方标准数据不在此列。
 6. 交付后仍有 Templates/Views 双层 UI 真源，或需要 Capture、回写流程。
 7. 源引擎运行时源码，或带源引擎许可证限制的文件（例如 Cocos Creator 的 easing 实现及其许可证文件头）。替代做法、原游戏素材范围与第三方包登记见 [许可证与再分发](../../grea-delivery/references/09-交付-许可证与再分发.md)。
 
-守卫做成 EditMode 测试或 Validator，并接入 Build 前置校验。已有项目的存量违规列入白名单，白名单只减不增，新增违规立即失败。守卫扫描范围、白名单和结果记录在项目验收中。
+守卫做成 EditMode 测试或 Validator，并接入 Build 前置校验。已有项目的过渡机制登记负责人、调用链、退出条件与阶段。`migration_no_regression` 检查没有新增或扩大依赖；它只允许继续迁移，不代表 `final_native_exit` 已通过。最终退出要求相关机制从实际 Player 编译集合、资产闭包与载荷中退出，不能靠白名单豁免。守卫扫描范围、白名单和结果记录在项目验收中。
 
 ## 平台 SDK
 
@@ -95,7 +95,7 @@
 
 | 门 | 通过条件 |
 | --- | --- |
-| 守卫 | 禁止项扫描零违规，或只剩登记过的白名单且没有新增 |
+| 守卫 | 最终 `final_native_exit` 无未退出的源引擎运行机制；过渡期 `migration_no_regression` 单列，不能替代最终门。源码扫描、Editor 回读和实际 Player 载荷分别核验 |
 | 原版对照 | 规则 oracle 测试通过；同状态截图、录像和关键帧对照通过；真实输入通过。分层记录方式见 [分层验收](../../../shared/08-验收-测试与结果交付.md) |
 | 原生可维护 | 人工维护的 UI/Scene/动画及选择 SO 制作的配置可直接编辑/Play；外部配置源走明确单向候选流程，不能重建源对象图；实际界面可编辑可见，移除转换器后仍编译/构建 |
 

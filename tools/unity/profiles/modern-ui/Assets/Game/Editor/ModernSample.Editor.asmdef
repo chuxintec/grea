@@ -1,0 +1,1 @@
+{"name":"ModernSample.Editor","references":["ModernSample.Bootstrap","ModernSample.Domain","ModernSample.Presentation","Grea.UI.Modern","Grea.UI.UGUI","UnityEngine.UI","Unity.TextMeshPro","Unity.InputSystem"],"includePlatforms":["Editor"]}

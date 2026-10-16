@@ -1,0 +1,8 @@
+{
+  "name": "ModernSample.Gameplay",
+  "references": [
+    "ModernSample.Domain"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

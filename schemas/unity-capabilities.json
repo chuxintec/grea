@@ -34,6 +34,20 @@
       }
     }
   ],
+  "profileRecipes": [
+    {
+      "id": "modern-ui-v1",
+      "version": "0.1.0",
+      "status": "candidate",
+      "renderPipeline": "builtin",
+      "ui": "ugui-tmp",
+      "input": "input-system",
+      "editor": "6000.6.2f1",
+      "definition": "tools/unity/profiles/modern-ui/profile.json",
+      "validation": "docs/design/audit-remediation-20261016.md",
+      "scope": "Opt-in sample preparation only; not a supported plan_unity_project generation override."
+    }
+  ],
   "referenceGames": [
     {
       "id": "signal-garden",

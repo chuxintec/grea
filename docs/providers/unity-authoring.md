@@ -45,3 +45,9 @@ unity run /absolute/own-project --timeout 300 --format json -- -executeMethod Gr
 本机观察到的项目 runtime 包含项目兼容修改，许可证要求单独满足 Spine 授权条件；尚无确认可用于本批独立分发的 pristine 匹配 runtime 与授权证据。因此 Spine 原生导入/Player 渲染保留 not_run，不能把闭包检查写成完整 Spine 转换通过。
 
 自有可见渲染补验使用显式相机与原生 SpriteRenderer：五个动画相位、每相位 25 项颜色/透明边/pivot/九宫格及可见动画像素断言，并另验移除转换器的实际 Player backbuffer。复现步骤见 [样例](../../tools/unity/fixtures/native-authoring/README.md)。这些是自有有限契约验收，不能替代原游戏画面对照或真实鼠标输入。
+
+## 审计后的导出边界
+
+`unity-export-config` 默认只导出实际观察到的 TextAsset 身份、字节和 JSON；显式 `--adapter level-datas-v1` 才检查旧业务表关系。缺少必需表返回 not_applicable。逻辑路径来自 provider container，缺少时为 null；不会拼造 `Assets/Resources` 路径。
+
+UnityPy 用 surrogateescape 表示非 UTF-8 TextAsset 字节时，导出器按相同编码恢复原 bytes。真实 Unity 6000.6.2f1 的自有无 TypeTree Bundle 已验证二进制和两种 JSON 结构；同版本含 TypeTree 的测试 Bundle 在当前锁定 UnityPy 上解析失败，记录 provider_decode_failed，不宣称已支持。此限制须通过 provider 更新或官方 Editor 读取路线另行解决，不能用零张表伪装成功。

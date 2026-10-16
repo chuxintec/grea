@@ -12,28 +12,80 @@ WORKFLOWS = {
  'maintain': {'title':'工具/技能/复盘维护','baseline':'调用契约、文档、兼容入口与必要测试','dimensions':['identity'], 'steps':[('02-工具-选择与调用.md',['check_grea_skill']),('10-维护-开发复盘与规范更新.md',[])], 'boundary':'不启动无关游戏、收费服务或Git推送。'},
 }
 
-SOURCE_MAPPINGS = {'cocos':'05-Unity-源引擎映射-Cocos.md'}
+SOURCE_MAPPINGS = {'cocos': '05-Unity-源引擎映射-Cocos.md'}
+SOURCE_ENGINES = ('unknown', 'unity', 'cocos', 'laya', 'other')
+for intent in ('assess', 'evidence'):
+    WORKFLOWS[intent] = {
+        'title': '只读成本评估' if intent == 'assess' else '来源取证',
+        'baseline': '显式来源身份、已观察行为与未知范围',
+        'dimensions': ['identity'],
+        'steps': [('03-恢复-原版运行与内容取证.md', ['video_manifest', 'video_sheet'])],
+        'boundary': '不进入游戏实现；提取不证明服务器或完整玩法。',
+    }
 
 
 def reference(name):
-    """Resolve a canonical reference file name inside the plugin (shared or any skill)."""
-    plugin=package_root()/'plugin'
-    found=sorted(p for p in [plugin/'shared'/name,*(plugin/'skills').glob('*/references/'+name)] if p.is_file())
-    if len(found)!=1:
-        raise KeyError('reference not uniquely resolvable: '+name)
+    plugin = package_root() / 'plugin'
+    found = sorted(path for path in [plugin / 'shared' / name, *(plugin / 'skills').glob('*/references/' + name)] if path.is_file())
+    if len(found) != 1:
+        raise KeyError('reference not uniquely resolvable: ' + name)
     return found[0]
 
 
-def plan(mode,source_engine='unity'):
-    value=WORKFLOWS[mode]
-    unity_only={'05-Unity-工程重建与恢复.md'}  # Unity package rebuild (AssetRipper/IL2CPP); not a cross-engine target
-    steps=[{'reference':str(reference(n)),'tool_ids':tools,'executed':False} for n,tools in value['steps']
-           if source_engine=='unity' or n not in unity_only]
-    if source_engine!='unity' and mode in ('recover','fix'):
-        steps.insert(0,{'reference':str(reference('05-Unity-跨引擎移植与行为一致性.md')),'tool_ids':['laya_contract_audit'] if source_engine=='laya' else [],'executed':False})
-        steps.insert(0,{'reference':str(reference('05-Unity-原生转换规范.md')),'tool_ids':[],'executed':False})
-    if source_engine in SOURCE_MAPPINGS and mode in ('recover','fix','port'):
-        steps.insert(1,{'reference':str(reference(SOURCE_MAPPINGS[source_engine])),'tool_ids':[],'executed':False})
-    preferred={'unity_dependency_audit':'audit_unity_dependencies','unity_asset_ledger':'snapshot_unity_assets','compare_traces':'compare_gameplay_traces','audit_numeric_texture':'inspect_numeric_texture'}
-    for step in steps:step['grea_operations']=[preferred[x] for x in step['tool_ids'] if x in preferred]
-    return {'mode':mode,'title':value['title'],'baseline':value['baseline'],'required_dimensions':value['dimensions'],'steps':steps,'boundary':value['boundary'],'source_engine':source_engine,'executed':False}
+def required_dimensions(mode, source_engine='unknown'):
+    if source_engine == 'unknown' and mode in ('recover', 'port'):
+        return ['identity']
+    dimensions = list(WORKFLOWS[mode]['dimensions'])
+    if source_engine in ('cocos', 'laya', 'other') and mode in ('recover', 'port', 'fix', 'refactor', 'performance'):
+        if 'native' not in dimensions:
+            dimensions.append('native')
+    return dimensions
+
+
+def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
+         target_platform=None, acceptance_profile='scoped'):
+    value = WORKFLOWS[mode]
+    source_tools = []
+    if source_format in ('apk', 'xapk'):
+        source_tools = ['unpack_xapk']
+    elif source_format == 'wxapkg':
+        source_tools = ['unpack_wxapkg']
+    stages = []
+    unknown = source_engine == 'unknown' and mode in ('recover', 'port')
+    steps = WORKFLOWS['evidence']['steps'] if unknown else value['steps']
+    for name, tools in steps:
+        tools = list(tools)
+        phase = 'verification'
+        if name == '03-恢复-原版运行与内容取证.md':
+            tools = source_tools + ['video_manifest', 'video_sheet']
+            phase = 'source_evidence'
+        elif name == '04-资源-提取与引用恢复.md':
+            tools = ['assetripper'] if source_engine == 'unity' else (['cocos_assets', 'cocos_modules'] if source_engine == 'cocos' else [])
+            phase = 'source_evidence'
+        elif name == '05-Unity-工程重建与恢复.md':
+            if source_engine != 'unity':
+                continue
+            if source_format == 'mono':
+                tools = ['ilspy']
+            elif source_format == 'il2cpp':
+                tools = ['cpp2il', 'il2cppdumper', 'ghidra']
+            phase = 'implementation'
+        elif name in ('01-流程-游戏恢复开发.md', '05-Unity-UI框架迁移.md'):
+            phase = 'implementation'
+        stages.append(dict(reference=str(reference(name)), tool_ids=tools, phase=phase, executed=False))
+    if source_engine in ('cocos', 'laya', 'other') and mode in ('recover', 'fix'):
+        extra = [('05-Unity-原生转换规范.md', []), ('05-Unity-跨引擎移植与行为一致性.md', ['laya_contract_audit'] if source_engine == 'laya' else [])]
+        stages = [dict(reference=str(reference(name)), tool_ids=tools, phase='implementation', executed=False) for name, tools in extra] + stages
+    if source_engine in SOURCE_MAPPINGS and mode in ('recover', 'fix', 'port'):
+        stages.insert(1, dict(reference=str(reference(SOURCE_MAPPINGS[source_engine])), tool_ids=[], phase='implementation', executed=False))
+    preferred = {'unity_dependency_audit': 'audit_unity_dependencies', 'unity_asset_ledger': 'snapshot_unity_assets', 'compare_traces': 'compare_gameplay_traces', 'audit_numeric_texture': 'inspect_numeric_texture'}
+    for step in stages:
+        step['grea_operations'] = [preferred[tool] for tool in step['tool_ids'] if tool in preferred]
+    return dict(mode=mode, title=value['title'], baseline=value['baseline'],
+                required_dimensions=required_dimensions(mode, source_engine), steps=stages,
+                boundary=value['boundary'], source_engine=source_engine, executed=False,
+                next_decision='identify_source_engine' if unknown else 'select_supported_format_and_scope',
+                task=dict(intent=mode, source_engine=source_engine, engine_version=engine_version,
+                          source_format=source_format, target_platform=target_platform,
+                          acceptance_profile=acceptance_profile),
+                limitations=['Source identity is caller-declared; parser support must be checked against its adapter catalog.'])

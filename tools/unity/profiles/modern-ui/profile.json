@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "modern-ui-v1",
+  "version": "0.1.0",
+  "editor": "6000.6.2f1",
+  "render_pipeline": "builtin",
+  "ui": "ugui-tmp",
+  "input": "input-system",
+  "target": "macOS-arm64-Mono",
+  "dependencies": {
+    "com.unity.ugui": "2.6.0",
+    "com.unity.inputsystem": "1.20.0"
+  },
+  "prepare": "scripts/testing/prepare-modern-ui.py",
+  "samples": [
+    "numeric-combat",
+    "grid-puzzle"
+  ],
+  "validation": "docs/design/audit-remediation-20261016.md",
+  "status": "candidate",
+  "game_parity": "not_run"
+}

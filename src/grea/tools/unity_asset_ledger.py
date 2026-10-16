@@ -257,7 +257,7 @@ def verify_moves(before, after, plan):
 
 def compare_editor(before, after):
     """Compare saved Editor identities, separate from filesystem GUID snapshots."""
-    from grea.tools.unity_config_candidate import sha,encode
+    from grea.data_io import sha,encode
     def index(document):
         if document.get('schema_version')!=1 or document.get('status')!='editor_observed' or not isinstance(document.get('asset_objects'),list) or not document['asset_objects']:
             raise ValueError('Nonempty versioned Editor observation required')
@@ -294,7 +294,7 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == 'compare-editor':
-            from grea.tools.unity_config_candidate import load
+            from grea.data_io import load
             before,_=load(args.before);after,_=load(args.after)
             sources=(args.before,args.after);validate_output(args.output,sources)
             report=compare_editor(before,after);needs_review=report['status']!='unchanged'

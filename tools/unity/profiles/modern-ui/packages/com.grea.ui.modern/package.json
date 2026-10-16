@@ -1,0 +1,1 @@
+{"name":"com.grea.ui.modern","version":"0.1.0","displayName":"Grea Modern UI","unity":"6000.6","description":"Opt-in TMP/Input System composition; no game or demonstration rules.","dependencies":{"com.grea.ui.ugui":"0.3.1","com.unity.ugui":"2.6.0","com.unity.inputsystem":"1.20.0"}}

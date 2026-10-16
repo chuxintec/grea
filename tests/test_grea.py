@@ -10,7 +10,7 @@ ROOT=package_root();CLI=ROOT/'bin/grea'
 
 class GreaTests(unittest.TestCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
+        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name).resolve()
     def tearDown(self):self.temp.cleanup()
     def call(self,name,args=None):
         value=dispatch(name,{} if args is None else args);Draft202012Validator(ENVELOPE_SCHEMA).validate(value);return value
@@ -19,9 +19,13 @@ class GreaTests(unittest.TestCase):
     def init(self,mode='fix',dims=None):
         source=self.artifact();args={'project_dir':str(self.root),'source':str(source),'mode':mode}
         if dims:args['required_dimensions']=dims
-        r=self.call('init_case',args);self.assertEqual(r['status'],'ok',r);return self.root/'.grea'
+        r=self.call('init_case',args);self.assertEqual(r['status'],'ok',r)
+        candidate=self.artifact('candidate.cs',b'candidate-v1')
+        revision=self.call('start_case_revision',{'case_dir':str(self.root),'candidate_root':str(self.root),'candidate_files':[candidate.name],'platform':'editor','qa_profile':'synthetic'})
+        self.assertEqual(revision['status'],'ok',revision)
+        return self.root/'.grea'
     def evidence(self,case,kind,name):
-        p=self.artifact(name,('data-'+name).encode());r=self.call('add_evidence',{'case_dir':str(case),'kind':kind,'path':str(p),'description':'fixture observation'})
+        p=self.artifact(name,('data-'+name).encode());r=self.call('add_evidence',{'case_dir':str(case),'kind':kind,'path':str(p),'description':'fixture observation','run_instance':'synthetic-test-run'})
         self.assertEqual(r['status'],'ok',r);return r['result']['evidence']['id']
     def fake_registry(self,body):
         p=self.root/'provider.py';p.write_text(body)

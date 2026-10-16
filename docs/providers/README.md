@@ -11,3 +11,6 @@ Spine 的构建配置位于 [tools/unity/spine](../../tools/unity/spine)，包�
 - [Cocos 离线解析与 AST 证据](cocos-static.md)：Python 数据解析及可选 Node provider；不执行源 JavaScript。
 - [Unity 原生退出检查](unity-native-exit.md)：静态候选、Editor 观察与实际 Mono DLL 元数据分层；可选 Cecil provider。
 - [Unity 有限制作链](unity-authoring.md)：两种配置 schema、Sprite/Clip 原生制作、Editor 身份差分和冲突保护；不推断整个源引擎。
+
+- [Creator 3.4.1、CCON 与 System.register](cocos3-evidence.md)：有限离线证据。
+- [配置、表现与性能预检](observation-tools.md)：显式合同与现场采样边界。

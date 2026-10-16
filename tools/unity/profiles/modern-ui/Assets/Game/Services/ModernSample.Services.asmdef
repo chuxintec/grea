@@ -1,0 +1,9 @@
+{
+  "name": "ModernSample.Services",
+  "references": [
+    "ModernSample.Domain",
+    "Grea.Foundation.Contracts"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}
