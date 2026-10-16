@@ -1,0 +1,454 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-16",
+  "implementation_commit": "5633fd1060eb3e5d083c6dfdb5ac0223f9b05e4c",
+  "verification_commit": "48c1c302f7c7d267f541128e9e5a6636eab8106c",
+  "base_commit": "eb2d7037372894611fb550e7576215c9f56f2e42",
+  "branch": "codex/audit-remediation-20261016",
+  "scope": "T01-T15 finite audit-remediation scope; no game project modification or release",
+  "python": {
+    "run": 268,
+    "passed": 263,
+    "skipped": 5,
+    "failed": 0,
+    "skipped_scopes": [
+      "3 optional .NET/Cecil integration tests",
+      "real ffmpeg/ffprobe integration",
+      "real NSIS installer integration"
+    ],
+    "log_sha256": "b13566522295836daa30fb2f2b4af380b824fef663a9766f20072418e0c74135"
+  },
+  "unity": {
+    "editor": "6000.6.2f1",
+    "platform": "macOS-arm64",
+    "backend": "Mono",
+    "tests": {
+      "core-final-editmode": {
+        "result": "Passed",
+        "passed": 23,
+        "failed": 0,
+        "skipped": 0,
+        "sha256": "3db02ce2710bb157ed1aa19afcf0a89a013ecce922d134fdee66b1dd973b5be4"
+      },
+      "core-final-playmode": {
+        "result": "Passed",
+        "passed": 22,
+        "failed": 0,
+        "skipped": 0,
+        "sha256": "503c4fdcc1cf0f2097e53e9198773542ce541604d962e7b99a596754122de15e"
+      },
+      "modern-combat-final-playmode": {
+        "result": "Passed",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "sha256": "329911eba107295225abc665827ef55530fad71c47808d33a57a13142ea9e7ac"
+      },
+      "modern-puzzle-final-playmode": {
+        "result": "Passed",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "sha256": "3e518308624ab96ff1eeee1fc41d96512dac9025696003c4c8850afa7445b7d0"
+      },
+      "authored-config-playmode": {
+        "result": "Passed",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "sha256": "5cec32e5166d757e11ad905545d24039e687fe8237c45642ec909694b2d5e66a"
+      }
+    },
+    "observations": {
+      "modern-combat": {
+        "schema_version": 1,
+        "tool": "presentation_audit",
+        "status": "no_findings_in_observed_scope",
+        "candidate_sha256": "0769e9c0e0c267ff02daf2628926b24141cc9a1003779ba0b61d9e35fd518f95",
+        "run_instance": "unity-playmode-fixture",
+        "phases": [
+          "closed",
+          "cold_open",
+          "reopen"
+        ],
+        "lifecycle_coverage": true,
+        "findings": [],
+        "scope": "Declared observations only; unknown blend, absent counters, unobserved tracks/input and final pixels remain unverified",
+        "input_sha256": "e7f015b99bef04aae097c304e593e4db2e25b414d1d1e2d60d39f4a5e8f3828c",
+        "report_sha256": "670abcbc15df404dc03734d66161862bbe4ae0063d818b832ae9a0cd8448e2f0"
+      },
+      "modern-puzzle": {
+        "schema_version": 1,
+        "tool": "presentation_audit",
+        "status": "no_findings_in_observed_scope",
+        "candidate_sha256": "55472303a29a229f7c104b4bf7970c89745de7d72eb5e857af17b59bb3c383e5",
+        "run_instance": "unity-playmode-fixture",
+        "phases": [
+          "closed",
+          "cold_open",
+          "reopen"
+        ],
+        "lifecycle_coverage": true,
+        "findings": [],
+        "scope": "Declared observations only; unknown blend, absent counters, unobserved tracks/input and final pixels remain unverified",
+        "input_sha256": "d5326921a753425d821595eb9f40bed2d3a8c2458d294353502b617e3e5b5331",
+        "report_sha256": "087ec9b199710369b3ebbe15b4b25832f543b1b59adb2022eb131f3dc9983ac0"
+      }
+    },
+    "authoring": {
+      "method": "Editor SerializedObject/AssetDatabase edit and save, followed by separate PlayMode consumer",
+      "health": 231,
+      "damage": 19,
+      "after_actual_input": 212,
+      "direct_inspector_mouse": "not_run"
+    },
+    "native_input": {
+      "schema_version": 1,
+      "platform": "macOS-arm64",
+      "editor": "6000.6.2f1",
+      "backend": "Mono",
+      "method": "CUA native app input and screenshots; user-confirmed combat mouse input",
+      "scope": "two owned architecture slices, no original-game parity claim",
+      "runs": {
+        "combat": {
+          "initial_user_confirmation": "actions=4",
+          "virtual_keyboard": "actions 4 -> 5",
+          "virtual_mouse": "actions 5 -> 6; modal close/reopen; actions 6 -> 7",
+          "normal_quit": "exit 0",
+          "reopen": "actions=7; main-preserved"
+        },
+        "puzzle": {
+          "startup": "first virtual click showed no immediate increment; after Return observed 2, so startup action attribution is inconclusive",
+          "steady_mouse": "2 -> 3 and tile swaps; modal mouse-close/reopen/keyboard-close; 3 -> 4, exactly one increment per subsequent click",
+          "normal_quit": "exit 0",
+          "reopen": "actions=4; main-preserved"
+        }
+      },
+      "limitations": [
+        "Initial virtual-window activation is not a verified substitute for foreground activation.",
+        "No physical mouse test for puzzle; native virtual mouse and keyboard were used.",
+        "No Windows, mobile, IL2CPP or commercial-game performance claim."
+      ],
+      "evidence": {
+        "combat-native-reopen.png": {
+          "sha256": "4c9c544177047ab47f96040b9e7ca2b52c9aa16458919d941190b239927b5c7b",
+          "bytes": 34515
+        },
+        "puzzle-native-action.png": {
+          "sha256": "0006c29935d2e3294f645c9419164ec3f112178c95064881eddf0d8ebf0a584d",
+          "bytes": 47093
+        },
+        "puzzle-native-modal.png": {
+          "sha256": "47e740bf9581507da91ee25d1bc909b2d292c3948270782d822959c1c5280ab0",
+          "bytes": 39202
+        },
+        "puzzle-native-reentry.png": {
+          "sha256": "9f29b464709816ae16e4570597849c3c04bc78ee9f8e91334252f8771f3dcf93",
+          "bytes": 47009
+        },
+        "puzzle-native-reopen.png": {
+          "sha256": "4664f94485665d2597da20bff300d26ea18049f76c8bfe8e79cfd6a147e88e58",
+          "bytes": 31315
+        },
+        "combat-modal.png": {
+          "sha256": "1d8fa46b8dece6a569457b68c9b868276e6ab7fcca115dcc2e4e4079a4cb8d15",
+          "bytes": 41265
+        },
+        "combat-reentry.png": {
+          "sha256": "8237f630399edce63d1411483cb063ae05505ff92a216a83f8efccaf6f3ae608",
+          "bytes": 52198
+        },
+        "combat-native-input.log": {
+          "sha256": "1fc0c0afaf5e078a4193ab12fa09dfa0cabe524528a6f6b6324d074f8a22840e",
+          "bytes": 2261
+        },
+        "combat-native-reopen.log": {
+          "sha256": "9fb95e907cb1b7b49dc4051cb99dfdc6a232988d4aa2c4c9bd5cf1a45ef0fdf3",
+          "bytes": 2215
+        },
+        "puzzle-native-input.log": {
+          "sha256": "5c1728bbcf649c6374f6e6697cbeb67bceaebbecc3109ceb4b9101cfcaecde71",
+          "bytes": 2151
+        },
+        "puzzle-native-reopen.log": {
+          "sha256": "7a22df6dbc821a11634aea159c0c56b1915fac0df4ef2642ac4a496f95120f2d",
+          "bytes": 2270
+        },
+        "player-first.log": {
+          "sha256": "d19ef7db8fe5e2c5368d75391d7e328a5bc0a0105a796056ec1eb9ed4d306676",
+          "bytes": 1927
+        },
+        "player-reopen.log": {
+          "sha256": "94478d857e227e15b83fe63fec974a2b7ab773474618b5c2599e7531ad18c6c9",
+          "bytes": 1926
+        },
+        "ModernCombat-artifact-manifest.json": {
+          "sha256": "696d7f6893cecd19ef5e4024e0c9f4d2d9f47414876cb41f21a7e55e3c9f0bd2",
+          "files": 194
+        },
+        "ModernPuzzle-artifact-manifest.json": {
+          "sha256": "a9cb58fa1c644c1d3e5a8a6542de41dc343da9402da4f01ecbf74ee467109f1a",
+          "files": 194
+        }
+      }
+    },
+    "builds": {
+      "ModernCombat": {
+        "identity": {
+          "build_id": "bd2fa113eb4e4c3cb63876c3e51d3639",
+          "profile": "modern-ui-v1"
+        },
+        "provenance": {
+          "outcome": "success",
+          "source_at_build": {
+            "vcs": "git",
+            "revision": "d94154b97ea31249561d5bdf10974c5a4486dabd",
+            "dirty": true
+          },
+          "editor": {
+            "version": "6000.6.2f1",
+            "changeset": "770e33f6875c",
+            "architecture": "arm64"
+          },
+          "target": "StandaloneOSX"
+        },
+        "public_cs_asmdef_correspondence": {
+          "matched_files": 47,
+          "sha256": "e109bcf17cc4fd4f2bf7e67c1219b49aa2d6e50b894955ecb05e01854ca2bfc9"
+        },
+        "artifact_manifest_sha256": "696d7f6893cecd19ef5e4024e0c9f4d2d9f47414876cb41f21a7e55e3c9f0bd2",
+        "scope": "Player built before commits; runtime source correspondence checked after commits. Whole built artifact frozen by manifest; not a claim that generated assets were committed."
+      },
+      "ModernPuzzle": {
+        "identity": {
+          "build_id": "4f807d7ba4d2492294eb1089aec4cefa",
+          "profile": "modern-ui-v1"
+        },
+        "provenance": {
+          "outcome": "success",
+          "source_at_build": {
+            "vcs": "git",
+            "revision": "d94154b97ea31249561d5bdf10974c5a4486dabd",
+            "dirty": true
+          },
+          "editor": {
+            "version": "6000.6.2f1",
+            "changeset": "770e33f6875c",
+            "architecture": "arm64"
+          },
+          "target": "StandaloneOSX"
+        },
+        "public_cs_asmdef_correspondence": {
+          "matched_files": 47,
+          "sha256": "e109bcf17cc4fd4f2bf7e67c1219b49aa2d6e50b894955ecb05e01854ca2bfc9"
+        },
+        "artifact_manifest_sha256": "a9cb58fa1c644c1d3e5a8a6542de41dc343da9402da4f01ecbf74ee467109f1a",
+        "scope": "Player built before commits; runtime source correspondence checked after commits. Whole built artifact frozen by manifest; not a claim that generated assets were committed."
+      }
+    }
+  },
+  "project_replays": {
+    "xapk": {
+      "scope": "all-entries",
+      "apk_count": 5,
+      "selected": 2943,
+      "skipped": 0,
+      "failed": 0
+    },
+    "creator3": {
+      "selected_adapter": "3.4.1",
+      "ccon_byte_ranges": 4,
+      "pack_sections": 2,
+      "curve_semantics": "unsupported",
+      "ccon_binary": "unsupported"
+    },
+    "config_preflight": {
+      "tables": 46,
+      "rows": 11689,
+      "result": "passed_explicit_typed_contract",
+      "business_foreign_keys": "not_inferred"
+    },
+    "performance": {
+      "historical_frames": 2812,
+      "result": "not_comparable",
+      "missing": [
+        "candidate_sha256",
+        "device",
+        "workload_sha256",
+        "input_sha256",
+        "quality"
+      ]
+    },
+    "textasset_export": {
+      "real_unity_bundle": true,
+      "text_assets": 3,
+      "json": 2,
+      "binary": 1,
+      "surrogateescape_roundtrip": true,
+      "logical_container_paths": "unavailable_recorded_as_null",
+      "typetree_disabled_sample": "passed",
+      "typetree_enabled_6000_6_2f1_sample": "provider_decode_failed"
+    }
+  },
+  "maintenance": {
+    "contracts": "passed",
+    "skill_sync": "passed",
+    "markdown_links": {
+      "documents": 127,
+      "links": 566,
+      "result": "passed"
+    },
+    "semantic_references": {
+      "explicit_references": 14,
+      "result": "passed"
+    },
+    "maintainer_scenarios": 4,
+    "independent_agent_behavior": "not_run_user_requested_no_subagents",
+    "public_index_gate": {
+      "files": 756,
+      "bytes": 3136068,
+      "result": "passed",
+      "scope": "pattern-based gate, not a universal secret or license proof",
+      "phase": "implementation index before verifier-only followup and final report"
+    }
+  },
+  "not_run": [
+    "Windows/mobile/IL2CPP",
+    "remote CI",
+    "native client plugin installation or upgrade",
+    "full commercial game parity and performance",
+    "generic farming framework",
+    "Spine/custom tween observation adapters"
+  ],
+  "publication": {
+    "pushed": false,
+    "released": false,
+    "installed_clients_changed": false,
+    "workspace_skill_copies_synced": true
+  },
+  "plugin": {
+    "archive_sha256": "c3e5d2e2820f998fed646c5a12c184b085c1bdce66febcb3a336fe0766e4f745",
+    "clients": {
+      "claude": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "evidence_manifest",
+          "config_preflight",
+          "presentation_audit",
+          "performance_compare",
+          "case_revision_invalidation",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "start_case_revision",
+          "validate_unity_project"
+        ]
+      },
+      "codex": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "evidence_manifest",
+          "config_preflight",
+          "presentation_audit",
+          "performance_compare",
+          "case_revision_invalidation",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "start_case_revision",
+          "validate_unity_project"
+        ]
+      }
+    },
+    "isolation": {
+      "independent_home": true,
+      "install_write_denied": true,
+      "installation_unchanged": true,
+      "minimal_path": true,
+      "moved_unicode_space_path": true,
+      "network_denied": true,
+      "source_read_denied": true
+    },
+    "limits": [
+      "Native client loading is a separate acceptance layer.",
+      "Unity Editor and gameplay not run.",
+      "Other platforms not run."
+    ],
+    "source_kind": "commit",
+    "source_tree_sha256": "059c01a010ec5079e43241b9a844f2fdc1e7bc3fa2f4472fc787c15c28edf3f9",
+    "status": "pass",
+    "target": "macos-arm64",
+    "version": "2026.10.16rc1",
+    "source_revision": "48c1c302f7c7d267f541128e9e5a6636eab8106c",
+    "source_dirty": false,
+    "archive_bytes": 47419790,
+    "native_client_installation": "not_run; neither client was installed or upgraded",
+    "prior_verifier_failure": "Initial assertion incorrectly expected ok for an unverified case; corrected to partial + matched candidate + incomplete acceptance. Product behavior was preserved."
+  }
+}
