@@ -7,6 +7,9 @@ import re
 import zipfile
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, quote, urlsplit
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
+from grea.brand_assets import validate_asset,validate_interface
 
 LINK = re.compile(r'(\]\()(<[^>]+>|[^\s)]+)(\))')
 REPOSITORY = 'https://github.com/chuxintec/grea'
@@ -45,7 +48,9 @@ def render(source, version, revision):
             continue  # Repository configuration is not installed plugin content.
         if mode != 0o100644 or local.startswith('/') or '..' in PurePosixPath(local).parts:
             raise ValueError('Plugin accepts regular documentation files only')
-        if not local.endswith(('.md', '.json', '.yaml', '.yml')):
+        if local.endswith(('.png','.svg')):
+            validate_asset(name,data)
+        elif not local.endswith(('.md', '.json', '.yaml', '.yml')):
             raise ValueError('Unexpected plugin payload: ' + local)
         if local in MANIFESTS:
             manifest = json.loads(data)
@@ -76,6 +81,8 @@ def render(source, version, revision):
         value = json.loads(files.get('grea/' + manifest, b'null'))
         if not value or value.get('name') != 'grea' or value.get('version') != version:
             raise ValueError('Plugin manifest missing or version mismatch: ' + manifest)
+        if manifest.startswith('.codex-plugin/'):
+            validate_interface(value,lambda path:files['grea/'+path])
     skills = sorted(PurePosixPath(n).parent.name for n in files
                     if re.fullmatch(r'grea/skills/[^/]+/SKILL\.md', n))
     if 'grea' not in skills:

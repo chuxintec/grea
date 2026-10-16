@@ -24,6 +24,7 @@ class PluginBundleTests(unittest.TestCase):
                  'plugin/shared/02-工具-选择与调用.md','schemas/operations.json','schemas/unity-project.schema.json']
         for directory in ['tools/unity/framework/packages','tests/unity/reference-project']:
             names.append(next(p.relative_to(ROOT).as_posix() for p in (ROOT/directory).rglob('*') if p.is_file()))
+        names.extend(p.relative_to(ROOT).as_posix() for p in (ROOT/'plugin/assets').rglob('*') if p.is_file())
         return {name:((ROOT/name).read_bytes(), 0o100755 if (ROOT/name).stat().st_mode & 0o111 else 0o100644) for name in names}
 
     def module(self):

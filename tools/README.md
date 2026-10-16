@@ -4,6 +4,8 @@ Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools)，通过 
 
 | 目录 | 内容 |
 | --- | --- |
+| cocos | 可选 Acorn AST 解析与依赖锁；Python 编排在 src/grea/tools |
+| unity/assembly-audit | 可选 .NET/Cecil 元数据读取器源码和锁，不加载被检查 DLL |
 | unity/framework | Foundation、uGUI、Editor 包源码、稳定 meta 与包测试 |
 | unity/adapters | 可选程序集适配包 |
 | unity/templates | 按用途命名的计数装配与最小工程模板 |

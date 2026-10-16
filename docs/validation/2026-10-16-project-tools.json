@@ -1,0 +1,986 @@
+{
+  "schema_version": 1,
+  "status": "verified_with_limits",
+  "date": "2026-10-16",
+  "branch": "codex/project-tool-extraction-20261016",
+  "baseline_commit": "8521ca5468454da147306a1047ddd5e9d1c0426a",
+  "private_evidence": ".private/project-tool-extraction-20261016",
+  "u1": {
+    "assets": [
+      {
+        "kind": "cc.Prefab",
+        "source_sha256": "040def4866e87801aebfc2860345d3e475ad2b9c37ebcc674426416a93683632",
+        "recorded_export_match": true,
+        "independent_oracle": false,
+        "output_sha256": "2b5206b25b7d3f063a416e363da9d6d2d781e5390cc07489b5ab2cafa6431553"
+      },
+      {
+        "kind": "cc.SpriteFrame",
+        "source_sha256": "e864d59b9817fbb6b01c0ca560eefeeb52f5e882038d6c81726e4939972a114a",
+        "recorded_export_match": true,
+        "independent_oracle": false,
+        "output_sha256": "f5a945453acb5ccab5423737fc63e24a2075ee1d5ce53499dab2aaa4ec1140b9"
+      },
+      {
+        "kind": "cc.TextAsset",
+        "source_sha256": "2637dc198521a96e5b1bf99e2ab70e777b4b2232efe2f8aae45f00b9749dbe98",
+        "recorded_export_match": true,
+        "independent_oracle": false,
+        "output_sha256": "8edc25d385e278e03f9e3e667a542150a18a716c6e3ae87c7d0b2c6b458246d1"
+      },
+      {
+        "kind": "sp.SkeletonData",
+        "source_sha256": "e701aa842f67542d5109350076e1cc803adb55b23a925fffd8ec8e7f5d5c6922",
+        "recorded_export_match": true,
+        "independent_oracle": false,
+        "output_sha256": "16e654adf7da78c038785932b36015cc3605c6071ffa07f67699fc48ed75620c"
+      }
+    ],
+    "packs": [
+      {
+        "adapter": "cocos-2.4-pack-v1",
+        "source_sha256": "c4a8a8b7573a29a18d36016b465b513f2a0d1ffcb79103da35a6f19b68634586",
+        "section_count": 9,
+        "selected_pack_section_ordinal": 0,
+        "status": "complete"
+      },
+      {
+        "adapter": "cocos-2.4-texture-pack-v1",
+        "source_sha256": "d7222a95cb2085389bb949bef0a29193dddd48576c6cd34b21e8cf5915b984f8",
+        "section_count": 13,
+        "selected_pack_section_ordinal": 0,
+        "status": "complete"
+      }
+    ],
+    "modules": [
+      {
+        "sample": "private-ui",
+        "source_sha256": "9f0c4262cf4756c584172426e828491c46ee84d6b38f4858bd68cdf938b26913",
+        "status": "partial",
+        "factory_candidates": 69,
+        "unresolved": 134,
+        "report_sha256": "8c1c74dd176ce1807c551464ff5f0588edd451eed5117c4460e611d433e177f5"
+      },
+      {
+        "sample": "private-common",
+        "source_sha256": "30adff030e24d876a6c4e7dbf8dc9f6b7dfb0a1f5acf7156fb596e05c7e31cce",
+        "status": "partial",
+        "factory_candidates": 106,
+        "unresolved": 129,
+        "report_sha256": "651cbb698ce608169353dfba8eab2505378e53b37cb7d30ff047718df9acd790"
+      }
+    ],
+    "source_files_unchanged": true,
+    "final_code_revalidation": "pass; private input/output digests and factory byte ranges retained after Unicode/budget hardening"
+  },
+  "limits": [
+    "Own protocol fixtures are the independent structural expectations; old private exports are only regression.",
+    "Dynamic obfuscated module names, dependency expressions and RF identities remain unresolved.",
+    "No original game, player save, source script or game Editor was modified.",
+    "No commit, push, merge, release or global plugin installation.",
+    "Native macOS metadata/Editor checks are not original-game parity, performance, Windows/mobile or IL2CPP acceptance.",
+    "Global installed plugins/Skills were not changed; native host loading is separate from isolated manifest/stdio verification.",
+    "Configuration supports closed scalar JSON authoring only; no generic Excel/LZ/delimiter adapter is claimed.",
+    "Sprite/clip conversion is finite and author-declared; Spine native import/rendering remains not_run pending pristine runtime identity and applicable license evidence.",
+    "Mouse remains not_run_reliably; internal Play/Player checks do not establish physical pointer routing."
+  ],
+  "u2": {
+    "static": "two synthetic layouts passed; removed/renamed known identities remain not_run",
+    "editor": {
+      "status": "editor_observed",
+      "compilation_assemblies": 38,
+      "asset_type_observations": 169,
+      "issues": [],
+      "report_sha256": "55edc52f78ba7b6a2c010b80302f998497b8c3852737626d81ff45af3556eb9a",
+      "proof_fields": [
+        [
+          "EditorOnly:System.String"
+        ]
+      ]
+    },
+    "player": {
+      "status": "metadata_checks_passed",
+      "assemblies": 71,
+      "types": 7661,
+      "call_sites": 20,
+      "build_identity": {
+        "schema_version": 1,
+        "build_id": "0e1f3e61562c461696c7c07e2248bc7b",
+        "source_sha256": "fa54ec5b004354da263ea9ea0c1068b5008730a9aaf9b4df0373c4c9508036ba",
+        "platform": "macos-arm64",
+        "backend": "Mono"
+      },
+      "proof_fields": [
+        {
+          "name": "PlayerOnly",
+          "type": "System.Int32"
+        }
+      ],
+      "report_sha256": "bbf2beeb34bcae96ee7c4f9d64697d43a9bb64da4bbc89e45c191fda57f2ca95",
+      "source_preservation": {
+        "sample": "grid-puzzle",
+        "sourceAssetsSha256": "fa54ec5b004354da263ea9ea0c1068b5008730a9aaf9b4df0373c4c9508036ba",
+        "sourceAssetsUnchanged": true,
+        "workMayContainUnityBuildCaches": true,
+        "sourceFiles": 77
+      }
+    },
+    "protocol": [
+      {
+        "tool": "unity_native_exit",
+        "transport": "mcp",
+        "status": "partial",
+        "tool_status": "not_run",
+        "exit_code": 1,
+        "report_sha256": "91d45f901c24bc546f217c73afd314d84e13ba20c6eb2d1fabe53a64ef373118"
+      },
+      {
+        "tool": "unity_native_exit",
+        "transport": "cli",
+        "status": "partial",
+        "tool_status": "not_run",
+        "exit_code": 1,
+        "report_sha256": "91d45f901c24bc546f217c73afd314d84e13ba20c6eb2d1fabe53a64ef373118"
+      },
+      {
+        "tool": "unity_player_audit",
+        "transport": "mcp",
+        "status": "ok",
+        "tool_status": "metadata_checks_passed",
+        "exit_code": 0,
+        "report_sha256": "bbf2beeb34bcae96ee7c4f9d64697d43a9bb64da4bbc89e45c191fda57f2ca95"
+      },
+      {
+        "tool": "unity_player_audit",
+        "transport": "cli",
+        "status": "ok",
+        "tool_status": "metadata_checks_passed",
+        "exit_code": 0,
+        "report_sha256": "bbf2beeb34bcae96ee7c4f9d64697d43a9bb64da4bbc89e45c191fda57f2ca95"
+      }
+    ],
+    "failure_evidence": [
+      "Initial conditional serialized layout fixture correctly rejected by Unity; valid counterexample uses nonserialized fields.",
+      "Forbidden assembly can be present without being referenced; policy now checks assembly identities separately.",
+      "Corrupt/missing/extra DLL, wrong digests, absent required types and IL2CPP never produce metadata_checks_passed."
+    ],
+    "resources_followup": {
+      "status": "editor_observed",
+      "red_missing": [
+        "unreferenced Resources Prefab",
+        "unreferenced Resources SO",
+        "indirect dependency"
+      ],
+      "red_sha256": "2264040ab870245c32dc6cec244dcb5d169930466ec6f82fc06fcb3bbdda0565",
+      "green": {
+        "coverage": true,
+        "types": true,
+        "deduplicated": true,
+        "editor_excluded": true,
+        "source_assets_unchanged": true,
+        "files": 94
+      },
+      "public_fixture": "tools/unity/fixtures/resources-coverage",
+      "public_fixture_actual_editor_pass": true,
+      "public_report_sha256": "ce974392f3b752985dfe8fe5b263c7da4c5413ef9a603b6698a25b50caa969e7",
+      "resources": 5,
+      "excluded_editor_resources": 2,
+      "policy": "AssetDatabase files below exact Resources segments in Assets; exclude any exact Editor segment; recursive dependencies, deduplicated with explicit/preloaded roots. Package Resources require explicit roots."
+    }
+  },
+  "implementation_files": {
+    "plugin/shared/02-工具-选择与调用.md": "3dbfd56e9bddecf3ccffdc18354c4801ed0d9d0e2e66d54050a35aee96930349",
+    "plugin/skills/grea-unity-standard/references/05-Unity-重构与资源迁移.md": "0cd496ce97e132fb8fe5dfd4bb84be68b74acc11311d67d3e58020d7b5d0ea4f",
+    "registry.json": "02ebb9ff4ed52ca191d33a0dbfe1d912e2cd723caadf68e7609e9ebeb473d6f0",
+    "schemas/unity-config-authoring.schema.json": "047d1ba203cdf3ff8cbf23457899815a3310b89acb75f4fed2c9abeddd73f5ed",
+    "schemas/unity-native-assets.schema.json": "593bbce9754ff4d361083e050f5e123c1aeae546c01b4f62eee136ac114f9244",
+    "scripts/generate_contracts.py": "7001f8b016d571f5bf3f17dc95ca526357faec7f0680a2938a8234659abffd99",
+    "scripts/testing/create-native-visual-inputs.py": "fde4cedfe2686506f74627653105ab2ca12bf90175c6887bbb25a2be9f0926b8",
+    "scripts/verify_plugin.py": "8cc8be6cc0c3656b3664bb7db94bb59c2b301a0581c4cf20f7fbe2e0bb0c0b4e",
+    "src/grea/__init__.py": "b5055cec9d93e04df7d43157d2597d05256eb5f75072a790ae48bdc1db120bec",
+    "src/grea/application.py": "612dd438bceb428a6038eae9999f01ff1fd2deee5804a0a21f48cb0e05dd88e2",
+    "src/grea/artifacts.py": "1f7da1f0decd604b34cdcbc8beb4b74bb12055e1e154c64d554c0aa1a43281f1",
+    "src/grea/authoring_contracts.py": "66a46b1a30381429597ae39ae874d384fc3299ab49cf5f8a878f241498b184be",
+    "src/grea/cases.py": "0dd749cfb4883904cf055926ee41325a30b000752954670e0ba1a4a2bf0aebb6",
+    "src/grea/cli.py": "1d132182566172b12463b7dc220b032b55b577999ac9c1e2961c7118355bb308",
+    "src/grea/cocos_contracts.py": "f6e921f5d709524bf4ab8c118187c4a9398e9f3c87086a6785072c24bfc3cd43",
+    "src/grea/common.py": "065d6a6b28050ca16c4467ac89c82b6959fd8f129cee5aa6e60c09b513bb1b15",
+    "src/grea/contracts.py": "0c4611b14a77d5f9c5f82c14461416a0a749f28772aa8ce690a94e12bef4afa7",
+    "src/grea/mcp_server.py": "796e42ec62a22f7d901f436d3a3fe70e353db5169387b795c76a164fba8554ec",
+    "src/grea/native_exit_contracts.py": "111b0bcafcf23887db75bd0fe4c993fc498726e2be4924be99865b8ba1dd4552",
+    "src/grea/registry.py": "b2edd3d4d04bf77dd46ebff15a0247260080d33795c0e08a17edbcede2299a23",
+    "src/grea/runner.py": "8d1b1087c30f5f08a0786f0694998fe342a049f39dcdaaba56f456ad555a8356",
+    "src/grea/safe_paths.py": "98e3b908cf9ba584c058cc975dc63aa1f52cc830d1b32c6390b085f18b2adc20",
+    "src/grea/tools/README.md": "18f2ac6fdfbb67ea40be8eacf0d641b11fccc50c04338f46bd6830bfadc151a1",
+    "src/grea/tools/__init__.py": "741da62c57d0b866b8470a7aca1fe24ff419c7b44e6c2084577c173147187350",
+    "src/grea/tools/_artifact_common.py": "757e6263288cb596ba4546c16cf9b3bc780eaa1e682ecee86ec2efa41fa196ef",
+    "src/grea/tools/audit_numeric_texture.py": "043cc7f0b61e298e72b47340b301222bdc11e399002bb00a533703cfc392de8f",
+    "src/grea/tools/check_skill.py": "b8c23944a885c421d85176f780cd49b12b9c0b3d54fa4fd98e6926d361df8cf0",
+    "src/grea/tools/cocos_assets.py": "8503336f74a26f736689b1a2b5fee6be076ac182d74824e614abc1e82f1cf316",
+    "src/grea/tools/cocos_modules.py": "2b305c57b70b6da8373da50e9d3a15ec8c7b42d31f5149770dd97cdcbc909101",
+    "src/grea/tools/compare_events.py": "509c8255a6fe5601b6bb31f350524a00df9e2288ccc87b7d334ee5ce55100b5a",
+    "src/grea/tools/compare_traces.py": "7d2d9e75305cba586250a7518debdf6ece55141cd120bfc11ead0f5658731d8c",
+    "src/grea/tools/decrypt_v1mmwx_wxapkg.py": "62a5113c20bf0f670f7700157288bf54546a8b2c665b857738de8700b68d717a",
+    "src/grea/tools/export_config_tables.py": "b373d62be802782da82f7ec3539f0acb797c01fe91416e0da62205fed0e26195",
+    "src/grea/tools/image_alpha_audit.py": "b60dddfb0057cb6759c8c25531c0e965f2f3266a5ee2512d5582df9c01ab030d",
+    "src/grea/tools/laya_contract_audit.py": "e0c85de45bfe60bd53bdd4ce05d90832c0c06e34b23a679d954bdc2205ddfabb",
+    "src/grea/tools/package_backup.py": "e696e00d7f3295cd2f1aab8626c0b50f544747e5423790d4e5aa65c8334bb46e",
+    "src/grea/tools/package_windows_portable.py": "edadc066e045fb7e7006f4f1c45df892e4313e9df2d636cfc7f8b1edcafba504",
+    "src/grea/tools/read_elf_values.py": "3840f98463464bcc2cd32017c6bd602b3f2d8e91769821f71e3866f287f6f20c",
+    "src/grea/tools/registry_doctor.py": "4a5ac8d1646db6ebc88e90ab52162501a404e4be0f6eb878a28e5a6ca747cb2c",
+    "src/grea/tools/shader_probe.py": "90c7e4680972e0513d7bafabf81709886c4eb0c783cd0f19f875a4b0e1bad34d",
+    "src/grea/tools/static_asset_copy.py": "f7819ddfca3aabacf6412352eb0207710fcb8a0e4ca6d0df7ee516327084fec9",
+    "src/grea/tools/unity_asset_ledger.py": "0b1ab1f9d7799a8137de7fa1fa23b7ecc182c4cd8bc420025a2c88473970a958",
+    "src/grea/tools/unity_config_candidate.py": "9835745e8076d6f43e48ad6a904fb6da5aa6c16ecff1030cab183f3b31222622",
+    "src/grea/tools/unity_dependency_audit.py": "b20c73fc42798e573715b6fffb241fda649e5bc29c870de2de8a767838fad21b",
+    "src/grea/tools/unity_native_assets.py": "1b771a34507bb087d54cc17ba9f5918ac67f1c451911a32b0f559bcd93744475",
+    "src/grea/tools/unity_native_exit.py": "d8b2ea9185779b51dc1348edd8b0afe74b33f24579231e8d81502a1011b7e3cb",
+    "src/grea/tools/unity_pilot.py": "eb114c8a8d8a7f90d926f6184a2a4861dc941c147dbf6f1030b14dfcaa527b70",
+    "src/grea/tools/unity_player_audit.py": "3e5c7da223e115eef405b8b4bf01a91048a95bb4aff58f4b38a6b4c3bda07451",
+    "src/grea/tools/unity_reference.py": "42839690835670d8c3471cd6f3e279bdc782040dc6e7eeb11c0732ce35e7c39f",
+    "src/grea/tools/unpack_wxapkg.py": "5a26e91e1bdeafe34137747ded4449885625e4d1bbdfb269130e6de476180cab",
+    "src/grea/tools/unpack_xapk.py": "b9e8509f3eb24575f53e4cb155f77ece030dd6451e42653e5c88c85595f07bc9",
+    "src/grea/tools/verify_payload_tree.py": "d2a70e47e4be1828c22333808825c241f17c88dee8493ee633d43c4f557e316f",
+    "src/grea/tools/video_manifest.py": "331ef706563b201adcc9e3a88f7fec249ab6b63e7e644feaf72337afd8c635fc",
+    "src/grea/tools/video_sheet.py": "f3f28fe73feed42ad23332df699c0b870baee0b8d0f3ea5fb85d56fab5a3230e",
+    "src/grea/unity_generation.py": "3fc11172cbf58145a2a61369ae61831b8126825827378a24b51389950cb5c6d8",
+    "src/grea/unity_project_contracts.py": "597e2423f1f6c1b6a44b96ee717b85d1c7373a1bef3a06b118da9f3542501032",
+    "src/grea/unity_projects.py": "56f18912971c1183092c317d19caeb4aa34a66e22f84fe62c3ce66767b181fef",
+    "src/grea/workflows.py": "b3908aede14c84761916db3f24e9249c697fe8b7ba1f2f906ec0a40ade9d5e16",
+    "tests/test_cocos_assets.py": "2e1f5f0374f1148599e1a78c93bc12b06058d505adc9f631a03bce46463d3f49",
+    "tests/test_cocos_modules.py": "7bb79d959cfb7877bf409ea35631c6e4f362b825a6700a5b94417ee03e669f33",
+    "tests/test_layout.py": "6d25cb89dec53d1c5f63e3868dcc3c518b3d034d32aeab724657d31c43474a8c",
+    "tests/test_project_tools_dispatch.py": "32eca8824e6212be59fc3dccbfa7747dcf9de460d0a916e561126437242c0edc",
+    "tests/test_unity_config_candidate.py": "9b4aa4e0e86f283ae722927d9d6c5010c4a731339845fd53c60c1c5281172305",
+    "tests/test_unity_editor_ledger.py": "851ae79c2308f80a6901a142f4fc263e1f4f1c1175c365655af4f01469f999e8",
+    "tests/test_unity_native_assets.py": "21abcec0405a13bc3ef531d595602c81888c14484d6d3bc104b8631cc9cad9a9",
+    "tests/test_unity_native_exit.py": "41e29c1a7296803bbfb761a784deda4b845bd05a8cae55e7720e07c640b82f43",
+    "tests/test_unity_player_audit.py": "e863a3592017f04a87811581f4b50f1fbb77c22d49a7d9b7d22973a7c72efd5f",
+    "tools/cocos/README.md": "2363776cea2d0b91cf33621cded10d563d58ef0aaac10b4b7182be2b4413bea8",
+    "tools/cocos/index-modules.cjs": "4997b0b4ec4905bc8ff10e340702290ba51ed1632f9a161bff2dcb0312e54547",
+    "tools/cocos/package-lock.json": "e722c59cb66e88b108627b44407c65e396bc111a01c97a9ab9602e005412391a",
+    "tools/cocos/package.json": "6e3926e154b6ca099a50c6ccd5e54974db54e7f007f9119d9354eb673c59ab59",
+    "tools/unity/assembly-audit/Grea.AssemblyAudit.csproj": "957b74db139eec4c45a9ce4aec20db98a080ab6ac5a691a1461adc59280f3f68",
+    "tools/unity/assembly-audit/Program.cs": "2f6201123bbfca8a40791887cd1ca18c48f917e0b5c7b4d13553593383d04aaa",
+    "tools/unity/assembly-audit/README.md": "ee146ab1762c8c244378a1a17f52dad1b654cb08d73a9b1ac53210ef64001e67",
+    "tools/unity/assembly-audit/cecil-lock.json": "ae2a95cafea26931e35b15e069392aca872d40ebf62fa9b16fba7c13e5cc58f1",
+    "tools/unity/assembly-audit/packages.lock.json": "2dfb369b8b394e2b1dc516a9f5fcd739f6867a67e67d96cad0876c114970616e",
+    "tools/unity/audit/NativeAssetImport.cs": "7a7597313301003281c03eef9f43a5893b60ed600d89bac66ce76c36a5645b97",
+    "tools/unity/audit/NativeExitEditorAudit.cs": "f7cfdc6a81b42a8e891d84acec4c0bb10074973b7fb80680564284e0859ca28c",
+    "tools/unity/fixtures/native-authoring/Enemy.rows.json": "49ac6709b0abe16883e9a31f7a00e9c10eaffb9e070804819f80b71ba522826a",
+    "tools/unity/fixtures/native-authoring/Enemy.schema.json": "3aaf1d1ac8262a2c5e58e83f4a1fd7ebceb7ffe6da51b5957dc3b1b18daa76b3",
+    "tools/unity/fixtures/native-authoring/Hint.rows.json": "a429ba059bed477dc40f27f5df269eb5f89799b25ff773e86ce82bd7222d299b",
+    "tools/unity/fixtures/native-authoring/Hint.schema.json": "5417178ac30b01ec37c15a1b1e882f0c9ea74bd2d44d4e4780365618e205b028",
+    "tools/unity/fixtures/native-authoring/NativeProofBuild.cs": "1de4abdf2bbd43cc67e157a6344249c8ae3928db6fa42c0fc6619f561fffe975",
+    "tools/unity/fixtures/native-authoring/NativeProofEditor.cs": "6c774f30b751e39f8054abd526f84546034051172fec9d9db8df3a1113c1071e",
+    "tools/unity/fixtures/native-authoring/NativeProofPlayTests.cs": "f951823e8a544932f8e0b9a88461cd1031606b2219ddb45bce7e8d643593a877",
+    "tools/unity/fixtures/native-authoring/NativeProofReceiver.cs": "553e1eb481151d060a87dadbb3b78f0a73c4e13dc1c2668f0f8750ef6712c367",
+    "tools/unity/fixtures/native-authoring/NativeProofRenderTests.cs": "ec13c9af584668b45989ccbebc7c1bd0a2cc164237a77032e139c876a79d55e7",
+    "tools/unity/fixtures/native-authoring/NativeProofVisual.cs": "3f5156602635220b0cdf93faf8d8b0cc6193545a0f87b654c9e8c17d5805118d",
+    "tools/unity/fixtures/native-authoring/NativeProofVisualEditor.cs": "db4d95c944fbdc29dcc6c91c4895975e0dff530b3e9fe3bd9932959ad74a409d",
+    "tools/unity/fixtures/native-authoring/native.recipe.json": "157d65647a8392bad06a1622f677b24d07f140970f3bb48f95a4575ca2e1952e",
+    "tools/unity/fixtures/resources-coverage/CoverageData.cs": "722793236c3d2cbb50ee9e4091a88735207521c5776775c3af0dbc41553627ae",
+    "tools/unity/fixtures/resources-coverage/CoverageFixture.cs": "8b783c098db44c964e8a9acc217edcd4aba7bd4f6909c5f3ed163e3a3841bdd9",
+    "tools/unity/fixtures/resources-coverage/CoverageProbe.cs": "0735d9d6b1e9e502f182c56323d22cba523b93bd65f0f644b0e8878227f8c7f3"
+  },
+  "implementation_tree_sha256": "27e64e19db44e484c9400cdaeb41f521897887f1dcdfe5404e77facfcd040ef4",
+  "tests": {
+    "discovered": 231,
+    "passed": 229,
+    "skipped": 2,
+    "failed": 0,
+    "log_sha256": "50025319f3dd07bb41777cc91a4983bb277e3336037f323ed01702605676c467",
+    "optional_cecil_integration": "explicitly_enabled_and_passed",
+    "skip_reasons": [
+      "existing media/codec integration opt-in",
+      "existing Windows NSIS opt-in"
+    ],
+    "failed_attempts_preserved": [
+      "sandbox .NET fixture build failed during setUpClass; same full suite outside sandbox passed",
+      "own Unity fixture omitted built-in Animation module; enabled installed module, no SDK install",
+      "loop test omitted Animator initial sample Update(0); corrected time-step assertion then passed"
+    ],
+    "visual_followup_targeted": {
+      "discovered": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "log_sha256": "08e6c07d54f6d13caea793d4dc1e3fa146489cd671c7a608307c4e5fee0c7743",
+      "scope": "Configuration/native assets/Editor ledger/native exit/CLI-MCP dispatch; full 231-test result above is retained historical batch, not rerun for fixture-only changes"
+    }
+  },
+  "plugin_preview": {
+    "archive_sha256": "23ca84fc302f531f2a8d959772187f1c7c45921883fa37903a9f75ebece3ab7b",
+    "clients": {
+      "claude": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "validate_unity_project"
+        ]
+      },
+      "codex": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "validate_unity_project"
+        ]
+      }
+    },
+    "isolation": {
+      "independent_home": true,
+      "install_write_denied": true,
+      "installation_unchanged": true,
+      "minimal_path": true,
+      "moved_unicode_space_path": true,
+      "network_denied": true,
+      "source_read_denied": true
+    },
+    "limits": [
+      "Native client loading is a separate acceptance layer.",
+      "Unity Editor and gameplay not run.",
+      "Other platforms not run."
+    ],
+    "source_kind": "worktree-preview",
+    "source_tree_sha256": "2bb3ebe858344494b2acab7fa66278c6f592bcc6a7f34f44505e505099203d5d",
+    "status": "pass",
+    "target": "macos-arm64",
+    "version": "2026.10.16rc1",
+    "implementation_files_match": true,
+    "documentation_reports_updated_after_preview": true,
+    "global_installation": "not_changed",
+    "native_host_loading": "not_run_this_batch"
+  },
+  "compatibility": {
+    "existing_tool_ids": "preserved",
+    "cli_mcp_operations": "unchanged; new helpers use the same run_tool operation",
+    "github_ci": "not_run; workflow syntax parsed and optional-provider tests wired",
+    "workflow_yaml": "parsed",
+    "docs_links": "pass",
+    "schema_generation": "no_drift",
+    "skill": "Plugin reference sources updated; isolated sync/check verified; workspace and global installed copies not updated."
+  },
+  "public_audit": {
+    "ok": true,
+    "scope": "Git index bytes",
+    "files": 557,
+    "bytes": 2587188,
+    "findings": [],
+    "limits": "Pattern-based source gate, not proof that every secret or license issue is absent.",
+    "alternate_index": true,
+    "real_index_preserved": true,
+    "report_only_metadata_after_audit": true
+  },
+  "previous_snapshot": {
+    "implementation_tree_sha256": "6912e3b91ba68e597f21b477f5656dc4af4d1401788038c8ab2c6bfa62d7c3dc",
+    "tests": {
+      "discovered": 224,
+      "passed": 222,
+      "skipped": 2,
+      "failed": 0,
+      "log_sha256": "a23966f6e5f26c7b0b4c9c05126b8cc68d90df9905e9dc3a1243b0e4b874deb8",
+      "optional_cecil_integration": "explicitly_enabled_and_passed",
+      "skip_reasons": [
+        "existing media/codec integration opt-in",
+        "existing Windows NSIS opt-in"
+      ]
+    },
+    "plugin_preview": {
+      "status": "pass",
+      "source_kind": "worktree-preview",
+      "archive_sha256": "83de419927a8b18298fd79b5c2d3524ced652da1ae669583a35b5b3c07669c21",
+      "source_tree_sha256": "7ca107bf0f970aee8f529696d3d1dd178bc16f67b3c92ea4fe8d0bd32f274c28",
+      "implementation_files_match": true,
+      "documentation_reports_updated_after_preview": true,
+      "isolation": {
+        "independent_home": true,
+        "install_write_denied": true,
+        "installation_unchanged": true,
+        "minimal_path": true,
+        "moved_unicode_space_path": true,
+        "network_denied": true,
+        "source_read_denied": true
+      },
+      "clients": {
+        "claude": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "legacy_launch",
+            "cocos_core_subprocess",
+            "native_exit_core_subprocess",
+            "optional_ast_cecil_missing",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "validate_unity_project"
+          ]
+        },
+        "codex": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "legacy_launch",
+            "cocos_core_subprocess",
+            "native_exit_core_subprocess",
+            "optional_ast_cecil_missing",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "validate_unity_project"
+          ]
+        }
+      },
+      "native_host_installation": "not_run; no installed plugin changes",
+      "report_sha256": "99143f2566cc1494ec46852c943ed540d12d37ca5b9593f58381c952304dc6f8"
+    }
+  },
+  "u3": {
+    "status": "bounded_authoring_verified",
+    "tool": "unity_config_candidate",
+    "schemas": [
+      "Enemy: int key, int range",
+      "Hint: string key, bool, nullable string"
+    ],
+    "source": "own JSON only; one authoring source per table",
+    "preflight": "schema/type/range/keys/missing/extra/nullable/identifier checks before candidate writes",
+    "ownership": "candidate byte equality unchanged; changed or manually edited candidate conflict; Editor SO create-only",
+    "readback": [
+      "source rows preserve null/empty/false",
+      "generated strongly typed fields and explicit nullable markers",
+      "two actual SOs",
+      "new Editor process",
+      "actual Mono Player"
+    ],
+    "editor_ledger": {
+      "tool": "unity_asset_ledger compare-editor",
+      "objects": 43,
+      "identity": "GUID + local fileID",
+      "changes": [
+        {
+          "fields": [
+            "path",
+            "name",
+            "sprite_geometry"
+          ],
+          "type": "UnityEngine.Sprite"
+        },
+        {
+          "fields": [
+            "path",
+            "name"
+          ],
+          "type": "UnityEngine.Texture2D"
+        }
+      ],
+      "added": 0,
+      "removed": 0,
+      "issues": [],
+      "report_sha256": "46d441ee807872cf3ba37b5cc26d8c6e8abdb1a30da90069b155f82424393acb"
+    },
+    "execution": "existing run-tool / Unity CLI; unique run ID and request/output hashes; no new Editor control service or game oracle"
+  },
+  "u4": {
+    "status": "sprite_clip_verified_spine_native_not_run",
+    "tool": "unity_native_assets",
+    "sprites": [
+      "trim + clockwise-packed rotation reversal",
+      "transparent original canvas restoration",
+      "pivot and nine-slice",
+      "no implicit NPOT rescale",
+      "PNG source identity"
+    ],
+    "clips": [
+      "explicit two targets, non-unit initial scale",
+      "linear absolute local position/scale curves",
+      "two distinct native clips",
+      "event Pulse",
+      "closed duration endpoints",
+      "loop seam and interruption"
+    ],
+    "editor": [
+      "actual API native assets",
+      "manual terminal key change 4 to 8",
+      "new Editor process readback",
+      "existing output rejected without erasing manual change"
+    ],
+    "play": {
+      "passed": 1,
+      "failed": 0,
+      "report_sha256": "b63cd37a4af1594ce5e0568ae6016a58e539cbcd838dbfb05aff6e48aa4bb63c"
+    },
+    "player": {
+      "platform": "macos-arm64",
+      "backend": "Mono",
+      "build_id": "81df368ab56748b4ad5621795824bc55",
+      "build": "converter-free own source; disposable independent build workspace",
+      "source_preservation": {
+        "distribution_source_unchanged": true,
+        "editor_fixture_source_unchanged": true,
+        "distribution_files": 42,
+        "editor_fixture_files": 169,
+        "distribution_sha256": "bd5298551e565f5ef575758ae9ed8ee6d5dd719f6e3ebfec19865337f1ae0061",
+        "editor_fixture_sha256": "a793ed544f27d15dda8842173de72e64804a1b1781b54c7e3880aaa87d23a132",
+        "build_input_asset_sha256": "c11e76ce65fd4c22b971bc7057d3af0f4ae8329a807d3300ce4056efbe09db74",
+        "disposable_build_extra_files": [
+          "Editor.meta",
+          "Editor/NativeProofBuild.cs.meta"
+        ]
+      },
+      "metadata_status": "metadata_checks_passed",
+      "assemblies": 62,
+      "types": 7362,
+      "forbidden_converter_and_test_identities_absent": true,
+      "metadata_sha256": "51510917bb51a53106734d265c140aceab188e418142698b51012b34d2d9c209",
+      "executable_sha256": "f160421249cf3d1c9e44b2ccf0763210c5f675b73caa3e12e982cb30c7c433ee",
+      "automatic_checks": [
+        "typed SO configuration",
+        "visible native sprite source colors and transparency",
+        "pivot position",
+        "two nine-slice sizes preserve corner width",
+        "edited midpoint curve effect",
+        "visible native scale",
+        "loop seam",
+        "interruption to second clip",
+        "native event counters"
+      ],
+      "visual": "passed_actual_player_backbuffer_5_frames_125_strict_pixel_assertions_and_manual_inspection",
+      "graphics": "Metal",
+      "frames": [
+        {
+          "phase": "start",
+          "width": 960,
+          "height": 600,
+          "pulses": 0,
+          "expected_x": 0.0,
+          "actual_x": 0.0,
+          "expected_scale": 2.0,
+          "actual_scale": 2.0,
+          "pixel_assertions": 25,
+          "file": "0-start.png",
+          "sha256": "3cb08102848a3d8da413193e69197ad85aa57f3b1e1dec963e4365ae4f2a1101"
+        },
+        {
+          "phase": "manual-midpoint",
+          "width": 960,
+          "height": 600,
+          "pulses": 1,
+          "expected_x": 4.0,
+          "actual_x": 4.0,
+          "expected_scale": 3.0,
+          "actual_scale": 3.0,
+          "pixel_assertions": 25,
+          "file": "1-manual-midpoint.png",
+          "sha256": "b611738c2aca4efd61a43e27ca2517ad3c30c73a471f889125108997d63d5f7d"
+        },
+        {
+          "phase": "near-end",
+          "width": 960,
+          "height": 600,
+          "pulses": 1,
+          "expected_x": 7.992000102996826,
+          "actual_x": 7.992000102996826,
+          "expected_scale": 3.997999906539917,
+          "actual_scale": 3.998000144958496,
+          "pixel_assertions": 25,
+          "file": "2-near-end.png",
+          "sha256": "8c011cdfebb47985dfaf267d09483a71e419927dca639bcf8adc19a5720b358a"
+        },
+        {
+          "phase": "loop-crossing",
+          "width": 960,
+          "height": 600,
+          "pulses": 1,
+          "expected_x": 0.1599999964237213,
+          "actual_x": 0.15999984741210938,
+          "expected_scale": 2.0399999618530273,
+          "actual_scale": 2.0399999618530273,
+          "pixel_assertions": 25,
+          "file": "3-loop-crossing.png",
+          "sha256": "3c9e24b5198253e1c7308ac00d07a70ef9914eab6ee0a291df9529f38e8c6c84"
+        },
+        {
+          "phase": "return-interruption",
+          "width": 960,
+          "height": 600,
+          "pulses": 2,
+          "expected_x": 2.0,
+          "actual_x": 2.0,
+          "expected_scale": 2.0,
+          "actual_scale": 2.0,
+          "pixel_assertions": 25,
+          "file": "4-return-interruption.png",
+          "sha256": "52d0ceab92db1e64832d9d19830a46414ed34c9cd659011d46c5695868081429"
+        }
+      ],
+      "receipt_sha256": "3c079f0859d6e8f7822f3f3e7f0429a1eecfeae8bd655aecef132612d3c3c7d5",
+      "log_sha256": "74ac879167c9db9eede2b65c39c060f27b09d145d4ad50adcb4f87069e56f75a",
+      "physical_mouse": "not_run_reliably",
+      "process": "exited automatically; exact own executable process absent"
+    },
+    "spine": {
+      "own_multi_page": "two pages closure observed",
+      "own_missing_page": "missing page detected",
+      "version_mismatch": "rejected",
+      "local_runtime_candidates": "source candidates and conditional license observed read-only",
+      "pristine_source_identity": "not_verified",
+      "applicable_license": "not_verified",
+      "native_import_rendering": "not_run",
+      "evidence_sha256": "823513eaa229b0c29e9e1f84b3a1ab2b9ddaf400532455b3c3ca7a8ed07db697"
+    },
+    "visual_followup": {
+      "status": "passed_with_scope",
+      "review_findings": [
+        "R1 actual rendered fixture",
+        "R2 stale current documentation"
+      ],
+      "scope": "Self-owned finite sprite/clip fixture only; not original-game visual parity or OS pointer acceptance",
+      "editor": {
+        "tests": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "rendered_phases": 5,
+        "pixel_assertions": 125,
+        "report_sha256": "975b6ddd3cb18f5e555d2d17a3a79eeecf6c28fe8e5867eefcb1963406b42d43"
+      },
+      "camera": {
+        "position": [
+          0,
+          0,
+          -10
+        ],
+        "orthographic_size": 5,
+        "rendering": "Built-in unlit SpriteRenderer; pipeline selected before renderer defaults",
+        "capture": [
+          960,
+          600
+        ]
+      },
+      "source_example": "tools/unity/fixtures/native-authoring",
+      "input_generator": "scripts/testing/create-native-visual-inputs.py",
+      "actual_player_frames_manually_reviewed": 5,
+      "renderer_reference": {
+        "scope": "Separate offscreen Camera.Render control from same actual Player, never substituted for backbuffer verdict",
+        "sha256": "f6808faf369a2735ebcd4bcbc270a8b0eb39f619fe6e9eda253cb6d348b2c0dc"
+      },
+      "failure_evidence": [
+        {
+          "kind": "old blank fixture",
+          "result": "real graphics smoke failed with zero green pixels",
+          "report_sha256": "b1028f75698f51aff893417dc315a69a29653180feec5f73d9028bc56de03ae5"
+        },
+        {
+          "kind": "own fixture pipeline/material mismatch",
+          "result": "static sliced renderers visible; animated targets retained URP material; fixed pipeline selection ordering and own fixture materials",
+          "frame_sha256": "4e1552c077404e81e3397ea2a255b60a67e58c29d3e090b5d518f59e20a436fb"
+        },
+        {
+          "kind": "startup backbuffer compositing",
+          "result": "RGBA32 source texel and offscreen reference correct, actual backbuffer mixed with native splash background; wait for SplashScreen.isFinished with 15 second bound, strict color threshold unchanged",
+          "screen_sha256": "2c3d4e891902548b2728293387e4a100b9fdac221a10284be0233a34fa010d0d",
+          "reference_sha256": "f6808faf369a2735ebcd4bcbc270a8b0eb39f619fe6e9eda253cb6d348b2c0dc",
+          "log_sha256": "c567866ff783ca467259eb72153752d9dbed00cc3e5732398067439c35038ebc"
+        }
+      ],
+      "remaining_limits": [
+        "Spine pristine runtime identity/applicable license/native import/rendering not verified",
+        "OS mouse remains not_run_reliably; no new pointer attempts",
+        "Windows/mobile/IL2CPP/CI/real installed client loading not_run"
+      ]
+    }
+  },
+  "u5": {
+    "scope": "six new helper IDs plus existing ledger extension; same twenty top-level operations",
+    "cli_mcp": "two authoring tools actual output parity + invalid-target error; previous evidence tools retained",
+    "schemas": "generated and drift check pass",
+    "skills": "Plugin reference sources updated; isolated sync/check verified; workspace and global installed copies not updated.",
+    "plugin": "clean relocated stdio passed for both manifest launch configurations; actual host loading not claimed",
+    "github_ci": "not_run; no push authorized"
+  },
+  "previous_public_audit": {
+    "result": "pass",
+    "files": 530,
+    "pattern_gate_only": true,
+    "real_index_preserved": true
+  },
+  "pre_visual_snapshot": {
+    "implementation_files": 89,
+    "implementation_tree_sha256": "2b139bce28b14321f00dfacd1a239ffa57118019db60b5ee83171ab58dc95032",
+    "plugin_preview": {
+      "archive_sha256": "d908426259514705aada87e1889d5555bc4c3ab2f454bf3f4203b59073abcae1",
+      "clients": {
+        "claude": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "legacy_launch",
+            "cocos_core_subprocess",
+            "native_exit_core_subprocess",
+            "typed_config_core_subprocess",
+            "native_authoring_core_subprocess",
+            "optional_ast_cecil_missing",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "validate_unity_project"
+          ]
+        },
+        "codex": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "legacy_launch",
+            "cocos_core_subprocess",
+            "native_exit_core_subprocess",
+            "typed_config_core_subprocess",
+            "native_authoring_core_subprocess",
+            "optional_ast_cecil_missing",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "validate_unity_project"
+          ]
+        }
+      },
+      "isolation": {
+        "independent_home": true,
+        "install_write_denied": true,
+        "installation_unchanged": true,
+        "minimal_path": true,
+        "moved_unicode_space_path": true,
+        "network_denied": true,
+        "source_read_denied": true
+      },
+      "limits": [
+        "Native client loading is a separate acceptance layer.",
+        "Unity Editor and gameplay not run.",
+        "Other platforms not run."
+      ],
+      "source_kind": "worktree-preview",
+      "source_tree_sha256": "34bd32d1e94c419de29d964db7c64c8333a72deb3885671933c8b25b74b38378",
+      "status": "pass",
+      "target": "macos-arm64",
+      "version": "2026.10.16rc1",
+      "implementation_files_match": true,
+      "documentation_reports_updated_after_preview": true,
+      "global_installation": "not_changed",
+      "native_host_loading": "not_run_this_batch"
+    },
+    "numeric_player": {
+      "platform": "macos-arm64",
+      "backend": "Mono",
+      "build": "converter-free NEW working copy",
+      "source_preservation": {
+        "source_assets_unchanged": true,
+        "distribution_source_unchanged": true,
+        "source_files": 158,
+        "distribution_files": 35,
+        "source_sha256": "ea1b2167de779266e949424dbd647ea42f9d4672606a63e8b1a3646c8881bdbf",
+        "distribution_sha256": "e25c0d89f4439cc155d7aee17d3f75aabac102a91760737fd9c7929120378603",
+        "converter_sources_absent": true
+      },
+      "metadata_status": "metadata_checks_passed",
+      "assemblies": 59,
+      "types": 7343,
+      "forbidden_converter_and_test_identities_absent": true,
+      "metadata_sha256": "aedeee9a0d068236289fce8a257d4f41b120742a2e0168e156ca3b99f26ce51d",
+      "automatic_checks": [
+        "typed SO persisted data",
+        "manual curve effect",
+        "native AnimationEvent",
+        "loop seam",
+        "clip interruption"
+      ],
+      "log_sha256": "ba68f7922b359d35360e2adf4bb44f9cf3dc0044b302757f68f36b88b80bcf3a",
+      "physical_mouse": "not_run",
+      "visual": "not_run",
+      "process": "exited automatically; exact own executable process absent"
+    }
+  },
+  "pre_visual_public_audit": {
+    "ok": true,
+    "scope": "Git index bytes",
+    "files": 553,
+    "bytes": 2550542,
+    "findings": [],
+    "limits": "Pattern-based source gate, not proof that every secret or license issue is absent.",
+    "alternate_index": true,
+    "real_index_preserved": true,
+    "report_only_metadata_after_audit": true
+  }
+}

@@ -13,6 +13,7 @@ grea 插件把"依据已发布游戏，在 Unity 中恢复或重建"拆成若干
 
 | 模式 | 比较基线与必要结果 | 使用的技能 |
 | --- | --- | --- |
+| 只读取证或成本评估 | 声明输入、已证实能力与未知范围；提取/解析不等于服务端或可玩恢复 | `grea-evidence`；本期不启动游戏实现 |
 | 完整恢复或首次重建 | 原版同版本、同状态；完整取证和提取库存、工作工程、差异清单。总体顺序见 [恢复开发](../../shared/01-流程-游戏恢复开发.md) | 先用 `grea-evidence`；源游戏是 Unity 时接 `grea-unity-recovery`，是 Cocos/Laya/H5 等其他引擎时接 `grea-native-port` |
 | 跨引擎转原生 Unity，或清理源引擎残留 | 原版的规则语义与可观察结果；原生可维护门 | `grea-native-port` |
 | 局部一致性修复 | 相关原版依据和受影响入口；只补缺失的证据和回归 | `grea-parity` |
@@ -31,4 +32,5 @@ grea 插件把"依据已发布游戏，在 Unity 中恢复或重建"拆成若干
 
 - 源包是 Unity（有 `globalgamemanagers`、`*.assets`、`il2cpp_data` 或 Mono 程序集）时，目标是找回或重建 Unity 工程，见 `grea-unity-recovery`。
 - 源包是 Cocos（有 `cc.` 类型、`project.json`/`settings.js`、bundle 中的 uuid 资源）、Laya、FairyGUI、Egret 或 H5 时，目标是纯原生 Unity 工程，见 `grea-native-port`。这种情况**不在 Unity 中复刻源引擎运行时**。
+- Cocos 先核对实际 2.x/3.x 版本与序列化格式，不能用 2.4 reader 猜解 3.x/CCON；其他原生格式单列支持表，不因 APK 或资源扩展名就判为 Unity。
 - 判断不了时，先用 `grea-evidence` 解包和盘点，再回到这里选择。

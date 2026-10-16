@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "namespace": "Own.Configuration",
+  "name": "Enemy",
+  "key": "Id",
+  "fields": [
+    {
+      "name": "Id",
+      "type": "int",
+      "min": 1
+    },
+    {
+      "name": "Health",
+      "type": "int",
+      "min": 1,
+      "max": 1000
+    }
+  ]
+}

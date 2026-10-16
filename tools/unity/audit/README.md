@@ -11,3 +11,5 @@ Run报告包含observations与findings：Missing Script、Sprite.texture为空�
 没有finding不等于可见或原版一致。纹理不可读会直接抛错，不擅自开启Read/Write；对压缩纹理的原字节应采用对应格式契约。报告均以CreateNew写入，不覆盖旧证据。Report.observations可能包含未激活对象；验收时结合active、相机与实际画面判断。
 
 先在匹配 Editor 版本的隔离工程中编译并执行 SelfTest。批处理-nographics只能验证编辑器API与字节回读，不能验证Metal渲染效果。
+
+有限原生制作入口 `NativeAssetImport.cs` 及 NativeExitEditorAudit 的 Resources/对象台账扩展见 [制作链说明](../../../docs/providers/unity-authoring.md)；均要求显式隔离工程，前者创建原生资产，后者只报告 Editor 观察。

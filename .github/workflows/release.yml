@@ -36,7 +36,16 @@ jobs:
           .venv/bin/python scripts/generate_contracts.py --check
           .venv/bin/python scripts/check_docs.py
           ./bin/grea legacy check_grea_skill --workspace-root . --json
+      - name: Prepare locked optional test providers
+        env:
+          DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+        run: |
+          npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
+          dotnet restore tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --locked-mode
+          dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore --configuration Release
       - name: Test source
+        env:
+          GREA_ASSEMBLY_AUDIT_INTEGRATION: '1'
         run: .venv/bin/python -m unittest discover -s tests -v
       - name: Build version-matched source bundle
         env:
@@ -52,8 +61,11 @@ jobs:
           test -f "$bundle/pyproject.toml"
           cd "$bundle"
           uv sync --frozen
+          npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
+          DOTNET_GENERATE_ASPNET_CERTIFICATE=false dotnet restore tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --locked-mode
+          dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore --configuration Release
           ./bin/grea session
-          .venv/bin/python -m unittest discover -s tests -v
+          GREA_ASSEMBLY_AUDIT_INTEGRATION=1 .venv/bin/python -m unittest discover -s tests -v
           .venv/bin/python scripts/generate_contracts.py --check
           .venv/bin/python scripts/check_docs.py
           ./bin/grea legacy check_grea_skill --workspace-root . --json

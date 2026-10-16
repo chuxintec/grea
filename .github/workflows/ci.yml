@@ -25,8 +25,11 @@ jobs:
           version: '0.12.21'
           python-version: ${{ matrix.python }}
       - run: uv sync --frozen
+      - name: Install locked optional AST test provider
+        run: npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
       - run: python3 scripts/audit_public_tree.py
       - run: .venv/bin/python scripts/generate_contracts.py --check
+      - run: .venv/bin/python scripts/render_brand_assets.py --check
       - run: .venv/bin/python scripts/check_docs.py
       - run: .venv/bin/python -m unittest discover -s tests -v
       - run: ./bin/grea legacy check_grea_skill --workspace-root . --json
@@ -84,3 +87,24 @@ jobs:
       - run: uv sync --frozen
       - shell: cmd
         run: bin\grea.cmd session
+
+  assembly-metadata:
+    runs-on: ubuntu-24.04
+    env:
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      GREA_ASSEMBLY_AUDIT_INTEGRATION: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
+        with:
+          version: '0.12.21'
+          python-version: '3.12'
+      - run: uv sync --frozen
+      - name: Build locked optional metadata reader
+        run: |
+          dotnet restore tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --locked-mode
+          dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore --configuration Release
+      - run: .venv/bin/python -m unittest discover -s tests -p test_unity_player_audit.py -v

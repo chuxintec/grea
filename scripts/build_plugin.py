@@ -17,6 +17,7 @@ import tomllib
 import urllib.request
 
 from plugin_bundle import encoded, extract_runtime, inventory, read_source, sha256, verify_archive, write_archive
+from grea.brand_assets import validate_interface
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = 'grea-plugin-macos-arm64.zip'
@@ -34,6 +35,13 @@ def write_product(source, destination):
     for client in ('.codex-plugin', '.claude-plugin'):
         value = json.loads(source[f'plugin/{client}/plugin.json'][0])
         value['skills'] = './plugin/skills/'
+        if client=='.codex-plugin':
+            for key in ('composerIcon','logo','logoDark'):
+                if key in value.get('interface',{}):
+                    original=value['interface'][key]
+                    if not original.startswith('./assets/'):raise ValueError('Unexpected source icon path')
+                    value['interface'][key]='./plugin/'+original[2:]
+            validate_interface(value,lambda path:(destination/path).read_bytes())
         path = destination / client / 'plugin.json'
         path.parent.mkdir(parents=True)
         path.write_bytes(encoded(value))
