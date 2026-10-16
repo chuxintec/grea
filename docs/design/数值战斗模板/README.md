@@ -38,7 +38,7 @@
 
 设计名暂定 `grea-numeric-combat-ugui`，`0.1.0-draft.2` **不是可传给 CLI 的模板版本**。`examples/template-profile.example.json` 是设计说明数据，不是 `grea-project.json`，不得送入现有生成接口。
 
-现有生成器只支持 `grea-minimal-2d/0.1.0` 的 Counter 配方；Foundation、uGUI、Editor 包版本为 `0.2.1`，生成器为 `0.1.1`。输入支持、例外和现有工具语义以 [生成器指南](../../Unity工程生成与恢复.md)、`registry.json` 和源码契约为准。本提案没有修改这些声明。
+现有生成器只支持 `grea-minimal-2d/0.1.0` 的 Counter 配方；Foundation 包版本为 `0.2.1`，uGUI/Editor 为 `0.3.0`，生成器为 `0.1.2`（本轮合成示例的接入见实际框架说明）。输入支持、例外和现有工具语义以 [生成器指南](../../Unity工程生成与恢复.md)、`registry.json` 和源码契约为准。本提案没有修改这些声明。
 
 本轮只读检查源码、历史报告和开发记录，未重新执行 Unity 测试、启动 Player 或操作原版。证据状态和报告适用范围见索引。后续实施必须重新固定样本字节，不能把本轮历史报告算作新模板的测试结果。
 

@@ -1,6 +1,6 @@
 {
   "name": "com.grea.ui.ugui",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "displayName": "com.grea.ui.ugui",
   "description": "Grea minimal framework candidate; see package documentation for validation boundaries.",
   "unity": "6000.6",

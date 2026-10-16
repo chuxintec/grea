@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace Grea.Generation.Tests
@@ -107,6 +108,82 @@ namespace Grea.Generation.Tests
             var bad = Request; bad.bootstrapType = "Missing.Bootstrap";
             Assert.Throws<InvalidOperationException>(() => ProjectGenerator.Generate(bad, Journal));
             Assert.IsFalse(Directory.Exists(ProjectGenerator.BasePath));
+        }
+        [Test] public void DuplicateEventSystemIsRejectedByTheSceneContract()
+        {
+            ProjectGenerator.Generate(Request, Journal);
+            var scene = EditorSceneManager.OpenScene(Request.entryScene, OpenSceneMode.Single);
+            new GameObject("DuplicateInputOwner", typeof(UnityEngine.EventSystems.EventSystem));
+            Assert.IsTrue(EditorSceneManager.SaveScene(scene, Request.entryScene));
+            var error = Assert.Throws<InvalidOperationException>(() => ProjectGenerator.Validate(Request));
+            StringAssert.Contains("EventSystem", error.Message);
+        }
+        [Test] public void PrefabSlotsHaveExplicitNeutralBindingsAndASeparateVisual()
+        {
+            ProjectGenerator.Generate(Request, Journal);
+            var button = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectGenerator.BasePath + "/ButtonShell.prefab");
+            var feedback = button.GetComponent<ButtonPressFeedback>();
+            Assert.IsNotNull(feedback, "ButtonShell must supply the tested finite feedback component");
+            var target = new SerializedObject(feedback).FindProperty("visual").objectReferenceValue as Transform;
+            Assert.IsNotNull(target); Assert.AreNotSame(button.transform, target);
+            Assert.AreEqual(target.GetComponent<Image>(), button.GetComponent<Button>().targetGraphic);
+            Assert.IsTrue(button.GetComponent<Image>().raycastTarget, "The hit target must remain unscaled");
+            var text = target.GetComponentInChildren<Text>(true);
+            Assert.IsNotNull(text); Assert.IsNotNull(text.font); Assert.IsFalse(text.raycastTarget);
+            Assert.IsTrue(target.GetComponentsInChildren<Image>(true).Any(x => x.name == "Icon"));
+            var modal = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectGenerator.BasePath + "/ModalShell.prefab");
+            Assert.AreEqual(Navigation.Mode.None, modal.GetComponent<ModalPanel>().CloseButton.navigation.mode);
+            var bindings = new SerializedObject(modal.GetComponent<ModalPanel>());
+            Assert.IsNotNull(bindings.FindProperty("contentSlot")?.objectReferenceValue);
+            Assert.IsNotNull(bindings.FindProperty("title")?.objectReferenceValue);
+            var host = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectGenerator.BasePath + "/UIHost.prefab");
+            Assert.IsNotNull(new SerializedObject(host.GetComponent<UIHost>()).FindProperty("safeAreaRoot")?.objectReferenceValue);
+            Assert.AreEqual(new Vector2(1080, 2340), host.GetComponent<CanvasScaler>().referenceResolution);
+            Assert.AreEqual(0, BindingValidator.Inspect(host).Count);
+        }
+        [Test] public void AuthoredPrefabFieldsSurviveSaveUnloadAndReopenWithoutGeneration()
+        {
+            ProjectGenerator.Generate(Request, Journal);
+            string path = ProjectGenerator.BasePath + "/UIHost.prefab";
+            var root = PrefabUtility.LoadPrefabContents(path);
+            var label = root.GetComponent<UIHost>().openButton.GetComponentInChildren<Text>(true);
+            Assert.IsNotNull(label);
+            var serialized = new SerializedObject(label);
+            serialized.FindProperty("m_Text").stringValue = "AUTHORED LABEL WITH A LONGER TRANSLATED CAPTION";
+            serialized.FindProperty("m_FontData.m_FontSize").intValue = 24;
+            var visual = label.transform.parent.GetComponent<Image>(); visual.color = Color.magenta;
+            ((RectTransform)visual.transform).sizeDelta = new Vector2(-20,-12);
+            Assert.IsTrue(serialized.ApplyModifiedPropertiesWithoutUndo());
+            PrefabUtility.SaveAsPrefabAsset(root, path); PrefabUtility.UnloadPrefabContents(root);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var reopenedLabel = root.GetComponent<UIHost>().openButton.GetComponentInChildren<Text>(true);
+                Assert.AreEqual("AUTHORED LABEL WITH A LONGER TRANSLATED CAPTION", reopenedLabel.text);
+                Assert.AreEqual(24, reopenedLabel.fontSize);
+                Assert.AreEqual(Color.magenta, reopenedLabel.transform.parent.GetComponent<Image>().color);
+                Assert.AreEqual(new Vector2(-20,-12), ((RectTransform)reopenedLabel.transform.parent).sizeDelta);
+                Assert.AreEqual(0, BindingValidator.Inspect(root).Count);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            Assert.Throws<InvalidOperationException>(() => ProjectGenerator.Generate(Request, Journal));
+        }
+        [TestCase("UIHost", "safeAreaRoot")]
+        [TestCase("ModalShell", "contentSlot")]
+        [TestCase("ModalShell", "title")]
+        public void MissingSlotReportsAssetComponentFieldWithoutWriting(string asset, string field)
+        {
+            ProjectGenerator.Generate(Request,Journal);
+            string path=ProjectGenerator.BasePath+"/"+asset+".prefab";
+            var root=PrefabUtility.LoadPrefabContents(path);
+            var component=asset=="UIHost" ? (Component)root.GetComponent<UIHost>() : root.GetComponent<ModalPanel>();
+            var serialized=new SerializedObject(component); serialized.FindProperty(field).objectReferenceValue=null;
+            serialized.ApplyModifiedPropertiesWithoutUndo(); PrefabUtility.SaveAsPrefabAsset(root,path); PrefabUtility.UnloadPrefabContents(root);
+            var before=ProjectGenerator.Hash(path);
+            var error=Assert.Throws<InvalidOperationException>(()=>ProjectGenerator.Validate(Request));
+            StringAssert.Contains(path,error.Message); StringAssert.Contains(field,error.Message);
+            Assert.AreEqual(before,ProjectGenerator.Hash(path));
         }
     }
 }

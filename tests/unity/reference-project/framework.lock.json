@@ -2,16 +2,16 @@
   "schemaVersion": 1,
   "packages": {
     "com.grea.editor": {
-      "version": "0.2.1",
-      "treeSha256": "51cf6cedafe201f0856c6704af8602d697078d6efd9bfc67382f90361fcd3d7a"
+      "version": "0.3.0",
+      "treeSha256": "35f0f763150b4b928e78a0774cd72cfc8fa57037ec2ec31e14c4efc7489bd84c"
     },
     "com.grea.foundation": {
       "version": "0.2.1",
-      "treeSha256": "2c533ebb125528de9f28f1e11281c608a67acfff4c1f3eaaab64e692b087d806"
+      "treeSha256": "d3ce2df0d5fecf2b09924cf2152aaabc531672999528be1ee32caa19652b68b9"
     },
     "com.grea.ui.ugui": {
-      "version": "0.2.1",
-      "treeSha256": "a80c6c85c1a356ca6550713ed657b953d643a6b9ef95c0ce1371c7321a41b8fa"
+      "version": "0.3.0",
+      "treeSha256": "8f9adb12037d78dbb73c2daae62eb4eb1a44a81d10f32a25b01d7632daca18de"
     }
   }
 }

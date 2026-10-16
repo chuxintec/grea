@@ -1,0 +1,849 @@
+{
+  "schemaVersion": 1,
+  "status": "verified_with_limits",
+  "date": "2026-10-16",
+  "branch": "codex/unity-framework-extraction-20261016",
+  "baselineCommit": "8521ca5468454da147306a1047ddd5e9d1c0426a",
+  "sourceKind": "working_tree_snapshot",
+  "sourceTreeSha256": "8f15433d94f142b6b1ce8cb75b279f27fd17a508000fc4e12add296ec3e8f050",
+  "sourceFiles": {
+    "scripts/testing/build-framework-sample.py": "22e2a7f8efb3306b3775d27db0889842381a6c648e3e568bc3255ac62cdba58d",
+    "scripts/testing/prepare-unity-framework.py": "b89fcd55c23589409f292684e08fb170a2ad57f1aa11d724bbfa3d2e87a5c818",
+    "src/grea/tools/unity_framework_audit.py": "cab2537196738282a2b40fb64b2517555d9b2d01e2063197e60081577a0d76f0",
+    "src/grea/unity_generation.py": "58efe9ac9b45849bc4788d570de852f28504025b3861e21020452192971319a0",
+    "tests/test_framework_sample_build.py": "843bcde3849fe331527989d8c2efeea00d466a095163251193c74910ffafc6e6",
+    "tests/test_unity_framework.py": "25d3752ecd346b407164545d841ff70061726975d9decc95cfa446d48905e6f3",
+    "tests/test_unity_generation.py": "d4cfb8d183d3ae2739eb36fa9159678915d0f0450641862e9126c54b633fb075",
+    "tests/unity/m3/Editor/GeneratorTests.cs": "95ba6c3c43c52c5854e5186f16f6a151eaf718d436d6c153818f3fcb539c0c67",
+    "tests/unity/reference-project/Packages/packages-lock.json": "95cdf034bd0c6b8f84124da02521f162ef0ea47467a27b9e3a3c3bae88667ff1",
+    "tests/unity/reference-project/framework.lock.json": "1a83402526faa8de0f36f181aa4f03ec4c29bba39feb8c4fe95ed38f0af3c794",
+    "tools/unity/framework/packages/com.grea.editor/Editor/BindingValidator.cs": "7f8999f949804d76ec78acb9225a8bb05ddd2e3822cc4d878d3e9682923bab4c",
+    "tools/unity/framework/packages/com.grea.editor/Editor/BindingValidator.cs.meta": "66497884ec1a75f0eb6d3b1ca70db67784f246d8a9a3d9429de08d58843dbcbb",
+    "tools/unity/framework/packages/com.grea.editor/Editor/Grea.Editor.asmdef": "98b93529fa9f3aed65d28d44891c8b4c243353bedba5ce3063afba4e842df977",
+    "tools/unity/framework/packages/com.grea.editor/Editor/Grea.Editor.asmdef.meta": "b2f909c2e45cce3ce7285157026349845c7892207c43f243c344dde571efc10c",
+    "tools/unity/framework/packages/com.grea.editor/Editor/ProjectGenerator.cs": "f137e68f8cc7137c270a9949c5f7739120d5e63128c68b378be90a1cf8c90271",
+    "tools/unity/framework/packages/com.grea.editor/Editor/ProjectGenerator.cs.meta": "7c50d6760b4c46b5d2078d860b9074f8ce8fb82e90afbd1b3e559b0648a3753c",
+    "tools/unity/framework/packages/com.grea.editor/Editor.meta": "38943c3c5161388342c199581064f25d238bba925f6aac8664f4686a8394cbad",
+    "tools/unity/framework/packages/com.grea.editor/LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+    "tools/unity/framework/packages/com.grea.editor/LICENSE.md.meta": "39c76aaf297d5b7c9741b6442afeef6623af4c0832c52784967fc006438b8fbe",
+    "tools/unity/framework/packages/com.grea.editor/README.md": "b6c5ec824114a5f70a5e8556079f6c94ae75b66e51569c329fa2432d5e80dd2c",
+    "tools/unity/framework/packages/com.grea.editor/README.md.meta": "eddd85ad7ea19878c7c71dc7cee109119d77df4764fbc1d926435e3f7c2ad0f7",
+    "tools/unity/framework/packages/com.grea.editor/Tests/Editor/BindingTests.cs": "ed20e0c1df3a56157693347e4e6cf999612dc608701a1e99dbf4baf97be32a69",
+    "tools/unity/framework/packages/com.grea.editor/Tests/Editor/BindingTests.cs.meta": "1876fd110a014a8010bc4db76855053d8f3e9223eedcb6c575e7e1ed61cfc347",
+    "tools/unity/framework/packages/com.grea.editor/Tests/Editor/Grea.Editor.Tests.asmdef": "c9498e26f56a260631de60eee703cbcbeca1c1864dd5c6ca3d9a684d00a48957",
+    "tools/unity/framework/packages/com.grea.editor/Tests/Editor/Grea.Editor.Tests.asmdef.meta": "dd36a6fe379c2fb3c9488b392d5ff2806ce9c2a3191bd830ae976aa5be59eb21",
+    "tools/unity/framework/packages/com.grea.editor/Tests/Editor.meta": "c37c4d86594a2d820331f3ce78080563aad5ff6b349940eafe37108bb1d2a6d3",
+    "tools/unity/framework/packages/com.grea.editor/Tests.meta": "e1939122a3cb8f595d2cfc539a73c400b85c17a6e6f24aa95964e2be403eff15",
+    "tools/unity/framework/packages/com.grea.editor/package.json": "5d05afc3467291494f818045f53a5404f6400685b9d3445e799be2251113d912",
+    "tools/unity/framework/packages/com.grea.editor/package.json.meta": "88b6eda01113ec229496503e419bde29d62e0438b604dd35653b2886bb16f6a0",
+    "tools/unity/framework/packages/com.grea.foundation/LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+    "tools/unity/framework/packages/com.grea.foundation/LICENSE.md.meta": "0f5eadf1b560e948483800bf47edae52fcfe256619ed4d21e5329647a06f2bef",
+    "tools/unity/framework/packages/com.grea.foundation/README.md": "c5f3f9f194a38b7bb69ef4f5bd8ed0c21fb24183d8457b07946be20d0d73b995",
+    "tools/unity/framework/packages/com.grea.foundation/README.md.meta": "55809760d5545191ae3633a443ca88976d62dce6380767ab458a903c92018641",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/AssetCatalog.cs": "69044182c27a24558e68d6bb0203b8a84a04f8c3101ef07bf12c9e88e9766840",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/AssetCatalog.cs.meta": "f5f1b6d82af86460d1fd9c42389d8d326e86486187974287836e6fa8d26b8831",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/AudioPlayer.cs": "5e5a6e10d3737dd8167132a17dcace7157ae0834b57e6d209bb99d5fa5b8bf78",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/AudioPlayer.cs.meta": "a65ae7904cf821868e6d983f5b55ac026dafa304825921b80ab05b6b6ec06a7d",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/BootstrapConfig.cs": "e711ff91b8b856fd007be8a6b8076d2e88e7c4a6623239138882997763691368",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/BootstrapConfig.cs.meta": "da5fbe88e4f79a79befa97b4f804c5c4d3d58a486b65c111790f4813166aed5a",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/DiagnosticBuffer.cs": "82a1087092d80513e438307a9ef739592a8a3ff7e16b2fa8fd76dd26948e7903",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/DiagnosticBuffer.cs.meta": "94cce8bc405cfe325a042ebb0b50fa6f8d50dec6e991ccde731145b6f5862b74",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/Grea.Foundation.Contracts.asmdef": "06c03101f53f4bd63a3fd20c0b9dc465beae5c646064874319aac4a8ba1dce00",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/Grea.Foundation.Contracts.asmdef.meta": "42056bf0976d9d93e66bf1382f1d2311474c17085d1b1dd7b30618794fd95730",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/LifetimeScope.cs": "e5966d2f2be814b0e25ee01fbc6e44306b8502a3f7889e3a67d224bd9ca29d4d",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/LifetimeScope.cs.meta": "4ff9522c319a231ecdc2d2fd3b3c0815ecddbec1f9de8d8426a61af4cd0bb9c8",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/ServiceScope.cs": "aeba81846a9253cc4004b9d9f61040b540324e6db243883c63720f2ec21c0456",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts/ServiceScope.cs.meta": "230123bcd3a97fe9cfacd316b560e914be2e9d748eef5c8b8ffe0db3c0945f03",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Contracts.meta": "380d80618ad2a3b3106b5f4793e039bd1bb9d5f5ffbe74b8d2dd0dd4fb6a55ae",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/FileSaveStore.cs": "1d0e09ab59c984e1f24332f9b77a471ac5653fb4f120a060897d4521db20e8ad",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/FileSaveStore.cs.meta": "6a6db4f3c64f5a5fd548e3bd18e81aeadb45d6b3d66a30acc92b79e99b99a844",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Grea.Foundation.Runtime.asmdef": "d9c41c4d57a02b0472d3253ff0591959a61fecad6537cb6f6e7ec4d98298fac7",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/Grea.Foundation.Runtime.asmdef.meta": "4ea95ddddd60d9abe31cbe18b544fb38287b9b2715058806c34449924a68c57f",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/IBindingCheck.cs": "d137a7691f8147b3dc984b29bd3fe88783f747a715a411e807b63af9bf4b39a2",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime/IBindingCheck.cs.meta": "1b3ba4b5c6106a792a27d89a75f947ff0aedaf78ff614206583651c2997d983e",
+    "tools/unity/framework/packages/com.grea.foundation/Runtime.meta": "ca36adc7ac502a545568d8adf81bf2a07ec1b2ec3d8d809d96561a9e0a988fe6",
+    "tools/unity/framework/packages/com.grea.foundation/Tests/Editor/FoundationTests.cs": "3afa3fbcfbe36d98c11eb5b3e4dce7a894513efac6d599a9b02fc8a7ffaac003",
+    "tools/unity/framework/packages/com.grea.foundation/Tests/Editor/FoundationTests.cs.meta": "b17d6d54c18d653d68f2719f8dd8dd96eef814cde720d686b57a98b67a118cc7",
+    "tools/unity/framework/packages/com.grea.foundation/Tests/Editor/Grea.Foundation.Tests.asmdef": "31ef05763134af04ac0e07ab713594bef6a9e27c1073ee725077b2f5b90163eb",
+    "tools/unity/framework/packages/com.grea.foundation/Tests/Editor/Grea.Foundation.Tests.asmdef.meta": "704b99299591387916faa467c49c43721d26d40e6fcc8989463ffc73706b0abe",
+    "tools/unity/framework/packages/com.grea.foundation/Tests/Editor.meta": "6589395938066cfcd99922e786644bdafe86ed31165096f403bfa69281cb7ff0",
+    "tools/unity/framework/packages/com.grea.foundation/Tests.meta": "fd43fcc2f57318bdac9b13acf088cf07818b775c0c5948d466f543fd8385a900",
+    "tools/unity/framework/packages/com.grea.foundation/package.json": "fe7390ce29809f63e60d042e7b7dc7bebab70eafeb8a5d8f20eeffc380b5dafc",
+    "tools/unity/framework/packages/com.grea.foundation/package.json.meta": "a4b01b9dac386cc13da5d928ae5f319bdbb46b049f4b1bb3bbf145188f001d3e",
+    "tools/unity/framework/packages/com.grea.ui.ugui/LICENSE.md": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
+    "tools/unity/framework/packages/com.grea.ui.ugui/LICENSE.md.meta": "55ba1da8a70899e4d36a0a42f4478ba0f00176e4e278a64935b66885dbef4045",
+    "tools/unity/framework/packages/com.grea.ui.ugui/README.md": "ea5eb941db635c5a42d90eb9bf65ae6f496b365d9d648f8742718468d92c9647",
+    "tools/unity/framework/packages/com.grea.ui.ugui/README.md.meta": "d800919b67ff46dd9f8c3125d659bf4c458667e2ea927e1d7a2e5e6c79fe03c7",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/ButtonPressFeedback.cs": "801d6eef3e0b4a9af028119e9cdb89d61b08f292ebb8c84b96785cf460a40af2",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/ButtonPressFeedback.cs.meta": "15d0b7cc718a9d573d34ace58ec3b48f1f3299bb083c42d0c993291a7fde72b5",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/CommandButton.cs": "b0ecee6746760988fcccdeaece556097214928fa1cd2e076de977c80d8275ac4",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/CommandButton.cs.meta": "3473e344f82c626ac7063dc8a46121d283ae61f65f96c23b8df7a3b3b7e0d2b0",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/Grea.UI.UGUI.asmdef": "3ae14c17856ca0f990967808fdf4eeaa2efb5a3e6a49d41f242d458678285130",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/Grea.UI.UGUI.asmdef.meta": "17b39eff6985e4c98afc1611ecbdbf6d79abb2bf3e46faad7821a304bdf45613",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/ModalPanel.cs": "7f331979f50d48ef7fb7f2e6c78e9ec6ca3af0e2624e571845900f159937d8d8",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/ModalPanel.cs.meta": "1ac56b30313910e6bf72842f91347d1b86fcdb8c7e7349880989c5c1c9dca9c0",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/ScreenHost.cs": "67a599afe44a6224e6a1e256487ef61e424ffeaa6fa995f8cd55cc836c0bcd68",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/ScreenHost.cs.meta": "05f94ebe85fc24e690dc63356615e89e1259ca5c4438889adf91b1a8e3e738bb",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/UIHost.cs": "43f2bb30c9806758035a58c08167a2d09c7508d59e932e0ffc37ecbfc9b52dab",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime/UIHost.cs.meta": "605f3bda64dec1aa745d79c19b19636c37800ef14927fe7b6664d7f42fcd625c",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Runtime.meta": "7e62c92944fdd7092d5acc8cf680f16ae1e391b79fc44beb84b595913f49865a",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Editor/Grea.UI.EditorTests.asmdef": "d56f4a06b8cccdab00cd95e6bfdefc7f47227f061cf098ae6c9a7d380d530cad",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Editor/Grea.UI.EditorTests.asmdef.meta": "464d9626a3bc9e9ea52fcc2eb81b37b151178a837665fbba84786e5bdfdca331",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Editor/PlayReentryTests.cs": "2431b2f28253dd9264f8cade8cfba125343377d59363df989054c060ec799f71",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Editor/PlayReentryTests.cs.meta": "d673c5196c5b2718e80de96a34fcdd9a0e97721a704d1932f1e7c84a70583c92",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Editor.meta": "0bce0bce31e27c113c1cf691cc1a54e64dc6312a66c219055447ea7b7b0570eb",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Runtime/ButtonPressFeedbackTests.cs": "e8ad47cc0fd129dd94f20e0689cb6e84091194772cd9f43fe8f8d5fb3aa6b306",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Runtime/ButtonPressFeedbackTests.cs.meta": "4ee21a7e8766cbadba36dad897f33f420a3c273439ebbf208385f9717066f855",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Runtime/Grea.UI.Tests.asmdef": "36f23f61780efda811fafb37fc2d46d21266d07c48aa9603dce65124450fef57",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Runtime/Grea.UI.Tests.asmdef.meta": "bd3c3b0374574a809c0ee968683e11fedf2c7633f9bb9162da7437ac9741917e",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Runtime/UiTests.cs": "b509c8371e1d93a24787b7f406a68b1e00b4e0f2ebf5b4b2bfaca60f93c90714",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Runtime/UiTests.cs.meta": "816ffcb69e09dcbdd88845a9fd57f8227e9ff0c1fb69196ab06f5aabc8efbcc7",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests/Runtime.meta": "097018399ed25713841c02ee420d14d51265ab0cf059071cea2f04cfc3550ac6",
+    "tools/unity/framework/packages/com.grea.ui.ugui/Tests.meta": "c48a4cf4889ce7c835ce8601cd0ec256050c001384232706d8cf8b4c26c4b778",
+    "tools/unity/framework/packages/com.grea.ui.ugui/package.json": "ce32daa24ed9cacbb9e8bc0e6739c88ab8f2f91369b1c2a339927245e3aacafb",
+    "tools/unity/framework/packages/com.grea.ui.ugui/package.json.meta": "065df7c57a40ea177462621d5ebc8ab5924c75e8103ced54f6a92093ff2708d3",
+    "tools/unity/framework/test-packages-lock.json": "2b63db8cb4e6956693f533ac44e2a8a0c25a309d680e7f612244f12111f30421",
+    "tools/unity/templates/counter-composition/Assets/Game/Bootstrap/CounterComposition.cs": "c80e80b762a5ca84399a839dc2053c0a95d58c1633bf85c16e7384814fa75c48",
+    "tools/unity/templates/counter-composition/Assets/Game/Bootstrap/CounterComposition.cs.meta": "9ef32c0d0e45ff48792e592e9a3b68b1af9fa23df0463124150ed473d13c325c",
+    "tools/unity/templates/counter-composition/Assets/Game/Bootstrap/Game.Bootstrap.asmdef": "40368018e3373e516d08fbe928baf96aa07115bbb8d18daab26e1d50e68cbe8f",
+    "tools/unity/templates/counter-composition/Assets/Game/Bootstrap/Game.Bootstrap.asmdef.meta": "8096c2ce08ab7cc94dc639083a60c7c34d00617ff79b409f28d6d399627c79c8",
+    "tools/unity/templates/counter-composition/Assets/Game/Bootstrap.meta": "3396bbd425f82758df9e16551ab48336c95af00a99f873344bb9d3959feb70dc",
+    "tools/unity/templates/counter-composition/Assets/Game/Domain/CounterState.cs": "bf2a4a8c3cfbf889015fae4da68fee658e2f13edd04aa1558d846e5eb8f244e1",
+    "tools/unity/templates/counter-composition/Assets/Game/Domain/CounterState.cs.meta": "1c1b6ae4b9acdd3945cdfe3e772a0326c2e3748aefd66c63ceef473c1a6250f8",
+    "tools/unity/templates/counter-composition/Assets/Game/Domain/Game.Domain.asmdef": "0208d0061862ae51b8307cc300f80b2fb42520b2a43a19fbfbc4a2ddd26bcfad",
+    "tools/unity/templates/counter-composition/Assets/Game/Domain/Game.Domain.asmdef.meta": "01df3565d62c11efd445e14ba38a9b6cc11a900d45e454bf3b5fbb2856f5cd25",
+    "tools/unity/templates/counter-composition/Assets/Game/Domain.meta": "b2ca628140b2530d701d20c5bf6f51262b082693856f9fb63fe0fe6def80f8ab",
+    "tools/unity/templates/counter-composition/Assets/Game/Gameplay/CounterSession.cs": "4f29b115f29112147f1f1d4fe67d8d5d0e3273069a3baf4357c1d2549e195703",
+    "tools/unity/templates/counter-composition/Assets/Game/Gameplay/CounterSession.cs.meta": "b83114442981f4aa811bdf342caa4768aedb6c9666d12d953c61d3fab2126db2",
+    "tools/unity/templates/counter-composition/Assets/Game/Gameplay/Game.Gameplay.asmdef": "aaf2c863c6e45993d225168010bb0731d8a891b302ac00f99501c07e98e73af8",
+    "tools/unity/templates/counter-composition/Assets/Game/Gameplay/Game.Gameplay.asmdef.meta": "7d79316cc2e789b47ecf8c01db792e3503cd5ad2f93cfd170a609c9b2209cc64",
+    "tools/unity/templates/counter-composition/Assets/Game/Gameplay.meta": "9430e7a333ee8f4318b2d757e76d26d03dce24c72c864bbe3237d707568da8af",
+    "tools/unity/templates/counter-composition/Assets/Game/Presentation/CounterPresenter.cs": "1260fb8ce058412596c82a2876875115e11299da7e995b1a6637b5356d0a33e1",
+    "tools/unity/templates/counter-composition/Assets/Game/Presentation/CounterPresenter.cs.meta": "19c0bd4845152d46ca5dfb6430e2eb5f2221d6c6386d5ce1f09cb394388107a3",
+    "tools/unity/templates/counter-composition/Assets/Game/Presentation/Game.Presentation.asmdef": "1c21aafae54d53a845d0221c9d77b0ff831d79b80603e4d7af506c6958a0638f",
+    "tools/unity/templates/counter-composition/Assets/Game/Presentation/Game.Presentation.asmdef.meta": "04d7695aaaf289a6dc62b4a01b37e786675f61ce0e1547ccc6f90988a90b80aa",
+    "tools/unity/templates/counter-composition/Assets/Game/Presentation.meta": "9307da4729778e2fdac52652e5f2e1e42134b62d25edeb982b99a767388f5833",
+    "tools/unity/templates/counter-composition/Assets/Game/Services/CounterPersistence.cs": "b9fa36a7179d598c2502c7041b20c8e952cb89d72e39e2a896d24c86930bf94f",
+    "tools/unity/templates/counter-composition/Assets/Game/Services/CounterPersistence.cs.meta": "14f0d934f22db9e57da76ae8d5b5c7cac1b4c530deb240e770885d4419a24264",
+    "tools/unity/templates/counter-composition/Assets/Game/Services/Game.Services.asmdef": "d7f1dc983c701cf69d50e3c1b4d6af492918b4313210641384150452af7df36e",
+    "tools/unity/templates/counter-composition/Assets/Game/Services/Game.Services.asmdef.meta": "2b88be935f13ccf06ae72d29d1dafd9cb200b6e7a33eba76e97561ca317e54ad",
+    "tools/unity/templates/counter-composition/Assets/Game/Services.meta": "67416577bc12180c8e4426660d0305f882aabad15914180dc601651176646971",
+    "tools/unity/templates/counter-composition/Assets/Game.meta": "deeaa3777a1baa3ffebd5a0a966e8854fb69ea5ece4a44eab7d825e39b4acc4d",
+    "tools/unity/templates/counter-composition/Assets/Tests/Editor/CompositionTests.cs": "06cd6eeb138600826cfbddffcdd7c1eb80dd52a6bf45556fd5b9e0cc352c63f3",
+    "tools/unity/templates/counter-composition/Assets/Tests/Editor/CompositionTests.cs.meta": "0b6a894d7b683ed6419f835ee4d55e0a749a7f58d9fcaf403e7b6b742edb7552",
+    "tools/unity/templates/counter-composition/Assets/Tests/Editor/Game.Tests.asmdef": "3a115359b5abd50209a197c99d1339adc77b6769646192f669d31b3d95114786",
+    "tools/unity/templates/counter-composition/Assets/Tests/Editor/Game.Tests.asmdef.meta": "2f9124d12955b3a37dc4fb390bfdd349e4259250f9501a72bfbc90bdb881a7d5",
+    "tools/unity/templates/counter-composition/Assets/Tests/Editor.meta": "e30b89a98fa2638662b0e6fcdf57c10f9cf776e8dbde879a9c610fc31eeb753f",
+    "tools/unity/templates/counter-composition/Assets/Tests.meta": "913acab75bda70e6084c22b0b9666c66ec75ad08fd4bf012146aff563ecee8e9",
+    "tools/unity/templates/counter-composition/README.md": "e11a9a2399ae68db520419f7b1d25626c8e819b2eeb6678f63e380d955dcd5bc",
+    "tools/unity/templates/framework-samples/README.md": "e948f2ce71eb9c0f0a794618edd93389d79d0da852236488fd51c30362b6f194",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Bootstrap/Puzzle.Bootstrap.asmdef": "e3c1d7768b141517abddc72c4caed759bf26d31fe2438801462c16b5addb326c",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Bootstrap/Puzzle.Bootstrap.asmdef.meta": "f807a7a9aa6c66ddb7368de55b4da3fc422fd59061dc69f789b88db40b822182",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Bootstrap/SampleBootstrap.cs": "aeff1f503c0a0606f67ad1dc9bb426bd9f783cfafbf0512fd4c28e994bbbec68",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Bootstrap/SampleBootstrap.cs.meta": "7681a0d4a6f5d5ed9d32499b26509256ac04bc394ac6aa6452d6dfc6984d1dea",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Bootstrap.meta": "d73997d9b2c3e25699be9101369480efdb70e9a419d0605f816377fe36c580d0",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Domain/Board.cs": "87fd955d0d3942a7fcebb7c2421a2f49e4e74fc84031cb846ecee5d1e960d1ce",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Domain/Board.cs.meta": "23c817bc7cc7ba2acc3322703aea05c2abfabd13764e532a83464b230f813b84",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Domain/Puzzle.Domain.asmdef": "39ba811e1946f71154b6a189c22d55508a09eeb58e4e4786ee4b4aa4a16ab16e",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Domain/Puzzle.Domain.asmdef.meta": "6a7bd1278c6b82166574cc04bc040603f756f3896b27a14c2f31eb0f015f1f57",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Domain.meta": "89ea2378e49ccd10efe04de517ca76279c554e6bd2b101da6efd7ee9499911f1",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Editor/Puzzle.Editor.asmdef": "75c7b163398b3f49223f82830d0f0db9cd58a4a4e20213671a1a85c95bccfdda",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Editor/Puzzle.Editor.asmdef.meta": "6464541ac682e31ddb28a0f7a64d26d827005e2207ebbd8281da49c1091ac81e",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Editor/SampleBuilder.cs": "7df9c323258bc3f1eb38a5d95be74273c20e30f99f5781e9641cf74141703670",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Editor/SampleBuilder.cs.meta": "e3387da5afb8825e8bde9de2d8e15c8ee872688229acf960ac1b7955e5b60e59",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Editor.meta": "c283e0386981e80ebd09bdc611d62ba53a7920a3934d8fccdcb9d623966a4cff",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Gameplay/Puzzle.Gameplay.asmdef": "61c15e9672f09451ccd7e51407fec1fb560b088c79947c2d23c0ca0cc0e81b2c",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Gameplay/Puzzle.Gameplay.asmdef.meta": "49d275b07bb850e613948234999a8ab4a1a5cca1b80f8aca20503d18e17b2317",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Gameplay/PuzzleSession.cs": "21704fafcd20c739b3ac29af6dcd7e7771ecb99f5eb9b9560c5542e25469e1b0",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Gameplay/PuzzleSession.cs.meta": "9ae57696bf7d8a46c872cc87fd004e3eec134a875e6c2a8d4daf18c4e536f4af",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Gameplay.meta": "e48f29dba3882b718d101f289898172958854166f166eda3310bd87bc8fc6770",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Presentation/Puzzle.Presentation.asmdef": "8e96646199a5127ba5c9d7200ee137200e747daa4ce0b3677d072eee09daf313",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Presentation/Puzzle.Presentation.asmdef.meta": "6afdadbcc4753d0ec23d0e6bec89b532ce389ffcb69303c93666198166882fff",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Presentation/PuzzleView.cs": "1944aa995c930755824ee9ef0d6c30420d5a301d0be6704af81d35473e7759a1",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Presentation/PuzzleView.cs.meta": "03239f918f84d2a9cec8a13b7797577dd70e60713f5d265d2f7742eb610fc0f5",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Presentation.meta": "3f5bb57d1ac755f72cbc5445be83a404a9b589547a156bec70c33d59e516dfab",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Services/Persistence.cs": "864534a9ac1dc853951d9ab1088337fea42b8c0fb926b36d82f17db6904dd38a",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Services/Persistence.cs.meta": "d9fc21ed5bbdc8bb1731b762400962a7f8e42a72ee0c05a1b83dc73cd2db2256",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Services/Puzzle.Services.asmdef": "bfe0b3094cd4855b65ea29a80cb1ac14b7309c0f08da3412e30526d48da1fc81",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Services/Puzzle.Services.asmdef.meta": "ec9ee333990e62b5dcccb11ae8c5f55881bbd4b17008b3591d14c4a6eee17105",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Services.meta": "f6f7839daf8349eae7423fcb73f8fb921b6ff967e89bf1843047525839f5ea64",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game.meta": "9d7242200522b399c498778084ede3c1648f9bb74eaa99f8bbed33ac62ff9d2b",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/Editor/Puzzle.Tests.asmdef": "a06f544fe10c3acde2e82bc28d1df1ae158e556e401b7b42b1571372733cd542",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/Editor/Puzzle.Tests.asmdef.meta": "4c9a415c0e4642070805e0d1669626eb3e5513cf6d1374786b691f52820c4824",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/Editor/SessionTests.cs": "5c9e8ac44cd46ed9d00d66aeb52c2e6f1319dfd93cf2d7e9eb2f2879efb45264",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/Editor/SessionTests.cs.meta": "49e3f51fb01223f8a53f60e689665ed918c9793dd15895d55b10f65f7d690102",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/Editor.meta": "e5c170b4c6d5d6ffe348970575a2d0db9fbe2b6822b5cbade08a811a219a0d72",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/PlayMode/Puzzle.PlayTests.asmdef": "8b2a38a91d75573d2897a60584dbed2315f1771e88c57326cb1bd83d55644d91",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/PlayMode/Puzzle.PlayTests.asmdef.meta": "481e442bba31455734eebca04848022e89f26e1325cd484ba7061af9efff1551",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/PlayMode/ViewTests.cs": "ece76e114667b27a0997764bec42709c279b071be80483818d6763811976e58a",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/PlayMode/ViewTests.cs.meta": "e1f56c86780f84a2c4b44a40d03199f793c125e1f0633734e97a2ef9ed9bdcc0",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/PlayMode.meta": "d3cd21c2d1c50ac8c056ecd4823b534e5ad5bfaa528587e3319d6b42d090a021",
+    "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests.meta": "127d194039fde8a07e4c2e844bb7be814fb5802c873333eaa039e9cfc930b54b",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Bootstrap/Numeric.Bootstrap.asmdef": "fb0359998ee2b6bcd701086c994c24df2134b25bed5182798884326a0cbc3f76",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Bootstrap/Numeric.Bootstrap.asmdef.meta": "b387389ace6dc42277961bac546d03d4b604448860ae071bc8fd288e703714ec",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Bootstrap/SampleBootstrap.cs": "5554927190d82e06b02ce252eeaaa2d9db2430b37736094fa10b9aaabf5ff522",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Bootstrap/SampleBootstrap.cs.meta": "79240ce4e920b0ab21fd3b151e24ac1d4f31e0a442fdc9a8b229996ec745a0af",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Bootstrap.meta": "a4a9f27db31f629c7aaa57f58f54591b6aac26272c7835a48f962a8a410fbeae",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Domain/Numeric.Domain.asmdef": "5328ba916dd71a91b1b4dbf5296316d0cd5f01ba9c66f19121e5038e1f188751",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Domain/Numeric.Domain.asmdef.meta": "9ede02df83454e2e4d26292fd7a7b8075bec86839ca07a8147d2a4f437386272",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Domain/Progress.cs": "0035c7111f9651124cde48a9ab48c78965acdeaa22e92433a1ad855ce52aa61a",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Domain/Progress.cs.meta": "0ca9be32fb15a766eb305670ac9c4bb685d8c463d90b5b9eec0e044cc2e4d4b4",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Domain.meta": "07a2ec73eb4eb10b698ec8e4a6ff3d0c7ff9f17354f988cc1e3079eeed5d848f",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Editor/Numeric.Editor.asmdef": "bb393dee7f7a31140d08ca1a3ad95ae999e01987c70ece81f74c9278bb749892",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Editor/Numeric.Editor.asmdef.meta": "5caf4a2961cbd05e2be81ed3ec8d3c6293160da47b5df757c0f876a19582416b",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Editor/SampleBuilder.cs": "f1af183dd3cc8f38f208bc6ad7a51252a34242e166e0ab35ff044b9f41e657ab",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Editor/SampleBuilder.cs.meta": "1666c3e874f9c707de4c8aa7f5601d4f3795b7b234365291664c9e832457caa2",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Editor.meta": "eea347096d93815193b88440cd30d7a671902ea7c06b9ef63db040ef06c725fc",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Gameplay/BattleSession.cs": "e46ff6986f898b4cbf4ed6c0e889f08c002558cb551a57a479c653594daf8a59",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Gameplay/BattleSession.cs.meta": "4b90784a2a1b3ee1c8d2a53d9f4665dbdf89d1617fd64af200e023944ae49cf6",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Gameplay/Numeric.Gameplay.asmdef": "1c19f6afdbf79f5129559e534be41c0b79ad44a206b2e3f070e9e2124e4e3ea8",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Gameplay/Numeric.Gameplay.asmdef.meta": "2260094540d874c6101f1c9f4180d14955597387d4e45324714ace38d9a1f66d",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Gameplay.meta": "5986f62ad9cd9a7af90853ee81d80f54c959ed0697c1247deeaf09445f97098e",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Presentation/BattleView.cs": "1bad09cea3b1803af4b720372ea59b46794aedaa3f71ab7e8aaea70036d22206",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Presentation/BattleView.cs.meta": "08cb88aa9de38c88af9ffab6346f6c17c82e7f846fe8027592ca735eb169c3dc",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Presentation/Numeric.Presentation.asmdef": "dbf38c119b87fafce14de3a2eabaa510ebb32480ddd5e7c02b9b37a58d27c175",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Presentation/Numeric.Presentation.asmdef.meta": "2a04b0f1b26b9f1b9e75e12a884182b25596fe8ac9bc682735a78f82bdc91c65",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Presentation.meta": "76303884767f1b04cc61b2711ada7465af017bb34f9cae1932ca8736f78ef3b8",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Services/Numeric.Services.asmdef": "87c4dc4f76b7c615e533a08754de175ad4172e195cc987fbea16ba6f7cca145f",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Services/Numeric.Services.asmdef.meta": "0c251285414f866667989263b4b8e80eb660fe336646024eb057fec2296d7d2a",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Services/Persistence.cs": "bc6488adeb041e4cdf34f50868eb07082f494a9ac90bb43dc3b58aadbe85a038",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Services/Persistence.cs.meta": "e2e89f9eef697a141623fb30baed661495019e30933a2146412dea8ababc6481",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Services.meta": "d621d9e1989755a1c114f3c84d58e068842f5f7dea2bb0b2534ae9c779d78152",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Game.meta": "8b44d44b08eff0c8d7346017aa9413029ac30af500035835c10f81bf12459ae9",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/Editor/Numeric.Tests.asmdef": "5aa444171a8a7c147daccf7ffd96c228369bda2127d487438a6894fefcbb6331",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/Editor/Numeric.Tests.asmdef.meta": "b936623c3c84fc43ada862945186f43de831da0e10ca15ed4aaa278d23c5c148",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/Editor/SessionTests.cs": "085e544d9a77ac9af58549a99e543918fbbded1815ed41cd0b967933c0853cea",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/Editor/SessionTests.cs.meta": "ce871a449116079d0b9b03b8a00080d871d3205a7de68922b2b30c2a9b49a4bd",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/Editor.meta": "6be90a4b2e797a41a2262410623923b7243b0e099007377f3c1984b169093164",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/PlayMode/Numeric.PlayTests.asmdef": "b1d8f1e44bedfab539b19b7872d57552007549f898a86853226868757ece817d",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/PlayMode/Numeric.PlayTests.asmdef.meta": "becf51c91b34583271f4a1eb0e8f58e62e6d247eb939eaa0b2c2b78e867a8681",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/PlayMode/ViewTests.cs": "230d8c88252c0b4bafe0256aabada18828e1767343c234d6ce2f09bf7b8a566c",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/PlayMode/ViewTests.cs.meta": "7a05489f9849a37517ad54f2c9115d0a8449b92e507d7e5a81a02e28a88d4230",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/PlayMode.meta": "2de71dc5d9799aa0d81bed19ae2c1aff52b83f25849fe433020f4b9a8bcf9897",
+    "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests.meta": "5bf912fddeb762504552b255219ffb7dd6c6b6e1f61f7d6b0d8a191223562722"
+  },
+  "packages": {
+    "com.grea.editor": {
+      "version": "0.3.0",
+      "treeSha256": "35f0f763150b4b928e78a0774cd72cfc8fa57037ec2ec31e14c4efc7489bd84c"
+    },
+    "com.grea.foundation": {
+      "version": "0.2.1",
+      "treeSha256": "d3ce2df0d5fecf2b09924cf2152aaabc531672999528be1ee32caa19652b68b9"
+    },
+    "com.grea.ui.ugui": {
+      "version": "0.3.0",
+      "treeSha256": "8f9adb12037d78dbb73c2daae62eb4eb1a44a81d10f32a25b01d7632daca18de"
+    }
+  },
+  "generatorVersion": "0.1.2",
+  "template": {
+    "id": "grea-minimal-2d",
+    "version": "0.1.0"
+  },
+  "editor": "6000.6.2f1",
+  "cli": "1.0.0-beta.11",
+  "platform": "macOS-arm64-Mono",
+  "officialPackages": {
+    "urp": "17.6.0",
+    "ugui": "2.6.0",
+    "tests": "1.8.0"
+  },
+  "python": {
+    "result": "pass",
+    "discovered": 209,
+    "skipped": 2,
+    "skipReasons": [
+      "real ffmpeg media integration opt-in",
+      "real NSIS fixture integration opt-in"
+    ],
+    "logSha256": "82ca6ba13bc89434d2ac931471ade61eb628f9a3c911385afe745a26c00d2f03"
+  },
+  "generatorEditMode": {
+    "result": "pass",
+    "passed": 39,
+    "failed": 0,
+    "skipped": 0,
+    "xmlSha256": "4a66122b8490797e8ad779e91f57afa04549d0c42ee264f70cf02f043a64cad2",
+    "testNames": [
+      "Grea.Tests.BindingTests.NoBindingComponentsIsValid",
+      "Grea.Tests.BindingTests.ReportsExactObjectComponentFieldWithoutChangingHierarchy",
+      "Grea.Tests.BindingTests.SafeAreaIntersectsNonzeroViewportAndScalesWithoutChangingUnits",
+      "Grea.Tests.BindingTests.SafeAreaUsesExplicitLayoutRootAndRejectsInvalidDimensions",
+      "Grea.Tests.FoundationTests.CatalogTypeMissingAndDestroyedAssetsFailWithoutLeaking",
+      "Grea.Tests.FoundationTests.CleanupContinuesAfterFailure",
+      "Grea.Tests.FoundationTests.CorruptSaveAndInterruptedWritePreserveOriginal",
+      "Grea.Tests.FoundationTests.DiagnosticsAreBoundedAndCopied",
+      "Grea.Tests.FoundationTests.DuplicateServiceRejected",
+      "Grea.Tests.FoundationTests.ExplicitRecoveryUnblocksWritesAndPreservesDamagedCopies",
+      "Grea.Tests.FoundationTests.FailedServiceCleansPartialAndSuccessfulServices",
+      "Grea.Tests.FoundationTests.LeaseDoubleReturnAndChildCleanupDoNotAccumulate",
+      "Grea.Tests.FoundationTests.LifetimeReleasesReverseAndInvalidatesBeforeCleanup",
+      "Grea.Tests.FoundationTests.SaveRejectsNamespaceAndPayloadErrors",
+      "Grea.Tests.FoundationTests.SaveReopenBackupAndQaIsolation",
+      "Grea.Tests.FoundationTests.ServicesStartOnceAndStopReverse",
+      "Grea.Tests.FoundationTests.StopWaitsForInitializerAndRejectsLateSuccess",
+      "Grea.Tests.FoundationTests.ValidPendingCommitsAndMissingBackupNeverDestroysCorruptMain",
+      "Grea.Generation.Tests.GeneratorTests.AuthoredPrefabFieldsSurviveSaveUnloadAndReopenWithoutGeneration",
+      "Grea.Generation.Tests.GeneratorTests.DuplicateEventSystemIsRejectedByTheSceneContract",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(1)",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(2)",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(3)",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(4)",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(5)",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(6)",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(7)",
+      "Grea.Generation.Tests.GeneratorTests.EveryCompletedAssetCheckpointResumesWithoutChangingIdentity(8)",
+      "Grea.Generation.Tests.GeneratorTests.InterruptedUncommittedAssetIsRetainedAndNotReplayed",
+      "Grea.Generation.Tests.GeneratorTests.LoggedErrorIsPersistedAndCannotBecomeRecoverySuccess",
+      "Grea.Generation.Tests.GeneratorTests.MissingSlotReportsAssetComponentFieldWithoutWriting(\"UIHost\",\"safeAreaRoot\")",
+      "Grea.Generation.Tests.GeneratorTests.MissingSlotReportsAssetComponentFieldWithoutWriting(\"ModalShell\",\"contentSlot\")",
+      "Grea.Generation.Tests.GeneratorTests.MissingSlotReportsAssetComponentFieldWithoutWriting(\"ModalShell\",\"title\")",
+      "Grea.Generation.Tests.GeneratorTests.ModifiedGeneratedAssetAndMissingManifestRefuseOverwrite",
+      "Grea.Generation.Tests.GeneratorTests.OldGeneratorAndMissingTypeRejectedBeforeAssetWrites",
+      "Grea.Generation.Tests.GeneratorTests.PrefabSlotsHaveExplicitNeutralBindingsAndASeparateVisual",
+      "Grea.Generation.Tests.GeneratorTests.RepeatedGenerationKeepsAssetBytesGuidsAndBindings",
+      "Grea.Generation.Tests.GeneratorTests.VariantOverridesSurviveAndBindingFailuresAreReadOnly",
+      "Grea.Tests.PlayReentryTests.TwoRealPlayEntriesUnbindOnExitWithoutDomainOrSceneReload"
+    ]
+  },
+  "generatedCounter": {
+    "result": "pass",
+    "nativeGeneration": {
+      "state": "generated",
+      "target": "UnityProject",
+      "manifest": "UnityProject/Tools/Generated/manifests/project.json",
+      "runDir": "Evidence/native",
+      "editorReceipt": "Evidence/native/editor-1/run.json",
+      "manifestSha256": "01e258168540c3b0295d2085c482fda571815c93ccb502dfb89d65fc6d77252c",
+      "editor": "compile_and_bindings_passed",
+      "playMode": "not_run",
+      "player": "not_run",
+      "limitations": [
+        "Creates only a new staged project or verifies its own unchanged generated project.",
+        "Adopt is read-only; refactor, template upgrades and automatic rollback/deletion are unsupported.",
+        "Editor compile/binding receipt is not PlayMode, Player, physical input or game parity acceptance.",
+        "Unknown or interrupted writes are preserved as recovery_required; never blindly replayed.",
+        "Local trusted filesystem and cooperative lock; not a sandbox for concurrent hostile filesystem writers."
+      ]
+    },
+    "repeatState": "unchanged",
+    "ownedBytesRetained": true,
+    "playMode": {
+      "result": "pass",
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "xmlSha256": "69a730489b1e070ea73891e12c6fe7de8bab331c7d887b751e12093e3a5891ba",
+      "testNames": [
+        "Grea.Generation.Tests.GeneratedPrefabTests.BootstrapLoadsEntryAndOwnsExactlyOneEventSystemOnReentry",
+        "Grea.Generation.Tests.GeneratedPrefabTests.GeneratedHostOpensClosesReopensAndCleansUp",
+        "Grea.Tests.ButtonPressFeedbackTests.AnotherPointerCannotStealOrReleaseThePress",
+        "Grea.Tests.ButtonPressFeedbackTests.CommandBusyCancellationDoesNotDuplicateTheBusinessRequest",
+        "Grea.Tests.ButtonPressFeedbackTests.DownAndReleaseRestoreAuthoredScale",
+        "Grea.Tests.ButtonPressFeedbackTests.ExitAndDragCancelUntilANewPress",
+        "Grea.Tests.ButtonPressFeedbackTests.ExternalAuthoredScaleChangeSurvivesCancellation",
+        "Grea.Tests.ButtonPressFeedbackTests.FeedbackUsesUnscaledTimeWhileGameplayIsPaused",
+        "Grea.Tests.ButtonPressFeedbackTests.FocusLossDisableAndDestroyRestoreWithoutDispatchingClicks",
+        "Grea.Tests.ButtonPressFeedbackTests.MissingReferencesAndInvalidNumbersAreObservable",
+        "Grea.Tests.ButtonPressFeedbackTests.ReconfigureRestoresOldVisualAndOwnsOnlyTheNewTarget",
+        "Grea.Tests.ButtonPressFeedbackTests.RightClickAndDisabledButtonNeverPress",
+        "Grea.Tests.ButtonPressFeedbackTests.SameFrameEdgesRestoreAndOnlyUnityButtonDispatches",
+        "Grea.Tests.UiTests.CommandFailureIsObservedAndButtonRecovers",
+        "Grea.Tests.UiTests.CommandPreservesNavigationFocusWithoutStealingAnotherSelection",
+        "Grea.Tests.UiTests.DisabledViewStopsRequestsAndAudioIsReleasedOnScopeExit",
+        "Grea.Tests.UiTests.HideShowRestoresBindingButRejectsLateCommandsAndDisposedOwner",
+        "Grea.Tests.UiTests.HostCanLeaveCommandOwnershipWithTheConsumer",
+        "Grea.Tests.UiTests.MissingBindingFailsBeforeListening",
+        "Grea.Tests.UiTests.ModalReopensAndRestoresFocusWithoutOldTasksOrListeners",
+        "Grea.Tests.UiTests.PanelInvalidBindingAndHostInvalidTargetAreExplicit",
+        "Grea.Tests.UiTests.ParentExitCancelsPendingCommandAndRejectsLateUpdate",
+        "Grea.Tests.UiTests.RebindAndRapidClickRunOnceAndLateCompletionCannotTouchNewBinding",
+        "Grea.Tests.UiTests.ScreenHostReplacesAndClosesActivePanel"
+      ]
+    }
+  },
+  "samples": {
+    "numeric-combat": {
+      "restoration": {
+        "sample": "numeric-combat",
+        "treeSha256": "bed46b0d86b42c49e284efe43b1838d296a512ccf263da76479bcffaf3d6310e",
+        "archiveSha256": "f458983d27d6bed4997e8ca3698bea826ada2f069606b8ee8e31f20c07e0fb29",
+        "files": 181,
+        "noLibrary": true,
+        "allBytesVerified": true
+      },
+      "editMode": {
+        "result": "pass",
+        "passed": 27,
+        "failed": 0,
+        "skipped": 0,
+        "xmlSha256": "9ee83ae5a7e3e43195a9a60d81e9cd77b494b377e5aa599751b6366bde47fa03",
+        "testNames": [
+          "Grea.Tests.BindingTests.NoBindingComponentsIsValid",
+          "Grea.Tests.BindingTests.ReportsExactObjectComponentFieldWithoutChangingHierarchy",
+          "Grea.Tests.BindingTests.SafeAreaIntersectsNonzeroViewportAndScalesWithoutChangingUnits",
+          "Grea.Tests.BindingTests.SafeAreaUsesExplicitLayoutRootAndRejectsInvalidDimensions",
+          "Grea.Tests.FoundationTests.CatalogTypeMissingAndDestroyedAssetsFailWithoutLeaking",
+          "Grea.Tests.FoundationTests.CleanupContinuesAfterFailure",
+          "Grea.Tests.FoundationTests.CorruptSaveAndInterruptedWritePreserveOriginal",
+          "Grea.Tests.FoundationTests.DiagnosticsAreBoundedAndCopied",
+          "Grea.Tests.FoundationTests.DuplicateServiceRejected",
+          "Grea.Tests.FoundationTests.ExplicitRecoveryUnblocksWritesAndPreservesDamagedCopies",
+          "Grea.Tests.FoundationTests.FailedServiceCleansPartialAndSuccessfulServices",
+          "Grea.Tests.FoundationTests.LeaseDoubleReturnAndChildCleanupDoNotAccumulate",
+          "Grea.Tests.FoundationTests.LifetimeReleasesReverseAndInvalidatesBeforeCleanup",
+          "Grea.Tests.FoundationTests.SaveRejectsNamespaceAndPayloadErrors",
+          "Grea.Tests.FoundationTests.SaveReopenBackupAndQaIsolation",
+          "Grea.Tests.FoundationTests.ServicesStartOnceAndStopReverse",
+          "Grea.Tests.FoundationTests.StopWaitsForInitializerAndRejectsLateSuccess",
+          "Grea.Tests.FoundationTests.ValidPendingCommitsAndMissingBackupNeverDestroysCorruptMain",
+          "Grea.Tests.PlayReentryTests.TwoRealPlayEntriesUnbindOnExitWithoutDomainOrSceneReload",
+          "Numeric.Tests.SessionTests.IndependentFileStoreReopenUsesOnlyQaNamespace",
+          "Numeric.Tests.SessionTests.InvalidPayloadIsObservableAndPreserved(\"future:2|0|1|0\")",
+          "Numeric.Tests.SessionTests.InvalidPayloadIsObservableAndPreserved(\"malformed\")",
+          "Numeric.Tests.SessionTests.InvalidPayloadIsObservableAndPreserved(\"numeric:1|bad|1|0\")",
+          "Numeric.Tests.SessionTests.PauseCancelAndReentryDoNotSettleIncompleteBattle",
+          "Numeric.Tests.SessionTests.SettlementFailurePreservesLastDamageAndDoesNotDuplicateReward",
+          "Numeric.Tests.SessionTests.UpgradeSaveFailureDoesNotCommitAndCanRetry",
+          "Numeric.Tests.SessionTests.VictoryAwardsOnceAndReopenRetainsProgress"
+        ]
+      },
+      "playMode": {
+        "result": "pass",
+        "passed": 23,
+        "failed": 0,
+        "skipped": 0,
+        "xmlSha256": "3f574354b203086f694d0ed7b9cf10ff97926cb556341bfe4976191b5e0facf3",
+        "testNames": [
+          "Grea.Tests.ButtonPressFeedbackTests.AnotherPointerCannotStealOrReleaseThePress",
+          "Grea.Tests.ButtonPressFeedbackTests.CommandBusyCancellationDoesNotDuplicateTheBusinessRequest",
+          "Grea.Tests.ButtonPressFeedbackTests.DownAndReleaseRestoreAuthoredScale",
+          "Grea.Tests.ButtonPressFeedbackTests.ExitAndDragCancelUntilANewPress",
+          "Grea.Tests.ButtonPressFeedbackTests.ExternalAuthoredScaleChangeSurvivesCancellation",
+          "Grea.Tests.ButtonPressFeedbackTests.FeedbackUsesUnscaledTimeWhileGameplayIsPaused",
+          "Grea.Tests.ButtonPressFeedbackTests.FocusLossDisableAndDestroyRestoreWithoutDispatchingClicks",
+          "Grea.Tests.ButtonPressFeedbackTests.MissingReferencesAndInvalidNumbersAreObservable",
+          "Grea.Tests.ButtonPressFeedbackTests.ReconfigureRestoresOldVisualAndOwnsOnlyTheNewTarget",
+          "Grea.Tests.ButtonPressFeedbackTests.RightClickAndDisabledButtonNeverPress",
+          "Grea.Tests.ButtonPressFeedbackTests.SameFrameEdgesRestoreAndOnlyUnityButtonDispatches",
+          "Grea.Tests.UiTests.CommandFailureIsObservedAndButtonRecovers",
+          "Grea.Tests.UiTests.CommandPreservesNavigationFocusWithoutStealingAnotherSelection",
+          "Grea.Tests.UiTests.DisabledViewStopsRequestsAndAudioIsReleasedOnScopeExit",
+          "Grea.Tests.UiTests.HideShowRestoresBindingButRejectsLateCommandsAndDisposedOwner",
+          "Grea.Tests.UiTests.HostCanLeaveCommandOwnershipWithTheConsumer",
+          "Grea.Tests.UiTests.MissingBindingFailsBeforeListening",
+          "Grea.Tests.UiTests.ModalReopensAndRestoresFocusWithoutOldTasksOrListeners",
+          "Grea.Tests.UiTests.PanelInvalidBindingAndHostInvalidTargetAreExplicit",
+          "Grea.Tests.UiTests.ParentExitCancelsPendingCommandAndRejectsLateUpdate",
+          "Grea.Tests.UiTests.RebindAndRapidClickRunOnceAndLateCompletionCannotTouchNewBinding",
+          "Grea.Tests.UiTests.ScreenHostReplacesAndClosesActivePanel",
+          "Numeric.PlayTests.ViewTests.SharedPrefabsDispatchOnceAndSurviveCancellationFailureAndReentry"
+        ]
+      },
+      "sourcePreservation": {
+        "sample": "numeric-combat",
+        "sourceAssetsSha256": "9a59a193f8b5d7926084408a58327c23e5f065d5bb8ca2750482039290b45020",
+        "sourceAssetsUnchanged": true,
+        "workMayContainUnityBuildCaches": true,
+        "sourceFiles": 66
+      },
+      "playerBuild": {
+        "sample": "numeric-combat",
+        "version": "0.1.0",
+        "buildId": "621e566b00c942cfb1f46a6ee436fb87",
+        "editor": "6000.6.2f1",
+        "result": "Succeeded",
+        "backend": "Mono",
+        "architecture": "arm64"
+      },
+      "playerPayload": {
+        "result": "pass",
+        "treeSha256": "d8be4b5a75fe9f84e4b24bb3509b2eb9d9916166161dcfca393b4e3461f3a912",
+        "fileCount": 114,
+        "architecture": "Mach-O 64-bit executable arm64",
+        "testOrEditorOrSourceEngineAssemblies": []
+      },
+      "osKeyboard": {
+        "result": "pass",
+        "driver": "cua_repl native key events; no game IPC or onClick injection",
+        "launch": "LaunchServices with explicit QA args; one matching process",
+        "observed": [
+          "PENDING True",
+          "Reward claimed once",
+          "REJECTED: no pending reward",
+          "Cancelled battle: no reward",
+          "SAVE ERROR:",
+          "Upgrade saved"
+        ],
+        "visual": "Observed via native app screenshots at the default 540x900 viewport",
+        "logs": [
+          {
+            "name": "numeric-player-verified-01.log",
+            "sha256": "8eac1f150ca590de60bac21d05c02f4001f95f5d696f103178edf8d7d9e316ec"
+          },
+          {
+            "name": "numeric-player-verified-02.log",
+            "sha256": "b061cc4e769def897def6da5580d01d5c861355bd9497c8f27b793bbc7ac224a"
+          },
+          {
+            "name": "numeric-player-verified-03.log",
+            "sha256": "846b86f67b562cc3a0a24dc604991700a32f53348cd08fcb6a490efafeece90b"
+          }
+        ]
+      },
+      "saveReopen": {
+        "result": "pass",
+        "namespace": "numeric-combat-qa",
+        "playerNamespaceCreated": false,
+        "finalSyntheticPayload": "numeric:1|10|2|1|False",
+        "sha256": "cef530acacabbb93ec83e7edd03b079fb8695ecf6006c3bd8c2ada9a722551f7"
+      }
+    },
+    "grid-puzzle": {
+      "restoration": {
+        "sample": "grid-puzzle",
+        "treeSha256": "2862e7c9a53603f6bd31fd10f271d7fd56ed868357b39c6faee3cf562b92bb0c",
+        "archiveSha256": "4c749d3d3c4a37c208f889adbf995dc02b1ae374d2410d1a83cc1e49ae51ef7e",
+        "files": 181,
+        "noLibrary": true,
+        "allBytesVerified": true
+      },
+      "editMode": {
+        "result": "pass",
+        "passed": 27,
+        "failed": 0,
+        "skipped": 0,
+        "xmlSha256": "f3fc4c1ab4664775e547f45ce458cb079309c1aa1fcf6569721b42638915854f",
+        "testNames": [
+          "Grea.Tests.BindingTests.NoBindingComponentsIsValid",
+          "Grea.Tests.BindingTests.ReportsExactObjectComponentFieldWithoutChangingHierarchy",
+          "Grea.Tests.BindingTests.SafeAreaIntersectsNonzeroViewportAndScalesWithoutChangingUnits",
+          "Grea.Tests.BindingTests.SafeAreaUsesExplicitLayoutRootAndRejectsInvalidDimensions",
+          "Grea.Tests.FoundationTests.CatalogTypeMissingAndDestroyedAssetsFailWithoutLeaking",
+          "Grea.Tests.FoundationTests.CleanupContinuesAfterFailure",
+          "Grea.Tests.FoundationTests.CorruptSaveAndInterruptedWritePreserveOriginal",
+          "Grea.Tests.FoundationTests.DiagnosticsAreBoundedAndCopied",
+          "Grea.Tests.FoundationTests.DuplicateServiceRejected",
+          "Grea.Tests.FoundationTests.ExplicitRecoveryUnblocksWritesAndPreservesDamagedCopies",
+          "Grea.Tests.FoundationTests.FailedServiceCleansPartialAndSuccessfulServices",
+          "Grea.Tests.FoundationTests.LeaseDoubleReturnAndChildCleanupDoNotAccumulate",
+          "Grea.Tests.FoundationTests.LifetimeReleasesReverseAndInvalidatesBeforeCleanup",
+          "Grea.Tests.FoundationTests.SaveRejectsNamespaceAndPayloadErrors",
+          "Grea.Tests.FoundationTests.SaveReopenBackupAndQaIsolation",
+          "Grea.Tests.FoundationTests.ServicesStartOnceAndStopReverse",
+          "Grea.Tests.FoundationTests.StopWaitsForInitializerAndRejectsLateSuccess",
+          "Grea.Tests.FoundationTests.ValidPendingCommitsAndMissingBackupNeverDestroysCorruptMain",
+          "Grea.Tests.PlayReentryTests.TwoRealPlayEntriesUnbindOnExitWithoutDomainOrSceneReload",
+          "Puzzle.Tests.SessionTests.DomainRejectsInvalidPermutationAndDoesNotExposeMutableCells",
+          "Puzzle.Tests.SessionTests.FailedMoveOrResetPreservesBoardAndCanRetry",
+          "Puzzle.Tests.SessionTests.IllegalMoveAndCancelledSelectionNeverWrite",
+          "Puzzle.Tests.SessionTests.IndependentFileStoreReopenUsesOnlyQaNamespace",
+          "Puzzle.Tests.SessionTests.InvalidPayloadIsObservableAndPreserved(\"future:2|0|1|0\")",
+          "Puzzle.Tests.SessionTests.InvalidPayloadIsObservableAndPreserved(\"malformed\")",
+          "Puzzle.Tests.SessionTests.InvalidPayloadIsObservableAndPreserved(\"puzzle:1|bad|1|0\")",
+          "Puzzle.Tests.SessionTests.LegalMovesSolveOnceAndReopenRetainsBoard"
+        ]
+      },
+      "playMode": {
+        "result": "pass",
+        "passed": 23,
+        "failed": 0,
+        "skipped": 0,
+        "xmlSha256": "b5af5bed2648675d761371635c33d445c2f9f46cee21a1ff3e17dd9732f86524",
+        "testNames": [
+          "Grea.Tests.ButtonPressFeedbackTests.AnotherPointerCannotStealOrReleaseThePress",
+          "Grea.Tests.ButtonPressFeedbackTests.CommandBusyCancellationDoesNotDuplicateTheBusinessRequest",
+          "Grea.Tests.ButtonPressFeedbackTests.DownAndReleaseRestoreAuthoredScale",
+          "Grea.Tests.ButtonPressFeedbackTests.ExitAndDragCancelUntilANewPress",
+          "Grea.Tests.ButtonPressFeedbackTests.ExternalAuthoredScaleChangeSurvivesCancellation",
+          "Grea.Tests.ButtonPressFeedbackTests.FeedbackUsesUnscaledTimeWhileGameplayIsPaused",
+          "Grea.Tests.ButtonPressFeedbackTests.FocusLossDisableAndDestroyRestoreWithoutDispatchingClicks",
+          "Grea.Tests.ButtonPressFeedbackTests.MissingReferencesAndInvalidNumbersAreObservable",
+          "Grea.Tests.ButtonPressFeedbackTests.ReconfigureRestoresOldVisualAndOwnsOnlyTheNewTarget",
+          "Grea.Tests.ButtonPressFeedbackTests.RightClickAndDisabledButtonNeverPress",
+          "Grea.Tests.ButtonPressFeedbackTests.SameFrameEdgesRestoreAndOnlyUnityButtonDispatches",
+          "Grea.Tests.UiTests.CommandFailureIsObservedAndButtonRecovers",
+          "Grea.Tests.UiTests.CommandPreservesNavigationFocusWithoutStealingAnotherSelection",
+          "Grea.Tests.UiTests.DisabledViewStopsRequestsAndAudioIsReleasedOnScopeExit",
+          "Grea.Tests.UiTests.HideShowRestoresBindingButRejectsLateCommandsAndDisposedOwner",
+          "Grea.Tests.UiTests.HostCanLeaveCommandOwnershipWithTheConsumer",
+          "Grea.Tests.UiTests.MissingBindingFailsBeforeListening",
+          "Grea.Tests.UiTests.ModalReopensAndRestoresFocusWithoutOldTasksOrListeners",
+          "Grea.Tests.UiTests.PanelInvalidBindingAndHostInvalidTargetAreExplicit",
+          "Grea.Tests.UiTests.ParentExitCancelsPendingCommandAndRejectsLateUpdate",
+          "Grea.Tests.UiTests.RebindAndRapidClickRunOnceAndLateCompletionCannotTouchNewBinding",
+          "Grea.Tests.UiTests.ScreenHostReplacesAndClosesActivePanel",
+          "Puzzle.PlayTests.ViewTests.SharedPrefabsDispatchOnceAndSurviveCancellationFailureAndReentry"
+        ]
+      },
+      "sourcePreservation": {
+        "sample": "grid-puzzle",
+        "sourceAssetsSha256": "1937ae0156f9d8d752d75a6d0e23eace6a12ce079677f2cdcb5f65d838c20a47",
+        "sourceAssetsUnchanged": true,
+        "workMayContainUnityBuildCaches": true,
+        "sourceFiles": 66
+      },
+      "playerBuild": {
+        "sample": "grid-puzzle",
+        "version": "0.1.0",
+        "buildId": "1468f89dc5304da0bb086012bdccabe4",
+        "editor": "6000.6.2f1",
+        "result": "Succeeded",
+        "backend": "Mono",
+        "architecture": "arm64"
+      },
+      "playerPayload": {
+        "result": "pass",
+        "treeSha256": "c34adbee26564cc49b2d4183489f666168e38c70f000165335fb4fda19f98483",
+        "fileCount": 114,
+        "architecture": "Mach-O 64-bit executable arm64",
+        "testOrEditorOrSourceEngineAssemblies": []
+      },
+      "osKeyboard": {
+        "result": "pass",
+        "driver": "cua_repl native key events; no game IPC or onClick injection",
+        "launch": "LaunchServices with explicit QA args; one matching process",
+        "observed": [
+          "REJECTED: select adjacent tile",
+          "SOLVED | MOVES 2 | WINS 1",
+          "Reset saved",
+          "SAVE ERROR:",
+          "Selection cancelled"
+        ],
+        "visual": "Observed via native app screenshots at the default 540x900 viewport",
+        "logs": [
+          {
+            "name": "puzzle-player-verified-01.log",
+            "sha256": "1c5b27b3620afc60b4d5f05cf26df2cc512cadfb350d4297b6f9d8d5c8f17869"
+          },
+          {
+            "name": "puzzle-player-verified-02.log",
+            "sha256": "e678698bb432ac39c6949d0db3d7c984994e489376acf6c5839d1934ec4f5b99"
+          },
+          {
+            "name": "puzzle-player-verified-03.log",
+            "sha256": "931f20272a2d290f888912422d02ab053331ebf92108557bd3b51ccaf0b984da"
+          }
+        ]
+      },
+      "saveReopen": {
+        "result": "pass",
+        "namespace": "grid-puzzle-qa",
+        "playerNamespaceCreated": false,
+        "finalSyntheticPayload": "puzzle:1|1,2,3,4,5,0,7,8,6|1|1",
+        "sha256": "de600833d2ed95fb78800b1719ea5f2406ba6cf904af2053ddfb26109e2304fa"
+      }
+    }
+  },
+  "failureEvidence": {
+    "finiteFeedback": "10 missing-implementation failures before implementation",
+    "keyboardFocus": "Native Player exposed selection loss; failing PlayMode assertion reproduced null selection, then all 22 shared PlayMode cases passed",
+    "modalNavigation": "Native Player and failing integration assertion selected background UPGRADE instead of modal action; explicit internal navigation verified in both final consumers",
+    "sourcePreservation": "Initial direct URP build rewrote three rendering cache assets; final wrapper builds only new working copies and verifies source bytes without restoring over them",
+    "boundary": "Pure layers, named project dependencies including a differently named consumer, cycles, test leakage and runtime Editor references reject before output",
+    "recipeIdentity": "Changing the boundary implementation hash must invalidate recipeId/planId"
+  },
+  "capabilityMatrix": {
+    "fiveLayerSource": "implemented_and_compiled",
+    "foundation": "reused_0.2.1",
+    "finitePressFeedback": "implemented_and_native_interface_tested",
+    "uiHostModalButtonRecipes": "editor_generated_reopened_and_two_consumers_verified",
+    "keyboardFocusAndModalNavigation": "native_tests_and_os_keyboard_verified",
+    "safeArea": "native_math_and_serialized_bindings_verified",
+    "independentRecovery": "no_Library_verified_with_existing_UPM_cache",
+    "macPlayers": "built_payload_checked_and_os_keyboard_save_reopen_verified",
+    "osMouseClickDrag": "not_run_reliably: CUA pointer events did not dispatch in Unity; no hardware mouse claim",
+    "osWindowResize": "pass: two own final macOS Players zoom/restore plus three actual Canvas viewport regression sizes",
+    "inputSystemDeviceRemoval": "not_run: baseline uses StandaloneInputModule",
+    "windowsMobileIl2cpp": "not_run",
+    "complexNavigationListsToastLoadingBattleFramework": "candidate_not_implemented"
+  },
+  "skillValidation": {
+    "scope": "Narrow existing reference correction based on the same two consumers; no new router or runtime IDs",
+    "quickValidate": "pass using existing system Python/PyYAML",
+    "greaSkillChecker": "pass",
+    "workspaceSync": "pass",
+    "independentAgentEvaluation": "not_run: serial/no-subagent task constraint"
+  },
+  "limits": [
+    "No original game project, save or Editor was modified.",
+    "No merge, push, release or global plugin installation.",
+    "Native interface events, OS keyboard and OS mouse are separate layers; OS mouse/drag remains unverified.",
+    "Default and zoomed macOS viewports verified; hardware mouse/drag and input-device removal remain unverified.",
+    "No offline/clean-machine, Windows, mobile, IL2CPP, multiwriter, real power-loss or performance benchmark claim.",
+    "These are own synthetic consumers, not original-game parity or a production battle/economy system."
+  ],
+  "privateEvidence": ".private/framework-extraction-20261016/run-20261016T052634Z-226f0c45",
+  "publicAudit": {
+    "result": "pass",
+    "scope": "All public working bytes staged in an alternate Git index; real index and branch refs preserved",
+    "files": 596,
+    "patternGateOnly": true,
+    "followUp": "pass: alternate index includes all current public working bytes; real staging index preserved"
+  },
+  "baselineValidationSourceTreeSha256": "0082da812e42c6a6a524ce2a5dacc4a5a328a850f48d507598b7d9ebdc2322b9",
+  "resizeFollowUp": {
+    "status": "verified_with_limits",
+    "priorSnapshotSha256": "0082da812e42c6a6a524ce2a5dacc4a5a328a850f48d507598b7d9ebdc2322b9",
+    "changedSources": {
+      "tools/unity/templates/framework-samples/grid-puzzle/Assets/Game/Editor/SampleBuilder.cs": {
+        "before": "c1b458028106ac827f009281f4774d93ebd66c27593ed3878946ddea85f5ed89",
+        "after": "7df9c323258bc3f1eb38a5d95be74273c20e30f99f5781e9641cf74141703670"
+      },
+      "tools/unity/templates/framework-samples/grid-puzzle/Assets/Tests/PlayMode/ViewTests.cs": {
+        "before": "7e3718f2756b78b2bfc952fd83da251f54b056dcfd2ddd2e80691284445a06f0",
+        "after": "ece76e114667b27a0997764bec42709c279b071be80483818d6763811976e58a"
+      },
+      "tools/unity/templates/framework-samples/numeric-combat/Assets/Game/Editor/SampleBuilder.cs": {
+        "before": "44b8aef24e4df294625f252c620705803d6e4e51f48ea80ac39ef46252749580",
+        "after": "f1af183dd3cc8f38f208bc6ad7a51252a34242e166e0ab35ff044b9f41e657ab"
+      },
+      "tools/unity/templates/framework-samples/numeric-combat/Assets/Tests/PlayMode/ViewTests.cs": {
+        "before": "d57b3268cda91c38febe32a0132620a07e4560355708d958224377682a1ece71",
+        "after": "230d8c88252c0b4bafe0256aabada18828e1767343c234d6ce2f09bf7b8a566c"
+      },
+      "tools/unity/templates/framework-samples/README.md": {
+        "before": "1a3c6d259684a0d57327541778ba6d6fcc9fa82d500c89967c7f69cd92afc968",
+        "after": "e948f2ce71eb9c0f0a794618edd93389d79d0da852236488fd51c30362b6f194"
+      }
+    },
+    "reason": "Native window zoom exposed overlapping portrait controls; fixed only the two own sample scaler recipes",
+    "regressionFailure": "Puzzle.PlayTests.ViewTests.ViewportChangesKeepEveryPageButtonVisibleAndSeparated: (3024, 1834): Tile 3 overlaps Tile 0",
+    "testedViewports": [
+      [
+        540,
+        900
+      ],
+      [
+        3024,
+        1834
+      ],
+      [
+        900,
+        540
+      ]
+    ],
+    "fix": "Sample CanvasScaler.ScreenMatchMode.Expand; shared UIHost policy remains consumer-owned",
+    "mouseClickDrag": "not_run_reliably: bounded CUA click/drag attempts did not dispatch game commands; no hardware mouse claim",
+    "windowResize": "pass: both own final Players zoomed to 3024x1834 and restored to 540x900; foreground screenshots inspected",
+    "samples": {
+      "grid-puzzle": {
+        "playMode": {
+          "result": "Passed",
+          "passed": 24,
+          "failed": 0,
+          "skipped": 0,
+          "xmlSha256": "b713e8acbbd8154b6d4cf2c8015797319e491ed7d6a0bb3beb99436e857ab0cf"
+        },
+        "playerBuild": {
+          "sample": "grid-puzzle",
+          "version": "0.1.0",
+          "buildId": "9df3e25be6a2401c8e067810f4b01d1a",
+          "editor": "6000.6.2f1",
+          "result": "Succeeded",
+          "backend": "Mono",
+          "architecture": "arm64"
+        },
+        "sourcePreservation": {
+          "sample": "grid-puzzle",
+          "sourceAssetsSha256": "e64755c3225a5cbc1b925c9071a02d7c9f931a0d23464b855624aa01e7edf3d8",
+          "sourceAssetsUnchanged": true,
+          "workMayContainUnityBuildCaches": true,
+          "sourceFiles": 66
+        },
+        "playerPayload": {
+          "files": 114,
+          "treeSha256": "4e48a12395fb11a4af93ff1e4f4916d478aab2a36022ffc88f98f255f62271ca",
+          "testOrEditorAssemblies": []
+        },
+        "osKeyboard": "not_repeated_full_route_after_layout_only_fix; previous snapshot OS route retained separately; current native PlayMode and foreground resized visual pass",
+        "paths": {
+          "project": "resize-green-puzzle",
+          "build_work": "resize-puzzle-build",
+          "player": "resize-puzzle-player/SlidingGrid.app",
+          "qa": "resize-puzzle-qa"
+        }
+      },
+      "numeric-combat": {
+        "playMode": {
+          "result": "Passed",
+          "passed": 24,
+          "failed": 0,
+          "skipped": 0,
+          "xmlSha256": "b1b5e839a4dc52a6738fa5a53ec5f7df302f1a32b7e2e28f9523b8ffdb4ecc43"
+        },
+        "playerBuild": {
+          "sample": "numeric-combat",
+          "version": "0.1.0",
+          "buildId": "3ccb1befbbd643aea414a18647d7f66a",
+          "editor": "6000.6.2f1",
+          "result": "Succeeded",
+          "backend": "Mono",
+          "architecture": "arm64"
+        },
+        "sourcePreservation": {
+          "sample": "numeric-combat",
+          "sourceAssetsSha256": "d9c9f9132af0c3966b9883bf1a5d3593c49179ba8b7b89cf787216dd321944eb",
+          "sourceAssetsUnchanged": true,
+          "workMayContainUnityBuildCaches": true,
+          "sourceFiles": 66
+        },
+        "playerPayload": {
+          "files": 114,
+          "treeSha256": "13f6b0d750a50eee688f062828cebf78bbba8ee67a7488b54eac246530350351",
+          "testOrEditorAssemblies": []
+        },
+        "osKeyboardAndReopen": {
+          "result": "pass",
+          "observed": [
+            "Battle started",
+            "Attack committed",
+            "Paused",
+            "Victory / PENDING True",
+            "reopen: Victory / PENDING True",
+            "Reward claimed once / COINS 15 / WINS 1",
+            "REJECTED: no pending reward",
+            "QUIT via keyboard"
+          ],
+          "logs": [
+            {
+              "name": "resize.log",
+              "sha256": "600cc2c971d4f5bb5f620f1211bcd3adb9cae984c181b0f6dbe8a71531a8b624"
+            },
+            {
+              "name": "reopen.log",
+              "sha256": "ef8ee30e4d2db3356f1c33477642afced841148114fe80e2a3b7d4db2035f3fb"
+            }
+          ],
+          "finalQaPayload": "numeric:1|15|1|1|False",
+          "saveSha256": "54c01a6fcf1c2317b7ad8004d369717224305b4ae09cdd09f662133673a08922"
+        },
+        "paths": {
+          "project": "resize-green-numeric",
+          "build_work": "resize-numeric-build",
+          "player": "resize-numeric-player/MicroBattle.app",
+          "qa": "resize-numeric-qa"
+        }
+      }
+    },
+    "python": {
+      "discovered": 209,
+      "passed": 207,
+      "skipped": 2,
+      "result": "pass",
+      "logSha256": "cc0247db27b940689a8e3c93ccec201bae5f376cc9315232f54567db410bee5b"
+    },
+    "privateEvidenceRoot": ".private/framework-extraction-20261016",
+    "pointerCalibration": {
+      "attempts": 1,
+      "hypothesis": "Two screenshot pixels per window coordinate",
+      "result": "not_verified: half-coordinate attempt did not dispatch a game action; no further retries",
+      "sample_state_events": 0,
+      "logSha256": "924a470e6ebff71d1ffad0ef6d2ebb19dd8fc0c2c2a5fe8ef8b6bd49413cb305",
+      "qaRoot": "retina-mouse-qa",
+      "previousAcceptedSaveUnchanged": true
+    },
+    "osMouseClickDrag": "not_run_reliably; original-coordinate and bounded half-coordinate calibration did not establish reliable game dispatch"
+  }
+}

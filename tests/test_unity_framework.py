@@ -5,16 +5,73 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES = ROOT / 'tools/unity/framework/packages'
 SAMPLE = ROOT / 'tools/unity/templates/counter-composition/Assets'
+CONSUMERS = tuple(ROOT / 'tools/unity/templates/framework-samples' / name / 'Assets' for name in ('numeric-combat', 'grid-puzzle'))
 spec = importlib.util.spec_from_file_location('prepare_m2', ROOT / 'scripts/testing/prepare-unity-framework.py')
 prepare_m2 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(prepare_m2)
 
 
 class UnityFrameworkTests(unittest.TestCase):
+    def test_prepare_rejects_layer_violations_before_creating_output(self):
+        cases = ('domain-engine', 'package-game', 'package-other-consumer', 'cycle', 'test-in-player', 'runtime-editor')
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve()
+                packages, sample = root / 'packages', root / 'sample'
+                packages.mkdir(); sample.mkdir()
+
+                def assembly(base, name, references=(), pure=False, **extra):
+                    folder = base / name
+                    folder.mkdir()
+                    value = dict(name=name, references=list(references), noEngineReferences=pure,
+                                 includePlatforms=[], defineConstraints=[])
+                    value.update(extra)
+                    (folder / (name + '.asmdef')).write_text(json.dumps(value))
+                    return folder
+
+                if case == 'domain-engine':
+                    folder = assembly(sample, 'Game.Domain', pure=True)
+                    (folder / 'State.cs').write_text('using UnityEngine; class State { Vector3 value; }')
+                elif case == 'package-game':
+                    assembly(packages, 'Grea.Bad', ['Game.Domain'])
+                    assembly(sample, 'Game.Domain', pure=True)
+                elif case == 'package-other-consumer':
+                    assembly(packages, 'Grea.Bad', ['Example.Domain'])
+                    assembly(sample, 'Example.Domain', pure=True)
+                elif case == 'cycle':
+                    assembly(sample, 'Game.Domain', ['Game.Gameplay'], pure=True)
+                    assembly(sample, 'Game.Gameplay', ['Game.Domain'], pure=True)
+                elif case == 'test-in-player':
+                    assembly(packages, 'Grea.Bad.Tests', optionalUnityReferences=['TestAssemblies'])
+                else:
+                    assembly(packages, 'Grea.Bad.Runtime', ['UnityEditor'])
+                destination = root / 'output'
+                with patch.object(prepare_m2, 'ROOT', root), patch.object(prepare_m2, 'PACKAGES', packages), patch.object(prepare_m2, 'SAMPLE', sample):
+                    with self.assertRaisesRegex(ValueError, 'FRAMEWORK_BOUNDARY'):
+                        prepare_m2.prepare(destination)
+                self.assertFalse(destination.exists())
+
+    def test_distinct_samples_are_copied_and_checked_without_game_dependencies_in_packages(self):
+        from grea.tools.unity_framework_audit import inspect
+        for name in ('numeric-combat', 'grid-puzzle'):
+            with self.subTest(sample=name), tempfile.TemporaryDirectory() as tmp:
+                dest = Path(tmp).resolve() / 'project'
+                result = prepare_m2.prepare(dest, sample=name)
+                self.assertEqual(result['sample'], name)
+                self.assertTrue(inspect(dest / 'Packages', dest / 'Assets')['ok'])
+                self.assertFalse(any('Counter' in p.name for p in (dest / 'Assets').rglob('*.cs')))
+                self.assertTrue((dest / 'Assets/Game/Editor/SampleBuilder.cs').is_file())
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp).resolve() / 'project'
+            with self.assertRaises(ValueError):
+                prepare_m2.prepare(dest, sample='../unknown')
+            self.assertFalse(dest.exists())
+
     def test_assemblies_are_acyclic_and_pure_layers_isolated(self):
         assemblies = {}
         for base in (PACKAGES, SAMPLE):
@@ -59,7 +116,7 @@ class UnityFrameworkTests(unittest.TestCase):
 
     def test_meta_identity_complete_unique_and_no_binary_payloads(self):
         guids = set()
-        for base in (PACKAGES, SAMPLE):
+        for base in (PACKAGES, SAMPLE, *CONSUMERS):
             for path in base.rglob('*'):
                 self.assertFalse(path.is_symlink())
                 if path.suffix == '.meta':

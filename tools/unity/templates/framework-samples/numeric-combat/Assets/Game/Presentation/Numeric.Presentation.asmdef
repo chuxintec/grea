@@ -1,0 +1,13 @@
+{
+  "name": "Numeric.Presentation",
+  "references": [
+    "Numeric.Domain",
+    "Numeric.Gameplay",
+    "Grea.Foundation.Contracts",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": []
+}

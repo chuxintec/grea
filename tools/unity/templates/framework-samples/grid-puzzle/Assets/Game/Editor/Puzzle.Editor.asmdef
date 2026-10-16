@@ -1,0 +1,16 @@
+{
+  "name": "Puzzle.Editor",
+  "references": [
+    "Puzzle.Bootstrap",
+    "Puzzle.Presentation",
+    "Grea.Editor",
+    "Grea.Foundation.Runtime",
+    "Grea.UI.UGUI",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": [
+    "Editor"
+  ]
+}

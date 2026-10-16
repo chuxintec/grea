@@ -1,13 +1,13 @@
 # Unity 框架与通用组件
 
-当前 Foundation、uGUI、Editor 包版本为 `0.2.1`，以自有源码随 grea 分发，尚未发布到 UPM Registry。已有默认程序集可选用桥接包 `0.1.0`。工程规则以 [Unity 开发规范](../plugin/skills/grea-unity-standard/references/05-Unity-工程结构与开发规范.md) 为准；本页说明实际 API、安装和测试。
+当前 Foundation 包版本为 `0.2.1`，uGUI、Editor 为 `0.3.0`，以自有源码随 grea 分发，尚未发布到 UPM Registry。已有默认程序集可选用桥接包 `0.1.0`。工程规则以 [Unity 开发规范](../plugin/skills/grea-unity-standard/references/05-Unity-工程结构与开发规范.md) 为准；本页说明实际 API、安装和测试。
 
 ## 包与依赖
 
 | 入口 | 内容 | 编译依赖 |
 | --- | --- | --- |
 | [Foundation](../tools/unity/framework/packages/com.grea.foundation/README.md) | 纯 Contracts、作用域/代次/句柄、服务启动、诊断、Catalog、音频、最小文件存档及平台端口 | Contracts 无 Unity 引用；Runtime→Contracts、Unity Runtime |
-| [uGUI](../tools/unity/framework/packages/com.grea.ui.ugui/README.md) | CommandButton、ModalPanel、ScreenHost | Foundation、uGUI 2.6.0 |
+| [uGUI](../tools/unity/framework/packages/com.grea.ui.ugui/README.md) | CommandButton、ButtonPressFeedback、ModalPanel、ScreenHost、UIHost | Foundation、uGUI 2.6.0 |
 | [Editor](../tools/unity/framework/packages/com.grea.editor/README.md) | 指定对象根的只读 Missing Script/必需字段检查，以及暂存工程内的生成/绑定回读 | Foundation Runtime；包测试使用 uGUI；仅 Editor |
 | [装配示例](../tools/unity/templates/counter-composition/README.md) | Game.Domain / Gameplay / Services / Presentation / Bootstrap 与合成计数业务 | 按标准显式向下引用；公共包不引用 Game |
 
@@ -54,3 +54,14 @@ unity test .private/framework-check/new-project --mode PlayMode \
 包测试与程序集配置依据已核对 [Unity 6000.6 包测试文档](https://docs.unity3d.com/6000.6/Documentation/Manual/cus-tests.html) 和 [asmdef 格式](https://docs.unity3d.com/6000.6/Documentation/Manual/assembly-definition-file-format.html)；本项目包拆分和生命周期 API 是 grea 的设计选择。
 
 `FileSaveStore.Recover()` 是显式恢复入口，返回 pending-committed、main-preserved、backup-restored 或 empty；损坏副本以唯一 `.corrupt-*` 名称保留，没有有效恢复副本时抛错。`CommandButton` 隐藏时取消旧命令，重显时仅恢复存活 owner 的绑定。0.2.1 不自动迁移已经复制到游戏中的旧包。
+
+
+## 本轮提炼与升级
+
+本节描述当前开发分支的未发布更改；已安装或已发布的 v2026.10.16-rc1 不会自动获得这些包和规范。
+
+五层是业务代码归属，三个 UPM 包是共享技术能力，不需要创建五个公共库。[两种独立消费者](../tools/unity/templates/framework-samples/README.md) 提供数值战斗和滑块拼图的实际源代码、测试、制作与恢复入口。`prepare-unity-framework.py --sample numeric-combat|grid-puzzle` 是隔离测试准备选项；默认 Counter、`--packages-only`、既有工具 ID 和 CLI/MCP 契约保持兼容，静态规划仍不支持声明未实现的 frameworkPackages。
+
+0.3.0 新增有限按压反馈、可选安全区根和弹窗内容/标题槽；不会给 Foundation 添加游戏规则。ProjectGenerator 配方身份为 0.1.2，资源通过 Editor 创建；旧 journal/recipe 的自动升级不被支持，旧版本或人工修改会被拒绝，不能靠重写 identity 强行覆盖。
+
+升级前保存原项目和三个包的完整副本（含 meta、manifest/lock），在隔离副本整体换入匹配版本，检查显式绑定并重跑受影响测试；先生成的新资源可作为制作参考，不能覆盖原场景。旧 UIHost/ModalPanel 手工资源允许缺少可选新槽，生成资源则要求所有槽。确认通过后按项目授权迁移；回退恢复整组包与资源/锁，不单独混回脚本。历史 Reference Player 和旧迁移记录不证明新包已经完成相同实机验收。

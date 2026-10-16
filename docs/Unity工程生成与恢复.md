@@ -6,7 +6,7 @@
 
 复制 [工程生成配置夹具](../tests/fixtures/unity-generation-v1.json) 到一个独立项目根，命名 `grea-project.json`。根目录需已存在，配置中的 `UnityProject` 目标必须不存在，空目录也不覆盖。Evidence、Build 与 Unity 工程分开，路径都相对该根，不允许 symlink、路径穿越或大小写/Unicode 冲突。
 
-精确组合：Unity 6000.6.2f1、URP 17.6.0、uGUI 2.6.0、legacy input、Catalog、macOS arm64/Mono。模板为 `grea-minimal-2d/0.1.0`，生成器 `0.1.1`，自有 Foundation/uGUI/Editor 包 `0.2.1`。当前仅支持夹具中的 Counter 四层模块选择和六项 features，不静默忽略未知模块；Bootstrap 为固定装配层。项目 ID、namespace、场景名与存档 namespace 可配置。依赖包来自随 grea 分发的源码和锁定的官方包，不接受用户替换 frameworkPackages 或例外。
+精确组合：Unity 6000.6.2f1、URP 17.6.0、uGUI 2.6.0、legacy input、Catalog、macOS arm64/Mono。模板为 `grea-minimal-2d/0.1.0`，生成器 `0.1.2`，自有 Foundation `0.2.1`、uGUI/Editor `0.3.0`。当前仅支持夹具中的 Counter 四层模块选择和六项 features，不静默忽略未知模块；Bootstrap 为固定装配层。项目 ID、namespace、场景名与存档 namespace 可配置。依赖包来自随 grea 分发的源码和锁定的官方包，不接受用户替换 frameworkPackages 或例外。
 
 `dependencyLock` 两项为 null，首次生成使用随模板提供的锁定依赖，最终 manifest/lock 的实际字节写入所有权清单。目标平台选择是生成配置，不是 Player 已验证声明。其他平台上的 plan 可只读运行，写入端当前依赖 macOS 原生 Unity 环境；不自动安装 Editor、激活许可或更换版本。
 
@@ -23,9 +23,9 @@
 | --- | --- | --- |
 | 框架包及稳定 meta | UnityProject/Packages/com.grea.* | package；按版本升级，不能在副本内改包后要求自动覆盖 |
 | 分层 Counter 示例、ProjectBootstrap | Assets/Game 各层 | seed-once；首次创建后归项目维护，重复执行保留人工代码 |
-| ButtonShell | Assets/GreaGenerated/ButtonShell.prefab | Image、Button、CommandButton；颜色反馈，业务监听运行时装配 |
-| ModalShell | Assets/GreaGenerated/ModalShell.prefab | 内容、遮罩、关闭按钮、ModalPanel；EventSystem 是声明的宿主绑定槽，独立基础壳不私造第二个输入系统 |
-| UIHost | Assets/GreaGenerated/UIHost.prefab | Canvas/缩放/射线、Pages/Modals/Toasts 层、一个 EventSystem、嵌套按钮/弹窗；填充并回读全部必需字段 |
+| ButtonShell | Assets/GreaGenerated/ButtonShell.prefab | 稳定点击根、独立 Visual/Image/Label/Icon、Button、CommandButton、ButtonPressFeedback；业务监听运行时装配 |
+| ModalShell | Assets/GreaGenerated/ModalShell.prefab | 内容、正文槽、标题、遮罩、关闭按钮、ModalPanel；EventSystem 是声明的宿主绑定槽，独立基础壳不私造第二个输入系统 |
+| UIHost | Assets/GreaGenerated/UIHost.prefab | Canvas/缩放/射线、SafeArea、Pages/Modals/Toasts 层、一个 EventSystem、嵌套按钮/弹窗；填充并回读全部必需字段 |
 | BootstrapConfig、Renderer、Pipeline | Assets/GreaGenerated | generated；启动/存档命名配置、URP Renderer 与 Pipeline 资产 |
 | Bootstrap、Entry 场景与构建场景表 | 配置声明的 Assets/Game/Scenes 路径 | generated；唯一启动组件加载 Entry，Entry 使用 UIHost，URP 通过 Editor 设置 |
 | 所有权清单 | Tools/Generated/manifests/project.json | [Manifest Schema](../schemas/unity-manifest.schema.json)，含 recipeId、输入身份、每文件哈希/meta/GUID、关键对象 fileID、owner |

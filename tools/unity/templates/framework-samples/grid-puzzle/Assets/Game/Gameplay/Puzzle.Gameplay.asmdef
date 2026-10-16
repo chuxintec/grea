@@ -1,0 +1,9 @@
+{
+  "name": "Puzzle.Gameplay",
+  "references": [
+    "Puzzle.Domain"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": true,
+  "includePlatforms": []
+}

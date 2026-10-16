@@ -126,5 +126,40 @@ namespace Grea.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(clip); }
         }
+        [UnityTest] public IEnumerator HostCanLeaveCommandOwnershipWithTheConsumer()
+        {
+            var go=Child("host",typeof(RectTransform)); go.SetActive(false);
+            var host=go.AddComponent<UIHost>(); host.bindOpenButton=false;
+            host.canvas=go.AddComponent<Canvas>();
+            host.pageLayer=Child("pages",typeof(RectTransform)).GetComponent<RectTransform>();
+            host.modalLayer=Child("modals",typeof(RectTransform)).GetComponent<RectTransform>();
+            host.toastLayer=Child("toasts",typeof(RectTransform)).GetComponent<RectTransform>();
+            host.events=Child("events",typeof(EventSystem)).GetComponent<EventSystem>();
+            var command=MakeButton(out var button); int count=0;
+            command.Bind(scope,stamp=>{count++;return Task.CompletedTask;});
+            host.openButton=command; host.Initialize(); go.SetActive(true); yield return null;
+            button.onClick.Invoke(); Assert.AreEqual(1,count);
+            go.SetActive(false); go.SetActive(true); yield return null;
+            button.onClick.Invoke(); Assert.AreEqual(2,count);
+        }
+        [UnityTest] public IEnumerator CommandPreservesNavigationFocusWithoutStealingAnotherSelection()
+        {
+            var events=Child("events",typeof(EventSystem)).GetComponent<EventSystem>();
+            var previous=EventSystem.current; EventSystem.current=events;
+            try
+            {
+                var command=MakeButton(out var button); var other=Child("other",typeof(RectTransform),typeof(Button));
+                command.Bind(scope,stamp=>Task.CompletedTask);
+                events.SetSelectedGameObject(button.gameObject); button.onClick.Invoke();
+                Assert.AreEqual(button.gameObject,events.currentSelectedGameObject,"Busy tint must not lose keyboard navigation");
+                var wait=new TaskCompletionSource<bool>();
+                command.Bind(scope,stamp=>{ events.SetSelectedGameObject(other); return wait.Task; });
+                events.SetSelectedGameObject(button.gameObject); button.onClick.Invoke();
+                Assert.AreEqual(other,events.currentSelectedGameObject);
+                wait.SetResult(true); yield return null;
+                Assert.AreEqual(other,events.currentSelectedGameObject,"Completion must not steal a modal/new focus");
+            }
+            finally { EventSystem.current=previous; }
+        }
     }
 }

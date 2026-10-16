@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Grea.Foundation.Contracts;
 using Grea.Foundation.Runtime;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Grea.UI.UGUI
@@ -51,10 +52,21 @@ namespace Grea.UI.UGUI
         void Click()
         {
             if (binding == null || !binding.IsAlive || busy || !button || !button.IsInteractable()) return;
-            busy = true; button.interactable = false;
-            LastError = null; Outcome = CommandOutcome.Running;
             var stamp = binding.Capture("button.execute");
-            Pending = Execute(stamp, command);
+            var action = command;
+            var events = EventSystem.current;
+            bool selected = events && events.currentSelectedGameObject == button.gameObject;
+            busy = true;
+            LastError = null; Outcome = CommandOutcome.Running;
+            button.interactable = false;
+            // Selectable clears selection when disabled. Keep the existing navigation owner,
+            // so an opened modal can capture it and keyboard users can continue after completion.
+            // A Deselect/Select listener may invalidate this binding or select another control.
+            if (!stamp.IsCurrent) return;
+            if (selected && events && !events.currentSelectedGameObject && button && button.gameObject.activeInHierarchy)
+                events.SetSelectedGameObject(button.gameObject);
+            if (!stamp.IsCurrent) return;
+            Pending = Execute(stamp, action);
         }
         async Task Execute(OperationStamp stamp, Func<OperationStamp, Task> action)
         {

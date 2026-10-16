@@ -1,0 +1,11 @@
+{
+  "name": "Puzzle.Services",
+  "references": [
+    "Puzzle.Domain",
+    "Puzzle.Gameplay",
+    "Grea.Foundation.Contracts"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": true,
+  "includePlatforms": []
+}
