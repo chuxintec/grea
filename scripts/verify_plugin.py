@@ -211,7 +211,9 @@ print(','.join(blocked))
                 _, first_revision=call('start_case_revision',revision_args)
                 check(first_revision['status']=='ok','Bundled revision creation failed')
                 _, case_status=call('case_status',dict(case_dir=str(case_project)))
-                check(case_status['status']=='ok' and case_status['result']['candidate_integrity']=='matched','Bundled candidate readback failed')
+                check(case_status['status']=='partial' and case_status['result']['candidate_integrity']=='matched'
+                      and case_status['result']['declared_acceptance']=='incomplete',
+                      'Bundled candidate readback must preserve the unverified state: '+json.dumps(case_status))
                 candidate.write_text('revision two')
                 _, stale=call('case_status',dict(case_dir=str(case_project)))
                 check(stale['error']['code']=='STALE_CANDIDATE','Changed candidate retained its acceptance identity')
