@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a relocatable documentation-only Skill from immutable release inputs."""
+"""Build a relocatable documentation-only grea plugin (multiple Skills) from immutable release inputs."""
 import hashlib
 import json
 import posixpath
@@ -16,35 +16,54 @@ def encoded(value):
     return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode()
 
 
+PLUGIN = 'plugin/'
+MANIFESTS = ('.codex-plugin/plugin.json', '.claude-plugin/plugin.json')
+
+
+def frontmatter(text):
+    match = re.match(r'^---\n(.*?)\n---\n', text, re.DOTALL)
+    if not match:
+        return {}
+    return dict(line.split(': ', 1) for line in match[1].splitlines() if ': ' in line)
+
+
 def render(source, version, revision):
-    """source maps committed repository paths to (bytes, Git mode)."""
-    metadata = json.loads(source['skill/version.json'][0])
+    """source maps committed repository paths to (bytes, Git mode); output is the grea plugin tree."""
+    metadata = json.loads(source[PLUGIN + 'version.json'][0])
     if metadata['version'] != version or metadata['greaVersion'] != version:
-        raise ValueError('Skill, grea and release versions must agree')
+        raise ValueError('Plugin, grea and release versions must agree')
     if not re.fullmatch(r'[0-9a-f]{40}', revision):
         raise ValueError('Expected a full source commit')
     files = {}
     for name, (data, mode) in source.items():
-        if not name.startswith('skill/'):
+        if not name.startswith(PLUGIN):
             continue
-        local = name[len('skill/'):]
-        if any(part.startswith('.') for part in PurePosixPath(local).parts):
-            continue  # Repository configuration is not installed Skill content.
+        local = name[len(PLUGIN):]
+        if local.startswith('launcher/') or local == 'runtime-lock.json':
+            continue  # The documentation-only archive intentionally has no runtime.
+        if local not in MANIFESTS and any(part.startswith('.') for part in PurePosixPath(local).parts):
+            continue  # Repository configuration is not installed plugin content.
         if mode != 0o100644 or local.startswith('/') or '..' in PurePosixPath(local).parts:
-            raise ValueError('Skill accepts regular documentation files only')
+            raise ValueError('Plugin accepts regular documentation files only')
         if not local.endswith(('.md', '.json', '.yaml', '.yml')):
-            raise ValueError('Unexpected Skill payload: ' + local)
+            raise ValueError('Unexpected plugin payload: ' + local)
+        if local in MANIFESTS:
+            manifest = json.loads(data)
+            manifest.pop('mcpServers', None)
+            if 'interface' in manifest:
+                manifest['interface']['longDescription'] = 'Workflow documentation. Tool execution requires a separate compatible grea runtime or the complete platform plugin.'
+            data = encoded(manifest)
         if local.endswith('.md'):
             def link(match):
                 raw = match[2]; target = raw.strip('<>'); url = urlsplit(target)
                 if url.scheme or url.netloc or not url.path:
                     return match[0]
                 if url.path.startswith('/') or '\\' in url.path:
-                    raise ValueError('Absolute/local-machine Skill link')
+                    raise ValueError('Absolute/local-machine plugin link')
                 dest = posixpath.normpath(posixpath.join(posixpath.dirname(name), unquote(url.path)))
                 if dest not in source and not any(x.startswith(dest.rstrip('/') + '/') for x in source):
                     raise ValueError('Missing linked source: ' + dest)
-                if dest.startswith('skill/'):
+                if dest.startswith(PLUGIN):
                     return match[0]
                 # Optional implementation/evidence references become immutable source URLs.
                 kind = 'blob' if dest in source else 'tree'
@@ -53,16 +72,26 @@ def render(source, version, revision):
                 return match[1] + remote + match[3]
             data = LINK.sub(link, data.decode('utf-8')).encode('utf-8')
         files['grea/' + local] = data
-    if 'grea/SKILL.md' not in files:
-        raise ValueError('Missing Skill entry')
+    for manifest in MANIFESTS:
+        value = json.loads(files.get('grea/' + manifest, b'null'))
+        if not value or value.get('name') != 'grea' or value.get('version') != version:
+            raise ValueError('Plugin manifest missing or version mismatch: ' + manifest)
+    skills = sorted(PurePosixPath(n).parent.name for n in files
+                    if re.fullmatch(r'grea/skills/[^/]+/SKILL\.md', n))
+    if 'grea' not in skills:
+        raise ValueError('Missing router skill entry')
+    for skill in skills:
+        meta = frontmatter(files[f'grea/skills/{skill}/SKILL.md'].decode('utf-8'))
+        if meta.get('name') != skill or not meta.get('description') or len(meta['description']) > 1024:
+            raise ValueError('Skill frontmatter must name its directory and describe it within 1024 characters: ' + skill)
     files['grea/LICENSE.md'] = source['LICENSE'][0]
-    manifest = {'schemaVersion': 1, 'name': 'grea', 'version': version,
+    manifest = {'schemaVersion': 2, 'name': 'grea', 'kind': 'plugin', 'version': version,
                 'greaVersion': version, 'sourceRevision': revision,
-                'requiredOperations': metadata['requiredOperations'],
+                'requiredOperations': metadata['requiredOperations'], 'skills': skills,
                 'files': {name: {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
                           for name, data in sorted(files.items())},
                 'limits': 'Workflow documentation is local; optional implementation/evidence links need network. Tool execution requires a compatible grea installation.'}
-    files['grea/skill-manifest.json'] = encoded(manifest)
+    files['grea/plugin-manifest.json'] = encoded(manifest)
     validate_local_links(files)
     return files
 
@@ -76,7 +105,7 @@ def validate_local_links(files):
             if url.scheme or url.netloc or not url.path: continue
             dest = posixpath.normpath(posixpath.join(posixpath.dirname(name), unquote(url.path)))
             if not dest.startswith('grea/') or (dest not in files and not any(x.startswith(dest.rstrip('/') + '/') for x in files)):
-                raise ValueError('Skill link escapes or is missing: ' + dest)
+                raise ValueError('Plugin link escapes or is missing: ' + dest)
 
 
 def write_archive(path, files, timestamp):

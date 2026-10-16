@@ -1,37 +1,83 @@
-# Skill 构建与安装
+# Skill 构建与安装（grea 插件）
 
-Skill 的唯一源码是 `skill/`。恢复流程和开发规范在 `SKILL.md` 与 `references/`，不从安装副本反向修改。当前版本为 **2026.10.14rc1**，由 [version.json](../skill/version.json) 声明；首次独立制品沿用当前 grea 版本。发布新版本时同时更新其中的 `version` 与 `greaVersion`，发布构建强制核对它们和产品版本一致。
+`plugin/` 维护技能、共享参考、客户端清单、运行时锁和启动薄层；`src/grea/` 是唯一业务实现。构建时组合成可安装插件，不从安装副本反向维护代码。
 
-## 两种交付
+## 三种交付
 
-- 完整包 `grea-<tag>.zip`：产品源码、工具、规范、维护脚本与测试。
-- Skill 包 `grea-skill-<tag>.zip`：解压得到 `grea/SKILL.md`、完整专题参考、版本声明、MIT 许可和逐文件身份清单。
+| 制品 | 内容 | 使用前提 |
+| --- | --- | --- |
+| `grea-plugin-macos-arm64.zip` | 8 个技能、MCP、独立 CPython、锁定依赖、公开工具源码和资源 | macOS arm64；兼容的 Codex 或 Claude Code |
+| `grea-skill-<tag>.zip` | 仅流程文档、共享参考、版本和插件清单；不注册 MCP | 执行工具时另装兼容 grea |
+| `grea-<tag>.zip` | 完整源码、维护脚本和测试 | 从源码使用时需要 Python/uv，见使用指南 |
 
-Skill 包不附带 Python 环境或 Unity；阅读流程不需要完整仓库，执行工具仍需安装匹配的 grea。安装后通过 `grea session` 核对版本和 requiredOperations；未安装工具时不能声称可以执行恢复。开发分支可能与同版本旧 Release 内容不同，应同时核对源码提交；现有发布标签不重用、不覆盖。
+从 `v2026.10.16-rc1` 开始提供完整平台插件，产品与插件版本均为 `2026.10.16rc1`。开发预览同时标明 `source_kind=worktree-preview`、源码基线提交与实际内容哈希，不能冒充同版本已发布制品。
 
-## 安装
+## 安装完整插件
 
-校验 Release 附件的 SHA256SUMS，解压 Skill ZIP，将其中 `grea` 目录放入客户端支持的技能目录；安装目标已有内容时先备份或比较，不直接覆盖手工修改。客户端发现技能后，读取 SKILL.md 并实际调用 grea session 才能确认工具连接；文件复制成功不代表 Editor 已连接。
+先核对随包 `SHA256SUMS`，解压完整插件，进入其中的 `grea/` 目录。macOS 可使用 Archive Utility 或 `ditto -x -k`，保留执行权限与中文文件名。包根已生成两种客户端的 marketplace 描述，无需手写 MCP 配置或 Python 路径。
 
-工作区开发安装仍使用 `python3 scripts/sync_skill.py --destination /absolute/skills/grea`，并运行同命令加 `--check`。它从规范源码生成安装副本，会同步删除副本多余文件，不能指向混有手工作业的目录。Release ZIP 是可迁移制品，不依赖此开发同步目录。
-
-独立包内所有本地链接都落在自身目录。指向工具实现、接口说明和历史证据的可选链接在构建时转为固定提交的 GitHub 地址；这些在线资料不计为离线包内容。尚未推送的本地构建所对应在线链接可能不可访问，不能据此宣称已发布。
-
-## 独立构建
-
-在干净、已提交的 grea 源码中执行，输出目录必须不存在：
+Codex：
 
 ```sh
-python3 scripts/build_skill.py --tag v2026.10.14-rc1 --out dist/skill-check
-python3 scripts/build_skill.py --tag v2026.10.14-rc1 --out dist/skill-check \
-  --verify --extract /absolute/new-skill-install
+codex plugin marketplace add .
+codex plugin add grea@grea-local
+codex plugin list --marketplace grea-local --json
 ```
 
-命令只在本地构建与核验，不创建标签、不上传。构建读取 Git 提交对象，版本不匹配、缺失引用、包外本地路径或校验失败都会停止。
+Claude Code：
 
-Release 流程同时构建两个 ZIP，生成同一制品清单和校验文件，并独立解压 Skill 检查内容与可迁移链接。相同提交重复构建应字节一致；未来结构调整仍保留完整包的既有入口与工具 ID。
+```sh
+claude plugin marketplace add ./
+claude plugin install grea@grea-local
+claude plugin list --json
+```
 
+Claude 的本地 marketplace 参数使用 `./`；单独的 `.` 在已验客户端会被拒绝。保留解压目录作为本地安装来源，不移动后继续沿用旧 marketplace 记录。安装与更新沿用客户端的信任和启用流程。
 
-开发安装保留本地仓库链接，Release 安装使用固定提交 URL；两种形式的使用场景不同，保留各自链接转换和测试。版本相同不表示不同提交字节相同，升级时还须核对 sourceRevision／安装来源。同步前用 `--check` 查看差异；生成副本中不存手工内容。
+新会话中确认 grea 技能与 MCP 工具被发现，再调用 `session`。无需 Git、系统 Python、uv、Homebrew，也不会在首次启动时下载依赖。终端入口仍是包根 `bin/grea`；CLI 和 MCP 使用同一应用层，工具 ID 与参数保持兼容。
 
-安装身份可通过 `./bin/grea session '{"skill_dir":"/absolute/skills/grea"}'` 显式检查。默认 session 检查随源码附带的 Skill，不自动推断客户端实际加载了哪个目录。
+如果客户端已有手工配置的 grea MCP 或旧 `.agents/skills/grea*`，先核对来源，按需停用旧入口，避免重复加载。安装器不修改用户已有配置。
+
+Unity Editor、构建模块、AssetRipper、IL2CPP 工具和商业插件不随包安装。核心 MCP 在这些依赖缺失时仍可启动，并按工具报告 unavailable；`session` 成功不等于 Editor 连接或游戏验收完成。
+
+## 制品布局与身份
+
+包根包含 `.codex-plugin/`、`.claude-plugin/`、`.mcp.json`、生成的 marketplace、`plugin/skills/`、`runtime/` 和公开产品资源。客户端通过相对插件根目录的启动器访问固定解释器；安装目录按只读使用，项目输入、输出和日志由工具参数显式指定。
+
+- `plugin-manifest.json`：产品版本、来源类型、提交与内容哈希、逐文件 SHA256/大小/权限。
+- `runtime-manifest.json`：固定 CPython 来源、许可归档、Python 依赖实际版本与许可元数据、锁文件与导出依赖的哈希。
+- `runtime-requirements.txt`：无构建主机路径的依赖清单，使用锁文件中的包哈希。
+- `runtime/licenses/`、`runtime/PYTHON.json`、`runtime/license-manifest.json`：同版本上游完整发行归档的许可材料和提取证据；wheel 许可同时保留在 `dist-info` 内。
+
+来源锁见 [runtime-lock.json](../plugin/runtime-lock.json)。运行时二进制只进入缓存和制品，不进入 Git；许可边界见 [第三方说明](../THIRD_PARTY.md)。
+
+## 构建与验收
+
+在 macOS arm64 源码环境中，构建工具需要 Python 3.11+、uv 0.12.21，以及 PATH 中可调用的 `zstd`（系统 `tar` 用它解包上游完整许可归档；CI 镜像已提供）；使用插件的机器不需要这些构建工具。默认仅从干净提交构建：
+
+```sh
+.venv/bin/python scripts/build_plugin.py --out dist/plugin
+.venv/bin/python scripts/verify_plugin.py --bundle dist/plugin/grea-plugin-macos-arm64.zip --report dist/plugin/plugin-acceptance.json
+.venv/bin/python scripts/verify_plugin_clients.py --bundle dist/plugin/grea-plugin-macos-arm64.zip --report dist/plugin/native-clients.json
+```
+
+开发中的未提交改动使用 `--worktree` 构建明确标记的未发布预览。构建先审计公开文件，固定运行时归档哈希；未知许可缺项、资源缺失、版本不符或依赖安装失败均阻止产物完成。输出目录必须不存在，下载只发生在构建时。
+
+`verify_plugin.py` 在含空格和中文的临时目录解包并移动，使用独立 HOME、最小 PATH、macOS 沙箱实际禁止联网、读取源码和写安装目录，验证两种启动配置的 MCP 握手、20 个操作目录、工作流资源、真实核心工具子进程、兼容入口与失败契约。不能在沙箱中再创建沙箱的环境需要允许验收器启动系统沙箱，不能跳过隔离检查后标记通过。
+
+`verify_plugin_clients.py` 另用独立客户端配置与安装缓存，实际验证 Codex、Claude Code 的随包市场安装、技能发现和 MCP 工具发现，全程不发送模型请求。缺少客户端、缺少随包市场或协议不支持时分别记录 blocked/not_run 并失败，不能拿配置模拟代替原生客户端验收。
+
+CI 在 macOS arm64 上构建两次并逐字节比较，再运行隔离验收。实际客户端版本的验收结果单独记录；CI 协议测试不扩大为所有客户端版本或其他操作系统已通过。
+
+## 纯文档 Skill 包与开发同步
+
+独立文档包保持原构建入口：
+
+```sh
+python3 scripts/build_skill.py --tag v2026.10.16-rc1 --out dist/skill-check
+python3 scripts/build_skill.py --tag v2026.10.16-rc1 --out dist/skill-check --verify
+```
+
+示例标签须替换为待验证版本，不覆盖旧 Release。纯文档包移除 MCP 注册、启动器及运行时锁；其可选外部文档链接指向固定提交的 GitHub 源码。它可以作为文档插件安装，也可把技能目录安装到客户端，但不会自动获得运行时。
+
+源码工作区技能同步仍使用 `python3 scripts/sync_skill.py`，之后执行 `--check`。它只管理自己登记的技能副本，不是完整插件安装器，详见 [工作区接入](工作区接入.md)。完整平台插件、文档包及源码包的发布版本必须一致；新版本不复用历史标签。

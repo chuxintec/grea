@@ -86,11 +86,11 @@ class ReferenceRoutesTests(unittest.TestCase):
     def test_category_grouping_and_all_workflow_and_scenario_paths_resolve(self):
         from grea.workflows import WORKFLOWS, plan
         categories={'流程':'01','工具':'02','恢复':'03','资源':'04','Unity':'05','玩法':'06','美术':'07','验收':'08','交付':'09','维护':'10'}
-        for path in (ROOT/'skill/references').glob('*.md'):
+        for path in [*(ROOT/'plugin/shared').glob('*.md'),*(ROOT/'plugin/skills').glob('*/references/*.md')]:
             number,category,module=path.stem.split('-',2)
             self.assertEqual(number,categories[category]);self.assertTrue(module)
         for mode in WORKFLOWS:
-            for engine in ['unity','laya']:
+            for engine in ['unity','cocos','laya']:
                 for step in plan(mode,engine)['steps']:self.assertTrue(Path(step['reference']).is_file(),step)
         cases=json.loads((ROOT/'tests/scenarios/scenarios.json').read_text())['cases']
         for case in cases:

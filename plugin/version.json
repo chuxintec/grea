@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "name": "grea",
+  "version": "2026.10.16rc1",
+  "greaVersion": "2026.10.16rc1",
+  "requiredOperations": ["session", "describe_tool", "plan_workflow", "run_tool"]
+}

@@ -17,15 +17,19 @@ import build_skill
 class SkillDistributionTests(unittest.TestCase):
     def source(self):
         value={'version':'1.2.3rc1','greaVersion':'1.2.3rc1','requiredOperations':['session']}
+        manifest=json.dumps({'name':'grea','version':'1.2.3rc1'})
         return {k:(v.encode(),0o100644) for k,v in {
-            'skill/SKILL.md':'---\nname: grea\ndescription: Test\n---\n[流程](references/Unity-恢复.md) [说明](../docs/使用.md#示例)\n',
-            'skill/.gitignore':'__pycache__/\n',
-            'skill/references/Unity-恢复.md':'# 恢复\n[入口](../SKILL.md)\n',
-            'skill/version.json':json.dumps(value),'docs/使用.md':'# 示例\n','LICENSE':'MIT\n'}.items()}
+            'plugin/skills/grea/SKILL.md':'---\nname: grea\ndescription: Test\n---\n[流程](../grea-port/references/Unity-恢复.md) [说明](../../../docs/使用.md#示例) [共用](../../shared/共用.md)\n',
+            'plugin/skills/grea-port/SKILL.md':'---\nname: grea-port\ndescription: Port\n---\n[流程](references/Unity-恢复.md)\n',
+            'plugin/skills/grea-port/references/Unity-恢复.md':'# 恢复\n[入口](../../grea/SKILL.md)\n',
+            'plugin/shared/共用.md':'# 共用\n',
+            'plugin/.gitignore':'__pycache__/\n',
+            'plugin/.codex-plugin/plugin.json':manifest,'plugin/.claude-plugin/plugin.json':manifest,
+            'plugin/version.json':json.dumps(value),'docs/使用.md':'# 示例\n','LICENSE':'MIT\n'}.items()}
     def test_versioned_relocatable_and_reproducible(self):
         source=self.source();files=build_skill.render(source,'1.2.3rc1','a'*40)
-        entry=files['grea/SKILL.md'].decode();self.assertIn('/'+'a'*40+'/',entry);self.assertNotIn('../docs/',entry);self.assertNotIn('grea/.gitignore',files)
-        manifest=json.loads(files['grea/skill-manifest.json']);self.assertEqual(manifest['version'],'1.2.3rc1');self.assertEqual(len(manifest['files']),4)
+        entry=files['grea/skills/grea/SKILL.md'].decode();self.assertIn('/'+'a'*40+'/',entry);self.assertNotIn('../docs/',entry);self.assertIn('](../../shared/共用.md)',entry);self.assertNotIn('grea/.gitignore',files);self.assertIn('grea/.codex-plugin/plugin.json',files)
+        manifest=json.loads(files['grea/plugin-manifest.json']);self.assertEqual(manifest['version'],'1.2.3rc1');self.assertEqual(manifest['skills'],['grea','grea-port']);self.assertEqual(len(manifest['files']),8)
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp).resolve();a=root/'a.zip';b=root/'b.zip';stamp=datetime(2026,10,13,tzinfo=timezone.utc)
             build_skill.write_archive(a,files,stamp);build_skill.write_archive(b,files,stamp);self.assertEqual(a.read_bytes(),b.read_bytes())
@@ -33,10 +37,12 @@ class SkillDistributionTests(unittest.TestCase):
             build_skill.validate_local_links(actual);self.assertEqual(actual,files)
             with self.assertRaises(ValueError):build_skill.verify_archive(a,files,root/'unrelated')
     def test_version_missing_link_and_local_escape_rejected(self):
-        for kind in ['version','missing','absolute']:
+        for kind in ['version','missing','absolute','manifest','name']:
             source=self.source()
-            if kind=='version':source['skill/version.json']=(b'{"version":"9","greaVersion":"9"}',0o100644)
-            else:source['skill/SKILL.md']=(('[bad]('+('missing.md' if kind=='missing' else '/local/file')+')').encode(),0o100644)
+            if kind=='version':source['plugin/version.json']=(b'{"version":"9","greaVersion":"9"}',0o100644)
+            elif kind=='manifest':source['plugin/.claude-plugin/plugin.json']=(b'{"name":"grea","version":"9"}',0o100644)
+            elif kind=='name':source['plugin/skills/grea-port/SKILL.md']=(b'---\nname: other\ndescription: Port\n---\n',0o100644)
+            else:source['plugin/skills/grea/SKILL.md']=(('---\nname: grea\ndescription: Test\n---\n[bad]('+('missing.md' if kind=='missing' else '/local/file')+')').encode(),0o100644)
             with self.assertRaises(ValueError):build_skill.render(source,'1.2.3rc1','a'*40)
     def test_tamper_and_extra_path_fail_before_extraction(self):
         files=build_skill.render(self.source(),'1.2.3rc1','a'*40)
@@ -48,7 +54,7 @@ class SkillDistributionTests(unittest.TestCase):
     def test_current_skill_manifest_declares_available_operations(self):
         from grea.contracts import CONTRACTS
         from grea import __version__
-        value=json.loads((ROOT/'skill/version.json').read_text());self.assertEqual(value['version'],__version__);self.assertEqual(value['greaVersion'],__version__)
+        value=json.loads((ROOT/'plugin/version.json').read_text());self.assertEqual(value['version'],__version__);self.assertEqual(value['greaVersion'],__version__)
         self.assertTrue(set(value['requiredOperations']) <= set(CONTRACTS))
     def test_tool_modules_import_without_execution(self):
         # These modules formerly parsed argv/wrote output during import.

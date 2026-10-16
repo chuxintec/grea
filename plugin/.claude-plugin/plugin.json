@@ -1,0 +1,28 @@
+{
+  "name": "grea",
+  "version": "2026.10.16rc1",
+  "description": "grea (Game Reverse Engineering and Assembly): evidence-first recovery of shipped games into native Unity projects, with skills for evidence extraction, cross-engine native porting, Unity package recovery, parity fixes, project standards, delivery and authorized reskins.",
+  "author": {
+    "name": "grea contributors",
+    "url": "https://github.com/chuxintec/grea"
+  },
+  "homepage": "https://github.com/chuxintec/grea",
+  "license": "MIT",
+  "mcpServers": {
+    "grea": {
+      "type": "stdio",
+      "command": "${CLAUDE_PLUGIN_ROOT}/plugin/launcher/grea",
+      "args": ["mcp"]
+    }
+  },
+  "keywords": [
+    "unity",
+    "game-recovery",
+    "reverse-engineering",
+    "cocos-creator",
+    "laya",
+    "native-port",
+    "il2cpp",
+    "assetripper"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "grea",
+  "version": "2026.10.16rc1",
+  "description": "grea (Game Reverse Engineering and Assembly): evidence-first recovery of shipped games into native Unity projects. Eight skills: a router plus specialized skills for evidence extraction, cross-engine native porting, Unity package recovery, parity fixes, project standards, delivery and authorized reskins.",
+  "author": {
+    "name": "grea contributors",
+    "url": "https://github.com/chuxintec/grea"
+  },
+  "homepage": "https://github.com/chuxintec/grea",
+  "license": "MIT",
+  "keywords": [
+    "unity",
+    "game-recovery",
+    "reverse-engineering",
+    "cocos-creator",
+    "laya",
+    "native-port",
+    "il2cpp",
+    "assetripper"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "requires_local_executor": true,
+  "interface": {
+    "displayName": "grea",
+    "shortDescription": "已发布游戏 → 原生 Unity 工程",
+    "longDescription": "依据原版实玩、包体资源和代码证据，把游戏恢复或转换为原生 Unity 工程。完整 macOS arm64 插件包含本地 MCP、Python 运行时与核心工具；Unity 和可选外部工具按需安装。",
+    "developerName": "grea contributors",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "把这个 Cocos Creator 微信小游戏转换为原生 Unity 工程。",
+      "审计这个 Unity 项目里残留的 Cocos 中间件，并给出原生化方案。",
+      "对照原版修复战斗结算和奖励弹窗的差异。"
+    ]
+  }
+}

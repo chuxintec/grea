@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "grea": {
+      "command": "./plugin/launcher/grea",
+      "args": ["mcp"],
+      "cwd": "."
+    }
+  }
+}

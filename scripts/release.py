@@ -5,6 +5,7 @@ import ast
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 import tomllib
@@ -111,7 +112,7 @@ def prepare(tag, out, require_tag=False):
         f'附件：完整 ZIP、独立 Skill ZIP（版本 {package}）、release-manifest.json、SHA256SUMS。\n\n'
         f'解压并进入 `grea-{tag}`，运行 `uv sync --frozen`，再运行 `./bin/grea session`；'
         'Windows 入口为 `bin\\grea.cmd session`。macOS 可用系统 Archive Utility 或 ditto 解压中文文件名。\n\n'
-        '公开包不包含第三方程序、Unity 包快照、Spine vendor、虚拟环境或项目材料。'
+        '源码与纯文档包不包含第三方程序、Unity 包快照、Spine vendor、虚拟环境或项目材料。'
         '来源与许可证见 THIRD_PARTY.md，自有代码采用 MIT。\n\n'
         '发布由测试、契约/技能检查及解压包安装验证把关；Windows 原生运行、Unity Editor 和游戏验收未执行。'
         '平台限制见 docs/工具集成与平台支持.md。\n\n'
@@ -125,6 +126,10 @@ def verify(tag, out, extract=None, extract_skill=None):
     if (manifest['release_version'], manifest['source_revision'], manifest['prerelease'], manifest['package_version']) != (tag, sha, prerelease, package):
         raise ValueError('Manifest identity mismatch.')
     names = [f'grea-{tag}.zip', f'grea-skill-{tag}.zip', 'release-manifest.json']
+    portable = len(manifest['artifacts']) == 3
+    if portable:
+        from plugin_release import ARCHIVE, REPORT
+        names += [ARCHIVE, REPORT]
     checksums = ''.join(sha256(out / n) + '  ' + n + '\n' for n in names)
     if (out / 'SHA256SUMS').read_text() != checksums:
         raise ValueError('Checksum mismatch.')
@@ -133,8 +138,13 @@ def verify(tag, out, extract=None, extract_skill=None):
     if (row['name'], row['bytes'], row['sha256']) != (names[0], archive.stat().st_size, sha256(archive)):
         raise ValueError('Archive identity mismatch.')
     files = source_files()
-    if len(manifest['artifacts']) != 2 or row['files'] != len(files) or row['root_directory'] != f'grea-{tag}':
+    if len(manifest['artifacts']) not in (2,3) or row['files'] != len(files) or row['root_directory'] != f'grea-{tag}':
         raise ValueError('Manifest file inventory mismatch.')
+    if portable:
+        from plugin_release import validate
+        plugin_row, report_row = validate(out/ARCHIVE, out/REPORT, files, package, sha)
+        if manifest['artifacts'][2] != plugin_row or manifest['validation'].get('plugin_acceptance') != report_row:
+            raise ValueError('Portable plugin release identity mismatch')
     skill_files = build_skill.render(files, package, sha)
     skill_row = manifest['artifacts'][1]
     expected_skill_row = {'name': names[1], 'kind': 'skill', 'version': package,
@@ -164,6 +174,36 @@ def verify(tag, out, extract=None, extract_skill=None):
     if extract_skill is not None:
         build_skill.verify_archive(out/names[1], skill_files, extract_skill)
     return names + ['SHA256SUMS']
+
+
+def attach_plugin(tag, out, plugin_dir):
+    """Merge a separately built and accepted platform artifact before publishing."""
+    from plugin_release import ARCHIVE, REPORT, validate
+    verify(tag, out)
+    package, _, revision, _ = identity(tag)
+    manifest_path = out/'release-manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    if len(manifest['artifacts']) != 2:
+        raise ValueError('Portable plugin already attached; do not overwrite')
+    plugin_row, report_row = validate(plugin_dir/ARCHIVE, plugin_dir/'plugin-acceptance.json', source_files(), package, revision)
+    for name in (ARCHIVE, REPORT):
+        if (out/name).exists(): raise FileExistsError(out/name)
+    shutil.copyfile(plugin_dir/ARCHIVE, out/ARCHIVE)
+    shutil.copyfile(plugin_dir/'plugin-acceptance.json', out/REPORT)
+    manifest['artifacts'].append(plugin_row)
+    manifest['validation']['plugin_acceptance'] = report_row
+    manifest['validation']['publication_gates'].append('macOS arm64 portable plugin isolated acceptance')
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2)+'\n')
+    names = [f'grea-{tag}.zip', f'grea-skill-{tag}.zip', 'release-manifest.json', ARCHIVE, REPORT]
+    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in names))
+    with (out/'release-notes.md').open('a') as stream:
+        stream.write('\n完整 macOS arm64 插件：`'+ARCHIVE+'`，包含独立 Python、锁定依赖与本地 stdio MCP；支持 Codex 和 Claude Code 的插件配置。Unity 与可选外部工具独立安装。隔离验收见 `'+REPORT+'`。\n')
+        stream.write('\n解压插件后进入其中的 `grea/`：\n\n'
+                     '```sh\n# Codex\ncodex plugin marketplace add .\ncodex plugin add grea@grea-local\n'
+                     '# Claude Code\nclaude plugin marketplace add ./\nclaude plugin install grea@grea-local\n```\n'
+                     '\n保留解压目录作为本地安装来源；已有源码版 MCP 注册时先核对并停用同名旧入口，重启客户端后在新会话调用 `session` 核对 `package_root` 为插件安装目录。\n')
+    verify(tag, out)
+    return manifest
 
 
 def gh(*args):
@@ -238,18 +278,22 @@ def publish(tag, out, repo):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'verify', 'publish'])
+    parser.add_argument('action', choices=['prepare', 'verify', 'attach-plugin', 'publish'])
     parser.add_argument('--tag', required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--require-tag', action='store_true')
     parser.add_argument('--extract', type=Path)
     parser.add_argument('--extract-skill', type=Path)
     parser.add_argument('--repo')
+    parser.add_argument('--plugin-dir', type=Path)
     args = parser.parse_args()
     if args.action == 'prepare':
         result = prepare(args.tag, args.out, args.require_tag)
     elif args.action == 'verify':
         result = verify(args.tag, args.out, args.extract, args.extract_skill)
+    elif args.action == 'attach-plugin':
+        if not args.plugin_dir: parser.error('--plugin-dir required')
+        result = attach_plugin(args.tag, args.out, args.plugin_dir)
     else:
         if not args.repo:
             parser.error('--repo required for publish')

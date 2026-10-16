@@ -1,0 +1,101 @@
+# Unity · 原生转换规范
+
+工具推荐：Unity 官方插件技能（ui-ugui、manage-sprite-atlas、unity-package-management 等）与 Unity CLI/Pipeline 生成和回读原生资源；`recovery compare_events`、`recovery compare_traces` 做规则对照。入口和限制见 [工具清单](../../../shared/02-工具-选择与调用.md)。
+
+适用于把 Cocos、Laya/FairyGUI、Egret、H5 等非 Unity 源游戏转换为 Unity 工程，以及审计、清理已有项目中的源引擎残留。源游戏本身是 Unity 时按 [Unity 工程重建](../../grea-unity-recovery/references/05-Unity-工程重建与恢复.md) 执行。
+
+## 目标形态
+
+交付的是一个 Unity 开发者打开即可按常规方式维护的工程：
+
+- Prefab、Scene、ScriptableObject、AnimationClip 是唯一真源。在 Inspector 修改后进入 Play 即生效；不需要 Capture、回写、重新生成或重放源对象图。
+- 运行时只使用 Unity 生命周期、uGUI/TMP 等原生组件和下文选型基线中的官方或主流插件。
+- 类型、资源和节点按游戏语义命名（`ShopView`、`RuneSlot`、`DailySignTable`）。源引擎的 uuid、类型名和脚本名只出现在 Analysis 的映射表里。
+- 源引擎只作为**行为与资源的来源**，不作为运行时模型。
+
+## 规则语义与引擎语义
+
+核心原则：**保留原版的规则语义，不保留原版的引擎语义。**
+
+| 类别 | 内容 | 实现与验证 |
+| --- | --- | --- |
+| 必须对齐：规则语义 | 数值公式与舍入、RNG 序列与消费顺序、结算/消耗/奖励顺序、任务与解锁条件、影响结果的玩法时序、存档键与兼容 | 在 Domain/Gameplay 用强类型 C# 实现；以原代码或原版轨迹为 oracle 做对照测试，见 [规则与随机](../../grea-parity/references/06-玩法-规则与随机一致性.md) |
+| 必须对齐：可观察结果 | 布局结果、文字外观、动画曲线与节奏、按钮反馈、遮罩形状、声音时机 | 用 Unity 原生组件配置得到相同结果；以同状态截图、录像和关键帧对照，不复刻源算法 |
+| 不复刻：引擎语义 | 节点树与节点身份、组件生命周期与执行顺序、Widget/Layout/Label 度量算法、Mask 命中算法、director/Scheduler/Promise 微任务、Tween/Action 系统、资源 uuid/bundle 体系、场景切换与常驻节点、事件捕获/冒泡实现、源脚本类名 | 换成对应的 Unity 原生机制，见 [Cocos 映射](05-Unity-源引擎映射-Cocos.md) |
+
+当规则结果确实依赖某个执行顺序（例如同帧内先结算后刷新），在 Gameplay 中把这个顺序写成显式调用，而不是复刻整个源帧循环。
+
+原生组件配置无法得到某个视觉结果时（例如反向圆形遮罩），可以写一个用途明确的小型 Unity 组件（如 `InvertedCircleMask`）。它按 Unity 惯例实现，不模拟源引擎组件；同时在项目 `Docs/PROJECT-STRUCTURE.md` 登记原因、替代方案和验证方法。
+
+## 技术选型基线
+
+一个项目对每项只选一种实现，记录版本、许可证及 IL2CPP/目标平台验证情况。新装包按工作区约定备份。可以使用 Unity 官方插件技能完成对应操作。
+
+| 方面 | 默认 | 可选或条件 |
+| --- | --- | --- |
+| UI | uGUI + TextMeshPro | 用户明确要求时使用 UI Toolkit |
+| 布局 | RectTransform 锚点与偏移；Horizontal/Vertical/GridLayoutGroup、ContentSizeFitter | — |
+| 图片与图集 | TextureImporter Sprite（Single/Multiple）+ SpriteAtlas v2 | — |
+| 动画 | AnimationClip + Animator，或用于简单播放的 Animation 组件 | 序列演出用 Timeline |
+| 补间 | DOTween 或 PrimeTween，项目内只选一个 | — |
+| 异步与定时 | `Awaitable`、Coroutine，配合 `destroyCancellationToken` 取消 | 项目已用时可选 UniTask |
+| 资源加载 | 直接序列化引用 | 动态或大量资源用 Addressables，使用语义地址；不用 `Resources` 存放目录式 Catalog |
+| 场景 | Boot 加内容场景，用 SceneManager 切换；常驻对象 `DontDestroyOnLoad` | 需要叠加时用 Additive |
+| 配置 | 强类型字段的 ScriptableObject | 表格经 Editor 导入器生成 SO |
+| 输入 | Input System + EventSystem（`InputSystemUIInputModule`）；指针用 `IPointer*Handler` | — |
+| 对象池 | `UnityEngine.Pool.ObjectPool<T>`，带显式复位 | — |
+| 音频 | AudioSource + AudioMixer，由音频服务管理 | — |
+| 骨骼动画 | 与数据版本匹配的 spine-unity（UI 用 SkeletonGraphic，场景用 SkeletonAnimation）或 DragonBones Unity 运行时 | — |
+| 本地化 | 单语言直接使用资源 | 多语言用 com.unity.localization |
+| 依赖装配 | 序列化引用加构造参数 | 组合根膨胀时用 VContainer |
+| 存档 | 存档端口 + JSON（com.unity.nuget.newtonsoft-json）文件存储 | 原版键与编码兼容由适配器负责 |
+
+主流插件能满足的需求直接使用主流插件。grea 自有的通用框架包只作为薄胶水，每项能力在项目中只保留一种实现；各 grea 组件对应的主流方案与选择规则见 [自研框架与主流插件的关系](../../grea-unity-standard/references/05-Unity-通用组件与Prefab.md#自研框架与主流插件的关系)。新装包的许可证登记见 [许可证与再分发](../../grea-delivery/references/09-交付-许可证与再分发.md#3-第三方包)。
+
+## 一次性转换器
+
+- 转换器（布局烘焙、动画曲线转换、导表、Sprite 切图）放在项目 `Tools/`，或 `Assets/Game/Editor/Conversion/` 这类一次性目录。转换器输入源数据，输出原生资产，通过 AssetDatabase/PrefabUtility 写入。
+- 转换完成后，生产程序集、Prefab 和场景都不依赖转换器。转换器目录可整体删除，工程仍能编译、运行和构建。
+- 再次运行转换器只输出候选（写到 `Library/` 或独立目录），检测到人工修改就拒绝覆盖。Build 只校验和打包已有资源，不调用转换器。
+- 源 uuid 到 Unity GUID 与路径、源名到语义名的映射表，以及转换器未覆盖的特性清单，都保存在 Analysis。
+- 不建立通用万能转换器。只覆盖本项目实际用到的源组件，未支持项报错。
+
+## 禁止项与守卫
+
+以下内容不得出现在交付的生产工程（`Assets/` 中的运行程序集、Prefab、场景和资源）中：
+
+1. 源引擎类型字符串（`cc.`、`sp.`、`Laya.`、`fgui.`、`egret.`）、源 uuid 字面量、以源脚本名命名的类型或枚举。
+2. 为保存源节点身份而挂在 Prefab 上的组件（如 SourceIdentity、SourceWidget、SourceBehaviour），以及运行时依据数据描述构建或改写 UI 树的 ViewDefinition 一类结构。
+3. 按节点索引、uuid 或字符串路径绑定事件或控件；控件统一用 `[SerializeField]` 引用。
+4. 自研的 director、帧循环参与者注册、调度器、微任务队列、Tween/Action 系统、Widget/Layout 布局算法、Label 度量算法，用来替代 Unity 已有能力。
+5. 在 ScriptableObject 中保存 JSON 字符串作为配置。
+6. 交付后仍有 Templates/Views 双层 UI 真源，或需要 Capture、回写流程。
+7. 源引擎运行时源码，或带源引擎许可证限制的文件（例如 Cocos Creator 的 easing 实现及其许可证文件头）。替代做法、原游戏素材范围与第三方包登记见 [许可证与再分发](../../grea-delivery/references/09-交付-许可证与再分发.md)。
+
+守卫做成 EditMode 测试或 Validator，并接入 Build 前置校验。已有项目的存量违规列入白名单，白名单只减不增，新增违规立即失败。守卫扫描范围、白名单和结果记录在项目验收中。
+
+## 平台 SDK
+
+微信 `wx.*`、抖音 `tt.*` 等平台 API 映射为 Gameplay 中声明的平台端口（广告、支付、登录、分享、排行榜、振动、剪贴板等），由 Services 实现。
+
+- 没有真实服务时返回 Unavailable。
+- 用户明确授权的离线替代（如广告点击即成功）单独实现并标明，不计为真实服务成功。
+- 资格、限额和奖励事务保留在业务层，不写在平台适配里。
+
+## 流程
+
+1. **盘点**：确认源引擎与格式版本、可达功能清单和原版证据（见 [取证](../../grea-evidence/references/03-恢复-原版运行与内容取证.md)）。已有项目先统计源引擎残留，并加上守卫。
+2. **代表切片**：选一个同时包含图片、文字、遮罩、列表、按钮和动画的页面，加一条玩法流程，完整走一遍：转换、原生 Prefab、View 脚本、Presenter、Domain 规则、对照。通过后再批量推进。
+3. **按模块转换**：转换器生成原生资产，然后人工补 View 与绑定；规则移入 Domain 并补 oracle 测试；视觉按截图对照。
+4. **退役**：删除转换期的过渡组件和双层资产，收紧白名单。
+5. **验收**：按下一节的三道门分别报告。
+
+## 验收三门
+
+| 门 | 通过条件 |
+| --- | --- |
+| 守卫 | 禁止项扫描零违规，或只剩登记过的白名单且没有新增 |
+| 原版对照 | 规则 oracle 测试通过；同状态截图、录像和关键帧对照通过；真实输入通过。分层记录方式见 [分层验收](../../../shared/08-验收-测试与结果交付.md) |
+| 原生可维护 | 在 Inspector 修改 Prefab 或 SO 后直接 Play 即生效；在 Editor 打开场景和 Prefab 能看到真实界面；没有重新生成步骤；转换器目录删除后仍能编译和构建 |
+
+三道门分别报告；任何一道不通过都不能称为原生转换完成。构建成功、测试数量或旧解释器已移除，都不能替代原生可维护门。

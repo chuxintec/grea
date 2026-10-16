@@ -30,9 +30,12 @@ class BundleTests(unittest.TestCase):
         (self.root / 'pyproject.toml').write_text('[project]\nname="grea"\nversion="2026.10.13rc1"\nrequires-python=">=3.10"\n')
         (self.root / 'uv.lock').write_text('[[package]]\nname="grea"\nversion="2026.10.13rc1"\n')
         (self.root / '中文.md').write_text('中文说明\n')
-        (self.root / 'skill').mkdir()
-        (self.root / 'skill/SKILL.md').write_text('---\nname: grea\ndescription: Fixture\n---\n[说明](../中文.md)\n')
-        (self.root / 'skill/version.json').write_text(json.dumps({'version':'2026.10.13rc1','greaVersion':'2026.10.13rc1','requiredOperations':['session']}))
+        (self.root / 'plugin/skills/grea').mkdir(parents=True)
+        (self.root / 'plugin/skills/grea/SKILL.md').write_text('---\nname: grea\ndescription: Fixture\n---\n[说明](../../../中文.md)\n')
+        (self.root / 'plugin/version.json').write_text(json.dumps({'version':'2026.10.13rc1','greaVersion':'2026.10.13rc1','requiredOperations':['session']}))
+        for manifest in ('.codex-plugin', '.claude-plugin'):
+            (self.root / 'plugin' / manifest).mkdir()
+            (self.root / 'plugin' / manifest / 'plugin.json').write_text(json.dumps({'name':'grea','version':'2026.10.13rc1'}))
         (self.root / 'LICENSE').write_text('MIT fixture')
         (self.root / 'launcher').write_text('#!/bin/sh\nexit 0\n')
         (self.root / 'launcher').chmod(0o755)
@@ -58,7 +61,7 @@ class BundleTests(unittest.TestCase):
         self.assertEqual((self.out / a['artifacts'][0]['name']).read_bytes(), (other / b['artifacts'][0]['name']).read_bytes())
         dest = self.out.with_name('extract')
         release.verify(self.tag, self.out, dest, self.out.with_name('skill-extract'))
-        self.assertTrue((self.out.with_name('skill-extract')/'grea/SKILL.md').is_file())
+        self.assertTrue((self.out.with_name('skill-extract')/'grea/skills/grea/SKILL.md').is_file())
         self.assertEqual(a['artifacts'][1]['kind'],'skill')
         top = dest / ('grea-' + self.tag)
         self.assertEqual((top / '中文.md').read_text(), '中文说明\n')
@@ -104,6 +107,45 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(release.version('v1.2.3-rc2'), ('1.2.3rc2', True))
         for tag in ['v1.2', 'v1.2.3-rc0', 'v1.2.3-beta1', 'v1.2.3;id', '../v1.2.3']:
             with self.assertRaises(ValueError):release.version(tag)
+
+    def test_portable_plugin_attachment_identity_and_tamper(self):
+        self.assertTrue(hasattr(release, 'attach_plugin'), 'Release has no portable plugin attachment gate')
+        import plugin_bundle
+        import build_plugin
+        for name, value in {
+            'plugin/.mcp.json':json.dumps({'mcpServers':{'grea':{'command':'./plugin/launcher/grea','args':['mcp'],'cwd':'.'}}}),
+            'plugin/runtime-lock.json':'{}', 'plugin/launcher/grea':'#!/bin/sh\n',
+            'plugin/launcher/start.py':'# fixture', 'src/grea/cli.py':'# fixture',
+            'registry.json':'{}','launch.py':'# fixture','launch_tool.py':'# fixture',
+            'schemas/operations.json':'{}','schemas/unity-project.schema.json':'{}',
+        }.items():
+            path=self.root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(value)
+        self.git('add','.');self.git('-c','commit.gpgsign=false','commit','-qm','plugin fixture')
+        release.prepare(self.tag,self.out)
+        source, identity=plugin_bundle.read_source(self.root)
+        staging=self.out.with_name('plugin')
+        tree=staging/'grea';build_plugin.write_product(source,tree)
+        (tree/'runtime').mkdir();(tree/'runtime/python').write_text('fixture runtime')
+        (tree/'runtime-requirements.txt').write_bytes(b'fixture requirements')
+        runtime={'python':{},'uvLockSha256':release.hashlib.sha256(source['uv.lock'][0]).hexdigest(),
+                 'requirementsSha256':release.hashlib.sha256(b'fixture requirements').hexdigest()}
+        (tree/'runtime-manifest.json').write_bytes(plugin_bundle.encoded(runtime))
+        manifest={'schemaVersion':1,'kind':'complete-plugin','version':'2026.10.13rc1','target':'macos-arm64',
+                  **identity,'runtime':runtime,'files':plugin_bundle.inventory(tree)}
+        (tree/'plugin-manifest.json').write_bytes(plugin_bundle.encoded(manifest))
+        plugin_bundle.write_archive(tree,staging/build_plugin.ARCHIVE,identity['source_timestamp'])
+        report={'status':'pass','target':'macos-arm64','archive_sha256':plugin_bundle.sha256(staging/build_plugin.ARCHIVE),
+                'source_tree_sha256':identity['source_tree_sha256'],
+                'clients':{client:{'status':'pass'} for client in ['codex','claude']},
+                'isolation':{key:True for key in ['moved_unicode_space_path','independent_home','minimal_path',
+                    'source_read_denied','network_denied','install_write_denied','installation_unchanged']}}
+        (staging/'plugin-acceptance.json').write_bytes(plugin_bundle.encoded(report))
+        release.attach_plugin(self.tag,self.out,staging)
+        names=release.verify(self.tag,self.out)
+        self.assertIn(build_plugin.ARCHIVE,names)
+        self.assertIn('plugin-acceptance-macos-arm64.json',names)
+        (self.out/build_plugin.ARCHIVE).write_bytes(b'corrupt')
+        with self.assertRaises(ValueError):release.verify(self.tag,self.out)
 
 
 class PublishTests(unittest.TestCase):

@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+root="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
+if [ "$(/usr/bin/uname -s)" != Darwin ] || [ "$(/usr/bin/uname -m)" != arm64 ]; then
+  printf '%s\n' 'This plugin runtime requires native macOS arm64.' >&2
+  exit 2
+fi
+if [ ! -x "$root/runtime/bin/python3" ]; then
+  printf '%s\n' 'Portable runtime missing. Install the complete macOS arm64 plugin artifact.' >&2
+  exit 2
+fi
+unset PYTHONPATH PYTHONHOME VIRTUAL_ENV
+exec "$root/runtime/bin/python3" -I -B "$root/plugin/launcher/start.py" "$@"

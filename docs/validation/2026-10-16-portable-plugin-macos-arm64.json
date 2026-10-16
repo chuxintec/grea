@@ -1,0 +1,311 @@
+{
+  "kind": "portable-plugin-local-acceptance",
+  "schemaVersion": 1,
+  "date": "2026-10-16",
+  "status": "pass",
+  "branch": "codex/numeric-combat-template-design",
+  "version": "2026.10.14rc1",
+  "target": "macos-arm64",
+  "platform": {
+    "system": "macOS",
+    "version": "27.0.1",
+    "architecture": "arm64"
+  },
+  "artifact": {
+    "archive": "grea-plugin-macos-arm64.zip",
+    "sha256": "893604f4f39fbcde67c1d4c72ee4394b9334be467206905c79f4e7edb7f6522f",
+    "bytes": 47040258,
+    "files": 3327,
+    "source_revision": "52934578bee2be782fe4853907600efa9c426ef6",
+    "source_dirty": true,
+    "source_kind": "worktree-preview",
+    "source_tree_sha256": "aa2d6a086cd8a951aeb69d84f2ece9c4b76b84a64f3ea43bbbf8b402b55d7082"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "pythonPackages": 30,
+    "lockedDependencies": 29,
+    "includesUpstreamPip": true,
+    "licenseFiles": 19,
+    "preservedUpstreamRecordDifferences": [
+      {
+        "file": "lib/python3.12/site-packages/pip/_vendor/distlib/t32.exe",
+        "reason": "Original stripped CPython archive bytes are unchanged; upstream wheel RECORD predates stripping.",
+        "sha256": "5fd873e09786a1eaabaa44261e9e30609d88745da040ebb702c1a5069ab345ca"
+      },
+      {
+        "file": "lib/python3.12/site-packages/pip/_vendor/distlib/t64-arm.exe",
+        "reason": "Original stripped CPython archive bytes are unchanged; upstream wheel RECORD predates stripping.",
+        "sha256": "81f7936c6d05cadd4a185bb9a8a64abe9a72c937ad979ea5afe672de59123fcc"
+      },
+      {
+        "file": "lib/python3.12/site-packages/pip/_vendor/distlib/t64.exe",
+        "reason": "Original stripped CPython archive bytes are unchanged; upstream wheel RECORD predates stripping.",
+        "sha256": "acd47a82dc01132e3b8414f683c2e117c18aedbf650a370249fe9fdbc445cda1"
+      },
+      {
+        "file": "lib/python3.12/site-packages/pip/_vendor/distlib/w32.exe",
+        "reason": "Original stripped CPython archive bytes are unchanged; upstream wheel RECORD predates stripping.",
+        "sha256": "f27b3724964ff524e837374847d2856f7d10a884516fc34200d0a2332a739789"
+      },
+      {
+        "file": "lib/python3.12/site-packages/pip/_vendor/distlib/w64-arm.exe",
+        "reason": "Original stripped CPython archive bytes are unchanged; upstream wheel RECORD predates stripping.",
+        "sha256": "f6704d3a1022f69ad6b7e604a927d00ce2f9dae515bfad5a7df9a2e3e4bd2448"
+      },
+      {
+        "file": "lib/python3.12/site-packages/pip/_vendor/distlib/w64.exe",
+        "reason": "Original stripped CPython archive bytes are unchanged; upstream wheel RECORD predates stripping.",
+        "sha256": "55b21889fd3d28799b834fba3d29482e7aa1b0519864b790e3914af7cdda666b"
+      }
+    ]
+  },
+  "compatibility": {
+    "registryUnchangedFromSourceRevision": true,
+    "registeredToolIds": 63,
+    "mcpOperations": 20,
+    "skills": 8
+  },
+  "checks": {
+    "sourceTests": {
+      "status": "pass",
+      "tests": 202,
+      "passed": 200,
+      "skipped": 2,
+      "skips": [
+        "Real ffmpeg/ffprobe requires integration mode.",
+        "Real NSIS packaging requires integration mode and fixture executable."
+      ]
+    },
+    "gitFreeExtractedTests": {
+      "status": "pass",
+      "tests": 23,
+      "runtime": "bundled Python",
+      "modules": [
+        "test_plugin_bundle",
+        "test_plugin_licenses",
+        "test_release"
+      ],
+      "scope": "The extracted product has no .git or developer environment; release unit tests create their own temporary Git fixtures."
+    },
+    "reproducibleBuild": {
+      "status": "pass",
+      "comparison": "byte-for-byte cmp",
+      "builds": 2,
+      "sha256": "893604f4f39fbcde67c1d4c72ee4394b9334be467206905c79f4e7edb7f6522f"
+    },
+    "stdioAndBusiness": {
+      "archive_sha256": "893604f4f39fbcde67c1d4c72ee4394b9334be467206905c79f4e7edb7f6522f",
+      "clients": {
+        "claude": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "legacy_launch",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "validate_unity_project"
+          ]
+        },
+        "codex": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "legacy_launch",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "validate_unity_project"
+          ]
+        }
+      },
+      "isolation": {
+        "independent_home": true,
+        "install_write_denied": true,
+        "installation_unchanged": true,
+        "minimal_path": true,
+        "moved_unicode_space_path": true,
+        "network_denied": true,
+        "source_read_denied": true
+      },
+      "limits": [
+        "Native client loading is a separate acceptance layer.",
+        "Unity Editor and gameplay not run.",
+        "Other platforms not run."
+      ],
+      "source_kind": "worktree-preview",
+      "source_tree_sha256": "aa2d6a086cd8a951aeb69d84f2ece9c4b76b84a64f3ea43bbbf8b402b55d7082",
+      "status": "pass",
+      "target": "macos-arm64",
+      "version": "2026.10.14rc1"
+    },
+    "nativeClients": {
+      "status": "pass",
+      "isolation": {
+        "credential_environment_inherited": false,
+        "independent_child_configuration": true,
+        "network_denied": true,
+        "unicode_space_path": true
+      },
+      "modelRequestsSent": 0,
+      "clients": {
+        "claude": {
+          "status": "pass",
+          "version": "2.1.299 (Claude Code)",
+          "catalogOrigin": "bundled",
+          "skills": 8,
+          "tools": 20,
+          "layers": {
+            "connection": "pass",
+            "entrypoint": "pass",
+            "initialize": "pass",
+            "install": "pass",
+            "manifest": "pass",
+            "registration": "pass",
+            "skills": "pass",
+            "tools": "pass",
+            "version": "pass"
+          }
+        },
+        "codex": {
+          "status": "pass",
+          "version": "codex-cli 0.162.1",
+          "catalogOrigin": "bundled",
+          "skills": 8,
+          "tools": 20,
+          "layers": {
+            "entrypoint": "pass",
+            "initialize": "pass",
+            "install": "pass",
+            "registration": "pass",
+            "skills": "pass",
+            "tools": "pass",
+            "version": "pass"
+          }
+        }
+      }
+    },
+    "documentation": {
+      "ok": true,
+      "documents": 109,
+      "localLinks": 524,
+      "errors": [],
+      "scope": "Local links/anchors only; external URLs not fetched."
+    },
+    "skillReferences": {
+      "ok": true,
+      "markdown_files": 41,
+      "local_links": 264,
+      "errors": [],
+      "warnings": []
+    },
+    "contracts": {
+      "status": "pass",
+      "drifted": []
+    },
+    "publicTreeAudit": {
+      "status": "pass",
+      "files": 500,
+      "scope": "tracked and untracked nonignored worktree bytes"
+    },
+    "acceptedCodeMatchesCurrentSource": {
+      "status": "pass",
+      "postBuildDocumentationChanges": [
+        "AGENTS.md",
+        "docs/design/插件运行时集成计划.md",
+        "docs/validation/2026-10-16-portable-plugin-macos-arm64.json"
+      ],
+      "excludedByProductAssembly": [
+        ".gitignore",
+        "plugin/.gitignore"
+      ]
+    }
+  },
+  "evidence": [
+    {
+      "path": "dist/plugin-final-v2/plugin-build.json",
+      "sha256": "a0315b34756eaa7483b0c02f719c8967024d21786086bb4458170d3a42c7eb3c"
+    },
+    {
+      "path": "dist/plugin-final-v2/plugin-acceptance.json",
+      "sha256": "63492198a8a8b205fa3633985db34a5d3fae6fc1027bfc7d6d9eb15c0a0b2493"
+    },
+    {
+      "path": "dist/plugin-final-v2/native-clients.json",
+      "sha256": "e0a1311ce9c4775aa97b099d9457934b4418f2c6aa0090de84d7972f09dd9392"
+    }
+  ],
+  "delivery": {
+    "published": false,
+    "commitCreated": false,
+    "pushed": false,
+    "remoteCiRun": false,
+    "originalGameProjectsModified": false,
+    "installedWorkspaceSkillsInSync": true
+  },
+  "notRun": [
+    "Unity Editor and game Player",
+    "Other operating systems or CPU architectures",
+    "Remote GitHub Actions execution",
+    "Signed or notarized public-download installation"
+  ],
+  "limits": [
+    "This is an unpublished worktree preview, not a replacement for the existing release with the same product version.",
+    "Native client tests cover installation and discovery; business tools are tested separately over the same stdio configurations.",
+    "Post-acceptance documentation closeout and this report were added after the artifact source snapshot; archive identity is the recorded source_tree_sha256."
+  ],
+  "checkedAt": "2026-10-16T03:38:34.385771+00:00"
+}

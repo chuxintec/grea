@@ -8,6 +8,12 @@ grea 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许
 
 主运行时由 `uv sync --frozen` 按 [uv.lock](uv.lock) 安装；包自带的许可证和 notice 应保留。顶层依赖为 [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)、[jsonschema](https://github.com/python-jsonschema/jsonschema) 和 [Pillow](https://github.com/python-pillow/Pillow)。可选提取环境的版本在 [requirements.txt](tools/requirements-extraction.txt)，包含 [UnityPy](https://github.com/K0lb3/UnityPy) 与 [cryptography](https://github.com/pyca/cryptography)。
 
+完整 macOS arm64 插件制品携带 [python-build-standalone](https://github.com/astral-sh/python-build-standalone) 的 CPython 3.12.14（20260929）及锁定的核心 Python 依赖；来源、平台、大小和 SHA256 见 [运行时锁](plugin/runtime-lock.json)。构建从固定归档恢复，不复制开发机 `.venv`。构建工具 uv 为 0.12.21，安装插件后的运行不依赖 uv。
+
+发行包的 `runtime-manifest.json` 记录解释器来源和各 Python 包的实际版本、许可元数据；`runtime/` 内保留 CPython、内置库与 wheel 的许可文本，`runtime-requirements.txt` 记录依赖哈希。第三方许可不被 grea 的 MIT 覆盖。运行时二进制与下载缓存仅进入构建制品，不提交 Git；完整插件的这一分发范围与仅含源码、文档的两类旧制品分开说明。
+
+所锁定 macOS 归档的上游元数据为四个使用系统 libz 的扩展同时列出了 zlib-ng 备选许可路径，该文件不在归档中。构建保留原始元数据和实际的 19 份许可证，并验证这四个扩展均链接系统 `z`、没有打包 zlib-ng；例外记录在 `runtime/license-manifest.json`。未知缺项、目标改变或链接方式改变会阻止构建，不能沿用此例外。
+
 ## 可选提供方
 
 | 能力 | 官方来源 | 接入方式 |

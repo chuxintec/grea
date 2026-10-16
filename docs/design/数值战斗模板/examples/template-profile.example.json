@@ -1,0 +1,37 @@
+{
+  "artifactKind": "design-only-template-profile",
+  "designVersion": "0.1.0-draft.2",
+  "executable": false,
+  "acceptedByCurrentGreaGenerator": false,
+  "proposedRecipe": "grea-numeric-combat-ugui",
+  "basisStandard": "grea-unity-project/1.0.0",
+  "candidateEnvironment": {
+    "editor": "6000.6.2f1",
+    "renderPipeline": "URP-17.6.0",
+    "ui": "uGUI-2.6.0",
+    "input": "InputSystem-1.20.0",
+    "target": "macOS-arm64-Mono",
+    "newCombinationValidated": false
+  },
+  "scenes": ["Bootstrap", "Entry"],
+  "enabledModules": ["Battle", "Inventory", "Progression", "Rewards", "Navigation", "Settings"],
+  "optionalModules": ["Activities", "Shop", "Guide", "Badges"],
+  "ownership": {
+    "framework": "versioned-package",
+    "gameplayCode": "seed-once",
+    "baseShells": "generated-with-manifest",
+    "workingVariants": "human",
+    "sourceMaterials": "project-evidence-only"
+  },
+  "policies": {
+    "rewardedAdDefault": "Unavailable",
+    "qaSimulationDefault": false,
+    "saveNamespace": "synthetic.numeric.sample",
+    "saveSchemaVersion": 1,
+    "saveWriter": "single-writer-single-aggregate",
+    "presentationOwnsRewards": false,
+    "sourceCompatibilityEnabled": false,
+    "unknownInput": "reject",
+    "buildRegeneratesAuthoredAssets": false
+  }
+}

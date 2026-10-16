@@ -1,4 +1,0 @@
-interface:
-  display_name: "grea · 游戏逆向与恢复"
-  short_description: "按原包证据恢复玩法，完成授权换皮、Unity 工程整理与分层验收"
-  default_prompt: "使用 $grea，先确认本次恢复、修复、换皮、重构、性能、交付或维护模式，只加载相关规则并按本期验收基线执行。"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "grea · 游戏逆向恢复与原生 Unity 转换"
+  short_description: "依据已发布游戏恢复或转换为原生 Unity 工程：取证、原生转换、一致性修复、工程治理与交付"
+  default_prompt: "使用 $grea，先判断源引擎和本次任务模式，再转到对应的 grea 子技能，按本期验收基线执行。"

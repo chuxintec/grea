@@ -1,0 +1,13 @@
+{"sample":"synthetic-example-only","status":"not-executed","seq":1,"event":"qa-created","coins":100,"equipmentLevel":1}
+{"sample":"synthetic-example-only","status":"not-executed","seq":2,"event":"upgrade-committed","operationId":"example-upgrade-1","coins":89,"equipmentLevel":2}
+{"sample":"synthetic-example-only","status":"not-executed","seq":3,"event":"battle-entered","sessionId":"example-battle-1","stageId":"training_stage"}
+{"sample":"synthetic-example-only","status":"not-executed","seq":4,"event":"battle-paused","sessionId":"example-battle-1","pauseOwners":1}
+{"sample":"synthetic-example-only","status":"not-executed","seq":5,"event":"battle-resumed","sessionId":"example-battle-1","pauseOwners":0}
+{"sample":"synthetic-example-only","status":"not-executed","seq":6,"event":"victory-committed","operationId":"example-victory-1","claimKey":"stage:example-battle-1:base","coins":112,"rewardId":"reward_victory"}
+{"sample":"synthetic-example-only","status":"not-executed","seq":7,"event":"qa-ad-simulated","operationId":"example-bonus-1","placementId":"after_result_bonus","provider":"explicit-qa-only"}
+{"sample":"synthetic-example-only","status":"not-executed","seq":8,"event":"bonus-committed","operationId":"example-bonus-1","claimKey":"bonus:example-day:after_result_bonus","coins":119,"quotaUsed":1,"rewardId":"reward_bonus"}
+{"sample":"synthetic-example-only","status":"not-executed","seq":9,"event":"same-request-replayed","operationId":"example-bonus-1","coins":119,"quotaUsed":1}
+{"sample":"synthetic-example-only","status":"not-executed","seq":10,"event":"same-receipt-modal-reopened","coins":119,"activeViewBindings":1}
+{"sample":"synthetic-example-only","status":"not-executed","seq":11,"event":"returned-home","battleTasks":0,"battleAssetLeases":0}
+{"sample":"synthetic-example-only","status":"not-executed","seq":12,"event":"process-quit","openPlayerWrites":0}
+{"sample":"synthetic-example-only","status":"not-executed","seq":13,"event":"new-process-loaded","coins":119,"equipmentLevel":2,"completedStages":["training_stage"],"claimedKeys":["stage:example-battle-1:base","bonus:example-day:after_result_bonus"]}

@@ -1,0 +1,50 @@
+{
+  "artifactKind": "synthetic-ui-contract-design",
+  "designVersion": "0.1.0-draft.2",
+  "executionStatus": "not-executed",
+  "sourceProfile": "observed-cocos-2.4-sizing-semantics-only",
+  "spriteInput": {
+    "authoredSize": [120, 120],
+    "originalSize": [48, 80],
+    "trimmedSize": [32, 52],
+    "unityImportedRect": [96, 96],
+    "scale": [0.75, 0.75],
+    "position": [5, 9]
+  },
+  "spriteCases": [
+    {"sourceMode": 0, "name": "CUSTOM", "expectedSize": [120, 120]},
+    {"sourceMode": 1, "name": "TRIMMED", "expectedSize": [32, 52]},
+    {"sourceMode": 2, "name": "RAW", "expectedSize": [48, 80]}
+  ],
+  "assignmentRoutes": ["initial", "address", "asset-id", "animation-frame"],
+  "remoteTextureCase": {"mode": "RAW", "descriptionKind": "full-image-texture", "expectedSizeSource": "originalSize", "mustNotParseAsLocalSpriteFrame": true},
+  "preserveAcrossAssignment": ["scale", "position"],
+  "unknownModePolicy": "error",
+  "bindingCases": [
+    {"name": "root-bound-child-pending", "rootBound": true, "childReady": false, "expectedBusinessReady": false},
+    {"name": "all-business-composed", "rootBound": true, "childReady": true, "expectedBusinessReady": true},
+    {"name": "callback-but-no-hit", "handlerBound": true, "graphicRaycastEnabled": false, "expectedInputAcceptance": false},
+    {"name": "hit-and-handler-only", "handlerBound": true, "graphicRaycastEnabled": true, "expectedInputAcceptance": "requires-actual-input"}
+  ],
+  "inertEventRule": {
+    "viewId": "synthetic-view-a", "node": 7, "slot": 2,
+    "handler": "OnInspect", "argument": "",
+    "sourceTargetAbsent": true,
+    "matching": "exact-all-fields",
+    "ordinaryMissingHandlerPolicy": "error"
+  },
+  "inertEventCases": [
+    {"name": "exact-source-inert", "viewId": "synthetic-view-a", "node": 7, "slot": 2, "handler": "OnInspect", "argument": "", "sourceTargetAbsent": true, "expectedIgnored": true},
+    {"name": "different-slot", "viewId": "synthetic-view-a", "node": 7, "slot": 3, "handler": "OnInspect", "argument": "", "sourceTargetAbsent": true, "expectedIgnored": false},
+    {"name": "target-actually-present", "viewId": "synthetic-view-a", "node": 7, "slot": 2, "handler": "OnInspect", "argument": "", "sourceTargetAbsent": false, "expectedIgnored": false}
+  ],
+  "selectionFlow": [
+    {"step": "bind", "modelSelection": "appearance-blue", "viewSelection": "appearance-blue", "presenterSelection": "appearance-blue"},
+    {"step": "select-new", "modelSelection": "appearance-gold", "viewSelection": "appearance-gold", "presenterSelection": "appearance-gold"},
+    {"step": "upgrade-preview", "modelSelection": "appearance-gold", "viewSelection": "appearance-gold", "presenterSelection": "appearance-gold", "previewSelection": "appearance-gold"}
+  ],
+  "dependencyCases": [
+    {"name": "same-versions-changed-bytes", "versionsMatch": true, "hashesMatch": false, "expectedIdentityPass": false},
+    {"name": "runtime-via-optional-tool-only", "runtimeUsesPackage": true, "directDeclaration": false, "resolvedTransitively": true, "expectedFinding": "runtime-dependency-owned-by-optional-tool"}
+  ]
+}

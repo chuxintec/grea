@@ -2,7 +2,7 @@
 
 静态规划已提供 `validate-unity-project`、`plan-unity-project`；MCP 名称为 `validate_unity_project`、`plan_unity_project`。两个入口共用实现，只读指定项目，结果输出到 stdout，不创建目录、生成代码/Prefab、安装依赖、打开 Unity 或修改项目。实际写入使用独立的 [工程生成契约](Unity工程生成与恢复.md)，不能执行静态规划的设计计划。
 
-工程标准见 [标准 v1](../skill/references/05-Unity-工程结构与开发规范.md)，历史实施过程见 [记录](history/Unity标准实施记录.md)。
+工程标准见 [标准 v1](../plugin/skills/grea-unity-standard/references/05-Unity-工程结构与开发规范.md)，历史实施过程见 [记录](history/Unity标准实施记录.md)。
 
 ## 1. 配置与 Schema
 

@@ -1,0 +1,209 @@
+{
+  "artifactKind": "design-only-prefab-contracts",
+  "designVersion": "0.1.0-draft.2",
+  "unityAssetsCreated": false,
+  "bindingTypeNamesAreProposals": true,
+  "contracts": [
+    {
+      "id": "ui-host",
+      "contractVersion": 1,
+      "owner": "generated",
+      "requiredSlots": [
+        "pages",
+        "modals",
+        "toasts",
+        "loading"
+      ],
+      "componentRoles": [
+        "Canvas",
+        "CanvasScaler",
+        "GraphicRaycaster",
+        "FocusStack"
+      ],
+      "hostRules": [
+        "one-event-system",
+        "profile-matched-input-module"
+      ],
+      "acceptance": [
+        "resize",
+        "modal-layer-order",
+        "failed-route-recovery"
+      ]
+    },
+    {
+      "id": "button-shell",
+      "contractVersion": 1,
+      "owner": "generated",
+      "requiredSlots": [
+        "hit-target",
+        "visual"
+      ],
+      "componentRoles": [
+        "Button",
+        "CommandBinding",
+        "PointerFeedback"
+      ],
+      "parameters": "CommandPresentation",
+      "events": [
+        "requested",
+        "cancelled"
+      ],
+      "allowedOverrides": [
+        "label",
+        "icon",
+        "theme"
+      ],
+      "acceptance": [
+        "bind-twice",
+        "drag-out",
+        "busy-reject",
+        "failure-reenable"
+      ],
+      "hitTestContract": {
+        "graphic": "explicit-hit-target",
+        "otherGraphics": "do-not-enable-globally",
+        "acceptance": "actual-hit-and-business-result-separate"
+      }
+    },
+    {
+      "id": "page-shell",
+      "contractVersion": 1,
+      "owner": "generated",
+      "requiredSlots": [
+        "header",
+        "content",
+        "footer"
+      ],
+      "componentRoles": [
+        "PageView"
+      ],
+      "parameters": "PageReadModel",
+      "events": [
+        "navigate-requested"
+      ],
+      "allowedOverrides": [
+        "theme",
+        "content-variant"
+      ],
+      "acceptance": [
+        "enter-exit-enter",
+        "late-callback",
+        "empty-state",
+        "deferred-child-binding"
+      ],
+      "readiness": [
+        "created",
+        "bound",
+        "business-ready",
+        "visible",
+        "closed"
+      ]
+    },
+    {
+      "id": "modal-shell",
+      "contractVersion": 1,
+      "owner": "generated",
+      "requiredSlots": [
+        "content",
+        "backdrop",
+        "close"
+      ],
+      "componentRoles": [
+        "ModalView",
+        "ScopedBinding"
+      ],
+      "hostRules": [
+        "borrow-focus",
+        "borrow-optional-pause",
+        "do-not-create-event-system"
+      ],
+      "events": [
+        "close-requested"
+      ],
+      "acceptance": [
+        "open-close-twice",
+        "composition-failure",
+        "destroy-during-hide"
+      ]
+    },
+    {
+      "id": "reward-dialog",
+      "contractVersion": 1,
+      "owner": "seed-once",
+      "baseContract": "modal-shell",
+      "requiredSlots": [
+        "items",
+        "confirm"
+      ],
+      "componentRoles": [
+        "RewardReceiptView"
+      ],
+      "parameters": "CommittedRewardReceipt",
+      "events": [
+        "acknowledged"
+      ],
+      "forbiddenEffects": [
+        "grant-items",
+        "consume-ad-quota",
+        "write-save"
+      ],
+      "acceptance": [
+        "same-receipt-reopen",
+        "long-list",
+        "missing-icon"
+      ]
+    },
+    {
+      "id": "inventory-item",
+      "contractVersion": 1,
+      "owner": "seed-once",
+      "requiredSlots": [
+        "icon",
+        "label",
+        "amount",
+        "selection",
+        "badge"
+      ],
+      "componentRoles": [
+        "ItemView",
+        "BindingGeneration"
+      ],
+      "parameters": "ItemReadModel",
+      "events": [
+        "selected"
+      ],
+      "acceptance": [
+        "same-size-data-replacement",
+        "late-icon",
+        "pool-reset",
+        "selection-then-upgrade-preview",
+        "all-sprite-assignment-routes"
+      ],
+      "spriteSizePolicy": "authored-by-default; source-mode-only-with-compatibility-contract"
+    },
+    {
+      "id": "battle-hud",
+      "contractVersion": 1,
+      "owner": "seed-once",
+      "requiredSlots": [
+        "health",
+        "wave",
+        "skills",
+        "pause"
+      ],
+      "componentRoles": [
+        "BattleReadModelView"
+      ],
+      "parameters": "BattleSnapshot",
+      "events": [
+        "pause-requested",
+        "skill-requested"
+      ],
+      "acceptance": [
+        "pause-resume",
+        "return-reenter",
+        "retired-session-event"
+      ]
+    }
+  ]
+}

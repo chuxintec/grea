@@ -1,0 +1,55 @@
+// DESIGN PSEUDOCODE ONLY. Not compiled; none of these APIs are published grea APIs.
+// Newly authored synthetic example. No original game source or formulas.
+// Scope: one writer, one aggregate snapshot, explicit recovery of unknown commits.
+
+ClaimResult Claim(ClaimRequest request, VerifiedCapabilityResult capability)
+{
+    // Input is typed and validated. A Boolean from a UI is not proof of an ad.
+    // Demo capability results are permitted only by an explicit QA profile.
+    using var lease = store.EnterSingleWriter();
+    var state = store.ReadValidatedAggregate(); // Corrupt/schema/IO must not become Missing.
+
+    var prior = state.Operations.Find(request.OperationId);
+    if (prior != null)
+        return prior.RequestDigest == request.Digest
+            ? ClaimResult.Replayed(prior.Receipt)
+            : ClaimResult.Conflict("OperationId reused with different input");
+
+    if (state.ClaimKeys.Contains(request.ClaimKey))
+        return ClaimResult.AlreadyClaimed(state.ReceiptFor(request.ClaimKey));
+    if (state.Revision != request.ExpectedRevision)
+        return ClaimResult.StaleState();
+
+    var definition = catalog.Require(request.RewardDefinitionId);
+    // Check reward eligibility, configured capability, limits, costs and ranges.
+    // UI route names, visibility or a previous Show() call never grant eligibility.
+    var validation = rules.Validate(state, request, capability, definition);
+    if (!validation.Allowed)
+        return ClaimResult.Rejected(validation.Reason);
+
+    var next = state.Copy();
+    var receipt = rules.ApplyToCopy(next, request, definition);
+    next.Operations.Add(request.OperationId, request.Digest, receipt);
+    next.ClaimKeys.Add(request.ClaimKey, receipt.Id);
+    next.Revision++;
+
+    // State, inventory, limit counters and receipt commit together.
+    // This transactional store is a design requirement, not FileSaveStore's current API.
+    var commit = store.CommitIfCurrent(state.Revision, next);
+    if (commit == CommitStatus.Unknown)
+        return ClaimResult.PendingRecovery(request.OperationId); // Query same ID; never regrant.
+    if (commit != CommitStatus.Committed)
+        return ClaimResult.SaveFailed();
+    return ClaimResult.Committed(receipt);
+}
+
+// Presenter sketch: the PlayerScope owns the business operation; a ViewScope
+// owns only UI subscriptions, async rendering and resource handles.
+async Task ShowClaimResult(ClaimRequest request, ViewBinding binding)
+{
+    var generation = binding.Generation;
+    var result = await playerOperations.SubmitOrQuery(request);
+    if (!binding.IsAlive || binding.Generation != generation)
+        return; // A new view can query the same receipt later.
+    view.Render(result); // Render never mutates inventory or marks claimed.
+}

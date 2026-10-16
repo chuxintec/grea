@@ -13,7 +13,7 @@ jobs:
         include:
           - os: ubuntu-24.04
             python: '3.12'
-          - os: macos-14
+          - os: macos-15
             python: '3.11'
     runs-on: ${{ matrix.os }}
     steps:
@@ -46,6 +46,31 @@ jobs:
       # Release maintenance requires Python 3.11; runtime minimum is checked separately.
       - run: .venv/bin/python -m unittest discover -s tests -p test_grea.py -v
       - run: .venv/bin/python -m unittest discover -s tests -p test_mcp.py -v
+  plugin-macos:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
+        with:
+          version: '0.12.21'
+          python-version: '3.12'
+      - run: uv sync --frozen
+      - name: Build and accept relocatable native plugin
+        run: |
+          test "$(uname -m)" = arm64
+          .venv/bin/python scripts/build_plugin.py --out dist/plugin
+          .venv/bin/python scripts/verify_plugin.py --bundle dist/plugin/grea-plugin-macos-arm64.zip --report dist/plugin/plugin-acceptance.json
+          .venv/bin/python scripts/build_plugin.py --out dist/plugin-repeat
+          cmp dist/plugin/grea-plugin-macos-arm64.zip dist/plugin-repeat/grea-plugin-macos-arm64.zip
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: plugin-macos-${{ github.sha }}
+          path: dist/plugin/*
+          if-no-files-found: error
+          retention-days: 7
   windows-smoke:
     runs-on: windows-2022
     steps:

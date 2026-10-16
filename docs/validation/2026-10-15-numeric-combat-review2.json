@@ -1,0 +1,123 @@
+{
+  "kind": "documentation-and-synthetic-example-validation",
+  "designVersion": "0.1.0-draft.2",
+  "date": "2026-10-15",
+  "state": "passed-documentation-checks",
+  "scope": "Documentation, fixture relationships and retained evidence bytes only",
+  "checks": {
+    "jsonFilesParsed": 5,
+    "sourceFilesHashVerified": 99,
+    "claimsReferencesVerified": 31,
+    "configurationTablesChecked": 10,
+    "prefabContractsChecked": 7,
+    "syntheticExpectedEventsChecked": 13,
+    "syntheticCoinSequence": [
+      100,
+      89,
+      112,
+      119
+    ],
+    "privateSampleIdentifiersFound": false,
+    "uiContractCasesChecked": 15,
+    "currentCandidateInputsCompared": 13827,
+    "candidateMatchScope": "initial comparison only; later source edits retained separately as E31",
+    "sourceFilesComparedBeforeAfter": 13852,
+    "priorDesignArtifactHashesVerified": 15,
+    "documentationLinks": {
+      "ok": true,
+      "documents": 89,
+      "localLinks": 429
+    },
+    "publicTreeAudit": {
+      "ok": true,
+      "scope": "intended Git index bytes in a separate temporary index"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "docs/design/数值战斗模板/Cocos到Unity迁移.md",
+      "sha256": "6cd8491e1234e5e61e13eac8508aae4c8b32ef47281b0ca9a18941edb32c64d8"
+    },
+    {
+      "path": "docs/design/数值战斗模板/Prefab与配置目录.md",
+      "sha256": "d41ff58c694c0941914a8100b097acc9e889b013adc83285cc337a53797388c5"
+    },
+    {
+      "path": "docs/design/数值战斗模板/README.md",
+      "sha256": "c2ed584ec80d04a4ec48378031feec7fdefb4f8c72ce10203f7f5090577053c2"
+    },
+    {
+      "path": "docs/design/数值战斗模板/evidence.json",
+      "sha256": "184ff24730e829c5ff923a23a1aa4df9a231fbdad790b81d508e34a6b77fe418"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/README.md",
+      "sha256": "b7bfc36305740fdd18cba2a2443dd50e566ede4e6e392449312b25a815c92faf"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/configuration.example.json",
+      "sha256": "bec26428bdb236a6faacf0b524f5b8e614ab1d0f376c2d5ef6faf95f624350c5"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/expected-flow.example.jsonl",
+      "sha256": "76f4878f869e2f0bdb27350079b628723767e8fd7d06ca22aab7686f890ba4c5"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/prefab-contracts.example.json",
+      "sha256": "8d4e5e7d08edd11b3988ac0202b58ec77c46428315c09671789c04666930a069"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/reward-claim.pseudocode.cs.txt",
+      "sha256": "96ff87e2374a47e746b99fa9b0c34f7b887fef3c085223c4a3af6a1dfd7e1370"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/template-profile.example.json",
+      "sha256": "651d7bbc3ce61a77ffc35d316161a33553667359aac4f30a83f2ec891692ce39"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/ui-regression-contracts.example.json",
+      "sha256": "bb6834a164cfe147e303caaf4b5192654a0a31665732ab6e6c1839f561f3633b"
+    },
+    {
+      "path": "docs/design/数值战斗模板/工作流与Skill补齐.md",
+      "sha256": "fd135a3ea6092231487d175c7e4e98944fb7b9234d4e29ef2e537f4b10f614ad"
+    },
+    {
+      "path": "docs/design/数值战斗模板/工具提炼计划.md",
+      "sha256": "d3a84559b0265b46b7ae444eb61e3f69f8732f8633f44620e141fc289829186d"
+    },
+    {
+      "path": "docs/design/数值战斗模板/模板架构.md",
+      "sha256": "3a6d1823c37540e80892ef67824d499dd98dc8169ce38d72d7fdf7d354bc5daa"
+    },
+    {
+      "path": "docs/design/数值战斗模板/结构复评与修订.md",
+      "sha256": "034d0e330928053911d2b7ba53235e983722cfcfd6ede9ace75d1b741ba8d337"
+    },
+    {
+      "path": "docs/design/数值战斗模板/落地与验收计划.md",
+      "sha256": "e8cd966b8b858894c929bcbea1c8b3102ed29418a10a61dd460703698fb43498"
+    },
+    {
+      "path": "docs/design/数值战斗模板/证据索引.md",
+      "sha256": "f1e3c2664160e86f7278fed0520b01b825e25de403203c8a6585038dcb151d78"
+    }
+  ],
+  "notExecuted": [
+    "Unity compilation",
+    "EditMode/PlayMode",
+    "Player input/audio/performance",
+    "original parity",
+    "template generation",
+    "Skill update/install",
+    "commit/push/release"
+  ],
+  "sourceWorkspace": {
+    "readOnlyByThisTask": true,
+    "concurrentChangesObserved": true,
+    "scopedSourceFilesUnchanged": false,
+    "basis": "Frozen files, current source-input comparison, and separately identified historical reports"
+  },
+  "limits": "No executable capability was added. Synthetic expected events are authored examples, not test outputs. Private original reports are not distributed.",
+  "checkedAt": "2026-10-15T05:52:18.950509+00:00"
+}

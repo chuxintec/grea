@@ -1,6 +1,6 @@
 # 非 Python 工具与 Unity 源码
 
-Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools/)，通过 `bin/grea` 和 [registry.json](../registry.json) 调度；本目录保存其他技术栈的源码与构建输入，不建立第二套工具 ID。
+Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools)，通过 `bin/grea` 和 [registry.json](../registry.json) 调度；本目录保存其他技术栈的源码与构建输入，不建立第二套工具 ID。
 
 | 目录 | 内容 |
 | --- | --- |

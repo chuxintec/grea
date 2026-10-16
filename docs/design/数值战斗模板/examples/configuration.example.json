@@ -1,0 +1,62 @@
+{
+  "artifactKind": "synthetic-design-fixture",
+  "designVersion": "0.1.0-draft.2",
+  "configVersion": "example-1",
+  "executionStatus": "not-executed",
+  "units": {"time": "milliseconds", "itemAmount": "integer", "damage": "integer"},
+  "assets": [
+    {"key": "icon.coin", "type": "Sprite", "authoringStatus": "not-created"},
+    {"key": "icon.shard", "type": "Sprite", "authoringStatus": "not-created"},
+    {"key": "icon.wand", "type": "Sprite", "authoringStatus": "not-created"}
+  ],
+  "texts": {
+    "item.coin": "样例金币",
+    "item.shard": "样例碎片",
+    "equipment.wand": "练习法杖"
+  },
+  "items": [
+    {"id": "coin", "kind": "currency", "maxCount": 999999, "iconKey": "icon.coin", "nameKey": "item.coin"},
+    {"id": "shard", "kind": "material", "maxCount": 9999, "iconKey": "icon.shard", "nameKey": "item.shard"}
+  ],
+  "equipment": [
+    {"id": "starter_wand", "nameKey": "equipment.wand", "iconKey": "icon.wand", "initialLevel": 1, "maxLevel": 2, "upgradeIds": ["upgrade_wand_2"]}
+  ],
+  "upgrades": [
+    {"id": "upgrade_wand_2", "equipmentId": "starter_wand", "fromLevel": 1, "toLevel": 2, "cost": [{"itemId": "coin", "count": 11}], "attackDelta": 2}
+  ],
+  "skills": [
+    {"id": "pulse", "cooldownMs": 700, "damage": 4, "targetPolicy": "nearest"},
+    {"id": "nova", "cooldownMs": 1200, "damage": 6, "targetPolicy": "all-active"}
+  ],
+  "enemies": [
+    {"id": "training_dummy", "hitPoints": 17, "attack": 3, "attackIntervalMs": 1700}
+  ],
+  "waves": [
+    {"id": "wave_a", "enemyId": "training_dummy", "count": 2, "spawnIntervalMs": 500},
+    {"id": "wave_b", "enemyId": "training_dummy", "count": 3, "spawnIntervalMs": 700}
+  ],
+  "stages": [
+    {"id": "training_stage", "waveIds": ["wave_a", "wave_b"], "skillIds": ["pulse", "nova"], "entryCost": [], "victoryRewardId": "reward_victory"}
+  ],
+  "rewards": [
+    {"id": "reward_victory", "items": [{"itemId": "coin", "count": 23}]},
+    {"id": "reward_bonus", "items": [{"itemId": "coin", "count": 7}]}
+  ],
+  "placements": [
+    {"id": "after_result_bonus", "rewardId": "reward_bonus", "dailyLimit": 1, "requiresResultReceipt": true, "defaultCapability": "Unavailable"}
+  ],
+  "routes": [
+    {"id": "home.page", "contractId": "page-shell", "scope": "page"},
+    {"id": "inventory.page", "contractId": "page-shell", "scope": "page"},
+    {"id": "battle.page", "contractId": "battle-hud", "scope": "battle"},
+    {"id": "result.modal", "contractId": "reward-dialog", "scope": "modal"},
+    {"id": "settings.modal", "contractId": "modal-shell", "scope": "modal"}
+  ],
+  "initialQaState": {
+    "synthetic": true,
+    "inventory": {"coin": 100, "shard": 0},
+    "equipmentLevels": {"starter_wand": 1},
+    "completedStages": [],
+    "claimedKeys": []
+  }
+}

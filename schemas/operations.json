@@ -700,6 +700,7 @@
             "description": "",
             "enum": [
               "recover",
+              "port",
               "fix",
               "reskin",
               "refactor",
@@ -714,6 +715,7 @@
             "description": "",
             "enum": [
               "unity",
+              "cocos",
               "laya",
               "other"
             ]
@@ -1037,6 +1039,7 @@
             "description": "",
             "enum": [
               "recover",
+              "port",
               "fix",
               "reskin",
               "refactor",
@@ -1057,7 +1060,8 @@
                 "visual",
                 "identity",
                 "performance",
-                "platform"
+                "platform",
+                "native"
               ]
             }
           }
@@ -1372,7 +1376,8 @@
               "visual",
               "identity",
               "performance",
-              "platform"
+              "platform",
+              "native"
             ]
           },
           "status": {
@@ -3252,5 +3257,5 @@
       }
     }
   ],
-  "sha256": "f922ede0ce8f4d60f35b9602d66ca6673e585d9f472dcbc22a98f7ebe765d1eb"
+  "sha256": "f894e6116ee504db480070335965bbcb9ac40752d4798ebec34a5d5ab6bceccd"
 }

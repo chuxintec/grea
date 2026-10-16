@@ -1,0 +1,110 @@
+{
+  "kind": "documentation-and-synthetic-example-validation",
+  "designVersion": "0.1.0-draft.1",
+  "date": "2026-10-15",
+  "state": "passed-documentation-checks",
+  "scope": "Documentation, fixture relationships and retained evidence bytes only",
+  "checks": {
+    "jsonFilesParsed": 4,
+    "sourceFilesHashVerified": 60,
+    "claimsReferencesVerified": 19,
+    "configurationTablesChecked": 10,
+    "prefabContractsChecked": 7,
+    "syntheticExpectedEventsChecked": 13,
+    "syntheticCoinSequence": [
+      100,
+      89,
+      112,
+      119
+    ],
+    "privateSampleIdentifiersFound": false,
+    "documentationLinks": {
+      "ok": true,
+      "documents": 88,
+      "localLinks": 419
+    },
+    "publicTreeAudit": {
+      "ok": true,
+      "scope": "intended Git index bytes in a separate temporary index"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "docs/design/数值战斗模板/Cocos到Unity迁移.md",
+      "sha256": "86f87075a14eff5989229d8eb8ef45a752771142650b07396dc66c538e4a84bf"
+    },
+    {
+      "path": "docs/design/数值战斗模板/Prefab与配置目录.md",
+      "sha256": "6c7c8f824181d01b0e5444b92b67f9c4761febdff1026a94159326d9a2c06159"
+    },
+    {
+      "path": "docs/design/数值战斗模板/README.md",
+      "sha256": "40f5d2b9913989f4949c2b45e567c68ff8f00ea134c9dc6d821cc7614ddb6fe8"
+    },
+    {
+      "path": "docs/design/数值战斗模板/evidence.json",
+      "sha256": "e83a47435f31bba6728207784c3a6cc249f1d0ea19dc64a72212a2cee7bdb00a"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/README.md",
+      "sha256": "71d966789e2a626b53c2707ce5f51eff708ac89a5687b455d28964ad1f409279"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/configuration.example.json",
+      "sha256": "abcdd7e186fc1054c78ac389913a1c0739996bebe068226f62c163e80d9a9e4b"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/expected-flow.example.jsonl",
+      "sha256": "76f4878f869e2f0bdb27350079b628723767e8fd7d06ca22aab7686f890ba4c5"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/prefab-contracts.example.json",
+      "sha256": "a53633910e6df18febf4cbacb95c098c946c44bc4efb0c810109d98fbfc69619"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/reward-claim.pseudocode.cs.txt",
+      "sha256": "96ff87e2374a47e746b99fa9b0c34f7b887fef3c085223c4a3af6a1dfd7e1370"
+    },
+    {
+      "path": "docs/design/数值战斗模板/examples/template-profile.example.json",
+      "sha256": "3d68282ff681bed30fb7b5e335dd0c179e5c2750ef463b4031bd22c2f48a400f"
+    },
+    {
+      "path": "docs/design/数值战斗模板/工作流与Skill补齐.md",
+      "sha256": "b621fe5fe28fdaa38ef6fcea53315e513e21f02db4147c402aa7bbf086b62e35"
+    },
+    {
+      "path": "docs/design/数值战斗模板/工具提炼计划.md",
+      "sha256": "03ead617468bd5c165eb2ddc4652f0c041993f447a2684bd00bdd92b54a4ce6c"
+    },
+    {
+      "path": "docs/design/数值战斗模板/模板架构.md",
+      "sha256": "71ab48974f6687eefd94d1aff85e1d3fbdecb2b70891f2df077c61190fea2713"
+    },
+    {
+      "path": "docs/design/数值战斗模板/落地与验收计划.md",
+      "sha256": "f071a6a63e426dad887892e7c965c9fa65dfb30c54ff7dd7e4d4c35f3d34881b"
+    },
+    {
+      "path": "docs/design/数值战斗模板/证据索引.md",
+      "sha256": "ced419ea35a5f07095dc8df70a03e250e7c0c732954ec34e4e536f388ea2f3c4"
+    }
+  ],
+  "notExecuted": [
+    "Unity compilation",
+    "EditMode/PlayMode",
+    "Player input/audio/performance",
+    "original parity",
+    "template generation",
+    "Skill update/install",
+    "commit/push/release"
+  ],
+  "sourceWorkspace": {
+    "readOnlyByThisTask": true,
+    "concurrentChangesObserved": true,
+    "wholeProjectUnchangedClaim": false,
+    "basis": "individually frozen source files; historical report identities kept separate"
+  },
+  "limits": "No executable capability was added. Synthetic expected events are authored examples, not test outputs. Private original reports are not distributed.",
+  "checkedAt": "2026-10-15T03:32:05.712945+00:00"
+}

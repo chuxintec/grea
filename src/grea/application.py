@@ -66,7 +66,7 @@ def dispatch(operation,arguments=_OMITTED,cancel=None):
             return out
         evidence=[];limits={};limitations=[];status='ok';error=None
         if operation=='session':
-            skill_path=Path(args.get('skill_dir',package_root()/'skill')).expanduser()
+            skill_path=Path(args.get('skill_dir',package_root()/'plugin')).expanduser()
             skill_version=json.loads((skill_path/'version.json').read_text())
             required=skill_version.get('requiredOperations')
             if (skill_version.get('greaVersion')!=__version__ or not isinstance(required,list)

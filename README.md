@@ -18,7 +18,9 @@ grea 把原包分析、资源检查、恢复流程和验收记录组织成一套
 
 ## 快速开始
 
-准备 Git 和 [uv](https://docs.astral.sh/uv/)，然后：
+macOS arm64 用户可安装完整插件制品 `grea-plugin-macos-arm64.zip`：包含 MCP、固定 Python 与核心工具，不需要系统 Python、uv 或手工 MCP 路径。安装与范围见 [插件安装](docs/Skill构建与安装.md)。完整插件从 `v2026.10.16-rc1` 开始提供，变更见 [本版发布说明](docs/releases/v2026.10.16-rc1.md)。
+
+从源码开发或使用其他平台时，准备 Git 和 [uv](https://docs.astral.sh/uv/)，然后：
 
 ```sh
 git clone https://github.com/chuxintec/grea.git
@@ -44,9 +46,10 @@ Windows 将 `./bin/grea` 换为 `bin\grea.cmd`。也可以下载 [Release 完整
 | 入口 | 用途 |
 | --- | --- |
 | [工具目录](TOOLS.md) | 按任务选工具，区分自带实现与外部依赖 |
-| [恢复技能](skill/SKILL.md) | 让 Agent 按当前目标加载流程；[安装技能](docs/工作区接入.md#接入已有工作区) |
+| [grea 插件](plugin/skills/grea/SKILL.md) | 路由技能加 7 个领域技能（取证、原生转换、Unity 包体恢复、一致性、工程标准、交付、换皮）；[安装插件与技能](docs/Skill构建与安装.md) |
 | [第三方依赖](THIRD_PARTY.md) | 官方来源、许可与本机接入；专题集中在 [providers](docs/providers) |
-| [Unity 工程规范](skill/references/05-Unity-工程结构与开发规范.md) | [配置与检查](docs/Unity项目配置与检查.md)、[框架与组件](docs/Unity框架与通用组件.md)、[生成与恢复](docs/Unity工程生成与恢复.md)、[参考游戏](docs/Unity参考游戏.md)、[隔离迁移](docs/Unity隔离迁移指南.md) |
+| [Unity 工程规范](plugin/skills/grea-unity-standard/references/05-Unity-工程结构与开发规范.md) | [配置与检查](docs/Unity项目配置与检查.md)、[框架与组件](docs/Unity框架与通用组件.md)、[生成与恢复](docs/Unity工程生成与恢复.md)、[参考游戏](docs/Unity参考游戏.md)、[隔离迁移](docs/Unity隔离迁移指南.md) |
+| [数值战斗模板设计提案](docs/design/数值战斗模板/README.md) | 工作流与 Skill 补齐、Cocos 到 Unity、工具提炼、UI/Prefab/配置设计、证据与合成示例；尚未实现新模板 |
 | [贡献指南](CONTRIBUTING.md) | 开发、测试和提交；[自动发布](docs/Release自动发布.md) |
 
 ## 仓库结构
@@ -54,7 +57,7 @@ Windows 将 `./bin/grea` 换为 `bin\grea.cmd`。也可以下载 [Release 完整
 ```text
 src/grea/   CLI、MCP、契约与产品功能；tools/ 子包为通用 Python 模块
 tools/      Unity C# 包、模板及其他非 Python 工具源码
-skill/      恢复流程规范与专题参考
+plugin/     8 个技能、共享参考、Codex/Claude 清单、运行时锁与启动薄层
 docs/       用户教程、工具契约、第三方接入及维护文档
 tests/      核心与工具回归、技能场景
 scripts/    仓库检查、技能同步和 Release 自动化
@@ -68,6 +71,6 @@ schemas/    生成的接口/配置契约与能力目录，说明见 schemas/READ
 
 ## 许可与分发
 
-自有代码与文档采用 [MIT](LICENSE)。不附带游戏包、商业素材、第三方程序、Unity 包快照或 Spine vendor；使用者按授权和 [第三方说明](THIRD_PARTY.md) 准备自己的输入与依赖。项目数据、私人配置和本机缓存不进入公开包。
+自有代码与文档采用 [MIT](LICENSE)。完整插件制品附带 Python 与核心依赖，并保留其许可；Git 只保存源码与来源锁。游戏包、商业素材、Unity Editor、可选第三方工具、Unity 包快照和 Spine vendor 由使用者按授权及 [第三方说明](THIRD_PARTY.md) 准备。项目数据、私人配置和本机缓存不进入公开包。
 
 独立 Skill 制品为 `grea-skill-<tag>.zip`，明确版本与工具依赖，安装见 [Skill 分发](docs/Skill构建与安装.md)。历史阶段记录单独保留在 [history](docs/history/README.md)，日常使用无需理解阶段编号。
