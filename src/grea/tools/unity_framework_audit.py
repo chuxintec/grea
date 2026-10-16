@@ -17,6 +17,9 @@ def inspect(packages, sample=None):
         findings.append(dict(code=code, path=path, **details))
 
     for label, root in roots:
+        if not root.is_dir():
+            report('MISSING_SOURCE_ROOT', label)
+            continue
         if root.is_symlink():
             report('SOURCE_LINK', label)
             continue
@@ -46,9 +49,13 @@ def inspect(packages, sample=None):
             if test and 'UNITY_INCLUDE_TESTS' not in data.get('defineConstraints', []):
                 report('TEST_PLAYER_LEAK', relative, assembly=name)
             node['pure'], node['test'] = pure or bool(data.get('noEngineReferences')), test
+        if not any(node['path'].startswith(label + '/') for node in nodes.values()):
+            report('INSUFFICIENT_COVERAGE', label, reason='No assemblies were found in this selected root')
 
     for name, node in nodes.items():
         for ref in node['data'].get('references', []):
+            if ref.startswith('GUID:'):
+                report('UNSUPPORTED_GUID_REFERENCE', node['path'], reference=ref)
             target = nodes.get(ref)
             if node['package'] and (target and not target['package'] or re.match(r'^(Game|IceFire)(\.|$)', ref)):
                 report('PACKAGE_PROJECT_REFERENCE', node['path'], reference=ref)

@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import sys
 from grea.safe_paths import disjoint
+from grea.data_io import load, encode, sha
 
 VERSION = '0.1.0'
 KEYWORDS = set('abstract as base bool break byte case catch char checked class const continue decimal default delegate do double else enum event explicit extern false finally fixed float for foreach goto if implicit in int interface internal is lock long namespace new null object operator out override params private protected public readonly ref return sbyte sealed short sizeof stackalloc static string struct switch this throw true try typeof uint ulong unchecked unsafe ushort using virtual void volatile while'.split())
@@ -15,27 +16,6 @@ def identifier(value):
     if not isinstance(value,str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]{0,63}',value) or value in KEYWORDS:
         raise ValueError('Expected a bounded non-keyword C# identifier')
     return value
-
-
-def load(path, max_bytes=8*1024*1024, max_nodes=100000):
-    path=Path(path).absolute()
-    if any(p.is_symlink() for p in (path,*path.parents)) or not path.is_file() or path.stat().st_size>max_bytes:
-        raise ValueError('Expected a regular bounded input without links')
-    raw=path.read_bytes()
-    def pairs(items):
-        result={}
-        for key,value in items:
-            if key in result: raise ValueError('Duplicate JSON key')
-            result[key]=value
-        return result
-    value=json.loads(raw.decode('utf-8-sig'),object_pairs_hook=pairs,parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Non-finite number')))
-    from grea.tools.cocos_assets import budget
-    budget(value,max_depth=32,max_nodes=max_nodes)
-    return value,hashlib.sha256(raw).hexdigest()
-
-
-def encode(value): return (json.dumps(value,ensure_ascii=False,indent=2,allow_nan=False)+'\n').encode('utf-8')
-def sha(raw): return hashlib.sha256(raw).hexdigest()
 
 
 def write_candidate(output, files, sources, identity):

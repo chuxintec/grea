@@ -7,7 +7,7 @@ import re
 import sys
 from grea.safe_paths import relative_name,unique_paths
 from grea.tools._artifact_common import inventory,write_report,validate_output
-from grea.tools.unity_config_candidate import load,sha,encode
+from grea.data_io import load, sha, encode
 
 LAYERS=('source','cache','cdn','chunk','export','build','capture')
 ADAPTERS=('flat-v1','layers-v1')
@@ -66,13 +66,29 @@ def verify(root,document,adapter,previous=None,previous_adapter='flat-v1'):
             if actual[path]!={k:row[k] for k in ('bytes','sha256')}:changed.append(path)
             else:verified.append(path)
     previous_changes=[]
+    manifest_diff = dict(added=[], removed=[], modified=[], moved=[], scope_changed=False)
     if previous is not None:
         old=rows(previous,previous_adapter);old_index={(x['layer'],x['id'],x['variant']):x for x in old}
-        for row in declared:
-            identity=(row['layer'],row['id'],row['variant']);before=old_index.get(identity)
-            if before is not None and any(before.get(k)!=row.get(k) for k in ('path','bytes','sha256','payload')):previous_changes.append(dict(layer=identity[0],id=identity[1],variant=identity[2]))
-    findings=bool(missing or extra or changed or unverified or duplicates or previous_changes)
-    return dict(schema_version=1,tool='evidence_manifest',implementation_version='0.1.0',status='needs_review' if findings else 'declared_closure_verified',scope=document['scope'],adapter=adapter,manifest_sha256=sha(encode(document)),previous_manifest_sha256=sha(encode(previous)) if previous is not None else None,counts=dict(declared=len(declared),payloads=len(payloads),no_payload=len(declared)-len(payloads),actual_files=len(actual),verified=len(verified),unverified=len(unverified)),missing=missing,extra=extra,changed=sorted(changed),unverified=sorted(unverified),duplicate_identities=duplicates,changed_since_previous=previous_changes,layer_counts=dict(Counter(x['layer'] for x in declared)),actual=actual,server_completeness_proven=False,parse_import_render_gameplay='not_run',limits=['Only the explicit frozen manifest union is checked. No network, private cache discovery, content parsing, native import, rendering or server completeness is established.','No-payload entries are explicit caller declarations, not independently proven engine semantics.','Per-file fingerprints are not an atomic filesystem snapshot.'])
+        if len(old_index) != len(old):
+            raise ValueError('Previous manifest has duplicate identities')
+        current_index = {(x['layer'],x['id'],x['variant']):x for x in declared}
+        for identity in sorted(set(old_index) | set(current_index)):
+            before, after = old_index.get(identity), current_index.get(identity)
+            item = dict(layer=identity[0], id=identity[1], variant=identity[2])
+            if before is None:
+                manifest_diff['added'].append(item)
+            elif after is None:
+                manifest_diff['removed'].append(item)
+            elif any(before.get(k) != after.get(k) for k in ('path','bytes','sha256','payload')):
+                kind = 'moved' if before.get('path') != after.get('path') and all(before.get(k) == after.get(k) for k in ('bytes','sha256','payload')) else 'modified'
+                manifest_diff[kind].append(dict(item, before=before, after=after))
+            else:
+                continue
+            previous_changes.append(item)
+        manifest_diff['scope_changed'] = previous['scope'] != document['scope']
+    closure_failed = bool(missing or extra or changed or unverified or duplicates)
+    findings = closure_failed or bool(previous_changes) or manifest_diff['scope_changed']
+    return dict(schema_version=1,tool='evidence_manifest',implementation_version='0.2.0',status='needs_review' if findings else 'declared_closure_verified',current_closure='incomplete' if closure_failed else 'verified',manifest_diff=manifest_diff,scope=document['scope'],adapter=adapter,manifest_sha256=sha(encode(document)),previous_manifest_sha256=sha(encode(previous)) if previous is not None else None,counts=dict(declared=len(declared),payloads=len(payloads),no_payload=len(declared)-len(payloads),actual_files=len(actual),verified=len(verified),unverified=len(unverified)),missing=missing,extra=extra,changed=sorted(changed),unverified=sorted(unverified),duplicate_identities=duplicates,changed_since_previous=previous_changes,layer_counts=dict(Counter(x['layer'] for x in declared)),actual=actual,server_completeness_proven=False,parse_import_render_gameplay='not_run',limits=['Only the explicit frozen manifest union is checked. No network, private cache discovery, content parsing, native import, rendering or server completeness is established.','No-payload entries are explicit caller declarations, not independently proven engine semantics.','Per-file fingerprints are not an atomic filesystem snapshot.','Manifest changes require scope review; a changed manifest is not necessarily invalid.'])
 
 
 def main():

@@ -8,7 +8,7 @@ using Grea.Foundation.Contracts;
 namespace Grea.Foundation.Runtime
 {
     // Single writer, trusted application-owned root. Payload is an opaque versioned DTO.
-    public sealed class FileSaveStore : ISaveStore
+    public sealed class FileSaveStore : ISaveStore, IRecoverableSaveStore
     {
         const int MaxBytes = 1024 * 1024;
         readonly string path;
@@ -33,11 +33,19 @@ namespace Grea.Foundation.Runtime
             if (new FileInfo(file).Length > MaxBytes + 128) throw new InvalidDataException("Save exceeds budget");
             var text = File.ReadAllText(file, new UTF8Encoding(false, true));
             var parts = text.Split(new[] { '\n' }, 3);
+            if (parts[0].StartsWith("grea-save:", StringComparison.Ordinal) && parts[0] != "grea-save:1")
+                throw new NotSupportedException("Unknown save version; original preserved");
             if (parts.Length != 3 || parts[0] != "grea-save:1" || parts[1] != Hash(Encoding.UTF8.GetBytes(parts[2])))
                 throw new InvalidDataException("Save version or checksum mismatch; original preserved");
             return parts[2];
         }
-        public string Read() => File.Exists(path) ? Decode(path) : null;
+        public string Read()
+        {
+            if (File.Exists(path)) return Decode(path);
+            if (File.Exists(path + ".pending") || File.Exists(path + ".backup"))
+                throw new InvalidDataException("Main save is missing; explicit recovery is required");
+            return null;
+        }
         // Recovery is explicit and read-only; never silently overwrite a damaged save.
         public string ReadBackup() => File.Exists(path + ".backup") ? Decode(path + ".backup") : null;
         static bool Valid(string file)
@@ -54,9 +62,17 @@ namespace Grea.Foundation.Runtime
         public string Recover()
         {
             var pending = path + ".pending";
+            var backup = path + ".backup";
+            // Classify all copies before mutation. Unknown versions and I/O failures propagate.
+            var hasMain = File.Exists(path);
+            var hasPending = File.Exists(pending);
+            var hasBackup = File.Exists(backup);
+            var validMain = Valid(path);
+            var validPending = Valid(pending);
+            var validBackup = Valid(backup);
             if (File.Exists(pending))
             {
-                if (Valid(pending))
+                if (validPending)
                 {
                     if (File.Exists(path) && !Valid(path)) Quarantine(path);
                     if (File.Exists(path)) File.Replace(pending, path, path + ".backup");
@@ -65,13 +81,12 @@ namespace Grea.Foundation.Runtime
                 }
                 Quarantine(pending);
             }
-            if (!File.Exists(path)) return "empty";
-            if (Valid(path)) return "main-preserved";
-            var backup = path + ".backup";
-            if (!Valid(backup)) throw new InvalidDataException("No valid recovery copy; damaged main preserved");
+            if (validMain) return "main-preserved";
+            if (!hasMain && !hasPending && !hasBackup) return "empty";
+            if (!validBackup) throw new InvalidDataException("No valid recovery copy; damaged copies preserved");
             File.Copy(backup, pending, false);
             Decode(pending);
-            Quarantine(path);
+            if (File.Exists(path)) Quarantine(path);
             File.Move(pending, path);
             return "backup-restored";
         }
@@ -81,6 +96,8 @@ namespace Grea.Foundation.Runtime
             var bytes = new UTF8Encoding(false, true).GetBytes(value);
             if (bytes.Length > MaxBytes) throw new ArgumentException("Save exceeds budget");
             if (File.Exists(path)) Decode(path); // Corrupt/unknown originals require explicit recovery.
+            else if (File.Exists(path + ".backup"))
+                throw new InvalidDataException("Main save is missing; recover backup before writing");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var temp = path + ".pending";
             // A previous interruption is surfaced, never deleted implicitly.

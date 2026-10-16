@@ -34,5 +34,6 @@ namespace Grea.Foundation.Contracts
     }
     public interface IGameClock { double Seconds { get; } }
     public interface ISaveStore { string Read(); void Write(string value); }
+    public interface IRecoverableSaveStore { string Recover(); }
     public interface IPlatformInfo { string Platform { get; } bool HasFocus { get; } }
 }

@@ -149,5 +149,35 @@ namespace Grea.Tests
             var store = new FileSaveStore(root, "player", "qa", true);
             Assert.Throws<ArgumentException>(() => store.Write(new string('a', 1024 * 1024 + 1))); Assert.IsFalse(Directory.Exists(root));
         }
+        [Test] public void MissingMainRecoversBackupAndRecoveryCanBeRepeated()
+        {
+            var store = new FileSaveStore(root, "player", "qa", true);
+            store.Write("recoverable"); store.Write("latest");
+            var path = Path.Combine(root, "qa", "save.v1");
+            File.Delete(path);
+            Assert.AreEqual("backup-restored", store.Recover());
+            Assert.AreEqual("recoverable", store.Read());
+            Assert.AreEqual("main-preserved", store.Recover());
+            Assert.IsNull(new FileSaveStore(root, "player", "qa", false).Read());
+        }
+        [Test] public void InvalidPendingWithMissingMainStillRecoversBackup()
+        {
+            var store = new FileSaveStore(root, "player", "qa", true);
+            store.Write("recoverable"); store.Write("latest");
+            var path = Path.Combine(root, "qa", "save.v1");
+            File.Delete(path); File.WriteAllText(path + ".pending", "truncated");
+            Assert.AreEqual("backup-restored", store.Recover());
+            Assert.AreEqual("recoverable", store.Read());
+            Assert.AreEqual(1, Directory.GetFiles(Path.GetDirectoryName(path), "*.corrupt-*").Length);
+        }
+        [Test] public void MissingMainAndInvalidBackupNeverReportEmpty()
+        {
+            var store = new FileSaveStore(root, "player", "qa", true);
+            store.Write("v1"); store.Write("v2");
+            var path = Path.Combine(root, "qa", "save.v1");
+            File.Delete(path); File.WriteAllText(path + ".backup", "unknown-version");
+            Assert.Throws<InvalidDataException>(() => store.Recover());
+            Assert.AreEqual("unknown-version", File.ReadAllText(path + ".backup"));
+        }
     }
 }
