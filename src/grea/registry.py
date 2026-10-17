@@ -1,6 +1,7 @@
 """One provider catalog for legacy dispatch, CLI discovery and MCP discovery."""
 import json,os,shutil,subprocess,sys,platform
 from pathlib import Path
+from .host.info import machine
 from .common import GreaError,package_root,digest
 
 def load():
@@ -56,7 +57,7 @@ def check_host(entry):
     support=entry.get('host_support',{})
     if support.get('systems') and platform.system() not in support['systems']:
         raise GreaError('UNSUPPORTED_HOST','Registered adapter is not configured for this host.',details={'tool_id':entry['id'],'host':platform.system(),'support':support},next_action='Read docs/安装与平台.md; configure the same provider explicitly for this host.')
-    if support.get('architectures') and platform.machine().lower() not in support['architectures']:
+    if support.get('architectures') and machine() not in support['architectures']:
         raise GreaError('UNSUPPORTED_ARCH','Bundled adapter does not match this CPU.',details={'tool_id':entry['id'],'architecture':platform.machine()},next_action='Install a matching native build and configure its canonical provider ID.')
 
 def expand(value):return value.replace('{grea}',str(package_root())).replace('{tools}',str(package_root())).replace('{home}',str(Path.home()) if '{home}' in value else '').replace('{python}',sys.executable)

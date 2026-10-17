@@ -45,18 +45,19 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(compared.is_error)
 
     async def test_legacy_protocol_cancellation_preserves_receipt(self):
-        import os,select,time
+        import os,queue,threading,time
         root=package_root()
         with tempfile.TemporaryDirectory() as d:
             base=Path(d);script=base/'sleep.py';script.write_text('import time\nprint("started",flush=True)\ntime.sleep(20)\n')
-            (base/'registry.json').write_text(json.dumps({'tools':[{'id':'fixture','execution':{'command':[str(root/'.venv/bin/python'),str(script)]}}]}))
+            (base/'registry.json').write_text(json.dumps({'tools':[{'id':'fixture','execution':{'command':[sys.executable,str(script)]}}]}))
             env=dict(os.environ,GREA_HOME=d)
-            process=subprocess.Popen([str(root/'.venv/bin/python'),'-m','grea.cli','mcp'],env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,bufsize=1)
+            process=subprocess.Popen([sys.executable,'-m','grea.cli','mcp'],env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,bufsize=1)
             def send(value):process.stdin.write(json.dumps(value)+'\n');process.stdin.flush()
             try:
                 send({'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-03-26','capabilities':{},'clientInfo':{'name':'grea-conformance','version':'1'}}})
-                self.assertTrue(select.select([process.stdout],[],[],10)[0])
-                initialized=json.loads(process.stdout.readline());self.assertEqual(initialized['result']['protocolVersion'],'2025-03-26')
+                messages=queue.Queue()
+                threading.Thread(target=lambda:messages.put(process.stdout.readline()),daemon=True).start()
+                initialized=json.loads(messages.get(timeout=10));self.assertEqual(initialized['result']['protocolVersion'],'2025-03-26')
                 send({'jsonrpc':'2.0','method':'notifications/initialized'})
                 run=base/'cancelled'
                 send({'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'run_tool','arguments':{'tool_id':'fixture','arguments':[],'run_dir':str(run)}}})

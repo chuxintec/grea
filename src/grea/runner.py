@@ -37,7 +37,7 @@ def execute(tool_id,arguments,run_dir,timeout_seconds=120,max_output_bytes=16777
     implementation=implementation_identity()
     limits={'timeout_seconds':timeout_seconds,'max_output_bytes':max_output_bytes,'max_inline_bytes':max_inline_bytes}
     out=out.parent.resolve()/out.name;out.mkdir();start=time.monotonic();began=now()
-    count=0;lock=threading.Lock();overflow=threading.Event();threads=[];reason=None
+    count=0;lock=threading.Lock();overflow=threading.Event();threads=[];reason=None;cleanup_verified=None
     try:
         environment=dict(os.environ, PYTHONUTF8='1', PYTHONIOENCODING='utf-8')
         if os.name=='nt':
@@ -74,7 +74,8 @@ def execute(tool_id,arguments,run_dir,timeout_seconds=120,max_output_bytes=16777
         for thread in threads:thread.join(timeout=2)
         if os.name=='nt':
             try:
-                if not proc.settle():reason=reason or 'CLEANUP_INCOMPLETE'
+                cleanup_verified=proc.settle()
+                if not cleanup_verified:reason=reason or 'CLEANUP_INCOMPLETE'
             except OSError:reason=reason or 'CLEANUP_INCOMPLETE'
         if any(t.is_alive() for t in threads):reason=reason or 'CLEANUP_INCOMPLETE'
     if overflow.is_set():reason=reason or 'OUTPUT_LIMIT'
@@ -92,7 +93,7 @@ def execute(tool_id,arguments,run_dir,timeout_seconds=120,max_output_bytes=16777
     if not inline_truncated and previews['stdout'].strip():
         try:parsed=json.loads(previews['stdout'],parse_constant=lambda value: (_ for _ in ()).throw(ValueError('Non-JSON constant '+value)))
         except ValueError:pass
-    result={'tool_id':tool_id,'provider_contract_sha256':digest(entry),'implementation':implementation,'entrypoint_identities':bindings,'identity_observed_at':'before_launch','limits':limits,'cleanup_attempted':bool(reason),'command':argv,'working_directory':str(cwd.resolve() if cwd else out),'exit_code':code,'status':status,'reason':reason,'run_dir':str(out),'started_at':began,'finished_at':now(),'duration_seconds':round(time.monotonic()-start,3),'captured_bytes':count,'capture_complete':not reason,'inline_truncated':inline_truncated,'stdout':previews['stdout'],'stderr':previews['stderr'],'parsed_stdout':parsed,'process_group':proc.pid if os.name=='posix' else None,'cleanup_scope':'owned_process_group' if os.name=='posix' else 'owned_job'}
+    result={'tool_id':tool_id,'provider_contract_sha256':digest(entry),'implementation':implementation,'entrypoint_identities':bindings,'identity_observed_at':'before_launch','limits':limits,'cleanup_attempted':bool(reason) or os.name=='nt','cleanup_verified':cleanup_verified,'command':argv,'working_directory':str(cwd.resolve() if cwd else out),'exit_code':code,'status':status,'reason':reason,'run_dir':str(out),'started_at':began,'finished_at':now(),'duration_seconds':round(time.monotonic()-start,3),'captured_bytes':count,'capture_complete':not reason,'inline_truncated':inline_truncated,'stdout':previews['stdout'],'stderr':previews['stderr'],'parsed_stdout':parsed,'process_group':proc.pid if os.name=='posix' else None,'cleanup_scope':'owned_process_group' if os.name=='posix' else 'owned_job'}
     write_new(out/'run.json',result)
     logs.append(dict(hash_file(out/'run.json'),kind='run_receipt'))
     error=None
