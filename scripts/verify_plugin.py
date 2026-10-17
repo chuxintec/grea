@@ -10,6 +10,7 @@ from pathlib import Path
 import platform
 import queue
 import shutil
+import socket
 import subprocess
 import tempfile
 import threading
@@ -147,21 +148,28 @@ def acceptance(bundle):
             from windows_sandbox import AppContainer
             security=stack.enter_context(AppContainer(root,work,home)).capabilities
         before = inventory(root,target)
-        # Prove the isolation policy is enforced, not merely recorded.
+        # Live host listener: a timeout is evidence only when an unsandboxed
+        # control reaches the exact endpoint before AND after the boxed probe.
+        listener=stack.enter_context(socket.socket(socket.AF_INET,socket.SOCK_STREAM))
+        listener.bind(('127.0.0.1',0));listener.listen(8)
+        endpoint=listener.getsockname()
+        socket.create_connection(endpoint,timeout=3).close()
         python = root/TARGETS[target]['python']
         probe = '''import pathlib,socket,sys
 blocked=[]
-for name,fn in [('source',lambda:pathlib.Path(sys.argv[1]).read_bytes()),('install_write',lambda:pathlib.Path(sys.argv[2]).write_text('bad')),('network',lambda:socket.create_connection(('127.0.0.1',9),timeout=1))]:
+for name,fn in [('source',lambda:pathlib.Path(sys.argv[1]).read_bytes()),('install_write',lambda:pathlib.Path(sys.argv[2]).write_text('bad')),('network',lambda:socket.create_connection(('127.0.0.1',int(sys.argv[3])),timeout=2))]:
  try: fn()
  except PermissionError as exc:
   blocked.append(name);print(name,exc.errno,getattr(exc,'winerror',None),file=sys.stderr)
  except OSError as exc:
-  print(name,exc.errno,getattr(exc,'winerror',None),file=sys.stderr)
-  if exc.errno in (1,13,10013) or getattr(exc,'winerror',None)==10013: blocked.append(name)
+  print(name,type(exc).__name__,exc.errno,getattr(exc,'winerror',None),file=sys.stderr)
+  if name=='network' and isinstance(exc,TimeoutError) and sys.argv[4]=='controlled-windows':blocked.append(name)
+  elif exc.errno in (1,13,10013) or getattr(exc,'winerror',None)==10013: blocked.append(name)
 print(','.join(blocked))
 '''
-        isolated = native_run([*prefix, str(python), '-I', '-B', '-c', probe, str(ROOT/'registry.json'), str(root/'forbidden')],
+        isolated = native_run([*prefix, str(python), '-I', '-B', '-c', probe, str(ROOT/'registry.json'), str(root/'forbidden'),str(endpoint[1]),'controlled-windows' if windows else 'permission-denial'],
                                   env=env, cwd=work, capture_output=True, text=True, encoding='utf-8', timeout=20,security=security)
+        socket.create_connection(endpoint,timeout=3).close()
         check(isolated.returncode == 0 and isolated.stdout.strip() == 'source,install_write,network',
               'Isolation policy did not enforce all restrictions: '+(isolated.stderr[:300]+isolated.stdout[:300] if isolated else 'not enforced'))
         catalog = native_run([*prefix, *([str(python),'-I','-B',str(root/'plugin/launcher/start.py')] if windows else [str(root/'bin/grea')]), 'catalog'], env=env, cwd=work,
@@ -272,6 +280,7 @@ print(','.join(blocked))
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
                 'source_kind':manifest['source_kind'], 'clients':results,
                 'isolation_probe_errors':isolated.stderr.strip().splitlines(),
+                'network_control':'Exact live loopback TCP listener reachable before and after boxed denial/timeout; no model or application data sent',
                 'verified_tool_ids':['static_asset_copy','cocos_assets','unity_native_exit','unity_config_candidate','unity_native_assets','evidence_manifest','config_preflight','presentation_audit','performance_compare'],
                 'verified_operations':['session','plan_workflow','run_tool','init_case','start_case_revision','case_status'],
                 'isolation':{'moved_unicode_space_path':True,'independent_home':True,'minimal_path':True,
