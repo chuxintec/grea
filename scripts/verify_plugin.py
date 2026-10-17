@@ -139,8 +139,9 @@ def acceptance(bundle):
         home = base/'clean home'; home.mkdir()
         if windows:
             from windows_drive_views import TemporaryDrives
-            views=stack.enter_context(TemporaryDrives(root,work,home))
-            root,work,home=views.paths
+            views=stack.enter_context(TemporaryDrives(base))
+            view=views.paths[0]
+            root,work,home=(view/path.name for path in (root,work,home))
         env = {'HOME': str(home), 'PATH':'/usr/bin:/bin', 'LANG':'en_US.UTF-8', 'TMPDIR':str(work)}
         prefix = [] if windows else sandbox_prefix(root, work)
         if windows:
