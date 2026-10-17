@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "kind": "implementation-checkpoint",
+  "status": "pass_with_limits",
+  "version": "2026.10.17",
+  "date": "2026-10-17",
+  "baseline_main": "35c2b1cad3e47928a8fa55a09a68311a97839ad6",
+  "checkpoint_revision": "04a27d6bf5b4d7835846b29c4587e5b0830ac803",
+  "checkpoint_source_checks": {
+    "run_id": 39015488477,
+    "url": "https://github.com/chuxintec/grea/actions/runs/39015488477",
+    "conclusion": "success",
+    "jobs_passed": 7
+  },
+  "root_causes_and_fixes": [
+    {
+      "cause": "CreateFileW(NUL) denied inside AppContainer",
+      "fix": "Anonymous stdin pipe with immediate EOF; suspended-create/owned Job cleanup retained",
+      "commit": "6106dc0"
+    },
+    {
+      "cause": "GetFinalPathNameByHandleW DOS-volume query denied although fixture bytes are readable",
+      "fix": "Normalized NT query; preserve a DOS alias only after comparing its opened root identity. No lexical canonicalization fallback or stdlib patch",
+      "commits": [
+        "10ecad4",
+        "a26a0a2"
+      ]
+    },
+    {
+      "cause": "Preflights must not acquire metadata access to unrelated private profile ancestors",
+      "fix": "Temporary user-session drive view of the owned verifier base; retain Unicode/space paths, all reparse checks and exact-target cleanup",
+      "commits": [
+        "157152d",
+        "04a27d6"
+      ]
+    },
+    {
+      "cause": "CPython 0700 directory DACL omits the creating AppContainer SID",
+      "fix": "Protected owner/system/admin staging DACL plus only the current AppContainer SID; no parent ACL change",
+      "commit": "4979792"
+    }
+  ],
+  "native_core": {
+    "windows_server_2022_x64": {
+      "tests": 289,
+      "skipped": 4,
+      "passed": true,
+      "skip_reasons": [
+        "POSIX FIFO unavailable",
+        "POSIX fd containment (native Windows junction/handle checks run separately)",
+        "optional real ffmpeg integration not selected",
+        "optional real NSIS integration not selected"
+      ]
+    },
+    "linux": {
+      "tests": 289,
+      "skipped": 12,
+      "passed": true
+    },
+    "macos_arm64": {
+      "source_checks": "pass",
+      "complete_plugin_isolation_and_repeat_build": "pass"
+    }
+  },
+  "checkpoint_artifacts": [
+    {
+      "target": "macos-arm64",
+      "sha256": "26ddbd543358979b8706ed2bb61b7fbadd4da9dfe97c6db1fd5b69b2d9b6266b",
+      "bytes": 47030112,
+      "files": 3470,
+      "source_revision": "04a27d6bf5b4d7835846b29c4587e5b0830ac803",
+      "source_tree_sha256": "88ba71453c44d088835b7a2cbebfe53eddd0953cf8b3c7391c7c62b4f83b55c6",
+      "repeated_build_identical": true,
+      "checkpoint_only": true
+    },
+    {
+      "target": "windows-x64",
+      "sha256": "8a3b8a425a799b744cbf3d4c2ef92e84ee0d311bf2c124540e5975eb5f0cad90",
+      "bytes": 42726790,
+      "files": 5195,
+      "source_revision": "04a27d6bf5b4d7835846b29c4587e5b0830ac803",
+      "source_tree_sha256": "88ba71453c44d088835b7a2cbebfe53eddd0953cf8b3c7391c7c62b4f83b55c6",
+      "repeated_build_identical": true,
+      "checkpoint_only": true
+    }
+  ],
+  "business_scope": {
+    "verified_tool_ids": [
+      "static_asset_copy",
+      "cocos_assets",
+      "unity_native_exit",
+      "unity_config_candidate",
+      "unity_native_assets",
+      "evidence_manifest",
+      "config_preflight",
+      "presentation_audit",
+      "performance_compare"
+    ],
+    "case_revision": "create, freeze, read, invalidate changed candidate, freeze again",
+    "native_windows_wxapkg": "two owned synthetic text/binary inputs plus corrupted-input refusal",
+    "inputs": "Owned fixtures; no original game changes or hidden-server/gameplay claims"
+  },
+  "clients": {
+    "stdio_launch_configurations": [
+      "codex",
+      "claude"
+    ],
+    "native_codex_windows": {
+      "status": "pass",
+      "cli_version": "0.163.0",
+      "skills": 8,
+      "mcp_tools": 21,
+      "model_requests_sent": 0,
+      "temporary_install_removed": true
+    },
+    "native_codex_macos": "Required by release dry-run and tag workflow; see per-target client report",
+    "native_claude": "not_run; no client installed"
+  },
+  "distribution": {
+    "installation_archives": [
+      "grea-plugin-macos-arm64.zip",
+      "grea-plugin-windows-x64.zip"
+    ],
+    "standalone_skill_zip": "retired",
+    "custom_source_zip": "retired; GitHub automatic source remains",
+    "preserved": [
+      "8 skills",
+      "shared references",
+      "MCP",
+      "Python runtime",
+      "icons",
+      "licenses",
+      "scripts/sync_skill.py"
+    ],
+    "final_gate": "Both targets and exact report/asset set; version/source/hash/cleanup mismatch rejected"
+  },
+  "excluded": [
+    {
+      "scope": "Windows 11 desktop",
+      "status": "not_run",
+      "reason": "User explicitly excluded this round; not a release blocker"
+    },
+    {
+      "scope": "Windows Unity Editor",
+      "status": "not_run",
+      "reason": "User explicitly excluded this round; not a release blocker"
+    },
+    {
+      "scope": "Windows Player",
+      "status": "not_run",
+      "reason": "User explicitly excluded this round; not a release blocker"
+    },
+    {
+      "scope": "Windows GPU performance",
+      "status": "not_run",
+      "reason": "User explicitly excluded this round; not a release blocker"
+    },
+    {
+      "scope": "Windows physical input",
+      "status": "not_run",
+      "reason": "User explicitly excluded this round; not a release blocker"
+    }
+  ],
+  "publication_evidence": {
+    "release": "https://github.com/chuxintec/grea/releases/tag/v2026.10.17",
+    "manifest": "https://github.com/chuxintec/grea/releases/download/v2026.10.17/release-manifest.json",
+    "checksums": "https://github.com/chuxintec/grea/releases/download/v2026.10.17/SHA256SUMS",
+    "identity_rule": "Checkpoint hashes above are not final release hashes. Candidate/main/tag rebuild at their actual SHA. Published manifest and per-target reports bind final artifacts and Release workflow run; their existence and GitHub state determine publication, not this checkpoint."
+  }
+}

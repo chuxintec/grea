@@ -62,6 +62,13 @@ class BundleTests(unittest.TestCase):
         with self.assertRaises(ValueError):release.verify(self.tag,self.out)
         with self.assertRaises(FileExistsError):release.prepare(self.tag,self.out)
 
+    def test_release_notes_are_selected_from_the_committed_tag_specific_file(self):
+        note=self.root/'validation/release-notes'/f'{self.tag}.md'
+        note.parent.mkdir(parents=True);note.write_text('Curated current changes.\n',encoding='utf-8')
+        self.git('add','.');self.git('-c','commit.gpgsign=false','commit','-qm','release notes')
+        release.prepare(self.tag,self.out)
+        self.assertIn('Curated current changes.',(self.out/'release-notes.md').read_text(encoding='utf-8'))
+
     def test_version_and_tag_mismatch_or_dirty_tree_rejected(self):
         with self.assertRaises(ValueError):release.prepare('v2026.10.13', self.out)
         (self.root / 'uv.lock').write_text('[[package]]\nname="grea"\nversion="1.0.0"\n')

@@ -89,7 +89,8 @@ def write_manifest(out, manifest):
 
 def prepare(tag, out, require_tag=False):
     package, prerelease, sha, python = identity(tag, require_tag)
-    source_files()  # Public audit remains a gate even though GitHub supplies source downloads.
+    files=source_files()  # Public audit remains a gate even though GitHub supplies source downloads.
+    changes=files.get(f"validation/release-notes/{tag}.md",(b"",0))[0].decode("utf-8")
     out.mkdir(parents=True, exist_ok=False)
     manifest = {'schema_version':2,'product':'grea','release_version':tag,
                 'package_version':package,'prerelease':prerelease,'source_revision':sha,
@@ -101,10 +102,8 @@ def prepare(tag, out, require_tag=False):
     write_manifest(out,manifest)
     (out/'release-notes.md').write_text(
         f'grea {tag}\n\n'+('预发行版本。' if prerelease else '正式版本。')+
-        f'版本 `{package}`，源码提交 `{sha}`。\n\n'
-        '本次修复 Windows 隔离环境中 DOS NUL 访问拒绝与规范路径查询失败：以匿名管道 EOF 提供标准输入，在 AppContainer 下使用规范 NT 卷路径，保留源码读取、联网和安装写入限制及 Job 进程清理。统一六份核心文档导航与按工具 ID 的验证索引。'
-        '安装附件收敛为 macOS ARM64、Windows x64 两个完整插件，均自带 Python、MCP、8 个技能、参考和许可证。'
-        '不再发布独立 Skill ZIP 或自定义源码 ZIP；源码由 GitHub 自动下载提供。\n\n'
+        f'版本 `{package}`，源码提交 `{sha}`。\n\n'+
+        changes+'\n\n完整插件自带 Python、MCP、8 个技能、参考和许可证。源码由 Git/GitHub 自动下载提供。\n\n'+
         'Windows x64 通过 Windows Server 原生 CI、隔离工具执行、重复构建及临时 Codex 安装发现验证。'
         'Windows 11 桌面、Unity Editor/Player、图形性能和人工输入未实机验收（本轮范围明确排除）。'
         '可选第三方供应方仍需独立安装及验证。\n\n'
