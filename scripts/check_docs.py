@@ -19,6 +19,7 @@ def operation_table():
 
 
 def check(root):
+    root=Path(root).resolve()
     errors=[];count=0;documents=0
     for directory, dirs, files in os.walk(root):
         dirs[:]=[d for d in dirs if not d.startswith('.') and d not in {'__pycache__','node_modules','Library','Temp','dist','Build','build'}]
