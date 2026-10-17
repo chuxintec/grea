@@ -44,7 +44,7 @@
       "input": "input-system",
       "editor": "6000.6.2f1",
       "definition": "tools/unity/profiles/modern-ui/profile.json",
-      "validation": "docs/design/audit-remediation-20261016.md",
+      "validation": "validation/releases/2026-10-16-audit-remediation.json",
       "scope": "Opt-in sample preparation only; not a supported plan_unity_project generation override."
     }
   ],
@@ -66,7 +66,7 @@
       "backend": "Mono",
       "managedStripping": "Medium",
       "input": "legacy",
-      "evidence": "docs/validation/2026-10-13-unity-m4.json",
+      "evidence": "validation/releases/2026-10-13-unity-m4.json",
       "gates": {
         "A0": "pass",
         "A1": "pass",
@@ -94,7 +94,7 @@
       "backend": "Mono",
       "managedStripping": "Medium",
       "input": "legacy",
-      "evidence": "docs/validation/2026-10-14-reference-player-1.0.1.json",
+      "evidence": "validation/releases/2026-10-14-reference-player-1.0.1.json",
       "gates": {
         "A0": "pass",
         "A1": "pass",

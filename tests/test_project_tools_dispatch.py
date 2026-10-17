@@ -1,3 +1,4 @@
+import sys
 """CLI/MCP share the actual run-tool path, including partial and malformed inputs."""
 import json
 import asyncio
@@ -18,7 +19,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
         root=package_root()
         with tempfile.TemporaryDirectory() as t:
             base=Path(t).resolve();source=base/'source.json';source.write_text(json.dumps(PLAIN))
-            async with Client(StdioServerParameters(command=str(root/'bin/grea'),args=['mcp']),read_timeout_seconds=30) as client:
+            async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=30) as client:
                 listing=await client.call_tool('describe_tool',{'tool_id':'cocos_assets'})
                 self.assertEqual(listing.structured_content['status'],'ok')
                 for n,content,wanted in [('valid',PLAIN,'ok'),('unsupported',[999],'partial'),('truncated',[1],'error')]:
@@ -29,7 +30,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
                     native=result['result']['parsed_stdout']
                     Draft202012Validator(documents()['cocos-evidence.schema.json']).validate(native)
                     args['run_dir']=str(base/('cli-'+n));args['arguments'][-1]=str(base/('cli-out-'+n))
-                    cli=await asyncio.to_thread(subprocess.run,[str(root/'bin/grea'),'run-tool',json.dumps(args)],capture_output=True,text=True)
+                    cli=await asyncio.to_thread(subprocess.run,[sys.executable,str(root/'launch.py'),'run-tool',json.dumps(args)],capture_output=True,text=True)
                     self.assertEqual(json.loads(cli.stdout)['status'],wanted)
                 self.assertFalse((base/'out-truncated').exists())
                 original=(base/'out-valid/decoded.json').read_bytes()
@@ -48,13 +49,13 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
             schema.write_text(json.dumps(dict(schema_version=1,namespace='Own.Typed',name='Hint',key='Id',fields=[dict(name='Id',type='int'),dict(name='Text',type='string',nullable=True)])))
             rows.write_text('[{"Id":1,"Text":null},{"Id":2,"Text":""}]')
             recipe.write_text(json.dumps(dict(schema_version=1,sprites=[],targets=[dict(path='Widget',scale=[2,3,1])],clips=[dict(name='Move',duration=1,loop=True,curves=[dict(target='Widget',property='m_LocalPosition.x',keys=[[0,0],[1,4]])],events=[])])))
-            async with Client(StdioServerParameters(command=str(root/'bin/grea'),args=['mcp']),read_timeout_seconds=30) as client:
+            async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=30) as client:
                 for name,arguments,readback in [('unity_config_candidate',['--schema',str(schema),'--input',str(rows)],'source-rows.json'),('unity_native_assets',['prepare','--recipe',str(recipe)],'native-request.json')]:
                     hashes=[]
                     for transport in ('cli','mcp'):
                         out=base/(name+'-'+transport);args=dict(tool_id=name,arguments=arguments+['--output',str(out)],run_dir=str(base/(name+'-'+transport+'-receipt')))
                         if transport=='cli':
-                            process=await asyncio.to_thread(subprocess.run,[str(root/'bin/grea'),'run-tool',json.dumps(args)],capture_output=True,text=True);result=json.loads(process.stdout)
+                            process=await asyncio.to_thread(subprocess.run,[sys.executable,str(root/'launch.py'),'run-tool',json.dumps(args)],capture_output=True,text=True);result=json.loads(process.stdout)
                         else:result=(await client.call_tool('run_tool',args)).structured_content
                         self.assertEqual(result['status'],'ok');hashes.append((out/readback).read_bytes())
                     self.assertEqual(*hashes)

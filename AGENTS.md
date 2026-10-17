@@ -1,6 +1,6 @@
 # grea 独立维护仓库
 
-本仓库只维护 grea 工具、配套规范、文档、测试和第三方接入说明。README.md 为导航，docs/使用指南.md 为统一教程，docs/维护指南.md 为维护约定。
+本仓库只维护 grea 工具、配套规范、文档、测试和第三方接入说明。README.md 为导航，docs/使用指南.md 为统一教程，docs/维护与发布.md 为维护约定。
 
 - 开始确认 Git 根目录为当前 grea 仓库；安装、测试和文档命令默认从本仓库根执行。
 - CLI／MCP 共用 src/grea 应用层；公共契约在 contracts.py，工具与平台要求在 registry.json，schemas 由脚本生成。
@@ -9,4 +9,4 @@
 - 游戏项目、工作区 memory、用户 .agents／.codex 配置位于仓库外，不是本仓库维护或发布内容。可选接入见 docs/工作区接入.md。
 - 本机依赖、第三方二进制、包备份与凭据不得提交；公开树不使用 Git LFS。提交推送依当前用户授权执行。
 
-- 开发规范以 plugin/shared 与 plugin/skills/*/references 为权威，采用 `<类别编号>-<类别>-<模块>.md` 命名，文件名在插件内唯一；docs 维护产品使用说明，历史阶段记录归 docs/history。插件版本见 plugin/version.json 与两份 plugin.json；完整平台插件由 scripts/build_plugin.py 构建，纯文档包由 scripts/build_skill.py 构建；工作区技能副本由 scripts/sync_skill.py 同步到 .agents/skills。
+- 开发规范以 plugin/shared 与 plugin/skills/*/references 为权威，采用 `<类别编号>-<类别>-<模块>.md` 命名，文件名在插件内唯一；docs 维护产品使用说明，已完成过程由冻结 Git 历史追溯，未实现项归 proposals，不可变报告归 validation/releases。插件版本见 plugin/version.json 与两份 plugin.json；完整平台插件由 scripts/build_plugin.py 构建，纯文档包由 scripts/build_skill.py 构建；工作区技能副本由 scripts/sync_skill.py 同步到 .agents/skills。

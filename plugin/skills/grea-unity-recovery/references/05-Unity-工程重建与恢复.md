@@ -2,7 +2,7 @@
 
 工具推荐：unity_dependency_audit、unity_asset_ledger、Unity CLI/Pipeline；包恢复先查grea/.private/backups/unity-packages。 入口和限制见 [工具清单](../../../shared/02-工具-选择与调用.md)。
 
-新增或获准标准化工程时，按 [工程标准 v1](../../grea-unity-standard/references/05-Unity-工程结构与开发规范.md) 选择目录、依赖和生命周期契约；框架包与受限生成器已经提供，实际范围见 [生成与恢复](../../../../docs/Unity工程生成与恢复.md)；它们不能代替原版资源恢复。
+新增或获准标准化工程时，按 [工程标准 v1](../../grea-unity-standard/references/05-Unity-工程结构与开发规范.md) 选择目录、依赖和生命周期契约；框架包与受限生成器已经提供，实际范围见 [生成与恢复](../../../../docs/Unity指南.md)；它们不能代替原版资源恢复。
 
 ## 工程路径与版本
 

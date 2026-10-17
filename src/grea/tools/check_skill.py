@@ -52,7 +52,7 @@ def dispatcher_contract(workspace):
     """Inspect literal tables without importing or executing the dispatcher."""
     tool_root = tool_root_for(workspace)
     if (tool_root / PLUGIN_REL / ROUTER).is_file():
-        entries = json.loads((tool_root / 'registry.json').read_text())['tools']
+        entries = json.loads((tool_root / 'registry.json').read_text(encoding='utf-8'))['tools']
         result = {}
         for entry in entries:
             command = (entry.get('execution') or {}).get('command', [])

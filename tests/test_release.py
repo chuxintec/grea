@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -65,7 +66,7 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(a['artifacts'][1]['kind'],'skill')
         top = dest / ('grea-' + self.tag)
         self.assertEqual((top / '中文.md').read_text(), '中文说明\n')
-        self.assertTrue((top / 'launcher').stat().st_mode & 0o111)
+        if os.name!='nt':self.assertTrue((top / 'launcher').stat().st_mode & 0o111)
         self.assertFalse((top / 'untracked.txt').exists())
         with self.assertRaises(FileExistsError):release.prepare(self.tag, self.out)
 

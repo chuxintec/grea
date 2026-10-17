@@ -251,7 +251,7 @@ def export_document(source,output,adapter=ADAPTERS[0],max_bytes=32*1024*1024,max
                 effects=['filesystem_read','create_only_candidate'])
     output.mkdir(parents=True,exist_ok=False)
     (output/'decoded.json').write_bytes(payload)
-    (output/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+    (output/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n', encoding='utf-8')
     return report
 
 
@@ -320,7 +320,7 @@ def export_bundle(config,asset_indices,output,pack_adapter=ADAPTERS[1],max_outpu
         scope='Explicit config and selected import assets only; no native payloads, source execution or Unity asset conversion',effects=['filesystem_read','create_only_candidate'])
     output.mkdir(parents=True,exist_ok=False)
     for name,data in payloads: (output/name).write_bytes(data)
-    (output/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+    (output/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n', encoding='utf-8')
     return report
 
 

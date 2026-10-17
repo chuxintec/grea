@@ -29,7 +29,7 @@ def inspect(packages, sample=None):
                 report('SOURCE_LINK', relative)
                 continue
             try:
-                data = json.loads(path.read_text())
+                data = json.loads(path.read_text(encoding='utf-8'))
                 name, refs = data['name'], data.get('references', [])
                 if not isinstance(name, str) or not isinstance(refs, list) or not all(isinstance(r, str) for r in refs):
                     raise ValueError('Invalid assembly name/references')
@@ -97,7 +97,7 @@ def inspect(packages, sample=None):
             if owner is None:
                 report('SCRIPT_WITHOUT_ASSEMBLY', relative)
                 continue
-            text = lexical.sub('', path.read_text())
+            text = lexical.sub('', path.read_text(encoding='utf-8'))
             if owner['pure'] and re.search(r'\b(?:UnityEngine|UnityEditor)\b', text):
                 report('PURE_LAYER_ENGINE_SOURCE', relative)
             if owner['package'] and re.search(r'\b(?:using|namespace)\s+(?:Game|IceFire)(?:\.|\s|;)', text):

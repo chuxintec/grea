@@ -42,7 +42,7 @@ def render(source, version, revision):
         if not name.startswith(PLUGIN):
             continue
         local = name[len(PLUGIN):]
-        if local.startswith('launcher/') or local == 'runtime-lock.json':
+        if local.startswith('launcher/') or local.startswith('runtime-') and local.endswith('.json'):
             continue  # The documentation-only archive intentionally has no runtime.
         if local not in MANIFESTS and any(part.startswith('.') for part in PurePosixPath(local).parts):
             continue  # Repository configuration is not installed plugin content.
@@ -160,8 +160,8 @@ if __name__ == '__main__':
         args.out.mkdir(parents=True, exist_ok=False)
         timestamp = datetime.fromtimestamp(int(release.git('show', '-s', '--format=%ct', 'HEAD')), timezone.utc)
         write_archive(archive, files, timestamp)
-        (args.out/'SHA256SUMS').write_text(release.sha256(archive)+'  '+archive.name+'\n')
-    if (args.out/'SHA256SUMS').read_text() != release.sha256(archive)+'  '+archive.name+'\n':
+        (args.out/'SHA256SUMS').write_text(release.sha256(archive)+'  '+archive.name+'\n', encoding='utf-8')
+    if (args.out/'SHA256SUMS').read_text(encoding='utf-8') != release.sha256(archive)+'  '+archive.name+'\n':
         raise ValueError('Skill checksum mismatch')
     verify_archive(archive, files, args.extract)
     print(json.dumps({'version': version, 'sourceRevision': revision, 'files': len(files), 'verified': True}))

@@ -5,7 +5,7 @@
 
 工具推荐：`video_sheet` 定位阶段，`compare_events` 对齐命中与结束；粒子与 Spine 由 Unity 回读和真实画面核验。入口和限制见 [工具清单](../../../shared/02-工具-选择与调用.md)。
 
-本页给出通用检查方法；对象、参数和时长由当前游戏的原代码与录像确定。具体玩法的历史返工记录见 [案例教训](../../../../docs/history/案例教训-玩法与动画.md)。跨引擎项目用 Unity 原生组件（Animator、补间插件、ParticleSystem）得到原版的结果，映射见 [Cocos 映射](../../grea-native-port/references/05-Unity-源引擎映射-Cocos.md#动画补间与特效)。
+本页给出通用检查方法；对象、参数和时长由当前游戏的原代码与录像确定。具体玩法的历史返工记录见 [案例教训](https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/history/案例教训-玩法与动画.md)。跨引擎项目用 Unity 原生组件（Animator、补间插件、ParticleSystem）得到原版的结果，映射见 [Cocos 映射](../../grea-native-port/references/05-Unity-源引擎映射-Cocos.md#动画补间与特效)。
 
 ## 完整流程与状态调度
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "name": "grea",
-  "version": "2026.10.16",
-  "greaVersion": "2026.10.16",
+  "version": "2026.10.17rc1",
+  "greaVersion": "2026.10.17rc1",
   "requiredOperations": [
     "session",
     "describe_tool",

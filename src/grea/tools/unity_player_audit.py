@@ -61,7 +61,7 @@ def audit(manifest,managed,policy):
     actual={p.name for p in managed.iterdir() if p.is_file() and p.suffix.lower()=='.dll'}
     if {str(n) for n in names}!=actual:reject('PAYLOAD_SET_MISMATCH','Manifest must enumerate every immediate managed DLL; missing/extra files cannot pass')
     if not READER.is_file() or not shutil.which('dotnet'):reject('READER_UNAVAILABLE','Build the optional locked Cecil provider first; see docs/providers/unity-native-exit.md')
-    lock=json.loads((ROOT/'tools/unity/assembly-audit/cecil-lock.json').read_text())
+    lock=json.loads((ROOT/'tools/unity/assembly-audit/cecil-lock.json').read_text(encoding='utf-8'))
     cecil=READER.parent/'Mono.Cecil.dll'
     if not cecil.is_file() or sha(cecil)!=lock['sha256']:reject('READER_DEPENDENCY_IDENTITY','Cecil provider does not match its pinned binary identity')
     env={k:v for k,v in os.environ.items() if not k.startswith(('DOTNET_STARTUP_HOOKS','CORECLR_PROFILER','CORECLR_ENABLE_PROFILING','COR_PROFILER','COR_ENABLE_PROFILING','DOTNET_ADDITIONAL_DEPS','DOTNET_SHARED_STORE'))}
@@ -97,7 +97,7 @@ def main(argv=None):
         output=disjoint(a.output,a.managed,a.manifest,a.policy)
         if output.exists():reject('OUTPUT_EXISTS','Output must be a new file')
         if a.policy.stat().st_size>1024*1024:reject('POLICY_BUDGET','Policy exceeds 1 MiB')
-        result=audit(a.manifest,a.managed,json.loads(a.policy.read_text()))
+        result=audit(a.manifest,a.managed,json.loads(a.policy.read_text(encoding='utf-8')))
         with output.open('x') as stream:json.dump(result,stream,ensure_ascii=False,indent=2);stream.write('\n')
         print(json.dumps(dict(status=result['status'],report=str(output),findings=len(result['findings']))));return 1 if result['findings'] else 0
     except (ValueError,OSError) as error:

@@ -50,3 +50,13 @@ class SampleBuildTests(unittest.TestCase):
             (source / 'Assets/link').symlink_to(source / 'Packages/owned.txt')
             with self.assertRaises(ValueError): builder.build(source, root / 'work', root / 'app')
             self.assertFalse((root / 'work').exists())
+
+    def test_windows_selects_explicit_target_and_executable_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp).resolve();source=self.source(root);out=root/'new-player'
+            def execute(command,**kwargs):
+                self.assertEqual(command[command.index('--target')+1],'StandaloneWindows64')
+                self.assertEqual(command[command.index('--output-path')+1],str(out/'MicroBattle.exe'))
+                out.mkdir();return subprocess.CompletedProcess(command,0,'{}','')
+            receipt=builder.build(source,root/'work',out,execute=execute,target='windows-x64')
+            self.assertEqual(receipt['target'],'windows-x64')

@@ -14,13 +14,14 @@ def fingerprint(root):
             for p in sorted(root.rglob('*')) if p.is_file()}
 
 
-def build(source, work, output, timeout=600, execute=subprocess.run, run_tests=False):
+def build(source, work, output, timeout=600, execute=subprocess.run, run_tests=False, target="macos-arm64"):
+    if target not in ('macos-arm64','windows-x64'):raise ValueError('Unsupported sample target')
     source, work, output = (Path(p).absolute() for p in (source, work, output))
     for path in (source, work, output):
         if any(p.is_symlink() for p in (path, *path.parents)):
             raise ValueError('Symlink paths are not supported')
     source, work, output = (p.resolve() for p in (source, work, output))
-    sample = (source / 'grea-framework-sample.marker').read_text().strip()
+    sample = (source / 'grea-framework-sample.marker').read_text(encoding='utf-8').strip()
     if sample not in ('numeric-combat', 'grid-puzzle') or not (source / 'sample-seeded.json').is_file():
         raise ValueError('Expected a prepared and Editor-seeded grea sample')
     if work.exists() or output.exists() or source == work or source in work.parents or work in source.parents:
@@ -37,8 +38,9 @@ def build(source, work, output, timeout=600, execute=subprocess.run, run_tests=F
     for name in ('sample-seeded.json', 'grea-framework-sample.marker'):
         shutil.copyfile(source / name, work / name)
     namespace = 'Numeric' if sample == 'numeric-combat' else 'Puzzle'
-    command = ['unity', 'build', str(work), '--target', 'StandaloneOSX', '--execute-method',
-               namespace + '.Editor.SampleBuilder.Build', '--output-path', str(output),
+    player=output/('MicroBattle.exe' if sample=='numeric-combat' else 'SlidingGrid.exe') if target=='windows-x64' else output
+    command = ['unity', 'build', str(work), '--target', 'StandaloneWindows64' if target=='windows-x64' else 'StandaloneOSX', '--execute-method',
+               namespace + '.Editor.SampleBuilder.Build', '--output-path', str(player),
                '--timeout', str(timeout), '--format', 'json', '--no-tail', '--log-file', str(work / 'build.log')]
     try:
         if run_tests:
@@ -47,25 +49,25 @@ def build(source, work, output, timeout=600, execute=subprocess.run, run_tests=F
                 test_command = ['unity', 'test', str(work), '--mode', mode, '--output', str(report), '--timeout',
                                 str(timeout), '--format', 'json', '--', '-nographics', '-logFile', str(work / (mode.lower() + '.log'))]
                 tested = execute(test_command, capture_output=True, text=True)
-                (work / (mode.lower() + '-command.json')).write_text(tested.stdout)
+                (work / (mode.lower() + '-command.json')).write_text(tested.stdout, encoding='utf-8')
                 if tested.returncode != 0 or not report.exists():
                     raise RuntimeError(mode + ' failed; test evidence preserved')
                 result = ET.parse(report).getroot()
                 if result.get('result') != 'Passed' or int(result.get('passed', '0')) <= 0 or int(result.get('skipped', '0')):
                     raise RuntimeError(mode + ' did not pass every discovered test')
         completed = execute(command, capture_output=True, text=True)
-        (work / 'build-command.json').write_text(completed.stdout)
-        (work / 'build-stderr.txt').write_text(completed.stderr)
+        (work / 'build-command.json').write_text(completed.stdout, encoding='utf-8')
+        (work / 'build-stderr.txt').write_text(completed.stderr, encoding='utf-8')
         if completed.returncode != 0:
             raise RuntimeError('Unity build failed; preserved working copy contains command and Editor logs')
         if not output.is_dir():
             raise RuntimeError('Unity exited without the expected Player')
         if fingerprint(source / 'Assets') != before:
             raise RuntimeError('SOURCE_ASSETS_CHANGED')
-        receipt = dict(sample=sample, sourceAssetsSha256=hashlib.sha256(json.dumps(before, sort_keys=True,
+        receipt = dict(sample=sample,target=target, sourceAssetsSha256=hashlib.sha256(json.dumps(before, sort_keys=True,
                        separators=(',', ':')).encode()).hexdigest(), sourceAssetsUnchanged=True,
                        workMayContainUnityBuildCaches=True, sourceFiles=len(before))
-        (work / 'source-preservation.json').write_text(json.dumps(receipt, indent=2) + '\n')
+        (work / 'source-preservation.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
         return receipt
     finally:
         # Never overwrite source to disguise changes. Retain evidence and fail if any source byte changed.
@@ -79,6 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--work', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--timeout', type=int, default=600)
+    parser.add_argument('--target', choices=('macos-arm64','windows-x64'), default='macos-arm64')
     parser.add_argument('--test', action='store_true', help='Run EditMode and PlayMode in the working copy before building')
     args = parser.parse_args()
-    print(json.dumps(build(args.source, args.work, args.output, args.timeout, run_tests=args.test), indent=2))
+    print(json.dumps(build(args.source, args.work, args.output, args.timeout, run_tests=args.test,target=args.target), indent=2))

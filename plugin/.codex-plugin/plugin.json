@@ -1,6 +1,6 @@
 {
   "name": "grea",
-  "version": "2026.10.16",
+  "version": "2026.10.17rc1",
   "description": "grea (Game Reverse Engineering and Assembly): evidence-first recovery of shipped games into native Unity projects. Eight skills: a router plus specialized skills for evidence extraction, cross-engine native porting, Unity package recovery, parity fixes, project standards, delivery and authorized reskins.",
   "author": {
     "name": "grea contributors",
@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "grea",
     "shortDescription": "已发布游戏 → 原生 Unity 工程",
-    "longDescription": "依据原版实玩、包体资源和代码证据，把游戏恢复或转换为原生 Unity 工程。完整 macOS arm64 插件包含本地 MCP、Python 运行时与核心工具；Unity 和可选外部工具按需安装。",
+    "longDescription": "依据原版实玩、包体资源和代码证据，把游戏恢复或转换为原生 Unity 工程。完整 macOS arm64 / Windows x64 插件包含本地 MCP、Python 与核心工具；平台与桌面实测范围见对应报告。Unity 和可选外部工具按需安装。",
     "developerName": "grea contributors",
     "category": "Developer Tools",
     "capabilities": [

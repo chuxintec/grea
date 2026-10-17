@@ -151,7 +151,7 @@ def main():
         results.append(result)
         report.write_text(json.dumps({'limits': {'oldSpaceMiB': None if args.python else args.heap_mb, 'groupRSSMiB': args.rss_mb,
                                                 'wallSecondsPerFile': args.timeout_seconds, 'outputKiBPerFile': args.output_kib},
-                                     'results': results}, indent=2) + '\n')
+                                     'results': results}, indent=2) + '\n', encoding='utf-8')
         if result['returncode'] != 0 or result['stopReason']:
             break
     print(f'Report: {report}', flush=True)

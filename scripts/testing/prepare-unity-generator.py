@@ -20,7 +20,7 @@ def prepare(output, generated_project=None):
         m2.prepare(output)
         shutil.copytree(tests / 'Editor', output / 'Assets/M3Tests')
         shutil.copytree(tests / 'Support', output / 'Assets/M3Support')
-        (output / 'grea-m3-test-project.marker').write_text('Isolated synthetic generator tests; never a game project.\n')
+        (output / 'grea-m3-test-project.marker').write_text('Isolated synthetic generator tests; never a game project.\n', encoding='utf-8')
     else:
         source = Path(generated_project).resolve()
         if not (source / 'Tools/Generated/manifests/project.json').is_file():
@@ -32,10 +32,10 @@ def prepare(output, generated_project=None):
         for name in ('Assets','Packages','ProjectSettings'):
             shutil.copytree(source/name,output/name)
         shutil.copytree(tests/'Runtime',output/'Assets/M3PlayTests')
-        manifest=output/'Packages/manifest.json';data=json.loads(manifest.read_text())
+        manifest=output/'Packages/manifest.json';data=json.loads(manifest.read_text(encoding='utf-8'))
         data['dependencies']['com.unity.test-framework']='1.8.0'
         data['testables']=['com.grea.foundation','com.grea.ui.ugui','com.grea.editor']
-        manifest.write_text(json.dumps(data,indent=2)+'\n')
+        manifest.write_text(json.dumps(data,indent=2)+'\n', encoding='utf-8')
     return {'output':str(output),'unityExecuted':False,'mode':'generated-prefab-playmode' if generated_project else 'generator-editmode'}
 
 

@@ -49,7 +49,7 @@ def export_index(source,output,adapter):
     report['outputs']=[dict(path=name,sha256=hashlib.sha256(data).hexdigest()) for name,data in payloads]
     output.mkdir(parents=True,exist_ok=False)
     for name,data in payloads: (output/name).write_bytes(data)
-    (output/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+    (output/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n', encoding='utf-8')
     return report
 
 

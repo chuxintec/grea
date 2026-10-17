@@ -35,7 +35,7 @@ counter 使用 `{supported, value, unit}`；不支持的值必须为 null，不�
 
 ## 当前边界
 
-自有反例测试见 `tests/test_observation_tools.py`。具体版本、Unity 现场回读和项目证据重放状态见 [整改执行记录](../design/audit-remediation-20261016.md)。未采集的目标平台和游戏仍是未验证；这些工具不能自动签发游戏验收通过。
+自有反例测试见 `tests/test_observation_tools.py`。具体版本、Unity 现场回读和项目证据重放状态见 [整改执行记录](https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/audit-remediation-20261016.md)。未采集的目标平台和游戏仍是未验证；这些工具不能自动签发游戏验收通过。
 
 CSV 输入使用规范列 `frame,phase,focused,valid,frame_ms`，bool 必须为小写 true/false；用 `--before-metadata` / `--after-metadata` 明确提供各自 JSON 身份和计数器状态。不会自动猜测项目 CSV 的毫秒/纳秒单位和冷启动边界。
 

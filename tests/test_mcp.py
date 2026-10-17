@@ -1,3 +1,4 @@
+import sys
 import asyncio,json,subprocess,tempfile,unittest
 from pathlib import Path
 from mcp import Client
@@ -8,7 +9,7 @@ from grea.contracts import catalog,ENVELOPE_SCHEMA
 
 class MCPTests(unittest.IsolatedAsyncioTestCase):
     async def test_stdio_catalog_parity_success_and_failure(self):
-        root=package_root();client=Client(StdioServerParameters(command=str(root/'bin/grea'),args=['mcp']),read_timeout_seconds=20)
+        root=package_root();client=Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=20)
         async with client:
             listing=await client.list_tools()
             self.assertEqual({t.name for t in listing.tools},{t['name'] for t in catalog()})
@@ -17,7 +18,7 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
                 result=await client.call_tool(name,args)
                 actual=result.structured_content
                 Draft202012Validator(ENVELOPE_SCHEMA).validate(actual)
-                cli=subprocess.run([str(root/'bin/grea'),name.replace('_','-'),json.dumps(args)],capture_output=True,text=True)
+                cli=subprocess.run([sys.executable,str(root/'launch.py'),name.replace('_','-'),json.dumps(args)],capture_output=True,text=True)
                 expected=json.loads(cli.stdout)
                 self.assertEqual(actual['status'],expected['status'])
                 self.assertEqual(actual['result'],expected['result'])
@@ -30,7 +31,7 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_stdio_case_and_typed_helper(self):
         root=package_root()
-        async with Client(StdioServerParameters(command=str(root/'bin/grea'),args=['mcp']),read_timeout_seconds=20) as client:
+        async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=20) as client:
             with tempfile.TemporaryDirectory() as d:
                 base=Path(d);source=base/'source.apk';source.write_bytes(b'fixture')
                 result=await client.call_tool('init_case',{'project_dir':d,'source':str(source),'mode':'fix'})
@@ -44,18 +45,19 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(compared.is_error)
 
     async def test_legacy_protocol_cancellation_preserves_receipt(self):
-        import os,select,time
+        import os,queue,threading,time
         root=package_root()
         with tempfile.TemporaryDirectory() as d:
             base=Path(d);script=base/'sleep.py';script.write_text('import time\nprint("started",flush=True)\ntime.sleep(20)\n')
-            (base/'registry.json').write_text(json.dumps({'tools':[{'id':'fixture','execution':{'command':[str(root/'.venv/bin/python'),str(script)]}}]}))
+            (base/'registry.json').write_text(json.dumps({'tools':[{'id':'fixture','execution':{'command':[sys.executable,str(script)]}}]}))
             env=dict(os.environ,GREA_HOME=d)
-            process=subprocess.Popen([str(root/'.venv/bin/python'),'-m','grea.cli','mcp'],env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,bufsize=1)
+            process=subprocess.Popen([sys.executable,'-m','grea.cli','mcp'],env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,bufsize=1)
             def send(value):process.stdin.write(json.dumps(value)+'\n');process.stdin.flush()
             try:
                 send({'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-03-26','capabilities':{},'clientInfo':{'name':'grea-conformance','version':'1'}}})
-                self.assertTrue(select.select([process.stdout],[],[],10)[0])
-                initialized=json.loads(process.stdout.readline());self.assertEqual(initialized['result']['protocolVersion'],'2025-03-26')
+                messages=queue.Queue()
+                threading.Thread(target=lambda:messages.put(process.stdout.readline()),daemon=True).start()
+                initialized=json.loads(messages.get(timeout=10));self.assertEqual(initialized['result']['protocolVersion'],'2025-03-26')
                 send({'jsonrpc':'2.0','method':'notifications/initialized'})
                 run=base/'cancelled'
                 send({'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'run_tool','arguments':{'tool_id':'fixture','arguments':[],'run_dir':str(run)}}})

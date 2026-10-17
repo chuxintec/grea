@@ -79,7 +79,7 @@ def snapshot(source, unity_root, output, extras=()):
 
 
 def load(snapshot_path):
-    data = json.loads(Path(snapshot_path).read_text())
+    data = json.loads(Path(snapshot_path).read_text(encoding='utf-8'))
     if data.get('schemaVersion') != 1 or not isinstance(data.get('files'), dict):
         raise ValueError('Unsupported snapshot')
     for name in data['files']:

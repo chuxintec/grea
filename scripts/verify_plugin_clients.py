@@ -34,6 +34,10 @@ def isolated_environment(root):
         path = root/directory
         path.mkdir(parents=True, exist_ok=True)
         env[key] = str(path)
+    if os.name=='nt':
+        env.update(SystemRoot=os.environ['SystemRoot'],PATH=str(Path(os.environ['SystemRoot'])/'System32'),USERPROFILE=env['HOME'],TEMP=env['TMPDIR'],TMP=env['TMPDIR'],PYTHONUTF8='1',
+                   LOCALAPPDATA=str(root/'local-app-data'),APPDATA=str(root/'roaming-app-data'))
+        Path(env['LOCALAPPDATA']).mkdir(exist_ok=True);Path(env['APPDATA']).mkdir(exist_ok=True)
     return env
 
 
@@ -57,6 +61,9 @@ def redact(value, paths=None):
 
 
 def stop_group(process):
+    if os.name=='nt':
+        if process.job:process.settle();process.wait(timeout=2)
+        return
     # Also stop MCP descendants when the client has already exited.
     for sig, timeout in [(signal.SIGTERM, .5), (signal.SIGKILL, 2)]:
         try:
@@ -74,9 +81,13 @@ def stop_group(process):
 
 
 def run_command(command, env, cwd, timeout):
-    process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, start_new_session=True)
+    if os.name=='nt':
+        from grea.host.windows_process import OwnedProcess
+        process=OwnedProcess(command,cwd,env=env,text=True)
+    else:
+        process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   text=True, encoding='utf-8',start_new_session=True)
     timed_out = False
     try:
         try:
@@ -91,6 +102,7 @@ def run_command(command, env, cwd, timeout):
         stop_group(process)
         process.stdout.close()
         process.stderr.close()
+        if os.name=='nt':process.close()
 
 
 def rpc_message(protocol, method, identity, params):
@@ -115,9 +127,13 @@ class JsonPeer:
         self.methods = []
         self.errors = []
         self.messages = queue.Queue(maxsize=1024)
-        self.process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.PIPE,
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                        text=True, bufsize=1, start_new_session=True)
+        if os.name=='nt':
+            from grea.host.windows_process import OwnedProcess
+            self.process=OwnedProcess(command,cwd,env=env,interactive=True,text=True)
+        else:
+            self.process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                            text=True, encoding='utf-8',bufsize=1,start_new_session=True)
         self.closed = threading.Event()
 
         def stdout_reader():
@@ -191,6 +207,7 @@ class JsonPeer:
             reader.join(timeout=2)
         self.process.stdout.close()
         self.process.stderr.close()
+        if os.name=='nt':self.process.close()
 
     def __enter__(self):
         return self
@@ -262,7 +279,7 @@ def marketplace_plan(bundle_root, base, client):
     relative = '.agents/plugins/marketplace.json' if client == 'codex' else '.claude-plugin/marketplace.json'
     delivered = bundle_root/relative
     if delivered.is_file():
-        data = json.loads(delivered.read_text())
+        data = json.loads(delivered.read_text(encoding='utf-8'))
         plugins = [item for item in data.get('plugins', []) if item.get('name') == 'grea']
         expected_source = {'source':'local', 'path':'./'} if client == 'codex' else './'
         if data.get('name') != 'grea-local' or len(plugins) != 1 or plugins[0].get('source') != expected_source:
@@ -308,7 +325,7 @@ def client_acceptance(name, binary, bundle_root, base, expected_skills, expected
     client = {'name': name, 'version': None, 'layers': {}, 'skills': [], 'tools': [], 'protocol_requests': []}
     phases = ['version', 'entrypoint', *(['manifest'] if name == 'claude' else []),
               'install', 'registration', *(['connection'] if name == 'claude' else []),
-              'initialize', 'skills', 'tools']
+              'initialize', 'skills', 'tools', *(['installed_session'] if name=='codex' else [])]
     for phase in phases:
         client['layers'][phase] = {'status': 'not_run', 'reason': 'Earlier prerequisite has not passed'}
     phase = 'version'
@@ -336,7 +353,7 @@ def client_acceptance(name, binary, bundle_root, base, expected_skills, expected
             config.write_text('cli_auth_credentials_store = "file"\n'
                               '[features]\nplugins = true\n[analytics]\nenabled = false\n' +
                               ''.join('[projects.' + json.dumps(str(path)) + ']\ntrust_level = "trusted"\n'
-                                      for path in (work, plan['directory'])))
+                                      for path in (work, plan['directory'])), encoding='utf-8')
             phase = 'install'
             checked_command([*command, 'plugin', 'marketplace', 'add', plan['add_source'], '--json'],
                             env, plan['directory'], timeout)
@@ -381,6 +398,20 @@ def client_acceptance(name, binary, bundle_root, base, expected_skills, expected
                     raise ValueError('Expected one grea server, observed ' + str([s.get('name') for s in servers]))
                 client['tools'] = check_tools(server_tools(candidates[0]), expected_tools, name)
                 layer(client, phase, 'pass', count=len(client['tools']))
+                phase='installed_session'
+                installed_roots={Path(item['path']).resolve().parents[3] for item in items
+                                 if item.get('name')=='grea:grea' and Path(item.get('path','/')).is_relative_to(cache)}
+                if len(installed_roots)!=1:raise ValueError('Cannot establish one client-installed product root')
+                installed_root=installed_roots.pop()
+                from verify_plugin import client_command
+                session_command,_=client_command(installed_root,'codex')
+                if session_command[-1]!='mcp':raise ValueError('Unexpected installed launcher shape')
+                session_command[-1]='session'
+                session=json.loads(checked_command(session_command,env,work,timeout))
+                expected_version=json.loads((bundle_root/'plugin/version.json').read_text(encoding='utf-8'))['version']
+                if session.get('status')!='ok' or session['result']['version']!=expected_version or Path(session['result']['package_root']).resolve()!=installed_root:
+                    raise ValueError('Client-installed cache session identity mismatch')
+                layer(client,phase,'pass',version=expected_version,scope='Delivered launcher in the real client-installed cache; separate from host tool invocation')
         else:
             phase = 'manifest'
             checks = validate_claude_manifests(command, bundle_root, plan['directory'], env, work, timeout)
@@ -437,32 +468,35 @@ def client_acceptance(name, binary, bundle_root, base, expected_skills, expected
     return client
 
 
-def acceptance(bundle, codex_bin=None, claude_bin=None, timeout=45, offline=True):
+def acceptance(bundle, codex_bin=None, claude_bin=None, timeout=45, offline=True, clients=('codex','claude')):
     bundle = Path(bundle).resolve()
     result = {'schema_version':1, 'status':'blocked', 'archive_sha256':sha256(bundle), 'clients':{},
               'isolation': {'independent_child_configuration':True, 'credential_environment_inherited':False,
                             'network_denied':offline, 'unicode_space_path':True},
               'model_requests_sent':0, 'limits':['Client loading and discovery only; no model inference or business tools called.',
                                                'Unity Editor, gameplay, and other platforms not tested.']}
-    with tempfile.TemporaryDirectory(prefix='grea 客户端 audit ', dir='/private/tmp') as tmp:
+    with tempfile.TemporaryDirectory(prefix='grea 客户端 audit ', dir=None if os.name=='nt' else '/private/tmp') as tmp:
         base = Path(tmp).resolve()
         try:
             manifest = verify_archive(bundle, base/'catalog/plugins')
+            from plugin_targets import native_target
+            if manifest.get('target')!=native_target():raise ValueError('Client acceptance requires the matching native target')
             bundle_root = base/'catalog/plugins/grea'
             result['version'] = manifest.get('version')
             result['source_tree_sha256'] = manifest.get('source_tree_sha256')
             result['archive'] = {'status':'pass'}
             skills = set()
             for path in sorted((bundle_root/'plugin/skills').glob('*/SKILL.md')):
-                match = re.search(r'^name:\s*["\']?([^\n"\']+)', path.read_text(), re.M)
+                match = re.search(r'^name:\s*["\']?([^\n"\']+)', path.read_text(encoding='utf-8'), re.M)
                 if match:
                     skills.add(match.group(1).strip())
-            operations = json.loads((bundle_root/'schemas/operations.json').read_text())['operations']
+            operations = json.loads((bundle_root/'schemas/operations.json').read_text(encoding='utf-8'))['operations']
             tools = {item['name'] for item in operations}
             if not skills or not tools:
                 raise ValueError('Bundle expected skill/tool inventory is empty')
             result['expected'] = {'skills':sorted(skills), 'tools':sorted(tools)}
             for name, binary in [('codex',codex_bin), ('claude',claude_bin)]:
+                if name not in clients:continue
                 result['clients'][name] = client_acceptance(name, binary, bundle_root, base, skills, tools, timeout, offline)
             result['status'] = 'pass' if all(item['status'] == 'pass' for item in result['clients'].values()) else 'blocked'
         except (OSError, ValueError, RuntimeError) as exc:
@@ -480,13 +514,14 @@ def main(argv=None):
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--codex-bin', type=Path)
     parser.add_argument('--claude-bin', type=Path)
+    parser.add_argument('--client',action='append',choices=('codex','claude'),help='Only install/verify the explicitly selected client in temporary configuration')
     parser.add_argument('--timeout', type=float, default=45, help='Bound each command or discovery phase in seconds')
     parser.add_argument('--allow-network', action='store_true', help='Explicitly omit the macOS network-denial sandbox')
     args = parser.parse_args(argv)
     if not 0 < args.timeout <= 300:
         parser.error('--timeout must be between 0 and 300 seconds')
     try:
-        report = acceptance(args.bundle, args.codex_bin, args.claude_bin, args.timeout, not args.allow_network)
+        report = acceptance(args.bundle, args.codex_bin, args.claude_bin, args.timeout, not args.allow_network,tuple(args.client or ('codex','claude')))
     except Exception as exc:
         report = {'schema_version':1, 'status':'blocked',
                   'reason':redact(type(exc).__name__ + ': ' + str(exc), {str(Path.home()):'<user-home>'}),

@@ -1,6 +1,6 @@
 {
   "name": "grea",
-  "version": "2026.10.16",
+  "version": "2026.10.17rc1",
   "description": "grea (Game Reverse Engineering and Assembly): evidence-first recovery of shipped games into native Unity projects, with skills for evidence extraction, cross-engine native porting, Unity package recovery, parity fixes, project standards, delivery and authorized reskins.",
   "author": {
     "name": "grea contributors",
@@ -12,7 +12,9 @@
     "grea": {
       "type": "stdio",
       "command": "${CLAUDE_PLUGIN_ROOT}/plugin/launcher/grea",
-      "args": ["mcp"]
+      "args": [
+        "mcp"
+      ]
     }
   },
   "keywords": [

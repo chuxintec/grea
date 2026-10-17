@@ -101,15 +101,15 @@ def _recipe(p):
         if source.is_symlink():
             raise GreaError('UNSAFE_TEMPLATE', 'Sample contains a symlink.')
         if source.suffix in ('.cs', '.asmdef'):
-            files['Assets/Game/' + source.relative_to(sample).as_posix()] = source.read_text().replace('Game.', p['namespace'] + '.').encode()
+            files['Assets/Game/' + source.relative_to(sample).as_posix()] = source.read_text(encoding='utf-8').replace('Game.', p['namespace'] + '.').encode()
     assembly_path = 'Assets/Game/Bootstrap/Game.Bootstrap.asmdef'
     assembly = json.loads(files[assembly_path]); assembly['references'].append('Grea.Foundation.Runtime')
     files[assembly_path] = encoded(assembly)
     seed = root / 'tools/unity/templates/minimal-project/ProjectBootstrap.cs.txt'
-    files['Assets/Game/Bootstrap/ProjectBootstrap.cs'] = seed.read_text().replace('__NAMESPACE__', p['namespace']).encode()
+    files['Assets/Game/Bootstrap/ProjectBootstrap.cs'] = seed.read_text(encoding='utf-8').replace('__NAMESPACE__', p['namespace']).encode()
     files['Packages/manifest.json'] = encoded({'dependencies': {'com.unity.render-pipelines.universal': '17.6.0', 'com.unity.ugui': '2.6.0', 'com.unity.modules.audio': '1.0.0'}})
     # Unity resolves the same pinned built-in package graph; tests are opt-in, not player dependencies.
-    lock = json.loads((root / 'tools/unity/framework/test-packages-lock.json').read_text())
+    lock = json.loads((root / 'tools/unity/framework/test-packages-lock.json').read_text(encoding='utf-8'))
     files['Packages/packages-lock.json'] = encoded(lock)
     files['ProjectSettings/ProjectVersion.txt'] = b'm_EditorVersion: 6000.6.2f1\n'
     files['.gitignore'] = b'/Library/\n/Temp/\n/Logs/\n/Obj/\n/UserSettings/\n/Build/\n*.csproj\n*.sln\n.DS_Store\n'
@@ -215,16 +215,14 @@ def _atomic(path, value):
 
 @contextlib.contextmanager
 def _lock(root):
-    if os.name != 'posix':
-        raise GreaError('UNSUPPORTED_PLATFORM', '工程生成 mutation currently requires POSIX locking.')
-    import fcntl
-    fd = os.open(root / '.grea-generation.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    from .host.files import file_lock
+    path=root/'.grea-generation.lock'
+    if path.is_symlink() or (path.exists() and getattr(path.lstat(),'st_file_attributes',0)&0x400):
+        raise GreaError('UNSAFE_PROJECT_ENTRY','Generation lock may not be a link.')
+    path.touch(exist_ok=True)
     try:
-        try: fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError: raise GreaError('GENERATION_BUSY', 'Another generation/recovery owns the root lock.')
-        yield
-    finally:
-        os.close(fd)
+        with file_lock(path,blocking=False):yield
+    except BlockingIOError:raise GreaError('GENERATION_BUSY','Another generation/recovery owns the root lock.')
 
 
 def _checkpoint(stage):

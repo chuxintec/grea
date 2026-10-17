@@ -98,7 +98,7 @@ class UnityProjectTests(unittest.TestCase):
         self.profile['projectId']='second-project';self.save_profile()
         before=fingerprint(self.root)
         args={'project_root':str(self.root),'mode':'new'}
-        process=subprocess.run([str(ROOT/'bin/grea'),'plan-unity-project',json.dumps(args)],cwd='/tmp',capture_output=True,text=True)
+        process=subprocess.run([sys.executable,str(ROOT/'launch.py'),'plan-unity-project',json.dumps(args)],cwd=tempfile.gettempdir(),capture_output=True,text=True)
         self.assertEqual(process.returncode,0,process.stderr)
         expected=self.call('plan_unity_project')['result']
         self.assertEqual(json.loads(process.stdout)['result'],expected)
@@ -306,12 +306,12 @@ class UnityProjectTests(unittest.TestCase):
 
     def test_mcp_cli_parity_for_success_findings_and_error(self):
         async def check():
-            async with Client(StdioServerParameters(command=str(ROOT/'bin/grea'),args=['mcp']),read_timeout_seconds=20) as client:
+            async with Client(StdioServerParameters(command=sys.executable,args=[str(ROOT/'launch.py'),'mcp']),read_timeout_seconds=20) as client:
                 for mode,profile in [('new','grea-project.json'),('adopt','grea-project.json'),('new','../escape.json')]:
                     request={'project_root':str(self.root),'mode':mode,'profile':profile}
                     for operation in ['plan_unity_project','validate_unity_project']:
                         mcp=(await client.call_tool(operation,request)).structured_content
-                        cli=subprocess.run([str(ROOT/'bin/grea'),operation.replace('_','-'),json.dumps(request)],capture_output=True,text=True,cwd='/tmp')
+                        cli=subprocess.run([sys.executable,str(ROOT/'launch.py'),operation.replace('_','-'),json.dumps(request)],capture_output=True,text=True,cwd=tempfile.gettempdir())
                         actual=json.loads(cli.stdout)
                         self.assertEqual(mcp['status'],actual['status']);self.assertEqual(mcp['result'],actual['result']);self.assertEqual(mcp['error'],actual['error'])
                         self.assertEqual(cli.returncode,{'ok':0,'partial':1,'error':2}[actual['status']])

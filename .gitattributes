@@ -1,4 +1,4 @@
-* text=auto
+* text=auto eol=lf
 *.py text eol=lf
 *.sh text eol=lf
 /bin/* text eol=lf
@@ -13,3 +13,6 @@
 tests/unity/reference-project/**/*.prefab text eol=lf whitespace=-blank-at-eol
 tests/unity/reference-project/**/*.unity text eol=lf whitespace=-blank-at-eol
 tests/unity/reference-project/**/*.asset text eol=lf whitespace=-blank-at-eol
+
+*.png -text
+*.svg text eol=lf
