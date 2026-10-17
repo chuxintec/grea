@@ -1,7 +1,7 @@
 """Create-only native-authoring candidates and bounded C# identities."""
 import json
 import re
-from pathlib import Path
+from grea.host.paths import Path
 from grea.safe_paths import disjoint
 from grea.data_io import sha, encode
 VERSION = "0.1.0"

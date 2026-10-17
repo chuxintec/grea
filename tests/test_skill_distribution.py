@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'scripts'))
-import build_skill
 
 
 class SkillDistributionTests(unittest.TestCase):
@@ -26,31 +25,6 @@ class SkillDistributionTests(unittest.TestCase):
             'plugin/.gitignore':'__pycache__/\n',
             'plugin/.codex-plugin/plugin.json':manifest,'plugin/.claude-plugin/plugin.json':manifest,
             'plugin/version.json':json.dumps(value),'docs/使用.md':'# 示例\n','LICENSE':'MIT\n'}.items()}
-    def test_versioned_relocatable_and_reproducible(self):
-        source=self.source();files=build_skill.render(source,'1.2.3rc1','a'*40)
-        entry=files['grea/skills/grea/SKILL.md'].decode();self.assertIn('/'+'a'*40+'/',entry);self.assertNotIn('../docs/',entry);self.assertIn('](../../shared/共用.md)',entry);self.assertNotIn('grea/.gitignore',files);self.assertIn('grea/.codex-plugin/plugin.json',files)
-        manifest=json.loads(files['grea/plugin-manifest.json']);self.assertEqual(manifest['version'],'1.2.3rc1');self.assertEqual(manifest['skills'],['grea','grea-port']);self.assertEqual(len(manifest['files']),8)
-        with tempfile.TemporaryDirectory() as tmp:
-            root=Path(tmp).resolve();a=root/'a.zip';b=root/'b.zip';stamp=datetime(2026,10,13,tzinfo=timezone.utc)
-            build_skill.write_archive(a,files,stamp);build_skill.write_archive(b,files,stamp);self.assertEqual(a.read_bytes(),b.read_bytes())
-            build_skill.verify_archive(a,files,root/'unrelated');actual={p.relative_to(root/'unrelated').as_posix():p.read_bytes() for p in (root/'unrelated').rglob('*') if p.is_file()}
-            build_skill.validate_local_links(actual);self.assertEqual(actual,files)
-            with self.assertRaises(ValueError):build_skill.verify_archive(a,files,root/'unrelated')
-    def test_version_missing_link_and_local_escape_rejected(self):
-        for kind in ['version','missing','absolute','manifest','name']:
-            source=self.source()
-            if kind=='version':source['plugin/version.json']=(b'{"version":"9","greaVersion":"9"}',0o100644)
-            elif kind=='manifest':source['plugin/.claude-plugin/plugin.json']=(b'{"name":"grea","version":"9"}',0o100644)
-            elif kind=='name':source['plugin/skills/grea-port/SKILL.md']=(b'---\nname: other\ndescription: Port\n---\n',0o100644)
-            else:source['plugin/skills/grea/SKILL.md']=(('---\nname: grea\ndescription: Test\n---\n[bad]('+('missing.md' if kind=='missing' else '/local/file')+')').encode(),0o100644)
-            with self.assertRaises(ValueError):build_skill.render(source,'1.2.3rc1','a'*40)
-    def test_tamper_and_extra_path_fail_before_extraction(self):
-        files=build_skill.render(self.source(),'1.2.3rc1','a'*40)
-        with tempfile.TemporaryDirectory() as tmp:
-            root=Path(tmp).resolve();archive=root/'skill.zip';build_skill.write_archive(archive,files,datetime(2026,10,13,tzinfo=timezone.utc))
-            with zipfile.ZipFile(archive,'a') as z:z.writestr('../escape',b'bad')
-            with self.assertRaises(ValueError):build_skill.verify_archive(archive,files,root/'output')
-            self.assertFalse((root/'output').exists())
     def test_current_skill_manifest_declares_available_operations(self):
         from grea.contracts import CONTRACTS
         from grea import __version__

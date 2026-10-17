@@ -4,9 +4,9 @@ grea 为已发布游戏恢复与原生 Unity 转换提供统一 CLI、stdio MCP 
 
 - 核心能力：包体/资源清单、Cocos 有限解析、类型化配置预检、轨迹与表现检查、Case/revision、Unity 检查及受控生成。
 - Unity 资产：Foundation/uGUI/Editor 包、原生 UI 配方、两个自有战斗/益智消费者。复杂品类系统保持候选。
-- 完整插件：macOS arm64 已有正式版；Windows x64 在本分支实现与原生 CI 验收。桌面、Editor/Player、隔离机制分别报告。
+- 完整插件：支持 macOS arm64 和 Windows x64；原生 CI、隔离机制、客户端加载与游戏实机范围分别报告。
 
-从 [安装与平台](docs/安装与平台.md)选择完整插件、源码或纯文档包；按 [使用指南](docs/使用指南.md)执行第一次工具调用。
+从 [安装与平台](docs/安装与平台.md)选择完整插件或 Git/GitHub 自动源码下载；按 [使用指南](docs/使用指南.md)执行第一次工具调用。
 
 | 入口 | 用途 |
 | --- | --- |
@@ -24,4 +24,4 @@ uv sync --frozen
 
 Windows 源码入口为 `bin\grea.cmd session`；完整插件自带解释器，不需要先执行 uv。能力存在、原生客户端发现、真实工具运行与游戏验收分别核验。游戏原工程和私人运行证据不进入本仓库。
 
-本分支为 Windows/docs 候选开发，不自动合并或发布。[MIT](LICENSE)。
+正式版本通过原生 CI 与双平台插件验收后发布；Windows 实机范围见验证索引。[MIT](LICENSE)。

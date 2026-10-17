@@ -1,7 +1,7 @@
 """Typed authoring preflight v1. No expression evaluation or inferred foreign keys."""
 import argparse
 import math
-from pathlib import Path
+from grea.host.paths import Path
 import sys
 from grea.data_io import load, encode
 from grea.safe_paths import disjoint

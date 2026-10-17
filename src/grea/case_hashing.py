@@ -1,7 +1,7 @@
 """Bounded file identity checks shared by legacy and revisioned case readers."""
 from contextlib import contextmanager
 from contextvars import ContextVar
-from pathlib import Path
+from grea.host.paths import Path
 
 from .common import GreaError, hash_file as raw_hash_file
 

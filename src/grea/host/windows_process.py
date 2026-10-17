@@ -71,12 +71,19 @@ class OwnedProcess:
         self.returncode=None; self.args=argv
         self.k=api(); k=self.k; self.job=None; self.handle=None
         self.stdin=self.stdout=self.stderr=None; handles=[]; attrs=None; attrs_ready=False; info=ProcessInfo()
+        stage="initialization"
         def require(ok):
-            if not ok:raise c.WinError(c.get_last_error())
+            if not ok:
+                error=c.WinError(c.get_last_error())
+                error.strerror=f"{stage}: {error.strerror}"
+                raise error
         try:
+            stage='CreateJobObjectW'
             self.job=k.CreateJobObjectW(None,None);require(self.job)
+            stage='SetInformationJobObject'
             limits=ExtendedLimits();limits.basic.flags=0x2000 # KILL_ON_JOB_CLOSE
             require(k.SetInformationJobObject(self.job,9,c.byref(limits),c.sizeof(limits)))
+            stage='CreatePipe'
             security=Security(c.sizeof(Security),None,True)
             pipes=[]
             for _ in range(2):
@@ -84,30 +91,34 @@ class OwnedProcess:
                 require(k.CreatePipe(c.byref(read),c.byref(write),c.byref(security),0))
                 handles.extend([read.value,write.value]);require(k.SetHandleInformation(read,1,0))
                 pipes.append((read.value,write.value))
-            nul=k.CreateFileW('NUL',0x80000000,3,c.byref(security),3,0,None)
-            require(nul not in (None,w.HANDLE(-1).value));handles.append(nul)
-            input_pipe=None
-            if interactive:
-                read,write=w.HANDLE(),w.HANDLE()
-                require(k.CreatePipe(c.byref(read),c.byref(write),c.byref(security),0))
-                handles.extend([read.value,write.value]);require(k.SetHandleInformation(write,1,0))
-                input_pipe=(read.value,write.value)
+            # AppContainer denies opening the DOS NUL device. An anonymous pipe
+            # is a local kernel object already allowed by the same token. Closing
+            # the parent writer gives noninteractive children immediate stdin EOF.
+            stage='CreatePipe(stdin)'
+            read,write=w.HANDLE(),w.HANDLE()
+            require(k.CreatePipe(c.byref(read),c.byref(write),c.byref(security),0))
+            handles.extend([read.value,write.value]);require(k.SetHandleInformation(write,1,0))
+            input_pipe=(read.value,write.value)
+            stage='process attributes'
             attribute_count=2 if capabilities is not None else 1
             size=SIZE();k.InitializeProcThreadAttributeList(None,attribute_count,0,c.byref(size))
             attrs=c.create_string_buffer(size.value)
             require(k.InitializeProcThreadAttributeList(attrs,attribute_count,0,c.byref(size)));attrs_ready=True
-            inherited=(w.HANDLE*3)(input_pipe[0] if interactive else nul,pipes[0][1],pipes[1][1])
+            inherited=(w.HANDLE*3)(input_pipe[0],pipes[0][1],pipes[1][1])
             require(k.UpdateProcThreadAttribute(attrs,0,0x20002,inherited,c.sizeof(inherited),None,None))
             if capabilities is not None:
                 require(k.UpdateProcThreadAttribute(attrs,0,0x20009,c.byref(capabilities),c.sizeof(capabilities),None,None))
             startup=StartupEx();startup.info.cb=c.sizeof(startup);startup.attributes=c.cast(attrs,w.LPVOID)
-            startup.info.flags=0x100;startup.info.stdin=input_pipe[0] if interactive else nul;startup.info.stdout=pipes[0][1];startup.info.stderr=pipes[1][1]
+            startup.info.flags=0x100;startup.info.stdin=input_pipe[0];startup.info.stdout=pipes[0][1];startup.info.stderr=pipes[1][1]
             environment=dict(os.environ if env is None else env)
             block=c.create_unicode_buffer('\0'.join(f'{key}={value}' for key,value in sorted(environment.items(),key=lambda p:p[0].upper()))+'\0\0')
             command=c.create_unicode_buffer(subprocess.list2cmdline(argv))
+            stage='CreateProcessW'
             require(k.CreateProcessW(None,command,None,None,True,0x4|0x80000|0x400|0x08000000,block,str(cwd),c.byref(startup),c.byref(info)))
             self.handle=info.process;self.pid=info.pid
+            stage='AssignProcessToJobObject'
             require(k.AssignProcessToJobObject(self.job,info.process))
+            stage='ResumeThread'
             if k.ResumeThread(info.thread)==0xffffffff:raise c.WinError(c.get_last_error())
             if interactive:
                 fd=msvcrt.open_osfhandle(input_pipe[1],os.O_WRONLY|os.O_BINARY);handles.remove(input_pipe[1])

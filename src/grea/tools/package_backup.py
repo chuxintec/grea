@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Snapshot installed non-builtin UPM packages and prepare verified offline install plans."""
 import argparse,hashlib,json,tarfile,tempfile,os,re
-from pathlib import Path
+from grea.host.paths import Path
 from grea.safe_paths import disjoint, relative_name
 
 def sha(p,private_markers=()):

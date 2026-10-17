@@ -8,7 +8,8 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
+from grea.host.paths import Path
 import shutil
 from grea.safe_paths import canonical_path, disjoint, relative_name
 

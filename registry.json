@@ -40,7 +40,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
@@ -111,7 +111,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
@@ -182,7 +182,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/ILSpy/ilspycmd"
@@ -252,7 +252,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "apktool",
       "capability": {
@@ -309,7 +309,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "jadx",
       "capability": {
@@ -367,7 +367,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "rizin",
       "capability": {
@@ -435,7 +435,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "binwalk",
       "capability": {
@@ -493,7 +493,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "7zz",
       "capability": {
@@ -555,7 +555,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -605,7 +605,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -660,7 +660,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -714,7 +714,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -780,7 +780,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -834,7 +834,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -883,7 +883,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "dependency_library",
@@ -932,7 +932,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "dependency_library",
@@ -982,7 +982,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "dependency_library",
@@ -1038,7 +1038,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -1082,7 +1082,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "provider_inventory",
@@ -1131,7 +1131,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "provider_inventory",
@@ -1193,7 +1193,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1256,7 +1256,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1319,7 +1319,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1382,7 +1382,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1445,7 +1445,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1506,7 +1506,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1569,7 +1569,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1632,7 +1632,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1694,7 +1694,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -1753,7 +1753,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "glslangValidator",
       "capability": {
@@ -1822,7 +1822,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "spirv-cross",
       "capability": {
@@ -1891,7 +1891,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "spirv-val",
       "capability": {
@@ -1959,7 +1959,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
@@ -2026,7 +2026,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -2082,7 +2082,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -2216,7 +2216,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -2276,7 +2276,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -2336,7 +2336,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -2402,7 +2402,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -2512,7 +2512,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/tools/dotnet/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
@@ -2618,7 +2618,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "spirv-dis",
       "capability": {
@@ -2681,7 +2681,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/adapters/wechat/export_all_bundle_assets.py",
@@ -2741,7 +2741,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
@@ -2816,7 +2816,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/adapters/wechat/decrypt_webgl_xxtea.py",
@@ -2874,7 +2874,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
@@ -2944,7 +2944,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/runtimes/python/.venv/bin/python"
@@ -3024,7 +3024,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -3079,7 +3079,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "editor_only",
@@ -3137,7 +3137,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "editor_only",

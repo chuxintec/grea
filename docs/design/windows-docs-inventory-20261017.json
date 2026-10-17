@@ -29,7 +29,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
+      "target_sha256": "c85a925d22f4215efaf279325a755f8ae300483e0699bccf3fc585ee2e05049a"
     },
     {
       "source": "docs/Skill构建与安装.md",
@@ -41,7 +41,7 @@
       "status": "executed",
       "resolved_target": "docs/安装与平台.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
+      "target_sha256": "2f86d9e93bd2a76d2e7d38560ab517067243dd27b71c27ab5f8d044becc492b8"
     },
     {
       "source": "docs/Unity参考游戏.md",
@@ -820,7 +820,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
+      "target_sha256": "c85a925d22f4215efaf279325a755f8ae300483e0699bccf3fc585ee2e05049a"
     },
     {
       "source": "docs/兼容与迁移指南.md",
@@ -832,7 +832,7 @@
       "status": "executed",
       "resolved_target": "docs/安装与平台.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
+      "target_sha256": "2f86d9e93bd2a76d2e7d38560ab517067243dd27b71c27ab5f8d044becc492b8"
     },
     {
       "source": "docs/工作区接入.md",
@@ -844,7 +844,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
+      "target_sha256": "c85a925d22f4215efaf279325a755f8ae300483e0699bccf3fc585ee2e05049a"
     },
     {
       "source": "docs/工具集成与平台支持.md",
@@ -856,7 +856,7 @@
       "status": "executed",
       "resolved_target": "docs/安装与平台.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
+      "target_sha256": "2f86d9e93bd2a76d2e7d38560ab517067243dd27b71c27ab5f8d044becc492b8"
     },
     {
       "source": "docs/接口与证据说明.md",
@@ -880,7 +880,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
+      "target_sha256": "c85a925d22f4215efaf279325a755f8ae300483e0699bccf3fc585ee2e05049a"
     },
     {
       "source": "docs/维护指南.md",
@@ -892,7 +892,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
+      "target_sha256": "c85a925d22f4215efaf279325a755f8ae300483e0699bccf3fc585ee2e05049a"
     },
     {
       "source": "docs/路径迁移表.json",
@@ -916,7 +916,7 @@
       "status": "executed",
       "resolved_target": "docs/安装与平台.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
+      "target_sha256": "2f86d9e93bd2a76d2e7d38560ab517067243dd27b71c27ab5f8d044becc492b8"
     }
   ],
   "new_documents": [
@@ -928,13 +928,15 @@
     "docs/故障排查.md",
     "docs/维护与发布.md",
     "proposals/numeric-template.md",
-    "validation/README.md"
+    "validation/README.md",
+    "docs/design/release-v2026-10-17.md"
   ],
   "current_counts": {
-    "public_docs_files": 24,
-    "public_markdown": 22,
+    "public_docs_files": 25,
+    "public_markdown": 23,
     "daily_top_level_markdown": 7,
     "immutable_reports_preserved": 15,
     "ignored_os_metadata_retained": 2
-  }
+  },
+  "scope_superseded_by": "docs/design/release-v2026-10-17.md; original reason fields describe the baseline audit, not current release authorization"
 }

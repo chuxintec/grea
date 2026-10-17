@@ -6,9 +6,9 @@ from urllib.parse import unquote,urlsplit,quote
 
 def project(source, revision):
     def included(name):
-        return not (name.startswith(('.github/','scripts/','docs/design/','proposals/','validation/'))
+        return not (name.endswith('.gitignore') or name.startswith(('.github/','scripts/','docs/design/','proposals/','validation/'))
                     or name.startswith('tests/') and not name.startswith('tests/unity/'))
-    files={name:value for name,value in source.items() if included(name)}
+    files={name:value for name,value in source.items() if included(name) or name=='scripts/sync_skill.py'}
     for name,(raw,mode) in list(files.items()):
         if not name.endswith('.md'):continue
         def link(match):

@@ -483,6 +483,7 @@ def acceptance(bundle, codex_bin=None, claude_bin=None, timeout=45, offline=True
             if manifest.get('target')!=native_target():raise ValueError('Client acceptance requires the matching native target')
             bundle_root = base/'catalog/plugins/grea'
             result['version'] = manifest.get('version')
+            result['target'] = manifest.get('target')
             result['source_tree_sha256'] = manifest.get('source_tree_sha256')
             result['archive'] = {'status':'pass'}
             skills = set()

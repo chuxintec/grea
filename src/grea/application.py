@@ -1,6 +1,7 @@
 """Only application dispatch: CLI/MCP use the same validation, handlers and outcomes."""
+from grea.host.files import temporary_directory
 import subprocess,json,tempfile
-from pathlib import Path
+from grea.host.paths import Path
 from jsonschema import Draft202012Validator
 from . import __version__
 from .contracts import CONTRACTS,ENVELOPE_SCHEMA,catalog
@@ -17,7 +18,7 @@ def doctor(tool_ids=None,probe=False,cancel=None):
         if entry.get('acquisition'):item['acquisition']=entry['acquisition']
         if probe:
             try:
-                with tempfile.TemporaryDirectory(prefix='grea-doctor-') as temp:
+                with temporary_directory(prefix='grea-doctor-') as temp:
                     receipt,_,failure=runner.execute(entry['id'],[],str(Path(temp)/'probe'),timeout_seconds=20,max_output_bytes=1048576,max_inline_bytes=8192,probe=True,cancel=cancel)
                     item.update(level='probe',exit_code=receipt['exit_code'],state='probe_passed' if receipt['status']=='ok' else 'probe_failed',output=receipt['stdout']+receipt['stderr'],output_truncated=receipt['inline_truncated'],capture_complete=receipt['capture_complete'],reason=receipt['reason'])
             except (GreaError,subprocess.TimeoutExpired,OSError) as e:item.update(state='probe_failed',reason=str(e))

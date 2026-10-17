@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe recovered combined GLES programs; original unchanged, adaptations explicit."""
 import argparse,json,re,subprocess,hashlib
-from pathlib import Path
+from grea.host.paths import Path
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('source',type=Path);p.add_argument('--output',required=True,type=Path);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False)

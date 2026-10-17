@@ -3,7 +3,8 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
+from grea.host.paths import Path
 import re
 import stat
 import unicodedata

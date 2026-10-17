@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 from grea.host.files import is_link
-from pathlib import Path
+from grea.host.paths import Path
 
 
 def digest(path):

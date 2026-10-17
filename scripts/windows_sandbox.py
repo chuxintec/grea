@@ -31,9 +31,13 @@ class AppContainer:
   try:
    text=w.LPWSTR()
    if not self.adv.ConvertSidToStringSidW(self.sid,c.byref(text)):raise c.WinError(c.get_last_error())
-   try:sid=text.value
+   try:sid=text.value;self.sid_text=sid
    finally:self.k.LocalFree(c.cast(text,w.LPVOID))
    tool=str(Path(os.environ['SystemRoot'])/'System32/icacls.exe')
+   base=self.paths[0].parent
+   if any(p.parent!=base for p in self.paths):raise ValueError('Verifier trees must share an owned temporary base')
+   # Ancestor metadata checks need this directory itself, not new access to its children.
+   subprocess.run([tool,str(base),'/grant','*'+sid+':(RX)','/Q'],check=True,capture_output=True)
    for path,rights in zip(self.paths,('RX','F','F')):
     subprocess.run([tool,str(path),'/grant','*'+sid+':(OI)(CI)('+rights+')','/T','/Q'],check=True,capture_output=True)
     if rights=='F':subprocess.run([tool,str(path),'/setintegritylevel','(OI)(CI)L','/T','/Q'],check=True,capture_output=True)

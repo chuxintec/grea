@@ -2,7 +2,7 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from grea.host.paths import Path
 import shutil
 import stat
 import sys
@@ -78,7 +78,8 @@ def unpack(source, output, scope='assets', max_files=100000, max_bytes=16 * 1024
         if not direct and not apk_names:
             raise ValueError('No APK entries or Android manifest; input is not a supported APK/XAPK')
         output.parent.mkdir(parents=True, exist_ok=True)
-        stage = Path(tempfile.mkdtemp(prefix='.grea-unpack-', dir=output.parent))
+        from grea.host.files import private_directory
+        stage = private_directory(output.parent,'.grea-unpack-')
         try:
             reference = stage / 'Reference'
             reference.mkdir()

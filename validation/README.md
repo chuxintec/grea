@@ -1,6 +1,9 @@
 # 验证索引
 
-历史报告保留原字节与原版本，只证明其声明范围。Windows/docs 当前候选结果将在本轮收口报告给出，未记录项保持 not_run。
+历史报告保留原字节与原版本，只证明其声明范围。当前证据按 [工具 ID 索引](tool-evidence-index.json)定位。v2026.10.17 的双平台包、原生隔离报告及临时 Codex 报告绑定同一源码提交，见 [Release](https://github.com/chuxintec/grea/releases/tag/v2026.10.17) 的 manifest 与 SHA256SUMS。平台声明不是业务验证；未测可选供应方保持 not_run。Windows 11 桌面、Unity/Player、性能和人工输入为本轮明确排除项，不作为正式发布门槛。
+
+- [v2026.10.17 实现检查点与发布证据入口](releases/2026-10-17-native-plugin.json)
+- [v2026.10.17 变更说明](release-notes/v2026.10.17.md)
 
 - [2026-10-13-unity-m1](releases/2026-10-13-unity-m1.json)
 - [2026-10-13-unity-m2](releases/2026-10-13-unity-m2.json)

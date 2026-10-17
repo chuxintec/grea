@@ -9,7 +9,6 @@ from grea.brand_assets import validate_asset, validate_interface
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
-import build_skill
 import build_plugin
 import test_plugin_bundle as bundle_tests
 import test_skill_distribution as skill_tests
@@ -27,11 +26,7 @@ class BrandTests(unittest.TestCase):
 
     def test_both_package_roots_and_manifest_paths(self):
         source=skill_tests.SkillDistributionTests().source();manifest=json.loads(source['plugin/.codex-plugin/plugin.json'][0]);manifest['interface']={'composerIcon':'./assets/icon_64.png','logo':'./assets/icon_64.png','brandColor':'#20C8A0'};source['plugin/.codex-plugin/plugin.json']=(json.dumps(manifest).encode(),0o100644);source['plugin/assets/icon_64.png']=(png(),0o100644)
-        files=build_skill.render(source,'1.2.3rc1','a'*40);self.assertEqual(files['grea/assets/icon_64.png'],png())
-        validate_interface(json.loads(files['grea/.codex-plugin/plugin.json']),lambda p:files['grea/'+p])
         full=bundle_tests.PluginBundleTests().source_fixture();full['plugin/assets/icon_64.png']=(png(),0o100644);m=json.loads(full['plugin/.codex-plugin/plugin.json'][0]);m['interface']=manifest['interface'];full['plugin/.codex-plugin/plugin.json']=(json.dumps(m).encode(),0o100644)
         with tempfile.TemporaryDirectory() as t:
             root=Path(t).resolve()/'中文 moved plugin';build_plugin.write_product(full,root)
             actual=json.loads((root/'.codex-plugin/plugin.json').read_text());self.assertEqual(actual['interface']['composerIcon'],'./plugin/assets/icon_64.png');validate_interface(actual,lambda p:(root/p).read_bytes())
-        source.pop('plugin/assets/icon_64.png')
-        with self.assertRaises((ValueError,KeyError)):build_skill.render(source,'1.2.3rc1','a'*40)

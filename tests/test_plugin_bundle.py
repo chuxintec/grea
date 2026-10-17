@@ -49,6 +49,16 @@ class PluginBundleTests(unittest.TestCase):
                     archive.addfile(item, io.BytesIO(value))
         return path, hashlib.sha256(path.read_bytes()).hexdigest()
 
+    def test_failed_acceptance_preserves_a_nonpassing_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);archive=root/'invalid.zip';archive.write_bytes(b'not a zip')
+            report=root/'failure.json'
+            result=subprocess.run([sys.executable,str(ROOT/'scripts/verify_plugin.py'),'--bundle',str(archive),'--report',str(report)],capture_output=True,text=True)
+            self.assertNotEqual(result.returncode,0)
+            value=json.loads(report.read_text(encoding='utf-8'))
+            self.assertEqual(value['status'],'fail');self.assertTrue(value['error']['message'])
+            self.assertEqual(value['archive_sha256'],hashlib.sha256(archive.read_bytes()).hexdigest())
+
     def test_runtime_hash_and_archive_escape_rejected_before_install(self):
         module = self.module()
         for entries in [[('../escape', b'bad')], [('python/bin/python3', ('../../../escape',))]]:

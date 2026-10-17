@@ -2,7 +2,7 @@
 import argparse
 from collections import Counter
 import json
-from pathlib import Path
+from grea.host.paths import Path
 import re
 import sys
 from grea.safe_paths import relative_name,unique_paths

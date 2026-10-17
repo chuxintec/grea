@@ -1,0 +1,824 @@
+{
+  "schema_version": 1,
+  "scope": "Evidence navigation; not a blanket verified stamp. Provider declaration != actual execution.",
+  "release": "v2026.10.17",
+  "tools": [
+    {
+      "tool_id": "7zz",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "adb",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_platform.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "android-emulator-arm32",
+      "aliases": [
+        "android_emulator_arm32_legacy"
+      ],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_platform.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "apktool",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "assembly-sanitizer",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "assetripper",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_workflow_profiles.py",
+        "tests/test_platform.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "audit_numeric_texture",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "binwalk",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "blender",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "check_grea_skill",
+      "aliases": [
+        "check_game_build_skill"
+      ],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_platform.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "cocos_assets",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_project_tools_dispatch.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "synthetic compiled Cocos typed object",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "cocos_modules",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "compare_events",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "compare_traces",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_review_contracts.py",
+        "tests/test_platform.py",
+        "tests/test_grea.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "config_preflight",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "explicit config contract",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "cpp2il",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "evidence_manifest",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "owned text + SHA256 manifest",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "ffmpeg",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "ffprobe",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "frida",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "generate_unity_project",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_unity_projects.py",
+        "tests/test_unity_generation.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "ghidra",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "glslangValidator",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "il2cpp-inspector",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "il2cppdumper",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "ilspy",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "image_alpha_audit",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "jadx",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_review_contracts.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "laya_contract_audit",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "nsis",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "package_windows_portable",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "performance_compare",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "identical synthetic before/after",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "plan_unity_generation",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_unity_generation.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "plan_unity_project",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_unity_projects.py",
+        "tests/test_unity_generation.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "pngquant",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "presentation_audit",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "synthetic observation",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "read_elf_values",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "recover_unity_generation",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_unity_generation.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "registry_doctor",
+      "aliases": [
+        "decode-doctor"
+      ],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_platform.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "rizin",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "scrcpy",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "shader_probe",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "spine38",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "spine41",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "spirv-cross",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "spirv-dis",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "spirv-val",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "static_asset_copy",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_static_asset_copy.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "static text file -> renamed output",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "unity-export-assets",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity-export-config",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_asset_ledger",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_cli",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_unity_generation.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_config_candidate",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_project_tools_dispatch.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "typed config rows incl null Text",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "unity_dependency_audit",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_native_assets",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_project_tools_dispatch.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "owned native UI recipe",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "unity_native_exit",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "gated_per_release_artifact",
+        "runner": [
+          "macos-15 arm64",
+          "windows-2022 x64"
+        ],
+        "input": "native Unity scene + explicit policy",
+        "verifier": "scripts/verify_plugin.py",
+        "evidence": "plugin-acceptance-<target>.json in the release; inspect status and archive_sha256, not this declaration"
+      }
+    },
+    {
+      "tool_id": "unity_package_backup",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_pilot",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_review_boundaries.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_pipeline",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_grea.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_player_audit",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unity_reference",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unitypy",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "unpack_xapk",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_workflow_profiles.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "validate_unity_project",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_unity_projects.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "verify_payload_tree",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "video_manifest",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "video_sheet",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "webgl-xxtea-decrypt",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "wxapkg-decrypt",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      }
+    },
+    {
+      "tool_id": "wxapkg-unpack",
+      "aliases": [],
+      "version_binding": "release-manifest.package_version and source_revision; runtime-manifest.json pins dependencies",
+      "unit_test_sources": [
+        "tests/test_windows_business.py"
+      ],
+      "native_plugin_acceptance": {
+        "status": "not_run_in_this_acceptance",
+        "reason": "No business execution claim for optional or other unselected tools"
+      },
+      "windows_native_test": {
+        "source": "tests/test_windows_business.py",
+        "input": "two synthetic wxapkg text/binary payloads plus corruption",
+        "evidence": "Source checks / windows-native for the exact commit"
+      }
+    }
+  ],
+  "historical_evidence": [
+    "validation/releases/2026-10-16-project-tools.json",
+    "validation/releases/2026-10-16-unity-framework-extraction.json"
+  ],
+  "release_evidence": "https://github.com/chuxintec/grea/releases/tag/v2026.10.17"
+}

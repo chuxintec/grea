@@ -3,7 +3,7 @@
 Hashes establish file identity; roles, platforms and run IDs remain explicit
 reviewer declarations. This module never runs the inspected game or test suite.
 """
-from pathlib import Path
+from grea.host.paths import Path
 import time
 import uuid
 

@@ -55,7 +55,7 @@ def validate(archive, report, source, version, revision):
         raise ValueError('Unexpected portable product payload')
     acceptance = json.loads(Path(report).read_text(encoding='utf-8'))
     if (acceptance.get('status'), acceptance.get('target'), acceptance.get('archive_sha256'),
-        acceptance.get('source_tree_sha256')) != ('pass',target,sha256(archive),source_digest):
+        acceptance.get('source_tree_sha256'),acceptance.get('version'),acceptance.get('source_kind')) != ('pass',target,sha256(archive),source_digest,version,'commit'):
         raise ValueError('Native acceptance does not match the plugin artifact')
     if not all(acceptance.get('isolation',{}).get(key) is True for key in ISOLATION):
         raise ValueError('Native acceptance isolation is incomplete')
@@ -64,3 +64,21 @@ def validate(archive, report, source, version, revision):
     return ({'name':artifact,'kind':'plugin','version':version,'target':target,
              'bytes':Path(archive).stat().st_size,'sha256':sha256(archive),'files':len(actual),'root_directory':'grea'},
             {'name':report_file,'bytes':Path(report).stat().st_size,'sha256':sha256(report)})
+
+
+def validate_client(report, archive, target, version, name=None):
+    value=json.loads(Path(report).read_text(encoding='utf-8'))
+    manifest=verify_archive(archive)
+    if value.get('target')!=target or value.get('temporary_directory_removed') is not True:raise ValueError('Native client target or temporary cleanup mismatch')
+    if value.get('isolation',{}).get('independent_child_configuration') is not True or value.get('isolation',{}).get('credential_environment_inherited') is not False:raise ValueError('Native client configuration isolation incomplete')
+    if (value.get('status'),value.get('archive_sha256'),value.get('source_tree_sha256'),value.get('version'),value.get('model_requests_sent')) != ('pass',sha256(archive),manifest['source_tree_sha256'],version,0):
+        raise ValueError('Native client acceptance identity mismatch')
+    client=value.get('clients',{}).get('codex',{})
+    required=('version','entrypoint','install','registration','initialize','skills','tools','installed_session')
+    if client.get('status')!='pass' or any(client.get('layers',{}).get(k,{}).get('status')!='pass' for k in required):
+        raise ValueError('Native Codex installation/discovery incomplete')
+    if client['layers']['installed_session'].get('version')!=version:raise ValueError('Installed session version mismatch')
+    if client['layers']['skills'].get('count')!=8 or client['layers']['tools'].get('count')!=21:
+        raise ValueError('Native Codex catalog incomplete')
+    if manifest['target']!=target:raise ValueError('Native client target mismatch')
+    return {'name':name or Path(report).name,'bytes':Path(report).stat().st_size,'sha256':sha256(report)}

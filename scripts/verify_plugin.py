@@ -24,11 +24,11 @@ ROOT = Path(__file__).resolve().parents[1]
 def client_command(root, client):
     if client == 'codex':
         value = json.loads((root/'.mcp.json').read_text(encoding='utf-8'))['mcpServers']['grea']
-        cwd = (root/value.get('cwd', '.')).resolve()
-        command = (root/value['command']).resolve()
+        cwd = (root/value.get('cwd', '.')).absolute()
+        command = (root/value['command']).absolute()
     elif client == 'claude':
         value = json.loads((root/'.claude-plugin/plugin.json').read_text(encoding='utf-8'))['mcpServers']['grea']
-        command = Path(value['command'].replace('${CLAUDE_PLUGIN_ROOT}', str(root))).resolve()
+        command = Path(value['command'].replace('${CLAUDE_PLUGIN_ROOT}', str(root))).absolute()
         cwd = root
     else:
         raise ValueError('Unknown client')
@@ -137,6 +137,11 @@ def acceptance(bundle):
         (base/'initial/grea').rename(root)
         work = base/'empty workspace'; work.mkdir()
         home = base/'clean home'; home.mkdir()
+        if windows:
+            from windows_drive_views import TemporaryDrives
+            views=stack.enter_context(TemporaryDrives(base))
+            view=views.paths[0]
+            root,work,home=(view/path.name for path in (root,work,home))
         env = {'HOME': str(home), 'PATH':'/usr/bin:/bin', 'LANG':'en_US.UTF-8', 'TMPDIR':str(work)}
         prefix = [] if windows else sandbox_prefix(root, work)
         if windows:
@@ -146,7 +151,8 @@ def acceptance(bundle):
         security=None
         if windows:
             from windows_sandbox import AppContainer
-            security=stack.enter_context(AppContainer(root,work,home)).capabilities
+            container=stack.enter_context(AppContainer(root,work,home))
+            security=container.capabilities
         before = inventory(root,target)
         # Live host listener: a timeout is evidence only when an unsandboxed
         # control reaches the exact endpoint before AND after the boxed probe.
@@ -172,6 +178,25 @@ print(','.join(blocked))
         socket.create_connection(endpoint,timeout=3).close()
         check(isolated.returncode == 0 and isolated.stdout.strip() == 'source,install_write,network',
               'Isolation policy did not enforce all restrictions: '+(isolated.stderr[:300]+isolated.stdout[:300] if isolated else 'not enforced'))
+        path_resolution={'status':'pass','method':'standard canonical path'}
+        if windows:
+            resolution_code="""import sys,json,os,pathlib
+sys.path.insert(0,sys.argv[1])
+from grea.host.paths import Path,in_appcontainer
+from grea.host.files import temporary_directory
+p=Path(sys.argv[2]);canonical=p.resolve(strict=True)
+assert in_appcontainer() and os.path.samefile(p,canonical)
+assert (p/'missing'/'child').resolve().parent.parent==canonical
+with temporary_directory(prefix='grea-private-',dir=p) as created:
+ marker=Path(created)/'write.txt';marker.write_text('private');assert marker.read_text()=='private'
+assert not Path(created).exists()
+try:pathlib.Path(p).resolve(strict=True);dos='available'
+except PermissionError as e:dos=str(e.winerror)
+print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volume_query=dos,roundtrip=True,private_directory_write_and_cleanup=True)))
+"""
+            resolved=native_run([str(python),'-I','-B','-c',resolution_code,str(root/'src'),str(work)],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
+            check(resolved.returncode==0,'Lowbox canonical path/private directory regression: '+resolved.stderr)
+            path_resolution=json.loads(resolved.stdout)
         catalog = native_run([*prefix, *([str(python),'-I','-B',str(root/'plugin/launcher/start.py')] if windows else [str(root/'bin/grea')]), 'catalog'], env=env, cwd=work,
                                  capture_output=True, text=True, encoding='utf-8', timeout=20,security=security)
         check(catalog.returncode == 0, 'Relocated CLI catalog failed: '+catalog.stderr[:500])
@@ -192,14 +217,35 @@ print(','.join(blocked))
                     return response, response['structuredContent']
                 response, session = call('session', {})
                 check(session['status'] == 'ok' and session['result']['version'] == manifest['version'], 'Session/version failed')
-                check(Path(session['result']['package_root']) == root, 'Session depends on original checkout')
+                check(os.path.samefile(session['result']['package_root'],root), 'Session depends on original checkout')
                 _, plan = call('plan_workflow', {'mode':'recover','source_engine':'cocos'})
                 check(plan['status'] == 'ok', 'Bundled workflow references failed')
-                check(all(root in Path(s['reference']).parents and Path(s['reference']).is_file() for s in plan['result']['steps']), 'Missing workflow resource')
+                check(all(Path(s['reference']).is_file() and any(os.path.samefile(root,parent) for parent in Path(s['reference']).parents if parent.is_dir()) for s in plan['result']['steps']), 'Missing workflow resource: '+json.dumps(plan['result']['steps'],ensure_ascii=True))
                 source = work/(client+' source'); source.mkdir()
                 (source/'sample.txt').write_text('portable core', encoding='utf-8')
                 output = work/(client+' copied')
                 _, copied = call('run_tool', {'tool_id':'static_asset_copy', 'arguments':['--source',str(source),'--output',str(output),'--map','sample.txt=renamed.txt'], 'run_dir':str(work/(client+' copy receipt'))})
+                if windows and copied['status']!='ok':
+                    diagnosis="""import pathlib,sys,traceback,subprocess
+p=pathlib.Path(sys.argv[1]);sys.path.insert(0,sys.argv[2])
+sys.stdout.reconfigure(encoding='utf-8');sys.stderr.reconfigure(encoding='utf-8')
+for parent in p.parents:
+ try:parent.lstat();state='metadata readable'
+ except OSError as e:state=str(e)
+ print('ancestor',str(parent),state,flush=True)
+for label,fn in [('stat',p.stat),('resolve',lambda:p.resolve(strict=True)),('list',lambda:list(p.iterdir())),('read',lambda:(p/'sample.txt').read_bytes())]:
+ try:print(label,repr(fn()),flush=True)
+ except Exception:traceback.print_exc()
+code='import pathlib,sys;sys.path.insert(0,'+repr(sys.argv[2])+');from grea.tools.static_asset_copy import copy_assets;print(copy_assets(sys.argv[1],sys.argv[2],["sample.txt=x.txt"]))'
+from grea.host.windows_process import OwnedProcess
+child=OwnedProcess([sys.executable,'-c',code,str(p),str(p.parent/'diagnosis-copy')],p.parent)
+try:print('nested',child.communicate(timeout=10),flush=True)
+finally:child.settle();child.close()
+"""
+                    diagnosed=native_run([str(python),'-I','-B','-c',diagnosis,str(source),str(root/'src')],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
+                    print('Windows owned fixture diagnosis:',diagnosed.stdout,diagnosed.stderr,flush=True)
+                    acl=subprocess.run([str(Path(os.environ['SystemRoot'])/'System32/icacls.exe'),str(source)],capture_output=True,text=True,encoding='utf-8')
+                    print('Fixture ACL:',acl.stdout,acl.stderr,flush=True)
                 check(copied['status'] == 'ok' and (output/'renamed.txt').read_text(encoding='utf-8') == 'portable core', 'Bundled tool subprocess failed: '+json.dumps(copied,ensure_ascii=True))
                 _, legacy = call('run_tool', {'tool_id':'validate_unity_project','arguments':['--help'], 'run_dir':str(work/(client+' legacy receipt'))})
                 check(legacy['status'] == 'ok', 'Legacy launch.py did not use bundled Python')
@@ -248,10 +294,10 @@ print(','.join(blocked))
                 case_source=case_project/'source.bin';case_source.write_bytes(b'owned source')
                 candidate=case_project/'candidate.txt';candidate.write_text('revision one', encoding='utf-8')
                 _, initialized_case=call('init_case',dict(project_dir=str(case_project),source=str(case_source),mode='fix',source_engine='unity'))
-                check(initialized_case['status']=='ok','Bundled case creation failed')
+                check(initialized_case['status']=='ok','Bundled case creation failed: '+json.dumps(initialized_case,ensure_ascii=True))
                 revision_args=dict(case_dir=str(case_project),candidate_root=str(case_project),candidate_files=['candidate.txt'],platform='editor',qa_profile='owned-fixture')
                 _, first_revision=call('start_case_revision',revision_args)
-                check(first_revision['status']=='ok','Bundled revision creation failed')
+                check(first_revision['status']=='ok','Bundled revision creation failed: '+json.dumps(first_revision,ensure_ascii=True))
                 _, case_status=call('case_status',dict(case_dir=str(case_project)))
                 check(case_status['status']=='partial' and case_status['result']['candidate_integrity']=='matched'
                       and case_status['result']['declared_acceptance']=='incomplete',
@@ -275,11 +321,19 @@ print(','.join(blocked))
                                    'checks':['initialize','catalog_parity','session','bundled_workflow','core_subprocess',
                                              'evidence_manifest','config_preflight','presentation_audit','performance_compare','case_revision_invalidation','legacy_launch','cocos_core_subprocess','native_exit_core_subprocess','typed_config_core_subprocess','native_authoring_core_subprocess','optional_ast_cecil_missing','structured_failure','external_provider_missing']}
             finally: rpc.close()
+        if windows:
+            # Re-prove all denials after the complete business sequence.
+            socket.create_connection(endpoint,timeout=3).close()
+            final_probe=native_run([str(python),'-I','-B','-c',probe,str(ROOT/'registry.json'),str(root/'forbidden'),str(endpoint[1]),'controlled-windows'],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
+            socket.create_connection(endpoint,timeout=3).close()
+            check(final_probe.returncode==0 and final_probe.stdout.strip()=='source,install_write,network','Restrictions changed after business execution: '+final_probe.stderr)
         check(inventory(root,target) == before, 'Installed plugin changed during use')
         return {'status':'pass', 'target':target, 'version':manifest['version'],
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
                 'source_kind':manifest['source_kind'], 'clients':results,
                 'isolation_probe_errors':isolated.stderr.strip().splitlines(),
+                'path_resolution':path_resolution,
+                'filesystem_view':'Temporary user-session drives to owned test trees; exact-target cleanup on exit' if windows else 'owned temporary directories',
                 'network_control':'Exact live loopback TCP listener reachable before and after boxed denial/timeout; no model or application data sent',
                 'verified_tool_ids':['static_asset_copy','cocos_assets','unity_native_exit','unity_config_candidate','unity_native_assets','evidence_manifest','config_preflight','presentation_audit','performance_compare'],
                 'verified_operations':['session','plan_workflow','run_tool','init_case','start_case_revision','case_status'],
@@ -294,8 +348,16 @@ if __name__ == '__main__':
     parser.add_argument('--bundle', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
-    result = acceptance(args.bundle)
+    try:
+        result=acceptance(args.bundle)
+    except Exception as error:
+        try:target=native_target()
+        except ValueError:target=None
+        result={'status':'fail','target':target,
+                'archive_sha256':sha256(args.bundle) if args.bundle.is_file() else None,
+                'error':{'type':type(error).__name__,'message':str(error)}}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_bytes(encoded(result))
-    print(json.dumps({'status':result['status'],'target':result['target'],'clients':list(result['clients']),
-                      'tools':len(result['clients']['codex']['tools'])}))
+    print(json.dumps({'status':result['status'],'target':result['target'],
+                      'clients':list(result.get('clients',{})), 'error':result.get('error')},ensure_ascii=True))
+    raise SystemExit(0 if result['status']=='pass' else 1)

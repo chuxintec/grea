@@ -2,7 +2,7 @@
 import hashlib
 import json
 import math
-from pathlib import Path
+from grea.host.paths import Path
 
 
 def sha(raw):

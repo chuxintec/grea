@@ -1,6 +1,6 @@
 """Thin CLI over the same application contracts advertised to MCP."""
 import argparse,json,os,sys,subprocess
-from pathlib import Path
+from grea.host.paths import Path
 from . import __version__
 from .common import GreaError,package_root,digest
 from .contracts import CONTRACTS,catalog
