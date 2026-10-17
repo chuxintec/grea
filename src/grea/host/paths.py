@@ -44,7 +44,7 @@ def _resolve_nt(path, strict):
     from ctypes import wintypes as w
     # The common kernel signatures include no token or mount-namespace mutation.
     from .windows_files import kernel
-    k=kernel();current=path.absolute();missing=[]
+    k=kernel();current=Path(os.path.abspath(os.fspath(path)));missing=[]
     while True:
         handle=k.CreateFileW(str(current),0,7,None,3,0x02000000,None)
         if handle not in (None,w.HANDLE(-1).value):
