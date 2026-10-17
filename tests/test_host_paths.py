@@ -43,6 +43,23 @@ class VolumeIdentityTests(unittest.TestCase):
    self.assertEqual(matching.closed,[2]);self.assertEqual(other.closed,[2])
 
 
+ def test_normalized_names_are_not_conflated_by_unicode_or_case_folding(self):
+  from unittest.mock import patch
+  from grea.host.paths import final_name
+  class Kernel:
+   def __init__(self,root,target):self.root=root;self.target=target
+   def GetFinalPathNameByHandleW(self,handle,buffer,size,flags):
+    buffer.value=self.target if handle==1 else self.root
+    return len(buffer.value)
+   def CreateFileW(self,*args):return 2
+   def CloseHandle(self,*args):pass
+  with patch('grea.host.paths.in_appcontainer',return_value=True):
+   for root,target in [('Straße','STRASSE'),('owned','OWNED')]:
+    source='\\Device\\HarddiskVolume4\\'+target+'\\file'
+    k=Kernel('\\Device\\HarddiskVolume4\\'+root+'\\',source)
+    self.assertEqual(final_name(k,1,'C:\\file'),'\\\\?\\GLOBALROOT'+source)
+
+
 class PrivateDirectoryTests(unittest.TestCase):
  def test_private_staging_is_writable_and_cleanup_is_scoped(self):
   from grea.host.files import temporary_directory

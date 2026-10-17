@@ -52,9 +52,11 @@ def final_name(kernel, handle, drive_hint=None):
                 volume=c.create_unicode_buffer(32768)
                 n=kernel.GetFinalPathNameByHandleW(root,volume,len(volume),2)
                 if 0<n<len(volume):
+                    # Both strings are already normalized kernel names. Text case
+                    # folding would conflate distinct case-sensitive/Unicode roots.
                     stem=volume.value.rstrip('\\')
-                    if buffer.value.casefold()==stem.casefold():return drive.upper()+'\\'
-                    if buffer.value.casefold().startswith(stem.casefold()+'\\'):
+                    if buffer.value==stem:return drive.upper()+'\\'
+                    if buffer.value.startswith(stem+'\\'):
                         return drive.upper()+buffer.value[len(stem):]
             finally:kernel.CloseHandle(root)
     return '\\\\?\\GLOBALROOT'+buffer.value
