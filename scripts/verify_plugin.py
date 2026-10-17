@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def client_command(root, client):
     if client == 'codex':
         value = json.loads((root/'.mcp.json').read_text(encoding='utf-8'))['mcpServers']['grea']
-        cwd = (root/value.get('cwd', '.')).resolve()
+        cwd = (root/value.get('cwd', '.')).absolute()
         command = (root/value['command']).absolute()
     elif client == 'claude':
         value = json.loads((root/'.claude-plugin/plugin.json').read_text(encoding='utf-8'))['mcpServers']['grea']
