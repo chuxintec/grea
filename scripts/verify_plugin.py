@@ -146,7 +146,8 @@ def acceptance(bundle):
         security=None
         if windows:
             from windows_sandbox import AppContainer
-            security=stack.enter_context(AppContainer(root,work,home)).capabilities
+            container=stack.enter_context(AppContainer(root,work,home))
+            security=container.capabilities
         before = inventory(root,target)
         # Live host listener: a timeout is evidence only when an unsandboxed
         # control reaches the exact endpoint before AND after the boxed probe.
@@ -188,6 +189,7 @@ print(','.join(blocked))
                 listing = rpc.request('tools/list')
                 check(sorted(x['name'] for x in listing['tools']) == tools, 'CLI/MCP catalog mismatch')
                 def call(name, arguments):
+                    if windows:container.prepare_inputs()
                     response = rpc.request('tools/call', {'name':name,'arguments':arguments})
                     return response, response['structuredContent']
                 response, session = call('session', {})

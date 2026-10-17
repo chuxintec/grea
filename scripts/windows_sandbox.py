@@ -31,7 +31,7 @@ class AppContainer:
   try:
    text=w.LPWSTR()
    if not self.adv.ConvertSidToStringSidW(self.sid,c.byref(text)):raise c.WinError(c.get_last_error())
-   try:sid=text.value
+   try:sid=text.value;self.sid_text=sid
    finally:self.k.LocalFree(c.cast(text,w.LPVOID))
    tool=str(Path(os.environ['SystemRoot'])/'System32/icacls.exe')
    for path,rights in zip(self.paths,('RX','F','F')):
@@ -40,6 +40,17 @@ class AppContainer:
    self.capabilities=Capabilities(self.sid,None,0,0)
    return self
   except BaseException:self.__exit__(None,None,None);raise
+ def prepare_inputs(self):
+  """Grant only newly authored verifier fixtures in its writable trees.
+
+  The host authors fixtures after starting the lowbox. Refresh their explicit
+  ACL/MIC rather than assuming the host process's new-object defaults give the
+  already running lowbox access. Installation remains RX and source ungranted.
+  """
+  tool=str(Path(os.environ['SystemRoot'])/'System32/icacls.exe')
+  for path in self.paths[1:]:
+   subprocess.run([tool,str(path),'/grant','*'+self.sid_text+':(OI)(CI)(F)','/T','/Q'],check=True,capture_output=True)
+   subprocess.run([tool,str(path),'/setintegritylevel','(OI)(CI)L','/T','/Q'],check=True,capture_output=True)
  def __exit__(self,*_):
   if self.created:
    result=self.user.DeleteAppContainerProfile(self.name);self.created=False
