@@ -102,6 +102,57 @@ class BundleTests(unittest.TestCase):
             with self.assertRaises(ValueError):release.verify(self.tag,self.out)
 
 
+    def test_two_real_projected_plugin_archives_and_report_binding(self):
+        import plugin_bundle,build_plugin,plugin_release
+        # Small runtime placeholders exercise byte identity gates, not runtime acceptance.
+        values={'plugin/.mcp.json':'{}','plugin/runtime-lock.json':'{}',
+                'plugin/runtime-windows-x64.lock.json':'{}','plugin/launcher/grea':'#!/bin/sh\n',
+                'plugin/launcher/start.py':'# fixture','src/grea/cli.py':'# fixture',
+                'registry.json':'{}','launch.py':'# fixture','launch_tool.py':'# fixture',
+                'schemas/operations.json':'{}','schemas/unity-project.schema.json':'{}'}
+        for name,text in values.items():
+            p=self.root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text,encoding='utf-8')
+        self.git('add','.');self.git('-c','commit.gpgsign=false','commit','-qm','runtime fixtures')
+        release.prepare(self.tag,self.out)
+        source,identity=plugin_bundle.read_source(self.root)
+        for target in release.TARGETS:
+            staging=self.out.with_name(target);tree=staging/'grea';build_plugin.write_product(source,tree,target,identity['source_revision'])
+            (tree/'runtime').mkdir();(tree/'runtime/python').write_bytes(b'placeholder')
+            requirements=b'locked fixture';(tree/'runtime-requirements.txt').write_bytes(requirements)
+            runtime={'python':{},'uvLockSha256':release.hashlib.sha256(source['uv.lock'][0]).hexdigest(),
+                     'requirementsSha256':release.hashlib.sha256(requirements).hexdigest()}
+            (tree/'runtime-manifest.json').write_bytes(plugin_bundle.encoded(runtime))
+            manifest={'schemaVersion':1,'kind':'complete-plugin','version':'2026.10.13rc1','target':target,
+                      **identity,'runtime':runtime,'files':plugin_bundle.inventory(tree,target)}
+            (tree/'plugin-manifest.json').write_bytes(plugin_bundle.encoded(manifest))
+            from plugin_targets import archive_name
+            archive=staging/archive_name(target);plugin_bundle.write_archive(tree,archive,identity['source_timestamp'])
+            report={'status':'pass','target':target,'archive_sha256':plugin_bundle.sha256(archive),
+                    'source_tree_sha256':identity['source_tree_sha256'],
+                    'clients':{c:{'status':'pass'} for c in ('codex','claude')},
+                    'isolation':{key:True for key in plugin_release.ISOLATION}}
+            (staging/'plugin-acceptance.json').write_bytes(plugin_bundle.encoded(report))
+            layers={k:{'status':'pass'} for k in ('version','entrypoint','install','registration','initialize','skills','tools','installed_session')}
+            layers['skills']['count']=8;layers['tools']['count']=21
+            layers['installed_session']['version']='2026.10.13rc1'
+            client={'status':'pass','archive_sha256':report['archive_sha256'],'version':'2026.10.13rc1',
+                    'source_tree_sha256':identity['source_tree_sha256'],'model_requests_sent':0,
+                    'clients':{'codex':{'status':'pass','layers':layers}}}
+            (staging/'client-acceptance.json').write_bytes(plugin_bundle.encoded(client))
+            for key,bad in [('status','blocked'),('archive_sha256','bad'),('source_tree_sha256','bad'),('target','wrong')]:
+                altered=dict(report);altered[key]=bad;(staging/'bad.json').write_bytes(plugin_bundle.encoded(altered))
+                with self.assertRaises(ValueError):plugin_release.validate(archive,staging/'bad.json',source,'2026.10.13rc1',identity['source_revision'])
+            for key,bad in [('version','old'),('archive_sha256','bad'),('source_tree_sha256','bad'),('model_requests_sent',1)]:
+                altered=dict(client);altered[key]=bad;(staging/'bad-client.json').write_bytes(plugin_bundle.encoded(altered))
+                with self.assertRaises(ValueError):plugin_release.validate_client(staging/'bad-client.json',archive,target,'2026.10.13rc1')
+            release.attach_plugin(self.tag,self.out,staging,target)
+            with self.assertRaises(ValueError):release.attach_plugin(self.tag,self.out,staging,target)
+        names=release.verify(self.tag,self.out)
+        self.assertEqual(len(names),8)
+        self.assertFalse(any('skill-' in n for n in names))
+        (self.out/'grea-plugin-windows-x64.zip').write_bytes(b'corrupt')
+        with self.assertRaises((ValueError,zipfile.BadZipFile)):release.verify(self.tag,self.out)
+
 
 class PublishTests(unittest.TestCase):
     def scenario(self, prerelease=True, existing=None, fail_upload=False, corrupt_download=False, remote_sha='source'):
