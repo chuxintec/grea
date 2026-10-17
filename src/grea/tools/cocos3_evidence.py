@@ -1,6 +1,6 @@
 """Finite Creator 3.4.1 index and CCON-JSON v1 readers; no engine execution."""
 import re
-from pathlib import Path
+from grea.host.paths import Path
 from grea.data_io import load, encode, sha, read_bytes
 from grea.safe_paths import disjoint
 from grea.tools.cocos_assets import fail, safe_path, uuid_full, decode_document

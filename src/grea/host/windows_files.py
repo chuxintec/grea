@@ -2,7 +2,7 @@
 import ctypes as c
 from ctypes import wintypes as w
 import os
-from pathlib import Path
+from grea.host.paths import Path
 
 class Info(c.Structure):
  _fields_=[('attributes',w.DWORD),('created',w.FILETIME),('accessed',w.FILETIME),('written',w.FILETIME),
@@ -26,13 +26,13 @@ def open_file(path, access=0x80000000):
  k=kernel();path=Path(path).absolute()
  for p in (path,*path.parents):
   if p.exists() and getattr(p.lstat(),'st_file_attributes',0)&0x400:raise OSError('Reparse-point ancestor refused')
+ path=path.resolve(strict=True)
  handle=k.CreateFileW(str(path),access,1,None,3,0x200000|0x02000000,None)
  if handle in (None,w.HANDLE(-1).value):raise c.WinError(c.get_last_error())
  try:
   handle_token(handle)
-  buf=c.create_unicode_buffer(32768);n=k.GetFinalPathNameByHandleW(handle,buf,len(buf),0)
-  if not n or n>=len(buf):raise OSError('Cannot establish final Windows input path')
-  final=buf.value.removeprefix('\\\\?\\')
+  from .paths import final_name
+  final=final_name(k,handle)
   if os.path.normcase(final)!=os.path.normcase(str(path)):raise OSError('Input path changed or escaped')
   return handle
  except BaseException:k.CloseHandle(handle);raise

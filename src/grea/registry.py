@@ -1,6 +1,6 @@
 """One provider catalog for legacy dispatch, CLI discovery and MCP discovery."""
 import json,os,shutil,subprocess,sys,platform
-from pathlib import Path
+from grea.host.paths import Path
 from .host.info import machine
 from .common import GreaError,package_root,digest
 

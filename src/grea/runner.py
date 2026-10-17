@@ -1,6 +1,6 @@
 """Owned process groups, bounded capture and immutable attempt receipts."""
 import json,os,signal,subprocess,threading,time
-from pathlib import Path
+from grea.host.paths import Path
 from .common import GreaError,hash_file,write_new,now,digest,implementation_identity
 from .registry import tool,command
 

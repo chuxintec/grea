@@ -6,7 +6,7 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
+from grea.host.paths import Path
 import re
 import sys
 from grea.safe_paths import canonical_path, disjoint, relative_name

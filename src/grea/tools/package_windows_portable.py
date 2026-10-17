@@ -10,7 +10,7 @@ Exit 0: packaging/content validation passed; 2: failure (no runtime verdict).
 """
 import argparse
 import hashlib
-from pathlib import Path
+from grea.host.paths import Path
 import shutil
 import struct
 import subprocess

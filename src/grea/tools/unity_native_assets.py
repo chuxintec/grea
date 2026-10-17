@@ -3,7 +3,7 @@ import argparse
 import io
 import json
 import math
-from pathlib import Path
+from grea.host.paths import Path
 import sys
 from PIL import Image
 from grea.safe_paths import relative_name,unique_paths

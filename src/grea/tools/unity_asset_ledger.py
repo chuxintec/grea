@@ -10,7 +10,8 @@ import collections
 import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
+from grea.host.paths import Path
 import re
 import sys
 import unicodedata

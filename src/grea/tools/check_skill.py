@@ -7,7 +7,7 @@ import json
 import re
 import sys
 import unicodedata
-from pathlib import Path
+from grea.host.paths import Path
 from urllib.parse import unquote
 
 

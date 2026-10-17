@@ -1,6 +1,6 @@
 """Only application dispatch: CLI/MCP use the same validation, handlers and outcomes."""
 import subprocess,json,tempfile
-from pathlib import Path
+from grea.host.paths import Path
 from jsonschema import Draft202012Validator
 from . import __version__
 from .contracts import CONTRACTS,ENVELOPE_SCHEMA,catalog

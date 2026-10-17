@@ -173,6 +173,21 @@ print(','.join(blocked))
         socket.create_connection(endpoint,timeout=3).close()
         check(isolated.returncode == 0 and isolated.stdout.strip() == 'source,install_write,network',
               'Isolation policy did not enforce all restrictions: '+(isolated.stderr[:300]+isolated.stdout[:300] if isolated else 'not enforced'))
+        path_resolution={'status':'pass','method':'standard canonical path'}
+        if windows:
+            resolution_code="""import sys,json,os,pathlib
+sys.path.insert(0,sys.argv[1])
+from grea.host.paths import Path,in_appcontainer
+p=Path(sys.argv[2]);canonical=p.resolve(strict=True)
+assert in_appcontainer() and os.path.samefile(p,canonical)
+assert (p/'missing'/'child').resolve().parent.parent==canonical
+try:pathlib.Path(p).resolve(strict=True);dos='available'
+except PermissionError as e:dos=str(e.winerror)
+print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volume_query=dos,roundtrip=True)))
+"""
+            resolved=native_run([str(python),'-I','-B','-c',resolution_code,str(root/'src'),str(work)],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
+            check(resolved.returncode==0,'Lowbox canonical path regression: '+resolved.stderr)
+            path_resolution=json.loads(resolved.stdout)
         catalog = native_run([*prefix, *([str(python),'-I','-B',str(root/'plugin/launcher/start.py')] if windows else [str(root/'bin/grea')]), 'catalog'], env=env, cwd=work,
                                  capture_output=True, text=True, encoding='utf-8', timeout=20,security=security)
         check(catalog.returncode == 0, 'Relocated CLI catalog failed: '+catalog.stderr[:500])
@@ -189,12 +204,11 @@ print(','.join(blocked))
                 listing = rpc.request('tools/list')
                 check(sorted(x['name'] for x in listing['tools']) == tools, 'CLI/MCP catalog mismatch')
                 def call(name, arguments):
-                    if windows:container.prepare_inputs()
                     response = rpc.request('tools/call', {'name':name,'arguments':arguments})
                     return response, response['structuredContent']
                 response, session = call('session', {})
                 check(session['status'] == 'ok' and session['result']['version'] == manifest['version'], 'Session/version failed')
-                check(Path(session['result']['package_root']) == root, 'Session depends on original checkout')
+                check(os.path.samefile(session['result']['package_root'],root), 'Session depends on original checkout')
                 _, plan = call('plan_workflow', {'mode':'recover','source_engine':'cocos'})
                 check(plan['status'] == 'ok', 'Bundled workflow references failed')
                 check(all(root in Path(s['reference']).parents and Path(s['reference']).is_file() for s in plan['result']['steps']), 'Missing workflow resource')
@@ -294,17 +308,17 @@ finally:child.settle();child.close()
                                              'evidence_manifest','config_preflight','presentation_audit','performance_compare','case_revision_invalidation','legacy_launch','cocos_core_subprocess','native_exit_core_subprocess','typed_config_core_subprocess','native_authoring_core_subprocess','optional_ast_cecil_missing','structured_failure','external_provider_missing']}
             finally: rpc.close()
         if windows:
-            # The business fixtures receive explicit ACLs only in owned writable
-            # trees; re-prove all denials after every such grant has happened.
+            # Re-prove all denials after the complete business sequence.
             socket.create_connection(endpoint,timeout=3).close()
             final_probe=native_run([str(python),'-I','-B','-c',probe,str(ROOT/'registry.json'),str(root/'forbidden'),str(endpoint[1]),'controlled-windows'],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
             socket.create_connection(endpoint,timeout=3).close()
-            check(final_probe.returncode==0 and final_probe.stdout.strip()=='source,install_write,network','Restrictions changed after fixture ACL refresh: '+final_probe.stderr)
+            check(final_probe.returncode==0 and final_probe.stdout.strip()=='source,install_write,network','Restrictions changed after business execution: '+final_probe.stderr)
         check(inventory(root,target) == before, 'Installed plugin changed during use')
         return {'status':'pass', 'target':target, 'version':manifest['version'],
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
                 'source_kind':manifest['source_kind'], 'clients':results,
                 'isolation_probe_errors':isolated.stderr.strip().splitlines(),
+                'path_resolution':path_resolution,
                 'network_control':'Exact live loopback TCP listener reachable before and after boxed denial/timeout; no model or application data sent',
                 'verified_tool_ids':['static_asset_copy','cocos_assets','unity_native_exit','unity_config_candidate','unity_native_assets','evidence_manifest','config_preflight','presentation_audit','performance_compare'],
                 'verified_operations':['session','plan_workflow','run_tool','init_case','start_case_revision','case_status'],

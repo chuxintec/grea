@@ -4,7 +4,7 @@ import csv
 import io
 import math
 import re
-from pathlib import Path
+from grea.host.paths import Path
 import sys
 from grea.data_io import load, encode, sha
 from grea.safe_paths import disjoint

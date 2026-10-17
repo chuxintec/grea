@@ -2,7 +2,7 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from grea.host.paths import Path
 import shutil
 import stat
 import sys

@@ -2,7 +2,7 @@
 import contextlib
 import ctypes
 import os
-from pathlib import Path
+from grea.host.paths import Path
 import sys
 
 
@@ -53,8 +53,14 @@ def publish_directory(source, target):
         api.MoveFileExW.restype = w.BOOL
         def extended(path):
             value = str(path)
-            if value.startswith('\\\\'): raise GreaError('UNSUPPORTED_FILESYSTEM','Publication requires a local volume.')
-            return '\\\\?\\' + value
+            if value.startswith('\\\\?\\GLOBALROOT\\Device\\HarddiskVolume'):
+                # A normalized local volume path from the lowbox-safe resolver.
+                import re
+                if not re.match(r'^\\\\\?\\GLOBALROOT\\Device\\HarddiskVolume[0-9]+\\',value):
+                    raise GreaError('UNSUPPORTED_FILESYSTEM','Publication requires a local volume.')
+                return value
+            if value.startswith('\\\\'):raise GreaError('UNSUPPORTED_FILESYSTEM','Publication requires a local volume.')
+            return '\\\\?\\'+value
         # No REPLACE_EXISTING and no COPY_ALLOWED: never copy/delete across volumes.
         if not api.MoveFileExW(extended(source), extended(target), 0):
             raise GreaError('PUBLICATION_FAILED','Atomic publication refused; staged project retained.',

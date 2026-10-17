@@ -3,7 +3,7 @@
 Default is presence-only. Version/help probes require --probe and explicit --tool.
 """
 import argparse, hashlib, json, re, sys
-from pathlib import Path
+from grea.host.paths import Path
 from grea.common import package_root
 ROOT = package_root()
 from grea.application import dispatch

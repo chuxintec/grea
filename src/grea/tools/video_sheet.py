@@ -3,7 +3,7 @@ import argparse
 import math
 import subprocess
 import tempfile
-from pathlib import Path
+from grea.host.paths import Path
 from PIL import Image, ImageDraw
 
 

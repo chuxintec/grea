@@ -4,7 +4,8 @@ These checks reject aliases and accidental overwrites; they are not a sandbox
 against concurrent hostile changes to parent directories.
 """
 import os
-from pathlib import Path, PureWindowsPath
+from pathlib import PureWindowsPath
+from grea.host.paths import Path
 from .host.files import is_link
 import re
 import unicodedata

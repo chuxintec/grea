@@ -1,6 +1,6 @@
 """Project-local immutable baseline, evidence records and explicit reviewer assertions."""
 import json,uuid,time,contextlib,tempfile,shutil
-from pathlib import Path
+from grea.host.paths import Path
 from .common import GreaError,digest,write_new,now,publish_directory
 from .case_hashing import hash_file, audit_hashes, audit_report
 from .host.files import is_link

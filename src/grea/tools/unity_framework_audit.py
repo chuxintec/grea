@@ -3,7 +3,7 @@
 This is a bounded source guard, not a C# compiler, reflection or Player payload audit.
 """
 import json
-from pathlib import Path
+from grea.host.paths import Path
 import re
 
 

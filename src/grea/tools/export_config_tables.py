@@ -3,7 +3,7 @@
 import argparse
 from collections import Counter, defaultdict
 import json
-from pathlib import Path
+from grea.host.paths import Path
 
 from grea.common import hash_file
 from grea.data_io import decode, encode, sha
