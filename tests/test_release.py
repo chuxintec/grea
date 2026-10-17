@@ -53,22 +53,14 @@ class BundleTests(unittest.TestCase):
     def git(self, *args):
         return subprocess.check_output(['git', '-C', str(self.root), *args], stderr=subprocess.PIPE)
 
-    def test_deterministic_bundle_unicode_permissions_and_exclusion(self):
-        (self.root / 'untracked.txt').write_text('must not ship')
-        a = release.prepare(self.tag, self.out, True)
-        other = self.out.with_name('other')
-        b = release.prepare(self.tag, other, True)
-        self.assertEqual(a, b)
-        self.assertEqual((self.out / a['artifacts'][0]['name']).read_bytes(), (other / b['artifacts'][0]['name']).read_bytes())
-        dest = self.out.with_name('extract')
-        release.verify(self.tag, self.out, dest, self.out.with_name('skill-extract'))
-        self.assertTrue((self.out.with_name('skill-extract')/'grea/skills/grea/SKILL.md').is_file())
-        self.assertEqual(a['artifacts'][1]['kind'],'skill')
-        top = dest / ('grea-' + self.tag)
-        self.assertEqual((top / '中文.md').read_text(), '中文说明\n')
-        if os.name!='nt':self.assertTrue((top / 'launcher').stat().st_mode & 0o111)
-        self.assertFalse((top / 'untracked.txt').exists())
-        with self.assertRaises(FileExistsError):release.prepare(self.tag, self.out)
+    def test_metadata_deterministic_no_source_or_skill_packages(self):
+        a=release.prepare(self.tag,self.out,True)
+        other=self.out.with_name('other');b=release.prepare(self.tag,other,True)
+        self.assertEqual(a,b)
+        self.assertEqual({p.name for p in self.out.iterdir()},{'release-manifest.json','SHA256SUMS','release-notes.md'})
+        release.verify(self.tag,self.out,complete=False)
+        with self.assertRaises(ValueError):release.verify(self.tag,self.out)
+        with self.assertRaises(FileExistsError):release.prepare(self.tag,self.out)
 
     def test_version_and_tag_mismatch_or_dirty_tree_rejected(self):
         with self.assertRaises(ValueError):release.prepare('v2026.10.13', self.out)
@@ -81,20 +73,13 @@ class BundleTests(unittest.TestCase):
         self.git('-c', 'commit.gpgsign=false', 'commit', '-qm', 'new')
         with self.assertRaises(ValueError):release.prepare(self.tag, self.out, True)
 
-    def test_tampered_zip_and_path_injection_rejected(self):
-        release.prepare(self.tag, self.out)
-        archive = self.out / f'grea-{self.tag}.zip'
-        with zipfile.ZipFile(archive, 'a') as z:z.writestr('../escaped', 'bad')
-        with self.assertRaises(ValueError):release.verify(self.tag, self.out, self.out.with_name('extract'))
-        self.assertFalse(self.out.with_name('escaped').exists())
-        # Even consistent attacker-supplied checksums cannot add archive paths.
-        p = self.out / 'release-manifest.json'
-        manifest = json.loads(p.read_text())
-        manifest['artifacts'][0].update(bytes=archive.stat().st_size, sha256=release.sha256(archive))
-        p.write_text(json.dumps(manifest))
-        (self.out / 'SHA256SUMS').write_text(''.join(release.sha256(f)+'  '+f.name+'\n' for f in [archive,p]))
-        with self.assertRaises(ValueError):release.verify(self.tag, self.out, self.out.with_name('extract'))
-        self.assertFalse(self.out.with_name('extract').exists())
+    def test_manifest_tamper_and_extra_installers_rejected(self):
+        release.prepare(self.tag,self.out)
+        (self.out/'unexpected.zip').write_bytes(b'bad')
+        with self.assertRaises(ValueError):release.verify(self.tag,self.out,complete=False)
+        (self.out/'unexpected.zip').unlink()
+        p=self.out/'release-manifest.json';value=json.loads(p.read_text());value['source_revision']='a'*40;release.write_manifest(self.out,value)
+        with self.assertRaises(ValueError):release.verify(self.tag,self.out,complete=False)
 
     def test_sensitive_committed_file_rejected(self):
         (self.root / 'config.txt').write_text('gh' + 'p_' + 'a' * 36)
@@ -109,44 +94,13 @@ class BundleTests(unittest.TestCase):
         for tag in ['v1.2', 'v1.2.3-rc0', 'v1.2.3-beta1', 'v1.2.3;id', '../v1.2.3']:
             with self.assertRaises(ValueError):release.version(tag)
 
-    def test_portable_plugin_attachment_identity_and_tamper(self):
-        self.assertTrue(hasattr(release, 'attach_plugin'), 'Release has no portable plugin attachment gate')
-        import plugin_bundle
-        import build_plugin
-        for name, value in {
-            'plugin/.mcp.json':json.dumps({'mcpServers':{'grea':{'command':'./plugin/launcher/grea','args':['mcp'],'cwd':'.'}}}),
-            'plugin/runtime-lock.json':'{}', 'plugin/launcher/grea':'#!/bin/sh\n',
-            'plugin/launcher/start.py':'# fixture', 'src/grea/cli.py':'# fixture',
-            'registry.json':'{}','launch.py':'# fixture','launch_tool.py':'# fixture',
-            'schemas/operations.json':'{}','schemas/unity-project.schema.json':'{}',
-        }.items():
-            path=self.root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(value)
-        self.git('add','.');self.git('-c','commit.gpgsign=false','commit','-qm','plugin fixture')
+    def test_exact_target_set_and_reports_required(self):
         release.prepare(self.tag,self.out)
-        source, identity=plugin_bundle.read_source(self.root)
-        staging=self.out.with_name('plugin')
-        tree=staging/'grea';build_plugin.write_product(source,tree)
-        (tree/'runtime').mkdir();(tree/'runtime/python').write_text('fixture runtime')
-        (tree/'runtime-requirements.txt').write_bytes(b'fixture requirements')
-        runtime={'python':{},'uvLockSha256':release.hashlib.sha256(source['uv.lock'][0]).hexdigest(),
-                 'requirementsSha256':release.hashlib.sha256(b'fixture requirements').hexdigest()}
-        (tree/'runtime-manifest.json').write_bytes(plugin_bundle.encoded(runtime))
-        manifest={'schemaVersion':1,'kind':'complete-plugin','version':'2026.10.13rc1','target':'macos-arm64',
-                  **identity,'runtime':runtime,'files':plugin_bundle.inventory(tree)}
-        (tree/'plugin-manifest.json').write_bytes(plugin_bundle.encoded(manifest))
-        plugin_bundle.write_archive(tree,staging/build_plugin.ARCHIVE,identity['source_timestamp'])
-        report={'status':'pass','target':'macos-arm64','archive_sha256':plugin_bundle.sha256(staging/build_plugin.ARCHIVE),
-                'source_tree_sha256':identity['source_tree_sha256'],
-                'clients':{client:{'status':'pass'} for client in ['codex','claude']},
-                'isolation':{key:True for key in ['moved_unicode_space_path','independent_home','minimal_path',
-                    'source_read_denied','network_denied','install_write_denied','installation_unchanged']}}
-        (staging/'plugin-acceptance.json').write_bytes(plugin_bundle.encoded(report))
-        release.attach_plugin(self.tag,self.out,staging)
-        names=release.verify(self.tag,self.out)
-        self.assertIn(build_plugin.ARCHIVE,names)
-        self.assertIn('plugin-acceptance-macos-arm64.json',names)
-        (self.out/build_plugin.ARCHIVE).write_bytes(b'corrupt')
-        with self.assertRaises(ValueError):release.verify(self.tag,self.out)
+        for targets in [['macos-arm64'],['windows-x64'],['windows-x64','windows-x64'],['linux-x64']]:
+            value=json.loads((self.out/'release-manifest.json').read_text());value['plugin_targets']=targets
+            (self.out/'release-manifest.json').write_text(json.dumps(value))
+            with self.assertRaises(ValueError):release.verify(self.tag,self.out)
+
 
 
 class PublishTests(unittest.TestCase):

@@ -50,29 +50,14 @@ jobs:
         env:
           GREA_ASSEMBLY_AUDIT_INTEGRATION: '1'
         run: .venv/bin/python -m unittest discover -s tests -v
-      - name: Build version-matched source bundle
+      - name: Prepare audited release metadata (no custom source or Skill ZIP)
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           args=()
           if [[ "$EVENT_NAME" == push ]]; then args+=(--require-tag); fi
           .venv/bin/python scripts/release.py prepare --tag "$RELEASE_TAG" --out dist/release "${args[@]}"
-          .venv/bin/python scripts/release.py verify --tag "$RELEASE_TAG" --out dist/release --extract "$RUNNER_TEMP/grea-extracted" --extract-skill "$RUNNER_TEMP/grea-skill"
-      - name: Install and test extracted bundle
-        run: |
-          bundle="$RUNNER_TEMP/grea-extracted/grea-$RELEASE_TAG"
-          test -f "$bundle/pyproject.toml"
-          cd "$bundle"
-          uv sync --frozen
-          npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
-          DOTNET_GENERATE_ASPNET_CERTIFICATE=false dotnet restore tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --locked-mode
-          dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore --configuration Release
-          ./bin/grea session
-          GREA_ASSEMBLY_AUDIT_INTEGRATION=1 .venv/bin/python -m unittest discover -s tests -v
-          .venv/bin/python scripts/generate_contracts.py --check
-          .venv/bin/python scripts/check_docs.py
-          .venv/bin/python scripts/check_semantic_docs.py
-          ./bin/grea legacy check_grea_skill --workspace-root . --json
+          .venv/bin/python scripts/release.py verify --partial --tag "$RELEASE_TAG" --out dist/release
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-${{ github.sha }}
@@ -85,7 +70,7 @@ jobs:
           name: release-${{ github.sha }}
           path: dist/roundtrip
       - name: Verify transferred assets
-        run: .venv/bin/python scripts/release.py verify --tag "$RELEASE_TAG" --out dist/roundtrip
+        run: .venv/bin/python scripts/release.py verify --partial --tag "$RELEASE_TAG" --out dist/roundtrip
   plugin-native:
     strategy:
       fail-fast: false
@@ -115,6 +100,13 @@ jobs:
           uv run --frozen python scripts/verify_plugin.py --bundle dist/plugin/grea-plugin-${{ matrix.target }}.zip --report dist/plugin/plugin-acceptance.json
           uv run --frozen python scripts/build_plugin.py --target "${{ matrix.target }}" --tag "$RELEASE_TAG" --out dist/plugin-repeat
           cmp dist/plugin/grea-plugin-${{ matrix.target }}.zip dist/plugin-repeat/grea-plugin-${{ matrix.target }}.zip
+      - name: Temporary native Codex installation and discovery
+        shell: bash
+        run: |
+          uv run --frozen python scripts/testing/fetch-codex-client.py --out dist/test-client
+          client=dist/test-client/codex
+          if [[ "${{ runner.os }}" == Windows ]]; then client+=.exe; fi
+          uv run --frozen python scripts/verify_plugin_clients.py --bundle dist/plugin/grea-plugin-${{ matrix.target }}.zip --client codex --codex-bin "$client" --allow-network --report dist/plugin/client-acceptance.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: release-plugin-${{ github.sha }}-${{ matrix.target }}

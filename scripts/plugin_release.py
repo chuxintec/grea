@@ -64,3 +64,18 @@ def validate(archive, report, source, version, revision):
     return ({'name':artifact,'kind':'plugin','version':version,'target':target,
              'bytes':Path(archive).stat().st_size,'sha256':sha256(archive),'files':len(actual),'root_directory':'grea'},
             {'name':report_file,'bytes':Path(report).stat().st_size,'sha256':sha256(report)})
+
+
+def validate_client(report, archive, target, version, name=None):
+    value=json.loads(Path(report).read_text(encoding='utf-8'))
+    manifest=verify_archive(archive)
+    if (value.get('status'),value.get('archive_sha256'),value.get('source_tree_sha256'),value.get('version'),value.get('model_requests_sent')) != ('pass',sha256(archive),manifest['source_tree_sha256'],version,0):
+        raise ValueError('Native client acceptance identity mismatch')
+    client=value.get('clients',{}).get('codex',{})
+    required=('version','entrypoint','install','registration','initialize','skills','tools','installed_session')
+    if client.get('status')!='pass' or any(client.get('layers',{}).get(k,{}).get('status')!='pass' for k in required):
+        raise ValueError('Native Codex installation/discovery incomplete')
+    if client['layers']['skills'].get('count')!=8 or client['layers']['tools'].get('count')!=21:
+        raise ValueError('Native Codex catalog incomplete')
+    if manifest['target']!=target:raise ValueError('Native client target mismatch')
+    return {'name':name or Path(report).name,'bytes':Path(report).stat().st_size,'sha256':sha256(report)}

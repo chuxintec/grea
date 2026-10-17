@@ -24,4 +24,4 @@ uv sync --frozen
 
 Windows 源码入口为 `bin\grea.cmd session`；完整插件自带解释器，不需要先执行 uv。能力存在、原生客户端发现、真实工具运行与游戏验收分别核验。游戏原工程和私人运行证据不进入本仓库。
 
-本分支为 Windows/docs 候选开发，不自动合并或发布。[MIT](LICENSE)。
+正式版本通过原生 CI 与双平台插件验收后发布；Windows 实机范围见验证索引。[MIT](LICENSE)。

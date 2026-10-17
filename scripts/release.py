@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 from audit_public_tree import inspect
-import build_skill
 
 ROOT = Path(__file__).resolve().parents[1]
 TAG = re.compile(r'v(\d+\.\d+\.\d+)(?:-rc([1-9]\d*))?')
@@ -71,144 +70,92 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+TARGETS = ('macos-arm64', 'windows-x64')
+
+
+def asset_names(manifest):
+    from plugin_targets import archive_name, report_name
+    names = ['release-manifest.json']
+    for target in manifest['plugin_targets']:
+        names.extend((archive_name(target), report_name(target), 'client-acceptance-'+target+'.json'))
+    return names
+
+
+def write_manifest(out, manifest):
+    (out/'release-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    (out/'SHA256SUMS').write_text(''.join(sha256(out/n)+'  '+n+'\n' for n in asset_names(manifest)),encoding='utf-8')
+
+
 def prepare(tag, out, require_tag=False):
     package, prerelease, sha, python = identity(tag, require_tag)
-    files = source_files()
-    skill_files = build_skill.render(files, package, sha)
-    timestamp = datetime.fromtimestamp(int(git('show', '-s', '--format=%ct', 'HEAD')), timezone.utc)
+    source_files()  # Public audit remains a gate even though GitHub supplies source downloads.
     out.mkdir(parents=True, exist_ok=False)
-    archive = out / f'grea-{tag}.zip'
-    with zipfile.ZipFile(archive, 'x', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        for name, (data, mode) in sorted(files.items()):
-            info = zipfile.ZipInfo(f'grea-{tag}/{name}', timestamp.timetuple()[:6])
-            info.create_system = 3
-            info.external_attr = mode << 16
-            info.compress_type = zipfile.ZIP_DEFLATED
-            z.writestr(info, data)
-    skill_archive = out / f'grea-skill-{tag}.zip'
-    build_skill.write_archive(skill_archive, skill_files, timestamp)
-    manifest = {
-        'schema_version': 1, 'product': 'grea', 'release_version': tag,
-        'package_version': package, 'prerelease': prerelease, 'source_revision': sha,
-        'source_dirty': False, 'source_timestamp': timestamp.isoformat(),
-        'requirements': {'python_declared': python, 'install': 'uv sync --frozen',
-                         'uv_lock_sha256': hashlib.sha256(files['uv.lock'][0]).hexdigest()},
-        'artifacts': [{'name': archive.name, 'bytes': archive.stat().st_size,
-                       'sha256': sha256(archive), 'files': len(files), 'root_directory': f'grea-{tag}'},
-                      {'name': skill_archive.name, 'kind': 'skill', 'version': package,
-                       'bytes': skill_archive.stat().st_size, 'sha256': sha256(skill_archive),
-                       'files': len(skill_files), 'root_directory': 'grea'}],
-        'validation': {'workflow': '.github/workflows/release.yml',
-                       'publication_gates': ['source audit', 'core tests and stdio MCP', 'contract and skill checks',
-                                             'fresh extracted bundle install and tests', 'uploaded asset download comparison'],
-                       'windows_native': 'not_run', 'game_and_unity_runtime': 'not_run'},
-        'distribution': 'Public source only; optional third-party providers installed separately. See THIRD_PARTY.md.',
-    }
-    (out / 'release-manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    (out / 'SHA256SUMS').write_text(''.join(sha256(p) + '  ' + p.name + '\n' for p in (archive, skill_archive, out / 'release-manifest.json')), encoding='utf-8')
-    (out / 'release-notes.md').write_text(
-        f'grea {tag}\n\n' + ('预发行版本。' if prerelease else '正式版本。') +
-        f'完整源码使用包，Python/CLI 版本 `{package}`。\n\n'
-        f'附件：完整 ZIP、独立 Skill ZIP（版本 {package}）、release-manifest.json、SHA256SUMS。\n\n'
-        f'解压并进入 `grea-{tag}`，运行 `uv sync --frozen`，再运行 `./bin/grea session`；'
-        'Windows 入口为 `bin\\grea.cmd session`。macOS 可用系统 Archive Utility 或 ditto 解压中文文件名。\n\n'
-        '源码与纯文档包不包含第三方程序、Unity 包快照、Spine vendor、虚拟环境或项目材料。'
-        '来源与许可证见 THIRD_PARTY.md，自有代码采用 MIT。\n\n'
-        '发布由测试、契约/技能检查及解压包安装验证把关；Windows 原生运行、Unity Editor 和游戏验收未执行。'
-        '平台限制见 docs/安装与平台.md。\n\n'
-        f'源码提交：`{sha}`。\n', encoding='utf-8')
+    manifest = {'schema_version':2,'product':'grea','release_version':tag,
+                'package_version':package,'prerelease':prerelease,'source_revision':sha,
+                'source_dirty':False,'plugin_targets':[],'artifacts':[],
+                'validation':{'plugin_acceptances':{},'client_acceptances':{},
+                              'windows_desktop_unity_player_performance':'not_run: excluded by user scope'}}
+    write_manifest(out,manifest)
+    (out/'release-notes.md').write_text(
+        f'grea {tag}\n\n'+('预发行版本。' if prerelease else '正式版本。')+
+        f'版本 `{package}`，源码提交 `{sha}`。\n\n'
+        '本次修复 Windows 隔离环境的工具启动，完善原生进程归属及清理；统一文档导航与平台验证证据。'
+        '安装附件收敛为 macOS ARM64、Windows x64 两个完整插件，均自带 Python、MCP、8 个技能、参考和许可证。'
+        '不再发布独立 Skill ZIP 或自定义源码 ZIP；源码由 GitHub 自动下载提供。\n\n'
+        'Windows x64 通过 Windows Server 原生 CI、隔离工具执行、重复构建及临时 Codex 安装发现验证。'
+        'Windows 11 桌面、Unity Editor/Player、图形性能和人工输入未实机验收（本轮范围明确排除）。'
+        '可选第三方供应方仍需独立安装及验证。\n\n'
+        '解压对应平台插件，进入 grea 目录后运行 `codex plugin marketplace add .`、'
+        '`codex plugin add grea@grea-local`，重启客户端后调用 session 核对安装路径。'
+        '完整用法见包内 docs/安装与平台.md；自有代码 MIT，第三方许可见 THIRD_PARTY.md。\n',encoding='utf-8')
     return manifest
 
 
-def verify(tag, out, extract=None, extract_skill=None):
-    package, prerelease, sha, _ = identity(tag)
-    manifest = json.loads((out / 'release-manifest.json').read_text(encoding='utf-8'))
-    if (manifest['release_version'], manifest['source_revision'], manifest['prerelease'], manifest['package_version']) != (tag, sha, prerelease, package):
-        raise ValueError('Manifest identity mismatch.')
-    names = [f'grea-{tag}.zip', f'grea-skill-{tag}.zip', 'release-manifest.json']
-    from plugin_targets import TARGETS, archive_name, report_name
-    targets=manifest.get('plugin_targets',['macos-arm64'] if len(manifest['artifacts'])==3 else [])
+def verify(tag, out, complete=True):
+    package, prerelease, revision, _ = identity(tag)
+    manifest=json.loads((out/'release-manifest.json').read_text(encoding='utf-8'))
+    if (manifest.get('schema_version'),manifest.get('release_version'),manifest.get('source_revision'),
+        manifest.get('prerelease'),manifest.get('package_version'),manifest.get('source_dirty')) != (2,tag,revision,prerelease,package,False):
+        raise ValueError('Manifest identity mismatch')
+    targets=manifest['plugin_targets']
     if len(targets)!=len(set(targets)) or any(t not in TARGETS for t in targets):raise ValueError('Invalid target set')
-    for target in targets:names += [archive_name(target),report_name(target)]
-    checksums = ''.join(sha256(out / n) + '  ' + n + '\n' for n in names)
-    if (out / 'SHA256SUMS').read_text(encoding='utf-8') != checksums:
-        raise ValueError('Checksum mismatch.')
-    archive = out / names[0]
-    row = manifest['artifacts'][0]
-    if (row['name'], row['bytes'], row['sha256']) != (names[0], archive.stat().st_size, sha256(archive)):
-        raise ValueError('Archive identity mismatch.')
-    files = source_files()
-    if len(manifest['artifacts']) != 2+len(targets) or row['files'] != len(files) or row['root_directory'] != f'grea-{tag}':
-        raise ValueError('Manifest file inventory mismatch.')
+    if complete and set(targets)!=set(TARGETS):raise ValueError('Both native plugin targets required')
+    if len(manifest['artifacts'])!=len(targets):raise ValueError('Unexpected installation artifacts')
+    from plugin_targets import archive_name,report_name
+    from plugin_release import validate, validate_client
+    source=source_files()
     for index,target in enumerate(targets):
-        from plugin_release import validate
-        plugin_row, report_row = validate(out/archive_name(target),out/report_name(target),files,package,sha)
-        report=manifest['validation'].get('plugin_acceptances',{}).get(target,manifest['validation'].get('plugin_acceptance') if target=='macos-arm64' else None)
-        if manifest['artifacts'][index+2] != plugin_row or report!=report_row:
-            raise ValueError('Portable plugin release identity mismatch')
-    skill_files = build_skill.render(files, package, sha)
-    skill_row = manifest['artifacts'][1]
-    expected_skill_row = {'name': names[1], 'kind': 'skill', 'version': package,
-                          'bytes': (out/names[1]).stat().st_size, 'sha256': sha256(out/names[1]),
-                          'files': len(skill_files), 'root_directory': 'grea'}
-    if skill_row != expected_skill_row:
-        raise ValueError('Skill manifest identity mismatch')
-    build_skill.verify_archive(out/names[1], skill_files)
-    with zipfile.ZipFile(archive) as z:
-        expected = {f'grea-{tag}/{p}' for p in files}
-        if set(z.namelist()) != expected or len(z.namelist()) != len(expected):
-            raise ValueError('Archive file set differs from committed source.')
-        for name, (data, mode) in files.items():
-            info = z.getinfo(f'grea-{tag}/{name}')
-            if z.read(info) != data or info.external_attr >> 16 != mode:
-                raise ValueError('Archive file bytes or mode mismatch: ' + name)
-        if extract:
-            extract.mkdir(parents=True, exist_ok=False)
-            for info in z.infolist():
-                path = PurePosixPath(info.filename)
-                if path.is_absolute() or '..' in path.parts:
-                    raise ValueError('Unsafe archive path.')
-                dest = extract.joinpath(*path.parts)
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                dest.write_bytes(z.read(info))
-                dest.chmod((info.external_attr >> 16) & 0o777)
-    if extract_skill is not None:
-        build_skill.verify_archive(out/names[1], skill_files, extract_skill)
-    return names + ['SHA256SUMS']
+        row,report=validate(out/archive_name(target),out/report_name(target),source,package,revision)
+        client=validate_client(out/('client-acceptance-'+target+'.json'),out/archive_name(target),target,package)
+        if (manifest['artifacts'][index]!=row or manifest['validation']['plugin_acceptances'].get(target)!=report
+                or manifest['validation']['client_acceptances'].get(target)!=client):raise ValueError('Acceptance identity mismatch')
+    names=asset_names(manifest)
+    if (out/'SHA256SUMS').read_text(encoding='utf-8')!=''.join(sha256(out/n)+'  '+n+'\n' for n in names):raise ValueError('Checksum mismatch')
+    actual={p.name for p in out.iterdir()}
+    if actual!=set(names+['SHA256SUMS','release-notes.md']):raise ValueError('Unexpected or missing release files')
+    return names+['SHA256SUMS']
 
 
-def attach_plugin(tag, out, plugin_dir, target="macos-arm64"):
-    """Merge a separately built and accepted platform artifact before publishing."""
-    from plugin_release import validate
-    from plugin_targets import archive_name,report_name,TARGETS
+def attach_plugin(tag, out, plugin_dir, target='macos-arm64'):
+    from plugin_release import validate,validate_client
+    from plugin_targets import archive_name,report_name
+    verify(tag,out,complete=False)
     if target not in TARGETS:raise ValueError('Unknown plugin target')
-    ARCHIVE,REPORT=archive_name(target),report_name(target)
-    verify(tag,out)
     package,_,revision,_=identity(tag)
-    manifest_path=out/'release-manifest.json'
-    manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
-    targets=manifest.get('plugin_targets',['macos-arm64'] if len(manifest['artifacts'])==3 else [])
-    if target in targets:raise ValueError('Target already attached; do not overwrite')
-    plugin_row,report_row=validate(plugin_dir/ARCHIVE,plugin_dir/'plugin-acceptance.json',source_files(),package,revision)
-    if plugin_row['target']!=target:raise ValueError('Wrong target supplied')
-    for name in (ARCHIVE,REPORT):
-        if (out/name).exists():raise FileExistsError(out/name)
-    shutil.copyfile(plugin_dir/ARCHIVE,out/ARCHIVE);shutil.copyfile(plugin_dir/'plugin-acceptance.json',out/REPORT)
-    manifest['artifacts'].append(plugin_row);manifest['plugin_targets']=[*targets,target]
-    manifest['validation'].setdefault('plugin_acceptances',{})[target]=report_row
-    if target=='macos-arm64':manifest['validation']['plugin_acceptance']=report_row
-    manifest['validation']['publication_gates'].append(target+' native portable plugin isolated acceptance')
-    manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    names=[f'grea-{tag}.zip',f'grea-skill-{tag}.zip','release-manifest.json']
-    for item in manifest['plugin_targets']:names.extend((archive_name(item),report_name(item)))
-    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in names),encoding='utf-8')
-    with (out/'release-notes.md').open('a',encoding='utf-8') as stream:
-        stream.write('\n完整 '+target+' 插件：`'+ARCHIVE+'`，包含独立 Python、锁定依赖与本地 stdio MCP；支持 Codex 和 Claude Code 的插件配置。Unity 与可选外部工具独立安装。隔离验收见 `'+REPORT+'`。\n')
-        stream.write('\n解压插件后进入其中的 `grea/`：\n\n'
-                     '```sh\n# Codex\ncodex plugin marketplace add .\ncodex plugin add grea@grea-local\n'
-                     '# Claude Code\nclaude plugin marketplace add ./\nclaude plugin install grea@grea-local\n```\n'
-                     '\n保留解压目录作为本地安装来源；已有源码版 MCP 注册时先核对并停用同名旧入口，重启客户端后在新会话调用 `session` 核对 `package_root` 为插件安装目录。\n')
-    verify(tag, out)
+    manifest=json.loads((out/'release-manifest.json').read_text(encoding='utf-8'))
+    if target in manifest['plugin_targets']:raise ValueError('Target already attached')
+    archive=archive_name(target);report=report_name(target);client='client-acceptance-'+target+'.json'
+    row,report_row=validate(plugin_dir/archive,plugin_dir/'plugin-acceptance.json',source_files(),package,revision)
+    if row['target']!=target:raise ValueError('Wrong target supplied')
+    client_row=validate_client(plugin_dir/'client-acceptance.json',plugin_dir/archive,target,package,name=client)
+    for source_name,dest in [(archive,archive),('plugin-acceptance.json',report),('client-acceptance.json',client)]:
+        if (out/dest).exists():raise FileExistsError(out/dest)
+        shutil.copyfile(plugin_dir/source_name,out/dest)
+    manifest['plugin_targets'].append(target);manifest['artifacts'].append(row)
+    manifest['validation']['plugin_acceptances'][target]=report_row
+    manifest['validation']['client_acceptances'][target]=client_row
+    write_manifest(out,manifest)
+    verify(tag,out,complete=False)
     return manifest
 
 
@@ -288,8 +235,7 @@ if __name__ == '__main__':
     parser.add_argument('--tag', required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--require-tag', action='store_true')
-    parser.add_argument('--extract', type=Path)
-    parser.add_argument('--extract-skill', type=Path)
+    parser.add_argument('--partial', action='store_true', help='Verify staging only; never publish partial targets')
     parser.add_argument('--repo')
     parser.add_argument('--plugin-dir', type=Path)
     parser.add_argument('--target',choices=('macos-arm64','windows-x64'),default='macos-arm64')
@@ -297,7 +243,7 @@ if __name__ == '__main__':
     if args.action == 'prepare':
         result = prepare(args.tag, args.out, args.require_tag)
     elif args.action == 'verify':
-        result = verify(args.tag, args.out, args.extract, args.extract_skill)
+        result = verify(args.tag, args.out, complete=not args.partial)
     elif args.action == 'attach-plugin':
         if not args.plugin_dir: parser.error('--plugin-dir required')
         result = attach_plugin(args.tag, args.out, args.plugin_dir,args.target)
