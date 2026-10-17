@@ -333,8 +333,16 @@ if __name__ == '__main__':
     parser.add_argument('--bundle', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
-    result = acceptance(args.bundle)
+    try:
+        result=acceptance(args.bundle)
+    except Exception as error:
+        try:target=native_target()
+        except ValueError:target=None
+        result={'status':'fail','target':target,
+                'archive_sha256':sha256(args.bundle) if args.bundle.is_file() else None,
+                'error':{'type':type(error).__name__,'message':str(error)}}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_bytes(encoded(result))
-    print(json.dumps({'status':result['status'],'target':result['target'],'clients':list(result['clients']),
-                      'tools':len(result['clients']['codex']['tools'])}))
+    print(json.dumps({'status':result['status'],'target':result['target'],
+                      'clients':list(result.get('clients',{})), 'error':result.get('error')},ensure_ascii=True))
+    raise SystemExit(0 if result['status']=='pass' else 1)
