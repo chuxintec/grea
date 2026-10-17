@@ -18,13 +18,15 @@ import urllib.request
 
 from plugin_bundle import encoded, extract_runtime, inventory, read_source, sha256, verify_archive, write_archive
 from grea.brand_assets import validate_interface
+from product_projection import project as project_product
 from plugin_targets import target_config, runtime_lock, archive_name, client_launch
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = 'grea-plugin-macos-arm64.zip'
 
 
-def write_product(source, destination, target="macos-arm64"):
+def write_product(source, destination, target="macos-arm64", revision="HEAD"):
+    source=project_product(source,revision)
     destination.mkdir(parents=True, exist_ok=False)
     for name, (data, mode) in sorted(source.items()):
         # Preserve the audited public resource closure, including linked docs and fixtures.
@@ -183,7 +185,7 @@ def build(out, *, worktree=False, cache=None, tag=None, target=None):
     out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='grea-plugin-build-', dir=out.parent) as temporary:
         tree = Path(temporary)/'grea'
-        write_product(source, tree, selected)
+        write_product(source, tree, selected, identity["source_revision"])
         extract_runtime(archive, tree/'runtime', lock['sha256'])
         from runtime_licenses import install_licenses
         licenses = install_licenses(license_archive, tree/'runtime', lock)

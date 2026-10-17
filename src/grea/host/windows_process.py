@@ -66,7 +66,7 @@ def api():
 
 
 class OwnedProcess:
-    def __init__(self, argv, cwd, env=None, interactive=False, text=False):
+    def __init__(self, argv, cwd, env=None, interactive=False, text=False, capabilities=None):
         import msvcrt
         self.returncode=None; self.args=argv
         self.k=api(); k=self.k; self.job=None; self.handle=None
@@ -92,11 +92,14 @@ class OwnedProcess:
                 require(k.CreatePipe(c.byref(read),c.byref(write),c.byref(security),0))
                 handles.extend([read.value,write.value]);require(k.SetHandleInformation(write,1,0))
                 input_pipe=(read.value,write.value)
-            size=SIZE();k.InitializeProcThreadAttributeList(None,1,0,c.byref(size))
+            attribute_count=2 if capabilities is not None else 1
+            size=SIZE();k.InitializeProcThreadAttributeList(None,attribute_count,0,c.byref(size))
             attrs=c.create_string_buffer(size.value)
-            require(k.InitializeProcThreadAttributeList(attrs,1,0,c.byref(size)))
+            require(k.InitializeProcThreadAttributeList(attrs,attribute_count,0,c.byref(size)))
             inherited=(w.HANDLE*3)(input_pipe[0] if interactive else nul,pipes[0][1],pipes[1][1])
             require(k.UpdateProcThreadAttribute(attrs,0,0x20002,inherited,c.sizeof(inherited),None,None))
+            if capabilities is not None:
+                require(k.UpdateProcThreadAttribute(attrs,0,0x20009,c.byref(capabilities),c.sizeof(capabilities),None,None))
             startup=StartupEx();startup.info.cb=c.sizeof(startup);startup.attributes=c.cast(attrs,w.LPVOID)
             startup.info.flags=0x100;startup.info.stdin=input_pipe[0] if interactive else nul;startup.info.stdout=pipes[0][1];startup.info.stderr=pipes[1][1]
             environment=dict(os.environ if env is None else env)

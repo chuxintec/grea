@@ -6,6 +6,11 @@ from pathlib import Path
 import sys
 
 
+def is_link(path):
+    path=Path(path)
+    return path.is_symlink() or bool(getattr(path.lstat(),'st_file_attributes',0)&0x400) if path.exists() else path.is_symlink()
+
+
 @contextlib.contextmanager
 def file_lock(path, *, write=True, blocking=True):
     # Open read-only: reviewers need not have write permission to the case lock.

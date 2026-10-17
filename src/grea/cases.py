@@ -3,12 +3,13 @@ import json,uuid,time,contextlib,tempfile,shutil
 from pathlib import Path
 from .common import GreaError,digest,write_new,now,publish_directory
 from .case_hashing import hash_file, audit_hashes, audit_report
+from .host.files import is_link
 from .workflows import WORKFLOWS, required_dimensions as workflow_dimensions
 
 def locate(path):
     path=Path(path).expanduser()
     if path.name!='.grea':path=path/'.grea'
-    if path.is_symlink() or not (path/'case.json').is_file():raise GreaError('CASE_NOT_FOUND','No case at the requested project.',details={'path':str(path)})
+    if is_link(path) or not (path/'case.json').is_file():raise GreaError('CASE_NOT_FOUND','No case at the requested project.',details={'path':str(path)})
     return path.resolve()
 
 def load_case(root):
@@ -21,7 +22,7 @@ def load_case(root):
 def locked(root, write=True):
     from .host.files import file_lock
     lock=root/'.lock'
-    if lock.is_symlink():raise GreaError('INVALID_CASE','Case lock may not be a symlink.')
+    if is_link(lock):raise GreaError('INVALID_CASE','Case lock may not be a symlink.')
     if not lock.is_file():raise GreaError('INVALID_CASE','Case lock file is missing.')
     with file_lock(lock, write=write):yield
 
@@ -31,7 +32,7 @@ def check_source(case):
 
 def init_case(project_dir,source,mode,required_dimensions=None,source_engine='unknown',engine_version=None,source_format=None,target_platform=None,acceptance_profile='scoped'):
     project=Path(project_dir).expanduser()
-    if project.is_symlink() or not project.is_dir():raise GreaError('INVALID_PROJECT','Choose an existing real project directory.')
+    if is_link(project) or not project.is_dir():raise GreaError('INVALID_PROJECT','Choose an existing real project directory.')
     from .case_revisions import identity as file_identity
     identity=file_identity(project.resolve(), source)
     mandatory=workflow_dimensions(mode, source_engine)
@@ -53,7 +54,7 @@ def init_case(project_dir,source,mode,required_dimensions=None,source_engine='un
     return {'case_dir':str(root),'case':value,'acceptance':'not_run'}
 
 def read_record(path,prefix):
-    if path.is_symlink():raise GreaError('TAMPERED_EVIDENCE','Record is a symlink.')
+    if is_link(path):raise GreaError('TAMPERED_EVIDENCE','Record is a symlink.')
     value=json.loads(path.read_text(encoding='utf-8'));body=value.copy();rid=body.pop('id',None)
     if rid!=prefix+digest(body):raise GreaError('TAMPERED_EVIDENCE','Record content does not match its ID.',details={'record':str(path)})
     return value

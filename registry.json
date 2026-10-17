@@ -34,7 +34,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -102,7 +105,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -170,7 +176,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -352,7 +361,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -475,7 +487,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -1732,7 +1747,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -1798,7 +1816,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -1864,7 +1885,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -2482,7 +2506,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."
@@ -2585,7 +2612,10 @@
           "Darwin",
           "Windows"
         ],
-        "architectures": [],
+        "architectures": [
+          "arm64",
+          "aarch64"
+        ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/工具集成与平台支持.md."

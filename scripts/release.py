@@ -126,10 +126,10 @@ def verify(tag, out, extract=None, extract_skill=None):
     if (manifest['release_version'], manifest['source_revision'], manifest['prerelease'], manifest['package_version']) != (tag, sha, prerelease, package):
         raise ValueError('Manifest identity mismatch.')
     names = [f'grea-{tag}.zip', f'grea-skill-{tag}.zip', 'release-manifest.json']
-    portable = len(manifest['artifacts']) == 3
-    if portable:
-        from plugin_release import ARCHIVE, REPORT
-        names += [ARCHIVE, REPORT]
+    from plugin_targets import TARGETS, archive_name, report_name
+    targets=manifest.get('plugin_targets',['macos-arm64'] if len(manifest['artifacts'])==3 else [])
+    if len(targets)!=len(set(targets)) or any(t not in TARGETS for t in targets):raise ValueError('Invalid target set')
+    for target in targets:names += [archive_name(target),report_name(target)]
     checksums = ''.join(sha256(out / n) + '  ' + n + '\n' for n in names)
     if (out / 'SHA256SUMS').read_text(encoding='utf-8') != checksums:
         raise ValueError('Checksum mismatch.')
@@ -138,12 +138,13 @@ def verify(tag, out, extract=None, extract_skill=None):
     if (row['name'], row['bytes'], row['sha256']) != (names[0], archive.stat().st_size, sha256(archive)):
         raise ValueError('Archive identity mismatch.')
     files = source_files()
-    if len(manifest['artifacts']) not in (2,3) or row['files'] != len(files) or row['root_directory'] != f'grea-{tag}':
+    if len(manifest['artifacts']) != 2+len(targets) or row['files'] != len(files) or row['root_directory'] != f'grea-{tag}':
         raise ValueError('Manifest file inventory mismatch.')
-    if portable:
+    for index,target in enumerate(targets):
         from plugin_release import validate
-        plugin_row, report_row = validate(out/ARCHIVE, out/REPORT, files, package, sha)
-        if manifest['artifacts'][2] != plugin_row or manifest['validation'].get('plugin_acceptance') != report_row:
+        plugin_row, report_row = validate(out/archive_name(target),out/report_name(target),files,package,sha)
+        report=manifest['validation'].get('plugin_acceptances',{}).get(target,manifest['validation'].get('plugin_acceptance') if target=='macos-arm64' else None)
+        if manifest['artifacts'][index+2] != plugin_row or report!=report_row:
             raise ValueError('Portable plugin release identity mismatch')
     skill_files = build_skill.render(files, package, sha)
     skill_row = manifest['artifacts'][1]
@@ -176,28 +177,33 @@ def verify(tag, out, extract=None, extract_skill=None):
     return names + ['SHA256SUMS']
 
 
-def attach_plugin(tag, out, plugin_dir):
+def attach_plugin(tag, out, plugin_dir, target="macos-arm64"):
     """Merge a separately built and accepted platform artifact before publishing."""
-    from plugin_release import ARCHIVE, REPORT, validate
-    verify(tag, out)
-    package, _, revision, _ = identity(tag)
-    manifest_path = out/'release-manifest.json'
-    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-    if len(manifest['artifacts']) != 2:
-        raise ValueError('Portable plugin already attached; do not overwrite')
-    plugin_row, report_row = validate(plugin_dir/ARCHIVE, plugin_dir/'plugin-acceptance.json', source_files(), package, revision)
-    for name in (ARCHIVE, REPORT):
-        if (out/name).exists(): raise FileExistsError(out/name)
-    shutil.copyfile(plugin_dir/ARCHIVE, out/ARCHIVE)
-    shutil.copyfile(plugin_dir/'plugin-acceptance.json', out/REPORT)
-    manifest['artifacts'].append(plugin_row)
-    manifest['validation']['plugin_acceptance'] = report_row
-    manifest['validation']['publication_gates'].append('macOS arm64 portable plugin isolated acceptance')
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
-    names = [f'grea-{tag}.zip', f'grea-skill-{tag}.zip', 'release-manifest.json', ARCHIVE, REPORT]
-    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in names), encoding='utf-8')
-    with (out/'release-notes.md').open('a') as stream:
-        stream.write('\n完整 macOS arm64 插件：`'+ARCHIVE+'`，包含独立 Python、锁定依赖与本地 stdio MCP；支持 Codex 和 Claude Code 的插件配置。Unity 与可选外部工具独立安装。隔离验收见 `'+REPORT+'`。\n')
+    from plugin_release import validate
+    from plugin_targets import archive_name,report_name,TARGETS
+    if target not in TARGETS:raise ValueError('Unknown plugin target')
+    ARCHIVE,REPORT=archive_name(target),report_name(target)
+    verify(tag,out)
+    package,_,revision,_=identity(tag)
+    manifest_path=out/'release-manifest.json'
+    manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+    targets=manifest.get('plugin_targets',['macos-arm64'] if len(manifest['artifacts'])==3 else [])
+    if target in targets:raise ValueError('Target already attached; do not overwrite')
+    plugin_row,report_row=validate(plugin_dir/ARCHIVE,plugin_dir/'plugin-acceptance.json',source_files(),package,revision)
+    if plugin_row['target']!=target:raise ValueError('Wrong target supplied')
+    for name in (ARCHIVE,REPORT):
+        if (out/name).exists():raise FileExistsError(out/name)
+    shutil.copyfile(plugin_dir/ARCHIVE,out/ARCHIVE);shutil.copyfile(plugin_dir/'plugin-acceptance.json',out/REPORT)
+    manifest['artifacts'].append(plugin_row);manifest['plugin_targets']=[*targets,target]
+    manifest['validation'].setdefault('plugin_acceptances',{})[target]=report_row
+    if target=='macos-arm64':manifest['validation']['plugin_acceptance']=report_row
+    manifest['validation']['publication_gates'].append(target+' native portable plugin isolated acceptance')
+    manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    names=[f'grea-{tag}.zip',f'grea-skill-{tag}.zip','release-manifest.json']
+    for item in manifest['plugin_targets']:names.extend((archive_name(item),report_name(item)))
+    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in names),encoding='utf-8')
+    with (out/'release-notes.md').open('a',encoding='utf-8') as stream:
+        stream.write('\n完整 '+target+' 插件：`'+ARCHIVE+'`，包含独立 Python、锁定依赖与本地 stdio MCP；支持 Codex 和 Claude Code 的插件配置。Unity 与可选外部工具独立安装。隔离验收见 `'+REPORT+'`。\n')
         stream.write('\n解压插件后进入其中的 `grea/`：\n\n'
                      '```sh\n# Codex\ncodex plugin marketplace add .\ncodex plugin add grea@grea-local\n'
                      '# Claude Code\nclaude plugin marketplace add ./\nclaude plugin install grea@grea-local\n```\n'
@@ -286,6 +292,7 @@ if __name__ == '__main__':
     parser.add_argument('--extract-skill', type=Path)
     parser.add_argument('--repo')
     parser.add_argument('--plugin-dir', type=Path)
+    parser.add_argument('--target',choices=('macos-arm64','windows-x64'),default='macos-arm64')
     args = parser.parse_args()
     if args.action == 'prepare':
         result = prepare(args.tag, args.out, args.require_tag)
@@ -293,7 +300,7 @@ if __name__ == '__main__':
         result = verify(args.tag, args.out, args.extract, args.extract_skill)
     elif args.action == 'attach-plugin':
         if not args.plugin_dir: parser.error('--plugin-dir required')
-        result = attach_plugin(args.tag, args.out, args.plugin_dir)
+        result = attach_plugin(args.tag, args.out, args.plugin_dir,args.target)
     else:
         if not args.repo:
             parser.error('--repo required for publish')

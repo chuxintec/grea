@@ -45,7 +45,7 @@ def validate(archive, report, source, version, revision):
                     raise ValueError('Runtime license bytes differ')
     with tempfile.TemporaryDirectory() as tmp:
         tree = Path(tmp)/'grea'
-        write_product(source, tree, target)
+        write_product(source, tree, target, revision)
         expected = inventory(tree,target)
     actual = manifest['files']
     if any(actual.get(name) != record for name,record in expected.items()):

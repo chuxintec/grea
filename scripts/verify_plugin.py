@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Accept a relocated plugin with no source, network, host Python, uv or install writes."""
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager,ExitStack
 import json
 import io
 from plugin_targets import native_target, TARGETS
@@ -50,10 +50,10 @@ def sandbox_prefix(root, work):
 
 
 class Rpc:
-    def __init__(self, command, cwd, env):
+    def __init__(self, command, cwd, env, security=None):
         if os.name=='nt':
             from grea.host.windows_process import OwnedProcess
-            self.process=OwnedProcess(command,cwd,env=env,interactive=True)
+            self.process=OwnedProcess(command,cwd,env=env,interactive=True,capabilities=security)
             for name in ('stdin','stdout','stderr'):
                 setattr(self.process,name,io.TextIOWrapper(getattr(self.process,name),encoding='utf-8',write_through=True))
         else:
@@ -111,13 +111,24 @@ def check(condition, message):
     if not condition: raise ValueError(message)
 
 
+def native_run(command, *, security=None, **kwargs):
+    if os.name!='nt':return subprocess.run(command,**kwargs)
+    from grea.host.windows_process import OwnedProcess
+    process=OwnedProcess(command,kwargs['cwd'],env=kwargs['env'],text=True,capabilities=security)
+    try:
+        output,error=process.communicate(timeout=kwargs.get('timeout'))
+        return subprocess.CompletedProcess(command,process.returncode,output,error)
+    finally:
+        process.settle();process.close();process.stdout.close();process.stderr.close()
+
+
 def acceptance(bundle):
     target=native_target()
     windows=target=='windows-x64'
     bundle = Path(bundle).resolve()
     checksums = dict(line.split('  ', 1)[::-1] for line in (bundle.parent/'SHA256SUMS').read_text(encoding='utf-8').splitlines())
     check(checksums.get(bundle.name) == sha256(bundle), 'Plugin external checksum mismatch')
-    with tempfile.TemporaryDirectory(prefix='grea 插件 acceptance ', dir=None if windows else '/private/tmp') as tmp:
+    with tempfile.TemporaryDirectory(prefix='grea 插件 acceptance ', dir=None if windows else '/private/tmp') as tmp, ExitStack() as stack:
         base = Path(tmp).resolve()
         manifest = verify_archive(bundle, base/'initial')
         root = base/'移动后 installed grea'
@@ -129,6 +140,10 @@ def acceptance(bundle):
         if windows:
             env.update(SystemRoot=os.environ['SystemRoot'], PATH=str(Path(os.environ['SystemRoot'])/'System32'),
                        USERPROFILE=str(home),TEMP=str(work),TMP=str(work),PYTHONUTF8='1')
+        security=None
+        if windows:
+            from windows_sandbox import AppContainer
+            security=stack.enter_context(AppContainer(root,work,home)).capabilities
         before = inventory(root,target)
         # Prove the isolation policy is enforced, not merely recorded.
         python = root/TARGETS[target]['python']
@@ -141,19 +156,19 @@ for name,fn in [('source',lambda:pathlib.Path(sys.argv[1]).read_bytes()),('insta
   if exc.errno in (1,13): blocked.append(name)
 print(','.join(blocked))
 '''
-        isolated = None if windows else subprocess.run([*prefix, str(python), '-I', '-B', '-c', probe, str(ROOT/'registry.json'), str(root/'forbidden')],
-                                  env=env, cwd=work, capture_output=True, text=True, encoding='utf-8', timeout=20)
-        check(windows or isolated.returncode == 0 and isolated.stdout.strip() == 'source,install_write,network',
+        isolated = native_run([*prefix, str(python), '-I', '-B', '-c', probe, str(ROOT/'registry.json'), str(root/'forbidden')],
+                                  env=env, cwd=work, capture_output=True, text=True, encoding='utf-8', timeout=20,security=security)
+        check(isolated.returncode == 0 and isolated.stdout.strip() == 'source,install_write,network',
               'Isolation policy did not enforce all restrictions: '+(isolated.stderr[:300]+isolated.stdout[:300] if isolated else 'not enforced'))
-        catalog = subprocess.run([*prefix, *([str(python),'-I','-B',str(root/'plugin/launcher/start.py')] if windows else [str(root/'bin/grea')]), 'catalog'], env=env, cwd=work,
-                                 capture_output=True, text=True, encoding='utf-8', timeout=20)
+        catalog = native_run([*prefix, *([str(python),'-I','-B',str(root/'plugin/launcher/start.py')] if windows else [str(root/'bin/grea')]), 'catalog'], env=env, cwd=work,
+                                 capture_output=True, text=True, encoding='utf-8', timeout=20,security=security)
         check(catalog.returncode == 0, 'Relocated CLI catalog failed: '+catalog.stderr[:500])
         expected = json.loads(catalog.stdout)
         tools = sorted(x['name'] for x in expected['operations'])
         results = {}
         for client in ('codex', 'claude'):
             command, _ = client_command(root, client)
-            rpc = Rpc([*prefix, *command], work, env)
+            rpc = Rpc([*prefix, *command], work, env, security=security)
             try:
                 initialized = rpc.request('initialize', {'protocolVersion':'2025-03-26','capabilities':{},
                                                        'clientInfo':{'name':'grea-plugin-acceptance','version':'1'}})
@@ -253,9 +268,9 @@ print(','.join(blocked))
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
                 'source_kind':manifest['source_kind'], 'clients':results,
                 'isolation':{'moved_unicode_space_path':True,'independent_home':True,'minimal_path':True,
-                             'source_read_denied':not windows,'network_denied':not windows,'install_write_denied':not windows,
+                             'source_read_denied':True,'network_denied':True,'install_write_denied':True,
                              'installation_unchanged':True},
-                'limits':['Native client loading is a separate acceptance layer.', 'Unity Editor and gameplay not run.', 'Windows ACL/source/network restrictions not enforced in this smoke; desktop client loading and Unity remain separate gates.' if windows else 'Other platforms not run.']}
+                'limits':['Native client loading is a separate acceptance layer.', 'Unity Editor and gameplay not run.', 'Windows AppContainer probes enforced; desktop client loading and Unity remain separate gates.' if windows else 'Other platforms not run.']}
 
 
 if __name__ == '__main__':

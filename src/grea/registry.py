@@ -38,6 +38,7 @@ def load():
             entry['execution']=dict(entry.get('execution') or {},command=native['command'])
             entry['probe']=native.get('probe')
             entry['files']=[];entry['required_files']=[];entry['system_binary']=None
+            entry['host_support']=dict(entry['host_support'],architectures=['amd64','x86_64'])
         if key in overrides:
             override=overrides[key]
             # A native replacement must not inherit the old host's probe.

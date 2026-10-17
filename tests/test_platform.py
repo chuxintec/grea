@@ -24,11 +24,12 @@ class PlatformTests(unittest.TestCase):
             self.assertEqual(a['canonical_id'],canonical)
 
     def test_windows_rejects_mac_bundle_but_keeps_inventory(self):
-        with patch('grea.registry.platform.system',return_value='Windows'):
+        with patch('grea.registry.platform.system',return_value='Windows'),patch('grea.registry.platform.machine',return_value='AMD64'):
             tool=registry.tool('assetripper')
-            self.assertEqual(registry.presence(tool)['state'],'unsupported')
+            self.assertIn(registry.presence(tool)['state'],('unavailable','detected'))
+            self.assertNotIn('/bin/assetripper', str(tool['execution']))
             with self.assertRaises(GreaError) as error:registry.command(tool)
-            self.assertEqual(error.exception.code,'UNSUPPORTED_HOST')
+            self.assertEqual(error.exception.code,'PROVIDER_UNAVAILABLE')
             self.assertEqual(registry.command(registry.tool('compare_traces'))[0],sys.executable)
 
     def test_architecture_guard(self):
@@ -55,7 +56,9 @@ class PlatformTests(unittest.TestCase):
 
     def test_platform_tools_name_not_rewritten(self):
         command=registry.tool('adb')['execution']['command']
-        self.assertIn('platform-tools',command[0]);self.assertNotIn('platform-grea',command[0])
+        if os.name=='nt':self.assertEqual(command[0],'adb.exe')
+        else:self.assertIn('platform-tools',command[0])
+        self.assertNotIn('platform-grea',command[0])
 
     def test_event_wrapper_keeps_schema_and_difference_semantics(self):
         with tempfile.TemporaryDirectory() as d:
