@@ -152,9 +152,11 @@ def acceptance(bundle):
 blocked=[]
 for name,fn in [('source',lambda:pathlib.Path(sys.argv[1]).read_bytes()),('install_write',lambda:pathlib.Path(sys.argv[2]).write_text('bad')),('network',lambda:socket.create_connection(('127.0.0.1',9),timeout=1))]:
  try: fn()
- except PermissionError: blocked.append(name)
+ except PermissionError as exc:
+  blocked.append(name);print(name,exc.errno,getattr(exc,'winerror',None),file=sys.stderr)
  except OSError as exc:
-  if exc.errno in (1,13): blocked.append(name)
+  print(name,exc.errno,getattr(exc,'winerror',None),file=sys.stderr)
+  if exc.errno in (1,13,10013) or getattr(exc,'winerror',None)==10013: blocked.append(name)
 print(','.join(blocked))
 '''
         isolated = native_run([*prefix, str(python), '-I', '-B', '-c', probe, str(ROOT/'registry.json'), str(root/'forbidden')],
@@ -268,6 +270,7 @@ print(','.join(blocked))
         return {'status':'pass', 'target':target, 'version':manifest['version'],
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
                 'source_kind':manifest['source_kind'], 'clients':results,
+                'isolation_probe_errors':isolated.stderr.strip().splitlines(),
                 'verified_tool_ids':['static_asset_copy','cocos_assets','unity_native_exit','unity_config_candidate','unity_native_assets','evidence_manifest','config_preflight','presentation_audit','performance_compare'],
                 'verified_operations':['session','plan_workflow','run_tool','init_case','start_case_revision','case_status'],
                 'isolation':{'moved_unicode_space_path':True,'independent_home':True,'minimal_path':True,
