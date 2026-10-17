@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from grea.application import dispatch
 
 
@@ -32,6 +33,32 @@ class RevisionCases(unittest.TestCase):
         self.start()
         (self.root/'Assets/new.cs').write_text('new')
         self.assertEqual(self.call('case_status')['error']['code'], 'STALE_CANDIDATE')
+
+    def test_append_order_survives_coarse_and_backward_clock(self):
+        with patch('grea.cases.time.time_ns', side_effect=[100, 100, 50]):
+            previous = -1
+            for version in range(3):
+                (self.root/'Assets/code.cs').write_text(str(version))
+                revision_id = self.start()
+                revision = json.loads((self.root/'.grea/revisions'/f'{revision_id}.json').read_text())
+                self.assertGreater(revision['order_ns'], previous)
+                previous = revision['order_ns']
+                status = self.call('case_status')['result']
+                self.assertEqual(status['revision_id'], revision_id)
+                self.assertEqual(status['candidate_integrity'], 'matched')
+
+    def test_latest_verdict_survives_coarse_and_backward_clock(self):
+        self.start()
+        with patch('grea.cases.time.time_ns', side_effect=[100, 100, 50]):
+            previous = -1
+            for verdict in ['failed', 'not_run', 'failed']:
+                response = self.call('record_verification', dimension='rules', status=verdict,
+                                     evidence_ids=[], note='clock regression')
+                self.assertEqual(response['status'], 'ok', response)
+                value = response['result']['verification']
+                self.assertGreater(value['order_ns'], previous)
+                previous = value['order_ns']
+                self.assertEqual(self.call('case_status')['result']['dimensions']['rules']['id'], value['id'])
 
     def test_revisions_keep_history_and_require_bound_runtime(self):
         first = self.start()

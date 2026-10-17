@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Accept a relocated plugin with no source, network, host Python, uv or install writes."""
 import argparse
+import traceback
 from contextlib import contextmanager,ExitStack
 import json
 import io
@@ -308,6 +309,7 @@ finally:child.settle();child.close()
                 _, second_revision=call('start_case_revision',revision_args)
                 check(second_revision['status']=='ok','Bundled second revision failed')
                 _, case_status=call('case_status',dict(case_dir=str(case_project)))
+                check(case_status.get('result') is not None, 'Second revision status failed: '+json.dumps(case_status,ensure_ascii=True))
                 check(case_status['result']['revision_count']==2 and case_status['result']['declared_acceptance']=='incomplete','Revision history or unverified state was lost')
                 for optional in ('cocos_modules','unity_player_audit'):
                     _, unavailable=call('describe_tool',{'tool_id':optional})
@@ -355,7 +357,7 @@ if __name__ == '__main__':
         except ValueError:target=None
         result={'status':'fail','target':target,
                 'archive_sha256':sha256(args.bundle) if args.bundle.is_file() else None,
-                'error':{'type':type(error).__name__,'message':str(error)}}
+                'error':{'type':type(error).__name__,'message':str(error),'traceback':traceback.format_exc()}}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_bytes(encoded(result))
     print(json.dumps({'status':result['status'],'target':result['target'],

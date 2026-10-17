@@ -4,7 +4,6 @@ Hashes establish file identity; roles, platforms and run IDs remain explicit
 reviewer declarations. This module never runs the inspected game or test suite.
 """
 from grea.host.paths import Path
-import time
 import uuid
 
 from .common import GreaError, digest, now, write_new
@@ -107,7 +106,7 @@ def check_revision(root, case, revision):
 
 def start(case_dir, candidate_root, candidate_files, platform, qa_profile, build_manifest=None,
           build_id=None, source=None, mode=None, required_dimensions_override=None):
-    from .cases import locate, locked, load_case
+    from .cases import locate, locked, load_case, next_order
     root = locate(case_dir)
     with locked(root):
         case = load_case(root)
@@ -134,7 +133,7 @@ def start(case_dir, candidate_root, candidate_files, platform, qa_profile, build
                      required_dimensions=dims, candidate=dict(content, root=str(candidate_path), project_relative=relative, selections=candidate_files),
                      build_manifest=identity(root.parent, build_manifest) if build_manifest else None,
                      build_id=build_id, platform=platform, qa_profile=qa_profile,
-                     created_at=now(), order_ns=time.time_ns(), nonce=uuid.uuid4().hex)
+                     created_at=now(), order_ns=next_order(root, 'revisions', 'rev_'), nonce=uuid.uuid4().hex)
         value['id'] = 'rev_' + digest(value)
         (root / 'revisions').mkdir(exist_ok=True)
         write_new(root / 'revisions' / (value['id'] + '.json'), value)
@@ -204,7 +203,7 @@ def validate_claim(root, case, revision, dimension, status, evidence_ids):
 
 
 def record(case_dir, dimension, status, evidence_ids, note, revision_id=None):
-    from .cases import locate, locked, load_case
+    from .cases import locate, locked, load_case, next_order
     root = locate(case_dir)
     with locked(root):
         case = load_case(root)
@@ -216,7 +215,7 @@ def record(case_dir, dimension, status, evidence_ids, note, revision_id=None):
         validate_claim(root, case, revision, dimension, status, evidence_ids)
         value = dict(case_id=case['case_id'], revision_id=revision['id'] if revision else None,
                      dimension=dimension, status=status, evidence_ids=evidence_ids, note=note,
-                     created_at=now(), order_ns=time.time_ns(), nonce=uuid.uuid4().hex, authority='reviewer_assertion')
+                     created_at=now(), order_ns=next_order(root, 'verifications', 'vr_'), nonce=uuid.uuid4().hex, authority='reviewer_assertion')
         value['id'] = 'vr_' + digest(value)
         write_new(root / 'verifications' / (value['id'] + '.json'), value)
     return dict(verification=value, executed_tests=False)
