@@ -4,6 +4,7 @@ import argparse
 import ast
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -94,12 +95,14 @@ def prepare(tag, out, require_tag=False):
                 'package_version':package,'prerelease':prerelease,'source_revision':sha,
                 'source_dirty':False,'plugin_targets':[],'artifacts':[],
                 'validation':{'plugin_acceptances':{},'client_acceptances':{},
+                              'workflow':'.github/workflows/release.yml',
+                              'workflow_run':('https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']) if all(os.environ.get(k) for k in ('GITHUB_REPOSITORY','GITHUB_RUN_ID')) else None,
                               'windows_desktop_unity_player_performance':'not_run: excluded by user scope'}}
     write_manifest(out,manifest)
     (out/'release-notes.md').write_text(
         f'grea {tag}\n\n'+('预发行版本。' if prerelease else '正式版本。')+
         f'版本 `{package}`，源码提交 `{sha}`。\n\n'
-        '本次修复 Windows 隔离环境的工具启动，完善原生进程归属及清理；统一文档导航与平台验证证据。'
+        '本次修复 Windows 隔离环境中 DOS NUL 访问拒绝与规范路径查询失败：以匿名管道 EOF 提供标准输入，在 AppContainer 下使用规范 NT 卷路径，保留源码读取、联网和安装写入限制及 Job 进程清理。统一六份核心文档导航与按工具 ID 的验证索引。'
         '安装附件收敛为 macOS ARM64、Windows x64 两个完整插件，均自带 Python、MCP、8 个技能、参考和许可证。'
         '不再发布独立 Skill ZIP 或自定义源码 ZIP；源码由 GitHub 自动下载提供。\n\n'
         'Windows x64 通过 Windows Server 原生 CI、隔离工具执行、重复构建及临时 Codex 安装发现验证。'

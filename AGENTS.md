@@ -5,7 +5,7 @@
 - 开始确认 Git 根目录为当前 grea 仓库；安装、测试和文档命令默认从本仓库根执行。
 - CLI／MCP 共用 src/grea 应用层；公共契约在 contracts.py，工具与平台要求在 registry.json，schemas 由脚本生成。
 - 现有兼容入口共用实现，不建立另一套业务逻辑。第三方源码、许可和历史验证不得为统一格式而批量改写。
-- 技能规范在 plugin/（skills/<技能>/SKILL.md 与 references/、共享参考 shared/、两种客户端清单及 launcher/ 启动薄层）；Python 产品实现放 src/grea/（通用工具模块在 src/grea/tools/），其他技术栈源码放 tools/，测试放 tests/，仓库维护脚本放 scripts/；第三方专题说明放 docs/providers/。独立运行时由 plugin/runtime-lock.json 锁定、构建进制品，不提交二进制。平台模拟、原生测试、游戏验收分别报告。
+- 技能规范在 plugin/（skills/<技能>/SKILL.md 与 references/、共享参考 shared/、两种客户端清单及 launcher/ 启动薄层）；Python 产品实现放 src/grea/（通用工具模块在 src/grea/tools/），其他技术栈源码放 tools/，测试放 tests/，仓库维护脚本放 scripts/；第三方专题说明放 docs/providers/。独立运行时分别由 plugin/runtime-lock.json 与 plugin/runtime-windows-x64.lock.json 锁定、构建进制品，不提交二进制。平台模拟、原生测试、游戏验收分别报告。
 - 游戏项目、工作区 memory、用户 .agents／.codex 配置位于仓库外，不是本仓库维护或发布内容。可选接入见 docs/安装与平台.md。
 - 本机依赖、第三方二进制、包备份与凭据不得提交；公开树不使用 Git LFS。提交推送依当前用户授权执行。
 
