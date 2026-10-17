@@ -127,7 +127,7 @@ class BundleTests(unittest.TestCase):
             (tree/'plugin-manifest.json').write_bytes(plugin_bundle.encoded(manifest))
             from plugin_targets import archive_name
             archive=staging/archive_name(target);plugin_bundle.write_archive(tree,archive,identity['source_timestamp'])
-            report={'status':'pass','target':target,'archive_sha256':plugin_bundle.sha256(archive),
+            report={'status':'pass','version':'2026.10.13rc1','source_kind':'commit','target':target,'archive_sha256':plugin_bundle.sha256(archive),
                     'source_tree_sha256':identity['source_tree_sha256'],
                     'clients':{c:{'status':'pass'} for c in ('codex','claude')},
                     'isolation':{key:True for key in plugin_release.ISOLATION}}
@@ -135,11 +135,11 @@ class BundleTests(unittest.TestCase):
             layers={k:{'status':'pass'} for k in ('version','entrypoint','install','registration','initialize','skills','tools','installed_session')}
             layers['skills']['count']=8;layers['tools']['count']=21
             layers['installed_session']['version']='2026.10.13rc1'
-            client={'status':'pass','archive_sha256':report['archive_sha256'],'version':'2026.10.13rc1',
+            client={'target':target,'temporary_directory_removed':True,'isolation':{'independent_child_configuration':True,'credential_environment_inherited':False},'status':'pass','archive_sha256':report['archive_sha256'],'version':'2026.10.13rc1',
                     'source_tree_sha256':identity['source_tree_sha256'],'model_requests_sent':0,
                     'clients':{'codex':{'status':'pass','layers':layers}}}
             (staging/'client-acceptance.json').write_bytes(plugin_bundle.encoded(client))
-            for key,bad in [('status','blocked'),('archive_sha256','bad'),('source_tree_sha256','bad'),('target','wrong')]:
+            for key,bad in [('status','blocked'),('archive_sha256','bad'),('source_tree_sha256','bad'),('target','wrong'),('version','old'),('source_kind','worktree-preview')]:
                 altered=dict(report);altered[key]=bad;(staging/'bad.json').write_bytes(plugin_bundle.encoded(altered))
                 with self.assertRaises(ValueError):plugin_release.validate(archive,staging/'bad.json',source,'2026.10.13rc1',identity['source_revision'])
             for key,bad in [('version','old'),('archive_sha256','bad'),('source_tree_sha256','bad'),('model_requests_sent',1)]:
