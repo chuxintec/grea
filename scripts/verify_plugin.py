@@ -25,10 +25,10 @@ def client_command(root, client):
     if client == 'codex':
         value = json.loads((root/'.mcp.json').read_text(encoding='utf-8'))['mcpServers']['grea']
         cwd = (root/value.get('cwd', '.')).resolve()
-        command = (root/value['command']).resolve()
+        command = (root/value['command']).absolute()
     elif client == 'claude':
         value = json.loads((root/'.claude-plugin/plugin.json').read_text(encoding='utf-8'))['mcpServers']['grea']
-        command = Path(value['command'].replace('${CLAUDE_PLUGIN_ROOT}', str(root))).resolve()
+        command = Path(value['command'].replace('${CLAUDE_PLUGIN_ROOT}', str(root))).absolute()
         cwd = root
     else:
         raise ValueError('Unknown client')
@@ -137,6 +137,10 @@ def acceptance(bundle):
         (base/'initial/grea').rename(root)
         work = base/'empty workspace'; work.mkdir()
         home = base/'clean home'; home.mkdir()
+        if windows:
+            from windows_drive_views import TemporaryDrives
+            views=stack.enter_context(TemporaryDrives(root,work,home))
+            root,work,home=views.paths
         env = {'HOME': str(home), 'PATH':'/usr/bin:/bin', 'LANG':'en_US.UTF-8', 'TMPDIR':str(work)}
         prefix = [] if windows else sandbox_prefix(root, work)
         if windows:
@@ -324,6 +328,7 @@ finally:child.settle();child.close()
                 'source_kind':manifest['source_kind'], 'clients':results,
                 'isolation_probe_errors':isolated.stderr.strip().splitlines(),
                 'path_resolution':path_resolution,
+                'filesystem_view':'Temporary user-session drives to owned test trees; exact-target cleanup on exit' if windows else 'owned temporary directories',
                 'network_control':'Exact live loopback TCP listener reachable before and after boxed denial/timeout; no model or application data sent',
                 'verified_tool_ids':['static_asset_copy','cocos_assets','unity_native_exit','unity_config_candidate','unity_native_assets','evidence_manifest','config_preflight','presentation_audit','performance_compare'],
                 'verified_operations':['session','plan_workflow','run_tool','init_case','start_case_revision','case_status'],
