@@ -71,12 +71,19 @@ class OwnedProcess:
         self.returncode=None; self.args=argv
         self.k=api(); k=self.k; self.job=None; self.handle=None
         self.stdin=self.stdout=self.stderr=None; handles=[]; attrs=None; attrs_ready=False; info=ProcessInfo()
+        stage="initialization"
         def require(ok):
-            if not ok:raise c.WinError(c.get_last_error())
+            if not ok:
+                error=c.WinError(c.get_last_error())
+                error.strerror=f"{stage}: {error.strerror}"
+                raise error
         try:
+            stage='CreateJobObjectW'
             self.job=k.CreateJobObjectW(None,None);require(self.job)
+            stage='SetInformationJobObject'
             limits=ExtendedLimits();limits.basic.flags=0x2000 # KILL_ON_JOB_CLOSE
             require(k.SetInformationJobObject(self.job,9,c.byref(limits),c.sizeof(limits)))
+            stage='CreatePipe'
             security=Security(c.sizeof(Security),None,True)
             pipes=[]
             for _ in range(2):
@@ -84,6 +91,7 @@ class OwnedProcess:
                 require(k.CreatePipe(c.byref(read),c.byref(write),c.byref(security),0))
                 handles.extend([read.value,write.value]);require(k.SetHandleInformation(read,1,0))
                 pipes.append((read.value,write.value))
+            stage='CreateFileW(NUL)'
             nul=k.CreateFileW('NUL',0x80000000,3,c.byref(security),3,0,None)
             require(nul not in (None,w.HANDLE(-1).value));handles.append(nul)
             input_pipe=None
@@ -92,6 +100,7 @@ class OwnedProcess:
                 require(k.CreatePipe(c.byref(read),c.byref(write),c.byref(security),0))
                 handles.extend([read.value,write.value]);require(k.SetHandleInformation(write,1,0))
                 input_pipe=(read.value,write.value)
+            stage='process attributes'
             attribute_count=2 if capabilities is not None else 1
             size=SIZE();k.InitializeProcThreadAttributeList(None,attribute_count,0,c.byref(size))
             attrs=c.create_string_buffer(size.value)
@@ -105,9 +114,12 @@ class OwnedProcess:
             environment=dict(os.environ if env is None else env)
             block=c.create_unicode_buffer('\0'.join(f'{key}={value}' for key,value in sorted(environment.items(),key=lambda p:p[0].upper()))+'\0\0')
             command=c.create_unicode_buffer(subprocess.list2cmdline(argv))
+            stage='CreateProcessW'
             require(k.CreateProcessW(None,command,None,None,True,0x4|0x80000|0x400|0x08000000,block,str(cwd),c.byref(startup),c.byref(info)))
             self.handle=info.process;self.pid=info.pid
+            stage='AssignProcessToJobObject'
             require(k.AssignProcessToJobObject(self.job,info.process))
+            stage='ResumeThread'
             if k.ResumeThread(info.thread)==0xffffffff:raise c.WinError(c.get_last_error())
             if interactive:
                 fd=msvcrt.open_osfhandle(input_pipe[1],os.O_WRONLY|os.O_BINARY);handles.remove(input_pipe[1])
