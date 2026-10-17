@@ -29,7 +29,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
+      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
     },
     {
       "source": "docs/Skill构建与安装.md",
@@ -111,7 +111,7 @@
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
       "status": "retained_with_reason",
-      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/.DS_Store",
+      "resolved_target": null,
       "execution_note": "Ignored OS metadata, not tracked or distributed; left local untouched."
     },
     {
@@ -485,7 +485,7 @@
       "status": "retained_with_reason",
       "resolved_target": "docs/providers/README.md",
       "execution_note": "Scoped format/tool contract retained.",
-      "target_sha256": "9f8262df7a96b6ddb8d5f843083aeb34b3360b8af147cbc5f0711cab4fa012ee"
+      "target_sha256": "7a5d0ac393e604ee3f76e369e7504938932a52b91be32ab7da396beaaae4936c"
     },
     {
       "source": "docs/providers/android-emulator-provenance.json",
@@ -820,7 +820,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
+      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
     },
     {
       "source": "docs/兼容与迁移指南.md",
@@ -844,7 +844,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
+      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
     },
     {
       "source": "docs/工具集成与平台支持.md",
@@ -868,7 +868,7 @@
       "status": "retained_with_reason",
       "resolved_target": "docs/接口与证据说明.md",
       "execution_note": "Scoped format/tool contract retained.",
-      "target_sha256": "5d51d6c1a684f3bfefc65e254a20de5681d69ddd050b97f0d20e0f71f51213c4"
+      "target_sha256": "81395c5340d9e640c5c82291c769b6450cef0b1e469155275cd01453a748f9ba"
     },
     {
       "source": "docs/架构设计.md",
@@ -880,7 +880,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
+      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
     },
     {
       "source": "docs/维护指南.md",
@@ -892,7 +892,7 @@
       "status": "executed",
       "resolved_target": "docs/维护与发布.md",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
+      "target_sha256": "fc730aed3a6bfc0b45c080db64d7f1ea16e6e2f7acf523595abf5caac564e181"
     },
     {
       "source": "docs/路径迁移表.json",
@@ -921,12 +921,20 @@
   ],
   "new_documents": [
     "docs/README.md",
-    "docs/安装与平台.md",
-    "docs/使用指南.md",
     "docs/Unity指南.md",
-    "docs/维护与发布.md",
+    "docs/providers/windows-native.md",
+    "docs/使用指南.md",
+    "docs/安装与平台.md",
     "docs/故障排查.md",
-    "validation/README.md",
-    "proposals/numeric-template.md"
-  ]
+    "docs/维护与发布.md",
+    "proposals/numeric-template.md",
+    "validation/README.md"
+  ],
+  "current_counts": {
+    "public_docs_files": 24,
+    "public_markdown": 22,
+    "daily_top_level_markdown": 7,
+    "immutable_reports_preserved": 15,
+    "ignored_os_metadata_retained": 2
+  }
 }

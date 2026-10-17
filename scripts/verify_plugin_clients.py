@@ -37,7 +37,7 @@ def isolated_environment(root):
     if os.name=='nt':
         env.update(SystemRoot=os.environ['SystemRoot'],PATH=str(Path(os.environ['SystemRoot'])/'System32'),USERPROFILE=env['HOME'],TEMP=env['TMPDIR'],TMP=env['TMPDIR'],PYTHONUTF8='1',
                    LOCALAPPDATA=str(root/'local-app-data'),APPDATA=str(root/'roaming-app-data'))
-        Path(env['LOCALAPPDATA']).mkdir();Path(env['APPDATA']).mkdir()
+        Path(env['LOCALAPPDATA']).mkdir(exist_ok=True);Path(env['APPDATA']).mkdir(exist_ok=True)
     return env
 
 
