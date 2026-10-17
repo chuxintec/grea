@@ -109,6 +109,9 @@ def install_dependencies(tree, cache, lock):
                     '-r', str(tree/'runtime-requirements.txt')], env=env, check=True, stdout=sys.stderr)
     # Console wrappers embed build paths. grea uses modules and the bundled interpreter.
     shutil.rmtree(site/'bin', ignore_errors=True)
+    # Windows console wrappers use Scripts/, not bin/. The runtime is invoked directly.
+    shutil.rmtree(tree/'runtime/Scripts',ignore_errors=True)
+    shutil.rmtree(site/'Scripts',ignore_errors=True)
     for path in sorted((tree/'runtime').rglob('*'), reverse=True):
         if path.is_file() and (path.suffix == '.pyc' or path.name == 'uv_cache.json'):
             path.unlink()
@@ -141,6 +144,7 @@ def normalize_records(site, runtime, upstream_files=None):
             if runtime not in path.parents: raise ValueError('Wheel RECORD escapes runtime')
             if not path.is_file():
                 pruned = (site/'bin' in path.parents or runtime/'bin' in path.parents
+                          or runtime/'Scripts' in path.parents or site/'Scripts' in path.parents
                           or '__pycache__' in path.parts or path.name == 'uv_cache.json')
                 if not pruned: raise ValueError('Missing installed dependency file: ' + name)
                 continue

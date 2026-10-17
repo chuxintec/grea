@@ -36,3 +36,14 @@ class TargetTests(unittest.TestCase):
  def test_case_and_unicode_parent_collisions_are_refused(self):
   for names in (['grea/A/x','grea/a/y'],['grea/é/a','grea/e\u0301/b']):
    with self.assertRaises(ValueError):plugin_bundle.portable_names(names)
+
+ def test_only_console_script_records_may_be_pruned(self):
+  import csv
+  with tempfile.TemporaryDirectory() as tmp:
+   runtime=Path(tmp)/'runtime';site=runtime/'Lib/site-packages';info=site/'pip.dist-info';info.mkdir(parents=True)
+   record=info/'RECORD'
+   record.write_text('../../Scripts/pip.exe,,\n',encoding='utf-8')
+   build_plugin.normalize_records(site,runtime)
+   self.assertEqual(record.read_text(),'')
+   record.write_text('missing_runtime_library.py,,\n',encoding='utf-8')
+   with self.assertRaises(ValueError):build_plugin.normalize_records(site,runtime)
