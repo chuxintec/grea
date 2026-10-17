@@ -202,6 +202,22 @@ print(','.join(blocked))
                 (source/'sample.txt').write_text('portable core', encoding='utf-8')
                 output = work/(client+' copied')
                 _, copied = call('run_tool', {'tool_id':'static_asset_copy', 'arguments':['--source',str(source),'--output',str(output),'--map','sample.txt=renamed.txt'], 'run_dir':str(work/(client+' copy receipt'))})
+                if windows and copied['status']!='ok':
+                    diagnosis="""import pathlib,sys,traceback,subprocess
+p=pathlib.Path(sys.argv[1]);sys.path.insert(0,sys.argv[2])
+for label,fn in [('stat',p.stat),('resolve',lambda:p.resolve(strict=True)),('list',lambda:list(p.iterdir())),('read',lambda:(p/'sample.txt').read_bytes())]:
+ try:print(label,repr(fn()),flush=True)
+ except Exception:traceback.print_exc()
+code='import pathlib,sys;from grea.tools.static_asset_copy import copy_assets;print(copy_assets(sys.argv[1],sys.argv[2],["sample.txt=x.txt"]))'
+from grea.host.windows_process import OwnedProcess
+child=OwnedProcess([sys.executable,'-c',code,str(p),str(p.parent/'diagnosis-copy')],p.parent)
+try:print('nested',child.communicate(timeout=10),flush=True)
+finally:child.settle();child.close()
+"""
+                    diagnosed=native_run([str(python),'-I','-B','-c',diagnosis,str(source),str(root/'src')],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
+                    print('Windows owned fixture diagnosis:',diagnosed.stdout,diagnosed.stderr,flush=True)
+                    acl=subprocess.run([str(Path(os.environ['SystemRoot'])/'System32/icacls.exe'),str(source)],capture_output=True,text=True,encoding='utf-8')
+                    print('Fixture ACL:',acl.stdout,acl.stderr,flush=True)
                 check(copied['status'] == 'ok' and (output/'renamed.txt').read_text(encoding='utf-8') == 'portable core', 'Bundled tool subprocess failed: '+json.dumps(copied,ensure_ascii=True))
                 _, legacy = call('run_tool', {'tool_id':'validate_unity_project','arguments':['--help'], 'run_dir':str(work/(client+' legacy receipt'))})
                 check(legacy['status'] == 'ok', 'Legacy launch.py did not use bundled Python')
