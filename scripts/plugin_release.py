@@ -75,6 +75,7 @@ def validate_client(report, archive, target, version, name=None):
     required=('version','entrypoint','install','registration','initialize','skills','tools','installed_session')
     if client.get('status')!='pass' or any(client.get('layers',{}).get(k,{}).get('status')!='pass' for k in required):
         raise ValueError('Native Codex installation/discovery incomplete')
+    if client['layers']['installed_session'].get('version')!=version:raise ValueError('Installed session version mismatch')
     if client['layers']['skills'].get('count')!=8 or client['layers']['tools'].get('count')!=21:
         raise ValueError('Native Codex catalog incomplete')
     if manifest['target']!=target:raise ValueError('Native client target mismatch')

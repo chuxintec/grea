@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Version-gated source bundles and resumable GitHub releases (Python 3.11+)."""
+"""Version-gated complete native plugins and resumable GitHub releases (Python 3.11+)."""
 import argparse
 import ast
 import hashlib
