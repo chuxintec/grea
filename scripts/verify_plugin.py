@@ -277,6 +277,13 @@ print(','.join(blocked))
                                    'checks':['initialize','catalog_parity','session','bundled_workflow','core_subprocess',
                                              'evidence_manifest','config_preflight','presentation_audit','performance_compare','case_revision_invalidation','legacy_launch','cocos_core_subprocess','native_exit_core_subprocess','typed_config_core_subprocess','native_authoring_core_subprocess','optional_ast_cecil_missing','structured_failure','external_provider_missing']}
             finally: rpc.close()
+        if windows:
+            # The business fixtures receive explicit ACLs only in owned writable
+            # trees; re-prove all denials after every such grant has happened.
+            socket.create_connection(endpoint,timeout=3).close()
+            final_probe=native_run([str(python),'-I','-B','-c',probe,str(ROOT/'registry.json'),str(root/'forbidden'),str(endpoint[1]),'controlled-windows'],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
+            socket.create_connection(endpoint,timeout=3).close()
+            check(final_probe.returncode==0 and final_probe.stdout.strip()=='source,install_write,network','Restrictions changed after fixture ACL refresh: '+final_probe.stderr)
         check(inventory(root,target) == before, 'Installed plugin changed during use')
         return {'status':'pass', 'target':target, 'version':manifest['version'],
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
