@@ -33,7 +33,7 @@ class SkillDistributionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp).resolve();a=root/'a.zip';b=root/'b.zip';stamp=datetime(2026,10,13,tzinfo=timezone.utc)
             build_skill.write_archive(a,files,stamp);build_skill.write_archive(b,files,stamp);self.assertEqual(a.read_bytes(),b.read_bytes())
-            build_skill.verify_archive(a,files,root/'unrelated');actual={str(p.relative_to(root/'unrelated')):p.read_bytes() for p in (root/'unrelated').rglob('*') if p.is_file()}
+            build_skill.verify_archive(a,files,root/'unrelated');actual={p.relative_to(root/'unrelated').as_posix():p.read_bytes() for p in (root/'unrelated').rglob('*') if p.is_file()}
             build_skill.validate_local_links(actual);self.assertEqual(actual,files)
             with self.assertRaises(ValueError):build_skill.verify_archive(a,files,root/'unrelated')
     def test_version_missing_link_and_local_escape_rejected(self):

@@ -1,3 +1,4 @@
+import sys
 import asyncio,json,subprocess,tempfile,unittest
 from pathlib import Path
 from mcp import Client
@@ -8,7 +9,7 @@ from grea.contracts import catalog,ENVELOPE_SCHEMA
 
 class MCPTests(unittest.IsolatedAsyncioTestCase):
     async def test_stdio_catalog_parity_success_and_failure(self):
-        root=package_root();client=Client(StdioServerParameters(command=str(root/'bin/grea'),args=['mcp']),read_timeout_seconds=20)
+        root=package_root();client=Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=20)
         async with client:
             listing=await client.list_tools()
             self.assertEqual({t.name for t in listing.tools},{t['name'] for t in catalog()})
@@ -17,7 +18,7 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
                 result=await client.call_tool(name,args)
                 actual=result.structured_content
                 Draft202012Validator(ENVELOPE_SCHEMA).validate(actual)
-                cli=subprocess.run([str(root/'bin/grea'),name.replace('_','-'),json.dumps(args)],capture_output=True,text=True)
+                cli=subprocess.run([sys.executable,str(root/'launch.py'),name.replace('_','-'),json.dumps(args)],capture_output=True,text=True)
                 expected=json.loads(cli.stdout)
                 self.assertEqual(actual['status'],expected['status'])
                 self.assertEqual(actual['result'],expected['result'])
@@ -30,7 +31,7 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_stdio_case_and_typed_helper(self):
         root=package_root()
-        async with Client(StdioServerParameters(command=str(root/'bin/grea'),args=['mcp']),read_timeout_seconds=20) as client:
+        async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=20) as client:
             with tempfile.TemporaryDirectory() as d:
                 base=Path(d);source=base/'source.apk';source.write_bytes(b'fixture')
                 result=await client.call_tool('init_case',{'project_dir':d,'source':str(source),'mode':'fix'})

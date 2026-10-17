@@ -70,7 +70,7 @@ class OwnedProcess:
         import msvcrt
         self.returncode=None; self.args=argv
         self.k=api(); k=self.k; self.job=None; self.handle=None
-        self.stdin=self.stdout=self.stderr=None; handles=[]; attrs=None; info=ProcessInfo()
+        self.stdin=self.stdout=self.stderr=None; handles=[]; attrs=None; attrs_ready=False; info=ProcessInfo()
         def require(ok):
             if not ok:raise c.WinError(c.get_last_error())
         try:
@@ -95,7 +95,7 @@ class OwnedProcess:
             attribute_count=2 if capabilities is not None else 1
             size=SIZE();k.InitializeProcThreadAttributeList(None,attribute_count,0,c.byref(size))
             attrs=c.create_string_buffer(size.value)
-            require(k.InitializeProcThreadAttributeList(attrs,attribute_count,0,c.byref(size)))
+            require(k.InitializeProcThreadAttributeList(attrs,attribute_count,0,c.byref(size)));attrs_ready=True
             inherited=(w.HANDLE*3)(input_pipe[0] if interactive else nul,pipes[0][1],pipes[1][1])
             require(k.UpdateProcThreadAttribute(attrs,0,0x20002,inherited,c.sizeof(inherited),None,None))
             if capabilities is not None:
@@ -125,7 +125,7 @@ class OwnedProcess:
             raise
         finally:
             if info.thread:k.CloseHandle(info.thread)
-            if attrs:k.DeleteProcThreadAttributeList(attrs)
+            if attrs_ready:k.DeleteProcThreadAttributeList(attrs)
             for handle in handles:k.CloseHandle(handle)
 
     def poll(self):

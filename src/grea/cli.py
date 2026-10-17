@@ -14,6 +14,9 @@ def legacy_main(tool_id,arguments):
     except GreaError as e:print(e.code+': '+str(e),file=sys.stderr);return 2
 
 def main():
+    if os.name=='nt':
+        for stream in (sys.stdin,sys.stdout,sys.stderr):
+            if hasattr(stream,'reconfigure'):stream.reconfigure(encoding='utf-8')
     p=argparse.ArgumentParser(prog='grea',description='Game Reverse Engineering and Assembly: Unity evidence, recovery tools, workflows and MCP.')
     p.add_argument('--version',action='version',version=__version__)
     sub=p.add_subparsers(dest='operation',required=True)

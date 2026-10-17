@@ -60,7 +60,7 @@ def redact(value, paths=None):
 
 def stop_group(process):
     if os.name=='nt':
-        if process.job:process.settle()
+        if process.job:process.settle();process.wait(timeout=2)
         return
     # Also stop MCP descendants when the client has already exited.
     for sig, timeout in [(signal.SIGTERM, .5), (signal.SIGKILL, 2)]:

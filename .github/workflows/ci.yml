@@ -37,6 +37,19 @@ jobs:
       - run: .venv/bin/python scripts/check_semantic_docs.py
       - run: .venv/bin/python -m unittest discover -s tests -v
       - run: ./bin/grea legacy check_grea_skill --workspace-root . --json
+      - name: Build and verify source/documentation candidate closure
+        if: runner.os == 'Linux'
+        run: |
+          candidate_tag="$(.venv/bin/python -c 'import tomllib,re; v=tomllib.load(open("pyproject.toml","rb"))["project"]["version"]; print("v"+re.sub(r"rc([0-9]+)$",r"-rc\1",v))')"
+          .venv/bin/python scripts/release.py prepare --tag "$candidate_tag" --out dist/source-candidate
+          .venv/bin/python scripts/release.py verify --tag "$candidate_tag" --out dist/source-candidate --extract "$RUNNER_TEMP/source-closed" --extract-skill "$RUNNER_TEMP/skill-closed"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: runner.os == 'Linux'
+        with:
+          name: source-candidate-${{ github.sha }}
+          path: dist/source-candidate/*
+          if-no-files-found: error
+          retention-days: 14
 
   python-minimum:
     runs-on: ubuntu-24.04
@@ -79,6 +92,11 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   windows-native:
+    timeout-minutes: 15
+    env:
+      GREA_ASSEMBLY_AUDIT_INTEGRATION: "1"
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: "false"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -92,6 +110,11 @@ jobs:
       - run: npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
       - shell: cmd
         run: bin\grea.cmd session
+      - name: Build optional locked Cecil provider for native tests
+        run: |
+          dotnet restore tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --locked-mode
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore --configuration Release
       - run: .venv/Scripts/python.exe -X utf8 -m unittest discover -s tests -v
       - run: .venv/Scripts/python.exe scripts/check_docs.py
 

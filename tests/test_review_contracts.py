@@ -33,7 +33,7 @@ class ReviewContractTests(unittest.TestCase):
             entry = registry.tool('jadx')
             self.assertEqual(registry.presence(entry)['state'],'unavailable')
             exe = self.root/'jadx';exe.write_text('#!/bin/sh\nexit 0\n');exe.chmod(0o755)
-            with patch('grea.registry.command',return_value=['/registered/mac-wrapper']):report=registry.presence(entry)
+            with patch('grea.registry.command',return_value=['/registered/mac-wrapper']),patch('grea.registry.os.access',return_value=True):report=registry.presence(entry)
             self.assertEqual(report['state'],'detected');self.assertEqual(report['executable'],str(exe))
 
     def test_session_explicit_skill_compatibility(self):

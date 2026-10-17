@@ -125,13 +125,13 @@ class GreaTests(unittest.TestCase):
             r=self.call('run_tool',{'tool_id':'fixture','arguments':[],'run_dir':str(self.root/'large'),'max_output_bytes':1024})
             self.assertEqual(r['error']['code'],'OUTPUT_LIMIT',r);self.assertLessEqual((self.root/'large/stdout.log').stat().st_size,1024)
     def test_cli_json_failure(self):
-        p=subprocess.run([str(CLI),'session','{"extra":1}'],capture_output=True,text=True,cwd=tempfile.gettempdir())
+        p=subprocess.run([sys.executable,str(ROOT/'launch.py'),'session','{"extra":1}'],capture_output=True,text=True,cwd=tempfile.gettempdir())
         self.assertEqual(p.returncode,2);self.assertEqual(json.loads(p.stdout)['error']['code'],'INVALID_ARGUMENTS')
 
     def test_typed_cli_paths_resolve_from_caller(self):
         self.artifact('a.jsonl',b'{"value":1}\n');self.artifact('b.jsonl',b'{"value":1}\n')
         request={'before':'a.jsonl','after':'b.jsonl','fields':['/value'],'run_dir':'run'}
-        p=subprocess.run([str(CLI),'compare-gameplay-traces',json.dumps(request)],capture_output=True,text=True,cwd=self.root)
+        p=subprocess.run([sys.executable,str(ROOT/'launch.py'),'compare-gameplay-traces',json.dumps(request)],capture_output=True,text=True,cwd=self.root)
         result=json.loads(p.stdout)
         self.assertEqual(p.returncode,0,result)
         self.assertEqual(result['status'],'ok')
