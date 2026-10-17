@@ -182,15 +182,19 @@ print(','.join(blocked))
             resolution_code="""import sys,json,os,pathlib
 sys.path.insert(0,sys.argv[1])
 from grea.host.paths import Path,in_appcontainer
+from grea.host.files import temporary_directory
 p=Path(sys.argv[2]);canonical=p.resolve(strict=True)
 assert in_appcontainer() and os.path.samefile(p,canonical)
 assert (p/'missing'/'child').resolve().parent.parent==canonical
+with temporary_directory(prefix='grea-private-',dir=p) as created:
+ marker=Path(created)/'write.txt';marker.write_text('private');assert marker.read_text()=='private'
+assert not Path(created).exists()
 try:pathlib.Path(p).resolve(strict=True);dos='available'
 except PermissionError as e:dos=str(e.winerror)
-print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volume_query=dos,roundtrip=True)))
+print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volume_query=dos,roundtrip=True,private_directory_write_and_cleanup=True)))
 """
             resolved=native_run([str(python),'-I','-B','-c',resolution_code,str(root/'src'),str(work)],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
-            check(resolved.returncode==0,'Lowbox canonical path regression: '+resolved.stderr)
+            check(resolved.returncode==0,'Lowbox canonical path/private directory regression: '+resolved.stderr)
             path_resolution=json.loads(resolved.stdout)
         catalog = native_run([*prefix, *([str(python),'-I','-B',str(root/'plugin/launcher/start.py')] if windows else [str(root/'bin/grea')]), 'catalog'], env=env, cwd=work,
                                  capture_output=True, text=True, encoding='utf-8', timeout=20,security=security)
@@ -289,10 +293,10 @@ finally:child.settle();child.close()
                 case_source=case_project/'source.bin';case_source.write_bytes(b'owned source')
                 candidate=case_project/'candidate.txt';candidate.write_text('revision one', encoding='utf-8')
                 _, initialized_case=call('init_case',dict(project_dir=str(case_project),source=str(case_source),mode='fix',source_engine='unity'))
-                check(initialized_case['status']=='ok','Bundled case creation failed')
+                check(initialized_case['status']=='ok','Bundled case creation failed: '+json.dumps(initialized_case,ensure_ascii=True))
                 revision_args=dict(case_dir=str(case_project),candidate_root=str(case_project),candidate_files=['candidate.txt'],platform='editor',qa_profile='owned-fixture')
                 _, first_revision=call('start_case_revision',revision_args)
-                check(first_revision['status']=='ok','Bundled revision creation failed')
+                check(first_revision['status']=='ok','Bundled revision creation failed: '+json.dumps(first_revision,ensure_ascii=True))
                 _, case_status=call('case_status',dict(case_dir=str(case_project)))
                 check(case_status['status']=='partial' and case_status['result']['candidate_integrity']=='matched'
                       and case_status['result']['declared_acceptance']=='incomplete',

@@ -41,3 +41,15 @@ class VolumeIdentityTests(unittest.TestCase):
    other=Kernel('\\Device\\HarddiskVolume8\\')
    self.assertEqual(final_name(other,1,'C:\\alias\\file'),'\\\\?\\GLOBALROOT\\Device\\HarddiskVolume4\\actual\\file')
    self.assertEqual(matching.closed,[2]);self.assertEqual(other.closed,[2])
+
+
+class PrivateDirectoryTests(unittest.TestCase):
+ def test_private_staging_is_writable_and_cleanup_is_scoped(self):
+  from grea.host.files import temporary_directory
+  with tempfile.TemporaryDirectory() as base:
+   untouched=Path(base)/'keep';untouched.write_text('keep')
+   with temporary_directory(prefix='grea-unit-',dir=base) as tmp:
+    path=Path(tmp);(path/'marker').write_text('private')
+    self.assertEqual((path/'marker').read_text(),'private')
+    if os.name!='nt':self.assertEqual(path.stat().st_mode & 0o077,0)
+   self.assertFalse(path.exists());self.assertEqual(untouched.read_text(),'keep')

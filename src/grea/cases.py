@@ -43,7 +43,8 @@ def init_case(project_dir,source,mode,required_dimensions=None,source_engine='un
     if root.exists() or root.is_symlink():raise GreaError('OUTPUT_EXISTS','Project already has a case; preserve it rather than overwrite.')
     value={'schema_version':2,'task':dict(intent=mode,source_engine=source_engine,engine_version=engine_version,source_format=source_format,target_platform=target_platform,acceptance_profile=acceptance_profile),'created_at':now(),'nonce':uuid.uuid4().hex,'project_dir':str(project.resolve()),'mode':mode,'source':identity,'required_dimensions':dims}
     value['case_id']='case_'+digest(value)
-    stage=Path(tempfile.mkdtemp(prefix='.grea-init-',dir=project.resolve()))
+    from .host.files import private_directory
+    stage=private_directory(project.resolve(),'.grea-init-')
     try:
         (stage/'.lock').touch(exist_ok=False)
         (stage/'evidence').mkdir();(stage/'verifications').mkdir();(stage/'revisions').mkdir()

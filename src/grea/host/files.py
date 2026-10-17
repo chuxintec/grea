@@ -80,3 +80,22 @@ def publish_directory(source, target):
     if call(*args):
         raise GreaError('PUBLICATION_FAILED','Atomic publication refused; staged project retained.',
                         details={'errno':ctypes.get_errno()})
+
+
+def private_directory(parent=None,prefix='grea-'):
+    """Owner-private staging; include the current lowbox SID only when needed."""
+    import tempfile,re
+    from .paths import in_appcontainer
+    if not re.fullmatch(r'[A-Za-z0-9._-]{1,64}',prefix):raise ValueError('Invalid staging prefix')
+    if in_appcontainer():
+        from .windows_security import private_directory as create
+        return create(Path(parent or tempfile.gettempdir()).resolve(strict=True),prefix)
+    return Path(tempfile.mkdtemp(prefix=prefix,dir=parent))
+
+
+@contextlib.contextmanager
+def temporary_directory(prefix='grea-',dir=None):
+    import shutil
+    path=private_directory(dir,prefix)
+    try:yield str(path)
+    finally:shutil.rmtree(path)
