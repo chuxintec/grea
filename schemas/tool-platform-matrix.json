@@ -1,0 +1,1759 @@
+{
+  "schema_version": 1,
+  "tools": [
+    {
+      "id": "7zz",
+      "canonical_id": "7zz",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "adb",
+      "canonical_id": "adb",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "android-emulator-arm32",
+      "canonical_id": "android-emulator-arm32",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "android_emulator_arm32_legacy",
+      "canonical_id": "android-emulator-arm32",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "apktool",
+      "canonical_id": "apktool",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "assembly-sanitizer",
+      "canonical_id": "assembly-sanitizer",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "assetripper",
+      "canonical_id": "assetripper",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "audit_numeric_texture",
+      "canonical_id": "audit_numeric_texture",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "binwalk",
+      "canonical_id": "binwalk",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "blender",
+      "canonical_id": "blender",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "check_game_build_skill",
+      "canonical_id": "check_grea_skill",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "check_grea_skill",
+      "canonical_id": "check_grea_skill",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "cocos_assets",
+      "canonical_id": "cocos_assets",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "cocos_modules",
+      "canonical_id": "cocos_modules",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "compare_events",
+      "canonical_id": "compare_events",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "compare_traces",
+      "canonical_id": "compare_traces",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "config_preflight",
+      "canonical_id": "config_preflight",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "cpp2il",
+      "canonical_id": "cpp2il",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "decode-doctor",
+      "canonical_id": "registry_doctor",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "evidence_manifest",
+      "canonical_id": "evidence_manifest",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "ffmpeg",
+      "canonical_id": "ffmpeg",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "ffprobe",
+      "canonical_id": "ffprobe",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "frida",
+      "canonical_id": "frida",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "generate_unity_project",
+      "canonical_id": "generate_unity_project",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "ghidra",
+      "canonical_id": "ghidra",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "glslangValidator",
+      "canonical_id": "glslangValidator",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "il2cpp-inspector",
+      "canonical_id": "il2cpp-inspector",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "il2cppdumper",
+      "canonical_id": "il2cppdumper",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "ilspy",
+      "canonical_id": "ilspy",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "image_alpha_audit",
+      "canonical_id": "image_alpha_audit",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "jadx",
+      "canonical_id": "jadx",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "laya_contract_audit",
+      "canonical_id": "laya_contract_audit",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "nsis",
+      "canonical_id": "nsis",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "package_windows_portable",
+      "canonical_id": "package_windows_portable",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "performance_compare",
+      "canonical_id": "performance_compare",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "plan_unity_generation",
+      "canonical_id": "plan_unity_generation",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "plan_unity_project",
+      "canonical_id": "plan_unity_project",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "pngquant",
+      "canonical_id": "pngquant",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "presentation_audit",
+      "canonical_id": "presentation_audit",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "read_elf_values",
+      "canonical_id": "read_elf_values",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "recover_unity_generation",
+      "canonical_id": "recover_unity_generation",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "registry_doctor",
+      "canonical_id": "registry_doctor",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "rizin",
+      "canonical_id": "rizin",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "scrcpy",
+      "canonical_id": "scrcpy",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "shader_probe",
+      "canonical_id": "shader_probe",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "spine38",
+      "canonical_id": "spine38",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "spine41",
+      "canonical_id": "spine41",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "spirv-cross",
+      "canonical_id": "spirv-cross",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "spirv-dis",
+      "canonical_id": "spirv-dis",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "spirv-val",
+      "canonical_id": "spirv-val",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "static_asset_copy",
+      "canonical_id": "static_asset_copy",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity-export-assets",
+      "canonical_id": "unity-export-assets",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity-export-config",
+      "canonical_id": "unity-export-config",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_asset_ledger",
+      "canonical_id": "unity_asset_ledger",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_cli",
+      "canonical_id": "unity_cli",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_config_candidate",
+      "canonical_id": "unity_config_candidate",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_dependency_audit",
+      "canonical_id": "unity_dependency_audit",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_native_assets",
+      "canonical_id": "unity_native_assets",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_native_exit",
+      "canonical_id": "unity_native_exit",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_package_backup",
+      "canonical_id": "unity_package_backup",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_pilot",
+      "canonical_id": "unity_pilot",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_pipeline",
+      "canonical_id": "unity_pipeline",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_player_audit",
+      "canonical_id": "unity_player_audit",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unity_reference",
+      "canonical_id": "unity_reference",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unitypy",
+      "canonical_id": "unitypy",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "unpack_xapk",
+      "canonical_id": "unpack_xapk",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "validate_unity_project",
+      "canonical_id": "validate_unity_project",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "verify_payload_tree",
+      "canonical_id": "verify_payload_tree",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "video_manifest",
+      "canonical_id": "video_manifest",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "video_sheet",
+      "canonical_id": "video_sheet",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "implemented",
+          "requires_provider": false,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "webgl-xxtea-decrypt",
+      "canonical_id": "webgl-xxtea-decrypt",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "wxapkg-decrypt",
+      "canonical_id": "wxapkg-decrypt",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    },
+    {
+      "id": "wxapkg-unpack",
+      "canonical_id": "wxapkg-unpack",
+      "platforms": {
+        "Darwin": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Windows": {
+          "adapter": "implemented",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        },
+        "Linux": {
+          "adapter": "unsupported",
+          "requires_provider": true,
+          "native_validation": "not_run_per_tool",
+          "verification_scope": "See run-specific native CI and business reports; declarations are not proof."
+        }
+      }
+    }
+  ],
+  "count": 73,
+  "scope": "Static routing declarations, no probes or native/business success inference."
+}

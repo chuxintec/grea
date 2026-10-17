@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "base_commit": "3d1a2be71292696ecc910523f33e949c160e3927",
-  "scope": "docs inventory before adding this plan; proposals only, no document removal executed",
+  "scope": "Executed document dispositions; original sha256 fields are immutable input identities.",
   "counts": {
     "files": 77,
     "markdown": 51,
@@ -15,7 +15,9 @@
       "action": "manual_review",
       "target": null,
       "reason": "不得依据文件名直接删除，先确认当前引用与所有权",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": null,
+      "execution_note": "Ignored OS metadata, not tracked or distributed; left local untouched."
     },
     {
       "source": "docs/Release自动发布.md",
@@ -24,7 +26,10 @@
       "action": "merge",
       "target": "docs/维护与发布.md",
       "reason": "双平台分支候选验证和将来的发布流程；本任务不发布",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/维护与发布.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
     },
     {
       "source": "docs/Skill构建与安装.md",
@@ -33,7 +38,10 @@
       "action": "merge",
       "target": "docs/安装与平台.md",
       "reason": "统一完整插件/源码/文档包安装与升级回退",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/安装与平台.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
     },
     {
       "source": "docs/Unity参考游戏.md",
@@ -42,7 +50,10 @@
       "action": "merge",
       "target": "docs/Unity指南.md",
       "reason": "参考消费者和实测范围；长过程从当前教程退出",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/Unity指南.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "a4541e8a51e11a54c7d61a6046fdb18f730b9533df1d4e7069be03f172b0393f"
     },
     {
       "source": "docs/Unity工程生成与恢复.md",
@@ -51,7 +62,10 @@
       "action": "merge",
       "target": "docs/Unity指南.md",
       "reason": "统一生成/恢复及所有权，有限能力与实际支持分开",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/Unity指南.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "a4541e8a51e11a54c7d61a6046fdb18f730b9533df1d4e7069be03f172b0393f"
     },
     {
       "source": "docs/Unity框架与通用组件.md",
@@ -60,7 +74,10 @@
       "action": "merge",
       "target": "docs/Unity指南.md",
       "reason": "框架选择与能力索引；细节链接包内README",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/Unity指南.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "a4541e8a51e11a54c7d61a6046fdb18f730b9533df1d4e7069be03f172b0393f"
     },
     {
       "source": "docs/Unity隔离迁移指南.md",
@@ -69,7 +86,10 @@
       "action": "merge",
       "target": "docs/Unity指南.md",
       "reason": "保留隔离/回退操作，不重复恢复规范",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/Unity指南.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "a4541e8a51e11a54c7d61a6046fdb18f730b9533df1d4e7069be03f172b0393f"
     },
     {
       "source": "docs/Unity项目配置与检查.md",
@@ -78,7 +98,10 @@
       "action": "merge",
       "target": "docs/Unity指南.md",
       "reason": "精简到配置/检查入口；必要参数保留到对应实现说明",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/Unity指南.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "a4541e8a51e11a54c7d61a6046fdb18f730b9533df1d4e7069be03f172b0393f"
     },
     {
       "source": "docs/design/.DS_Store",
@@ -87,7 +110,9 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/.DS_Store",
+      "execution_note": "Ignored OS metadata, not tracked or distributed; left local untouched."
     },
     {
       "source": "docs/design/audit-remediation-20261016.md",
@@ -96,7 +121,9 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/audit-remediation-20261016.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/design/project-tool-extraction-20261016.md",
@@ -105,7 +132,9 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/project-tool-extraction-20261016.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/design/projects-experience-20261016.md",
@@ -114,7 +143,9 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/projects-experience-20261016.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/design/unity-framework-extraction-20261016.md",
@@ -123,7 +154,9 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/unity-framework-extraction-20261016.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/design/unity-framework-extraction-inventory.md",
@@ -132,7 +165,9 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/unity-framework-extraction-inventory.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/design/插件运行时集成计划.md",
@@ -141,7 +176,9 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/插件运行时集成计划.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/design/数值战斗模板/Cocos到Unity迁移.md",
@@ -150,7 +187,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/Prefab与配置目录.md",
@@ -159,7 +199,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/README.md",
@@ -168,7 +211,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/evidence.json",
@@ -177,7 +223,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/examples/README.md",
@@ -186,7 +235,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "tests/fixtures/numeric-template-design/README.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "b7bfc36305740fdd18cba2a2443dd50e566ede4e6e392449312b25a815c92faf"
     },
     {
       "source": "docs/design/数值战斗模板/examples/configuration.example.json",
@@ -195,7 +247,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "tests/fixtures/numeric-template-design/configuration.example.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "bec26428bdb236a6faacf0b524f5b8e614ab1d0f376c2d5ef6faf95f624350c5"
     },
     {
       "source": "docs/design/数值战斗模板/examples/expected-flow.example.jsonl",
@@ -204,7 +259,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "tests/fixtures/numeric-template-design/expected-flow.example.jsonl",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "76f4878f869e2f0bdb27350079b628723767e8fd7d06ca22aab7686f890ba4c5"
     },
     {
       "source": "docs/design/数值战斗模板/examples/prefab-contracts.example.json",
@@ -213,7 +271,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "tests/fixtures/numeric-template-design/prefab-contracts.example.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "8d4e5e7d08edd11b3988ac0202b58ec77c46428315c09671789c04666930a069"
     },
     {
       "source": "docs/design/数值战斗模板/examples/reward-claim.pseudocode.cs.txt",
@@ -222,7 +283,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "tests/fixtures/numeric-template-design/reward-claim.pseudocode.cs.txt",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "96ff87e2374a47e746b99fa9b0c34f7b887fef3c085223c4a3af6a1dfd7e1370"
     },
     {
       "source": "docs/design/数值战斗模板/examples/template-profile.example.json",
@@ -231,7 +295,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "tests/fixtures/numeric-template-design/template-profile.example.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "651d7bbc3ce61a77ffc35d316161a33553667359aac4f30a83f2ec891692ce39"
     },
     {
       "source": "docs/design/数值战斗模板/examples/ui-regression-contracts.example.json",
@@ -240,7 +307,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "tests/fixtures/numeric-template-design/ui-regression-contracts.example.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "bb6834a164cfe147e303caaf4b5192654a0a31665732ab6e6c1839f561f3633b"
     },
     {
       "source": "docs/design/数值战斗模板/工作流与Skill补齐.md",
@@ -249,7 +319,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/工具提炼计划.md",
@@ -258,7 +331,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/模板架构.md",
@@ -267,7 +343,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/结构复评与修订.md",
@@ -276,7 +355,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/落地与验收计划.md",
@@ -285,7 +367,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/design/数值战斗模板/证据索引.md",
@@ -294,7 +379,10 @@
       "action": "review_then_consolidate",
       "target": "proposals/",
       "reason": "未完成且仍有价值的提案精炼保留；完成记录按Git历史退役；引用中的示例需核对消费者，不能盲删",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "proposals/numeric-template.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "cc641e71ea4f1850363bce63f13efdead9dfc73c5c5672e65cacd967b24f1e4e"
     },
     {
       "source": "docs/history/README.md",
@@ -303,7 +391,9 @@
       "action": "retire_after_reference_check",
       "target": null,
       "reason": "已完成过程保留于基线Git历史；现行有效约束先并入唯一权威，禁止搬一份重复历史树",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/history/README.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/history/SKILL审计-20261016.md",
@@ -312,7 +402,9 @@
       "action": "retire_after_reference_check",
       "target": null,
       "reason": "已完成过程保留于基线Git历史；现行有效约束先并入唯一权威，禁止搬一份重复历史树",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/history/SKILL审计-20261016.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/history/Unity标准实施记录.md",
@@ -321,7 +413,9 @@
       "action": "retire_after_reference_check",
       "target": null,
       "reason": "已完成过程保留于基线Git历史；现行有效约束先并入唯一权威，禁止搬一份重复历史树",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/history/Unity标准实施记录.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/history/开源审查记录.md",
@@ -330,7 +424,9 @@
       "action": "retire_after_reference_check",
       "target": null,
       "reason": "已完成过程保留于基线Git历史；现行有效约束先并入唯一权威，禁止搬一份重复历史树",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/history/开源审查记录.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/history/案例教训-玩法与动画.md",
@@ -339,7 +435,9 @@
       "action": "retire_after_reference_check",
       "target": null,
       "reason": "已完成过程保留于基线Git历史；现行有效约束先并入唯一权威，禁止搬一份重复历史树",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/history/案例教训-玩法与动画.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/providers/Android旧模拟器接入.md",
@@ -348,7 +446,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/Android旧模拟器接入.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/Android旧模拟器接入.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "cf40ff193c974e0fefb694bcc69d7c0c6c30d02a34889580e2628af475068493"
     },
     {
       "source": "docs/providers/Frida接入.md",
@@ -357,7 +458,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/Frida接入.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/Frida接入.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "e07a1638f8a84a3dd8d27a6135a579a653ec5bfaa78d43af4a1703cdd8d86804"
     },
     {
       "source": "docs/providers/IL2CPP解析器接入.md",
@@ -366,7 +470,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/IL2CPP解析器接入.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/IL2CPP解析器接入.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "ec35abffee2e33ec5849ee52bc2845ac465a8046cb07e728261ac2e13a9666fe"
     },
     {
       "source": "docs/providers/README.md",
@@ -375,7 +482,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/README.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/README.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "9f8262df7a96b6ddb8d5f843083aeb34b3360b8af147cbc5f0711cab4fa012ee"
     },
     {
       "source": "docs/providers/android-emulator-provenance.json",
@@ -384,7 +494,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/android-emulator-provenance.json",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/android-emulator-provenance.json",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "3dcd5c8c5c846493d05395b9f217de62ff826e507b0685651c90d362bec79ab3"
     },
     {
       "source": "docs/providers/cocos-static.md",
@@ -393,7 +506,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/cocos-static.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/cocos-static.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "5e2fbc62c03f318af9c7060b3f289fa0950c135a9588d73ab85b089449485c9e"
     },
     {
       "source": "docs/providers/cocos3-evidence.md",
@@ -402,7 +518,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/cocos3-evidence.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/cocos3-evidence.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "1a2e7f971cccec7ac08fd2d5c4b17c383b3443e0f276ea51067aab7e6561499f"
     },
     {
       "source": "docs/providers/observation-tools.md",
@@ -411,7 +530,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/observation-tools.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/observation-tools.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "83d759e39368c423581d8e92447ff419eb27602298f7cbad581ed254e345eaa4"
     },
     {
       "source": "docs/providers/unity-authoring.md",
@@ -420,7 +542,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/unity-authoring.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/unity-authoring.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "a5382b572b06ccaa9d21e328aeb92ce9320e2fb7cdf931130b0c1477f9f8c18e"
     },
     {
       "source": "docs/providers/unity-native-exit.md",
@@ -429,7 +554,10 @@
       "action": "retain_scoped",
       "target": "docs/providers/unity-native-exit.md",
       "reason": "仅保留活跃工具需要的接入/格式/许可边界；与registry逐项对照，去除重复教程",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/providers/unity-native-exit.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "611e401870ca5be6b2181ff6fda1a644743a3e9155ca3438b7fd55dfc4975953"
     },
     {
       "source": "docs/releases/v2026.10.16-rc1.md",
@@ -438,7 +566,9 @@
       "action": "retire_after_reference_check",
       "target": null,
       "reason": "历史版本说明由对应Git标签和GitHub Release追溯；当前入口改为当前状态",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/releases/v2026.10.16-rc1.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree."
     },
     {
       "source": "docs/tools/MemoryProfiler安装.md",
@@ -447,7 +577,10 @@
       "action": "retain_or_colocate",
       "target": "docs/tools/MemoryProfiler安装.md",
       "reason": "保留实际操作契约；单一实现专属细节可与其README合并，通用使用入口引用而不复制",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/tools/MemoryProfiler安装.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "53c17a5a3635f40b8fdd7e11bc1bf7d725cb8f65a50a0ec51245eea7051a4349"
     },
     {
       "source": "docs/tools/Shader工具.md",
@@ -456,7 +589,10 @@
       "action": "retain_or_colocate",
       "target": "docs/tools/Shader工具.md",
       "reason": "保留实际操作契约；单一实现专属细节可与其README合并，通用使用入口引用而不复制",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/tools/Shader工具.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "47073d66dd28dd3c65e3e08d1e6e21afee87631bd54ebb12ee31d42b2f9dafca"
     },
     {
       "source": "docs/tools/制品与资源检查.md",
@@ -465,7 +601,10 @@
       "action": "retain_or_colocate",
       "target": "docs/tools/制品与资源检查.md",
       "reason": "保留实际操作契约；单一实现专属细节可与其README合并，通用使用入口引用而不复制",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/tools/制品与资源检查.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "beb06848b45b4de5cb8c2ea957ff436d7e9ff9f939d8b87fc3cb2e2129a4833b"
     },
     {
       "source": "docs/tools/规则与格式检查.md",
@@ -474,7 +613,10 @@
       "action": "retain_or_colocate",
       "target": "docs/tools/规则与格式检查.md",
       "reason": "保留实际操作契约；单一实现专属细节可与其README合并，通用使用入口引用而不复制",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/tools/规则与格式检查.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "69206ef66b1e4a7b5074ad696359da07901857464878322f48ef32e0dc6a14ce"
     },
     {
       "source": "docs/validation/2026-10-13-unity-m1.json",
@@ -483,7 +625,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-13-unity-m1.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-13-unity-m1.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "6791f1160cf359e67b6f66b7a9ff54342f5345734c4d2d41690990d850214e26"
     },
     {
       "source": "docs/validation/2026-10-13-unity-m2.json",
@@ -492,7 +637,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-13-unity-m2.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-13-unity-m2.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "c2ce85ec8ede0d1c55dea1443e481baf1bb2f2c63831369f9803505adfddc9d3"
     },
     {
       "source": "docs/validation/2026-10-13-unity-m3.json",
@@ -501,7 +649,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-13-unity-m3.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-13-unity-m3.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "0cb7e3b531854f8f34ee63170dd6bc84717c887971aae3f195c794c88b380584"
     },
     {
       "source": "docs/validation/2026-10-13-unity-m4.json",
@@ -510,7 +661,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-13-unity-m4.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-13-unity-m4.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "19877b67bd32d7ab795a76c1170d8f23708ada04917374bdd26ad026ce76a951"
     },
     {
       "source": "docs/validation/2026-10-13-unity-m5.json",
@@ -519,7 +673,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-13-unity-m5.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-13-unity-m5.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "b55cf0fae836e07b02b6aa40f69872817c25be74b96299c7379dd1c9bcaa1b4d"
     },
     {
       "source": "docs/validation/2026-10-13-unity-standard-v1.json",
@@ -528,7 +685,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-13-unity-standard-v1.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-13-unity-standard-v1.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "3c1423115e0e71f373f5b6b14de7981d8c85d754fe064b88fe08e2a299d1278e"
     },
     {
       "source": "docs/validation/2026-10-13-workflow-refinement.json",
@@ -537,7 +697,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-13-workflow-refinement.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-13-workflow-refinement.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "8110fa0bd5c25074d34c605864bb798d3ecab41e194a53c4c6da7c16b9f1a3eb"
     },
     {
       "source": "docs/validation/2026-10-14-rc3-review.json",
@@ -546,7 +709,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-14-rc3-review.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-14-rc3-review.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "c6468d6ffbfa8f5e74b6dba740a69dfb510d2ecdffdce49c567bdf4be3fc9d0e"
     },
     {
       "source": "docs/validation/2026-10-14-reference-player-1.0.1.json",
@@ -555,7 +721,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-14-reference-player-1.0.1.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-14-reference-player-1.0.1.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "fd722195e00d2c572aff28475290cb447094252b4d48218700e78abc5467ca8d"
     },
     {
       "source": "docs/validation/2026-10-15-numeric-combat-design.json",
@@ -564,7 +733,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-15-numeric-combat-design.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-15-numeric-combat-design.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "55c30f279120816c728e32a38801e52581af7d0a9fa9f8e3627887d155112555"
     },
     {
       "source": "docs/validation/2026-10-15-numeric-combat-review2.json",
@@ -573,7 +745,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-15-numeric-combat-review2.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-15-numeric-combat-review2.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "74102f867d661c14b871f52041b7bf56ce25bdf7107a370218244fe3c81e6ef1"
     },
     {
       "source": "docs/validation/2026-10-16-audit-remediation.json",
@@ -582,7 +757,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-16-audit-remediation.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-16-audit-remediation.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "e976c87febe29af78d5453b6e4f202609b157659437d4f824533327b86ef73aa"
     },
     {
       "source": "docs/validation/2026-10-16-portable-plugin-macos-arm64.json",
@@ -591,7 +769,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-16-portable-plugin-macos-arm64.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-16-portable-plugin-macos-arm64.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "c1be8def4e77e77647a650dc9f5112e69210cabab2e349a96a3a0694f3f3acd3"
     },
     {
       "source": "docs/validation/2026-10-16-project-tools.json",
@@ -600,7 +781,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-16-project-tools.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-16-project-tools.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "0f045e37371546d9444da3a0fde1d088711dcad9767fdac13c1afc580eaf359d"
     },
     {
       "source": "docs/validation/2026-10-16-unity-framework-extraction.json",
@@ -609,7 +793,10 @@
       "action": "move_immutable",
       "target": "validation/releases/2026-10-16-unity-framework-extraction.json",
       "reason": "保留原文/哈希与版本身份，脱离当前使用文档，生成单一验证索引",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "validation/releases/2026-10-16-unity-framework-extraction.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "7d5059ae42468f616a4f6feb174cc57abe803fe5f630b739f4b00b125a25a9a8"
     },
     {
       "source": "docs/使用指南.md",
@@ -618,7 +805,10 @@
       "action": "rewrite",
       "target": "docs/使用指南.md",
       "reason": "只保留日常任务流程，安装与完整API表改为引用",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/使用指南.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "9721bebd8a57d540d6cd8564102f923d1d80799be8804506101efc76e2501de8"
     },
     {
       "source": "docs/公开分发规则.md",
@@ -627,7 +817,10 @@
       "action": "merge",
       "target": "docs/维护与发布.md",
       "reason": "保留公开树/许可/源身份要求，不降低现有门槛",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/维护与发布.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
     },
     {
       "source": "docs/兼容与迁移指南.md",
@@ -636,7 +829,10 @@
       "action": "split_merge",
       "target": "docs/安装与平台.md",
       "reason": "当前升级/回退合并；完成的历史搬迁从工作树退出，以基线Git历史追溯",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/安装与平台.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
     },
     {
       "source": "docs/工作区接入.md",
@@ -645,7 +841,10 @@
       "action": "merge",
       "target": "docs/维护与发布.md",
       "reason": "仅保留可选工作区接入；产品不依赖Games或本机路径",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/维护与发布.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
     },
     {
       "source": "docs/工具集成与平台支持.md",
@@ -654,7 +853,10 @@
       "action": "merge",
       "target": "docs/安装与平台.md",
       "reason": "同一平台支持矩阵；按版本和实测状态生成",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/安装与平台.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
     },
     {
       "source": "docs/接口与证据说明.md",
@@ -663,7 +865,10 @@
       "action": "rewrite",
       "target": "docs/接口与证据说明.md",
       "reason": "保留唯一CLI/MCP/Case与revision语义及生成操作表",
-      "status": "planned"
+      "status": "retained_with_reason",
+      "resolved_target": "docs/接口与证据说明.md",
+      "execution_note": "Scoped format/tool contract retained.",
+      "target_sha256": "5d51d6c1a684f3bfefc65e254a20de5681d69ddd050b97f0d20e0f71f51213c4"
     },
     {
       "source": "docs/架构设计.md",
@@ -672,7 +877,10 @@
       "action": "merge",
       "target": "docs/维护与发布.md",
       "reason": "核心模块职责与扩展边界；避免另一个使用导航",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/维护与发布.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
     },
     {
       "source": "docs/维护指南.md",
@@ -681,7 +889,10 @@
       "action": "merge",
       "target": "docs/维护与发布.md",
       "reason": "维护唯一来源、质量门与贡献操作",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/维护与发布.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "1b94b1208661f987489c203acddb2216f41e8c8dd2963c91757c513c5f0417c3"
     },
     {
       "source": "docs/路径迁移表.json",
@@ -690,7 +901,10 @@
       "action": "migrate_machine_index",
       "target": "schemas/document-path-map.json",
       "reason": "机器可读映射从用户教程分离，消费代码须同步迁移",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "schemas/document-path-map.json",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "4808b8db6a436e7ea25e50cb9e611220a515ea2118a46d0dfb0591391d4b1edc"
     },
     {
       "source": "docs/验证范围与限制.md",
@@ -699,7 +913,20 @@
       "action": "merge",
       "target": "docs/安装与平台.md",
       "reason": "平台状态与验证层次的唯一说明",
-      "status": "planned"
+      "status": "executed",
+      "resolved_target": "docs/安装与平台.md",
+      "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
+      "target_sha256": "5fd2325ec62301ed295b35ab1b6399a9558b5339d7a7f0d34d8aa02e966e18c5"
     }
+  ],
+  "new_documents": [
+    "docs/README.md",
+    "docs/安装与平台.md",
+    "docs/使用指南.md",
+    "docs/Unity指南.md",
+    "docs/维护与发布.md",
+    "docs/故障排查.md",
+    "validation/README.md",
+    "proposals/numeric-template.md"
   ]
 }

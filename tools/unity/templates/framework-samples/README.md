@@ -41,6 +41,6 @@ python3 scripts/testing/build-framework-sample.py --source .private/sample-battl
 
 独立恢复只复制 `Assets/`、`Packages/`、`ProjectSettings/` 与该示例 marker/制作回执；不复制 Library、Temp、Logs、构建目录或用户存档。恢复后按 lock 导入、测试、构建；不依赖 grea 源码目录或外部软链接。制作源码和导入后的资产身份分别记录，构建前后 Assets 必须一致。
 
-当前实际通过范围见 [本轮验收](../../../../docs/validation/2026-10-16-unity-framework-extraction.json)。自动 onClick/接口测试不等于 OS 输入；Editor、Player、实际输入和未验平台分开记录。没有证据的能力保持 `not_run`。
+当前实际通过范围见 [本轮验收](../../../../validation/releases/2026-10-16-unity-framework-extraction.json)。自动 onClick/接口测试不等于 OS 输入；Editor、Player、实际输入和未验平台分开记录。没有证据的能力保持 `not_run`。
 
 两个示例按纵向参考分辨率编排；CanvasScaler 使用 Expand，在宽/矮窗口中保留最小设计空间，控件不会因纵向压缩而重叠。多视口原生几何测试不等于 OS 鼠标或移动设备验收；实测边界见验收 JSON 的 resizeFollowUp。

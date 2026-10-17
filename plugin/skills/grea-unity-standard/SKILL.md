@@ -9,7 +9,7 @@ description: 恢复或转换工程的 Unity 工程标准与治理：目录与 as
 
 | 任务 | 参考 |
 | --- | --- |
-| 标准总览、版本、例外与分篇索引（先读） | [工程结构与开发规范](references/05-Unity-工程结构与开发规范.md)（标准 v1）；落地记录见 [实施记录](../../../docs/history/Unity标准实施记录.md) |
+| 标准总览、版本、例外与分篇索引（先读） | [工程结构与开发规范](references/05-Unity-工程结构与开发规范.md)（标准 v1）；落地记录见 [实施记录](https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/history/Unity标准实施记录.md) |
 | 目录树、资产类型归类、动态加载路径 | [工程目录与资产归类](references/05-Unity-工程目录与资产归类.md) |
 | asmdef 分层、启动场景、生命周期、存档与事件 | [程序集分层与生命周期](references/05-Unity-程序集分层与生命周期.md) |
 | 通用组件、自研框架与主流插件的取舍、基础 Prefab | [通用组件与 Prefab](references/05-Unity-通用组件与Prefab.md) |

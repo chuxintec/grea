@@ -58,7 +58,7 @@
 
 ### 通用包的维护位置
 
-自有框架源码在 grea 的 `tools/unity/framework/packages/`，基础框架已交付 foundation、ui.ugui 和 editor 三包（校验与受限生成）；`tools/unity/templates/counter-composition/` 保存有测试的分层装配示例，也是 `grea-minimal-2d/0.1.0` 的 seed-once 源码输入。只按实际内容建目录；工程生成的实际创建/恢复范围见 [生成器与 Prefab](../../../../docs/Unity工程生成与恢复.md)，不先拆大量微包。
+自有框架源码在 grea 的 `tools/unity/framework/packages/`，基础框架已交付 foundation、ui.ugui 和 editor 三包（校验与受限生成）；`tools/unity/templates/counter-composition/` 保存有测试的分层装配示例，也是 `grea-minimal-2d/0.1.0` 的 seed-once 源码输入。只按实际内容建目录；工程生成的实际创建/恢复范围见 [生成器与 Prefab](../../../../docs/Unity指南.md)，不先拆大量微包。
 
 | 候选包 | 内容和依赖边界 |
 | --- | --- |

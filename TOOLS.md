@@ -26,14 +26,14 @@
 | Unity Editor 操作与回读 | `unity_cli`、`unity_pipeline`；Editor 资源审计 | [连接流程](plugin/skills/grea-delivery/references/05-Unity-编辑器连接与任务执行.md)、[实际资源回读](tools/unity/audit/README.md)；Pipeline 使用官方专用接口 |
 | Unity 包与 Spine 运行时恢复 | 包备份、`spine38`、`spine41` | [包备份](tools/unity/packages/README.md)、[Spine 3.8](tools/unity/spine/Spine38/README.md)、[Spine 4.1](tools/unity/spine/Spine41/README.md)；版本不可随意互换 |
 | 构建产物核对与 Windows 封装 | `verify_payload_tree`、`package_windows_portable`、`nsis` | [脚本契约](docs/tools/制品与资源检查.md)；封装成功不等于 Windows 运行通过 |
-| 诊断、技能检查与有界测试 | doctor、`check_grea_skill` | [维护说明](docs/维护指南.md)、[测试内存工具](scripts/testing/README.md) |
+| 诊断、技能检查与有界测试 | doctor、`check_grea_skill` | [维护说明](docs/维护与发布.md)、[测试内存工具](scripts/testing/README.md) |
 | 特定来源格式和历史工具 | `laya_contract_audit`、wxapkg 系列、旧 ARM32 模拟器 | [条件性恢复工具](docs/tools/规则与格式检查.md)、[旧模拟器](docs/providers/Android旧模拟器接入.md)；不作为默认路线 |
 
 ## Unity 工程静态规划
 
-`validate_unity_project` / `plan_unity_project` 已提供 项目配置、依赖和显式程序集检查与只读设计计划。用法见 [配置与检查](docs/Unity项目配置与检查.md)；这两个静态操作不启动 Editor、不写目标；需要生成时使用下面独立的生成操作，运行验收另做。
+`validate_unity_project` / `plan_unity_project` 已提供 项目配置、依赖和显式程序集检查与只读设计计划。用法见 [配置与检查](docs/Unity指南.md)；这两个静态操作不启动 Editor、不写目标；需要生成时使用下面独立的生成操作，运行验收另做。
 
-[框架与通用组件](docs/Unity框架与通用组件.md) 提供 Foundation/uGUI/Editor C# 源码与包测试；使用独立隔离测试入口，不新增 registry 工具 ID，不改变上述静态操作的运行证据。
+[框架与通用组件](docs/Unity指南.md) 提供 Foundation/uGUI/Editor C# 源码与包测试；使用独立隔离测试入口，不新增 registry 工具 ID，不改变上述静态操作的运行证据。
 
 ## 工具存在于哪里
 
@@ -50,24 +50,24 @@ Unity 包库存及恢复方法统一见 [备份说明](tools/unity/packages/READ
 
 ## 兼容与平台
 
-`check_game_build_skill`、`decode-doctor`、`android_emulator_arm32_legacy` 是兼容别名；新调用使用正式入口。registry_doctor 是旧参数诊断入口，默认只查存在。更多映射见 [迁移说明](docs/兼容与迁移指南.md)。
+`check_game_build_skill`、`decode-doctor`、`android_emulator_arm32_legacy` 是兼容别名；新调用使用正式入口。registry_doctor 是旧参数诊断入口，默认只查存在。更多映射见 [迁移说明](docs/安装与平台.md)。
 
-host_support 表示登记的平台条件，不表示已原生实测；Windows 不能执行本机另行安装的 Mac 二进制。配置方法统一在 [使用说明](docs/使用指南.md#8-windows-原生工具配置)，限制见 [平台结论](docs/工具集成与平台支持.md#平台结论)。
+host_support 表示登记的平台条件，不表示已原生实测；Windows 不能执行本机另行安装的 Mac 二进制。配置方法统一在 [使用说明](docs/使用指南.md)，限制见 [平台结论](docs/安装与平台.md)。
 
 ## Unity 工程生成与恢复
 
-`plan_unity_generation` 只读规划/盘点；`generate_unity_project` 仅生成新工程或校验自己的生成清单；`recover_unity_generation` 核验并续作明确的中断记录。写入操作运行 Unity 并生成缓存，不能当成 静态规划 的只读工具。参见 [生成与恢复](docs/Unity工程生成与恢复.md)。
+`plan_unity_generation` 只读规划/盘点；`generate_unity_project` 仅生成新工程或校验自己的生成清单；`recover_unity_generation` 核验并续作明确的中断记录。写入操作运行 Unity 并生成缓存，不能当成 静态规划 的只读工具。参见 [生成与恢复](docs/Unity指南.md)。
 
 ## Unity 参考项目分发
 
-`unity_reference` 提供固定参考源码的 prepare/archive/verify/restore，内嵌自有包、校验锁和 SHA-256；不启动 Unity。独立恢复、测试与 Player 实玩证据见 [参考游戏说明](docs/Unity参考游戏.md)。参考游戏通过不改变任意项目的 静态规划 静态报告。
+`unity_reference` 提供固定参考源码的 prepare/archive/verify/restore，内嵌自有包、校验锁和 SHA-256；不启动 Unity。独立恢复、测试与 Player 实玩证据见 [参考游戏说明](docs/Unity指南.md)。参考游戏通过不改变任意项目的 静态规划 静态报告。
 
 ## Unity 隔离迁移
 
-`unity_pilot` 提供 snapshot/clone/verify，冻结明确输入、独立复制并验证原工程未变化；不启动 Unity，不迁移源工程。默认程序集可选桥接包、两类模块迁移的验收与回退边界见 [迁移说明](docs/Unity隔离迁移指南.md)。私有游戏的快照、补丁、截图和 Player 不进入公共分发。
+`unity_pilot` 提供 snapshot/clone/verify，冻结明确输入、独立复制并验证原工程未变化；不启动 Unity，不迁移源工程。默认程序集可选桥接包、两类模块迁移的验收与回退边界见 [迁移说明](docs/Unity指南.md)。私有游戏的快照、补丁、截图和 Player 不进入公共分发。
 
 `shader_probe` 与 `unity_package_backup` 将已有 Shader 探针和包备份实现接入统一调度；先通过 `describe-tool` 查看边界，再使用 `run-tool` 执行。
 
 `static_asset_copy` 按显式路径映射复制静态文件，使用 Python 标准库；参数、退出码和复制边界见 [静态文件映射复制](docs/tools/制品与资源检查.md#静态文件映射复制)。
 
-当前整改能力与未验项见 [审计整改执行记录](docs/design/audit-remediation-20261016.md)。新 TMP/Input System 配方见 [Modern UI v1](tools/unity/profiles/modern-ui/README.md)，旧 reference 证据不能沿用到新配方。
+当前整改能力与未验项见 [审计整改执行记录](https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/audit-remediation-20261016.md)。新 TMP/Input System 配方见 [Modern UI v1](tools/unity/profiles/modern-ui/README.md)，旧 reference 证据不能沿用到新配方。
