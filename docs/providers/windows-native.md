@@ -25,4 +25,4 @@ python scripts/testing/windows-readiness.py --out C:/new-evidence/windows-readin
 
 独立配置的 Codex 复验使用 `scripts/verify_plugin_clients.py --client codex --codex-bin <native-exe> --bundle <windows-zip> --report <new-json> --allow-network`。`--allow-network` 代表此客户端层未禁网，不能复制为插件隔离层的通过；不发送模型请求，不改用户安装。Claude 未经要求不安装。
 
-Windows Server CI 可关闭原生 CLI/Job/锁及插件范围；Windows 11 桌面输入和 Unity/Player 的缺设备或许可必须保持 blocked/not_run。Mac 上交叉构建 Windows Player 也只能证明编译与包体，不证明其运行体验。
+Windows Server CI 可关闭原生 CLI/Job/锁及插件范围；本轮 Windows 11 桌面输入、Unity/Player、GPU 性能和人工输入由用户明确排除，保持 not_run，不阻塞本轮发布。后续实机验证需独立授权及证据。Mac 上交叉构建 Windows Player 也只能证明编译与包体，不证明其运行体验。
