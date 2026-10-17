@@ -35,7 +35,9 @@ def isolated_environment(root):
         path.mkdir(parents=True, exist_ok=True)
         env[key] = str(path)
     if os.name=='nt':
-        env.update(SystemRoot=os.environ['SystemRoot'],PATH=str(Path(os.environ['SystemRoot'])/'System32'),USERPROFILE=env['HOME'],TEMP=env['TMPDIR'],TMP=env['TMPDIR'],PYTHONUTF8='1')
+        env.update(SystemRoot=os.environ['SystemRoot'],PATH=str(Path(os.environ['SystemRoot'])/'System32'),USERPROFILE=env['HOME'],TEMP=env['TMPDIR'],TMP=env['TMPDIR'],PYTHONUTF8='1',
+                   LOCALAPPDATA=str(root/'local-app-data'),APPDATA=str(root/'roaming-app-data'))
+        Path(env['LOCALAPPDATA']).mkdir();Path(env['APPDATA']).mkdir()
     return env
 
 
@@ -323,7 +325,7 @@ def client_acceptance(name, binary, bundle_root, base, expected_skills, expected
     client = {'name': name, 'version': None, 'layers': {}, 'skills': [], 'tools': [], 'protocol_requests': []}
     phases = ['version', 'entrypoint', *(['manifest'] if name == 'claude' else []),
               'install', 'registration', *(['connection'] if name == 'claude' else []),
-              'initialize', 'skills', 'tools']
+              'initialize', 'skills', 'tools', *(['installed_session'] if name=='codex' else [])]
     for phase in phases:
         client['layers'][phase] = {'status': 'not_run', 'reason': 'Earlier prerequisite has not passed'}
     phase = 'version'
@@ -396,6 +398,20 @@ def client_acceptance(name, binary, bundle_root, base, expected_skills, expected
                     raise ValueError('Expected one grea server, observed ' + str([s.get('name') for s in servers]))
                 client['tools'] = check_tools(server_tools(candidates[0]), expected_tools, name)
                 layer(client, phase, 'pass', count=len(client['tools']))
+                phase='installed_session'
+                installed_roots={Path(item['path']).resolve().parents[3] for item in items
+                                 if item.get('name')=='grea:grea' and Path(item.get('path','/')).is_relative_to(cache)}
+                if len(installed_roots)!=1:raise ValueError('Cannot establish one client-installed product root')
+                installed_root=installed_roots.pop()
+                from verify_plugin import client_command
+                session_command,_=client_command(installed_root,'codex')
+                if session_command[-1]!='mcp':raise ValueError('Unexpected installed launcher shape')
+                session_command[-1]='session'
+                session=json.loads(checked_command(session_command,env,work,timeout))
+                expected_version=json.loads((bundle_root/'plugin/version.json').read_text(encoding='utf-8'))['version']
+                if session.get('status')!='ok' or session['result']['version']!=expected_version or Path(session['result']['package_root']).resolve()!=installed_root:
+                    raise ValueError('Client-installed cache session identity mismatch')
+                layer(client,phase,'pass',version=expected_version,scope='Delivered launcher in the real client-installed cache; separate from host tool invocation')
         else:
             phase = 'manifest'
             checks = validate_claude_manifests(command, bundle_root, plan['directory'], env, work, timeout)

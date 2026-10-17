@@ -139,7 +139,8 @@ def acceptance(bundle):
         prefix = [] if windows else sandbox_prefix(root, work)
         if windows:
             env.update(SystemRoot=os.environ['SystemRoot'], PATH=str(Path(os.environ['SystemRoot'])/'System32'),
-                       USERPROFILE=str(home),TEMP=str(work),TMP=str(work),PYTHONUTF8='1')
+                       USERPROFILE=str(home),TEMP=str(work),TMP=str(work),PYTHONUTF8='1',
+                       LOCALAPPDATA=os.environ['LOCALAPPDATA'],APPDATA=os.environ.get('APPDATA',str(home)))
         security=None
         if windows:
             from windows_sandbox import AppContainer
