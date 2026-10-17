@@ -208,7 +208,7 @@ p=pathlib.Path(sys.argv[1]);sys.path.insert(0,sys.argv[2])
 for label,fn in [('stat',p.stat),('resolve',lambda:p.resolve(strict=True)),('list',lambda:list(p.iterdir())),('read',lambda:(p/'sample.txt').read_bytes())]:
  try:print(label,repr(fn()),flush=True)
  except Exception:traceback.print_exc()
-code='import pathlib,sys;from grea.tools.static_asset_copy import copy_assets;print(copy_assets(sys.argv[1],sys.argv[2],["sample.txt=x.txt"]))'
+code='import pathlib,sys;sys.path.insert(0,'+repr(sys.argv[2])+');from grea.tools.static_asset_copy import copy_assets;print(copy_assets(sys.argv[1],sys.argv[2],["sample.txt=x.txt"]))'
 from grea.host.windows_process import OwnedProcess
 child=OwnedProcess([sys.executable,'-c',code,str(p),str(p.parent/'diagnosis-copy')],p.parent)
 try:print('nested',child.communicate(timeout=10),flush=True)
