@@ -211,7 +211,7 @@ print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volum
                 check(os.path.samefile(session['result']['package_root'],root), 'Session depends on original checkout')
                 _, plan = call('plan_workflow', {'mode':'recover','source_engine':'cocos'})
                 check(plan['status'] == 'ok', 'Bundled workflow references failed')
-                check(all(root in Path(s['reference']).resolve().parents and Path(s['reference']).is_file() for s in plan['result']['steps']), 'Missing workflow resource')
+                check(all(Path(s['reference']).is_file() and any(os.path.samefile(root,parent) for parent in Path(s['reference']).parents if parent.is_dir()) for s in plan['result']['steps']), 'Missing workflow resource: '+json.dumps(plan['result']['steps'],ensure_ascii=True))
                 source = work/(client+' source'); source.mkdir()
                 (source/'sample.txt').write_text('portable core', encoding='utf-8')
                 output = work/(client+' copied')
