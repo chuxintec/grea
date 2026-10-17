@@ -60,6 +60,11 @@ def read_record(path,prefix):
     if rid!=prefix+digest(body):raise GreaError('TAMPERED_EVIDENCE','Record content does not match its ID.',details={'record':str(path)})
     return value
 
+def next_order(root, directory, prefix):
+    """Allocate strict append order while the caller holds the Case write lock."""
+    previous = (read_record(path, prefix)['order_ns'] for path in (root/directory).glob('*.json'))
+    return max(time.time_ns(), max(previous, default=-1) + 1)
+
 def evidence_records(root,case):
     values={}
     if (root/'evidence').is_symlink():raise GreaError('TAMPERED_EVIDENCE','Evidence directory is a symlink.')
@@ -105,7 +110,7 @@ def record_verification(case_dir,dimension,status,evidence_ids,note,revision_id=
         if status=='passed':
             required=required_kinds(case['mode'],dimension);actual={records[x]['kind'] for x in evidence_ids}
             if not required<=actual:raise GreaError('INSUFFICIENT_EVIDENCE','Passed verdict lacks required evidence roles.',details={'required':sorted(required),'provided':sorted(actual)},next_action='Register relevant original/candidate evidence; static output alone is not runtime proof.')
-        value={'case_id':case['case_id'],'dimension':dimension,'status':status,'evidence_ids':evidence_ids,'note':note,'created_at':now(),'order_ns':time.time_ns(),'nonce':uuid.uuid4().hex,'authority':'reviewer_assertion'}
+        value={'case_id':case['case_id'],'dimension':dimension,'status':status,'evidence_ids':evidence_ids,'note':note,'created_at':now(),'order_ns':next_order(root,'verifications','vr_'),'nonce':uuid.uuid4().hex,'authority':'reviewer_assertion'}
         value['id']='vr_'+digest(value);write_new(root/'verifications'/f"{value['id']}.json",value)
     return {'verification':value,'executed_tests':False}
 
