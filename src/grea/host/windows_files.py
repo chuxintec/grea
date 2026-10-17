@@ -32,7 +32,7 @@ def open_file(path, access=0x80000000):
  try:
   handle_token(handle)
   from .paths import final_name
-  final=final_name(k,handle)
+  final=final_name(k,handle,path)
   if os.path.normcase(final)!=os.path.normcase(str(path)):raise OSError('Input path changed or escaped')
   return handle
  except BaseException:k.CloseHandle(handle);raise

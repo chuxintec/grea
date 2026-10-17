@@ -28,7 +28,7 @@ def in_appcontainer():
     finally:k.CloseHandle(token)
 
 
-def final_name(kernel, handle):
+def final_name(kernel, handle, drive_hint=None):
     """The same normalized target identity, without lowbox Mount Manager access."""
     import ctypes as c
     buffer=c.create_unicode_buffer(32768)
@@ -36,7 +36,28 @@ def final_name(kernel, handle):
     count=kernel.GetFinalPathNameByHandleW(handle,buffer,len(buffer),2 if nt else 0)
     if not count:raise c.WinError(c.get_last_error())
     if count>=len(buffer):raise OSError('Canonical Windows path exceeds supported bound')
-    return '\\\\?\\GLOBALROOT'+buffer.value if nt else buffer.value.removeprefix('\\\\?\\')
+    if not nt:return buffer.value.removeprefix('\\\\?\\')
+    # Avoid reverse translation through Mount Manager. Open the caller's
+    # explicit drive root and compare normalized NT volume identities instead.
+    # A cross-volume target can never be relabelled with the caller's drive.
+    import ntpath,sys
+    from ctypes import wintypes as w
+    drive=ntpath.splitdrive(os.fspath(drive_hint or sys.executable))[0]
+    if not (len(drive)==2 and drive[1]==':' and drive[0].isalpha()):
+        drive=ntpath.splitdrive(sys.executable)[0]
+    if len(drive)==2 and drive[1]==':' and drive[0].isalpha():
+        root=kernel.CreateFileW(drive+'\\',0,7,None,3,0x02000000,None)
+        if root not in (None,w.HANDLE(-1).value):
+            try:
+                volume=c.create_unicode_buffer(32768)
+                n=kernel.GetFinalPathNameByHandleW(root,volume,len(volume),2)
+                if 0<n<len(volume):
+                    stem=volume.value.rstrip('\\')
+                    if buffer.value.casefold()==stem.casefold():return drive.upper()+'\\'
+                    if buffer.value.casefold().startswith(stem.casefold()+'\\'):
+                        return drive.upper()+buffer.value[len(stem):]
+            finally:kernel.CloseHandle(root)
+    return '\\\\?\\GLOBALROOT'+buffer.value
 
 
 def _resolve_nt(path, strict):
@@ -48,7 +69,7 @@ def _resolve_nt(path, strict):
     while True:
         handle=k.CreateFileW(str(current),0,7,None,3,0x02000000,None)
         if handle not in (None,w.HANDLE(-1).value):
-            try:resolved=Path(final_name(k,handle))
+            try:resolved=Path(final_name(k,handle,current))
             finally:k.CloseHandle(handle)
             return resolved.joinpath(*reversed(missing))
         error=c.get_last_error()
