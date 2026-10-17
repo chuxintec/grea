@@ -22,7 +22,7 @@ failed=[]
 for name,value in outputs.items():
  path=root/'schemas'/name;content=json.dumps(value,ensure_ascii=False,indent=2)+'\n'
  if a.check:
-  if not path.exists() or path.read_text()!=content:failed.append(name)
- else:path.write_text(content)
+  if not path.exists() or path.read_text(encoding='utf-8')!=content:failed.append(name)
+ else:path.write_text(content, encoding='utf-8')
 print(json.dumps({'ok':not failed,'drifted':failed,'written':[] if a.check else list(outputs)}))
 raise SystemExit(1 if failed else 0)

@@ -37,12 +37,12 @@ def new_output(path):
 
 def source_files():
     files = {}
-    lock=json.loads((SOURCE/'framework.lock.json').read_text())['packages']
+    lock=json.loads((SOURCE/'framework.lock.json').read_text(encoding='utf-8'))['packages']
     if set(lock) != {p.name for p in FRAMEWORK.iterdir() if p.is_dir()}:
         raise ValueError('Framework package inventory differs from reference lock')
     for name,identity in lock.items():
         package=FRAMEWORK/portable(name)
-        if json.loads((package/'package.json').read_text())['version'] != identity['version']:
+        if json.loads((package/'package.json').read_text(encoding='utf-8'))['version'] != identity['version']:
             raise ValueError('Framework version differs from reference lock: '+name)
         hashes={p.relative_to(package).as_posix():sha(p.read_bytes()) for p in sorted(package.rglob('*')) if p.is_file() and not p.is_symlink()}
         if sha(json.dumps(hashes,sort_keys=True,separators=(',',':')).encode())!=identity['treeSha256']:

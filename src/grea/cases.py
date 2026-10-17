@@ -12,22 +12,18 @@ def locate(path):
     return path.resolve()
 
 def load_case(root):
-    value=json.loads((root/'case.json').read_text())
+    value=json.loads((root/'case.json').read_text(encoding='utf-8'))
     claim=value.copy();fingerprint=claim.pop('case_id',None)
     if not fingerprint or fingerprint!='case_'+digest(claim):raise GreaError('TAMPERED_CASE','Case baseline digest does not match.')
     return value
 
 @contextlib.contextmanager
 def locked(root, write=True):
-    try:import fcntl
-    except ImportError:raise GreaError('UNSUPPORTED_HOST','Case mutation currently requires POSIX file locking.')
+    from .host.files import file_lock
     lock=root/'.lock'
     if lock.is_symlink():raise GreaError('INVALID_CASE','Case lock may not be a symlink.')
     if not lock.is_file():raise GreaError('INVALID_CASE','Case lock file is missing.')
-    with lock.open('r') as f:
-        fcntl.flock(f.fileno(),fcntl.LOCK_EX if write else fcntl.LOCK_SH)
-        try:yield
-        finally:fcntl.flock(f.fileno(),fcntl.LOCK_UN)
+    with file_lock(lock, write=write):yield
 
 def check_source(case):
     actual=hash_file(case['source']['path'])
@@ -58,7 +54,7 @@ def init_case(project_dir,source,mode,required_dimensions=None,source_engine='un
 
 def read_record(path,prefix):
     if path.is_symlink():raise GreaError('TAMPERED_EVIDENCE','Record is a symlink.')
-    value=json.loads(path.read_text());body=value.copy();rid=body.pop('id',None)
+    value=json.loads(path.read_text(encoding='utf-8'));body=value.copy();rid=body.pop('id',None)
     if rid!=prefix+digest(body):raise GreaError('TAMPERED_EVIDENCE','Record content does not match its ID.',details={'record':str(path)})
     return value
 

@@ -42,15 +42,15 @@ def prepare(destination, include_sample=True, sample=None):
     dependencies = {'com.unity.render-pipelines.universal': '17.6.0', 'com.unity.ugui': '2.6.0',
                     'com.unity.test-framework': '1.8.0', 'com.unity.modules.audio': '1.0.0'}
     manifest = {'dependencies': dependencies, 'testables': sorted(p.name for p in PACKAGES.iterdir() if p.is_dir())}
-    (destination / 'Packages/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    (destination / 'Packages/manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     lock = ROOT / 'tools/unity/framework/test-packages-lock.json'
     if lock.exists():
         shutil.copyfile(lock, destination / 'Packages/packages-lock.json')
     (destination / 'ProjectSettings').mkdir()
-    (destination / 'ProjectSettings/ProjectVersion.txt').write_text('m_EditorVersion: 6000.6.2f1\n')
+    (destination / 'ProjectSettings/ProjectVersion.txt').write_text('m_EditorVersion: 6000.6.2f1\n', encoding='utf-8')
     if sample:
-        (destination / 'grea-framework-sample.marker').write_text(sample + '\n')
-    (destination / 'grea-m2-inputs.json').write_text(json.dumps(snapshot, indent=2) + '\n')
+        (destination / 'grea-framework-sample.marker').write_text(sample + '\n', encoding='utf-8')
+    (destination / 'grea-m2-inputs.json').write_text(json.dumps(snapshot, indent=2) + '\n', encoding='utf-8')
     return {'project': str(destination), 'sourceFiles': len(snapshot), 'editor': '6000.6.2f1',
             'unityExecuted': False, 'includesSample': include_sample, 'sample': sample or ('counter-composition' if include_sample else None)}
 

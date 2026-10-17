@@ -49,7 +49,7 @@ def validate(archive, report, source, version, revision):
     if any(name not in expected and not name.startswith('runtime/') and name not in
            ('runtime-requirements.txt','runtime-manifest.json') for name in actual):
         raise ValueError('Unexpected portable product payload')
-    acceptance = json.loads(Path(report).read_text())
+    acceptance = json.loads(Path(report).read_text(encoding='utf-8'))
     if (acceptance.get('status'), acceptance.get('target'), acceptance.get('archive_sha256'),
         acceptance.get('source_tree_sha256')) != ('pass','macos-arm64',sha256(archive),source_digest):
         raise ValueError('Native acceptance does not match the plugin artifact')

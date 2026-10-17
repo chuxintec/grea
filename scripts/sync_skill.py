@@ -81,7 +81,7 @@ def synchronize(source: Path, destination: Path, check: bool = False) -> list[st
         raise ValueError('Source and destination must not overlap')
     names = skill_names(source)
     record_path = destination / ROUTER / RECORD
-    previous = json.loads(record_path.read_text())['skills'] if record_path.is_file() else []
+    previous = json.loads(record_path.read_text(encoding='utf-8'))['skills'] if record_path.is_file() else []
     managed = sorted(set(names) | set(previous))
     for name in managed:
         target = destination / name

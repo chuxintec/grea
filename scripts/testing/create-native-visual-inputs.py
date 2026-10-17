@@ -22,7 +22,7 @@ def create(output):
             image.putpixel((x,y),color)
     image.save(output/'nine.png')
     recipe=dict(schema_version=1,sprites=[dict(name='Nine',image='nine.png',rect=[0,0,9,9],rotated_cw=False,original_size=[9,9],offset=[0,0],pivot=[0.5,0.5],border=[2,2,2,2],pixels_per_unit=10)],targets=[],clips=[])
-    (output/'nine.recipe.json').write_text(json.dumps(recipe,indent=2)+'\n')
+    (output/'nine.recipe.json').write_text(json.dumps(recipe,indent=2)+'\n', encoding='utf-8')
 
 
 if __name__=='__main__':

@@ -4,17 +4,17 @@ from pathlib import Path
 from .common import GreaError,package_root,digest
 
 def load():
-    value=json.loads((package_root()/'registry.json').read_text())
+    value=json.loads((package_root()/'registry.json').read_text(encoding='utf-8'))
     entries=value['tools'];ids=[x['id'] for x in entries]
     if len(ids)!=len(set(ids)):raise GreaError('INVALID_REGISTRY','Duplicate tool IDs.')
     lock_path=package_root()/'providers.lock.json'
-    acquisition={x['tool_id']:x for x in json.loads(lock_path.read_text())['providers']} if lock_path.is_file() else {}
+    acquisition={x['tool_id']:x for x in json.loads(lock_path.read_text(encoding='utf-8'))['providers']} if lock_path.is_file() else {}
     for entry in entries:
         if entry['id'] in acquisition:entry['acquisition']=acquisition[entry['id']]
     by_id={x['id']:x for x in entries}
     overrides={}
     if os.environ.get('GREA_PROVIDERS'):
-        config=json.loads(Path(os.environ['GREA_PROVIDERS']).expanduser().read_text())
+        config=json.loads(Path(os.environ['GREA_PROVIDERS']).expanduser().read_text(encoding='utf-8'))
         if not isinstance(config,dict) or set(config)!={'schema_version','providers'} or config['schema_version']!=1 or not isinstance(config['providers'],dict):
             raise GreaError('INVALID_PROVIDER_CONFIG','Expected schema_version=1 and a providers object.')
         overrides=config['providers']

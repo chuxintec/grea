@@ -262,7 +262,7 @@ def marketplace_plan(bundle_root, base, client):
     relative = '.agents/plugins/marketplace.json' if client == 'codex' else '.claude-plugin/marketplace.json'
     delivered = bundle_root/relative
     if delivered.is_file():
-        data = json.loads(delivered.read_text())
+        data = json.loads(delivered.read_text(encoding='utf-8'))
         plugins = [item for item in data.get('plugins', []) if item.get('name') == 'grea']
         expected_source = {'source':'local', 'path':'./'} if client == 'codex' else './'
         if data.get('name') != 'grea-local' or len(plugins) != 1 or plugins[0].get('source') != expected_source:
@@ -336,7 +336,7 @@ def client_acceptance(name, binary, bundle_root, base, expected_skills, expected
             config.write_text('cli_auth_credentials_store = "file"\n'
                               '[features]\nplugins = true\n[analytics]\nenabled = false\n' +
                               ''.join('[projects.' + json.dumps(str(path)) + ']\ntrust_level = "trusted"\n'
-                                      for path in (work, plan['directory'])))
+                                      for path in (work, plan['directory'])), encoding='utf-8')
             phase = 'install'
             checked_command([*command, 'plugin', 'marketplace', 'add', plan['add_source'], '--json'],
                             env, plan['directory'], timeout)
@@ -454,10 +454,10 @@ def acceptance(bundle, codex_bin=None, claude_bin=None, timeout=45, offline=True
             result['archive'] = {'status':'pass'}
             skills = set()
             for path in sorted((bundle_root/'plugin/skills').glob('*/SKILL.md')):
-                match = re.search(r'^name:\s*["\']?([^\n"\']+)', path.read_text(), re.M)
+                match = re.search(r'^name:\s*["\']?([^\n"\']+)', path.read_text(encoding='utf-8'), re.M)
                 if match:
                     skills.add(match.group(1).strip())
-            operations = json.loads((bundle_root/'schemas/operations.json').read_text())['operations']
+            operations = json.loads((bundle_root/'schemas/operations.json').read_text(encoding='utf-8'))['operations']
             tools = {item['name'] for item in operations}
             if not skills or not tools:
                 raise ValueError('Bundle expected skill/tool inventory is empty')

@@ -160,8 +160,8 @@ if __name__ == '__main__':
         args.out.mkdir(parents=True, exist_ok=False)
         timestamp = datetime.fromtimestamp(int(release.git('show', '-s', '--format=%ct', 'HEAD')), timezone.utc)
         write_archive(archive, files, timestamp)
-        (args.out/'SHA256SUMS').write_text(release.sha256(archive)+'  '+archive.name+'\n')
-    if (args.out/'SHA256SUMS').read_text() != release.sha256(archive)+'  '+archive.name+'\n':
+        (args.out/'SHA256SUMS').write_text(release.sha256(archive)+'  '+archive.name+'\n', encoding='utf-8')
+    if (args.out/'SHA256SUMS').read_text(encoding='utf-8') != release.sha256(archive)+'  '+archive.name+'\n':
         raise ValueError('Skill checksum mismatch')
     verify_archive(archive, files, args.extract)
     print(json.dumps({'version': version, 'sourceRevision': revision, 'files': len(files), 'verified': True}))

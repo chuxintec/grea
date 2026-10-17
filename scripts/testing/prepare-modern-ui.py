@@ -24,14 +24,14 @@ def prepare(output,sample,font,font_license=None):
         license_path=Path(font_license).absolute()
         if not license_path.is_file() or any(p.is_symlink() for p in (license_path,*license_path.parents)):raise ValueError('Ordinary explicit font license file required')
         shutil.copyfile(license_path,asset.parent/'FONT_LICENSE.txt')
-    (output/'font-source.marker').write_text(asset.relative_to(output).as_posix())
-    (output/'font-source.json').write_text(json.dumps({'sha256':hashlib.sha256(font.read_bytes()).hexdigest(),'source_name':font.name}))
-    (output/'modern-profile.marker').write_text(sample)
+    (output/'font-source.marker').write_text(asset.relative_to(output).as_posix(), encoding='utf-8')
+    (output/'font-source.json').write_text(json.dumps({'sha256':hashlib.sha256(font.read_bytes()).hexdigest(),'source_name':font.name}), encoding='utf-8')
+    (output/'modern-profile.marker').write_text(sample, encoding='utf-8')
     dependencies={'com.unity.ugui':'2.6.0','com.unity.inputsystem':'1.20.0','com.unity.render-pipelines.universal':'17.6.0','com.unity.test-framework':'1.8.0','com.unity.modules.audio':'1.0.0','com.unity.modules.particlesystem':'1.0.0','com.unity.modules.animation':'1.0.0'}
-    (output/'Packages/manifest.json').write_text(json.dumps({'dependencies':dependencies,'testables':[p.name for p in (output/'Packages').iterdir() if p.is_dir()]},indent=2))
-    (output/'ProjectSettings').mkdir();(output/'ProjectSettings/ProjectVersion.txt').write_text('m_EditorVersion: 6000.6.2f1\n')
+    (output/'Packages/manifest.json').write_text(json.dumps({'dependencies':dependencies,'testables':[p.name for p in (output/'Packages').iterdir() if p.is_dir()]},indent=2), encoding='utf-8')
+    (output/'ProjectSettings').mkdir();(output/'ProjectSettings/ProjectVersion.txt').write_text('m_EditorVersion: 6000.6.2f1\n', encoding='utf-8')
     snapshot={p.relative_to(output).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in output.rglob('*') if p.is_file()}
-    (output/'prepared-inputs.json').write_text(json.dumps(snapshot,indent=2));return {'project':str(output),'profile':'modern-ui-v1','sample':sample,'unityExecuted':False}
+    (output/'prepared-inputs.json').write_text(json.dumps(snapshot,indent=2), encoding='utf-8');return {'project':str(output),'profile':'modern-ui-v1','sample':sample,'unityExecuted':False}
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True);p.add_argument('--sample',choices=['numeric-combat','grid-puzzle'],required=True);p.add_argument('--font',required=True);p.add_argument('--font-license')

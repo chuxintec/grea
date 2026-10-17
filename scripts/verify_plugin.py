@@ -20,11 +20,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def client_command(root, client):
     if client == 'codex':
-        value = json.loads((root/'.mcp.json').read_text())['mcpServers']['grea']
+        value = json.loads((root/'.mcp.json').read_text(encoding='utf-8'))['mcpServers']['grea']
         cwd = (root/value.get('cwd', '.')).resolve()
         command = (root/value['command']).resolve()
     elif client == 'claude':
-        value = json.loads((root/'.claude-plugin/plugin.json').read_text())['mcpServers']['grea']
+        value = json.loads((root/'.claude-plugin/plugin.json').read_text(encoding='utf-8'))['mcpServers']['grea']
         command = Path(value['command'].replace('${CLAUDE_PLUGIN_ROOT}', str(root))).resolve()
         cwd = root
     else:
@@ -43,7 +43,7 @@ def sandbox_prefix(root, work):
     for path in deny_read:
         clauses.append('(deny file-read* (subpath ' + json.dumps(path, ensure_ascii=False) + '))')
     profile = work/'acceptance.sb'
-    profile.write_text('\n'.join(clauses))
+    profile.write_text('\n'.join(clauses), encoding='utf-8')
     return ['/usr/bin/sandbox-exec', '-f', str(profile)]
 
 
@@ -103,7 +103,7 @@ def acceptance(bundle):
     if (platform.system(), platform.machine()) != ('Darwin', 'arm64'):
         raise ValueError('Native acceptance requires macOS arm64')
     bundle = Path(bundle).resolve()
-    checksums = dict(line.split('  ', 1)[::-1] for line in (bundle.parent/'SHA256SUMS').read_text().splitlines())
+    checksums = dict(line.split('  ', 1)[::-1] for line in (bundle.parent/'SHA256SUMS').read_text(encoding='utf-8').splitlines())
     check(checksums.get(bundle.name) == sha256(bundle), 'Plugin external checksum mismatch')
     with tempfile.TemporaryDirectory(prefix='grea 插件 acceptance ', dir='/private/tmp') as tmp:
         base = Path(tmp).resolve()
@@ -155,56 +155,56 @@ print(','.join(blocked))
                 check(plan['status'] == 'ok', 'Bundled workflow references failed')
                 check(all(root in Path(s['reference']).parents and Path(s['reference']).is_file() for s in plan['result']['steps']), 'Missing workflow resource')
                 source = work/(client+' source'); source.mkdir()
-                (source/'sample.txt').write_text('portable core')
+                (source/'sample.txt').write_text('portable core', encoding='utf-8')
                 output = work/(client+' copied')
                 _, copied = call('run_tool', {'tool_id':'static_asset_copy', 'arguments':['--source',str(source),'--output',str(output),'--map','sample.txt=renamed.txt'], 'run_dir':str(work/(client+' copy receipt'))})
-                check(copied['status'] == 'ok' and (output/'renamed.txt').read_text() == 'portable core', 'Bundled tool subprocess failed')
+                check(copied['status'] == 'ok' and (output/'renamed.txt').read_text(encoding='utf-8') == 'portable core', 'Bundled tool subprocess failed')
                 _, legacy = call('run_tool', {'tool_id':'validate_unity_project','arguments':['--help'], 'run_dir':str(work/(client+' legacy receipt'))})
                 check(legacy['status'] == 'ok', 'Legacy launch.py did not use bundled Python')
                 compiled = work/(client+' compiled.json')
-                compiled.write_text(json.dumps([1,[],[],[['cc.Node',['_name'],2]],[[0,0,2]],[[0,'portable']],[],[],[],[],[]]))
+                compiled.write_text(json.dumps([1,[],[],[['cc.Node',['_name'],2]],[[0,0,2]],[[0,'portable']],[],[],[],[],[]]), encoding='utf-8')
                 decoded = work/(client+' decoded')
                 _, cocos = call('run_tool', {'tool_id':'cocos_assets','arguments':['--input',str(compiled),'--output',str(decoded)],'run_dir':str(work/(client+' cocos receipt'))})
-                check(cocos['status']=='ok' and json.loads((decoded/'decoded.json').read_text())['instances'][0]['_name']=='portable','Bundled Cocos reader depends on host/source')
+                check(cocos['status']=='ok' and json.loads((decoded/'decoded.json').read_text(encoding='utf-8'))['instances'][0]['_name']=='portable','Bundled Cocos reader depends on host/source')
                 project = work/(client+' synthetic project'); (project/'Assets').mkdir(parents=True)
-                (project/'Assets/Entry.unity').write_text('%YAML 1.1\n')
-                (project/'Assets/Save.cs').write_text('class Save { public string Json; }')
-                policy=work/(client+' exit policy.json'); policy.write_text('{"schema_version":1,"exits":[]}')
+                (project/'Assets/Entry.unity').write_text('%YAML 1.1\n', encoding='utf-8')
+                (project/'Assets/Save.cs').write_text('class Save { public string Json; }', encoding='utf-8')
+                policy=work/(client+' exit policy.json'); policy.write_text('{"schema_version":1,"exits":[]}', encoding='utf-8')
                 native_report=work/(client+' native report.json')
                 _, native=call('run_tool',{'tool_id':'unity_native_exit','arguments':['--project',str(project),'--root','Entry.unity','--policy',str(policy),'--output',str(native_report)],'run_dir':str(work/(client+' native receipt'))})
-                check(native['status']=='partial' and not json.loads(native_report.read_text())['native_exit_passed'],'Static native exit must stay pending under bundled Python')
+                check(native['status']=='partial' and not json.loads(native_report.read_text(encoding='utf-8'))['native_exit_passed'],'Static native exit must stay pending under bundled Python')
                 config_schema=work/(client+' config schema.json'); config_rows=work/(client+' config rows.json'); config_out=work/(client+' config candidate')
-                config_schema.write_text(json.dumps(dict(schema_version=1,namespace='Own.Portable',name='Hint',key='Id',fields=[dict(name='Id',type='int'),dict(name='Text',type='string',nullable=True)])))
-                config_rows.write_text('[{"Id":1,"Text":null},{"Id":2,"Text":""}]')
+                config_schema.write_text(json.dumps(dict(schema_version=1,namespace='Own.Portable',name='Hint',key='Id',fields=[dict(name='Id',type='int'),dict(name='Text',type='string',nullable=True)])), encoding='utf-8')
+                config_rows.write_text('[{"Id":1,"Text":null},{"Id":2,"Text":""}]', encoding='utf-8')
                 _, config=call('run_tool',dict(tool_id='unity_config_candidate',arguments=['--schema',str(config_schema),'--input',str(config_rows),'--output',str(config_out)],run_dir=str(work/(client+' config receipt'))))
-                check(config['status']=='ok' and (config_out/'HintTable.cs').is_file() and json.loads((config_out/'source-rows.json').read_text())[0]['Text'] is None,'Bundled typed config failed')
+                check(config['status']=='ok' and (config_out/'HintTable.cs').is_file() and json.loads((config_out/'source-rows.json').read_text(encoding='utf-8'))[0]['Text'] is None,'Bundled typed config failed')
                 recipe=work/(client+' native recipe.json'); native_out=work/(client+' native candidate')
-                recipe.write_text(json.dumps(dict(schema_version=1,sprites=[],targets=[dict(path='Widget',scale=[2,3,1])],clips=[dict(name='Move',duration=1,loop=True,curves=[dict(target='Widget',property='m_LocalPosition.x',keys=[[0,0],[1,4]])],events=[])])))
+                recipe.write_text(json.dumps(dict(schema_version=1,sprites=[],targets=[dict(path='Widget',scale=[2,3,1])],clips=[dict(name='Move',duration=1,loop=True,curves=[dict(target='Widget',property='m_LocalPosition.x',keys=[[0,0],[1,4]])],events=[])])), encoding='utf-8')
                 _, authored=call('run_tool',dict(tool_id='unity_native_assets',arguments=['prepare','--recipe',str(recipe),'--output',str(native_out)],run_dir=str(work/(client+' authoring receipt'))))
-                check(authored['status']=='ok' and json.loads((native_out/'native-request.json').read_text())['targets'][0]['scale']==[2,3,1],'Bundled finite authoring failed')
+                check(authored['status']=='ok' and json.loads((native_out/'native-request.json').read_text(encoding='utf-8'))['targets'][0]['scale']==[2,3,1],'Bundled finite authoring failed')
                 manifest_file=work/(client+' evidence.json')
                 payload=source/'sample.txt'
-                manifest_file.write_text(json.dumps(dict(schema_version=1,scope='owned fixture',entries=[dict(id='sample',layer='source',path='sample.txt',bytes=payload.stat().st_size,sha256=sha256(payload))])))
+                manifest_file.write_text(json.dumps(dict(schema_version=1,scope='owned fixture',entries=[dict(id='sample',layer='source',path='sample.txt',bytes=payload.stat().st_size,sha256=sha256(payload))])), encoding='utf-8')
                 evidence_report=work/(client+' evidence-report.json')
                 _, verified=call('run_tool',dict(tool_id='evidence_manifest',arguments=['--root',str(source),'--manifest',str(manifest_file),'--adapter','flat-v1','--output',str(evidence_report)],run_dir=str(work/(client+' manifest receipt'))))
-                check(verified['status']=='ok' and json.loads(evidence_report.read_text())['current_closure']=='verified','Bundled manifest verification failed')
+                check(verified['status']=='ok' and json.loads(evidence_report.read_text(encoding='utf-8'))['current_closure']=='verified','Bundled manifest verification failed')
                 config_dir=work/(client+' typed export');config_dir.mkdir()
-                (config_dir/'rows.json').write_text('[{"Id":1,"Rate":0.123456789012345}]')
+                (config_dir/'rows.json').write_text('[{"Id":1,"Rate":0.123456789012345}]', encoding='utf-8')
                 contract=config_dir/'contract.json'
-                contract.write_text(json.dumps(dict(schema_version=1,codec='typed-json-v1',tables=[dict(name='A',path='rows.json',authoring='json',key='Id',fields=[dict(name='Id',type='int'),dict(name='Rate',type='double')])],references=[])))
+                contract.write_text(json.dumps(dict(schema_version=1,codec='typed-json-v1',tables=[dict(name='A',path='rows.json',authoring='json',key='Id',fields=[dict(name='Id',type='int'),dict(name='Rate',type='double')])],references=[])), encoding='utf-8')
                 _, preflight=call('run_tool',dict(tool_id='config_preflight',arguments=['--contract',str(contract),'--output',str(work/(client+' preflight.json'))],run_dir=str(work/(client+' preflight receipt'))))
                 check(preflight['status']=='ok','Bundled typed preflight failed')
                 observation=work/(client+' observation.json')
-                observation.write_text(json.dumps(dict(schema_version=1,candidate_sha256='a'*64,run_instance='own-fixture',frames=[dict(frame=i,phase=phase,nodes=[dict(id='label',active=True,text_length=3,mesh_vertices=12)]) for i,phase in enumerate(['cold_open','closed','reopen'])])))
+                observation.write_text(json.dumps(dict(schema_version=1,candidate_sha256='a'*64,run_instance='own-fixture',frames=[dict(frame=i,phase=phase,nodes=[dict(id='label',active=True,text_length=3,mesh_vertices=12)]) for i,phase in enumerate(['cold_open','closed','reopen'])])), encoding='utf-8')
                 _, presentation=call('run_tool',dict(tool_id='presentation_audit',arguments=['--input',str(observation),'--output',str(work/(client+' observation-report.json'))],run_dir=str(work/(client+' observation receipt'))))
                 check(presentation['status']=='ok','Bundled observation analysis failed')
                 perf=work/(client+' perf.json')
-                perf.write_text(json.dumps(dict(schema_version=1,candidate_sha256='b'*64,identity=dict(workload_sha256='a'*64,device='fixture',platform='mac',viewport=[540,900],quality='fixed',seed=1,input_sha256='c'*64,measurement='frame-ms-v1'),samples=[dict(frame=i,phase='steady',focused=True,valid=True,frame_ms=16) for i in range(3)],counters={})))
+                perf.write_text(json.dumps(dict(schema_version=1,candidate_sha256='b'*64,identity=dict(workload_sha256='a'*64,device='fixture',platform='mac',viewport=[540,900],quality='fixed',seed=1,input_sha256='c'*64,measurement='frame-ms-v1'),samples=[dict(frame=i,phase='steady',focused=True,valid=True,frame_ms=16) for i in range(3)],counters={})), encoding='utf-8')
                 _, performance=call('run_tool',dict(tool_id='performance_compare',arguments=['--before',str(perf),'--after',str(perf),'--output',str(work/(client+' performance'))],run_dir=str(work/(client+' performance receipt'))))
                 check(performance['status']=='ok','Bundled performance analysis failed')
                 case_project=work/(client+' revision case');case_project.mkdir()
                 case_source=case_project/'source.bin';case_source.write_bytes(b'owned source')
-                candidate=case_project/'candidate.txt';candidate.write_text('revision one')
+                candidate=case_project/'candidate.txt';candidate.write_text('revision one', encoding='utf-8')
                 _, initialized_case=call('init_case',dict(project_dir=str(case_project),source=str(case_source),mode='fix',source_engine='unity'))
                 check(initialized_case['status']=='ok','Bundled case creation failed')
                 revision_args=dict(case_dir=str(case_project),candidate_root=str(case_project),candidate_files=['candidate.txt'],platform='editor',qa_profile='owned-fixture')
@@ -214,7 +214,7 @@ print(','.join(blocked))
                 check(case_status['status']=='partial' and case_status['result']['candidate_integrity']=='matched'
                       and case_status['result']['declared_acceptance']=='incomplete',
                       'Bundled candidate readback must preserve the unverified state: '+json.dumps(case_status))
-                candidate.write_text('revision two')
+                candidate.write_text('revision two', encoding='utf-8')
                 _, stale=call('case_status',dict(case_dir=str(case_project)))
                 check(stale['error']['code']=='STALE_CANDIDATE','Changed candidate retained its acceptance identity')
                 _, second_revision=call('start_case_revision',revision_args)

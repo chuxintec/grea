@@ -207,7 +207,7 @@ def build(out, *, worktree=False, cache=None, tag=None):
     summary.update(archive=ARCHIVE, sha256=sha256(out/ARCHIVE), bytes=(out/ARCHIVE).stat().st_size,
                    files=len(manifest['files']), runtime=runtime_identity)
     (out/'plugin-build.json').write_bytes(encoded(summary))
-    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in (ARCHIVE, 'plugin-build.json')))
+    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in (ARCHIVE, 'plugin-build.json')), encoding='utf-8')
     return summary
 
 

@@ -20,7 +20,7 @@ def build(source, work, output, timeout=600, execute=subprocess.run, run_tests=F
         if any(p.is_symlink() for p in (path, *path.parents)):
             raise ValueError('Symlink paths are not supported')
     source, work, output = (p.resolve() for p in (source, work, output))
-    sample = (source / 'grea-framework-sample.marker').read_text().strip()
+    sample = (source / 'grea-framework-sample.marker').read_text(encoding='utf-8').strip()
     if sample not in ('numeric-combat', 'grid-puzzle') or not (source / 'sample-seeded.json').is_file():
         raise ValueError('Expected a prepared and Editor-seeded grea sample')
     if work.exists() or output.exists() or source == work or source in work.parents or work in source.parents:
@@ -47,15 +47,15 @@ def build(source, work, output, timeout=600, execute=subprocess.run, run_tests=F
                 test_command = ['unity', 'test', str(work), '--mode', mode, '--output', str(report), '--timeout',
                                 str(timeout), '--format', 'json', '--', '-nographics', '-logFile', str(work / (mode.lower() + '.log'))]
                 tested = execute(test_command, capture_output=True, text=True)
-                (work / (mode.lower() + '-command.json')).write_text(tested.stdout)
+                (work / (mode.lower() + '-command.json')).write_text(tested.stdout, encoding='utf-8')
                 if tested.returncode != 0 or not report.exists():
                     raise RuntimeError(mode + ' failed; test evidence preserved')
                 result = ET.parse(report).getroot()
                 if result.get('result') != 'Passed' or int(result.get('passed', '0')) <= 0 or int(result.get('skipped', '0')):
                     raise RuntimeError(mode + ' did not pass every discovered test')
         completed = execute(command, capture_output=True, text=True)
-        (work / 'build-command.json').write_text(completed.stdout)
-        (work / 'build-stderr.txt').write_text(completed.stderr)
+        (work / 'build-command.json').write_text(completed.stdout, encoding='utf-8')
+        (work / 'build-stderr.txt').write_text(completed.stderr, encoding='utf-8')
         if completed.returncode != 0:
             raise RuntimeError('Unity build failed; preserved working copy contains command and Editor logs')
         if not output.is_dir():
@@ -65,7 +65,7 @@ def build(source, work, output, timeout=600, execute=subprocess.run, run_tests=F
         receipt = dict(sample=sample, sourceAssetsSha256=hashlib.sha256(json.dumps(before, sort_keys=True,
                        separators=(',', ':')).encode()).hexdigest(), sourceAssetsUnchanged=True,
                        workMayContainUnityBuildCaches=True, sourceFiles=len(before))
-        (work / 'source-preservation.json').write_text(json.dumps(receipt, indent=2) + '\n')
+        (work / 'source-preservation.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
         return receipt
     finally:
         # Never overwrite source to disguise changes. Retain evidence and fail if any source byte changed.
