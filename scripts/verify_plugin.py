@@ -219,6 +219,11 @@ print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volum
                 if windows and copied['status']!='ok':
                     diagnosis="""import pathlib,sys,traceback,subprocess
 p=pathlib.Path(sys.argv[1]);sys.path.insert(0,sys.argv[2])
+sys.stdout.reconfigure(encoding='utf-8');sys.stderr.reconfigure(encoding='utf-8')
+for parent in p.parents:
+ try:parent.lstat();state='metadata readable'
+ except OSError as e:state=str(e)
+ print('ancestor',str(parent),state,flush=True)
 for label,fn in [('stat',p.stat),('resolve',lambda:p.resolve(strict=True)),('list',lambda:list(p.iterdir())),('read',lambda:(p/'sample.txt').read_bytes())]:
  try:print(label,repr(fn()),flush=True)
  except Exception:traceback.print_exc()

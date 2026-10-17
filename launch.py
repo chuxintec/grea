@@ -4,7 +4,7 @@ import os,subprocess,sys
 from pathlib import Path
 
 def main():
-    root=Path(__file__).resolve().parent
+    root=Path(__file__).absolute().parent
     portable=root/('runtime/python.exe' if os.name=='nt' else 'runtime/bin/python3')
     if portable.is_file() and (root/'plugin/launcher/start.py').is_file():
         command=[str(portable),'-I','-B',str(root/'plugin/launcher/start.py'),*sys.argv[1:]]
