@@ -479,6 +479,8 @@ def acceptance(bundle, codex_bin=None, claude_bin=None, timeout=45, offline=True
         base = Path(tmp).resolve()
         try:
             manifest = verify_archive(bundle, base/'catalog/plugins')
+            from plugin_targets import native_target
+            if manifest.get('target')!=native_target():raise ValueError('Client acceptance requires the matching native target')
             bundle_root = base/'catalog/plugins/grea'
             result['version'] = manifest.get('version')
             result['source_tree_sha256'] = manifest.get('source_tree_sha256')

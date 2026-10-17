@@ -62,7 +62,7 @@ class Reader:
     """Never traverses symlinks, follows special files, or imports project code."""
     def __init__(self, root, max_files, max_bytes, cancel):
         supplied = Path(root).expanduser().absolute()
-        if supplied.is_symlink() or not supplied.is_dir():
+        if supplied.is_symlink() or (supplied.exists() and getattr(supplied.lstat(),'st_file_attributes',0)&0x400) or not supplied.is_dir():
             raise GreaError('INVALID_PROJECT_ROOT', 'Project root must be an existing non-symlink directory.')
         self.root = supplied.resolve()
         self.root_identity = (self.root.stat().st_dev, self.root.stat().st_ino)

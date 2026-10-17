@@ -131,6 +131,7 @@ def acceptance(bundle):
     with tempfile.TemporaryDirectory(prefix='grea 插件 acceptance ', dir=None if windows else '/private/tmp') as tmp, ExitStack() as stack:
         base = Path(tmp).resolve()
         manifest = verify_archive(bundle, base/'initial')
+        check(manifest.get('target')==target,'Artifact does not match the native acceptance target')
         root = base/'移动后 installed grea'
         (base/'initial/grea').rename(root)
         work = base/'empty workspace'; work.mkdir()
