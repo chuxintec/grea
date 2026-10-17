@@ -18,12 +18,13 @@ import urllib.request
 
 from plugin_bundle import encoded, extract_runtime, inventory, read_source, sha256, verify_archive, write_archive
 from grea.brand_assets import validate_interface
+from plugin_targets import target_config, runtime_lock, archive_name, client_launch
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = 'grea-plugin-macos-arm64.zip'
 
 
-def write_product(source, destination):
+def write_product(source, destination, target="macos-arm64"):
     destination.mkdir(parents=True, exist_ok=False)
     for name, (data, mode) in sorted(source.items()):
         # Preserve the audited public resource closure, including linked docs and fixtures.
@@ -35,6 +36,7 @@ def write_product(source, destination):
     for client in ('.codex-plugin', '.claude-plugin'):
         value = json.loads(source[f'plugin/{client}/plugin.json'][0])
         value['skills'] = './plugin/skills/'
+        if client=='.claude-plugin':value['mcpServers']={'grea':client_launch(target,'claude')}
         if client=='.codex-plugin':
             for key in ('composerIcon','logo','logoDark'):
                 if key in value.get('interface',{}):
@@ -45,7 +47,7 @@ def write_product(source, destination):
         path = destination / client / 'plugin.json'
         path.parent.mkdir(parents=True)
         path.write_bytes(encoded(value))
-    (destination / '.mcp.json').write_bytes(source['plugin/.mcp.json'][0])
+    (destination / '.mcp.json').write_bytes(encoded({'mcpServers':{'grea':client_launch(target,'codex')}}))
     marketplace = destination/'.agents/plugins/marketplace.json'
     marketplace.parent.mkdir(parents=True)
     marketplace.write_bytes(encoded({'name':'grea-local','description':'Portable grea skills and local MCP runtime.','plugins':[{
@@ -97,8 +99,9 @@ def install_dependencies(tree, cache, lock):
                '--no-emit-project', '--format', 'requirements-txt']
     requirements = subprocess.check_output(command, env=env)
     (tree/'runtime-requirements.txt').write_bytes(requirements)
-    python = tree/'runtime/bin/python3'
-    site = tree/f"runtime/lib/python{lock['pythonMinor']}/site-packages"
+    _,layout=target_config(lock['target'])
+    python = tree/layout['python']
+    site = tree/layout['site']
     subprocess.run([uv, 'pip', 'install', '--python', str(python), '--target', str(site),
                     '--require-hashes', '--only-binary', ':all:', '--no-deps',
                     '-r', str(tree/'runtime-requirements.txt')], env=env, check=True, stdout=sys.stderr)
@@ -109,7 +112,7 @@ def install_dependencies(tree, cache, lock):
             path.unlink()
         elif path.is_dir() and path.name == '__pycache__':
             shutil.rmtree(path)
-    for path in (tree/'runtime/bin').iterdir():
+    for path in (tree/'runtime/bin').iterdir() if (tree/'runtime/bin').exists() else []:
         if path.name not in ('python3', 'python' + lock['pythonMinor']):
             if path.is_dir(): shutil.rmtree(path)
             else: path.unlink()
@@ -126,7 +129,7 @@ def normalize_records(site, runtime, upstream_files=None):
     upstream_files = upstream_files or {}
     preserved = []
     for record in sorted(site.glob('*.dist-info/RECORD')):
-        with record.open(newline='') as stream:
+        with record.open(newline='', encoding='utf-8') as stream:
             rows = list(csv.reader(stream))
         kept = []
         for row in rows:
@@ -150,14 +153,15 @@ def normalize_records(site, runtime, upstream_files=None):
                     preserved.append({'file':relative,'sha256':original['sha256'],
                                       'reason':'Original stripped CPython archive bytes are unchanged; upstream wheel RECORD predates stripping.'})
             kept.append(row)
-        with record.open('w', newline='') as stream:
+        with record.open('w', newline='', encoding='utf-8') as stream:
             csv.writer(stream, lineterminator='\n').writerows(sorted(kept))
     return preserved
 
 
-def build(out, *, worktree=False, cache=None, tag=None):
-    if (platform.system(), platform.machine()) != ('Darwin', 'arm64'):
-        raise ValueError('Build and acceptance currently require native macOS arm64')
+def build(out, *, worktree=False, cache=None, tag=None, target=None):
+    selected,layout=target_config(target)
+    if target_config()[0]!=selected:raise ValueError('Build requires the matching native host')
+    artifact=archive_name(selected)
     out = Path(out).resolve()
     if out.exists(): raise FileExistsError(out)
     source, identity = read_source(ROOT, worktree)
@@ -172,42 +176,42 @@ def build(out, *, worktree=False, cache=None, tag=None):
     if tag:
         from release import version as parse_version
         if parse_version(tag)[0] != version: raise ValueError('Release tag version differs')
-    lock = json.loads(source['plugin/runtime-lock.json'][0])
+    lock = runtime_lock(source,selected)
     cache = Path(cache or ROOT/'.cache/plugin-runtime').resolve()
     archive = download_python(lock, cache)
     license_archive = download_python(lock['licenseArchive'], cache)
     out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='grea-plugin-build-', dir=out.parent) as temporary:
         tree = Path(temporary)/'grea'
-        write_product(source, tree)
+        write_product(source, tree, selected)
         extract_runtime(archive, tree/'runtime', lock['sha256'])
         from runtime_licenses import install_licenses
         licenses = install_licenses(license_archive, tree/'runtime', lock)
         packages, normalization = install_dependencies(tree, cache, lock)
-        subprocess.run([str(tree/'runtime/bin/python3'), '-I', '-B', str(tree/'launch_tool.py'),
+        subprocess.run([str(tree/layout['python']), '-I', '-B', str(tree/'launch_tool.py'),
                         'check_skill', '--workspace-root', str(tree), '--json'],
                        cwd=tree, check=True, stdout=sys.stderr)
-        observed = subprocess.check_output([str(tree/'runtime/bin/python3'), '-I', '-B', '-c',
+        observed = subprocess.check_output([str(tree/layout['python']), '-I', '-B', '-c',
                                             'import platform; print(platform.python_version(), platform.machine())'], text=True).strip()
-        if observed != lock['pythonVersion'] + ' arm64': raise ValueError('Runtime architecture/version mismatch')
+        if observed.split()[0] != lock['pythonVersion'] or observed.split()[1].lower() not in layout['machines']: raise ValueError('Runtime architecture/version mismatch')
         runtime_identity = {'python': lock, 'pythonPackages': packages, 'licenses': licenses,
                             'preservedUpstreamRecordDifferences': normalization,
                             'uvLockSha256': hashlib.sha256(source['uv.lock'][0]).hexdigest(),
                             'requirementsSha256': sha256(tree/'runtime-requirements.txt')}
         (tree/'runtime-manifest.json').write_bytes(encoded(runtime_identity))
         manifest = {'schemaVersion': 1, 'name': 'grea', 'kind': 'complete-plugin',
-                    'version': version, 'target': 'macos-arm64', **identity,
-                    'runtime': runtime_identity, 'files': inventory(tree),
+                    'version': version, 'target': selected, **identity,
+                    'runtime': runtime_identity, 'files': inventory(tree, selected),
                     'limits': 'Local core MCP is bundled; Unity Editor and optional external providers are separate. No other platform is accepted by this artifact.'}
         (tree/'plugin-manifest.json').write_bytes(encoded(manifest))
         out.mkdir()
-        write_archive(tree, out/ARCHIVE, identity['source_timestamp'])
-    verify_archive(out/ARCHIVE)
+        write_archive(tree, out/artifact, identity['source_timestamp'])
+    verify_archive(out/artifact)
     summary = {k: manifest[k] for k in ('version', 'target', 'source_revision', 'source_dirty', 'source_kind', 'source_tree_sha256')}
-    summary.update(archive=ARCHIVE, sha256=sha256(out/ARCHIVE), bytes=(out/ARCHIVE).stat().st_size,
+    summary.update(archive=artifact, sha256=sha256(out/artifact), bytes=(out/artifact).stat().st_size,
                    files=len(manifest['files']), runtime=runtime_identity)
     (out/'plugin-build.json').write_bytes(encoded(summary))
-    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in (ARCHIVE, 'plugin-build.json')), encoding='utf-8')
+    (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in (artifact, 'plugin-build.json')), encoding='utf-8')
     return summary
 
 
@@ -217,6 +221,7 @@ if __name__ == '__main__':
     parser.add_argument('--cache', type=Path)
     parser.add_argument('--worktree', action='store_true', help='Unpublished preview of audited current worktree bytes')
     parser.add_argument('--tag')
+    parser.add_argument('--target', choices=('macos-arm64','windows-x64'))
     args = parser.parse_args()
-    result = build(args.out, worktree=args.worktree, cache=args.cache, tag=args.tag)
+    result = build(args.out, worktree=args.worktree, cache=args.cache, tag=args.tag, target=args.target)
     print(json.dumps({k: v for k, v in result.items() if k != 'runtime'}, ensure_ascii=False))

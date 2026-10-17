@@ -115,7 +115,7 @@ def prepare(tag, out, require_tag=False):
         '源码与纯文档包不包含第三方程序、Unity 包快照、Spine vendor、虚拟环境或项目材料。'
         '来源与许可证见 THIRD_PARTY.md，自有代码采用 MIT。\n\n'
         '发布由测试、契约/技能检查及解压包安装验证把关；Windows 原生运行、Unity Editor 和游戏验收未执行。'
-        '平台限制见 docs/工具集成与平台支持.md。\n\n'
+        '平台限制见 docs/安装与平台.md。\n\n'
         f'源码提交：`{sha}`。\n', encoding='utf-8')
     return manifest
 

@@ -42,7 +42,7 @@ def render(source, version, revision):
         if not name.startswith(PLUGIN):
             continue
         local = name[len(PLUGIN):]
-        if local.startswith('launcher/') or local == 'runtime-lock.json':
+        if local.startswith('launcher/') or local.startswith('runtime-') and local.endswith('.json'):
             continue  # The documentation-only archive intentionally has no runtime.
         if local not in MANIFESTS and any(part.startswith('.') for part in PurePosixPath(local).parts):
             continue  # Repository configuration is not installed plugin content.

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "target": "windows-x64",
+  "pythonVersion": "3.12.14",
+  "pythonMinor": "3.12",
+  "distribution": "python-build-standalone",
+  "release": "20260929",
+  "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260929/cpython-3.12.14%2B20260929-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+  "sha256": "f38e68f4d612ade6dd50c894fc80b14c0be0c3b5201145d6fff5f20b9323204d",
+  "bytes": 21992568,
+  "source": "https://github.com/astral-sh/python-build-standalone/releases/tag/20260929",
+  "license": "Python and bundled library licenses are preserved in the runtime distribution.",
+  "dependencies": "uv.lock",
+  "buildUvVersion": "0.12.21",
+  "licenseArchive": {
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260929/cpython-3.12.14%2B20260929-x86_64-pc-windows-msvc-pgo-full.tar.zst",
+    "sha256": "129535755f80aca967bda7cdac177cacccad9328cf4570af2a2af42a8b761d0c",
+    "bytes": 43741185
+  }
+}

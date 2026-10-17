@@ -3,6 +3,8 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import shutil
+from plugin_targets import TARGETS
 
 from plugin_bundle import encoded, safe_name, sha256
 
@@ -22,7 +24,7 @@ def check_license_closure(metadata, available):
     # This pinned macOS distribution's metadata lists zlib-ng as an alternative,
     # while these four extensions actually link Apple's system libz.
     exception = 'licenses/LICENSE.zlib-ng.txt'
-    if missing != {exception}: raise ValueError('Unaccounted runtime licenses: '+str(sorted(missing)))
+    if metadata.get('target_triple','aarch64-apple-darwin') != 'aarch64-apple-darwin' or missing != {exception}: raise ValueError('Unaccounted runtime licenses: '+str(sorted(missing)))
     refs = []
     for name, variants in metadata['build_info']['extensions'].items():
         for value in variants:
@@ -42,13 +44,13 @@ def install_licenses(archive, runtime, lock):
         raise ValueError('Full Python archive checksum mismatch')
     def read(name):
         safe_name(name)
-        value = subprocess.check_output(['/usr/bin/tar','-xOf',str(archive),name], timeout=60)
+        value = subprocess.check_output([shutil.which('tar') or 'tar','-xOf',str(archive),name], timeout=60)
         if len(value) > 5 * 1024**2: raise ValueError('Unexpected license metadata size')
         return value
     raw = read('python/PYTHON.json'); metadata = json.loads(raw)
-    if (metadata['python_version'], metadata['target_triple']) != (lock['pythonVersion'],'aarch64-apple-darwin'):
+    if (metadata['python_version'], metadata['target_triple']) != (lock['pythonVersion'],TARGETS[lock['target']]['triple']):
         raise ValueError('License archive does not match the runtime')
-    listing = subprocess.check_output(['/usr/bin/tar','-tf',str(archive)], text=True, timeout=60).splitlines()
+    listing = subprocess.check_output([shutil.which('tar') or 'tar','-tf',str(archive)], text=True, timeout=60).splitlines()
     names = sorted(name for name in listing if name.startswith('python/licenses/') and not name.endswith('/'))
     if not names or len(names) != len(set(names)): raise ValueError('Missing or duplicate runtime licenses')
     records = {}
@@ -64,6 +66,7 @@ def install_licenses(archive, runtime, lock):
     (Path(runtime)/'PYTHON.json').write_bytes(raw)
     report = {'source_archive_sha256':lock['licenseArchive']['sha256'],
               'metadata_sha256':hashlib.sha256(raw).hexdigest(),'files':records,
-              'metadata_exceptions':exceptions,'minimum_macos':metadata['apple_sdk_deployment_target']}
+              'metadata_exceptions':exceptions,'target_triple':metadata['target_triple'],
+              'minimum_macos':metadata.get('apple_sdk_deployment_target')}
     (Path(runtime)/'license-manifest.json').write_bytes(encoded(report))
     return report

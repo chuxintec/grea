@@ -16,7 +16,7 @@
     "numeric-combat",
     "grid-puzzle"
   ],
-  "validation": "docs/design/audit-remediation-20261016.md",
+  "validation": "validation/releases/2026-10-16-audit-remediation.json",
   "status": "candidate",
   "game_parity": "not_run"
 }

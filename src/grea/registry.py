@@ -33,6 +33,11 @@ def load():
             canonical=resolve(entry['alias_of'],(*seen,key))
             for field in ('execution','probe','files','required_files','host_support','configuration_source','system_binary'):entry[field]=canonical.get(field)
             entry['canonical_id']=canonical.get('canonical_id',canonical['id'])
+        native=entry.get('platform_commands',{}).get(platform.system())
+        if native:
+            entry['execution']=dict(entry.get('execution') or {},command=native['command'])
+            entry['probe']=native.get('probe')
+            entry['files']=[];entry['required_files']=[];entry['system_binary']=None
         if key in overrides:
             override=overrides[key]
             # A native replacement must not inherit the old host's probe.
@@ -49,11 +54,11 @@ def load():
 def check_host(entry):
     support=entry.get('host_support',{})
     if support.get('systems') and platform.system() not in support['systems']:
-        raise GreaError('UNSUPPORTED_HOST','Registered adapter is not configured for this host.',details={'tool_id':entry['id'],'host':platform.system(),'support':support},next_action='Read docs/工具集成与平台支持.md; configure the same provider explicitly for this host.')
+        raise GreaError('UNSUPPORTED_HOST','Registered adapter is not configured for this host.',details={'tool_id':entry['id'],'host':platform.system(),'support':support},next_action='Read docs/安装与平台.md; configure the same provider explicitly for this host.')
     if support.get('architectures') and platform.machine().lower() not in support['architectures']:
         raise GreaError('UNSUPPORTED_ARCH','Bundled adapter does not match this CPU.',details={'tool_id':entry['id'],'architecture':platform.machine()},next_action='Install a matching native build and configure its canonical provider ID.')
 
-def expand(value):return value.replace('{grea}',str(package_root())).replace('{tools}',str(package_root())).replace('{home}',str(Path.home())).replace('{python}',sys.executable)
+def expand(value):return value.replace('{grea}',str(package_root())).replace('{tools}',str(package_root())).replace('{home}',str(Path.home()) if '{home}' in value else '').replace('{python}',sys.executable)
 
 def tool(tool_id):
     for entry in load():

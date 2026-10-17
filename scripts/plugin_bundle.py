@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import posixpath
+import re
 import shutil
 import stat
 import subprocess
@@ -30,7 +31,15 @@ def safe_name(name):
     path = PurePosixPath(name)
     if not name or path.is_absolute() or '..' in path.parts or '\\' in name or ':' in name or str(path) != name:
         raise ValueError('Unsafe archive path: ' + name)
+    for part in path.parts:
+        if (part.endswith((' ','.')) or re.search(r'[<>"|?*\x00-\x1f]',part)
+                or part.split('.')[0].upper() in {'CON','PRN','AUX','NUL',*(f'COM{i}' for i in range(1,10)),*(f'LPT{i}' for i in range(1,10))}):
+            raise ValueError('Nonportable archive path: '+name)
     return path
+
+
+def linked(path):
+    return path.is_symlink() or bool(getattr(path.lstat(),'st_file_attributes',0)&0x400)
 
 
 def read_source(root, worktree=False):
@@ -112,20 +121,21 @@ def extract_runtime(archive, destination, expected_sha256):
             path.chmod(0o755 if value.mode & 0o111 else 0o644)
 
 
-def inventory(root):
+def inventory(root, target=None):
     result = {}
     for path in sorted(Path(root).rglob('*')):
-        if path.is_symlink(): raise ValueError('Installed plugin must contain regular files only')
+        if linked(path): raise ValueError('Installed plugin must contain regular files only')
         if not path.is_file(): continue
         name = path.relative_to(root).as_posix(); safe_name(name)
         if name == 'plugin-manifest.json': continue
         result[name] = {'sha256': sha256(path), 'bytes': path.stat().st_size,
-                        'mode': 0o755 if path.stat().st_mode & 0o111 else 0o644}
+                        'mode': 0o644 if target=='windows-x64' else (0o755 if path.stat().st_mode & 0o111 else 0o644)}
     return result
 
 
 def write_archive(root, archive, timestamp):
     stamp = time.gmtime(max(315532800, timestamp))[:6]
+    declared=json.loads((Path(root)/'plugin-manifest.json').read_text(encoding='utf-8'))['files']
     with zipfile.ZipFile(archive, 'x', zipfile.ZIP_DEFLATED, compresslevel=9) as zip_file:
         for path in sorted(Path(root).rglob('*')):
             if path.is_symlink(): raise ValueError('Plugin symlink')
@@ -133,7 +143,7 @@ def write_archive(root, archive, timestamp):
             name = path.relative_to(root).as_posix(); safe_name(name)
             info = zipfile.ZipInfo('grea/' + name, stamp)
             info.create_system = 3
-            info.external_attr = (stat.S_IFREG | (0o755 if path.stat().st_mode & 0o111 else 0o644)) << 16
+            info.external_attr = (stat.S_IFREG | declared.get(name,{'mode':0o644})['mode']) << 16
             info.compress_type = zipfile.ZIP_DEFLATED
             with path.open('rb') as source, zip_file.open(info, 'w') as output:
                 shutil.copyfileobj(source, output)
@@ -145,7 +155,7 @@ def verify_archive(archive, extract=None):
         for name in names:
             safe_name(name)
             if not name.startswith('grea/'): raise ValueError('Unexpected plugin root')
-        if len(names) != len(set(names)): raise ValueError('Duplicate ZIP entry')
+        if len(names)>100000 or len(names) != len(set(n.casefold() for n in names)): raise ValueError('Duplicate ZIP entry')
         if sum(x.file_size for x in zip_file.infolist()) > 2 * 1024**3:
             raise ValueError('Plugin archive exceeds limit')
         manifest = json.loads(zip_file.read('grea/plugin-manifest.json'))

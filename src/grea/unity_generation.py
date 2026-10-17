@@ -215,16 +215,14 @@ def _atomic(path, value):
 
 @contextlib.contextmanager
 def _lock(root):
-    if os.name != 'posix':
-        raise GreaError('UNSUPPORTED_PLATFORM', '工程生成 mutation currently requires POSIX locking.')
-    import fcntl
-    fd = os.open(root / '.grea-generation.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    from .host.files import file_lock
+    path=root/'.grea-generation.lock'
+    if path.is_symlink() or (path.exists() and getattr(path.lstat(),'st_file_attributes',0)&0x400):
+        raise GreaError('UNSAFE_PROJECT_ENTRY','Generation lock may not be a link.')
+    path.touch(exist_ok=True)
     try:
-        try: fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError: raise GreaError('GENERATION_BUSY', 'Another generation/recovery owns the root lock.')
-        yield
-    finally:
-        os.close(fd)
+        with file_lock(path,blocking=False):yield
+    except BlockingIOError:raise GreaError('GENERATION_BUSY','Another generation/recovery owns the root lock.')
 
 
 def _checkpoint(stage):

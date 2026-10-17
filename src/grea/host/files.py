@@ -7,7 +7,7 @@ import sys
 
 
 @contextlib.contextmanager
-def file_lock(path, *, write=True):
+def file_lock(path, *, write=True, blocking=True):
     # Open read-only: reviewers need not have write permission to the case lock.
     with Path(path).open('rb') as stream:
         if os.name == 'nt':
@@ -23,15 +23,17 @@ def file_lock(path, *, write=True):
             api.UnlockFileEx.restype = w.BOOL
             handle = msvcrt.get_osfhandle(stream.fileno()); state = Overlapped()
             # Synchronous handle, offset zero, one byte (including an empty file).
-            if not api.LockFileEx(handle, 2 if write else 0, 0, 1, 0, ctypes.byref(state)):
-                raise ctypes.WinError(ctypes.get_last_error())
+            if not api.LockFileEx(handle, (2 if write else 0) | (0 if blocking else 1), 0, 1, 0, ctypes.byref(state)):
+                error=ctypes.get_last_error()
+                if error==33 and not blocking:raise BlockingIOError(error,'Lock already held')
+                raise ctypes.WinError(error)
             try: yield
             finally:
                 if not api.UnlockFileEx(handle, 0, 1, 0, ctypes.byref(state)):
                     raise ctypes.WinError(ctypes.get_last_error())
         else:
             import fcntl
-            fcntl.flock(stream.fileno(), fcntl.LOCK_EX if write else fcntl.LOCK_SH)
+            fcntl.flock(stream.fileno(), (fcntl.LOCK_EX if write else fcntl.LOCK_SH) | (0 if blocking else fcntl.LOCK_NB))
             try: yield
             finally: fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 

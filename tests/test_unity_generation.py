@@ -1,3 +1,4 @@
+import sys
 """M3 transaction tests use a fake Editor; native behavior is tested separately in Unity."""
 import json
 import asyncio
@@ -234,13 +235,13 @@ class GenerationTests(unittest.TestCase):
 
     def test_cli_mcp_parity_and_preflight_rejections(self):
         async def run():
-            async with Client(StdioServerParameters(command=str(ROOT/'bin/grea'),args=['mcp']),read_timeout_seconds=30) as client:
+            async with Client(StdioServerParameters(command=sys.executable,args=[str(ROOT/'launch.py'),'mcp']),read_timeout_seconds=30) as client:
                 requests=[('plan_unity_generation',{'project_root':str(self.root)}),
                           ('generate_unity_project',{'project_root':str(self.root),'plan_id':'0'*64,'run_dir':'Evidence/mcp'}),
                           ('recover_unity_generation',{'project_root':str(self.root),'run_dir':'../escape'})]
                 for operation,request in requests:
                     mcp=(await client.call_tool(operation,request)).structured_content
-                    cli=subprocess.run([str(ROOT/'bin/grea'),operation.replace('_','-'),json.dumps(request)],capture_output=True,text=True,cwd='/tmp')
+                    cli=subprocess.run([sys.executable,str(ROOT/'launch.py'),operation.replace('_','-'),json.dumps(request)],capture_output=True,text=True,cwd=tempfile.gettempdir())
                     actual=json.loads(cli.stdout)
                     for key in ('status','result','error'):self.assertEqual(mcp[key],actual[key])
                     self.assertEqual(cli.returncode,{'ok':0,'partial':1,'error':2}[actual['status']])

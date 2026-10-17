@@ -9,6 +9,8 @@ from ctypes import wintypes as w
 import os
 import subprocess
 import time
+import threading
+import io
 
 SIZE = c.c_size_t
 class Security(c.Structure):
@@ -64,10 +66,11 @@ def api():
 
 
 class OwnedProcess:
-    def __init__(self, argv, cwd, env=None):
+    def __init__(self, argv, cwd, env=None, interactive=False, text=False):
         import msvcrt
+        self.returncode=None; self.args=argv
         self.k=api(); k=self.k; self.job=None; self.handle=None
-        self.stdout=self.stderr=None; handles=[]; attrs=None; info=ProcessInfo()
+        self.stdin=self.stdout=self.stderr=None; handles=[]; attrs=None; info=ProcessInfo()
         def require(ok):
             if not ok:raise c.WinError(c.get_last_error())
         try:
@@ -83,13 +86,19 @@ class OwnedProcess:
                 pipes.append((read.value,write.value))
             nul=k.CreateFileW('NUL',0x80000000,3,c.byref(security),3,0,None)
             require(nul not in (None,w.HANDLE(-1).value));handles.append(nul)
+            input_pipe=None
+            if interactive:
+                read,write=w.HANDLE(),w.HANDLE()
+                require(k.CreatePipe(c.byref(read),c.byref(write),c.byref(security),0))
+                handles.extend([read.value,write.value]);require(k.SetHandleInformation(write,1,0))
+                input_pipe=(read.value,write.value)
             size=SIZE();k.InitializeProcThreadAttributeList(None,1,0,c.byref(size))
             attrs=c.create_string_buffer(size.value)
             require(k.InitializeProcThreadAttributeList(attrs,1,0,c.byref(size)))
-            inherited=(w.HANDLE*3)(nul,pipes[0][1],pipes[1][1])
+            inherited=(w.HANDLE*3)(input_pipe[0] if interactive else nul,pipes[0][1],pipes[1][1])
             require(k.UpdateProcThreadAttribute(attrs,0,0x20002,inherited,c.sizeof(inherited),None,None))
             startup=StartupEx();startup.info.cb=c.sizeof(startup);startup.attributes=c.cast(attrs,w.LPVOID)
-            startup.info.flags=0x100;startup.info.stdin=nul;startup.info.stdout=pipes[0][1];startup.info.stderr=pipes[1][1]
+            startup.info.flags=0x100;startup.info.stdin=input_pipe[0] if interactive else nul;startup.info.stdout=pipes[0][1];startup.info.stderr=pipes[1][1]
             environment=dict(os.environ if env is None else env)
             block=c.create_unicode_buffer('\0'.join(f'{key}={value}' for key,value in sorted(environment.items(),key=lambda p:p[0].upper()))+'\0\0')
             command=c.create_unicode_buffer(subprocess.list2cmdline(argv))
@@ -97,9 +106,15 @@ class OwnedProcess:
             self.handle=info.process;self.pid=info.pid
             require(k.AssignProcessToJobObject(self.job,info.process))
             if k.ResumeThread(info.thread)==0xffffffff:raise c.WinError(c.get_last_error())
+            if interactive:
+                fd=msvcrt.open_osfhandle(input_pipe[1],os.O_WRONLY|os.O_BINARY);handles.remove(input_pipe[1])
+                self.stdin=os.fdopen(fd,'wb',buffering=0)
             for name,(read,write) in zip(('stdout','stderr'),pipes):
                 fd=msvcrt.open_osfhandle(read,os.O_RDONLY|os.O_BINARY);handles.remove(read)
                 setattr(self,name,os.fdopen(fd,'rb',buffering=0))
+            if text:
+                for name in ('stdin','stdout','stderr'):
+                    if getattr(self,name) is not None:setattr(self,name,io.TextIOWrapper(getattr(self,name),encoding='utf-8',write_through=True))
         except BaseException:
             if info.process:
                 k.TerminateProcess(info.process,1);k.WaitForSingleObject(info.process,2000)
@@ -111,10 +126,12 @@ class OwnedProcess:
             for handle in handles:k.CloseHandle(handle)
 
     def poll(self):
+        if self.returncode is not None:return self.returncode
         if self.k.WaitForSingleObject(self.handle,0)==258:return None
         code=w.DWORD()
         if not self.k.GetExitCodeProcess(self.handle,c.byref(code)):raise c.WinError(c.get_last_error())
-        return code.value
+        self.returncode=code.value
+        return self.returncode
 
     def wait(self, timeout=None):
         result=self.k.WaitForSingleObject(self.handle,0xffffffff if timeout is None else max(0,int(timeout*1000)))
@@ -135,6 +152,23 @@ class OwnedProcess:
             if value.active==0:return True
             if time.monotonic()>=deadline:return False
             time.sleep(.02)
+
+    def communicate(self, input=None, timeout=None):
+        # Keep drainers across a timeout so callers can kill then collect output.
+        if not hasattr(self,'_drainers'):
+            self._output=[None,None]
+            def read(index,stream):self._output[index]=stream.read()
+            self._drainers=[threading.Thread(target=read,args=(i,stream),daemon=True) for i,stream in enumerate((self.stdout,self.stderr))]
+            for thread in self._drainers:thread.start()
+            if self.stdin:
+                if input is not None:self.stdin.write(input);self.stdin.flush()
+                self.stdin.close()
+        deadline=None if timeout is None else time.monotonic()+timeout
+        self.wait(timeout)
+        for thread in self._drainers:
+            thread.join(None if deadline is None else max(0,deadline-time.monotonic()))
+        if any(t.is_alive() for t in self._drainers):raise subprocess.TimeoutExpired(self.args,timeout)
+        return tuple(self._output)
 
     def close(self):
         for name in ('job','handle'):

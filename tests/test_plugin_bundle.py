@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -74,7 +75,7 @@ class PluginBundleTests(unittest.TestCase):
             python = root/'runtime/bin/python3'
             self.assertFalse(python.is_symlink())
             self.assertEqual(python.read_bytes(), b'python')
-            self.assertTrue(python.stat().st_mode & 0o111)
+            if os.name!='nt':self.assertTrue(python.stat().st_mode & 0o111)
 
     def test_bundle_reproducibility_permissions_and_tamper(self):
         module = self.module()
@@ -90,7 +91,7 @@ class PluginBundleTests(unittest.TestCase):
             module.write_archive(tree, root/'b.zip', 1760000000)
             self.assertEqual((root/'a.zip').read_bytes(), (root/'b.zip').read_bytes())
             module.verify_archive(root/'a.zip', root/'moved path')
-            self.assertTrue((root/'moved path/grea/entry').stat().st_mode & 0o111)
+            if os.name!='nt':self.assertTrue((root/'moved path/grea/entry').stat().st_mode & 0o111)
             with zipfile.ZipFile(root/'a.zip', 'a') as archive:
                 archive.writestr('grea/unlisted', b'tampered')
             with self.assertRaises(ValueError):

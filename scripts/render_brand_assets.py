@@ -3,6 +3,8 @@
 import argparse
 import hashlib
 import io
+import struct
+import zlib
 import json
 from pathlib import Path
 import sys
@@ -26,13 +28,22 @@ def render(raw,size):
     return image.resize((size,size),Image.Resampling.LANCZOS)
 
 
+def png_bytes(image):
+    # Stored DEFLATE blocks avoid platform zlib/zlib-ng encoder differences.
+    raw=b''.join(b'\0'+image.tobytes()[y*image.width*4:(y+1)*image.width*4] for y in range(image.height))
+    blocks=[raw[i:i+65535] for i in range(0,len(raw),65535)]
+    compressed=b'\x78\x01'+b''.join(bytes([int(i==len(blocks)-1)])+struct.pack('<HH',len(block),65535-len(block))+block for i,block in enumerate(blocks))+struct.pack('>I',zlib.adler32(raw))
+    def chunk(name,value):return struct.pack('>I',len(value))+name+value+struct.pack('>I',zlib.crc32(name+value))
+    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',image.width,image.height,8,6,0,0,0))+chunk(b'IDAT',compressed)+chunk(b'IEND',b'')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--check',action='store_true');parser.add_argument('--preview',type=Path);args=parser.parse_args();assets=ROOT/'plugin/assets';expected={};identity={}
     for name in ('icon','logo_light','logo_dark'):
         raw=(assets/(name+'.svg')).read_bytes();validate_asset('plugin/assets/'+name+'.svg',raw);identity[name+'.svg']=hashlib.sha256(raw).hexdigest()
         for size in SIZES:
-            image=render(raw,size);assert image.getextrema()[3]==(0,255);stream=io.BytesIO();image.save(stream,format='PNG');data=stream.getvalue();path=name+'_'+str(size)+'.png';validate_asset('plugin/assets/'+path,data);expected[path]=data;identity[path]=hashlib.sha256(data).hexdigest()
-    expected['brand.json']=(json.dumps(dict(schema_version=1,author='grea contributors',license='MIT',design='Original geometric G with reassembled tiles; no game/vendor trademark assets',renderer='restricted SVG rect/polygon, Pillow 12.2.0, 4x antialias; deterministic',files=identity),indent=2,sort_keys=True)+'\n').encode()
+            image=render(raw,size);assert image.getextrema()[3]==(0,255);data=png_bytes(image);path=name+'_'+str(size)+'.png';validate_asset('plugin/assets/'+path,data);expected[path]=data;identity[path]=hashlib.sha256(data).hexdigest()
+    expected['brand.json']=(json.dumps(dict(schema_version=1,author='grea contributors',license='MIT',design='Original geometric G with reassembled tiles; no game/vendor trademark assets',renderer='restricted SVG rect/polygon, Pillow 12.2.0, 4x antialias; stored DEFLATE PNG',files=identity),indent=2,sort_keys=True)+'\n').encode()
     for name,data in expected.items():
         target=assets/name
         if args.check:

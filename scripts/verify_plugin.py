@@ -3,6 +3,8 @@
 import argparse
 from contextlib import contextmanager
 import json
+import io
+from plugin_targets import native_target, TARGETS
 import os
 from pathlib import Path
 import platform
@@ -49,9 +51,15 @@ def sandbox_prefix(root, work):
 
 class Rpc:
     def __init__(self, command, cwd, env):
-        self.process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.PIPE,
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                        text=True, bufsize=1, start_new_session=True)
+        if os.name=='nt':
+            from grea.host.windows_process import OwnedProcess
+            self.process=OwnedProcess(command,cwd,env=env,interactive=True)
+            for name in ('stdin','stdout','stderr'):
+                setattr(self.process,name,io.TextIOWrapper(getattr(self.process,name),encoding='utf-8',write_through=True))
+        else:
+            self.process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                            text=True, encoding='utf-8', bufsize=1, start_new_session=True)
         self.queue = queue.Queue(); self.stderr = []; self.counter = 0
         def read():
             for line in self.process.stdout:
@@ -87,12 +95,16 @@ class Rpc:
         if not self.process.stdin.closed: self.process.stdin.close()
         try: self.process.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            os.killpg(self.process.pid, signal.SIGTERM)
+            if os.name=='nt':self.process.terminate()
+            else:os.killpg(self.process.pid, signal.SIGTERM)
             try: self.process.wait(timeout=3)
             except subprocess.TimeoutExpired:
-                os.killpg(self.process.pid, signal.SIGKILL); self.process.wait()
+                if os.name=='nt':self.process.kill()
+                else:os.killpg(self.process.pid, signal.SIGKILL)
+                self.process.wait()
         for reader in self.readers: reader.join(timeout=2)
         self.process.stdout.close(); self.process.stderr.close()
+        if os.name=='nt':self.process.settle();self.process.close()
 
 
 def check(condition, message):
@@ -100,12 +112,12 @@ def check(condition, message):
 
 
 def acceptance(bundle):
-    if (platform.system(), platform.machine()) != ('Darwin', 'arm64'):
-        raise ValueError('Native acceptance requires macOS arm64')
+    target=native_target()
+    windows=target=='windows-x64'
     bundle = Path(bundle).resolve()
     checksums = dict(line.split('  ', 1)[::-1] for line in (bundle.parent/'SHA256SUMS').read_text(encoding='utf-8').splitlines())
     check(checksums.get(bundle.name) == sha256(bundle), 'Plugin external checksum mismatch')
-    with tempfile.TemporaryDirectory(prefix='grea 插件 acceptance ', dir='/private/tmp') as tmp:
+    with tempfile.TemporaryDirectory(prefix='grea 插件 acceptance ', dir=None if windows else '/private/tmp') as tmp:
         base = Path(tmp).resolve()
         manifest = verify_archive(bundle, base/'initial')
         root = base/'移动后 installed grea'
@@ -113,10 +125,13 @@ def acceptance(bundle):
         work = base/'empty workspace'; work.mkdir()
         home = base/'clean home'; home.mkdir()
         env = {'HOME': str(home), 'PATH':'/usr/bin:/bin', 'LANG':'en_US.UTF-8', 'TMPDIR':str(work)}
-        prefix = sandbox_prefix(root, work)
-        before = inventory(root)
+        prefix = [] if windows else sandbox_prefix(root, work)
+        if windows:
+            env.update(SystemRoot=os.environ['SystemRoot'], PATH=str(Path(os.environ['SystemRoot'])/'System32'),
+                       USERPROFILE=str(home),TEMP=str(work),TMP=str(work),PYTHONUTF8='1')
+        before = inventory(root,target)
         # Prove the isolation policy is enforced, not merely recorded.
-        python = root/'runtime/bin/python3'
+        python = root/TARGETS[target]['python']
         probe = '''import pathlib,socket,sys
 blocked=[]
 for name,fn in [('source',lambda:pathlib.Path(sys.argv[1]).read_bytes()),('install_write',lambda:pathlib.Path(sys.argv[2]).write_text('bad')),('network',lambda:socket.create_connection(('127.0.0.1',9),timeout=1))]:
@@ -126,12 +141,12 @@ for name,fn in [('source',lambda:pathlib.Path(sys.argv[1]).read_bytes()),('insta
   if exc.errno in (1,13): blocked.append(name)
 print(','.join(blocked))
 '''
-        isolated = subprocess.run([*prefix, str(python), '-I', '-B', '-c', probe, str(ROOT/'registry.json'), str(root/'forbidden')],
-                                  env=env, cwd=work, capture_output=True, text=True, timeout=20)
-        check(isolated.returncode == 0 and isolated.stdout.strip() == 'source,install_write,network',
-              'Isolation policy did not enforce all restrictions: '+isolated.stderr[:300]+isolated.stdout[:300])
-        catalog = subprocess.run([*prefix, str(root/'bin/grea'), 'catalog'], env=env, cwd=work,
-                                 capture_output=True, text=True, timeout=20)
+        isolated = None if windows else subprocess.run([*prefix, str(python), '-I', '-B', '-c', probe, str(ROOT/'registry.json'), str(root/'forbidden')],
+                                  env=env, cwd=work, capture_output=True, text=True, encoding='utf-8', timeout=20)
+        check(windows or isolated.returncode == 0 and isolated.stdout.strip() == 'source,install_write,network',
+              'Isolation policy did not enforce all restrictions: '+(isolated.stderr[:300]+isolated.stdout[:300] if isolated else 'not enforced'))
+        catalog = subprocess.run([*prefix, *([str(python),'-I','-B',str(root/'plugin/launcher/start.py')] if windows else [str(root/'bin/grea')]), 'catalog'], env=env, cwd=work,
+                                 capture_output=True, text=True, encoding='utf-8', timeout=20)
         check(catalog.returncode == 0, 'Relocated CLI catalog failed: '+catalog.stderr[:500])
         expected = json.loads(catalog.stdout)
         tools = sorted(x['name'] for x in expected['operations'])
@@ -233,14 +248,14 @@ print(','.join(blocked))
                                    'checks':['initialize','catalog_parity','session','bundled_workflow','core_subprocess',
                                              'evidence_manifest','config_preflight','presentation_audit','performance_compare','case_revision_invalidation','legacy_launch','cocos_core_subprocess','native_exit_core_subprocess','typed_config_core_subprocess','native_authoring_core_subprocess','optional_ast_cecil_missing','structured_failure','external_provider_missing']}
             finally: rpc.close()
-        check(inventory(root) == before, 'Installed plugin changed during use')
-        return {'status':'pass', 'target':'macos-arm64', 'version':manifest['version'],
+        check(inventory(root,target) == before, 'Installed plugin changed during use')
+        return {'status':'pass', 'target':target, 'version':manifest['version'],
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
                 'source_kind':manifest['source_kind'], 'clients':results,
                 'isolation':{'moved_unicode_space_path':True,'independent_home':True,'minimal_path':True,
-                             'source_read_denied':True,'network_denied':True,'install_write_denied':True,
+                             'source_read_denied':not windows,'network_denied':not windows,'install_write_denied':not windows,
                              'installation_unchanged':True},
-                'limits':['Native client loading is a separate acceptance layer.', 'Unity Editor and gameplay not run.', 'Other platforms not run.']}
+                'limits':['Native client loading is a separate acceptance layer.', 'Unity Editor and gameplay not run.', 'Windows ACL/source/network restrictions not enforced in this smoke; desktop client loading and Unity remain separate gates.' if windows else 'Other platforms not run.']}
 
 
 if __name__ == '__main__':

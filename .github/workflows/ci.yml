@@ -3,6 +3,9 @@ on:
   push:
     branches: ["**"]
   pull_request:
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
 permissions:
   contents: read
 jobs:
@@ -113,3 +116,36 @@ jobs:
           dotnet restore tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --locked-mode
           dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore --configuration Release
       - run: .venv/bin/python -m unittest discover -s tests -p test_unity_player_audit.py -v
+  plugin-windows:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
+        with:
+          version: '0.12.21'
+          python-version: '3.12'
+      - run: uv sync --frozen
+      - name: Build, relocate and exercise Windows native plugin
+        run: |
+          .venv/Scripts/python.exe scripts/build_plugin.py --target windows-x64 --out dist/plugin
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          .venv/Scripts/python.exe scripts/verify_plugin.py --bundle dist/plugin/grea-plugin-windows-x64.zip --report dist/plugin/plugin-acceptance.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          .venv/Scripts/python.exe scripts/build_plugin.py --target windows-x64 --out dist/plugin-repeat
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          if ((Get-FileHash dist/plugin/grea-plugin-windows-x64.zip).Hash -ne (Get-FileHash dist/plugin-repeat/grea-plugin-windows-x64.zip).Hash) { throw 'Nonreproducible Windows plugin' }
+      - name: Native Codex temporary installation and discovery only
+        run: |
+          .venv/Scripts/python.exe scripts/testing/fetch-codex-client.py --out dist/test-client
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          .venv/Scripts/python.exe scripts/verify_plugin_clients.py --bundle dist/plugin/grea-plugin-windows-x64.zip --client codex --codex-bin dist/test-client/codex.exe --allow-network --report dist/plugin/client-acceptance.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: plugin-windows-${{ github.sha }}
+          path: dist/plugin/*
+          if-no-files-found: warn
+          retention-days: 14
