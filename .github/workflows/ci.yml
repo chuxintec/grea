@@ -117,6 +117,17 @@ jobs:
           dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore --configuration Release
       - run: .venv/Scripts/python.exe -X utf8 -m unittest discover -s tests -v
       - run: .venv/Scripts/python.exe scripts/check_docs.py
+      - name: Record desktop and Unity prerequisites without installing
+        if: always()
+        run: |
+          New-Item -ItemType Directory -Force dist/native-evidence | Out-Null
+          .venv/Scripts/python.exe scripts/testing/windows-readiness.py --out dist/native-evidence/windows-readiness.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: windows-native-evidence-${{ github.sha }}
+          path: dist/native-evidence/*
+          retention-days: 14
 
 
   assembly-metadata:

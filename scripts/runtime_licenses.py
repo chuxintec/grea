@@ -2,8 +2,6 @@
 import hashlib
 import json
 from pathlib import Path
-import subprocess
-import shutil
 from plugin_targets import TARGETS
 
 from plugin_bundle import encoded, safe_name, sha256
@@ -42,26 +40,37 @@ def check_license_closure(metadata, available):
 def install_licenses(archive, runtime, lock):
     if sha256(archive) != lock['licenseArchive']['sha256']:
         raise ValueError('Full Python archive checksum mismatch')
-    def read(name):
-        safe_name(name)
-        value = subprocess.check_output([shutil.which('tar') or 'tar','-xOf',str(archive),name], timeout=60)
-        if len(value) > 5 * 1024**2: raise ValueError('Unexpected license metadata size')
-        return value
-    raw = read('python/PYTHON.json'); metadata = json.loads(raw)
-    if (metadata['python_version'], metadata['target_triple']) != (lock['pythonVersion'],TARGETS[lock['target']]['triple']):
+    # One bounded streaming pass. Re-spawning tar for every license repeatedly
+    # decompresses the full Windows archive and makes builds needlessly slow.
+    import tarfile
+    import zstandard
+    values={};total=0;count=0;expanded=0
+    with Path(archive).open('rb') as source, zstandard.ZstdDecompressor().stream_reader(source) as decoded:
+        with tarfile.open(fileobj=decoded,mode='r|') as tar:
+            for item in tar:
+                count+=1;expanded+=max(0,item.size)
+                if expanded>2*1024**3:raise ValueError("Expanded license archive budget exceeded")
+                if count>100000:raise ValueError('License archive entry budget exceeded')
+                if item.name!='python/PYTHON.json' and not item.name.startswith('python/licenses/'):continue
+                if item.isdir():continue
+                safe_name(item.name)
+                if not item.isfile() or item.name in values or item.size>5*1024**2:
+                    raise ValueError('Invalid license entry')
+                total+=item.size
+                if total>20*1024**2:raise ValueError('License archive text budget exceeded')
+                value=tar.extractfile(item).read(item.size+1)
+                if len(value)!=item.size:raise ValueError('Truncated license entry')
+                values[item.name]=value
+    raw=values['python/PYTHON.json'];metadata=json.loads(raw)
+    if (metadata['python_version'],metadata['target_triple'])!=(lock['pythonVersion'],TARGETS[lock['target']]['triple']):
         raise ValueError('License archive does not match the runtime')
-    listing = subprocess.check_output([shutil.which('tar') or 'tar','-tf',str(archive)], text=True, timeout=60).splitlines()
-    names = sorted(name for name in listing if name.startswith('python/licenses/') and not name.endswith('/'))
-    if not names or len(names) != len(set(names)): raise ValueError('Missing or duplicate runtime licenses')
-    records = {}
+    names=sorted(name for name in values if name.startswith('python/licenses/'))
+    if not names:raise ValueError('Missing runtime licenses')
+    records={}
     for name in names:
-        safe_name(name)
-        relative = name.removeprefix('python/')
-        value = read(name)
-        path = Path(runtime)/relative
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(value)
-        records[relative] = {'sha256':hashlib.sha256(value).hexdigest(),'bytes':len(value)}
+        relative=name.removeprefix('python/');value=values[name]
+        path=Path(runtime)/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(value)
+        records[relative]={'sha256':hashlib.sha256(value).hexdigest(),'bytes':len(value)}
     exceptions = check_license_closure(metadata, set(records))
     (Path(runtime)/'PYTHON.json').write_bytes(raw)
     report = {'source_archive_sha256':lock['licenseArchive']['sha256'],

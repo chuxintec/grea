@@ -84,3 +84,13 @@ class HostTests(unittest.TestCase):
                 self.assertTrue(is_link(link))
                 with self.assertRaises(ValueError):inventory(source)
             finally:link.rmdir()
+
+    @unittest.skipUnless(os.name=='nt','Windows same-volume publication boundary')
+    def test_cross_volume_publication_keeps_stage_and_no_target(self):
+        private=ROOT/'.private';private.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory() as first,tempfile.TemporaryDirectory(dir=private) as second:
+            source=Path(first)/'stage';source.mkdir();(source/'bytes').write_bytes(b'owned')
+            target=Path(second)/'target'
+            if source.drive.lower()==target.drive.lower():self.skipTest('Host provides no second test volume')
+            with self.assertRaises(GreaError):publish_directory(source,target)
+            self.assertTrue(source.is_dir());self.assertEqual((source/'bytes').read_bytes(),b'owned');self.assertFalse(target.exists())

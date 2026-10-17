@@ -46,3 +46,5 @@ AssemblySanitizer 使用 [Mono.Cecil 0.11.6](https://github.com/jbevain/cecil)�
 - Cocos 引擎参考文件和原游戏代码/素材仅为私有协议研究输入，不复制进上述实现、公开 fixtures、运行时或插件。解析器为独立实现，不重新授权来源代码。
 
 有限制作链使用已锁定的 Pillow 处理自有/授权图片，Unity Editor API 创建原生资产；没有新增 Spine runtime 分发。Spine 页闭包检查不建立运行时授权，匹配来源与适用许可应另核验，见 [制作边界](docs/providers/unity-authoring.md)。
+
+构建期使用锁定的 [python-zstandard 0.25.0](https://github.com/indygreg/python-zstandard/tree/0.25.0) 单次流式读取 CPython 许可归档，许可为 BSD-3-Clause（上游内含 zstd 许可）；仅在 dev 依赖组，运行插件的依赖仍从 `uv export --no-dev` 生成。原始许可随其构建环境包保留，不重新授权为 grea 代码。

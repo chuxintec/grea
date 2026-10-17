@@ -10,6 +10,7 @@ import stat
 import subprocess
 import tarfile
 import time
+import unicodedata
 import zipfile
 
 from audit_public_tree import inspect
@@ -33,9 +34,24 @@ def safe_name(name):
         raise ValueError('Unsafe archive path: ' + name)
     for part in path.parts:
         if (part.endswith((' ','.')) or re.search(r'[<>"|?*\x00-\x1f]',part)
-                or part.split('.')[0].upper() in {'CON','PRN','AUX','NUL',*(f'COM{i}' for i in range(1,10)),*(f'LPT{i}' for i in range(1,10))}):
+                or part.split('.')[0].upper() in {'CON','PRN','AUX','NUL','CONIN$','CONOUT$',*(f'COM{i}' for i in range(1,10)),*(f'LPT{i}' for i in range(1,10))}):
             raise ValueError('Nonportable archive path: '+name)
     return path
+
+
+def portable_names(names):
+    spellings={};files=set()
+    for name in names:
+        path=safe_name(name)
+        for item in (path,*path.parents):
+            value=str(item)
+            if value=='.':continue
+            key=unicodedata.normalize('NFC',value).casefold()
+            if key in spellings and spellings[key]!=value:raise ValueError('Portable archive case/Unicode collision')
+            spellings[key]=value
+        key=unicodedata.normalize('NFC',name).casefold()
+        if key in files:raise ValueError('Duplicate archive entry')
+        files.add(key)
 
 
 def linked(path):
@@ -155,6 +171,7 @@ def verify_archive(archive, extract=None):
         for name in names:
             safe_name(name)
             if not name.startswith('grea/'): raise ValueError('Unexpected plugin root')
+        portable_names(names)
         if len(names)>100000 or len(names) != len(set(n.casefold() for n in names)): raise ValueError('Duplicate ZIP entry')
         if sum(x.file_size for x in zip_file.infolist()) > 2 * 1024**3:
             raise ValueError('Plugin archive exceeds limit')

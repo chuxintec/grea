@@ -21,3 +21,8 @@ Issues = "https://github.com/chuxintec/grea/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/grea"]
+
+[dependency-groups]
+dev = [
+    "zstandard==0.25.0",
+]

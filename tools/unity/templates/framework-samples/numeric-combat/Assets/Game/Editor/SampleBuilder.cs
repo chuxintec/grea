@@ -98,15 +98,20 @@ namespace Numeric.Editor
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone,ScriptingImplementation.Mono2x);
             PlayerSettings.SetArchitecture(NamedBuildTarget.Standalone,1);
             PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.Standalone,ManagedStrippingLevel.Medium);
+            var target=EditorUserBuildSettings.activeBuildTarget;
+            if(target!=BuildTarget.StandaloneOSX && target!=BuildTarget.StandaloneWindows64)
+                throw new InvalidOperationException("Only explicit Mac or Windows x64 sample targets are supported");
             var report=BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes=new[]{Entry}, locationPathName=args[index+1],
-                target=BuildTarget.StandaloneOSX, options=BuildOptions.None });
+                target=target, options=BuildOptions.None });
             if(report.summary.result==BuildResult.Succeeded)
             {
-                var managed=Path.Combine(args[index+1],"Contents/Resources/Data/Managed");
+                var managed=target==BuildTarget.StandaloneWindows64
+                    ? Path.Combine(Path.GetDirectoryName(args[index+1]),Path.GetFileNameWithoutExtension(args[index+1])+"_Data","Managed")
+                    : Path.Combine(args[index+1],"Contents/Resources/Data/Managed");
                 var tests=Directory.GetFiles(managed,"*.dll").Select(Path.GetFileName).Where(x=>x.Contains(".Tests") || x.Contains(".PlayTests") || x.Contains("TestRunner") || x.StartsWith("nunit") || x.StartsWith("UnityEditor")).ToArray();
                 if(tests.Length>0) throw new InvalidOperationException("TEST_ASSEMBLIES_IN_PLAYER: "+string.Join(",",tests));
                 File.WriteAllText(Path.Combine(Path.GetDirectoryName(args[index+1]),"player-build.json"),JsonUtility.ToJson(new Receipt {
-                    sample="numeric-combat", version="0.1.0", buildId=report.summary.guid.ToString(), editor=Application.unityVersion, result=report.summary.result.ToString(), backend="Mono", architecture="arm64" },true));
+                    sample="numeric-combat", version="0.1.0", buildId=report.summary.guid.ToString(), editor=Application.unityVersion, result=report.summary.result.ToString(), backend="Mono", architecture=target==BuildTarget.StandaloneWindows64?"x64":"arm64" },true));
             }
             if(report.summary.result!=BuildResult.Succeeded) throw new InvalidOperationException("Player build failed");
         }

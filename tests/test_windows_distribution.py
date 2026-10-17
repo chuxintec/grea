@@ -32,3 +32,7 @@ class TargetTests(unittest.TestCase):
  def test_windows_unsafe_names_are_rejected(self):
   for name in ('grea/CON','grea/a./x','grea/Lpt1.json','grea/ok:stream','grea/a?/b','grea/trailing '):
    with self.subTest(name=name),self.assertRaises(ValueError):plugin_bundle.safe_name(name)
+
+ def test_case_and_unicode_parent_collisions_are_refused(self):
+  for names in (['grea/A/x','grea/a/y'],['grea/é/a','grea/e\u0301/b']):
+   with self.assertRaises(ValueError):plugin_bundle.portable_names(names)

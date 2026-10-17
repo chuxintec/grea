@@ -267,6 +267,8 @@ print(','.join(blocked))
         return {'status':'pass', 'target':target, 'version':manifest['version'],
                 'archive_sha256':sha256(bundle), 'source_tree_sha256':manifest['source_tree_sha256'],
                 'source_kind':manifest['source_kind'], 'clients':results,
+                'verified_tool_ids':['static_asset_copy','cocos_assets','unity_native_exit','unity_config_candidate','unity_native_assets','evidence_manifest','config_preflight','presentation_audit','performance_compare'],
+                'verified_operations':['session','plan_workflow','run_tool','init_case','start_case_revision','case_status'],
                 'isolation':{'moved_unicode_space_path':True,'independent_home':True,'minimal_path':True,
                              'source_read_denied':True,'network_denied':True,'install_write_denied':True,
                              'installation_unchanged':True},
