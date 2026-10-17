@@ -72,6 +72,19 @@ class HostTests(unittest.TestCase):
             finally:p.close();p.stdout.close();p.stderr.close()
             with self.assertRaises(OSError):OwnedProcess([str(Path(tmp)/'absent.exe')],tmp)
 
+    @unittest.skipUnless(os.name=='nt','Win32 standard input EOF and diagnostic stage')
+    def test_noninteractive_stdin_is_immediate_eof(self):
+        from grea.host.windows_process import OwnedProcess
+        with tempfile.TemporaryDirectory() as tmp:
+            p=OwnedProcess([sys.executable,'-c','import sys;print(repr(sys.stdin.read()))'],tmp)
+            try:
+                out,err=p.communicate(timeout=5)
+                self.assertEqual(out.strip(),b"''");self.assertEqual(err,b'')
+                self.assertTrue(p.settle())
+            finally:p.close();p.stdout.close();p.stderr.close()
+            with self.assertRaises(OSError) as caught:OwnedProcess([str(Path(tmp)/'missing.exe')],tmp)
+            self.assertIn('CreateProcessW',str(caught.exception))
+
     @unittest.skipUnless(os.name=='nt','Windows junction boundary')
     def test_junction_is_not_read_as_owned_evidence(self):
         from grea.host.files import is_link

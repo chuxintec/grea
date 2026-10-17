@@ -158,7 +158,7 @@ class PublishTests(unittest.TestCase):
     def scenario(self, prerelease=True, existing=None, fail_upload=False, corrupt_download=False, remote_sha='source'):
         temp = tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup)
         out = Path(temp.name)
-        names = ['bundle.zip', 'skill.zip', 'release-manifest.json', 'SHA256SUMS']
+        names = ['grea-plugin-macos-arm64.zip', 'grea-plugin-windows-x64.zip', 'release-manifest.json', 'SHA256SUMS']
         for n in names:(out / n).write_text(n)
         (out / 'release-notes.md').write_text('notes')
         state = {'release': existing, 'patches': [], 'uploads': []}
@@ -210,11 +210,11 @@ class PublishTests(unittest.TestCase):
         def existing(draft, names):
             return {'id':1,'tag_name':'v1.2.3-rc1','draft':draft,'prerelease':True,'html_url':'https://example.com/release',
                     'assets':[{'name':n,'size':len(n),'state':'uploaded'} for n in names]}
-        s=self.scenario(existing=existing(True,['bundle.zip']))
-        self.assertEqual(s['uploads'],['skill.zip','release-manifest.json','SHA256SUMS'])
-        s=self.scenario(existing=existing(False,['bundle.zip','skill.zip','release-manifest.json','SHA256SUMS']))
+        s=self.scenario(existing=existing(True,['grea-plugin-macos-arm64.zip']))
+        self.assertEqual(s['uploads'],['grea-plugin-windows-x64.zip','release-manifest.json','SHA256SUMS'])
+        s=self.scenario(existing=existing(False,['grea-plugin-macos-arm64.zip','grea-plugin-windows-x64.zip','release-manifest.json','SHA256SUMS']))
         self.assertEqual(s['uploads'],[]);self.assertEqual(s['patches'],[])
-        with self.assertRaises(ValueError):self.scenario(existing=existing(False,['bundle.zip']))
+        with self.assertRaises(ValueError):self.scenario(existing=existing(False,['grea-plugin-macos-arm64.zip']))
         with self.assertRaises(ValueError):self.scenario(existing=existing(True,['unrecognized']))
 
 
