@@ -30,18 +30,25 @@ def check_source(case):
     actual=hash_file(case['source']['path'])
     if actual['sha256']!=case['source']['sha256']:raise GreaError('STALE_SOURCE','The baseline source changed; create a new case.',details={'expected':case['source']['sha256'],'actual':actual['sha256']})
 
-def init_case(project_dir,source,mode,required_dimensions=None,source_engine='unknown',engine_version=None,source_format=None,target_platform=None,acceptance_profile='scoped'):
+def init_case(project_dir,source,mode,required_dimensions=None,source_engine='unknown',engine_version=None,source_format=None,target_platform=None,acceptance_profile='scoped',change_contract=None):
     project=Path(project_dir).expanduser()
     if is_link(project) or not project.is_dir():raise GreaError('INVALID_PROJECT','Choose an existing real project directory.')
     from .case_revisions import identity as file_identity
     identity=file_identity(project.resolve(), source)
+    if mode=='evolve' and change_contract is None:raise GreaError('MISSING_CHANGE_CONTRACT','Define UI/UX changes and invariant baseline before creating an evolve case.')
+    if change_contract is not None and mode not in ('reskin','evolve'):raise GreaError('INVALID_CHANGE_CONTRACT','Change contracts apply only to reskin/evolve.')
+    if change_contract is not None:
+        from .change_contracts import validate
+        change_contract=validate(change_contract,identity['sha256'])
     mandatory=workflow_dimensions(mode, source_engine)
     dims=required_dimensions if required_dimensions is not None else mandatory
     if 'native' in mandatory and 'native' not in dims:raise GreaError('REQUIRED_DIMENSION','Cross-engine native acceptance cannot be removed.')
+    if mode=='evolve' and not set(mandatory)<=set(dims):raise GreaError('REQUIRED_DIMENSION','Evolve cannot drop identity/rules/runtime/visual or applicable native checks.')
     if not dims or len(dims)!=len(set(dims)):raise GreaError('INVALID_REQUIREMENTS','Required dimensions must be nonempty and unique.')
     root=project.resolve()/'.grea'
     if root.exists() or root.is_symlink():raise GreaError('OUTPUT_EXISTS','Project already has a case; preserve it rather than overwrite.')
     value={'schema_version':2,'task':dict(intent=mode,source_engine=source_engine,engine_version=engine_version,source_format=source_format,target_platform=target_platform,acceptance_profile=acceptance_profile),'created_at':now(),'nonce':uuid.uuid4().hex,'project_dir':str(project.resolve()),'mode':mode,'source':identity,'required_dimensions':dims}
+    if change_contract is not None:value['task']['change_contract']=change_contract
     value['case_id']='case_'+digest(value)
     from .host.files import private_directory
     stage=private_directory(project.resolve(),'.grea-init-')
@@ -93,7 +100,8 @@ def add_evidence(case_dir,kind,path,description,revision_id=None,run_instance=No
     return {'evidence':value,'limitations':['A file hash proves identity; role and meaning are reviewer assertions.']}
 
 def required_kinds(mode,dimension):
-    if dimension=='visual':return {'approved_design','candidate_runtime'} if mode=='reskin' else {'original_runtime','candidate_runtime'}
+    if dimension=='visual':return {'approved_design','candidate_runtime'} if mode in ('reskin','evolve') else {'original_runtime','candidate_runtime'}
+    if dimension=='rules' and mode=='evolve':return {'original_static','test_report'}
     if dimension in ('runtime','platform'):return {'candidate_runtime'}
     if dimension=='performance':return {'test_report','candidate_runtime'}
     return {'test_report'}

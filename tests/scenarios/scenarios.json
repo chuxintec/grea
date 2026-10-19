@@ -591,6 +591,45 @@
         "plugin/shared/01-流程-开发计划与进度管理.md",
         "plugin/skills/grea-delivery/references/09-交付-游戏构建与版本发布.md"
       ]
+    },
+    {
+      "id": "R-EVOLVE-01",
+      "request": "从已恢复版本做独立主题项目，玩法不变，UI结构和操作流程只做有限改动，先可玩样板。",
+      "setup": "来源制品冻结，用户授权制作候选样板；新产品与存档隔离尚待实读。",
+      "expected_mode": "有限UI/UE二次开发",
+      "observable_outcomes": [
+        "evolve合同绑定基线文件与设计文件SHA，明确允许维度及玩法不变量",
+        "先隔离产品/存档与输出，代表闭环样板；比例按整体页面/流程解释",
+        "候选设计不冒充批准，规则对照旧基线，视觉对照批准新设计"
+      ],
+      "prohibited_scope_expansion": [
+        "不追加逐页审批或全部历史验收",
+        "不改未授权玩法或自动发布/安装"
+      ],
+      "primary_references": [
+        "plugin/skills/grea-evolve/SKILL.md",
+        "plugin/skills/grea-evolve/references/01-流程-有限二次开发.md",
+        "docs/providers/theme-assets.md"
+      ]
+    },
+    {
+      "id": "R-THEME-01",
+      "request": "把一批PNG、骨骼图集和Prefab都交给主题清单自动应用，再覆盖原文件回退。",
+      "setup": "仅授权隔离工程同画布单Sprite UI PNG替换；有本地后续修改。",
+      "expected_mode": "有限主题映射",
+      "observable_outcomes": [
+        "PNG先声明用途/alpha与来源/meta摘要，预览并生成全新增量包",
+        "Editor回读GUID/fileID和几何，显式应用/回退；未知改动阻断",
+        "骨骼/多Sprite、新尺寸/新GUID和Prefab结构转现有Unity制作，不伪造引用验证"
+      ],
+      "prohibited_scope_expansion": [
+        "不从Python写Unity YAML或元数据",
+        "不强制覆盖后续改动或把预览当美术批准"
+      ],
+      "primary_references": [
+        "docs/providers/theme-assets.md",
+        "plugin/skills/grea-reskin/SKILL.md"
+      ]
     }
   ]
 }

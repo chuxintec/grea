@@ -6,6 +6,7 @@ WORKFLOWS = {
  'fix': {'title':'局部一致性修复','baseline':'相关原版依据与受影响入口','dimensions':['rules','runtime'], 'steps':[('01-流程-开发前检查与迭代.md',[]),('05-Unity-界面还原与输入交互.md',[]),('06-玩法-规则与随机一致性.md',['compare_traces']),('05-Unity-动画特效与事件时序.md',['compare_events']),('08-验收-测试与结果交付.md',[])], 'boundary':'按具体缺口选专题，不重新完整解包或无条件做性能基准。'},
  'port': {'title':'跨引擎转原生 Unity/清理源引擎残留','baseline':'原版规则语义与可观察结果；原生可维护门','dimensions':['rules','runtime','visual','native'], 'steps':[('05-Unity-原生转换规范.md',[]),('05-Unity-跨引擎移植与行为一致性.md',['compare_events']),('05-Unity-UI框架迁移.md',[]),('06-玩法-规则与随机一致性.md',['compare_traces']),('08-验收-测试与结果交付.md',[])], 'boundary':'不在 Unity 中复刻源引擎运行时；转换器一次性运行，生产不依赖它；守卫、原版对照与原生可维护三门分别报告。'},
  'reskin': {'title':'授权换皮','baseline':'最新批准设计与已授权玩法/交互不变量','dimensions':['runtime','visual'], 'steps':[('07-美术-游戏换皮与资源制作.md',['image_alpha_audit']),('05-Unity-界面还原与输入交互.md',[]),('05-Unity-动画特效与事件时序.md',[]),('08-验收-测试与结果交付.md',[])], 'boundary':'已批准素材直接复用；指定制作工具依当前会话能力，不自动收费生图或审批。'},
+ 'evolve': {'title':'已恢复工程的有限二次开发','baseline':'冻结旧工程的玩法与持久化不变量；批准新设计决定允许的UI/UE维度','dimensions':['identity','rules','runtime','visual'], 'steps':[('01-流程-有限二次开发.md',['theme_assets']),('07-美术-游戏换皮与资源制作.md',['image_alpha_audit']),('08-验收-测试与结果交付.md',[])], 'boundary':'当前只覆盖UI/UE；候选设计可用于样板但不冒称批准；不扩展玩法、推送或发布。'},
  'refactor': {'title':'结构重构/UI迁移','baseline':'当前工程行为、GUID/fileID、动态加载键','dimensions':['identity','runtime'], 'steps':[('05-Unity-工程结构与开发规范.md',['unity_asset_ledger']),('05-Unity-重构与资源迁移.md',['unity_dependency_audit']),('05-Unity-UI框架迁移.md',[]),('08-验收-测试与结果交付.md',[])], 'boundary':'UI框架迁移仅在本次要求时进行；不凭未引用列表删除资产。'},
  'performance': {'title':'性能优化','baseline':'同设备、场景、输入、随机和负载的前后结果','dimensions':['performance','rules','runtime'], 'steps':[('05-Unity-性能分析与优化验证.md',[]),('08-验收-测试与结果交付.md',[])], 'boundary':'不通过改变随机、限帧或画质制造收益；不冒称已验证目标渠道。'},
  'deliver': {'title':'构建/预览/发布','baseline':'源码/资产/构建ID与目标平台','dimensions':['identity','platform'], 'steps':[('09-交付-游戏构建与版本发布.md',['verify_payload_tree']),('08-验收-测试与结果交付.md',[])], 'boundary':'默认Mac；只进入本次已授权的预览、安装或发布环节。'},
@@ -36,14 +37,20 @@ def required_dimensions(mode, source_engine='unknown'):
     if source_engine == 'unknown' and mode in ('recover', 'port'):
         return ['identity']
     dimensions = list(WORKFLOWS[mode]['dimensions'])
-    if source_engine in ('cocos', 'laya', 'other') and mode in ('recover', 'port', 'fix', 'refactor', 'performance'):
+    if source_engine in ('cocos', 'laya', 'other') and mode in ('recover', 'port', 'fix', 'refactor', 'performance', 'reskin', 'evolve'):
         if 'native' not in dimensions:
             dimensions.append('native')
     return dimensions
 
 
 def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
-         target_platform=None, acceptance_profile='scoped'):
+         target_platform=None, acceptance_profile='scoped', change_contract=None):
+    if change_contract is not None and mode not in ('reskin','evolve'):
+        from .common import GreaError
+        raise GreaError('INVALID_CHANGE_CONTRACT','Change contracts apply only to reskin/evolve.')
+    if change_contract is not None:
+        from .change_contracts import validate
+        change_contract=validate(change_contract)
     value = WORKFLOWS[mode]
     source_tools = []
     if source_format in ('apk', 'xapk'):
@@ -84,8 +91,8 @@ def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
     return dict(mode=mode, title=value['title'], baseline=value['baseline'],
                 required_dimensions=required_dimensions(mode, source_engine), steps=stages,
                 boundary=value['boundary'], source_engine=source_engine, executed=False,
-                next_decision='identify_source_engine' if unknown else 'select_supported_format_and_scope',
+                next_decision='define_change_contract' if mode=='evolve' and change_contract is None else ('identify_source_engine' if unknown else 'select_supported_format_and_scope'),
                 task=dict(intent=mode, source_engine=source_engine, engine_version=engine_version,
                           source_format=source_format, target_platform=target_platform,
-                          acceptance_profile=acceptance_profile),
+                          acceptance_profile=acceptance_profile, change_contract=change_contract),
                 limitations=['Source identity is caller-declared; parser support must be checked against its adapter catalog.'])

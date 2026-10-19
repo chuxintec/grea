@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "candidate_id": "reskin-evolve-m1",
+  "status": "local_development_candidate",
+  "base_release": "v2026.10.19",
+  "base_revision": "2d62a17795637dac90e2039f383390abdbfccf45",
+  "released": false,
+  "pushed": false,
+  "installed": false,
+  "public_version_changed": false,
+  "implemented": [
+    "theme-map-v1 validate preview incremental prepare",
+    "Editor companion apply rollback with complete preflight and partial failure receipts",
+    "evolve planning and Case/revision change contract",
+    "baseline artifact and design artifact digest binding",
+    "candidate approval and evidence role separation",
+    "nine source skill routing and count-derived future client validation"
+  ],
+  "validation": {
+    "theme_own_png_tests": 5,
+    "evolve_contract_case_tests": 2,
+    "editor_own_stub_harness_tests": 1,
+    "legacy_core_tests": 15,
+    "case_revision_tests": 8,
+    "mcp_tests": 3,
+    "release_compatibility_unit_tests": 13,
+    "skill_sync_tests": 5,
+    "frontmatter_skills": 9,
+    "isolated_skill_projection": "pass",
+    "docs_contracts_platform_matrix": "pass"
+  },
+  "editor_harness": {
+    "real_unity_editor": false,
+    "own_stubs_and_files_only": true,
+    "checks": [
+      "apply",
+      "idempotence",
+      "simulated import failure preserves attempted receipt",
+      "rollback after partial write",
+      "foreign edit refuses overwrite",
+      "meta bytes unchanged"
+    ]
+  },
+  "consumer_review": {
+    "method": "read-only existing external consumer contracts and selected files",
+    "images": 4,
+    "png_hash_canvas_alpha": "matched",
+    "prefab_source_meta_guids": 8,
+    "guid_checks": "matched source metadata to recorded values; not new runtime reference audit",
+    "actual_product_editor_receipt": "reviewed separately; not a run of this companion, not playable or approved design",
+    "raw_evidence": "private external project; never included in product"
+  },
+  "boundaries": [
+    "existing ui_sprite single PNG, same canvas, explicit alpha policy",
+    "no Python Unity asset mutation",
+    "no skeleton attachment/event/atlas or multi-Sprite automation",
+    "no new GUID/canvas/Prefab structure migration",
+    "GUID/fileID/pivot/border/PPU declarations require Editor readback",
+    "no all-file atomicity guarantee; before/after and partial receipt govern recovery",
+    "no automatic code or gameplay changes",
+    "source contract/approval is caller declared, never authority attestation"
+  ],
+  "not_run": [
+    "actual Unity import/apply/rollback of this companion",
+    "game GUI Player audio performance",
+    "native installed client discovery for nine-skill candidate",
+    "full dual-native plugin rebuild or new release"
+  ],
+  "initial_test_correction": "A negative test briefly rewrote an already-registered evidence file, correctly triggering stale evidence; changed to a distinct immutable wrong-design artifact, not a product waiver",
+  "maintainer_walkthrough": {
+    "R-EVOLVE-01": "bounded UI/UX prototype without per-page approval or inherited full historical gates",
+    "R-THEME-01": "refuse unsupported resources/unknown edits; separate prepare, Editor apply, game acceptance"
+  }
+}

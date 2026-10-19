@@ -4450,6 +4450,71 @@
         ],
         "support_formats": "performance-run-v1 fixed workload and measurement identities"
       }
+    },
+    {
+      "id": "theme_assets",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "theme_assets",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "theme-map-v1; existing single-Sprite UI PNG only; Editor apply/rollback separate",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "See docs/providers/theme-assets.md; validate/preview/prepare with explicit roots",
+      "output_schema": "JSON plan/bundle declarations; docs/providers/theme-assets.md",
+      "tested_samples": "Own PNG and rejection fixtures; actual Editor/GUI remain separately recorded",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "theme_assets"
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "theme-map-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "theme-map-v1; existing single-Sprite UI PNG only; Editor apply/rollback separate"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/theme_assets.py"
+      ]
     }
   ],
   "product": "grea",

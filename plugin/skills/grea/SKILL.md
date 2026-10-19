@@ -1,6 +1,6 @@
 ---
 name: grea
-description: 游戏逆向恢复与原生 Unity 转换的总入口。当用户要把已发布的游戏（Cocos Creator、Laya/FairyGUI、Egret、H5、微信小游戏 wxapkg、APK/XAPK、Unity Mono/IL2CPP 包）依据原版恢复、复刻或移植为纯原生 Unity 工程，但还没有明确具体环节时使用；本技能判断任务模式，并转到 grea-evidence、grea-native-port、grea-unity-recovery、grea-parity、grea-unity-standard、grea-delivery 或 grea-reskin。Use when recovering, remaking or porting a shipped game into a native Unity project. 不用于原创新游戏，也不用于与原版无关的普通 Unity 开发。
+description: 游戏逆向恢复与原生 Unity 转换的总入口。当用户要把已发布的游戏（Cocos Creator、Laya/FairyGUI、Egret、H5、微信小游戏 wxapkg、APK/XAPK、Unity Mono/IL2CPP 包）依据原版恢复、复刻或移植为纯原生 Unity 工程，但还没有明确具体环节时使用；本技能判断任务模式，并转到 grea-evidence、grea-native-port、grea-unity-recovery、grea-parity、grea-unity-standard、grea-delivery 、grea-reskin 或 grea-evolve。Use when recovering, remaking or porting a shipped game into a native Unity project. 不用于原创新游戏，也不用于与原版无关的普通 Unity 开发。
 ---
 
 # grea · 游戏逆向恢复与原生 Unity 转换
@@ -20,6 +20,7 @@ grea 插件把"依据已发布游戏，在 Unity 中恢复或重建"拆成若干
 | 结构重构、资源治理、性能优化 | 当前已核验工程的行为与资源身份；性能任务要有固定设备、场景和负载的前后数据 | `grea-unity-standard`；替换 UI 框架时加 `grea-native-port` |
 | 构建、预览、发布 | 明确的源码、平台、制品身份和本次交付层级 | `grea-delivery` |
 | 授权换皮 | 最新的批准设计，以及指定不变的玩法和交互 | `grea-reskin` |
+| 已恢复工程的有限二次开发 | 冻结旧基线玩法/存档不变量，允许的UI/UE维度按新设计；当前仅UI/UE | `grea-evolve` |
 | 工具、技能维护与复盘 | 文档、工具和调用方契约；不重跑无关的游戏流程 | [工具清单](../../shared/02-工具-选择与调用.md)、[复盘维护](../../shared/10-维护-开发复盘与规范更新.md) |
 
 `grea plan-workflow` 以 intent、source_engine、engine_version/source_format、target_platform 和 acceptance_profile 给出步骤与必验项；`assess`/`evidence` 只做只读评估/取证，unknown 先辨识来源。拿到计划不表示执行，格式支持须核对工具 adapter。

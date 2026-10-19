@@ -1,7 +1,7 @@
 """Canonical CLI/MCP contracts. Catalogs and advertised schemas derive from here."""
 from . import __version__
 
-MODES = ('recover', 'port', 'fix', 'reskin', 'refactor', 'performance', 'deliver', 'maintain', 'assess', 'evidence')
+MODES = ('recover', 'port', 'fix', 'reskin', 'evolve', 'refactor', 'performance', 'deliver', 'maintain', 'assess', 'evidence')
 DIMENSIONS = ('rules', 'runtime', 'visual', 'identity', 'performance', 'platform', 'native')
 KINDS = ('original_static', 'original_runtime', 'candidate_runtime', 'approved_design', 'test_report', 'build_manifest')
 
@@ -46,6 +46,10 @@ CONTRACTS['start_case_revision'] = (
       'required_dimensions_override': dict(array(string(enum=DIMENSIONS)),minItems=1,uniqueItems=True)},
      ['case_dir','candidate_root','candidate_files','platform','qa_profile']),
  ['filesystem_read','filesystem_write'])
+
+from .change_contracts import documents as change_documents
+for operation in ('plan_workflow','init_case','start_case_revision'):
+    CONTRACTS[operation][1]['properties']['change_contract'] = change_documents()['change-contract.schema.json']
 
 # Typed Unity outcomes reuse existing adapters; generic argv remains only the compatibility/advanced surface.
 _RUN = {k: v for k, v in CONTRACTS['run_tool'][1]['properties'].items() if k in ('run_dir','timeout_seconds','max_output_bytes','max_inline_bytes')}

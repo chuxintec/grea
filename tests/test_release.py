@@ -116,7 +116,7 @@ class BundleTests(unittest.TestCase):
                 'plugin/runtime-windows-x64.lock.json':'{}','plugin/launcher/grea':'#!/bin/sh\n',
                 'plugin/launcher/start.py':'# fixture','src/grea/cli.py':'# fixture',
                 'registry.json':'{}','launch.py':'# fixture','launch_tool.py':'# fixture',
-                'schemas/operations.json':'{}','schemas/unity-project.schema.json':'{}'}
+                'schemas/operations.json':'{"operations":[{"name":"session"}]}','schemas/unity-project.schema.json':'{}'}
         for name,text in values.items():
             p=self.root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text,encoding='utf-8')
         self.git('add','.');self.git('-c','commit.gpgsign=false','commit','-qm','runtime fixtures')
@@ -140,7 +140,7 @@ class BundleTests(unittest.TestCase):
                     'isolation':{key:True for key in plugin_release.ISOLATION}}
             (staging/'plugin-acceptance.json').write_bytes(plugin_bundle.encoded(report))
             layers={k:{'status':'pass'} for k in ('version','entrypoint','install','registration','initialize','skills','tools','installed_session')}
-            layers['skills']['count']=8;layers['tools']['count']=21
+            layers['skills']['count']=sum(n.startswith('plugin/skills/') and n.endswith('/SKILL.md') for n in source);layers['tools']['count']=len(json.loads(source['schemas/operations.json'][0])['operations'])
             layers['installed_session']['version']='2026.10.13rc1'
             client={'target':target,'temporary_directory_removed':True,'isolation':{'independent_child_configuration':True,'credential_environment_inherited':False},'status':'pass','archive_sha256':report['archive_sha256'],'version':'2026.10.13rc1',
                     'source_tree_sha256':identity['source_tree_sha256'],'model_requests_sent':0,

@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "change_contract",
+    "assets"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "change_contract": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "scope",
+        "baseline_sha256",
+        "product_id",
+        "baseline_product_id",
+        "save_namespace",
+        "baseline_save_namespace",
+        "design",
+        "allowed_changes",
+        "invariants"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "scope": {
+          "const": "ui_ux"
+        },
+        "baseline_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "product_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "baseline_product_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "save_namespace": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "baseline_save_namespace": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "design": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "reference",
+            "sha256"
+          ],
+          "properties": {
+            "state": {
+              "enum": [
+                "candidate",
+                "approved"
+              ]
+            },
+            "reference": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "allowed_changes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "visual_style",
+              "layout",
+              "navigation",
+              "feedback",
+              "readability"
+            ]
+          }
+        },
+        "invariants": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "combat_rules",
+              "progression",
+              "damage_hit_timing",
+              "rng_choices",
+              "costs_rewards_eligibility",
+              "persistence_semantics",
+              "animation_events_cancel"
+            ]
+          }
+        },
+        "ui_ux_budget": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "usage",
+          "alpha_required",
+          "asset",
+          "replacement",
+          "source_sha256",
+          "replacement_sha256",
+          "meta_sha256",
+          "guid",
+          "sprite"
+        ],
+        "properties": {
+          "usage": {
+            "const": "ui_sprite"
+          },
+          "alpha_required": {
+            "type": "boolean"
+          },
+          "asset": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "replacement": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "source_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "replacement_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "meta_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "guid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "sprite": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "width",
+              "height",
+              "pivot",
+              "border",
+              "pixels_per_unit",
+              "file_id"
+            ],
+            "properties": {
+              "mode": {
+                "const": "single"
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "pivot": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "border": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "pixels_per_unit": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "file_id": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

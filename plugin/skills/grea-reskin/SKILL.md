@@ -1,6 +1,6 @@
 ---
 name: grea-reskin
-description: 已有恢复工程的授权换皮：先确认批准的页面设计，复用或制作素材，切图与序列帧接入 Unity，保持指定的玩法和交互不变，并做 alpha、边缘和按钮状态检查。Use when reskinning a recovered Unity game with approved new art. 不用于原版一致性恢复。
+description: 已有恢复工程的授权换皮：按当前授权制作或采用设计，复用或制作素材，切图与序列帧接入 Unity，保持指定的玩法和交互不变，并做 alpha、边缘和按钮状态检查。Use when reskinning a recovered Unity game with scoped new art. 不用于原版一致性恢复。
 ---
 
 # grea-reskin · 授权换皮
@@ -11,3 +11,6 @@ description: 已有恢复工程的授权换皮：先确认批准的页面设计�
 - 已批准的素材直接复用；只在本期确实需要设计确认时才进入审批环节，不重复审批已有版本。
 - 跨引擎转换的工程换皮后，按 [原生可维护门](../../shared/08-验收-测试与结果交付.md#原生可维护性跨引擎转换) 复核：新素材通过原生 Sprite、图集和 Prefab 接入，守卫不新增违规。
 - 界面接入与输入检查见 [界面还原与输入交互](../grea-parity/references/05-Unity-界面还原与输入交互.md)；结果按 [分层验收](../../shared/08-验收-测试与结果交付.md) 记录。
+
+- 用户已授权先做可玩样板时，允许提出候选设计并按约定审阅，不给每页追加审批；候选不是已批准。整体UI/UE变化按页面/流程清单解释，不按像素或每页配额。布局/导航/反馈变化较多时转 [有限二次开发](../grea-evolve/SKILL.md)。
+- 资源替换使用 [theme_assets 合同](../../../docs/providers/theme-assets.md)，先预览与校验，再在授权隔离工程通过Editor应用/回退。骨骼、事件及多Sprite不在首版自动替换范围。

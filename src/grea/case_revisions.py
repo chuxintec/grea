@@ -105,7 +105,7 @@ def check_revision(root, case, revision):
 
 
 def start(case_dir, candidate_root, candidate_files, platform, qa_profile, build_manifest=None,
-          build_id=None, source=None, mode=None, required_dimensions_override=None):
+          build_id=None, source=None, mode=None, required_dimensions_override=None, change_contract=None):
     from .cases import locate, locked, load_case, next_order
     root = locate(case_dir)
     with locked(root):
@@ -125,8 +125,19 @@ def start(case_dir, candidate_root, candidate_files, platform, qa_profile, build
         if bool(build_manifest) != bool(build_id):
             raise GreaError('INVALID_BUILD', 'Build manifest and build_id must be supplied together.')
         task = dict(case.get('task', {}), intent=mode or case['mode'])
+        if mode and mode not in ('reskin','evolve'):task.pop('change_contract',None)
+        if change_contract is not None and task['intent'] not in ('reskin','evolve'):
+            raise GreaError('INVALID_CHANGE_CONTRACT','Change contracts apply only to reskin/evolve.')
+        if change_contract is not None:task['change_contract']=change_contract
+        if task['intent']=='evolve' and task.get('change_contract') is None:
+            raise GreaError('MISSING_CHANGE_CONTRACT','Evolve revision needs explicit UI/UX change boundaries.')
+        if task.get('change_contract') is not None:
+            from .change_contracts import validate
+            task['change_contract']=validate(task['change_contract'],selected_source['sha256'])
         dims = required_dimensions_override or (case['required_dimensions'] if mode is None else required_dimensions(mode, task.get('source_engine', 'unknown')))
         mandatory = required_dimensions(task['intent'], task.get('source_engine', 'unknown'))
+        if task['intent']=='evolve' and not set(mandatory)<=set(dims):
+            raise GreaError('REQUIRED_DIMENSION','Evolve cannot drop mandatory dimensions.')
         if 'native' in mandatory and 'native' not in dims:
             raise GreaError('REQUIRED_DIMENSION', 'Cross-engine native acceptance cannot be removed.')
         value = dict(schema_version=2, case_id=case['case_id'], source=selected_source, task=task,
@@ -182,6 +193,12 @@ def validate_claim(root, case, revision, dimension, status, evidence_ids):
     if status != 'passed':
         return selected
     mode = revision['task']['intent'] if revision else case['mode']
+    task=revision['task'] if revision else case.get('task',{})
+    if dimension=='visual' and task.get('change_contract',{}).get('design',{}).get('state')=='candidate':
+        raise GreaError('UNAPPROVED_DESIGN','Candidate design is usable for a prototype, not an approved visual verdict.')
+    design=task.get('change_contract',{}).get('design')
+    if dimension=='visual' and design and not any(v['kind']=='approved_design' and v['artifact']['sha256']==design['sha256'] for v in selected):
+        raise GreaError('WRONG_DESIGN_EVIDENCE','Visual evidence must match the bound design artifact digest.')
     roles = {value['kind'] for value in selected}
     if not required_kinds(mode, dimension) <= roles:
         raise GreaError('INSUFFICIENT_EVIDENCE', 'Passed claim lacks required evidence roles.')

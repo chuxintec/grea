@@ -1,6 +1,8 @@
 # grea · 游戏取证、恢复与原生 Unity 转换
 
-grea（Game Reverse Engineering and Assembly）为已发布游戏的分析、恢复、复刻与原生 Unity 转换提供 **统一 CLI、stdio MCP、8 个 Agent 技能及可复查的执行回执**。从原包与原版证据出发，把资源、规则、制作资产、源码、构建和验收身份连接起来，让开发者能继续在正常 Unity 工作流中维护工程。
+> 当前分支包含未发布的 reskin/evolve M1 开发候选：新增主题映射与第9个技能。已发布 v2026.10.19 保持冻结，只有8技能；本分支未推送、发布或更新用户安装。
+
+grea（Game Reverse Engineering and Assembly）为已发布游戏的分析、恢复、复刻与原生 Unity 转换提供 **统一 CLI、stdio MCP、9 个 Agent 技能及可复查的执行回执**。从原包与原版证据出发，把资源、规则、制作资产、源码、构建和验收身份连接起来，让开发者能继续在正常 Unity 工作流中维护工程。
 
 它提供工具和有边界的工作流，不是一键万能转换器。提取成功、编译成功、工具检查通过、真实输入和原版一致性是不同结果；未执行的层保持未验。
 
@@ -72,7 +74,7 @@ uv sync --frozen
 
 Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执、stdout/stderr、退出码和产物哈希；不能复用旧运行目录掩盖失败。CLI 与 MCP 共用 [契约](schemas/operations.json) 及执行层；MCP 使用本地 **stdio**，无需另开 HTTP 服务。CLI 操作用短横线，MCP 用下划线，例如 `run-tool` / `run_tool`。既有工具 ID 和兼容入口保留。
 
-## 8 个技能如何分工
+## 9 个技能如何分工
 
 | 技能 | 职责 |
 | --- | --- |
@@ -84,6 +86,7 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 | [grea-unity-standard](plugin/skills/grea-unity-standard/SKILL.md) | 工程/程序集结构、生命周期、配置、资产治理与性能 |
 | [grea-delivery](plugin/skills/grea-delivery/SKILL.md) | Editor任务、构建、制品身份、封装、预览与发布 |
 | [grea-reskin](plugin/skills/grea-reskin/SKILL.md) | 有明确设计与授权的换皮，保持指定玩法和交互 |
+| [grea-evolve](plugin/skills/grea-evolve/SKILL.md) | 已恢复工程的有限UI/UE二次开发，旧玩法基线与新设计维度分离（开发候选） |
 
 这些技能面向有原版依据的恢复与维护。原创 Unity 开发不自动套用恢复门槛。权威流程维护在 `plugin/shared/` 与各技能 references；docs 解释产品使用，避免两套竞争规范。
 
@@ -100,6 +103,8 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 Cocos 2.4 与 Creator 3.4.1 的有限格式解析有各自适配边界，不能互相猜解；Laya/H5/Egret 工作流不意味着任意版本解析器已实现。Spine 数据闭包检查也不等于渲染、运行时兼容或许可已满足。详见 [供应方与格式契约](docs/providers/README.md)。
 
 Unity 侧已有 [Foundation/uGUI/Editor 三个 UPM 包](tools/unity/framework/packages)、受控工程生成与恢复入口，以及 [数值战斗/网格益智自有最小消费者](tools/unity/templates/framework-samples/README.md)。它们验证薄胶水与有限闭环，不是完整 IAA 模板；复杂背包、Buff、商业奖励和列表框架仍是 [候选范围](proposals/numeric-template.md)，不声明已批量适配所有品类。项目可沿用自己的框架和主流插件。
+
+开发候选的 [主题映射](docs/providers/theme-assets.md) 提供校验、前后预览及可回退增量包；独立Editor伴随工具保护单Sprite PNG身份与几何。骨骼、多Sprite、尺寸迁移和游戏玩法不自动处理。
 
 ## Case 与典型工作流
 

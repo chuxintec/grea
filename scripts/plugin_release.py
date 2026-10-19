@@ -78,7 +78,11 @@ def validate_client(report, archive, target, version, name=None):
     if client.get('status')!='pass' or any(client.get('layers',{}).get(k,{}).get('status')!='pass' for k in required):
         raise ValueError('Native Codex installation/discovery incomplete')
     if client['layers']['installed_session'].get('version')!=version:raise ValueError('Installed session version mismatch')
-    if client['layers']['skills'].get('count')!=8 or client['layers']['tools'].get('count')!=21:
+    import zipfile
+    with zipfile.ZipFile(archive) as z:
+        skill_count=sum(n.startswith('grea/plugin/skills/') and n.endswith('/SKILL.md') for n in z.namelist())
+        tool_count=len(json.loads(z.read('grea/schemas/operations.json'))['operations'])
+    if not skill_count or not tool_count or client['layers']['skills'].get('count')!=skill_count or client['layers']['tools'].get('count')!=tool_count:
         raise ValueError('Native Codex catalog incomplete')
     if manifest['target']!=target:raise ValueError('Native client target mismatch')
     return {'name':name or Path(report).name,'bytes':Path(report).stat().st_size,'sha256':sha256(report)}

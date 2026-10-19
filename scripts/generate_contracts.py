@@ -13,6 +13,9 @@ from grea.cocos_contracts import documents as cocos_documents
 outputs.update(cocos_documents())
 from grea.native_exit_contracts import documents as native_exit_documents
 outputs.update(native_exit_documents())
+from grea.change_contracts import documents as change_documents, theme_documents
+outputs.update(change_documents())
+outputs.update(theme_documents())
 from grea.authoring_contracts import documents as authoring_documents
 outputs.update(authoring_documents())
 from grea.evidence_contracts import documents as evidence_documents

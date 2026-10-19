@@ -29,6 +29,8 @@
 | 诊断、技能检查与有界测试 | doctor、`check_grea_skill` | [维护说明](docs/维护与发布.md)、[测试内存工具](scripts/testing/README.md) |
 | 特定来源格式和历史工具 | `laya_contract_audit`、wxapkg 系列、旧 ARM32 模拟器 | [条件性恢复工具](docs/tools/规则与格式检查.md)、[旧模拟器](docs/providers/Android旧模拟器接入.md)；不作为默认路线 |
 
+开发候选 `theme_assets`：只读校验/预览和单Sprite PNG增量包；Editor显式应用/回退及限制见 [主题映射](docs/providers/theme-assets.md)。不修改游戏规则或自动处理骨骼/多Sprite。
+
 ## Unity 工程静态规划
 
 `validate_unity_project` / `plan_unity_project` 已提供 项目配置、依赖和显式程序集检查与只读设计计划。用法见 [配置与检查](docs/Unity指南.md)；这两个静态操作不启动 Editor、不写目标；需要生成时使用下面独立的生成操作，运行验收另做。

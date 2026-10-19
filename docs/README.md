@@ -10,3 +10,5 @@
 - [故障排查](故障排查.md)：按症状定位失败。
 
 专项格式契约见 [providers](providers/README.md)、[工具说明](tools/规则与格式检查.md)；历史报告见 [验证索引](../validation/README.md)。[未实现的品类候选](../proposals/numeric-template.md)不属于可用能力。
+
+开发候选：[主题映射与有限UI/UE开发](providers/theme-assets.md)；[grea-evolve](../plugin/skills/grea-evolve/SKILL.md)。冻结发行与本地候选分别标识。
