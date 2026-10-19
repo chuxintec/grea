@@ -4460,9 +4460,9 @@
         "--help"
       ],
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
-      "formats": "theme-map-v1; existing single-Sprite UI PNG only; Editor apply/rollback separate",
+      "formats": "theme-map-v1 and declared art-ledger-v1; automatic assets limited to existing single-Sprite UI PNG",
       "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "See docs/providers/theme-assets.md; validate/preview/prepare with explicit roots",
+      "usage": "See docs/providers/theme-assets.md; validate-ledger without project/media; validate/preview/prepare with explicit roots",
       "output_schema": "JSON plan/bundle declarations; docs/providers/theme-assets.md",
       "tested_samples": "Own PNG and rejection fixtures; actual Editor/GUI remain separately recorded",
       "execution": {
@@ -4491,7 +4491,8 @@
       "capability": {
         "implementation": "builtin",
         "adapters": [
-          "theme-map-v1"
+          "theme-map-v1",
+          "art-ledger-v1"
         ],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -4510,7 +4511,7 @@
           "filesystem_read",
           "explicit_output_write"
         ],
-        "support_formats": "theme-map-v1; existing single-Sprite UI PNG only; Editor apply/rollback separate"
+        "support_formats": "theme-map-v1 and declared art-ledger-v1; automatic assets limited to existing single-Sprite UI PNG"
       },
       "required_files": [
         "{grea}/src/grea/tools/theme_assets.py"

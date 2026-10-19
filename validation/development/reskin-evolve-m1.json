@@ -70,5 +70,48 @@
   "maintainer_walkthrough": {
     "R-EVOLVE-01": "bounded UI/UX prototype without per-page approval or inherited full historical gates",
     "R-THEME-01": "refuse unsupported resources/unknown edits; separate prepare, Editor apply, game acceptance"
+  },
+  "art_first_correction": {
+    "status": "local_candidate_passed_with_limits",
+    "source_parent": "42a5d879c7c8efe01897285c30d5eae31d5859da",
+    "workflow": [
+      "style_sample",
+      "art_production",
+      "sample_replace",
+      "full_reskin",
+      "game_tuning"
+    ],
+    "rules": [
+      "art stages preserve layout entrances operations and gameplay",
+      "UI UX tuning only after full reskin and bug fixes",
+      "UI UX budget is not art coverage",
+      "one ongoing resource ledger and interface character monster effect level settings",
+      "static PNG pending skeleton is not completed Spine art"
+    ],
+    "implemented": [
+      "optional art_production contract with stage and completion reference guards",
+      "plan_workflow five-stage outcomes with executed false",
+      "theme_assets validate-ledger for declarations without project or media",
+      "optional digest-bound ledger and UI PNG record association",
+      "Spine production export integration verification declaration completeness checks"
+    ],
+    "own_example_selection": {
+      "interfaces": 10,
+      "characters": 1,
+      "monsters": 2,
+      "spine_state": "pending; no actual media production claimed"
+    },
+    "validation": {
+      "new_production_tests": 5,
+      "all_targeted_tests_including_compatibility": 57,
+      "skills": 9,
+      "isolated_projection": "pass",
+      "local_document_links": 537,
+      "real_unity": "not_run",
+      "real_spine": "not_run",
+      "new_native_plugin_build": "not_run",
+      "installation": "not_run"
+    },
+    "consumer_previous_snapshot": "Prior PNG and source-GUID review remains historical static evidence, not S1 design approval or this tool application; new product S1 work proceeds independently"
   }
 }

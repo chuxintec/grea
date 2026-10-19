@@ -858,6 +858,63 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 1024
+              },
+              "art_production": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "stage",
+                  "ledger"
+                ],
+                "properties": {
+                  "stage": {
+                    "enum": [
+                      "style_sample",
+                      "art_production",
+                      "sample_replace",
+                      "full_reskin",
+                      "game_tuning"
+                    ]
+                  },
+                  "ledger": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "reference",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "reference": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1024
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  },
+                  "reskin_complete": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "reference",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "reference": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1024
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -1355,6 +1412,63 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 1024
+              },
+              "art_production": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "stage",
+                  "ledger"
+                ],
+                "properties": {
+                  "stage": {
+                    "enum": [
+                      "style_sample",
+                      "art_production",
+                      "sample_replace",
+                      "full_reskin",
+                      "game_tuning"
+                    ]
+                  },
+                  "ledger": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "reference",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "reference": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1024
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  },
+                  "reskin_complete": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "reference",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "reference": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1024
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -2185,6 +2299,63 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 1024
+              },
+              "art_production": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "stage",
+                  "ledger"
+                ],
+                "properties": {
+                  "stage": {
+                    "enum": [
+                      "style_sample",
+                      "art_production",
+                      "sample_replace",
+                      "full_reskin",
+                      "game_tuning"
+                    ]
+                  },
+                  "ledger": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "reference",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "reference": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1024
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  },
+                  "reskin_complete": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "reference",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "reference": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1024
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -3906,5 +4077,5 @@
       }
     }
   ],
-  "sha256": "cf28cfa16479730b73dfdeedbdec2fefa7be43bdb07a10a2bb7d0d4200cd1fd4"
+  "sha256": "61fe9444214c238cd88faeed83ba4ef338c1636aab699435d526ed318a021bb9"
 }

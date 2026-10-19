@@ -14,9 +14,7 @@
       "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     },
     "allowed_changes": [
-      "visual_style",
-      "layout",
-      "feedback"
+      "visual_style"
     ],
     "invariants": [
       "combat_rules",
@@ -27,7 +25,14 @@
       "persistence_semantics",
       "animation_events_cancel"
     ],
-    "ui_ux_budget": "overall page/flow scope; no pixel or per-page quota"
+    "ui_ux_budget": "Only after full reskin and bug fixes: scoped page/flow UI UX tuning; not art coverage or a per-page quota",
+    "art_production": {
+      "stage": "style_sample",
+      "ledger": {
+        "reference": "art-ledger.example.json",
+        "sha256": "600ff16885be9fb35f82fb509b186fb8887f59933da12780e925dc9b1987457a"
+      }
+    }
   },
   "assets": [
     {
@@ -55,7 +60,8 @@
         ],
         "pixels_per_unit": 100,
         "file_id": 21300000
-      }
+      },
+      "ledger_record": "screen-main"
     }
   ]
 }

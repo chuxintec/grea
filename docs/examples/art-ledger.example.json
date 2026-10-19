@@ -1,0 +1,239 @@
+{
+  "schema_version": 1,
+  "selection": {
+    "interfaces": [
+      "screen-main",
+      "screen-inventory",
+      "screen-upgrade",
+      "screen-battle",
+      "screen-pause",
+      "screen-result",
+      "screen-settings",
+      "screen-shop",
+      "screen-missions",
+      "screen-levels"
+    ],
+    "characters": [
+      "hero-a"
+    ],
+    "monsters": [
+      "monster-a",
+      "monster-b"
+    ]
+  },
+  "settings": {
+    "interface": "Settings/interface.md",
+    "character": "Settings/character.md",
+    "monster": "Settings/monster.md",
+    "effect": "Settings/effect.md",
+    "level": "Settings/level.md"
+  },
+  "records": [
+    {
+      "id": "screen-main",
+      "kind": "interface",
+      "feature_id": "ui.main",
+      "original_resource": "Original/UI/main.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [
+        "Source/main.png"
+      ],
+      "slices": [
+        "Slices/control-theme.png"
+      ],
+      "targets": [
+        "Assets/UI/control.png"
+      ],
+      "state": "designed"
+    },
+    {
+      "id": "screen-inventory",
+      "kind": "interface",
+      "feature_id": "ui.inventory",
+      "original_resource": "Original/UI/inventory.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-upgrade",
+      "kind": "interface",
+      "feature_id": "ui.upgrade",
+      "original_resource": "Original/UI/upgrade.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-battle",
+      "kind": "interface",
+      "feature_id": "ui.battle",
+      "original_resource": "Original/UI/battle.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-pause",
+      "kind": "interface",
+      "feature_id": "ui.pause",
+      "original_resource": "Original/UI/pause.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-result",
+      "kind": "interface",
+      "feature_id": "ui.result",
+      "original_resource": "Original/UI/result.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-settings",
+      "kind": "interface",
+      "feature_id": "ui.settings",
+      "original_resource": "Original/UI/settings.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-shop",
+      "kind": "interface",
+      "feature_id": "ui.shop",
+      "original_resource": "Original/UI/shop.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-missions",
+      "kind": "interface",
+      "feature_id": "ui.missions",
+      "original_resource": "Original/UI/missions.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "screen-levels",
+      "kind": "interface",
+      "feature_id": "ui.levels",
+      "original_resource": "Original/UI/levels.prefab",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    },
+    {
+      "id": "hero-a",
+      "kind": "character",
+      "feature_id": "combat.hero-a",
+      "original_resource": "Original/Actors/hero-a",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [
+        "Concept/hero-a.png"
+      ],
+      "slices": [],
+      "targets": [],
+      "state": "designed",
+      "spine": {
+        "state": "pending"
+      }
+    },
+    {
+      "id": "monster-a",
+      "kind": "monster",
+      "feature_id": "combat.monster-a",
+      "original_resource": "Original/Actors/monster-a",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [
+        "Concept/monster-a.png"
+      ],
+      "slices": [],
+      "targets": [],
+      "state": "designed",
+      "spine": {
+        "state": "pending"
+      }
+    },
+    {
+      "id": "monster-b",
+      "kind": "monster",
+      "feature_id": "combat.monster-b",
+      "original_resource": "Original/Actors/monster-b",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [
+        "Concept/monster-b.png"
+      ],
+      "slices": [],
+      "targets": [],
+      "state": "designed",
+      "spine": {
+        "state": "pending"
+      }
+    },
+    {
+      "id": "effect-hit",
+      "kind": "effect",
+      "feature_id": "combat.effect-hit",
+      "original_resource": "Original/Actors/effect-hit",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [
+        "Concept/effect-hit.png"
+      ],
+      "slices": [],
+      "targets": [],
+      "state": "designed",
+      "spine": {
+        "state": "pending"
+      }
+    },
+    {
+      "id": "level-01",
+      "kind": "level",
+      "feature_id": "progression.level-01",
+      "original_resource": "Original/Levels/01",
+      "design_source": "Design/style-board-v1.json",
+      "design_version": "candidate-v1",
+      "source_art": [],
+      "slices": [],
+      "targets": [],
+      "state": "planned"
+    }
+  ]
+}

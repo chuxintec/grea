@@ -24,4 +24,4 @@ description: 恢复或转换工程的 Unity 工程标准与治理：目录与 as
 
 规范设计与可调用的实现分开核对。只制定计划时，不创建工程，也不执行迁移。
 
-已恢复工程的有界UI/UE开发见 [grea-evolve](../grea-evolve/SKILL.md)；主题替换仍保护GUID/local fileID与制作所有权，骨骼/事件不靠图片清单证明不变。
+已恢复工程的有界UI/UE开发见 [grea-evolve](../grea-evolve/SKILL.md)；主题替换持续使用同一资源/设定台账，保护GUID/local fileID与制作所有权；新Spine记录实际版本、骨架/附件/动画事件及atlas/纹理导出和目标引用，骨骼/事件不靠图片清单证明不变。

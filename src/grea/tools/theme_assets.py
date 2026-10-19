@@ -9,7 +9,7 @@ from grea.common import GreaError
 from grea.host.paths import Path
 from grea.safe_paths import canonical_path,relative_name,unique_paths,disjoint
 from grea.common import digest
-from grea.change_contracts import validate as change_contract
+from grea.change_contracts import validate as change_contract, validate_ledger
 from ._artifact_common import digest as file_sha
 from .image_alpha_audit import inspect_image
 
@@ -33,13 +33,26 @@ def inspect(project,replacements,manifest):
     from grea.change_contracts import theme_documents
     Draft202012Validator(theme_documents()['theme-map.schema.json']).validate(v)
     change_contract(v['change_contract'])
+    ledger=None;ledger_path=None
+    production=v['change_contract'].get('art_production')
+    if production:
+        declaration=production['ledger']
+        ledger_path=member(manifest.parent,declaration['reference'])
+        if ledger_path.stat().st_size>1024*1024:raise ValueError('Art ledger exceeds 1 MiB')
+        if file_sha(ledger_path)!=declaration['sha256']:raise ValueError('Stale art ledger digest')
+        ledger=read_json(ledger_path);ledger_summary=validate_ledger(ledger)
+        record_index={r['id']:r for r in ledger['records']}
     assets=v['assets']
     if not isinstance(assets,list) or not 1<=len(assets)<=256:raise ValueError('Select 1..256 PNG mappings')
     unique_paths([a['asset'] for a in assets])
     if len({a['guid'] for a in assets})!=len(assets):raise ValueError('Mapped targets must have unique GUIDs')
     rows=[];total=0;pixels=0
     for row in assets:
-        if set(row)!={'usage','alpha_required','asset','replacement','source_sha256','replacement_sha256','meta_sha256','guid','sprite'}:raise ValueError('Unknown or missing mapping fields')
+        if set(row)-{'ledger_record'}!={'usage','alpha_required','asset','replacement','source_sha256','replacement_sha256','meta_sha256','guid','sprite'}:raise ValueError('Unknown or missing mapping fields')
+        if 'ledger_record' in row:
+            record=record_index.get(row['ledger_record']) if ledger else None
+            if not record or record['kind'] not in ('interface','icon') or record.get('spine',{}).get('state','not_required')!='not_required' or row['asset'] not in record['targets']:
+                raise ValueError('PNG mapping must name an existing UI/icon ledger record with this target; Spine is not an automatic PNG replacement')
         if not row['asset'].startswith('Assets/') or not row['asset'].endswith('.png') or not row['replacement'].endswith('.png'):raise ValueError('Only existing native PNG assets supported')
         import re
         if not re.fullmatch('[0-9a-f]{32}',row['guid']):raise ValueError('Expected declared existing GUID')
@@ -64,8 +77,11 @@ def inspect(project,replacements,manifest):
         if row['alpha_required'] and not after['transparent_pixels']:raise ValueError('Cutout requires transparent pixels')
         rows.append(dict(row,changed=row['source_sha256']!=row['replacement_sha256'],before=before,after=after))
     result=dict(schema_version=1,tool='theme_assets',implementation_version='0.1.0',status='validated_declared_mapping',change_contract=v['change_contract'],assets=rows,
-                limits=['Approval/invariants/baseline are caller declarations; only selected images/meta are read.','GUID/fileID/importer fields are declarations until Editor readback.','No pixel approval, input/gameplay or skeleton/event validation.'])
+                limits=['Approval/invariants/baseline are caller declarations; selected images/meta and an optional bound ledger are read; referenced media are not opened.','GUID/fileID/importer fields are declarations until Editor readback.','No pixel approval, input/gameplay or skeleton/event validation.'])
     result['plan_id']=digest({'manifest':v,'assets':[{k:x[k] for k in ('asset','source_sha256','replacement_sha256','meta_sha256')} for x in rows]})
+    if ledger:
+        result['art_ledger']=ledger_summary
+        if file_sha(ledger_path)!=production['ledger']['sha256']:raise ValueError('Art ledger changed during inspection')
     # Cooperative local writers only; recheck all explicit input identities before returning.
     for row in rows:
         for file,key in ((member(project,row['asset']),'source_sha256'),(member(replacements,row['replacement']),'replacement_sha256'),(member(project,row['asset']+'.meta'),'meta_sha256')):
@@ -94,7 +110,7 @@ def create(project,replacements,manifest,out,preview=False):
                 target=out/name;target.parent.mkdir(exist_ok=True);shutil.copyfile(source,target)
                 expected=row['source_sha256' if name==before else 'replacement_sha256']
                 if file_sha(target)!=expected:raise ValueError('Copy changed; partial output retained')
-            bundle.append({**{k:row[k] for k in ('usage','alpha_required','asset','source_sha256','replacement_sha256','meta_sha256','guid','sprite')},'before':before,'after':after})
+            bundle.append({**{k:row[k] for k in ('usage','alpha_required','asset','source_sha256','replacement_sha256','meta_sha256','guid','sprite','ledger_record') if k in row},'before':before,'after':after})
         report['bundle']=bundle
         report['status']='incremental_bundle_prepared_not_applied'
     if inspect(project,replacements,manifest)['plan_id']!=report['plan_id']:raise ValueError('Input changed while producing output; partial output retained')
@@ -103,15 +119,21 @@ def create(project,replacements,manifest,out,preview=False):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action',choices=['validate','preview','prepare'])
-    for name in ('project','replacements','manifest','output'):parser.add_argument('--'+name,type=Path,required=True)
+    parser.add_argument('action',choices=['validate','preview','prepare','validate-ledger'])
+    for name in ('project','replacements','manifest','output'):parser.add_argument('--'+name,type=Path,required=name in ('manifest','output'))
     a=parser.parse_args()
     try:
-        if a.action=='validate':
+        if a.action=='validate-ledger':
+            manifest=canonical_path(a.manifest);result=validate_ledger(read_json(manifest))
+            out=disjoint(a.output,manifest)
+            with out.open('x',encoding='utf-8') as f:json.dump(result,f,ensure_ascii=False,indent=2,allow_nan=False)
+        elif a.project is None or a.replacements is None:
+            raise ValueError('PNG actions require --project and --replacements')
+        elif a.action=='validate':
             result=inspect(a.project,a.replacements,a.manifest);out=disjoint(a.output,a.project,a.replacements,a.manifest)
             with out.open('x',encoding='utf-8') as f:json.dump(result,f,ensure_ascii=False,indent=2,allow_nan=False)
         else:result=create(a.project,a.replacements,a.manifest,a.output,a.action=='preview')
-        print(json.dumps({'status':result['status'],'plan_id':result['plan_id']}));return 0
+        print(json.dumps({'status':result['status'],**({'plan_id':result['plan_id']} if 'plan_id' in result else {})}));return 0
     except (OSError,ValueError,KeyError,TypeError,GreaError,ValidationError) as error:
         print(str(error));return 2
 

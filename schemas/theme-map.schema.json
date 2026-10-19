@@ -120,6 +120,63 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 1024
+        },
+        "art_production": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "stage",
+            "ledger"
+          ],
+          "properties": {
+            "stage": {
+              "enum": [
+                "style_sample",
+                "art_production",
+                "sample_replace",
+                "full_reskin",
+                "game_tuning"
+              ]
+            },
+            "ledger": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "reference",
+                "sha256"
+              ],
+              "properties": {
+                "reference": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "reskin_complete": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "reference",
+                "sha256"
+              ],
+              "properties": {
+                "reference": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -222,6 +279,11 @@
                 "type": "integer"
               }
             }
+          },
+          "ledger_record": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
           }
         }
       }

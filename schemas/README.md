@@ -1,6 +1,6 @@
 # 数据契约与能力目录
 
-本目录全部 JSON 由 `scripts/generate_contracts.py` 从 `src/grea/contracts.py` 、`src/grea/unity_project_contracts.py` 、`src/grea/cocos_contracts.py` 、`src/grea/native_exit_contracts.py` 和 `src/grea/authoring_contracts.py` 生成。修改源码定义，再生成；CI 用 `--check` 防止漂移。不要手工改 JSON 来绕过运行时校验。
+本目录全部 JSON 由 `scripts/generate_contracts.py` 从 `src/grea/contracts.py` 、`src/grea/unity_project_contracts.py` 、`src/grea/cocos_contracts.py` 、`src/grea/native_exit_contracts.py` 、`src/grea/authoring_contracts.py` 、`src/grea/change_contracts.py` 和 `src/grea/evidence_contracts.py` 生成。修改源码定义，再生成；CI 用 `--check` 防止漂移。不要手工改 JSON 来绕过运行时校验。
 
 | 文件 | 类型 | 用途与消费者 |
 | --- | --- | --- |
@@ -29,3 +29,5 @@ python3 scripts/generate_contracts.py --check
 ## 有限制作输入
 
 `unity-config-authoring.schema.json` 定义闭合标量字段表的制作契约；`unity-native-assets.schema.json` 定义明确 Sprite 与 Transform 动画切片。跨字段范围、主键、目标、坐标和生成所有权由工具完整预检。两者由 `src/grea/authoring_contracts.py` 生成，不改变既有操作 Schema；具体边界见 [制作链](../docs/providers/unity-authoring.md)。
+
+`change-contract.schema.json` 的可选 art_production 约束换皮阶段与后置调优；`art-ledger.schema.json` 描述持续选样/资源/设定与Spine生产状态，供 theme_assets validate-ledger 消费。结构/引用声明通过不等于真实媒体、用户批准或Editor/Player验收；使用说明见 [主题映射](../docs/providers/theme-assets.md)。

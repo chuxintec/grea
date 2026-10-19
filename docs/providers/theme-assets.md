@@ -41,3 +41,27 @@ prepare 只收录摘要不同的行，按索引存 before/after PNG，生成 `th
 已应用/已回退行可幂等略过。未知第三方改动、meta或几何漂移不得强制覆盖。中途失败回执保留 attempted/verified 行；回退仅处理当前字节明确等于本包before/after的目标，回到原PNG后再次导入验证。进程中断或meta已变需先检查实际状态/备份，不能把旧“成功”回执当当前身份。不保证整个多文件操作原子，不能以素材回退代替玩法/存档回滚。
 
 完成状态只表示图像字节及导入字段检查；真正视觉、按钮状态、布局/导航、骨骼附件/事件、命中/取消、存档与Player证据仍分层。当前Editor实际运行按消费者自己的有界窗口验收，本工具不占用或新建游戏窗口。
+
+## 美术优先的阶段与持续台账
+
+换皮主线顺序为 S1真实选样定风格 → S2 UI/ICON切分、原画与所需角色/怪物/特效Spine成套生产 → S3选样范围100%原功能替换 → S4用户确认样板风格后的全量换皮与Bug修复 → S5最后游戏调优。前四阶段保持原布局、入口和操作；约30%如有约定只用于S5整体页面/流程范围，不是美术替换覆盖率。不为每页增加审批，不把可玩/改色/静态PNG冒称完整美术或Spine。具体执行规范以 [换皮制作](../../plugin/skills/grea-reskin/references/07-美术-游戏换皮与资源制作.md) 为准。
+
+`change_contract.art_production` 可选新增 `stage`、`ledger:{reference,sha256}`；阶段值依次为 `style_sample`、`art_production`、`sample_replace`、`full_reskin`、`game_tuning`。前四阶段允许维度仅 `visual_style`，S4/S5要求design声明approved，S5要求额外 `reskin_complete:{reference,sha256}` 绑定全量换皮与Bug修复完成回执。这是有限声明约束，不是审批服务或自动验收；既有不带该字段的合同/API继续兼容。没有换皮前置的独立UI/UE任务不强套美术阶段。
+
+各阶段更新**同一份**台账文件及其当前SHA，不复制成阶段台账。台账链接持续维护的界面、角色、怪物、特效、关卡设定；以稳定资源/功能ID关联设计来源和版本、源稿、切片、Spine生产/导出、目标引用与状态。纯文档引用不上传任何媒体、原始提示词或私有附件。
+
+```sh
+./bin/grea legacy theme_assets validate-ledger --manifest /work/art-ledger.json --output /work/new-ledger-report.json
+```
+
+此动作不需要工程、替换图或Editor。读取1MiB以内JSON，按 [art-ledger Schema](../../schemas/art-ledger.schema.json) 校验后输出 `validated_declared_art_ledger`、选样数量和**声明状态**统计；引用的媒体/设置/证据不打开。输出必须全新，旧文件不覆盖。台账示例见 [自有占位示例](../examples/art-ledger.example.json)：10个示例界面、1角色、2个轮廓/动作差异怪物，**不是某真实项目的已完成选样**；概念角色/怪物/特效的Spine明确pending。
+
+台账字段：
+
+- `selection` 列实际界面、角色、怪物的记录ID；数量按本期明确范围，如10/1/N落实，工具不强迫所有项目采用相同数目。
+- `settings` 链接interface/character/monster/effect/level五类持续设定文档，无新机制时引用原设定。
+- `records[]`：`id/kind/feature_id/original_resource`，`design_source/design_version`，`source_art[]/slices[]/targets[]`，`state` 为 planned/designed/produced/integrated/verified；verified必须另有evidence引用。稳定ID不可重复，选样必须引用正确类别的现有记录。
+- character/monster/effect条目明确 `spine.state` 为not_required/pending/authored/exported/integrated/verified。not_required需真实理由，不等于免除用户所需的Spine；exported及以后需editor_version、runtime_version、skeleton、attachments、animations、events（允许明确空列表）、atlas、textures、exports；integrated需目标引用，verified还需自身evidence。
+- 概念图/静态切片加pending或authored骨架不能声明为produced完整资源；无证据不声明verified。字段齐备也只表明声明完整，不能证明实际Spine文件兼容、事件时序、导出/导入或运行通过。
+
+PNG清单引用此台账时，`ledger.reference` 是相对映射JSON所在目录的显式安全文件路径，不能越界/链接；会读取该台账、核验SHA及结构并在输出记录摘要。每条PNG行可增加 `ledger_record`：它必须指向interface/icon记录，且targets包含该PNG路径、没有待处理的Spine；不能用骨骼条目伪装为普通UI PNG。bundle保留这一关联，不自动更新生产状态。清单中的骨骼资料仅用于追溯，**不会因此获得骨骼替换能力**；单Sprite/同画布/meta保护保持原边界。
