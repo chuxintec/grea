@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "kind": "maintenance_checkpoint",
+  "version": "2026.10.19",
+  "baseline": "v2026.10.17",
+  "status": "local_targeted_checks_passed_pending_native_ci_release",
+  "changes": [
+    "unified_complete_managed_dll_limit_256",
+    "mechanism_and_actual_player_scope_rules",
+    "ordinary_teardown_ownership_rules",
+    "authoring_measurement_identity_batching_rules",
+    "functional_readme",
+    "workspace_sync_default_compatibility"
+  ],
+  "local_validation": {
+    "actual_cecil_own_fixture_tests": {
+      "executed": 6,
+      "passed": 6,
+      "large_complete_sets": [
+        128,
+        129,
+        162,
+        256
+      ],
+      "negative_cases": [
+        "empty_or_257_schema",
+        "truncated_manifest",
+        "extra_corrupt_dll",
+        "sha_mismatch",
+        "per_dll_byte_budget",
+        "missing_project_type",
+        "forbidden_reference_assembly",
+        "il2cpp"
+      ],
+      "inspected_il_executed": false
+    },
+    "native_exit_tests": 2,
+    "review_contract_tests": 4,
+    "skill_sync_tests": 5,
+    "quick_validate_skills": 8,
+    "isolated_skill_sync": "pass",
+    "contracts_docs_brand_lock": "pass",
+    "readme_commands": [
+      "session",
+      "list-tools",
+      "describe-tool",
+      "plan-workflow mode=assess"
+    ]
+  },
+  "maintainer_walkthrough": {
+    "method": "maintainer-walkthrough; no independent agent or game execution",
+    "cases": {
+      "R-AUDIT-02": "mechanism and consumers decide; Editor candidates and Player evidence remain separate; names never grant waiver",
+      "R19": "stop ingress; clean despite failure; late callback and ordinary quit bounded checks",
+      "R29": "source protocol and reconstituted commit distinct; transport proof does not assert fresh cold restore",
+      "R-AUDIT-04": "reuse only proven unchanged inputs; changed runtime consumers require affected revalidation"
+    },
+    "performance": "calibration can pass while formal display/workload conditions fail; new observer needs calibration review"
+  },
+  "initial_failures": [
+    {
+      "stage": "own_fixture_compile",
+      "cause": "Unnecessary NuGet feed lookup hit host network initialization error before product audit; preserved privately",
+      "resolution": "Own fixtures now clear feeds and use existing SDK reference packs; real metadata tests passed"
+    },
+    {
+      "stage": "documentation_check",
+      "cause": "Private untracked review included external project evidence links",
+      "resolution": "Original preserved locally outside public scan/projection; no checker waiver"
+    },
+    {
+      "stage": "skill_frontmatter_check",
+      "cause": "Project venv lacks optional PyYAML",
+      "resolution": "Used already-installed host validator dependency; all eight skills passed, no dependency installation"
+    }
+  ],
+  "limits_preserved": {
+    "manifest_bytes": 1048576,
+    "dll_bytes": 67108864,
+    "total_dll_bytes": 536870912,
+    "report_bytes": 33554432,
+    "reader_timeout_seconds": 60
+  },
+  "not_run": [
+    "game_editor_player_gui_audio_performance",
+    "windows_desktop_unity_player_gpu_manual_input",
+    "native_claude_client",
+    "user_global_plugin_upgrade"
+  ],
+  "private_material": "Local project review, raw product evidence, environment annotations and credentials excluded from committed product inputs; only generic rules and own fixtures included",
+  "final_publication_authority": {
+    "release": "https://github.com/chuxintec/grea/releases/tag/v2026.10.19",
+    "source_identity": "release-manifest.json",
+    "checksums": "SHA256SUMS",
+    "native_results": "per-target plugin/client acceptance attachments",
+    "scope": "This file is a prepublication local checkpoint, not final package hashes or CI status"
+  }
+}

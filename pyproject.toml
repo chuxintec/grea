@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "grea"
-version = "2026.10.17"
+version = "2026.10.19"
 description = "Game Reverse Engineering and Assembly: evidence-first Unity recovery CLI and MCP"
 readme = "README.md"
 license = "MIT"

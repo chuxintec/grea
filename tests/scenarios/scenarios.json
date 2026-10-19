@@ -325,7 +325,8 @@
       "expected_mode": "局部一致性修复",
       "observable_outcomes": [
         "核对源语义，隔离重复启动、回收再显示与受影响入口",
-        "按证据修复后进行真实入口回归，不同触发的空白分别记录"
+        "按证据修复后进行真实入口回归，不同触发的空白分别记录",
+        "若受影响退出发现晚到回调，关闭入口并保证解绑/清理幂等，普通包活跃任务退出查尾日志"
       ],
       "prohibited_scope_expansion": [
         "重写整套玩法",
@@ -334,7 +335,8 @@
       "primary_references": [
         "plugin/skills/grea-native-port/references/05-Unity-跨引擎移植与行为一致性.md",
         "plugin/skills/grea-parity/references/05-Unity-界面还原与输入交互.md",
-        "plugin/shared/08-验收-测试与结果交付.md"
+        "plugin/shared/08-验收-测试与结果交付.md",
+        "plugin/skills/grea-unity-standard/references/05-Unity-程序集分层与生命周期.md"
       ]
     },
     {
@@ -506,7 +508,8 @@
       "expected_mode": "分发验收",
       "observable_outcomes": [
         "检查许可证和锁定依赖，去除维护者路径依赖并从独立副本恢复",
-        "Editor、目标 Player 和原游戏验收分层；未运行项如实记录"
+        "Editor、目标 Player 和原游戏验收分层；未运行项如实记录",
+        "区分内容指纹协议、来源提交与无历史恢复的新本地检查点；传输分片逐片及合成校验，不冒充新冷恢复"
       ],
       "prohibited_scope_expansion": [
         "把私人原包或商业素材补进公共框架",
@@ -537,13 +540,17 @@
     {
       "id": "R-AUDIT-02",
       "request": "把旧节点图解释器重命名为 Native 后是否完成？",
-      "setup": "原机制仍在 Player 内。",
+      "setup": "源解释机制仍在 Player 内；另有不解释源协议的有限业务FIFO及Editor-only历史对照候选。",
       "expected_mode": "原生机制退出审计",
       "observable_outcomes": [
-        "按机制与调用链继续判未退出"
+        "按机制与调用链继续判未退出",
+        "按结构与投递/推进/销毁消费者区分有限业务FIFO，保留源调度器负例",
+        "Editor候选不冒充Player；前检实际根/引用，后检实际普通载荷"
       ],
       "prohibited_scope_expansion": [
-        "凭类型名通过原生门"
+        "凭类型名通过原生门",
+        "按FIFO全名豁免或封禁",
+        "把Editor-only对照候选当生产违规"
       ],
       "primary_references": [
         "plugin/skills/grea-native-port/references/05-Unity-原生转换规范.md",
@@ -573,14 +580,16 @@
       "setup": "旧录像和测试未对应新候选。",
       "expected_mode": "新候选构建验收",
       "observable_outcomes": [
-        "新 revision；受影响门待验"
+        "按diff和输入确认受影响门：审计器变化重审固定原件；运行时/资源变化核验相关实际消费者；发布字段不沿用旧未发布描述"
       ],
       "prohibited_scope_expansion": [
         "把旧截图升级为新包通过"
       ],
       "primary_references": [
         "plugin/skills/grea-native-port/references/05-Unity-原生转换规范.md",
-        "plugin/shared/08-验收-测试与结果交付.md"
+        "plugin/shared/08-验收-测试与结果交付.md",
+        "plugin/shared/01-流程-开发计划与进度管理.md",
+        "plugin/skills/grea-delivery/references/09-交付-游戏构建与版本发布.md"
       ]
     }
   ]
