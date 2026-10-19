@@ -15,6 +15,12 @@ from urllib.parse import unquote, urlsplit
 
 LINK = re.compile(r"(\]\()(<[^>]+>|[^\s)]+)(\))")
 ROOT = Path(__file__).resolve().parents[1]
+# tools/grea remains a product repo; shared skills belong to the enclosing workspace.
+def workspace_root(product_root: Path) -> Path:
+    return product_root.parent.parent if product_root.parent.name == 'tools' else product_root.parent
+
+
+WORKSPACE = workspace_root(ROOT)
 ROUTER = 'grea'
 RECORD = '.grea-install.json'
 
@@ -125,7 +131,7 @@ def synchronize(source: Path, destination: Path, check: bool = False) -> list[st
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--destination', type=Path, default=ROOT.parent / '.agents/skills',
+    parser.add_argument('--destination', type=Path, default=WORKSPACE / '.agents/skills',
                         help='Skills root that receives one directory per grea skill')
     parser.add_argument('--check', action='store_true', help='Report drift without writing')
     args = parser.parse_args()

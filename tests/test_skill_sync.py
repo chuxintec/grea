@@ -27,6 +27,13 @@ def plugin(root):
 
 
 class SkillSyncTests(unittest.TestCase):
+    def test_default_workspace_supports_direct_and_tools_repository_layouts(self):
+        root = Path('/workspace')
+        self.assertEqual(sync.workspace_root(root / 'grea'), root)
+        self.assertEqual(sync.workspace_root(root / 'tools/grea'), root)
+        self.assertEqual(sync.workspace_root(root / 'tools/grea') / '.agents/skills',
+                         root / '.agents/skills')
+
     def test_layout_relocation_drift_and_pruning(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

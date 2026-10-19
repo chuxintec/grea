@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 from grea.safe_paths import canonical_path, disjoint, relative_name, unique_paths
+from grea.native_exit_contracts import MAX_PLAYER_ASSEMBLIES
 
 ROOT=Path(__file__).resolve().parents[3]
 READER=ROOT/'tools/unity/assembly-audit/bin/Release/net8.0/Grea.AssemblyAudit.dll'
@@ -46,7 +47,7 @@ def audit(manifest,managed,policy):
         if not isinstance(values,list) or len(values)>256 or not all(isinstance(x,str) and 0<len(x)<1024 for x in values):reject('INVALID_POLICY','Expected bounded explicit identity lists')
     if not policy.get('required_types'):reject('INVALID_POLICY','At least one required project type is necessary; zero project types must not pass')
     inputs=identity.get('assemblies')
-    if not isinstance(inputs,list) or not 1<=len(inputs)<=128:reject('INVALID_MANIFEST','Select 1..128 exact managed DLLs')
+    if not isinstance(inputs,list) or not 1<=len(inputs)<=MAX_PLAYER_ASSEMBLIES:reject('INVALID_MANIFEST',f'Select 1..{MAX_PLAYER_ASSEMBLIES} exact managed DLLs')
     names=[];total=0
     for row in inputs:
         if not isinstance(row,dict) or set(row)!={'path','sha256'} or not isinstance(row['sha256'],str) or not re.fullmatch('[0-9a-f]{64}',row['sha256']):reject('INVALID_MANIFEST','Each DLL requires a relative path and SHA')
@@ -80,7 +81,7 @@ def audit(manifest,managed,policy):
         for name in policy.get(key,[]):
             violates=(name not in observed) if missing else (name in observed)
             if violates:findings.append(dict(check=key,identity=name))
-    return dict(schema_version=1,tool='unity_player_audit',implementation_version='0.1.0',status='fail' if findings else 'metadata_checks_passed',
+    return dict(schema_version=1,tool='unity_player_audit',implementation_version='0.1.1',status='fail' if findings else 'metadata_checks_passed',
         source_format='Mono-managed-assemblies',build_identity=identity,manifest_sha256=sha(manifest),policy=policy,
         reader=dict(sha256=sha(READER),cecil_dll_sha256=sha(cecil),cecil_lock_sha256=sha(ROOT/'tools/unity/assembly-audit/packages.lock.json')),
         assemblies=data['assemblies'],findings=findings,errors=[],unsupported=[],scope='Selected metadata checks only; no executed-call graph, gameplay, stripping completeness or source provenance attestation',

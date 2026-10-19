@@ -68,12 +68,12 @@
 1. 用源引擎类型、uuid、脚本名作运行时类型分发、节点身份或资源调度的兼容机制。扫描这些拼写只能生成审查线索；正常领域名、存档 ID、Spine JSON、有限业务 Tick 以及 Unity GUID 不因名称相似而禁止。改名后的源引擎解释器仍属违规。
 2. 为保存源节点身份而挂在 Prefab 上的组件（如 SourceIdentity、SourceWidget、SourceBehaviour），以及运行时依据数据描述构建或改写 UI 树的 ViewDefinition 一类结构。
 3. 按节点索引、uuid 或字符串路径绑定事件或控件；控件统一用 `[SerializeField]` 引用。
-4. 自研的 director、帧循环参与者注册、调度器、微任务队列、Tween/Action 系统、Widget/Layout 布局算法、Label 度量算法，用来替代 Unity 已有能力。
+4. 为解释源引擎协议而自研的 director、帧循环参与者注册、调度器、微任务队列、Tween/Action 系统、Widget/Layout 布局算法、Label 度量算法，用来替代 Unity 已有能力。有限业务完成 FIFO 若不解释源节点、生命周期或帧阶段协议，且有明确线程、作用域退出、受限推进及重入边界，可按业务服务审查；不得仅按名称放行或封禁。核对实际结构与投递、推进、销毁消费者，移除线程/清空/退出边界或加入源调度协议的反例仍须拒绝。
 5. 将任意 `key + json` 行或完整源对象图塞入 ScriptableObject，并继续在 Player 中动态解释为生产规则。合法强类型 DTO 的 JSON 序列化、文本字段和第三方标准数据不在此列。
 6. 交付后仍有 Templates/Views 双层 UI 真源，或需要 Capture、回写流程。
 7. 源引擎运行时源码，或带源引擎许可证限制的文件（例如 Cocos Creator 的 easing 实现及其许可证文件头）。替代做法、原游戏素材范围与第三方包登记见 [许可证与再分发](../../grea-delivery/references/09-交付-许可证与再分发.md)。
 
-守卫做成 EditMode 测试或 Validator，并接入 Build 前置校验。已有项目的过渡机制登记负责人、调用链、退出条件与阶段。`migration_no_regression` 检查没有新增或扩大依赖；它只允许继续迁移，不代表 `final_native_exit` 已通过。最终退出要求相关机制从实际 Player 编译集合、资产闭包与载荷中退出，不能靠白名单豁免。守卫扫描范围、白名单和结果记录在项目验收中。
+守卫做成 EditMode 测试或 Validator。构建前检查生产编译集合、实际根资产与引用；Editor 已加载的对照类型只作为待审候选，不能冒充实际 Player 类型阻断或放行。对本次交付支持的后端，构建后必须核对实际 Player 载荷与禁止项；缺少该层证据不能宣称最终退出通过。普通与 Development 构建可能走不同守卫、裁剪和宏分支，结论绑定实际构建配置。已有项目的过渡机制登记负责人、调用链、退出条件与阶段。`migration_no_regression` 检查没有新增或扩大依赖；它只允许继续迁移，不代表 `final_native_exit` 已通过。最终退出要求相关机制从实际 Player 编译集合、资产闭包与载荷中退出，不能靠白名单豁免。守卫扫描范围、白名单和结果记录在项目验收中。
 
 ## 平台 SDK
 

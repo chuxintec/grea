@@ -20,3 +20,5 @@
 - [2026-10-16-portable-plugin-macos-arm64](releases/2026-10-16-portable-plugin-macos-arm64.json)
 - [2026-10-16-project-tools](releases/2026-10-16-project-tools.json)
 - [2026-10-16-unity-framework-extraction](releases/2026-10-16-unity-framework-extraction.json)
+
+本轮维护本地检查点：[2026-10-19](releases/2026-10-19-maintenance.json)；最终原生CI、制品身份与下载校验以 [正式Release](https://github.com/chuxintec/grea/releases/tag/v2026.10.19) 附件为准，检查点不预先声明发布完成。

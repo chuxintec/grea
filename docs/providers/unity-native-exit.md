@@ -20,7 +20,7 @@ Editor 层位于 [NativeExitEditorAudit.cs](../../tools/unity/audit/NativeExitEd
 
 它读取 CompilationPipeline 的 Player 编译集合、AssetDatabase 依赖、预加载资源和显式动态根，临时加载 Prefab/预览场景后释放，不保存资产。Editor 导入、预览与项目自身 Editor 生命周期函数仍可能写缓存，不能称为无副作用沙箱。`editor_loaded_type` 和 `editor_declared_fields` 明确属于 Editor；即使类型全名一样，也不能代替条件编译后的 Player 类型。未覆盖的 build scene 单列 issues，动态根完整性仍需审查。
 
-实际 Player 层 `unity_player_audit` 0.1.0 使用锁定的 Mono.Cecil 0.11.6（MIT）读取 DLL 元数据，不用 Assembly.Load，不执行静态构造器，不解析依赖或加载符号。依赖来源为官方 NuGet，完整性在 `tools/unity/assembly-audit/packages.lock.json`。需本机现有 .NET 8 SDK，显式构建可选 provider：
+实际 Player 层 `unity_player_audit` 0.1.1 使用锁定的 Mono.Cecil 0.11.6（MIT）读取 DLL 元数据，不用 Assembly.Load，不执行静态构造器，不解析依赖或加载符号。依赖来源为官方 NuGet，完整性在 `tools/unity/assembly-audit/packages.lock.json`。需本机现有 .NET 8 SDK，显式构建可选 provider：
 
 ```sh
 dotnet restore tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --locked-mode
@@ -33,13 +33,15 @@ dotnet build tools/unity/assembly-audit/Grea.AssemblyAudit.csproj --no-restore -
 {"schema_version":1,"build_id":"own-build-001","source_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","platform":"macos-arm64","backend":"Mono","assemblies":[{"path":"Own.Game.dll","sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]}
 ```
 
-必须穷举 Managed 目录直接包含的每个 DLL，集合/摘要不符、缺失、损坏、链接或零项目类型都不能通过。策略至少指定一个实际项目类型：
+必须穷举 Managed 目录直接包含的每个 DLL，支持 1–256 个完整集合；集合/摘要不符、缺失、损坏、链接或零项目类型都不能通过。策略至少指定一个实际项目类型：
 
 ```json
 {"schema_version":1,"required_types":["Own.Game"],"forbidden_types":[],"forbidden_assemblies":["nunit.framework","UnityEngine.TestRunner","UnityEditor.TestRunner"],"forbidden_references":["nunit.framework","UnityEditor.TestRunner","UnityEngine.TestRunner"],"call_types":["Own.Game"]}
 ```
 
 `metadata_checks_passed` 只表示这些明确检查通过；manifest 的 build/source/platform 是调用方声明，工具核验实际 DLL 集合与摘要，不为构建来源作第三方背书。调用位点仅覆盖所选类型的 call/callvirt/newobj，不是完整调用图或实际执行证据。IL2CPP 返回 unsupported，不能因为没有 DLL 就判清洁。Node、.NET/Cecil、Unity Editor 都是可选外部 provider，不自动安装进 Python 核心插件。
+
+容量提升不改变预算：manifest 1 MiB、单 DLL 64 MiB、总 DLL 512 MiB、元数据报告 32 MiB、读取进程60秒，另有类型/方法/字段/调用位点上限。不能截断清单或漏选 DLL 绕过预算；超出时报告限制，不宣称完整检查。有限业务 FIFO 与源调度机制依据结构、所有权与真实消费者人工/专项审查，不按类名自动豁免。Editor-only 候选不代替实际 Player 元数据。
 
 静态报告始终需后续确认：退出 1；元数据检查通过 0、发现违例/不支持 1、输入/身份/依赖/IO 错误 2。原始报告、Unity 日志与真实项目资料留项目内，公共仓库仅保留合成 fixtures 和脱敏验收摘要。
 
