@@ -1,0 +1,1 @@
+{"extends":"./temp/tsconfig.cocos.json","compilerOptions":{"strict":true}}

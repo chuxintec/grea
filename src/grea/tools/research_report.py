@@ -1,6 +1,7 @@
 """Normalize bounded local evidence and create a new JSON/Markdown research report."""
 import argparse,hashlib,json
 from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError
 from grea.host.paths import Path
 from grea.safe_paths import canonical_path,disjoint,relative_name
 from grea.research_contracts import documents,KINDS,STAGES
@@ -26,15 +27,26 @@ def normalize(source):
         if j['type']=='fact' and not j['source_ids']:raise ValueError('Fact needs explicit evidence')
     for e in value.get('estimates',[]):
         if any(e[k][0]>e[k][1] for k in ('active_hours','collaboration_days')):raise ValueError('Reversed estimate interval')
+    coverage=value.get('play_coverage',[])
+    for row in coverage:
+        for media in row['media']:
+            if media['source_id'] not in sources:raise ValueError('Unknown gameplay media source')
+            if media['kind']=='video' and not media.get('timecode'):raise ValueError('Video needs reviewed timecode')
+        if row['status']=='played':
+            kinds={m['kind'] for m in row['media']}
+            required={'video'} if row['area'] in ('core_loop','tutorial') else {'screenshot'}
+            if not required<=kinds:raise ValueError('Played coverage needs relevant screenshot/video evidence')
+    play_gaps=[area+': actual experience not established' for area in ('core_loop','tutorial','progression','ui_comparison') if not any(row['area']==area and row['status'] in ('played','not_applicable') for row in coverage)]
     metrics={};gaps=[]
     for kind in KINDS:
         rows=[r for r in value['items'] if r['kind']==kind]
         present={r['stage'] for r in rows}
         metrics[kind]={s:len({r['id'] for r in rows if r['stage']==s}) if s in present else None for s in STAGES}
+        metrics[kind]['versions']={version:len({r['id'] for r in rows if r.get('version')==version}) for version in sorted({r['version'] for r in rows if 'version' in r})} or None
         metrics[kind]['unique_observed']=len({r['id'] for r in rows}) if rows or kind in value.get('complete_kinds',[]) else None
         if kind not in value.get('complete_kinds',[]):gaps.append(kind+': total coverage not established')
     protocols={direction:{kind:len({r['name'] for r in value['protocols'] if r['direction']==direction and r['kind']==kind}) or None for kind in ('rpc','message','field')} for direction in ('client_to_server','server_to_client','internal')}
-    return dict(schema_version=1,status='normalized_evidence_not_development_approval',game=value['game'],input_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),sources=list(sources.values()),metrics=metrics,protocols=protocols,coverage_gaps=gaps,judgments=value.get('judgments',[]),estimates=value.get('estimates',[]),limitations=['Counts are deduplicated caller classifications linked to byte-verified sources; the tool does not parse game semantics or infer missing stages.','Nested fields are not RPCs. Config rows are not gameplay count. Absence is unknown, not zero.','Analyst estimates/judgments are supplied, not a fixed AI speed multiplier or authorization to create a game.'])
+    return dict(schema_version=1,status='normalized_evidence_not_development_approval',game=value['game'],input_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),sources=list(sources.values()),metrics=metrics,protocols=protocols,coverage_gaps=gaps,play_coverage=coverage,play_coverage_gaps=play_gaps,play_verification='analyst_reported_not_semantically_verified' if coverage else 'not_provided',judgments=value.get('judgments',[]),estimates=value.get('estimates',[]),limitations=['Media byte checks and coverage declarations do not prove decoded/reviewed media, successful input or understood gameplay; legacy static reports do not establish complete play evidence.','Counts are deduplicated caller classifications linked to byte-verified sources; the tool does not parse game semantics or infer missing stages.','Nested fields are not RPCs. Config rows are not gameplay count. Absence is unknown, not zero.','Analyst estimates/judgments are supplied, not a fixed AI speed multiplier or authorization to create a game.'])
 
 def report(source,output):
     source=canonical_path(source);value=normalize(source);output=disjoint(output,source)
@@ -45,6 +57,8 @@ def report(source,output):
     (output/'research.json').write_text(json.dumps(value,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     lines=['# '+value['game'],'','状态：证据归一；不自动批准开发。','','## 分析判断']
     lines += [f"- [{j['type']}] {j['topic']}: {j['text']}" for j in value['judgments']] or ['尚无分析者判断；事实指标见JSON，不用统计表替代立项判断。']
+    lines += ['','## 实玩覆盖（分析者申报，工具不认证机制理解）']+[f"- {c['area']}/{c['system']}: {c['status']}；版本/进度/视口 {c['identity']}；操作者 {c['operator']}；入口 {c['entry']}；动作 {c['actions']}；结果 {c['result']}；理解 {c['understanding']}；媒体 {c['media']}；下一步 {c['next_step']}" for c in value['play_coverage']]
+    lines += ['- '+gap for gap in value['play_coverage_gaps']]
     lines += ['','## 成本假设']+[f"- {e['role']}: 主动小时 {e['active_hours']}；协作工作日 {e['collaboration_days']}；后端已包含 {e['backend_included']}；置信度 {e['confidence']}；前提 {'; '.join(e['assumptions'])}" for e in value['estimates']]
     lines += ['','## 证据边界']+['- '+x for x in value['coverage_gaps']+value['limitations']]
     (output/'report.md').write_text('\n'.join(lines)+'\n',encoding='utf-8');return value
@@ -52,5 +66,5 @@ def report(source,output):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--input',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
     try:r=report(a.input,a.output);print(json.dumps(dict(status=r['status'],coverage_gaps=len(r['coverage_gaps']))));return 0
-    except (OSError,ValueError,KeyError) as e:print(str(e));return 2
+    except (OSError,ValueError,KeyError,ValidationError) as e:print(str(e));return 2
 if __name__=='__main__':raise SystemExit(main())

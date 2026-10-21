@@ -1,7 +1,7 @@
 {
   "name": "grea",
   "version": "2026.10.19",
-  "description": "grea (Game Reverse Engineering and Assembly): evidence-first recovery of shipped games into native Unity projects. Nine skills (development candidate): a router plus specialized skills for evidence extraction, cross-engine native porting, Unity package recovery, parity fixes, project standards, delivery and authorized reskins and bounded UI/UX evolution.",
+  "description": "grea unpublished development source: research, Unity/Cocos targets, Go backend and bounded reskin workflows; 12 skills. Frozen release identities remain separate.",
   "author": {
     "name": "grea contributors",
     "url": "https://github.com/chuxintec/grea"

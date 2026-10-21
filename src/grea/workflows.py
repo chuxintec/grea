@@ -22,7 +22,7 @@ RESKIN_SEQUENCE = [
     ('full_reskin', 'After user approval of the visible sample style, replace all scoped art and fix affected bugs.'),
     ('game_tuning', 'Only after full reskin and bug fixes, apply the separately scoped UI/UX tuning budget.'),
 ]
-for intent in ('assess', 'evidence'):
+for intent in ('assess', 'evidence', 'research'):
     WORKFLOWS[intent] = {
         'title': '只读成本评估' if intent == 'assess' else '来源取证',
         'baseline': '显式来源身份、已观察行为与未知范围',
@@ -40,24 +40,41 @@ def reference(name):
     return found[0]
 
 
-def required_dimensions(mode, source_engine='unknown'):
-    if source_engine == 'unknown' and mode in ('recover', 'port'):
-        return ['identity']
-    dimensions = list(WORKFLOWS[mode]['dimensions'])
-    if source_engine in ('cocos', 'laya', 'other') and mode in ('recover', 'port', 'fix', 'refactor', 'performance', 'reskin', 'evolve'):
-        if 'native' not in dimensions:
-            dimensions.append('native')
+def required_dimensions(mode, source_engine='unknown', target_engine='unity', backend='none'):
+    if source_engine == 'unknown' and mode in ('recover', 'port') and target_engine=='unity':
+        dimensions=['identity']
+    elif target_engine=='none':dimensions=['identity']
+    else:dimensions=list(WORKFLOWS[mode]['dimensions'])
+    if target_engine=='unity' and source_engine in ('cocos','laya','other') and mode in ('recover','port','fix','refactor','performance','reskin','evolve') and 'native' not in dimensions:
+        dimensions.append('native')
+    if target_engine!='unity':dimensions=[x for x in dimensions if x!='native']
+    if backend=='go' and mode not in ('assess','evidence','research','maintain'):
+        dimensions=list(dict.fromkeys(dimensions+['identity','rules','runtime']))
     return dimensions
 
 
 def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
-         target_platform=None, acceptance_profile='scoped', change_contract=None):
+         target_platform=None, acceptance_profile='scoped', change_contract=None, target_engine='unity', backend='none'):
     if change_contract is not None and mode not in ('reskin','evolve'):
         from .common import GreaError
         raise GreaError('INVALID_CHANGE_CONTRACT','Change contracts apply only to reskin/evolve.')
     if change_contract is not None:
         from .change_contracts import validate
         change_contract=validate(change_contract)
+    if target_engine!='unity' or mode=='research':
+        names=[('01-流程-游戏调研与成本判断.md',['research_report'])] if mode in ('assess','evidence','research') else []
+        if target_engine=='cocos' and mode not in ('assess','evidence','research'):
+            names.append(('05-Cocos-工程与迁移.md',['cocos_project','cocos_convert'] if mode in ('recover','port') else []))
+        if backend=='go':names.append(('11-服务端-Go六服与事务.md',['server_go_project'] if mode in ('recover','port') else []))
+        if not names:
+            from .common import GreaError
+            raise GreaError('TARGET_REQUIRED','Choose a client target or Go backend for implementation.')
+        return dict(mode=mode,title='Research and explicitly selected target',target_engine=target_engine,backend=backend,
+                    required_dimensions=required_dimensions(mode,source_engine,target_engine,backend),executed=False,
+                    steps=[dict(reference=str(reference(n)),tool_ids=t,phase='research' if '调研' in n else 'implementation',executed=False,grea_operations=[]) for n,t in names],
+                    next_decision='review_research_decision' if mode in ('research','assess','evidence') else 'select_supported_format_and_scope',
+                    task=dict(intent=mode,source_engine=source_engine,target_engine=target_engine,backend=backend,engine_version=engine_version,source_format=source_format,target_platform=target_platform,acceptance_profile=acceptance_profile,change_contract=change_contract),
+                    limitations=['Plan and research recommendation do not authorize game development. Creator/Go tools have finite support; live runtime acceptance is separate.'])
     value = WORKFLOWS[mode]
     source_tools = []
     if source_format in ('apk', 'xapk'):
@@ -96,7 +113,7 @@ def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
     for step in stages:
         step['grea_operations'] = [preferred[tool] for tool in step['tool_ids'] if tool in preferred]
     result=dict(mode=mode, title=value['title'], baseline=value['baseline'],
-                required_dimensions=required_dimensions(mode, source_engine), steps=stages,
+                required_dimensions=required_dimensions(mode, source_engine,target_engine,backend), steps=stages,
                 boundary=value['boundary'], source_engine=source_engine, executed=False,
                 next_decision='define_change_contract' if mode=='evolve' and change_contract is None else ('identify_source_engine' if unknown else 'select_supported_format_and_scope'),
                 task=dict(intent=mode, source_engine=source_engine, engine_version=engine_version,
@@ -107,4 +124,7 @@ def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
         result['reskin_sequence']=[dict(stage=stage,outcome=outcome,executed=False) for stage,outcome in RESKIN_SEQUENCE]
         result['art_production']=(change_contract or {}).get('art_production')
         result['limitations'].append('The art sequence applies to a reskin-led task; an existing prototype is not style approval. Stage and completion references are caller declarations, not executed acceptance.')
+    result.update(target_engine=target_engine,backend=backend)
+    result['task'].update(target_engine=target_engine,backend=backend)
+    if backend=='go':result['steps'].append(dict(reference=str(reference('11-服务端-Go六服与事务.md')),tool_ids=['server_go_project'],phase='implementation',executed=False,grea_operations=[]))
     return result

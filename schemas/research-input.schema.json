@@ -250,6 +250,119 @@
           "confidence"
         ]
       }
+    },
+    "play_coverage": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "enum": [
+              "core_loop",
+              "tutorial",
+              "progression",
+              "ui_comparison"
+            ]
+          },
+          "system": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "status": {
+            "enum": [
+              "played",
+              "observed",
+              "partial",
+              "locked",
+              "blocked",
+              "static_only",
+              "not_run",
+              "not_applicable"
+            ]
+          },
+          "identity": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "operator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "actions": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "result": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "understanding": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "next_step": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "media": {
+            "type": "array",
+            "maxItems": 100000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "screenshot",
+                    "video"
+                  ]
+                },
+                "source_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2048
+                },
+                "timecode": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2048
+                }
+              },
+              "required": [
+                "kind",
+                "source_id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "area",
+          "system",
+          "status",
+          "identity",
+          "operator",
+          "entry",
+          "actions",
+          "result",
+          "understanding",
+          "next_step",
+          "media"
+        ]
+      }
     }
   },
   "required": [

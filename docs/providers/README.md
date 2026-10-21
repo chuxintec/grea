@@ -16,3 +16,5 @@ Spine 的构建配置位于 [tools/unity/spine](../../tools/unity/spine)，包�
 - [配置、表现与性能预检](observation-tools.md)：显式合同与现场采样边界。
 
 - [Windows 原生供应方与桌面复验](windows-native.md)：核心、可选 provider、Codex 与 Unity 各自的原生验收边界。
+
+开发候选：[调研归一](research.md)、[Cocos目标](cocos-target.md)、[Go六服框架](server-go.md)；均保留有限支持与实测边界。

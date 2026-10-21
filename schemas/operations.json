@@ -690,7 +690,7 @@
     },
     {
       "name": "plan_workflow",
-      "description": "Select scoped Unity recovery steps, evidence dimensions, tools and canonical references; does not execute the plan.",
+      "description": "Select source/target-specific research, client or Go backend steps, dimensions and references; does not execute the plan.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -709,7 +709,8 @@
               "deliver",
               "maintain",
               "assess",
-              "evidence"
+              "evidence",
+              "research"
             ]
           },
           "source_engine": {
@@ -748,6 +749,27 @@
               "migration_no_regression",
               "final_native_exit"
             ]
+          },
+          "target_engine": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "unity",
+              "cocos",
+              "none"
+            ],
+            "default": "unity"
+          },
+          "backend": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "none",
+              "go"
+            ],
+            "default": "none"
           },
           "change_contract": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1246,7 +1268,8 @@
               "deliver",
               "maintain",
               "assess",
-              "evidence"
+              "evidence",
+              "research"
             ]
           },
           "required_dimensions": {
@@ -1302,6 +1325,27 @@
               "migration_no_regression",
               "final_native_exit"
             ]
+          },
+          "target_engine": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "unity",
+              "cocos",
+              "none"
+            ],
+            "default": "unity"
+          },
+          "backend": {
+            "type": "string",
+            "minLength": 1,
+            "description": "",
+            "enum": [
+              "none",
+              "go"
+            ],
+            "default": "none"
           },
           "change_contract": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -2168,7 +2212,8 @@
               "deliver",
               "maintain",
               "assess",
-              "evidence"
+              "evidence",
+              "research"
             ]
           },
           "required_dimensions_override": {
@@ -4077,5 +4122,5 @@
       }
     }
   ],
-  "sha256": "61fe9444214c238cd88faeed83ba4ef338c1636aab699435d526ed318a021bb9"
+  "sha256": "d8784c9ad8ac274574948dcb13c3a024d3e9e05d4165b5f8b39bb0bbb2d04054"
 }

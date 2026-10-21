@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "status": "partial_waiting_editor_window",
+  "scope": "owned fictional examples only; unpublished development branch",
+  "python_tests": {
+    "research": 2,
+    "cocos": 3,
+    "server_go_template": 2,
+    "grea": 15,
+    "case_revisions": 8,
+    "mcp": 3,
+    "skill_sync": 5,
+    "release": 13
+  },
+  "go_tests": 3,
+  "cocos": {
+    "typescript_3_8_8": "pass",
+    "creator_import": "not_run",
+    "browser_input": "not_run",
+    "reason": "desktop resource not explicitly released"
+  },
+  "go_live": {
+    "schema_version": 1,
+    "status": "pass",
+    "checks": [
+      "unauthenticated state refused",
+      "durable development login",
+      "discarded response recovered with same command",
+      "persistent identical retry returns same revision and award",
+      "same ID different content refused",
+      "business once-only reward holds across different IDs",
+      "config version mismatch refused",
+      "int64 wire string enforced",
+      "authenticated chat idempotence and conflict",
+      "payment provider and grant unavailable",
+      "session state and durable receipt survive service restart"
+    ],
+    "roles": [
+      "gateway",
+      "chat",
+      "server",
+      "login",
+      "world",
+      "billing"
+    ],
+    "scope": "isolated owned development stack, MySQL/Redis, HTTP ProtoJSON and internal gRPC",
+    "not_run": [
+      "Unity/Cocos actual network clients",
+      "production TLS/WSS/payment",
+      "node migration and outbox/inbox"
+    ],
+    "model_or_game_requests": false
+  },
+  "go_live_binary_sha256": "5250b4972b709c7d07c6a8bcc2c0d62be04f5ea597488e49673a5f5f36a11186",
+  "go_live_stack_cleanup": "owned containers/network/volume removed",
+  "cors": "added after live chain; unit preflight test only",
+  "integration": {
+    "status": "pass",
+    "operations": 21,
+    "skills": 12,
+    "targets": [
+      "research",
+      "unity",
+      "cocos",
+      "go"
+    ],
+    "helpers_executed": [
+      "research_report",
+      "cocos_project",
+      "server_go_project"
+    ],
+    "template_projection": "pass",
+    "runtime_source": "read-only copy of previously verified macos-arm64 runtime; not a new native release build",
+    "global_install": false,
+    "model_requests": 0
+  },
+  "play_evidence_policy": "mandatory task-scoped actual play and screenshots/video; software verifies structure/bytes only",
+  "published_or_installed": false
+}

@@ -134,8 +134,9 @@ def start(case_dir, candidate_root, candidate_files, platform, qa_profile, build
         if task.get('change_contract') is not None:
             from .change_contracts import validate
             task['change_contract']=validate(task['change_contract'],selected_source['sha256'])
-        dims = required_dimensions_override or (case['required_dimensions'] if mode is None else required_dimensions(mode, task.get('source_engine', 'unknown')))
-        mandatory = required_dimensions(task['intent'], task.get('source_engine', 'unknown'))
+        dims = required_dimensions_override or (case['required_dimensions'] if mode is None else required_dimensions(mode, task.get('source_engine', 'unknown'), task.get('target_engine','unity'),task.get('backend','none')))
+        mandatory = required_dimensions(task['intent'], task.get('source_engine', 'unknown'), task.get('target_engine','unity'),task.get('backend','none'))
+        if task.get('backend')=='go' and not set(mandatory)<=set(dims):raise GreaError('REQUIRED_DIMENSION','Go backend acceptance dimensions cannot be removed.')
         if task['intent']=='evolve' and not set(mandatory)<=set(dims):
             raise GreaError('REQUIRED_DIMENSION','Evolve cannot drop mandatory dimensions.')
         if 'native' in mandatory and 'native' not in dims:

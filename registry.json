@@ -4581,6 +4581,201 @@
       "required_files": [
         "{grea}/src/grea/tools/research_report.py"
       ]
+    },
+    {
+      "id": "cocos_project",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "cocos_project",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Creator3.8.8 create-only five-layer sample",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "See docs/providers/cocos-target.md",
+      "output_schema": "Versioned generation/conversion JSON manifest",
+      "tested_samples": "Owned synthetic fixtures; live runtime status separately recorded",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "cocos_project"
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "cocos_project-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Creator3.8.8 create-only five-layer sample"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/cocos_project.py"
+      ]
+    },
+    {
+      "id": "cocos_convert",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "cocos_convert",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "2.4.15 and 3.8.8 bounded serialized objects, explicit UUID closure; unsupported refuses graph",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "See docs/providers/cocos-target.md",
+      "output_schema": "Versioned generation/conversion JSON manifest",
+      "tested_samples": "Owned synthetic fixtures; live runtime status separately recorded",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "cocos_convert"
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "cocos_convert-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "2.4.15 and 3.8.8 bounded serialized objects, explicit UUID closure; unsupported refuses graph"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/cocos_convert.py"
+      ]
+    },
+    {
+      "id": "server_go_project",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "server_go_project",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Go six-role development framework; generates source only; no Docker deployment",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "See docs/providers/server-go.md",
+      "output_schema": "Versioned generation/conversion JSON manifest",
+      "tested_samples": "Owned synthetic fixtures; live runtime status separately recorded",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "server_go_project"
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "server_go_project-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Go six-role development framework; generates source only; no Docker deployment"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/server_go_project.py"
+      ]
     }
   ],
   "product": "grea",

@@ -1,8 +1,8 @@
-# grea · 游戏取证、恢复与原生 Unity 转换
+# grea · 游戏调研、恢复与 Unity / Cocos / Go 工具
 
-> 当前分支包含未发布的 reskin/evolve M1 开发候选：新增主题映射与第9个技能。已发布 v2026.10.19 保持冻结，只有8技能；本分支未推送、发布或更新用户安装。
+> 当前分支包含未发布的研究、Cocos目标与Go六服开发候选，以及既有reskin/evolve能力，共12技能。已发布 v2026.10.19 保持冻结，只有8技能；本分支未推送、发布或更新用户安装。
 
-grea（Game Reverse Engineering and Assembly）为已发布游戏的分析、恢复、复刻与原生 Unity 转换提供 **统一 CLI、stdio MCP、9 个 Agent 技能及可复查的执行回执**。从原包与原版证据出发，把资源、规则、制作资产、源码、构建和验收身份连接起来，让开发者能继续在正常 Unity 工作流中维护工程。
+grea（Game Reverse Engineering and Assembly）为已发布游戏的分析、恢复、复刻与原生 Unity 转换提供 **统一 CLI、stdio MCP、12 个 Agent 技能及可复查的执行回执**。从原包与原版证据出发，把资源、规则、制作资产、源码、构建和验收身份连接起来，让开发者能继续在正常 Unity 工作流中维护工程。
 
 它提供工具和有边界的工作流，不是一键万能转换器。提取成功、编译成功、工具检查通过、真实输入和原版一致性是不同结果；未执行的层保持未验。
 
@@ -74,10 +74,13 @@ uv sync --frozen
 
 Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执、stdout/stderr、退出码和产物哈希；不能复用旧运行目录掩盖失败。CLI 与 MCP 共用 [契约](schemas/operations.json) 及执行层；MCP 使用本地 **stdio**，无需另开 HTTP 服务。CLI 操作用短横线，MCP 用下划线，例如 `run-tool` / `run_tool`。既有工具 ID 和兼容入口保留。
 
-## 9 个技能如何分工
+## 12 个技能如何分工
 
 | 技能 | 职责 |
 | --- | --- |
+| [grea-research](plugin/skills/grea-research/SKILL.md) | 调研判断、证据归一、覆盖缺口和成本报告 |
+| [grea-cocos](plugin/skills/grea-cocos/SKILL.md) | Creator目标五层示例、有限序列化迁移及浏览器流程 |
+| [grea-server-go](plugin/skills/grea-server-go/SKILL.md) | Go六服、MySQL持久命令、Redis辅助及双客户端合同 |
 | [grea](plugin/skills/grea/SKILL.md) | 总入口：辨识来源、任务模式与验收范围，路由到子技能 |
 | [grea-evidence](plugin/skills/grea-evidence/SKILL.md) | 原版运行、包体与资源/代码提取、覆盖表和来源台账 |
 | [grea-native-port](plugin/skills/grea-native-port/SKILL.md) | 非 Unity 来源转原生 Unity；清理源引擎运行机制与双真源 |
@@ -88,7 +91,9 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 | [grea-reskin](plugin/skills/grea-reskin/SKILL.md) | 有明确设计与授权的换皮，保持指定玩法和交互 |
 | [grea-evolve](plugin/skills/grea-evolve/SKILL.md) | 已恢复工程的有限UI/UE二次开发，旧玩法基线与新设计维度分离（开发候选） |
 
-这些技能面向有原版依据的恢复与维护。原创 Unity 开发不自动套用恢复门槛。权威流程维护在 `plugin/shared/` 与各技能 references；docs 解释产品使用，避免两套竞争规范。
+新增 [grea-research](plugin/skills/grea-research/SKILL.md) 处理分析/比较，[grea-cocos](plugin/skills/grea-cocos/SKILL.md) 处理Creator目标，[grea-server-go](plugin/skills/grea-server-go/SKILL.md) 处理自有Go后端。研究建议不自动创建开发项目，目标选择独立于源引擎，旧调用省略目标仍为Unity。
+
+这些技能面向有原版依据的恢复与维护及明确获准的目标工程。原创 Unity 开发不自动套用恢复门槛。权威流程维护在 `plugin/shared/` 与各技能 references；docs 解释产品使用，避免两套竞争规范。
 
 ## 工具、原生制作与框架
 
@@ -138,3 +143,5 @@ Case 操作、严格 JSON Schema、退出码、预算、清理和审阅边界见
 | [全部文档导航](docs/README.md) / [贡献指南](CONTRIBUTING.md) | 专项格式、测试和贡献入口 |
 
 通用实现放 `src/grea/`，其他技术栈及 Unity 源码放 `tools/`，维护脚本放 `scripts/`，技能维护源只在 `plugin/`。保留工具 ID、调用契约和旧证据；改动按实际风险运行相关测试，发布前完成既有 CI 和制品门禁。
+
+开发候选工具：[调研归一与报告](docs/providers/research.md)、[Creator3.8.8五层示例与有限转换](docs/providers/cocos-target.md)、[Go六服虚构事务示例](docs/providers/server-go.md)。生成/编译不替代Editor、浏览器、数据库或六服运行；实际完成边界见 [本地开发记录](docs/design/research-cocos-go.md)。

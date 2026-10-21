@@ -73,3 +73,5 @@ host_support 表示登记的平台条件，不表示已原生实测；Windows �
 `static_asset_copy` 按显式路径映射复制静态文件，使用 Python 标准库；参数、退出码和复制边界见 [静态文件映射复制](docs/tools/制品与资源检查.md#静态文件映射复制)。
 
 当前整改能力与未验项见 [审计整改执行记录](https://github.com/chuxintec/grea/blob/3d1a2be71292696ecc910523f33e949c160e3927/docs/design/audit-remediation-20261016.md)。新 TMP/Input System 配方见 [Modern UI v1](tools/unity/profiles/modern-ui/README.md)，旧 reference 证据不能沿用到新配方。
+
+开发候选：`research_report`（[调研](docs/providers/research.md)）、`cocos_project` / `cocos_convert`（[Creator](docs/providers/cocos-target.md)）、`server_go_project`（[Go六服](docs/providers/server-go.md)）。模板生成不自动启动Editor、Docker或生产服务。
