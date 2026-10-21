@@ -4516,6 +4516,71 @@
       "required_files": [
         "{grea}/src/grea/tools/theme_assets.py"
       ]
+    },
+    {
+      "id": "research_report",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "research_report",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "research-input-v1; stage and protocol direction normalization; explicit evidence hashes",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "See docs/providers/research.md; --input JSON --output new-directory",
+      "output_schema": "JSON metrics and Markdown analyst report",
+      "tested_samples": "Owned evidence fixtures; no full game re-analysis",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "research_report"
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "research-input-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "research-input-v1; stage and protocol direction normalization; explicit evidence hashes"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/research_report.py"
+      ]
     }
   ],
   "product": "grea",
