@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-23",
+  "status": "local_feedback_and_candidate_handoff_verified_not_product_release",
+  "source_base": "c0bd145b70d7f44b6651790e67fa8982007d5f96",
+  "entry": "tools/lifecycle-feedback/README.md",
+  "inputs": {
+    "tools/lifecycle-feedback/inputs/before.json": {
+      "sha256": "2f5a19959194ee38299c92289fcf4c0365f5c75840d9c58d71823d32868a73d0",
+      "bytes": 280
+    },
+    "tools/lifecycle-feedback/inputs/new-config.json": {
+      "sha256": "141e4ece497b02731d63ff225071b2d6b1873c2742baf5b0650ebea73262805b",
+      "bytes": 13
+    },
+    "tools/lifecycle-feedback/inputs/target.json": {
+      "sha256": "f441fe7da69538e2b1495e444465e60915091a85cb6b31fa4334112c1774f7ab",
+      "bytes": 269
+    },
+    "tools/lifecycle-feedback/inputs/sample-save.json": {
+      "sha256": "5b8a5ea87f1e159d1b49c633565b78c0ac59066abb82d30f95779acb9355a101",
+      "bytes": 49
+    },
+    "tools/lifecycle-feedback/inputs/config-schema.json": {
+      "sha256": "8ee24554bdb15b46b196928bf93ecd7ab8cc754c1bce4b45d0bfd517f72d06c9",
+      "bytes": 120
+    },
+    "tools/lifecycle-feedback/inputs/old-config.json": {
+      "sha256": "b01a77b82c9d8ab02e9ca4103e5c0115e00aa96615d9c34e3fe72d38858680cb",
+      "bytes": 13
+    },
+    "tools/lifecycle-feedback/inputs/after.json": {
+      "sha256": "f494af481e6f9e1e39ff3e8a53c838bc3f071cb601e74bb28a5a248e2c1165a6",
+      "bytes": 347
+    },
+    "tools/lifecycle-feedback/inputs/rollback.json": {
+      "sha256": "d53e1915ad8a84be4b35c2aed2e24702268ceef92205d481d7f0bfd3b4069762",
+      "bytes": 466
+    },
+    "tools/lifecycle-feedback/inputs/events.jsonl": {
+      "sha256": "0d050d8f75fe2935e0950dba60293a27d1a38fc749a25576c2aa0fcb298f2e78",
+      "bytes": 255
+    }
+  },
+  "reused_evidence": {
+    "lifecycle": {
+      "path": "validation/development/lifecycle.json",
+      "sha256": "e656662ea10d50e29d89d812553cf9d5c6fea81fdb022be0d1721b235e22bfee",
+      "prior_targeted_tests": 4,
+      "rerun_full_matrix": false
+    },
+    "native": {
+      "path": "validation/development/lifecycle-native.json",
+      "sha256": "eccdf1d2132e4ed425681e5b2e120d9a244301ad63f2be1ef19ad9a29af3e66d",
+      "native_work_repeated": false
+    },
+    "helper_code_unchanged_from_verified_projection": {
+      "src/grea/tools/operations_preview.py": "d6845ad83762f69ee9b7bfe104988918c8417def4fdcebb828615d3ac60e9149",
+      "src/grea/tools/compatibility_plan.py": "8d3eb0f7203842eb0232cbe865a559ae8329f502b4c038de433e64ebde40c808",
+      "src/grea/common.py": "8324bf07a14eb7fcb821ba7a6e38588d088af6d71c68aba379be12bad6bce55d",
+      "src/grea/safe_paths.py": "fdceb8800ae518db25b2a2a4f7b7c925d5cec5aae21f8480bd8b72ce3d838b14",
+      "src/grea/lifecycle_data_contracts.py": "4b4dc6f3793aaef398127c8e5cf2cfd88e20a7345f987a2e49dda7a973b2ccc5"
+    },
+    "original_fixture_bytes_reused": 8
+  },
+  "actual_entry_replay": {
+    "commands": 5,
+    "inventory_command": 1,
+    "coverage": "complete",
+    "helper_runtime": "source CLI using existing project Python environment",
+    "product_projection_includes_example_inputs": true
+  },
+  "results": {
+    "event_kind": "simulation",
+    "funnel": [
+      1,
+      0
+    ],
+    "d1": [],
+    "economy": [],
+    "analysis_is_tuning_recommendation": false,
+    "manual_config_diff": [
+      {
+        "path": "/reward",
+        "operation": "replace",
+        "before": 1,
+        "after": 2
+      }
+    ],
+    "compatibility": "declared_top_level_compatible",
+    "forward_save_versions": [
+      1,
+      2
+    ],
+    "rollback_diff": [
+      {
+        "path": "/reward",
+        "operation": "replace",
+        "before": 2,
+        "after": 1
+      }
+    ],
+    "rollback_save_versions": [
+      2,
+      2
+    ],
+    "candidate_pending_preserved": true,
+    "input_save_unchanged": true,
+    "normal_player_saves_touched": false
+  },
+  "handoff": {
+    "productName": "grea lifecycle local candidate",
+    "releaseVersion": null,
+    "channel": "development",
+    "buildId": "local-feedback-ba9f75d9f55422e6",
+    "sourceRevision": "c0bd145b70d7f44b6651790e67fa8982007d5f96",
+    "sourceDirty": true,
+    "scope": "Local docs/examples handoff; no new runtime or plugin release build",
+    "execution_host": "macos-arm64",
+    "target_platform": "none",
+    "input_data_kind": "simulation",
+    "payload": {
+      "protocol": "grea inspect-target sorted relative path/sha256/bytes inventory",
+      "sha256": "ba9f75d9f55422e6a13979c85f45f0d359ffeb6030e890fbe08e1a07501c922d",
+      "coverage": "complete",
+      "files": [
+        {
+          "path": "save-v2-candidate.json",
+          "sha256": "c3036242be8cd094299b41627832560a3559ff5ee349f55a40160b77a71b3380",
+          "bytes": 75
+        },
+        {
+          "path": "analysis/analysis.json",
+          "sha256": "5334b9312c5ef0ef930feeb55f19b65476fd3051796bc9b75b7fef3d2d906afd",
+          "bytes": 2004
+        },
+        {
+          "path": "compatibility/compatibility.json",
+          "sha256": "6363a58cc2d40a28c2958ab09582a466060cc2842a3d14cc161ccaa1de0ae1c8",
+          "bytes": 1955
+        },
+        {
+          "path": "config-preview/preview.json",
+          "sha256": "66b8479b50cd73ab3473f0467e14d506b6ef4bd7fb89a8f75bd1ea9f279bb026",
+          "bytes": 2129
+        },
+        {
+          "path": "rollback-compatibility/compatibility.json",
+          "sha256": "067cc27e1c282e7dfe13674aac87b04bb65e6dd0ded455636349acb74a42955c",
+          "bytes": 1930
+        },
+        {
+          "path": "rollback-config-preview/preview.json",
+          "sha256": "5776152d24ea45cc670006a510f1a8fca676e3dc527ff61010581df7f260cc7e",
+          "bytes": 2129
+        }
+      ]
+    },
+    "entry": "tools/lifecycle-feedback/README.md",
+    "publication": {
+      "tag": null,
+      "release_url": null,
+      "uploaded": false,
+      "global_install": false,
+      "production_write": "Unavailable"
+    },
+    "acceptance": {
+      "lc1": "isolated adopted Editor/Player and native keyboard verified; original provider/mouse remain separate",
+      "lc2": "owned bounded round loop and save migration verified; candidate visual Case incomplete",
+      "lc3": "synthetic event -> manual finite config -> compatibility -> config rollback keeping save v2 -> local inventory verified"
+    },
+    "necessary_remaining": [
+      "Original provider native boundaries owned by monkey maintainer",
+      "Automated mouse coordinates not passed; no blind retries",
+      "Candidate formal visual and whole-game equivalence not accepted",
+      "Real operational data and channel unselected, no production permission"
+    ]
+  },
+  "limitations": [
+    "Sample reward change is manual demonstration, not justified by one start event",
+    "LC2 Player input traces lack operational timestamps/session contract and were not relabeled as analytics",
+    "Compatibility is only declared top-level types/defaults; candidates not applied and no ordinary save migration",
+    "Configuration rollback never reverses grants/debits or downgrades schema",
+    "Public report contains aggregate facts and hashes only; raw local reports remain private"
+  ],
+  "remote_or_global_actions": false
+}

@@ -33,3 +33,7 @@ bin/grea legacy operations_preview config --before /path/old.json --after /path/
 两份JSON均用显式本地Draft2020-12 Schema校验；拒绝外部$ref/$dynamicRef/$recursiveRef及资源$id，不下载Schema。target v1包含environment/audience/effective_at（带offset）、client_versions、approval_reference、rollback_limits、platform（未选写none）。最多256项JSON Pointer差异，超限要求缩小输入。状态candidate_not_applied；审批引用是声明，不是权限。
 
 Schema通过不证明旧客户端/save/protocol兼容；回退配置也不撤销发奖/扣款/迁移。production_write为Unavailable。platform=none保持未选，其余也仅登记目标并标adapter_not_implemented，不默认Steam、创建账号或宣称渠道预检已支持。
+
+## 本地串联与交接
+
+[完整调用示例](../../tools/lifecycle-feedback/README.md)复用既有合成输入，将事件分析、人工有限配置diff、前向兼容、配置回退且保留新save schema及最终目录盘点串联；入口无需额外服务。缺事件的LC2 Player输入日志不自动变成运营数据，模拟指标不构成调优依据。交接沿用既有来源/内容清单/验收/未发布字段，不新增生产或商业平台能力。

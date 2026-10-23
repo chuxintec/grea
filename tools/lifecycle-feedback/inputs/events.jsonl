@@ -1,0 +1,1 @@
+{"schema_version": 1, "event_id": "owned1", "event_type": "start", "event_time": "2026-10-20T08:00:00+08:00", "player_id": "pseudonym-one", "session_id": "session-one", "game_version": "owned-v1", "config_version": "owned-c1", "environment": "synthetic"}

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "config": {
+    "path": "old-config.json",
+    "sha256": "b01a77b82c9d8ab02e9ca4103e5c0115e00aa96615d9c34e3fe72d38858680cb"
+  },
+  "save": {
+    "version": 2,
+    "fields": {
+      "pending": {
+        "type": "string",
+        "required": true
+      },
+      "label": {
+        "type": "string",
+        "required": true,
+        "default": "owned"
+      }
+    }
+  },
+  "protocol_version": "v1",
+  "pending_fields": [
+    "pending"
+  ]
+}

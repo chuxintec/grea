@@ -1,0 +1,1 @@
+{"schema_version": 1, "environment": "synthetic", "audience": "owned-fixture", "effective_at": "2026-10-23T00:00:00+08:00", "client_versions": ["owned-v1"], "approval_reference": "caller-declared only", "rollback_limits": "config only; not rewards", "platform": "none"}

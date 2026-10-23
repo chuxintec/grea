@@ -1,6 +1,6 @@
-# 非 Python 工具与 Unity 源码
+# 工具源码与自有验证样例
 
-Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools)，通过 `bin/grea` 和 [registry.json](../registry.json) 调度；本目录保存其他技术栈的源码与构建输入，不建立第二套工具 ID。
+Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools)，通过 `bin/grea` 和 [registry.json](../registry.json) 调度；本目录保存其他技术栈的源码、构建输入和跨工具自有验证样例，不建立第二套工具 ID。
 
 | 目录 | 内容 |
 | --- | --- |
@@ -12,5 +12,7 @@ Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools)，通过 
 | unity/audit、unity/packages | Editor 审计和包安装辅助 C# |
 | unity/spine | Spine 运行时构建配置与许可；不附带 vendor |
 | dotnet | 托管程序集清理工具源码 |
+| unity/lifecycle-sample | 自有原生接续／可玩增量验证输入与Editor API示例 |
+| lifecycle-feedback | 合成事件→配置／兼容／回退预览→本地交接调用示例；复用已有工具 |
 
 按任务选工具见 [工具目录](../TOOLS.md)，参数见 [工具说明](../docs/tools/制品与资源检查.md)，第三方接入见 [providers](../docs/providers/README.md)。脚本路径不是工具身份；正式调用使用已登记 ID。

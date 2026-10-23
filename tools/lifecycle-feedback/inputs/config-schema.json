@@ -1,0 +1,1 @@
+{"type": "object", "properties": {"reward": {"type": "integer"}}, "required": ["reward"], "additionalProperties": false}
