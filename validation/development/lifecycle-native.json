@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-23",
+  "scope": "Owned isolated Creator fixture -> explicit adopted Unity project -> bounded playable feature; no original game files changed",
+  "local_evidence_root": ".private/lifecycle-native",
+  "provider": {
+    "name": "monkey",
+    "version": "0.3.0.dev1",
+    "commit": "1e21f8aef71ca6a940ee35e1b1f07f0ed9dedb42",
+    "source_snapshot": {
+      "path": "snapshot.json",
+      "sha256": "e885657b95586d14d6dbe5679dc1ab7f5fb36058cddb4419b4544c281f4a7c60",
+      "bytes": 822
+    },
+    "bridge_candidate": {
+      "path": "bridge-slice/result.json",
+      "sha256": "db73025d831d788a4ecd298ef1e9a86a918af18d64ab5d2f99d2ae92fe75a1f3",
+      "bytes": 4028
+    },
+    "bridge_modules": {
+      "path": "native-handoff-fixed/ai-modules.json",
+      "sha256": "55ea2718b27c118e146887126fdb2b756b70fec15d5846bba44c97b3fcf5432b",
+      "bytes": 1516
+    },
+    "candidate_status": "needs_action",
+    "original_provider_native_resume": "not_run",
+    "adoption": {
+      "path": "adoption.json",
+      "sha256": "6682ebec0b7214b3f68ff7469130aafa7fa2acf0283aded1c80a7812a9bcc06b",
+      "bytes": 9064
+    },
+    "provider_importer_unchanged": true
+  },
+  "projects": [
+    {
+      "phase": "lc1",
+      "project": "lc1-adopted",
+      "config": {
+        "path": "lc1-adopted/Assets/Game/Resources/Config/counter.json",
+        "sha256": "4242c06d98aa21b4a0e72b5e5a91f5c0d1f0c0d0b9d1ac63a9d3863016d40917",
+        "bytes": 78
+      },
+      "native_readback": {
+        "path": "lc1-adopted/Analysis/editor-readback.json",
+        "sha256": "283fc7ed95b716c69e0f46a2d1857cc852ff82b4860f137d45e4a2aaa3f8cc7a",
+        "bytes": 6587
+      },
+      "editor_acceptance": {
+        "path": "lc1-adopted/Analysis/grea-native-acceptance.json",
+        "sha256": "99a948efc809adf8b5d27ccee11c09ac0d60787b59ef60e0376d554fd9b1b25a",
+        "bytes": 152
+      },
+      "save": {
+        "path": "lc1-data/save.json",
+        "sha256": "1788a1653c001f4d956a5cba4afe88e18a8a3a605ee80ca723598087a4c76ec8",
+        "bytes": 128
+      },
+      "events": {
+        "path": "lc1-data/events.jsonl",
+        "sha256": "013a7d1efb9335f1eb8946516d951eb5872722455cb977c8db330486ef4c6fc0",
+        "bytes": 2334
+      },
+      "editor": {
+        "unity": "6000.6.2f1",
+        "build": "pass",
+        "rules": "pass",
+        "nativeReferences": "pass",
+        "missingScripts": 0,
+        "bytes": 161877254
+      },
+      "provider_readback": {
+        "status": "imported",
+        "missing_scripts": 0,
+        "editable_roundtrip": true,
+        "nodes": 2,
+        "sprites": 2,
+        "all_view_references_bound": true,
+        "native_hashes_current": true
+      },
+      "runtime": {
+        "native_keyboard_ui": "pass",
+        "direct_button_invoke_used": false,
+        "window_pixels": [
+          480,
+          720
+        ],
+        "reopen_count": 2,
+        "completed_runs": 0,
+        "mouse": "not_passed_coordinate_mismatch",
+        "visual": "observed_native_window"
+      },
+      "business_actions": [
+        {
+          "action": "increment",
+          "count": 1,
+          "phase": "menu"
+        },
+        {
+          "action": "increment",
+          "count": 2,
+          "phase": "menu"
+        },
+        {
+          "action": "quit",
+          "count": 2,
+          "phase": "menu"
+        },
+        {
+          "action": "quit",
+          "count": 2,
+          "phase": "menu"
+        }
+      ]
+    },
+    {
+      "phase": "lc2",
+      "project": "lc2-feature",
+      "config": {
+        "path": "lc2-feature/Assets/Game/Resources/Config/counter.json",
+        "sha256": "35326b4b35f66edecb6462ec9f5f93479718a16e3bcc7415abb1d8b5dc5189b8",
+        "bytes": 78
+      },
+      "native_readback": {
+        "path": "lc2-feature/Analysis/editor-readback.json",
+        "sha256": "283fc7ed95b716c69e0f46a2d1857cc852ff82b4860f137d45e4a2aaa3f8cc7a",
+        "bytes": 6587
+      },
+      "editor_acceptance": {
+        "path": "lc2-feature/Analysis/grea-native-acceptance.json",
+        "sha256": "30653e8576015b573606be928d90c283cd4ebae038e9d982dcc83f44ab4043b0",
+        "bytes": 152
+      },
+      "save": {
+        "path": "lc2-data/save.json",
+        "sha256": "6c8f62137c54d7330372808eabed720e9f72d189dcb9f195e36ce3052cbf46e0",
+        "bytes": 155
+      },
+      "events": {
+        "path": "lc2-data/events.jsonl",
+        "sha256": "d5957a0b1db3be3dae83c8d1256ce4fcc6c7df16e008754c834040c316bece07",
+        "bytes": 3101
+      },
+      "editor": {
+        "unity": "6000.6.2f1",
+        "build": "pass",
+        "rules": "pass",
+        "nativeReferences": "pass",
+        "missingScripts": 0,
+        "bytes": 161877252
+      },
+      "provider_readback": {
+        "status": "imported",
+        "missing_scripts": 0,
+        "editable_roundtrip": true,
+        "nodes": 2,
+        "sprites": 2,
+        "all_view_references_bound": true,
+        "native_hashes_current": true
+      },
+      "runtime": {
+        "native_keyboard_ui": "pass",
+        "direct_button_invoke_used": false,
+        "window_pixels": [
+          480,
+          720
+        ],
+        "reopen_count": 6,
+        "completed_runs": 1,
+        "mouse": "not_passed_coordinate_mismatch",
+        "visual": "observed_native_window"
+      },
+      "business_actions": [
+        {
+          "action": "start",
+          "count": 2,
+          "phase": "playing"
+        },
+        {
+          "action": "increment",
+          "count": 3,
+          "phase": "playing"
+        },
+        {
+          "action": "pause",
+          "count": 3,
+          "phase": "paused"
+        },
+        {
+          "action": "resume",
+          "count": 3,
+          "phase": "playing"
+        },
+        {
+          "action": "increment",
+          "count": 4,
+          "phase": "playing"
+        },
+        {
+          "action": "increment",
+          "count": 5,
+          "phase": "victory"
+        },
+        {
+          "action": "start",
+          "count": 5,
+          "phase": "playing"
+        },
+        {
+          "action": "increment",
+          "count": 6,
+          "phase": "playing"
+        },
+        {
+          "action": "pause",
+          "count": 6,
+          "phase": "paused"
+        },
+        {
+          "action": "menu",
+          "count": 6,
+          "phase": "menu"
+        },
+        {
+          "action": "quit",
+          "count": 6,
+          "phase": "menu"
+        },
+        {
+          "action": "quit",
+          "count": 6,
+          "phase": "menu"
+        }
+      ]
+    }
+  ],
+  "lc1_frozen": {
+    "file_count": 339,
+    "unchanged": true,
+    "manifest": {
+      "path": "lc1-frozen.json",
+      "sha256": "934e2229cde4b82063bb987a5469a3cd20035aa70619998708a52d07a1695105",
+      "bytes": 52782
+    }
+  },
+  "migration": {
+    "schema_before": 1,
+    "schema_after": 2,
+    "backup_exact": true,
+    "pending_preserved": true,
+    "lc1_save_unchanged": true,
+    "unknown_future_and_bad_config": "Editor rule tests pass; negative Player launch not_run"
+  },
+  "checks": {
+    "python_targeted": 11,
+    "owned_fixture_recreated_exactly": true,
+    "contracts": "pass",
+    "docs": "pass",
+    "semantic_docs": "pass",
+    "skill_validator": "pass",
+    "workspace_skill_sync": "pass"
+  },
+  "limitations": [
+    "Native UI acceptance used real keyboard submit/navigation; automated mouse arrived with off-window coordinates and remains not passed",
+    "Original provider candidate is preserved; adoption success is not an unmodified converter resume pass",
+    "Self-authored minimal sample is not a full Cocos game or automatic business translation",
+    "macOS arm64 only; Windows/Creator real runtime not_run; no production network, release or global install"
+  ],
+  "lc2_frozen": {
+    "file_count": 339,
+    "manifest": {
+      "path": "lc2-frozen.json",
+      "sha256": "7136845bd2bc3a250cd85ceee84785ea9db92bc51b5ad6f8bc0f560f5387b489"
+    }
+  },
+  "sample_implementation": {
+    "tools/unity/lifecycle-sample/fixture.py": "042d111ab1c31f48dddaa030eee67032a168d1d18e15a8446b5f567165247632",
+    "tools/unity/lifecycle-sample/README.md": "9876bab3ab495112453bdfd4751eae3312d58de497918c1a06dc6f5f4430517a",
+    "tools/unity/lifecycle-sample/config/lc2.json": "35326b4b35f66edecb6462ec9f5f93479718a16e3bcc7415abb1d8b5dc5189b8",
+    "tools/unity/lifecycle-sample/config/lc1.json": "4242c06d98aa21b4a0e72b5e5a91f5c0d1f0c0d0b9d1ac63a9d3863016d40917",
+    "tools/unity/lifecycle-sample/Runtime/CounterState.cs": "ed1cc28bc8e5e567ddde4cced94dbcf25df29b6b3f6ac5f424e3b48bd4a5b056",
+    "tools/unity/lifecycle-sample/Runtime/CounterController.cs": "5670ec2b4783c1990c8be30f80219f0bd0b2288ee96de496d9ac672fe0c05516",
+    "tools/unity/lifecycle-sample/Runtime/InputEvidence.cs": "4402242400aaf11929e326f0ab0889207951fd0c2e7bc8dbb5d872a11288341d",
+    "tools/unity/lifecycle-sample/Runtime/PointerEvidence.cs": "c61d532447f7e1f877d26a68944f8e323f23ec24c157107de1602b10bc102336",
+    "tools/unity/lifecycle-sample/Editor/LifecycleBuilder.cs": "db8e33f9ddafeff22758e1eb4e304c5af606be02abbb69920fd951b221049bdd",
+    "tools/unity/lifecycle-sample/Editor/NativeAdoption.cs": "664becd6e5a20b60198ee10d6f5db1cbf3033fcf70c0e002913182c691f505d3"
+  },
+  "case_binding": {
+    "contract": {
+      "path": "lc2-change-contract-v2.json",
+      "sha256": "d1d525dd68c2fc2cb45486f2abcda962844e7ed893c371b87a242d102f6b4951"
+    },
+    "status": {
+      "path": "case-bindings.json",
+      "sha256": "70425e860f6d6a19bfd62539cc043fe89e8fd2a56fe13eb9c7a8f45e97abc9b0"
+    },
+    "schema_version": 2,
+    "mode": "feature",
+    "revision_count": 1,
+    "identity": "passed",
+    "rules": "passed",
+    "runtime": "passed_keyboard_scope",
+    "visual": "not_run_candidate_design",
+    "declared_acceptance": "incomplete",
+    "verified_game_equivalence": false
+  }
+}

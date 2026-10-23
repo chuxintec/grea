@@ -4786,11 +4786,11 @@
         "--help"
       ],
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
-      "formats": "Pinned monkey package-v1 provider conversion and grouped AI handoff; --config JSON --source INPUT --target unity6|cocos38|both --output NEW",
-      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "Pinned monkey package-v1 provider conversion and grouped AI handoff; --config JSON --source INPUT --target unity6|cocos38|both --output NEW",
-      "output_schema": "JSON metrics and Markdown analyst report",
-      "tested_samples": "Pinned local monkey CLI plus owned bounded input; native Editor not_run",
+      "formats": "Pinned monkey package-v1 or explicit slice-v1 conversion, native resume and grouped AI handoff; --workflow package|slice --config JSON --source INPUT|--workspace WORKSPACE --output NEW",
+      "side_effects": "Runs pinned local provider; conversion writes a new target; --resume-native writes checks in the explicit isolated workspace. GREA does not launch Editor or edit game source.",
+      "usage": "Pinned monkey package-v1 or explicit slice-v1 conversion, native resume and grouped AI handoff; --workflow package|slice --config JSON --source INPUT|--workspace WORKSPACE --output NEW",
+      "output_schema": "result.json and ai-modules.json, plus captured provider process receipts",
+      "tested_samples": "Fixed monkey CLI, owned package and slice candidates; explicit adopted Unity sample evidence is separate from provider native resume",
       "execution": {
         "command": [
           "{python}",
@@ -4804,6 +4804,7 @@
       "category": "helper",
       "effects": [
         "filesystem_read",
+        "process",
         "explicit_output_write"
       ],
       "host_support": {
@@ -4820,7 +4821,8 @@
       "capability": {
         "implementation": "builtin",
         "adapters": [
-          "monkey-package-v1"
+          "monkey-package-v1",
+          "monkey-slice-v1"
         ],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -4837,9 +4839,10 @@
         ],
         "effects": [
           "filesystem_read",
+          "process",
           "explicit_output_write"
         ],
-        "support_formats": "Pinned monkey package-v1 provider conversion and grouped AI handoff; --config JSON --source INPUT --target unity6|cocos38|both --output NEW"
+        "support_formats": "Pinned monkey package-v1 or explicit slice-v1 conversion, native resume and grouped AI handoff; --workflow package|slice --config JSON --source INPUT|--workspace WORKSPACE --output NEW"
       },
       "required_files": [
         "{grea}/src/grea/tools/monkey_bridge.py"

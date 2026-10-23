@@ -89,13 +89,17 @@ LC1/LC2/LC3是本轮内部版本标识，分别包含实质开发成果。正式
 - LC1→LC2→LC3顺序推进，但未执行生产/未选渠道不是已批准本地工具开发的全局阻塞。无新事实不复做调研或重复全量验证。
 - 只读引用上游固定commit38a4c25，保留选用文件、LICENSE/NOTICE与修改说明；本地私有游戏材料、账号、完整提示词不进GREA公开树。
 
+## 完工报告与连续推进
+
+本机开发采用工作区总监的《主开发者完工报告与总监续推规范》。成组完成、实际阻塞或准备结束但当前范围未完时，先更新本计划，再向已获用户授权的总监会话原生报告成果、证据、已验/未验、必要剩余及下一包。已批准就绪工作继续，不等待礼节确认；不扩大发布/安装/生产权限。本机来源与路由保留私有协作回执，公开产品不依赖维护者机器路径或会话。
+
 ## 当前进度（开发者维护）
 
 | 版本 | 状态 | 下一动作 |
 |---|---|---|
 | 既有research/Cocos/Go包 | 按原计划保留 | 静态/真实Go已验与Creator待验分开，不被新包覆写 |
-| LC1 工程接续 | 有限本地工具切片通过 | 阶段/模式＋v2合同及旧Unity/ui_ux兼容通过；真实固定monkey调用产出candidate/needs_action；来源/候选/模块池可回查；资产来源字段/中文联系表/尺寸及色数反例通过。原生Editor与可玩不在此结果内 |
-| LC2 开发迭代 | 合同/有限兼容分析已实现；可玩待验 | feature/tuning/prototype合同及顶层save/config/protocol/pending分析通过；有界真实功能或换皮工程的可玩出口尚未验证 |
+| LC1 工程接续 | 工具切片＋自有隔离原生接续／键盘运行通过；鼠标局部未过 | 阶段/模式＋v2合同及旧Unity/ui_ux兼容通过；真实固定monkey调用产出candidate/needs_action；来源/候选/模块池可回查；资产来源字段/中文联系表/尺寸及色数反例通过。后续自有adopted工程的Editor、macOS Player与持久化已验，详见下方新增记录；原始provider候选不冒充原生完成 |
+| LC2 开发迭代 | 合同／有限兼容分析＋隔离计数回合增量通过 | feature/tuning/prototype合同及顶层save/config/protocol/pending分析通过；自有样例回合闭环、真实键盘UI、schema1→2、pending与重开已验；不代表任意真实产品或鼠标已验 |
 | LC3 运营反馈 | 本地合成分析/配置预览已实现 | 事件v1、会话漏斗/首观测D1、经济流、JSON配置diff通过；真实数据needs_data，平台未选/适配未实现，生产写入Unavailable |
 
 每次更新只记新成果、实际失败/未验和下一步；不追加多套每日台账。正式发布、远端推送、插件全局安装、引擎安装、生产部署与运营写入仍另行授权。
@@ -103,7 +107,7 @@ LC1/LC2/LC3是本轮内部版本标识，分别包含实质开发成果。正式
 ### LC1 本地结果（2026-10-23）
 
 - monkey实测0.3.0.dev1/commit1e21f8a：自有Cocos输入2文件，经真实包级convert产出1个Unity候选、3条明细任务，GREA保持needs_action/candidate；来源前后SHA一致。Editor/编译/业务/画面not_run，不运行原始代码。旧真实产品样本不复制入公开fixtures。
-- monkey_bridge支持固定配置/实现身份、能力探测、来源输入或既有包结果归一与有界模块合同；未分组任务留一池，明细不丢弃，不自动派Agent。包级native/resume尚无适配，明确拒绝而非提升结果。
+- monkey_bridge支持固定配置/实现身份、能力探测、来源输入或既有包结果归一与有界模块合同；未分组任务留一池，明细不丢弃，不自动派Agent。包级native/resume不支持，明确拒绝；后续新增独立slice/resume合同，不能混用。
 - art-ledger新增可选provenance；联系表通过实际中文图回看；alpha可选尺寸/精确RGBA色数，上限+1拒绝。没有上游Python复制/全量安装；保留固定上游来源与Apache通知。
 - 定向测试覆盖生命周期2、provider2、资产4、旧evolve2/theme5/workflow3/grea15/case8/skill-sync5；MCP3通过。首次MCP失败定位为本地.venv遗留旧目录editable路径，备份并修复本项目虚拟环境，未修改全局安装或生产launcher。
 - 旧JSON→SO制作真源冲突已修，正式JSON由Player强类型解析，SO继续用于资源引用。未改游戏/monkey工程、运行服务或全局插件。
@@ -119,4 +123,18 @@ LC1/LC2/LC3是本轮内部版本标识，分别包含实质开发成果。正式
 
 66项相称Python检查通过（含旧接口/MCP、13项发布逻辑检查）；独立源码投影加载12技能/21操作，用包内运行时实际调用联系表/色数反例/monkey模块接续/兼容/事件/配置预览。投影core摘要与当前实现一致；不是新原生平台发行构建或已安装插件。另对固定monkey真实既有包级产物只读归一，保持needs_action/candidate、明细索引和一个待分析池，不复制原始素材到公开树、不派Agent。分层记录见validation/development/lifecycle.json。
 
-下一出口仍是具名试点/用户批准范围下的原生工程接续与一个真实可玩增量，以及授权匿名运营数据和已选渠道的验证。monkey自动原生编排和多根输入缺项保留；既有Editor窗口仍无明确交接，本轮不启动或探测。可以交付当前本地工具源码，不把这些外部缺口说成已通过，也不再重复已通过的Go链/全矩阵。
+前述工具切片之后，用户明确授权在隔离工程执行LC1原生接续和LC2可玩增量；本轮仅新建自有样例并启动其独立batch Editor/Player，没有接管既有游戏窗口。新增结果如下；不重复已通过的Go链或无关全矩阵。
+
+
+### LC1 原生接续与LC2可玩增量（2026-10-23）
+
+- 新增monkey_bridge显式slice入口、来源profile/资产选择和实际provider resume适配；默认package与原ID保持。实际GREA CLI调用固定monkey1e21f8a，处理自有Creator2.4.15两节点/两Sprite/原生Button，静态零诊断、candidate/needs_action不提升。来源前后不变，完整模块绑定源规则/JSON/原生回读哈希；接续边界标明GREA声明，未冒充自动业务翻译。
+- 原始候选在Unity6000.6.2f1实际遇到无效com.unity.modules.input依赖；新Unity脚手架经PackageManager解析uGUI builtin2.6.0与2D Sprite1.0.0。隔离NativeAdoption显式设Texture2D、保存bootstrap场景并创建输出目录；外部provider生成的Importer字节未改，原候选仍保留。原候选native resume为not_run，不能把修复后adopted结果回填成原件通过。
+- adopted工程原生导入imported、Missing Script0、editableRoundtrip通过、全部原生Sprite/Button引用绑定；逐文件回读哈希仍一致。新Assets/Game接续实现正式JSON强类型读取、原生序列化Button/Text引用、计数与显式隔离存档，Editor规则反例和macOS arm64 Player构建通过。真实键盘UI计数0→2、QUIT、同包重开仍TOTAL2。
+- LC1的339个工程/Player文件及存档冻结；在新LC2副本追加菜单→开始→goal3→结算→再玩，以及暂停/继续/取消。真实键盘实玩至TOTAL5/RUNS1，再玩计一次后取消，重开TOTAL6/RUNS1/MENU；所有业务事件与实际Return输入同帧。LC1全部冻结文件与旧档哈希未变。
+- LC2 schema1→2追加迁移前原文备份完全一致，累计count及自有测试pending保留；规则检查覆盖菜单/暂停/结算重复提交保护、取消不增完成数、配置版本变化不误拒旧档、未来save版本与坏配置拒绝。未来档负面Player启动未另跑，不将Editor规则检查说成该项Player实测。
+- 自动鼠标确实进入Unity，但被读取为窗口外坐标（示例779,-621，窗口480×720），没有有效Button点击；键盘UI通过与鼠标not_passed分别记录，未注入业务回调伪造输入。实机画面已回看，未宣称原版视觉一致性、Windows/Creator运行或商业分发完成。
+- 实际v2 feature合同已绑定LC1冻结清单、LC2候选源码与Player Build清单，并登记原始规则、Editor测试和具名Player事件；Case中identity/rules/runtime为范围内reviewer_assertion，visual仍not_run（candidate设计），整体保持incomplete且verified_game_equivalence=false，不把自有玩法冒烟提升为已批准产品的完整验收。
+- 自有可复验示例在tools/unity/lifecycle-sample/，分层身份与验收在validation/development/lifecycle-native.json，原日志/工程/包/存档只留.private/lifecycle-native。定向Python 11项、契约、文档、技能同步通过；没有改游戏原工程/monkey源码、推送、合并main、打标签或发布。
+
+当前必要限制是自动鼠标坐标验收和provider无修复原生导入边界；已验自有样例可作为后续接续/有界开发示例，不折算为全游戏恢复率。下一包应优先由底层维护者修复明确导入边界，再在固定版本的新隔离候选复验鼠标路径；原版多根复杂工程与LC3真实授权数据/渠道仍按实际输入推进，不自行扩大生产范围。

@@ -76,6 +76,6 @@ host_support 表示登记的平台条件，不表示已原生实测；Windows �
 
 开发候选：`research_report`（[调研](docs/providers/research.md)）、`cocos_project` / `cocos_convert`（[Creator](docs/providers/cocos-target.md)）、`server_go_project`（[Go六服](docs/providers/server-go.md)）。模板生成不自动启动Editor、Docker或生产服务。
 
-生命周期候选：`monkey`为外部可配置provider，`monkey_bridge`做版本化包级接续与模块索引，见[monkey](docs/providers/monkey.md)；`image_contact_sheet`及`image_alpha_audit`规格增量见[资产总览](docs/providers/asset-preview.md)。
+生命周期候选：`monkey`为外部可配置provider，`monkey_bridge`做版本化包级／切片接续、显式原生resume与模块索引，见[monkey](docs/providers/monkey.md)；`image_contact_sheet`及`image_alpha_audit`规格增量见[资产总览](docs/providers/asset-preview.md)。
 
 本地候选工具：`compatibility_plan`（声明的save/config/protocol/pending差异）与`operations_preview`（事件/经济只读分析及配置预览），见[支持范围](docs/providers/lifecycle-analysis.md)，不提供普通档迁移或生产执行。

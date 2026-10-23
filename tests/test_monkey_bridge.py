@@ -32,3 +32,43 @@ class MonkeyBridge(unittest.TestCase):
    source.write_text('changed')
    with self.assertRaises(ValueError):pinned(config)
    with self.assertRaises(ValueError):check([module])
+
+class MonkeySlice(unittest.TestCase):
+ def fixture(self,root):
+  from grea.tools.monkey_bridge import collect_slice
+  p=root/'project';p.mkdir();(root/'inspect').mkdir();(root/'inspect/source-manifest.json').write_text('{}')
+  (p/'file').write_text('owned');sha=lambda f:hashlib.sha256(f.read_bytes()).hexdigest()
+  m=dict(schemaVersion=1,toolVersion='owned',targetProfile='unity6',files=[dict(path='file',sha256=sha(p/'file'))]);(p/'manifest.json').write_text(json.dumps(m))
+  b=dict(schemaVersion=1,toolVersion='owned',targetProfile='unity6',completed=True,candidateManifestSha256=sha(p/'manifest.json'),sourceManifestSha256=sha(root/'inspect/source-manifest.json'),workflowStatus='needs_action',resultKind='candidate',validation=dict(editor='not_run'))
+  (root/'conversion.json').write_text(json.dumps(b));return p,b,sha
+ def test_slice_candidate_does_not_promote_or_hide_changes(self):
+  from grea.tools.monkey_bridge import collect_slice
+  with tempfile.TemporaryDirectory() as td:
+   r=Path(td).resolve();p,b,sha=self.fixture(r);v=collect_slice(r,'owned');self.assertEqual(v['native_validation'],'not_run');self.assertEqual(v['result_kind'],'candidate');self.assertEqual(handoff(v)['detail_count'],1)
+   (p/'Analysis').mkdir();(p/'Analysis/editor-readback.json').write_text('{}');self.assertEqual(collect_slice(r,'owned')['native_validation'],'not_run')
+   (p/'file').write_text('changed')
+   with self.assertRaises(ValueError):collect_slice(r,'owned')
+ def test_slice_native_requires_identity_readback_and_unchanged_bytes(self):
+  from grea.tools.monkey_bridge import collect_slice
+  with tempfile.TemporaryDirectory() as td:
+   r=Path(td).resolve();p,b,sha=self.fixture(r);(p/'Analysis').mkdir();(r/'checks').mkdir();(p/'native').write_text('actual native bytes')
+   rb=dict(unityVersion='6000.6.2f1',missingScripts=0,editableRoundtrip=True,nativeFiles=[dict(path='native',sha256=sha(p/'native'))]);(p/'Analysis/editor-readback.json').write_text(json.dumps(rb))
+   report=r/'checks/resume.json';report.write_text(json.dumps(dict(b,resultKind='native',workflowStatus='partial',validation=dict(editor='pass'))))
+   v=collect_slice(r,'owned',report);self.assertEqual(v['native_validation'],'provider_verified_editor_readback');self.assertEqual(v['status'],'partial');self.assertEqual(v['result_kind'],'native')
+   (p/'file').write_text('changed source code')
+   with self.assertRaises(ValueError):collect_slice(r,'owned',report)
+   (p/'file').write_text('owned');(p/'native').write_text('changed after verification')
+   with self.assertRaises(ValueError):collect_slice(r,'owned',report)
+ def test_slice_output_cannot_mutate_source_parent(self):
+  from grea.tools.monkey_bridge import run
+  with tempfile.TemporaryDirectory() as td:
+   r=Path(td).resolve();source=r/'source';source.mkdir();entry=source/'project.json';entry.write_text('{}');sha=hashlib.sha256(entry.read_bytes()).hexdigest();config=r/'pin.json';config.write_text(json.dumps(dict(schema_version=1,version='owned',capabilities_sha256='0'*64,identity_files=[dict(path=str(entry),sha256=sha)])))
+   with self.assertRaises(ValueError):run(config,source/'bad-output',source=entry,target='unity6',workflow='slice',source_profile='cocos-2.4.15-project',all_assets=True)
+   self.assertFalse((source/'bad-output').exists());self.assertEqual(hashlib.sha256(entry.read_bytes()).hexdigest(),sha)
+ def test_slice_resume_does_not_accept_unrelated_report(self):
+  from grea.tools.monkey_bridge import collect_slice
+  with tempfile.TemporaryDirectory() as td:
+   r=Path(td).resolve();p,b,sha=self.fixture(r);report=r/'resume.json';report.write_text(json.dumps(b))
+   with self.assertRaises(ValueError):collect_slice(r,'owned',report)
+   (r/'checks').mkdir();report=r/'checks/resume.json';report.write_text(json.dumps(dict(b,sourceManifestSha256='0'*64)))
+   with self.assertRaises(ValueError):collect_slice(r,'owned',report)
