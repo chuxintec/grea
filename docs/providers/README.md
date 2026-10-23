@@ -18,3 +18,8 @@ Spine 的构建配置位于 [tools/unity/spine](../../tools/unity/spine)，包�
 - [Windows 原生供应方与桌面复验](windows-native.md)：核心、可选 provider、Codex 与 Unity 各自的原生验收边界。
 
 开发候选：[调研归一](research.md)、[Cocos目标](cocos-target.md)、[Go六服框架](server-go.md)；均保留有限支持与实测边界。
+
+- [monkey转换接续](monkey.md)：显式配置、固定版本、候选与模块包。
+- [资产总览与规格](asset-preview.md)：中文标签联系表、来源元数据、尺寸和可选RGBA色数。
+
+- [生命周期兼容与只读分析](lifecycle-analysis.md)：配置/save差异、事件与经济流、配置候选；无生产写入。

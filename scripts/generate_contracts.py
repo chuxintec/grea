@@ -22,6 +22,8 @@ from grea.authoring_contracts import documents as authoring_documents
 outputs.update(authoring_documents())
 from grea.evidence_contracts import documents as evidence_documents
 outputs.update(evidence_documents())
+from grea.lifecycle_data_contracts import documents as lifecycle_data_documents
+outputs.update(lifecycle_data_documents())
 outputs['unity-capabilities.json']=capability_matrix()
 failed=[]
 for name,value in outputs.items():

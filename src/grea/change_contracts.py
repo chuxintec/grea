@@ -5,7 +5,7 @@ from .common import GreaError, digest
 INVARIANTS = ['combat_rules','progression','damage_hit_timing','rng_choices','costs_rewards_eligibility','persistence_semantics','animation_events_cancel']
 RESKIN_STAGES = ['style_sample', 'art_production', 'sample_replace', 'full_reskin', 'game_tuning']
 
-def documents():
+def legacy_documents():
     text={'type':'string','minLength':1,'maxLength':1024}
     return {'change-contract.schema.json':{'$schema':'https://json-schema.org/draft/2020-12/schema','type':'object','additionalProperties':False,
         'required':['schema_version','scope','baseline_sha256','product_id','baseline_product_id','save_namespace','baseline_save_namespace','design','allowed_changes','invariants'],
@@ -19,6 +19,17 @@ def documents():
             'properties':{'stage':{'enum':RESKIN_STAGES},'ledger':artifact_schema(),
                           'reskin_complete':artifact_schema()}}}}}
 
+def documents():
+    """Version dispatch keeps the original UI/UX contract unchanged."""
+    text={'type':'string','minLength':1,'maxLength':4096}
+    refs={'type':'array','minItems':1,'maxItems':128,'uniqueItems':True,'items':text}
+    props={k:text for k in ('product_id','baseline_product_id','save_namespace','baseline_save_namespace','user_source','objective')}
+    props.update(schema_version={'const':2},scope={'enum':['faithful','reskin','feature','tuning','prototype','operate']},baseline_sha256={'type':'string','pattern':'^[0-9a-f]{64}$'},design=legacy_documents()['change-contract.schema.json']['properties']['design'],allowed_changes=refs,invariants=refs,verification=refs,
+        compatibility={'type':'object','additionalProperties':False,'required':['config','save','protocol','pending'],'properties':{k:text for k in ('config','save','protocol','pending')}},
+        experiment={'type':'object','additionalProperties':False,'required':['question','keep_discard_criteria'],'properties':{k:text for k in ('question','keep_discard_criteria')}})
+    v2={'type':'object','additionalProperties':False,'properties':props,'required':[k for k in props if k!='experiment']}
+    return {'change-contract.schema.json':{'$schema':'https://json-schema.org/draft/2020-12/schema','oneOf':[legacy_documents()['change-contract.schema.json'],v2]}}
+
 def artifact_schema():
     return {'type':'object','additionalProperties':False,'required':['reference','sha256'],
             'properties':{'reference':{'type':'string','minLength':1,'maxLength':1024},
@@ -28,6 +39,11 @@ def validate(value, baseline_sha256=None):
     schema=documents()['change-contract.schema.json']
     errors=list(Draft202012Validator(schema).iter_errors(value))
     if errors:raise GreaError('INVALID_CHANGE_CONTRACT',errors[0].message)
+    if value['schema_version']==2:
+        if value['scope']=='prototype' and 'experiment' not in value:raise GreaError('INVALID_CHANGE_CONTRACT','Prototype needs a question and observable keep/discard criteria.')
+        if value['scope'] not in ('reskin','prototype'):
+            if baseline_sha256 is not None and value['baseline_sha256']!=baseline_sha256:raise GreaError('CHANGE_BASELINE_MISMATCH','Contract must bind baseline.')
+            return dict(value)
     for name in ('product_id','save_namespace'):
         if value[name].strip().casefold()==value['baseline_'+name].strip().casefold():
             raise GreaError('CHANGE_IDENTITY_COLLISION','Derived product and save namespace must be explicitly isolated.')
@@ -64,6 +80,7 @@ def ledger_schema():
     spine_props['state']={'enum':['not_required','pending','authored','exported','integrated','verified']}
     props={k:text for k in ('id','feature_id','original_resource','design_source','design_version')}
     props.update({k:refs() for k in ('source_art','slices','targets','evidence')})
+    props['provenance']={'type':'object','additionalProperties':False,'properties':{**{k:text for k in ('source_url','creator','license','license_reference','generation_tool','tool_version','model','prompt_reference')},'restrictions':refs(),'source_references':refs()}}
     props.update(kind={'enum':['interface','icon','character','monster','effect','level']},
                  state={'enum':['planned','designed','produced','integrated','verified']},
                  spine={'type':'object','additionalProperties':False,'required':['state'],'properties':spine_props})
@@ -76,7 +93,7 @@ def ledger_schema():
                         'properties':{k:text for k in ('interface','character','monster','effect','level')}},
             'records':{'type':'array','minItems':1,'maxItems':4096,'items':{
                 'type':'object','additionalProperties':False,
-                'required':[k for k in props if k not in ('spine','evidence')],'properties':props}}}}
+                'required':[k for k in props if k not in ('spine','evidence','provenance')],'properties':props}}}}
 
 def validate_ledger(value):
     """Validate declared production links, never media, approval or Spine execution."""

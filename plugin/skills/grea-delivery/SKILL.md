@@ -21,3 +21,5 @@ description: 恢复或转换工程的构建与交付：macOS/Windows 构建、�
 - 只进入本次已授权的预览、安装或发布环节。
 
 衍生工程按 [grea-evolve](../grea-evolve/SKILL.md) 分开来源与新产品/存档/构建身份，原验收和新设计验收不互相替代；交付时区分美术/Spine制作、Unity接入和Player实测状态，可玩构建不等于样板风格批准，约定UI/UE调优在全量换皮与Bug修复之后；本模式不新增发布权限。
+
+生命周期增量版本需一起给源码、配置、制品、存档/协议兼容和已知缺口；本地[配置与发行预览](../../../docs/providers/lifecycle-analysis.md)不执行上传或上线，也不证明渠道支持。

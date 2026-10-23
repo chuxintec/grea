@@ -13,139 +13,242 @@
     },
     "change_contract": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "schema_version",
-        "scope",
-        "baseline_sha256",
-        "product_id",
-        "baseline_product_id",
-        "save_namespace",
-        "baseline_save_namespace",
-        "design",
-        "allowed_changes",
-        "invariants"
-      ],
-      "properties": {
-        "schema_version": {
-          "const": 1
-        },
-        "scope": {
-          "const": "ui_ux"
-        },
-        "baseline_sha256": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
-        },
-        "product_id": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1024
-        },
-        "baseline_product_id": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1024
-        },
-        "save_namespace": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1024
-        },
-        "baseline_save_namespace": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1024
-        },
-        "design": {
+      "oneOf": [
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "state",
-            "reference",
-            "sha256"
+            "schema_version",
+            "scope",
+            "baseline_sha256",
+            "product_id",
+            "baseline_product_id",
+            "save_namespace",
+            "baseline_save_namespace",
+            "design",
+            "allowed_changes",
+            "invariants"
           ],
           "properties": {
-            "state": {
-              "enum": [
-                "candidate",
-                "approved"
-              ]
+            "schema_version": {
+              "const": 1
             },
-            "reference": {
+            "scope": {
+              "const": "ui_ux"
+            },
+            "baseline_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "product_id": {
               "type": "string",
               "minLength": 1,
               "maxLength": 1024
             },
-            "sha256": {
+            "baseline_product_id": {
               "type": "string",
-              "pattern": "^[0-9a-f]{64}$"
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "save_namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "baseline_save_namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "design": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "state",
+                "reference",
+                "sha256"
+              ],
+              "properties": {
+                "state": {
+                  "enum": [
+                    "candidate",
+                    "approved"
+                  ]
+                },
+                "reference": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "allowed_changes": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 5,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "visual_style",
+                  "layout",
+                  "navigation",
+                  "feedback",
+                  "readability"
+                ]
+              }
+            },
+            "invariants": {
+              "type": "array",
+              "minItems": 7,
+              "maxItems": 7,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "combat_rules",
+                  "progression",
+                  "damage_hit_timing",
+                  "rng_choices",
+                  "costs_rewards_eligibility",
+                  "persistence_semantics",
+                  "animation_events_cancel"
+                ]
+              }
+            },
+            "ui_ux_budget": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "art_production": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "stage",
+                "ledger"
+              ],
+              "properties": {
+                "stage": {
+                  "enum": [
+                    "style_sample",
+                    "art_production",
+                    "sample_replace",
+                    "full_reskin",
+                    "game_tuning"
+                  ]
+                },
+                "ledger": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "reference",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "reference": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  }
+                },
+                "reskin_complete": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "reference",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "reference": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  }
+                }
+              }
             }
           }
         },
-        "allowed_changes": {
-          "type": "array",
-          "minItems": 1,
-          "maxItems": 5,
-          "uniqueItems": true,
-          "items": {
-            "enum": [
-              "visual_style",
-              "layout",
-              "navigation",
-              "feedback",
-              "readability"
-            ]
-          }
-        },
-        "invariants": {
-          "type": "array",
-          "minItems": 7,
-          "maxItems": 7,
-          "uniqueItems": true,
-          "items": {
-            "enum": [
-              "combat_rules",
-              "progression",
-              "damage_hit_timing",
-              "rng_choices",
-              "costs_rewards_eligibility",
-              "persistence_semantics",
-              "animation_events_cancel"
-            ]
-          }
-        },
-        "ui_ux_budget": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 1024
-        },
-        "art_production": {
+        {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "stage",
-            "ledger"
-          ],
           "properties": {
-            "stage": {
+            "product_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "baseline_product_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "save_namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "baseline_save_namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "user_source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "objective": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "schema_version": {
+              "const": 2
+            },
+            "scope": {
               "enum": [
-                "style_sample",
-                "art_production",
-                "sample_replace",
-                "full_reskin",
-                "game_tuning"
+                "faithful",
+                "reskin",
+                "feature",
+                "tuning",
+                "prototype",
+                "operate"
               ]
             },
-            "ledger": {
+            "baseline_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "design": {
               "type": "object",
               "additionalProperties": false,
               "required": [
+                "state",
                 "reference",
                 "sha256"
               ],
               "properties": {
+                "state": {
+                  "enum": [
+                    "candidate",
+                    "approved"
+                  ]
+                },
                 "reference": {
                   "type": "string",
                   "minLength": 1,
@@ -157,28 +260,110 @@
                 }
               }
             },
-            "reskin_complete": {
+            "allowed_changes": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            },
+            "invariants": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            },
+            "verification": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            },
+            "compatibility": {
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "reference",
-                "sha256"
+                "config",
+                "save",
+                "protocol",
+                "pending"
               ],
               "properties": {
-                "reference": {
+                "config": {
                   "type": "string",
                   "minLength": 1,
-                  "maxLength": 1024
+                  "maxLength": 4096
                 },
-                "sha256": {
+                "save": {
                   "type": "string",
-                  "pattern": "^[0-9a-f]{64}$"
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "protocol": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "pending": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                }
+              }
+            },
+            "experiment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "question",
+                "keep_discard_criteria"
+              ],
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "keep_discard_criteria": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
                 }
               }
             }
-          }
+          },
+          "required": [
+            "product_id",
+            "baseline_product_id",
+            "save_namespace",
+            "baseline_save_namespace",
+            "user_source",
+            "objective",
+            "schema_version",
+            "scope",
+            "baseline_sha256",
+            "design",
+            "allowed_changes",
+            "invariants",
+            "verification",
+            "compatibility"
+          ]
         }
-      }
+      ]
     },
     "assets": {
       "type": "array",

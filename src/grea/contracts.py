@@ -1,7 +1,7 @@
 """Canonical CLI/MCP contracts. Catalogs and advertised schemas derive from here."""
 from . import __version__
 
-MODES = ('recover', 'port', 'fix', 'reskin', 'evolve', 'refactor', 'performance', 'deliver', 'maintain', 'assess', 'evidence', 'research')
+MODES = ('recover', 'port', 'fix', 'reskin', 'evolve', 'refactor', 'performance', 'deliver', 'maintain', 'assess', 'evidence', 'research', 'feature', 'tuning', 'prototype', 'operate')
 DIMENSIONS = ('rules', 'runtime', 'visual', 'identity', 'performance', 'platform', 'native')
 KINDS = ('original_static', 'original_runtime', 'candidate_runtime', 'approved_design', 'test_report', 'build_manifest')
 
@@ -49,6 +49,10 @@ CONTRACTS['start_case_revision'] = (
 
 for operation in ('plan_workflow','init_case'):
     CONTRACTS[operation][1]['properties'].update(target_engine=dict(string(enum=('unity','cocos','none')),default='unity'), backend=dict(string(enum=('none','go')),default='none'))
+
+from .lifecycle import STAGES, WORK_MODES, DELIVERY
+for operation in ('plan_workflow','init_case','start_case_revision'):
+    CONTRACTS[operation][1]['properties'].update(lifecycle_stage=string(enum=STAGES),work_mode=string(enum=WORK_MODES),delivery_level=string(enum=DELIVERY))
 
 from .change_contracts import documents as change_documents
 for operation in ('plan_workflow','init_case','start_case_revision'):

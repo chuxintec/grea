@@ -89,7 +89,7 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 | [grea-unity-standard](plugin/skills/grea-unity-standard/SKILL.md) | 工程/程序集结构、生命周期、配置、资产治理与性能 |
 | [grea-delivery](plugin/skills/grea-delivery/SKILL.md) | Editor任务、构建、制品身份、封装、预览与发布 |
 | [grea-reskin](plugin/skills/grea-reskin/SKILL.md) | 有明确设计与授权的换皮，保持指定玩法和交互 |
-| [grea-evolve](plugin/skills/grea-evolve/SKILL.md) | 已恢复工程的有限UI/UE二次开发，旧玩法基线与新设计维度分离（开发候选） |
+| [grea-evolve](plugin/skills/grea-evolve/SKILL.md) | 有界UI/UE与feature/tuning/prototype合同规划；旧不变量、新设计和兼容影响分离（开发候选） |
 
 新增 [grea-research](plugin/skills/grea-research/SKILL.md) 处理分析/比较，[grea-cocos](plugin/skills/grea-cocos/SKILL.md) 处理Creator目标，[grea-server-go](plugin/skills/grea-server-go/SKILL.md) 处理自有Go后端。研究建议不自动创建开发项目，目标选择独立于源引擎，旧调用省略目标仍为Unity。
 
@@ -145,3 +145,7 @@ Case 操作、严格 JSON Schema、退出码、预算、清理和审阅边界见
 通用实现放 `src/grea/`，其他技术栈及 Unity 源码放 `tools/`，维护脚本放 `scripts/`，技能维护源只在 `plugin/`。保留工具 ID、调用契约和旧证据；改动按实际风险运行相关测试，发布前完成既有 CI 和制品门禁。
 
 开发候选工具：[调研归一与报告](docs/providers/research.md)、[Creator3.8.8五层示例与有限转换](docs/providers/cocos-target.md)、[Go六服虚构事务示例](docs/providers/server-go.md)。生成/编译不替代Editor、浏览器、数据库或六服运行；实际完成边界见 [本地开发记录](docs/design/research-cocos-go.md)。
+
+未发布生命周期增量：stage/work_mode/delivery_level规划与变更v2合同、固定[monkey候选接续](docs/providers/monkey.md)、静态资产联系表及尺寸/色数检查已实现；不代表原生可玩或生产运营。当前范围/待验只维护在[生命周期计划](proposals/lifecycle-roadmap.md)。
+
+`compatibility_plan`和`operations_preview`已提供有限本地兼容/事件/经济流/配置候选工具；见[精确边界](docs/providers/lifecycle-analysis.md)。没有真实运营数据、线上写入或发行渠道验收，不能把候选分析称为全体系交付完成。

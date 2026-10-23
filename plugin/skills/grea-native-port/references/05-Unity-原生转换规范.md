@@ -9,7 +9,7 @@
 交付的是一个 Unity 开发者打开即可按常规方式维护的工程：
 
 - UI、Scene、动画以原生 Prefab/Scene/AnimationClip 为制作源，正常嵌套 Prefab/Variant 合法；人工编辑直接 Play 生效，不靠来源模板/节点图与工作 View 双真源或 Capture 回写。
-- 每张配置表可选择 Excel、结构化 JSON 或 SO 中一种作为唯一 authoring source。外部制作源单向生成强类型 C#/SO，记录输入/Schema/输出哈希及所有权，人工改动冲突不得覆盖；选择 SO 制作时 Inspector 修改直接生效。不能同时把外部表和生成 SO 都当作可随意编辑的真源，也不能把任意 Row JSON 换成 `.asset` 后称为强类型原生配置。
+- 正式数值配置唯一制作源为UTF-8 JSON；Player实际解析为强类型DTO，记录输入/Schema/hash，坏配置拒绝且不静默回退。SO可维护Unity资源引用或引用JSON TextAsset，不另存重复可编辑数值，不能只在Editor转SO后让Player读取另一份表。资源绑定用稳定ID，不依赖行序。
 - 运行时只使用 Unity 生命周期、uGUI/TMP 等原生组件和下文选型基线中的官方或主流插件。
 - 类型、资源和节点按游戏语义命名（`ShopView`、`RuneSlot`、`DailySignTable`）。来源映射保留在 Analysis；原有领域名称、存档兼容 ID、Unity GUID 和合法第三方数据不因拼写相同而违规，判断依据是运行机制与实际调用者。
 - 源引擎只作为**行为与资源的来源**，不作为运行时模型。
@@ -42,7 +42,7 @@
 | 异步与定时 | `Awaitable`、Coroutine，配合 `destroyCancellationToken` 取消 | 项目已用时可选 UniTask |
 | 资源加载 | 直接序列化引用 | 动态或大量资源用 Addressables，使用语义地址；不用 `Resources` 存放目录式 Catalog |
 | 场景 | Boot 加内容场景，用 SceneManager 切换；常驻对象 `DontDestroyOnLoad` | 需要叠加时用 Additive |
-| 配置 | 强类型字段/DTO 与原生序列化资产 | 项目明确唯一 Excel/结构化 JSON/SO 制作源；需要时通过 Editor 导入器生成 SO，消费者不运行源引擎配置解析器 |
+| 配置 | 强类型字段/DTO 与原生序列化资产 | 正式JSON唯一制作源，Player读取强类型DTO；SO只管理资源/JSON引用，消费者不运行源引擎配置解析器 |
 | 输入 | Input System + EventSystem（`InputSystemUIInputModule`）；指针用 `IPointer*Handler` | — |
 | 对象池 | `UnityEngine.Pool.ObjectPool<T>`，带显式复位 | — |
 | 音频 | AudioSource + AudioMixer，由音频服务管理 | — |

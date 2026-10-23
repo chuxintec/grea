@@ -7,12 +7,35 @@
     "source_package_version": "6.4.0",
     "license": "MIT",
     "adoption": "Architecture and contract design studied; no REA engine implementation copied or installed.",
-    "reviewed_files": ["docs/tool-design.md", "docs/mcp-contracts.md", "docs/architecture.mermaid", "docs/reconstruction-readiness.md", "docs/reconstruction-obligation-ledgers.md", "docs/testing.md", "src/domain/evidence.ts", "src/server/toolResult.ts", "src/contracts/errorSchemas.ts"]
+    "reviewed_files": [
+      "docs/tool-design.md",
+      "docs/mcp-contracts.md",
+      "docs/architecture.mermaid",
+      "docs/reconstruction-readiness.md",
+      "docs/reconstruction-obligation-ledgers.md",
+      "docs/testing.md",
+      "src/domain/evidence.ts",
+      "src/server/toolResult.ts",
+      "src/contracts/errorSchemas.ts"
+    ]
   },
   "mcp_sdk": {
     "upstream": "https://github.com/modelcontextprotocol/python-sdk",
     "version": "2.3.0",
     "license": "MIT",
     "installed_from": "PyPI; exact transitive resolutions in uv.lock"
+  },
+  "gamedev_skills": {
+    "url": "https://github.com/gamedev-skills/awesome-gamedev-agent-skills",
+    "commit": "38a4c2500eeb5ff9ac084336b8f66108069d2f8d",
+    "license": "Apache-2.0",
+    "selected": [
+      "skills/disciplines/create-game-assets/SKILL.md",
+      "skills/disciplines/create-game-assets/assets/asset-manifest.json",
+      "skills/disciplines/save-systems/SKILL.md",
+      "skills/workflows/prototype-fast/SKILL.md"
+    ],
+    "adoption": "Adapted provenance/brief and contact-sheet concepts into existing ledger and own bounded tools; no upstream Python copied. Palette boundary independently corrected. Save/prototype principles selectively rewritten; no forced greybox/rewrite or SO numeric source.",
+    "notice": "docs/providers/licenses/awesome-gamedev-agent-skills/NOTICE"
   }
 }

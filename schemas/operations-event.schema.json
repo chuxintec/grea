@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "event_time",
+    "player_id",
+    "session_id",
+    "game_version",
+    "config_version",
+    "environment",
+    "schema_version"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "event_time": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "player_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "game_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "config_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "schema_version": {
+      "const": 1,
+      "type": "integer"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "economy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "asset_id",
+        "quantity",
+        "receipt_id"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "grant",
+            "spend",
+            "snapshot"
+          ]
+        },
+        "asset_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "quantity": {
+          "type": "string",
+          "pattern": "^[0-9]{1,19}$"
+        },
+        "receipt_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}

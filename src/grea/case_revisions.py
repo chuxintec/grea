@@ -105,7 +105,7 @@ def check_revision(root, case, revision):
 
 
 def start(case_dir, candidate_root, candidate_files, platform, qa_profile, build_manifest=None,
-          build_id=None, source=None, mode=None, required_dimensions_override=None, change_contract=None):
+          build_id=None, source=None, mode=None, required_dimensions_override=None, change_contract=None, lifecycle_stage=None, work_mode=None, delivery_level=None):
     from .cases import locate, locked, load_case, next_order
     root = locate(case_dir)
     with locked(root):
@@ -125,19 +125,23 @@ def start(case_dir, candidate_root, candidate_files, platform, qa_profile, build
         if bool(build_manifest) != bool(build_id):
             raise GreaError('INVALID_BUILD', 'Build manifest and build_id must be supplied together.')
         task = dict(case.get('task', {}), intent=mode or case['mode'])
-        if mode and mode not in ('reskin','evolve'):task.pop('change_contract',None)
-        if change_contract is not None and task['intent'] not in ('reskin','evolve'):
-            raise GreaError('INVALID_CHANGE_CONTRACT','Change contracts apply only to reskin/evolve.')
+        from .lifecycle import metadata,check_change,CHANGE_MODES
+        meta=metadata(task['intent'],lifecycle_stage or (None if mode else task.get('lifecycle_stage')),work_mode or (None if mode else task.get('work_mode')),delivery_level or (None if mode else task.get('delivery_level')))
+        task.update(meta)
+        if mode and mode not in CHANGE_MODES:task.pop('change_contract',None)
+        if change_contract is not None and task['intent'] not in CHANGE_MODES:
+            raise GreaError('INVALID_CHANGE_CONTRACT','Change contracts apply only to explicit change workflows.')
         if change_contract is not None:task['change_contract']=change_contract
-        if task['intent']=='evolve' and task.get('change_contract') is None:
-            raise GreaError('MISSING_CHANGE_CONTRACT','Evolve revision needs explicit UI/UX change boundaries.')
+        if task['intent'] in ('evolve','feature','tuning','prototype') and task.get('change_contract') is None:
+            raise GreaError('MISSING_CHANGE_CONTRACT','Change revision needs an explicit bound contract.')
         if task.get('change_contract') is not None:
             from .change_contracts import validate
             task['change_contract']=validate(task['change_contract'],selected_source['sha256'])
+        check_change(task['intent'],task.get('change_contract'),meta)
         dims = required_dimensions_override or (case['required_dimensions'] if mode is None else required_dimensions(mode, task.get('source_engine', 'unknown'), task.get('target_engine','unity'),task.get('backend','none')))
         mandatory = required_dimensions(task['intent'], task.get('source_engine', 'unknown'), task.get('target_engine','unity'),task.get('backend','none'))
         if task.get('backend')=='go' and not set(mandatory)<=set(dims):raise GreaError('REQUIRED_DIMENSION','Go backend acceptance dimensions cannot be removed.')
-        if task['intent']=='evolve' and not set(mandatory)<=set(dims):
+        if task['intent'] in ('evolve','feature','tuning','prototype') and not set(mandatory)<=set(dims):
             raise GreaError('REQUIRED_DIMENSION','Evolve cannot drop mandatory dimensions.')
         if 'native' in mandatory and 'native' not in dims:
             raise GreaError('REQUIRED_DIMENSION', 'Cross-engine native acceptance cannot be removed.')

@@ -4776,6 +4776,337 @@
       "required_files": [
         "{grea}/src/grea/tools/server_go_project.py"
       ]
+    },
+    {
+      "id": "monkey_bridge",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "monkey_bridge",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Pinned monkey package-v1 provider conversion and grouped AI handoff; --config JSON --source INPUT --target unity6|cocos38|both --output NEW",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "Pinned monkey package-v1 provider conversion and grouped AI handoff; --config JSON --source INPUT --target unity6|cocos38|both --output NEW",
+      "output_schema": "JSON metrics and Markdown analyst report",
+      "tested_samples": "Pinned local monkey CLI plus owned bounded input; native Editor not_run",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "monkey_bridge"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "monkey-package-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Pinned monkey package-v1 provider conversion and grouped AI handoff; --config JSON --source INPUT --target unity6|cocos38|both --output NEW"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/monkey_bridge.py"
+      ]
+    },
+    {
+      "id": "monkey",
+      "probe": [
+        "{grea}/.private/providers/monkey/bin/monkey",
+        "capabilities",
+        "--json"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Explicitly configured monkey capabilities/convert package-v1; not bundled",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "Configure canonical monkey ID using GREA_PROVIDERS; see docs/providers/monkey.md",
+      "output_schema": "JSON metrics and Markdown analyst report",
+      "tested_samples": "External provider; current input/version must be pinned",
+      "execution": {
+        "command": [
+          "{grea}/.private/providers/monkey/bin/monkey"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "provider",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [
+          "monkey-package-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "monkey"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "process",
+          "explicit_output_write"
+        ],
+        "support_formats": "Explicitly configured monkey capabilities/convert package-v1; not bundled"
+      },
+      "required_files": [
+        "{grea}/.private/providers/monkey/bin/monkey"
+      ]
+    },
+    {
+      "id": "image_contact_sheet",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "image_contact_sheet",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Explicit image label manifest v1; Pillow static previews",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "--manifest JSON --output NEW [--font FONT] [--native-size]",
+      "output_schema": "JSON metrics and Markdown analyst report",
+      "tested_samples": "Owned wide/tall images, Chinese font review, limits and source protection",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "image_contact_sheet"
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "image-contact-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Explicit image label manifest v1; Pillow static previews"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/image_contact_sheet.py"
+      ]
+    },
+    {
+      "id": "compatibility_plan",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "compatibility_plan",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Declared top-level save/config/protocol compatibility v1",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "--before CONTRACT --after CONTRACT --sample JSON --output NEW",
+      "output_schema": "JSON metrics and Markdown analyst report",
+      "tested_samples": "Owned local fixtures; no ordinary save migration, real player data, production or channel execution",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "compatibility_plan"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "compatibility_plan-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "Declared top-level save/config/protocol compatibility v1"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/compatibility_plan.py"
+      ]
+    },
+    {
+      "id": "operations_preview",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "operations_preview",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "operations-event-v1 JSONL and local config/schema preview",
+      "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
+      "usage": "events --input JSONL --start ISO --end ISO --as-of ISO --timezone IANA --steps EVENT,EVENT --data-kind simulation --output NEW; config --before JSON --after JSON --schema JSON --target JSON --output NEW",
+      "output_schema": "JSON metrics and Markdown analyst report",
+      "tested_samples": "Owned local fixtures; no ordinary save migration, real player data, production or channel execution",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "operations_preview"
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "operations_preview-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "filesystem_read",
+          "explicit_output_write"
+        ],
+        "support_formats": "operations-event-v1 JSONL and local config/schema preview"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/operations_preview.py"
+      ]
     }
   ],
   "product": "grea",

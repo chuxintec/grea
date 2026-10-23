@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "status": "local_tool_slices_verified_not_full_lifecycle_delivery",
+  "source_base": "48debf7cece25803a06cc3002ae73970a7773ddc",
+  "core": {
+    "version": "2026.10.19",
+    "core_sha256": "3e5511318da5e25bca19d3d64b95ca74c42e00bb0bd559ad3e3ec5a09f701e66",
+    "files": 82
+  },
+  "python_tests": {
+    "test_evolve": 2,
+    "test_grea": 15,
+    "test_theme_assets": 5,
+    "test_case_revisions": 8,
+    "test_release": 13,
+    "test_mcp": 3,
+    "test_workflow_profiles": 3,
+    "test_lifecycle": 2,
+    "test_skill_sync": 5,
+    "test_monkey_bridge": 2,
+    "test_asset_preview": 4,
+    "test_lifecycle_analysis": 4
+  },
+  "python_test_total": 66,
+  "monkey": {
+    "version": "0.3.0.dev1",
+    "revision": "1e21f8aef71ca6a940ee35e1b1f07f0ed9dedb42",
+    "owned_input_conversion": "needs_action/candidate; real CLI",
+    "existing_real_package_normalization": "byte-verified candidate only; private source/tasks retained outside public tree",
+    "grouped_handoff": "explicit owned module plus unassigned detail index; no Agents started",
+    "native": "not_run"
+  },
+  "assets": {
+    "chinese_sheet": "opened and reviewed",
+    "limit_plus_one": "rejected",
+    "source_immutability": "passed"
+  },
+  "integration": {
+    "status": "pass",
+    "operations": 21,
+    "skills": 12,
+    "helpers_executed": [
+      "image_contact_sheet",
+      "image_alpha_audit",
+      "monkey_bridge",
+      "compatibility_plan",
+      "operations_preview",
+      "operations_preview-config"
+    ],
+    "source_tree_digest": "d9e9b8dff97a8955a6bf7dfb1c7a50cb96336319f56f1054310d4b67639daf0e",
+    "native_editor": "not_run",
+    "production": "not_run",
+    "runtime": "read-only copy of installed verified macos-arm64 runtime, not a new release build",
+    "global_install": false,
+    "source_directory_needed_by_core": false,
+    "external_monkey": "explicit pinned provider configuration",
+    "model_requests": 0
+  },
+  "not_run": [
+    "native Editor import/real input/visual gameplay",
+    "playable feature or reskin version",
+    "ordinary player save migration",
+    "real operational datasets",
+    "commercial platform adapter/preflight",
+    "production write/payment/reward/notification"
+  ],
+  "remote_or_global_actions": false
+}

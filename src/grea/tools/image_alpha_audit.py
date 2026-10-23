@@ -11,7 +11,9 @@ import sys
 from grea.tools._artifact_common import digest, validate_output, write_report
 
 
-def inspect_image(path, max_pixels=20000000):
+def inspect_image(path, max_pixels=20000000, expect_size=None, max_colors=None):
+    if max_colors is not None and not 1<=max_colors<=65536:raise ValueError("max-colors must be 1..65536")
+    if expect_size is not None and (len(expect_size)!=2 or any(type(x) is not int or x<1 for x in expect_size)):raise ValueError("Expected positive width and height")
     from PIL import Image
     path = Path(path)
     if path.is_symlink() or not path.is_file():
@@ -26,7 +28,10 @@ def inspect_image(path, max_pixels=20000000):
         if width * height > max_pixels:
             raise ValueError('Image exceeds max-pixels: ' + str(path))
         mode, image_format = image.mode, image.format
-        alpha = image.convert('RGBA').getchannel('A')
+        if getattr(image,'n_frames',1)!=1:raise ValueError('Static image required')
+        rgba=image.convert('RGBA');alpha=rgba.getchannel('A')
+        colors=rgba.getcolors(maxcolors=max_colors+1) if max_colors is not None else None
+        color_count=len(colors) if colors is not None else None
         histogram = alpha.histogram()
         strips = [alpha.crop((0, 0, width, 1))]
         if height > 1: strips.append(alpha.crop((0, height - 1, width, height)))
@@ -39,7 +44,11 @@ def inspect_image(path, max_pixels=20000000):
                   'mode': mode, 'width': width, 'height': height,
                   'visible_bbox': alpha.getbbox(), 'alpha_extrema': alpha.getextrema(),
                   'transparent_pixels': histogram[0], 'partial_alpha_pixels': sum(histogram[1:255]),
-                  'opaque_border_pixels': border_opaque, 'border_pixels': border_pixels}
+                  'opaque_border_pixels': border_opaque, 'border_pixels': border_pixels,
+                  'expected_size':list(expect_size) if expect_size is not None else None,
+                  'size_matches':list(expect_size)==[width,height] if expect_size is not None else None,
+                  'max_colors':max_colors,'color_count':color_count,
+                  'colors_within_limit':color_count is not None and color_count<=max_colors if max_colors is not None else None}
     if digest(path) != checksum: raise ValueError('Source changed during inspection: ' + str(path))
     return result
 
@@ -49,14 +58,18 @@ def main():
     parser.add_argument('--images', nargs='+', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--require-transparency', action='store_true', help='For cutout/button assets only; not full backgrounds')
+    parser.add_argument('--expect-size',nargs=2,type=int,metavar=('WIDTH','HEIGHT'))
+    parser.add_argument('--max-colors',type=int,help='Optional exact RGBA palette limit for pixel/palette tasks only')
     parser.add_argument('--max-pixels', type=int, default=20000000)
     args = parser.parse_args()
     try:
         if args.max_pixels < 1: raise ValueError('max-pixels must be positive')
         validate_output(args.output, args.images)
-        rows = [inspect_image(path, args.max_pixels) for path in args.images]
+        rows = [inspect_image(path, args.max_pixels,args.expect_size,args.max_colors) for path in args.images]
         issues = []
         for row in rows:
+            if row['size_matches'] is False:issues.append({'path':row['path'],'kind':'unexpected_dimensions'})
+            if row['colors_within_limit'] is False:issues.append({'path':row['path'],'kind':'too_many_rgba_colors'})
             if row['visible_bbox'] is None:
                 issues.append({'path': row['path'], 'kind': 'fully_transparent_image'})
             elif args.require_transparency and row['transparent_pixels'] == 0:

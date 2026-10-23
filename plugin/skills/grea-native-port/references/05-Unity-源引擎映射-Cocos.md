@@ -82,7 +82,7 @@
 | cc.NodePool（put/get、unuse/reuse） | `ObjectPool<T>` | put 会移出父节点；在 actionOnRelease/actionOnGet 中显式处理 SetActive、父节点、监听和补间的复位 | 回收后再显示 |
 | cc.sys.localStorage | 存档端口与文件存储 | 需要兼容原版存档时，由适配器保留原键和编码 | 关闭后重开 |
 | cc.audioEngine、cc.AudioSource | AudioSource 池 + AudioMixer 分组 | 音乐和音效分组，音量映射到 Mixer 参数 | 开关、切后台、播放时机 |
-| JSON 配置、cc.JsonAsset | 强类型 ScriptableObject | 在 Editor 中导入为 SO 字段，不在 SO 里存 JSON 字符串 | 规则测试 |
+| JSON 配置、cc.JsonAsset | UTF-8 JSON → Player强类型DTO | JSON为唯一数值制作源，运行时实际解析；SO仅维护资源引用或JSON TextAsset引用，不复制可编辑数值 | Player解析与坏配置拒绝、规则测试 |
 | 物理（PhysicsManager、RigidBody、PhysicsCollider） | Rigidbody2D、Collider2D | 按 PTM_RATIO 换算单位；规则依赖的简单几何判定放在 Domain | 规则轨迹 |
 | CollisionManager（非物理碰撞） | Collider2D 触发器，或 Domain 中的几何判定 | — | 命中判定 |
 | wx.*、tt.* 平台 API | 平台端口 | 见原生转换规范的平台 SDK 一节 | 不可用时的提示与离线授权路径 |

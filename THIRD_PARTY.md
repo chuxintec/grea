@@ -48,3 +48,5 @@ AssemblySanitizer 使用 [Mono.Cecil 0.11.6](https://github.com/jbevain/cecil)�
 有限制作链使用已锁定的 Pillow 处理自有/授权图片，Unity Editor API 创建原生资产；没有新增 Spine runtime 分发。Spine 页闭包检查不建立运行时授权，匹配来源与适用许可应另核验，见 [制作边界](docs/providers/unity-authoring.md)。
 
 构建期使用锁定的 [python-zstandard 0.25.0](https://github.com/indygreg/python-zstandard/tree/0.25.0) 单次流式读取 CPython 许可归档，许可为 BSD-3-Clause（上游内含 zstd 许可）；仅在 dev 依赖组，运行插件的依赖仍从 `uv export --no-dev` 生成。原始许可随其构建环境包保留，不重新授权为 grea 代码。
+
+资源制作brief/来源字段与联系表方法参考[awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills)固定commit `38a4c2500eeb5ff9ac084336b8f66108069d2f8d`，Apache-2.0。选用范围与独立改写见[来源记录](UPSTREAM.json)，保留[LICENSE](docs/providers/licenses/awesome-gamedev-agent-skills/LICENSE)和[NOTICE](docs/providers/licenses/awesome-gamedev-agent-skills/NOTICE)。没有运行其安装器或复制Python工具；grea检查器保留自身边界及色数上限修正。

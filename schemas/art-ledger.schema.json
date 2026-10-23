@@ -183,6 +183,74 @@
               "maxLength": 1024
             }
           },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "source_url": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "creator": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "license": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "license_reference": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "generation_tool": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "tool_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "prompt_reference": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "restrictions": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "source_references": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              }
+            }
+          },
           "kind": {
             "enum": [
               "interface",
