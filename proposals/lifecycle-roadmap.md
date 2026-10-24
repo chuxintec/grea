@@ -162,3 +162,5 @@ LC1/LC2/LC3是本轮内部版本标识，分别包含实质开发成果。正式
 - 完整macOS包已从56e7179干净提交构建，版本2026.10.24rc1、SHA d5770a8fb6539dc812972335b0b6d5ffe96c20aab70a9b758127614db2648e92；隔离验证通过，安装副本3571文件hash匹配、12技能可见。官方Codex plugin add已安装并启用唯一grea@Konanw，其他配置／marketplace条目不变，Claude未安装更新。
 - 安装副本独立stdio的session/describe_tool/plan_workflow通过，package_root与随包Python均在新版缓存；这是独立stdio层。当前会话仍连接2026.10.17，未热加载新版；官方安装器清理旧缓存后已仅恢复原字节保证旧会话正常，不回滚新版注册、不启用第二服务。当前session和只读能力恢复ok。
 - 最后待验是正常刷新／新会话后的真实客户端session版本与package_root；必要时由用户在合适时机正常重开Codex，不强重启当前或其他工作。分层回执见validation/development/codex-upgrade-20261024.json。未推送、打标签或发布；LC1／2／3原有未验边界继续保留。
+
+- 收尾向总监发送一次报告被自动审批拒绝（未认可当前会话对具体接收线程的明确授权）；未重试或换渠道。本地代码／安装／回执不受影响，发送阻塞原因已写入本轮分层记录。

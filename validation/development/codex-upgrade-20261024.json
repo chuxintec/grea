@@ -122,5 +122,13 @@
     "Original provider/automated mouse/formal visual/full game equivalence limitations retained",
     "Windows native acceptance, real operational datasets or channel selection",
     "GitHub push/tag/Release, Claude update or production operation"
-  ]
+  ],
+  "coordination_report": {
+    "status": "blocked_by_automatic_approval_review",
+    "recipient": "director thread",
+    "reason": "Approval reviewer did not recognize explicit current-chat user authorization to send workspace/install status to the specific destination thread.",
+    "retried": false,
+    "alternate_channel_used": false,
+    "local_results_preserved": true
+  }
 }
