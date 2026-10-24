@@ -25,10 +25,14 @@ grea 插件把游戏调研、恢复与显式目标工程开发拆成若干技能
 | 结构重构、资源治理、性能优化 | 当前已核验工程的行为与资源身份；性能任务要有固定设备、场景和负载的前后数据 | `grea-unity-standard`；替换 UI 框架时加 `grea-native-port` |
 | 构建、预览、发布 | 明确的源码、平台、制品身份和本次交付层级 | `grea-delivery` |
 | 授权换皮 | 美术选样/成套生产/样板完整替换，风格获批后全量换皮与修Bug；最后才做另行约定的UI/UE调优；保持原布局、操作和规则 | `grea-reskin` |
-| 已恢复工程的有限二次开发 | 冻结旧基线玩法/存档不变量，允许的UI/UE维度按新设计；当前仅UI/UE | `grea-evolve` |
+| 已恢复工程的有限二次开发 | 冻结旧基线玩法/存档不变量，允许的UI/UE维度按新设计；显式UI/UE或v2 feature/tuning/prototype合同 | `grea-evolve` |
 | 工具、技能维护与复盘 | 文档、工具和调用方契约；不重跑无关的游戏流程 | [工具清单](../../shared/02-工具-选择与调用.md)、[复盘维护](../../shared/10-维护-开发复盘与规范更新.md) |
 
 `grea plan-workflow` 新增 target_engine（unity/cocos/none，省略仍unity）与backend（none/go），不把非Unity来源一律送Unity；研究不自动进入实现。其余以 intent、source_engine、engine_version/source_format、target_platform 和 acceptance_profile 给出步骤与必验项；`assess`/`evidence` 只做只读评估/取证，unknown 先辨识来源。拿到计划不表示执行，格式支持须核对工具 adapter。
+
+## 全量初版与开发分工
+
+完整恢复／首次重建先读[全量初版工程与协作](../../shared/01-流程-全量初版工程与协作.md)：GREA冻结来源→monkey批量导出独立初版→GREA核真实交接→游戏Agent接续业务。当前all-scope适配not_available，不能把lookup、素材池或completed当完整工程；不等待全玩法才交初版。
 
 ## 验收维度
 
@@ -41,4 +45,4 @@ grea 插件把游戏调研、恢复与显式目标工程开发拆成若干技能
 - Cocos 先核对实际 2.x/3.x 版本与序列化格式，不能用 2.4 reader 猜解 3.x/CCON；其他原生格式单列支持表，不因 APK 或资源扩展名就判为 Unity。
 - 判断不了源引擎时，先用 `grea-evidence` 解包和盘点，再回到这里选择。
 
-生命周期阶段/模式及有界feature/tuning/prototype合同见[生命周期与变更](../../shared/01-流程-生命周期与变更合同.md)。monkey仅负责声明支持的转换候选，AI接续不自动启动Agent或执行源代码；运营当前只规划，不声称已有生产工具。
+生命周期阶段/模式及有界feature/tuning/prototype合同见[生命周期与变更](../../shared/01-流程-生命周期与变更合同.md)。monkey仅负责声明支持的转换候选，全量初版核验后才接续业务；不自动启动Agent或执行源代码；运营当前只规划，不声称已有生产工具。

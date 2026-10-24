@@ -4786,9 +4786,9 @@
         "--help"
       ],
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
-      "formats": "Pinned monkey package-v1 or explicit slice-v1 conversion, native resume and grouped AI handoff; --workflow package|slice --config JSON --source INPUT|--workspace WORKSPACE --output NEW",
+      "formats": "Pinned legacy package/slice conversion or explicit handoff audit; --workflow package|slice|handoff; all-scope export not_available",
       "side_effects": "Runs pinned local provider; conversion writes a new target; --resume-native writes checks in the explicit isolated workspace. GREA does not launch Editor or edit game source.",
-      "usage": "Pinned monkey package-v1 or explicit slice-v1 conversion, native resume and grouped AI handoff; --workflow package|slice --config JSON --source INPUT|--workspace WORKSPACE --output NEW",
+      "usage": "Pinned legacy package/slice conversion or explicit handoff audit; --workflow package|slice|handoff; all-scope export not_available",
       "output_schema": "result.json and ai-modules.json, plus captured provider process receipts",
       "tested_samples": "Fixed monkey CLI, owned package and slice candidates; explicit adopted Unity sample evidence is separate from provider native resume",
       "execution": {
@@ -4822,7 +4822,8 @@
         "implementation": "builtin",
         "adapters": [
           "monkey-package-v1",
-          "monkey-slice-v1"
+          "monkey-slice-v1",
+          "monkey-explicit-bulk-handoff-v1"
         ],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -4835,14 +4836,15 @@
           "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
         },
         "limitations": [
-          "Presence, help and adapter availability do not establish target sample or game acceptance."
+          "Presence, help and adapter availability do not establish target sample or game acceptance.",
+          "Automatic all-scope export adapter not_available; explicit bulk audit validates bytes and caller-declared native receipts only."
         ],
         "effects": [
           "filesystem_read",
           "process",
           "explicit_output_write"
         ],
-        "support_formats": "Pinned monkey package-v1 or explicit slice-v1 conversion, native resume and grouped AI handoff; --workflow package|slice --config JSON --source INPUT|--workspace WORKSPACE --output NEW"
+        "support_formats": "Pinned legacy package/slice conversion or explicit handoff audit; --workflow package|slice|handoff; all-scope export not_available"
       },
       "required_files": [
         "{grea}/src/grea/tools/monkey_bridge.py"

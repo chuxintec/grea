@@ -57,6 +57,17 @@ def required_dimensions(mode, source_engine='unknown', target_engine='unity', ba
     return dimensions
 
 
+def initial_project_pipeline(result, mode):
+    if mode not in ('recover','port'):return result
+    result['initial_project_pipeline']=dict(export_owner='monkey',grea_role='freeze_source_and_audit_handoff',business_owner='game_agent_after_handoff',all_scope_export='not_available_in_grea_adapter',handoff_audit='explicit_local_contract',executed=False)
+    result['steps'].insert(0,dict(reference=str(reference('01-流程-全量初版工程与协作.md')),tool_ids=['monkey','monkey_bridge'],phase='freeze_then_bulk_export_then_handoff',executed=False,grea_operations=[],bulk_export_status='not_available_in_grea_adapter'))
+    for step in result['steps'][1:]:
+        step['business_development_requires_verified_bulk_handoff']=step.get('phase') not in ('research','source_evidence')
+        if 'cocos_convert' in step['tool_ids']:step['tool_ids'].remove('cocos_convert')
+    result['limitations'].append('Research/evidence may precede export. Full initial-project handoff is required before business development; lookup/IR/media or completed flags do not satisfy it. Legacy converter IDs remain callable, not the primary bulk pipeline.')
+    return result
+
+
 def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
          target_platform=None, acceptance_profile='scoped', change_contract=None, target_engine='unity', backend='none', lifecycle_stage=None, work_mode=None, delivery_level=None):
     meta=metadata(mode,lifecycle_stage,work_mode,delivery_level)
@@ -79,12 +90,12 @@ def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
         if not names:
             from .common import GreaError
             raise GreaError('TARGET_REQUIRED','Choose a client target or Go backend for implementation.')
-        return dict(mode=mode,title='Research and explicitly selected target',target_engine=target_engine,backend=backend,
+        return initial_project_pipeline(dict(mode=mode,title='Research and explicitly selected target',target_engine=target_engine,backend=backend,
                     required_dimensions=required_dimensions(mode,source_engine,target_engine,backend),executed=False,
                     steps=[dict(reference=str(reference(n)),tool_ids=t,phase='research' if '调研' in n else 'implementation',executed=False,grea_operations=[]) for n,t in names],
                     next_decision='review_research_decision' if mode in ('research','assess','evidence') else 'select_supported_format_and_scope',
                     task=dict(intent=mode,source_engine=source_engine,target_engine=target_engine,backend=backend,engine_version=engine_version,source_format=source_format,target_platform=target_platform,acceptance_profile=acceptance_profile,change_contract=change_contract,**meta),
-                    limitations=['Plan and research recommendation do not authorize game development. Creator/Go tools have finite support; live runtime acceptance is separate.'])
+                    limitations=['Plan and research recommendation do not authorize game development. Creator/Go tools have finite support; live runtime acceptance is separate.']),mode)
     value = WORKFLOWS[mode]
     source_tools = []
     if source_format in ('apk', 'xapk'):
@@ -141,4 +152,4 @@ def plan(mode, source_engine='unknown', engine_version=None, source_format=None,
     result.update(target_engine=target_engine,backend=backend)
     result['task'].update(target_engine=target_engine,backend=backend)
     if backend=='go':result['steps'].append(dict(reference=str(reference('11-服务端-Go六服与事务.md')),tool_ids=['server_go_project'],phase='implementation',executed=False,grea_operations=[]))
-    return result
+    return initial_project_pipeline(result,mode)

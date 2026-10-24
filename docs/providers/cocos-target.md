@@ -7,3 +7,5 @@
 入口、支持边界和实际导入流程以 [Cocos技能](../../plugin/skills/grea-cocos/SKILL.md) 为准。生成与转换不能替代Creator导入、TS编译、浏览器真实输入和目标渠道验收。
 
 `cocos_project --audit-project PROJECT --output new-layer-report.json` 保守筛查五层的字面量import/export/dynamic-import引用、反向依赖与环；计算式加载/外部依赖精确报需审阅，不冒充完整TS解析器。生成器不依赖本机Editor/Node；实际类型检查与浏览器运行另记。
+
+完整恢复的主流程采用[monkey全量初版交接](monkey.md)，新的all-scope适配未实现时保持not_available。上述cocos_convert有限子集保留旧ID兼容，不再作为批量完整恢复主入口，也不据此发展第二套转换器；cocos_project仍是可选工程规范模板，不替代真实资源／代码导出。

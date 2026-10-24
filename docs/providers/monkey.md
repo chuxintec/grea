@@ -29,3 +29,32 @@ bin/grea legacy monkey_bridge --config /path/lock.json --workflow slice --worksp
 切片的GREA接续边界`grea-native-continuation`允许`Assets/Game/`，标明它是GREA声明的开发边界，**不是转换器自动翻译出的业务任务**。来源合同、原生引用和新增实现须分别核验。包级仍保留provider的细粒度任务，不改旧ID。
 
 自有最小原生示例见[生命周期接续验收样例](../../tools/unity/lifecycle-sample/README.md)。固定provider原始候选遇到无效依赖与Editor导入边界时，保留原件，在新Editor脚手架中显式修复、记录差异后接续。**修复后的Editor通过属于GREA adopted工程验收，不伪造原候选的provider resume pass**。这不是任意Cocos游戏自动恢复能力或真实项目完整度百分比。
+
+## 全量初版协作与当前能力
+
+完整恢复采用[全量初版工程与协作](../../plugin/shared/01-流程-全量初版工程与协作.md)。monkey负责批量解析/原生装配/代码依据和初稿；GREA冻结调用并核交接，游戏Agent在真实初版上开发。现有package/slice是此前固定0.3.0.dev1内部候选的已验合同，不代表最新monkey全版本或all-scope。新版本CLI、Unity来源全Bundle及Cocos全集原生续接正在由上游维护；**GREA自动all-scope导出适配not_available**。不要猜`--all-scope`参数、以lookup代替导出，或新写GREA转换器；上游新合同固定版本后再接入。
+
+新增显式、只读的批量交接审计（保持monkey_bridge工具ID）：
+
+```sh
+bin/grea legacy monkey_bridge --config /path/pinned-monkey-lock.json --workflow handoff --workspace /path/independent-export --handoff-contract /path/bulk-handoff.json --output /path/new-review
+```
+
+该调用仍核固定provider版本/capabilities；只审计既有产物，不调用批量转换、原生导入或游戏业务。结果handoff_ready只表示**声明的逻辑映射和实际文件／原生收据字节吻合**，authority保留caller-declared，不是GREA重新运行了Editor，更不证明完整玩法。成功的初版候选保持partial，不升为全游戏success。缺原生工程、源图仅留原文/lookup、无匹配导入编译收据等均needs_action。
+
+handoff合同v1为JSON，严格包含以下字段：
+
+| 字段 | 形状与含义 |
+|---|---|
+| schema_version / provider_version | 1；与lock固定版本一致 |
+| target_engine / project_path | unity或cocos；相对workspace的真实工程目录 |
+| source_inventory | `{path,sha256}`，相对合同文件的既有inspect-target完整目录结果或envelope；盘点文件必须在输入目录之外，实际输入全量重新核SHA；全集范围仍由调用者声明 |
+| assets | 每个逻辑源资产一条，唯一source_id、category、source_files（盘点内相对路径数组）、disposition、outputs（相对工程的path/sha256数组）、reason；多个资产可共享文件，不能按重复映射行计算恢复率 |
+| entry | `{path,sha256}`，相对目标工程的AI接续入口，含必要使用命令与业务缺口 |
+| native_check | null表示未验；或相对合同的`{path,sha256}`，置于目标工程外的实际引擎验收收据（避免清单自指） |
+
+category为texture/sprite/material/shader/font/audio/animation/spine/config/prefab/scene/code/other；disposition为native/draft/retained/unsupported/missing。非native必须写源位置、TODO或缺口原因；前三类须实际输出。所有输入文件必须归属某个逻辑处置，不能漏掉未转换资料。源有Prefab/Scene时逐项要求真正`.prefab`／`.unity`（Creator为`.scene`）；源无图不凭空加Prefab数量门。未知代码保留原始依据，具名草稿和未恢复方法位置，不生成重复空类冒充业务。
+
+native_check内容严格为schema_version1、target_engine、import_status、compile_status、artifacts；两种status需pass，artifacts为相对工程的path/sha256数组，绑定整个当前交付树。明确排除根级Library/Temp/obj/Logs/UserSettings/Build/Builds/.git/.grea缓存或本地构建目录，不能只绑定一个成功Prefab。实际收据与其含义仍由提交者负责，GREA只验字节。输入/目标各≤100000文件/8GiB、单文件≤512MiB，合同/收据≤32MiB；超限明确失败，不降级为“全量成功”。Unity须有Assets、Packages/manifest.json和ProjectSettings/ProjectVersion.txt，Creator须有assets及project.json；不执行这些文件中的指令。
+
+先批量初版，再Agent开发；不要求未知方法或全玩法先完成才交接，也不能以completed、入账数、媒体数或空代码数量替代上述实际产物。既有游戏接收新候选时按版本与GUID来源合并，不能盲覆盖已有JSON/代码/存档。

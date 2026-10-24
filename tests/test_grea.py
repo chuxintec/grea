@@ -46,7 +46,7 @@ class GreaTests(unittest.TestCase):
         link=self.root/'link';link.symlink_to(p);self.assertEqual(self.call('inspect_target',{'path':str(link)})['status'],'error')
     def test_workflows_and_provider_not_ready(self):
         r=self.call('plan_workflow',{'mode':'recover','source_engine':'laya'})
-        self.assertEqual(r['status'],'ok',r);self.assertFalse(r['result']['executed']);self.assertTrue(Path(r['result']['steps'][0]['reference']).is_file());self.assertIn('Unity-原生转换规范',r['result']['steps'][0]['reference']);self.assertTrue(any('Unity-跨引擎' in s['reference'] for s in r['result']['steps']));self.assertFalse(any('Unity-工程重建' in s['reference'] for s in r['result']['steps']))
+        self.assertEqual(r['status'],'ok',r);self.assertFalse(r['result']['executed']);self.assertTrue(Path(r['result']['steps'][0]['reference']).is_file());self.assertIn('全量初版工程与协作',r['result']['steps'][0]['reference']);self.assertTrue(any('Unity-原生转换规范' in step['reference'] for step in r['result']['steps']));self.assertTrue(any('Unity-跨引擎' in s['reference'] for s in r['result']['steps']));self.assertFalse(any('Unity-工程重建' in s['reference'] for s in r['result']['steps']))
         self.assertEqual(self.call('describe_tool',{'tool_id':'unity_pipeline'})['result']['availability']['runtime'],'not_checked')
         self.assertEqual(self.call('doctor',{'probe':True})['error']['code'],'EXPLICIT_SELECTION_REQUIRED')
     def test_existing_case_and_unknown_not_complete(self):
