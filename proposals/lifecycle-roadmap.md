@@ -159,4 +159,6 @@ LC1/LC2/LC3是本轮内部版本标识，分别包含实质开发成果。正式
 - 实际plan_workflow完整恢复／port输出批量先行分工和未支持状态；局部fix不强制重导。monkey_bridge保持旧package/slice接口，新增显式handoff合同审计来源完整盘点、逻辑资产处置、实际原生图、代码依据／TODO、AI入口及外置导入编译收据；只核字节和提交者声明，不冒充重跑Editor。新all-scope自动导出适配明确not_available，未等待上游或复制解析器。
 - 30项受影响桥接／规划／兼容检查已通过（旧首步骤断言按新流水线修正；输出预算测试在允许本轮子进程信号的环境复验通过），另补lookup伪原生图反例。真实CLI对自有静态样例维持needs_action，未执行引擎；文档、契约及技能验证通过。LC1／2／3既有实跑和限制复用，不开游戏Editor、不做全平台重验。
 - 代码／Python包／uv锁及两种客户端源码manifest统一候选版本2026.10.24rc1；不是远端已发布版本。本轮从固定提交构建完整macOS arm64插件，用官方Codex plugin命令更新已有grea@Konanw；旧包与注册备份，其他插件／凭据不改。
-- 安装和当前会话MCP验收待完成：必须分开记录代码main、完整包SHA、技能可见、installed/enabled、实际session版本/package_root及一次只读能力调用。单独stdio通过不能代替当前会话热加载；不强重启Codex或正在工作的会话。
+- 完整macOS包已从56e7179干净提交构建，版本2026.10.24rc1、SHA d5770a8fb6539dc812972335b0b6d5ffe96c20aab70a9b758127614db2648e92；隔离验证通过，安装副本3571文件hash匹配、12技能可见。官方Codex plugin add已安装并启用唯一grea@Konanw，其他配置／marketplace条目不变，Claude未安装更新。
+- 安装副本独立stdio的session/describe_tool/plan_workflow通过，package_root与随包Python均在新版缓存；这是独立stdio层。当前会话仍连接2026.10.17，未热加载新版；官方安装器清理旧缓存后已仅恢复原字节保证旧会话正常，不回滚新版注册、不启用第二服务。当前session和只读能力恢复ok。
+- 最后待验是正常刷新／新会话后的真实客户端session版本与package_root；必要时由用户在合适时机正常重开Codex，不强重启当前或其他工作。分层回执见validation/development/codex-upgrade-20261024.json。未推送、打标签或发布；LC1／2／3原有未验边界继续保留。

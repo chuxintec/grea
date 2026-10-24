@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "status": "installed_and_independent_stdio_verified_current_chat_refresh_pending",
+  "local_main_merge": {
+    "method": "fast_forward",
+    "old_main": "2d62a17795637dac90e2039f383390abdbfccf45",
+    "merged_branch": "codex/research-cocos-go",
+    "merged_tip": "a8f21dbdff1c3f41d7317b06f96bdce236a384ee",
+    "commits": 8,
+    "user_agents_edit": "backed_up_preserved_uncommitted"
+  },
+  "candidate": {
+    "version": "2026.10.24rc1",
+    "source_revision": "56e717943d426dc6b792d2c0d37dd888fba8e8ec",
+    "source_dirty": false,
+    "source_kind": "commit",
+    "source_tree_sha256": "fdfc7b2ad69b340a238c45341f216fc2ee39faa74d4bdcb2a66ab7c8a137be9e",
+    "archive": "grea-plugin-macos-arm64.zip",
+    "sha256": "d5770a8fb6539dc812972335b0b6d5ffe96c20aab70a9b758127614db2648e92",
+    "bytes": 47206239,
+    "payload_files": 3571,
+    "target": "macos-arm64",
+    "release": null,
+    "github_pushed": false
+  },
+  "collaboration": {
+    "export_owner": "monkey",
+    "grea_owner": "evidence_source_freeze_handoff_and_framework_workflows",
+    "business_owner": "game_agent_after_real_initial_project_handoff",
+    "bulk_audit": "explicit_local_contract_and_byte_bound_caller_receipt",
+    "all_scope_export": "not_available_in_grea_adapter",
+    "synthetic_gate_cases": [
+      "lookup/media/completed do not promote source graphs",
+      "zero true native graph output refused",
+      "stale or incomplete input/target receipt refused",
+      "source without graphs not forced to add Prefabs",
+      "unknown code retains evidence/TODO, never assumed business-complete"
+    ],
+    "actual_cli": "owned frozen-provider handoff audit needs_action; no Editor or current monkey source executed"
+  },
+  "verification": {
+    "targeted_checks": 30,
+    "failed_legacy_step_assertion": "updated for intentionally changed bulk-first ordering; targeted recheck passed",
+    "sandbox_output_budget_check": "passed with owned child-process signal permissions",
+    "last_bulk_checks": 10,
+    "docs": "pass",
+    "contracts": "consistent",
+    "skills": "consistent",
+    "archive_isolation": "pass; source access/install writes/network denied inside verifier",
+    "independent_manifest_clients": [
+      "codex",
+      "claude"
+    ],
+    "claude_installed": false,
+    "new_game_editor_runs": 0
+  },
+  "installation": {
+    "plugin_id": "grea@Konanw",
+    "installed": true,
+    "enabled": true,
+    "enabled_grea_registrations": 1,
+    "installed_cache": "plugins/cache/Konanw/grea/2026.10.24rc1",
+    "bundled_python": "plugins/cache/Konanw/grea/2026.10.24rc1/runtime/bin/python3",
+    "payload_hashes_match": true,
+    "skills": 12,
+    "source_path_dependency": false,
+    "other_config_unchanged": true,
+    "other_marketplace_entries_unchanged": true,
+    "direct_duplicate_mcp_entries": 0,
+    "backup": "private old package/config/marketplace plus scoped rollback instructions"
+  },
+  "independent_installed_mcp": {
+    "scope": "Separate stdio process from installed launcher with empty test HOME/PATH; not current client hot-load",
+    "version": "2026.10.24rc1",
+    "package_root": "plugins/cache/Konanw/grea/2026.10.24rc1",
+    "calls": [
+      "session",
+      "describe_tool",
+      "plan_workflow"
+    ],
+    "status": "pass"
+  },
+  "current_chat_mcp": {
+    "version": "2026.10.17",
+    "status": "ok",
+    "package_root": "plugins/cache/Konanw/grea/2026.10.17",
+    "read_only_capability": "describe_tool image_alpha_audit passed",
+    "candidate_hot_loaded": false,
+    "refresh_required": true,
+    "normal_next_step": "Start a normal new conversation/refresh supported client; if still old, restart Codex at a safe time and read session version/root. No forced restart performed.",
+    "old_cache": "Official installer removed old cache; verified backup restored for existing live MCP only, without old registration"
+  },
+  "prior_evidence": [
+    {
+      "path": "validation/development/lifecycle.json",
+      "sha256": "e656662ea10d50e29d89d812553cf9d5c6fea81fdb022be0d1721b235e22bfee",
+      "reexecuted": false
+    },
+    {
+      "path": "validation/development/lifecycle-native.json",
+      "sha256": "eccdf1d2132e4ed425681e5b2e120d9a244301ad63f2be1ef19ad9a29af3e66d",
+      "reexecuted": false
+    },
+    {
+      "path": "validation/development/lifecycle-feedback.json",
+      "sha256": "0db7d3a0d15ffb29674ffb8b28c12ccbb47642bbf7b31861952cc75e64adf5e4",
+      "reexecuted": false
+    }
+  ],
+  "local_receipt_hashes": {
+    "package/plugin-build.json": "ac75063fd456b45110c2c08c0e5ede8799f5313cb773f5474eca6856f2aa7237",
+    "package-acceptance-native.json": "16ebb2c451098ce63be0bc17acfafc307781a7d234c62ee1f23ec320c516fb87",
+    "installed-stdio.json": "1d7d98b28dc16aeaef37a8f747d7fa64d8f7f4d6e3257508ee2e5f8c5b421e9f",
+    "current-chat.json": "7530f916f512341036c4bbe13c23210196148486849c23e4a0c4b5c586eab276",
+    "plugins-final.json": "42d7e2b3ff33521ce2db2f95b909cfd7b80e0bd07d2104b70dacbc8b716d53a0",
+    "old-live-cache-restored.json": "80ce63273c1a33f88996132a679a472787b421678438ade38db44297a6a0e005"
+  },
+  "not_done": [
+    "Current chat has not hot-loaded candidate MCP",
+    "All-scope export adapter until monkey publishes a pinned compatible contract",
+    "Original provider/automated mouse/formal visual/full game equivalence limitations retained",
+    "Windows native acceptance, real operational datasets or channel selection",
+    "GitHub push/tag/Release, Claude update or production operation"
+  ]
+}
