@@ -1,7 +1,11 @@
 # CLI contract v1
 
-版本 0.2.0。所有业务命令 stdout 为单个 `beaver-result/1` JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
+当前本地版本 0.3.0，沿用 `beaver-result/1`。所有业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
 退出 0=ok；1=partial；3=blocked/not_run（包括无效参数与前置条件未满足）；2=failed（执行/读回失败）。帮助为 argparse 文本；没有任意 shell 透传。
+
+`actualChanges` 是数组，每项为**非空路径字符串或对象摘要**，消费者须保留类型、顺序及原值。`batch/production apply` 通常返回已变资源相对路径字符串，`unity apply` 沿用原生变化记录；工程绑定、迁移、采用/恢复和失败检查点可返回操作/数量/身份或待核写入对象。对象内部字段由操作定义，不能将整个数组限定为对象，也不能把字符串强转为对象后丢失原值；数字、布尔、null 和嵌套数组不是合法变更项。对应 JSON Schema 项合同为 `{"oneOf":[{"type":"string","minLength":1},{"type":"object"}]}`。这是既有固定 producer 的合同澄清，不改变其输出或身份。
+
+原生执行与外层消费校验分别记录：provider 已返回 `status=ok`、原生 verified 后，外层 Schema 拒收不等于原生失败或零写入。应保留原始 provider stdout、退出码、计划/事务及外层拒收，修正校验后只读重验原结果；不能重新执行 apply、改写旧回执或根据空数组推断零写入。producer/计划身份、退出码与其他信封字段的检查仍各自生效。
 
 | 命令 | 参数 | 效果 |
 |---|---|---|

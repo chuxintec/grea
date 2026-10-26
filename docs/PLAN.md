@@ -8,7 +8,7 @@
 
 游戏业务及正式工程由肥鹅单写，Skill／方法／薄适配由 GREA 单写，通用执行问题及私有复现由 beaver 负责。本轮真实缺口可在三位已登记开发者与技术总监间直接低通信协调，严重阻塞、数据/架构风险或权限裁定交总监；不跨写正式游戏、服务或存档，不新增全局安装、推送或 Release。普通 ACK 不作为开发前置。
 
-当前维护队列：尚无新具体缺陷；仅明确上述维护入口，不新增任务、不派发子 Agent、不循环等候或巡检。
+当前维护队列：肥鹅 `storage-feedback-01` 暴露执行后的结果合同差异。固定 beaver 已原生 verified、退出 0，但 GREA 将合法 `actualChanges` 路径字符串限定为对象而拒收。beaver 已明确逐项 string/object 合同，并以固定安装版通过 6 项 CLI 合同检查；保存原始 provider stdout 后，只读验证 GREA 修正后的校验可接受原四路径并拒绝五类非法项；生成 Schema 与代码一致，GREA 的 8 项受影响检查及原结果离线重验通过，原 invocation/外层失败文件哈希未变。原外层 needs_action、原生成功及事务分别保留，不重放、不改旧回执。GREA 主开发已修正消费侧 Schema/生成文件及执行后失败提示，并向肥鹅交接；beaver 仅改文档/回归，版本、wheel 与 producer `e6191235…` 不变，无 Engine/游戏/服务写入。证据在 `.private/v03/result-contract/` 与 `.private/v03/result-contract-tests.log`。本项目无新增执行器实现任务，不派发子 Agent或循环巡检。
 
 | 组 | 状态 | 出口 |
 |---|---|---|
