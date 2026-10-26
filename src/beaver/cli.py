@@ -19,6 +19,16 @@ def implementation_identity():
 
 def capabilities():
     capabilities = [
+        dict(id='batch.plan',state='implemented',effects='plan-output',verification='scoped hashes, dependency/compilation inputs; cache is not authority'),
+        dict(id='batch.apply',state='requires_provider',provider='Unity 6000.6.2f1 + project uGUI/TMP',effects='declared-project-write',verification='one Editor process; native checkpoint and serialized save/reload checks'),
+        dict(id='batch.recover',state='requires_provider',provider='same pinned beaver + Unity 6000.6.2f1',effects='hash-owned-restore',verification='exact witnessed after state required; later edits and missing checkpoints block'),
+        dict(id='references',state='implemented',effects='read-and-index-output',verification='static GUID graph, literal spans, unknown dynamic keys; incremental cache'),
+        dict(id='debug.start',state='implemented',effects='owned-budgeted-process',verification='fixed candidate manifest; asynchronous worker'),
+        dict(id='debug.inspect',state='implemented',effects='read',verification='PID/executable/start/marker identity; unknown probes remain partial'),
+        dict(id='debug.target',state='implemented',effects='read',verification='pinned Editor/PlayMode transaction evidence; no external attachment'),
+        dict(id='debug.stop',state='implemented',effects='own-worker-stop-request',verification='worker Popen child ownership; no arbitrary PID signals'),
+        dict(id='debug.tail',state='implemented',effects='read',verification='bounded redacted own session log'),
+        dict(id='debug.screenshot',state='implemented',effects='evidence-registration',verification='caller supplied hash only; screenshot origin not authenticated'),
         dict(id="project.inspect", state="implemented", effects="read", verification="python"),
         dict(id="adoption.plan", state="implemented", effects="plan-output", engines=["unity-6000.6.2f1", "creator-3.8.8"], verification="python; large isolated Unity manifest preview"),
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
@@ -45,7 +55,7 @@ def capabilities():
         dict(id="creator.build", state="not_supported", effects="none", verification="not_run")
     ]
     return dict(contract="beaver-capabilities/1", capabilities=capabilities, requiredProviders=[],
-                nativeOperationContract="beaver-unity/1", adoptionContract="beaver-adopt/1",
+                nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",
                 limitations=["Provider readiness is not Editor connection or gameplay", "Native tests cover Unity 6000.6.2f1 only", "No source package parser; candidates are produced by monkey", "No global install, release, account/service/savegame writes", "Native receipts do not prove physical input, visual parity or game business acceptance"])
 
 
@@ -111,6 +121,18 @@ def parser():
     unity_apply.add_argument("--out", required=True)
     unity_apply.add_argument("--editor-path", required=True)
     unity_apply.add_argument("--timeout", type=int, default=600)
+    batch = sub.add_parser('batch').add_subparsers(dest='action',required=True)
+    bp=batch.add_parser('plan');bp.add_argument('--project',required=True);bp.add_argument('--spec',required=True);bp.add_argument('--out',required=True)
+    ba=batch.add_parser('apply');ba.add_argument('--plan',required=True);ba.add_argument('--expected-plan',required=True);ba.add_argument('--out',required=True);ba.add_argument('--editor-path',required=True);ba.add_argument('--timeout',type=int,default=600)
+    br=batch.add_parser('recover');br.add_argument('--transaction',required=True);br.add_argument('--out',required=True);br.add_argument('--editor-path',required=True);br.add_argument('--timeout',type=int,default=600)
+    refs=sub.add_parser('references');refs.add_argument('--project',required=True);refs.add_argument('--out',required=True);refs.add_argument('--cache')
+    debug=sub.add_parser('debug').add_subparsers(dest='action',required=True)
+    ds=debug.add_parser('start');ds.add_argument('--manifest',required=True);ds.add_argument('--expected',required=True);ds.add_argument('--out',required=True);ds.add_argument('--duration',type=int,default=3600);ds.add_argument('--width',type=int);ds.add_argument('--height',type=int)
+    for name in ('inspect','stop','tail','screenshot'):
+        d=debug.add_parser(name);d.add_argument('--session',required=True)
+        if name=='tail':d.add_argument('--lines',type=int,default=80)
+        if name=='screenshot':d.add_argument('--input',required=True);d.add_argument('--expected',required=True)
+    dt=debug.add_parser('target');dt.add_argument('--transaction',required=True)
     player=sub.add_parser('player').add_subparsers(dest='action',required=True)
     player_run=player.add_parser('run')
     player_run.add_argument('--manifest',required=True)
@@ -123,6 +145,7 @@ def parser():
     payload_verify.add_argument('--manifest',required=True)
     payload_verify.add_argument('--scope')
     payload_verify.add_argument('--allow-unlisted',action='store_true')
+    payload_verify.add_argument('--unity-artifact',action='store_true')
     payload_plan=payload.add_parser('plan')
     payload_plan.add_argument('--root',required=True)
     payload_plan.add_argument('--manifest',required=True)
@@ -170,6 +193,26 @@ def dispatch(a):
     if a.command == "unity":
         from .unity import plan, apply
         return plan(a.project,a.spec,a.out) if a.action == "plan" else apply(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
+    if a.command=='batch':
+        from .batch import plan,apply,recover
+        if a.action=='plan':return plan(a.project,a.spec,a.out)
+        if a.action=='apply':return apply(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
+        return recover(a.transaction,a.out,a.editor_path,a.timeout)
+    if a.command=='references':
+        from .references import inspect_graph
+        result=inspect_graph(a.project,a.out,a.cache)
+        return dict(status=result['status'],report=result['report'],counts=result['counts'],timingMs=result['timingMs'],
+                    indexedGuids=len(result['guidToPath']),dependencySources=len(result['dependencies']),literalLoads=len(result['literalLoads']),
+                    unknownDynamicLoads=len(result['unknownDynamicLoads']),unresolvedJsonStrings=len(result['unresolvedJsonStrings']),
+                    limitations=result['limitations'])
+    if a.command=='debug':
+        from .debug import start,inspect_session,stop,tail,screenshot_record,inspect_native
+        if a.action=='target':return inspect_native(a.transaction)
+        if a.action=='start':return start(a.manifest,a.out,a.expected,a.duration,a.width,a.height)
+        if a.action=='inspect':return inspect_session(a.session)
+        if a.action=='stop':return stop(a.session)
+        if a.action=='tail':return tail(a.session,a.lines)
+        return screenshot_record(a.session,a.input,a.expected)
     if a.command == 'code':
         from .codecheck import inspect_code
         return inspect_code(a.project)
@@ -178,7 +221,7 @@ def dispatch(a):
         return run(a.manifest,a.out,a.duration,a.expected_manifest)
     if a.command=='payload':
         from .payload import verify_manifest,plan,apply
-        if a.action=='verify':return verify_manifest(a.root,a.manifest,a.scope,allow_unlisted=a.allow_unlisted)
+        if a.action=='verify':return verify_manifest(a.root,a.manifest,a.scope,allow_unlisted=a.allow_unlisted,artifact=a.unity_artifact)
         if a.action=='plan':return plan(a.root,a.manifest,a.target,a.out,a.overrides,a.override_root)
         return apply(a.plan,a.out,a.expected_plan)
 
@@ -196,6 +239,7 @@ def main(argv=None):
         a = parser().parse_args(argv)
         data = dispatch(a)
         status = data.get("status") if data.get("status") in ("blocked","partial","failed","not_run") else "ok"
+        if data.get('status') in ('identity_unknown','starting','stopping','not_available'):status='partial'
         base.update(status=status, data=data)
         result_path = data.get("report")
         if result_path and Path(result_path).is_file():
@@ -206,6 +250,8 @@ def main(argv=None):
             base["actualChanges"] = [dict(operation='adoption.apply',transaction=data['transaction'],counts=data.get('counts',{}))]
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
+        if a.command=='batch' and a.action in ('apply','recover'):
+            base['actualChanges']=data.get('changes',[dict(operation='batch.recover',restored=data.get('restored'))])
         if a.command=='adopt' and a.action=='rollback':
             base['verification']['native']='rolled_back'
             base['actualChanges']=[dict(operation='adoption.rollback',restored=data.get('restored'),report=data.get('report'))]
@@ -216,7 +262,7 @@ def main(argv=None):
         print(json.dumps(base, ensure_ascii=False, allow_nan=False))
         return {'blocked':3,'partial':1,'failed':2,'not_run':3}.get(status,0)
     except (BeaverError, OSError, ValueError, TypeError, KeyError, ImportError, OverflowError) as error:
-        blocked=isinstance(error,BeaverError) and not any(x in error.code for x in ('_FAILED','TIMEOUT','_READBACK','UNEXPECTED_CHANGE','BUILD_SOURCE_DRIFT'))
+        blocked=isinstance(error,BeaverError) and error.status=='blocked'
         base.update(status="blocked" if blocked else "failed",
                     diagnostics=[error.as_dict() if isinstance(error, BeaverError) else dict(code="IO_OR_INPUT", location="input", message=str(error))])
         if isinstance(error,BeaverError):
@@ -227,7 +273,7 @@ def main(argv=None):
                 if '_NATIVE_FAILED' in error.code:
                     base['verification']['native']='failed'
         print(json.dumps(base, ensure_ascii=False))
-        return 2
+        return 3 if blocked else 2
 
 
 if __name__ == "__main__":

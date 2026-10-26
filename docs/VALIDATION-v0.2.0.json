@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 1,
+  "contract": "beaver-validation/2",
+  "version": "0.2.0",
+  "status": "verified_local_delivery_with_declared_limits",
+  "observedUtc": "2026-10-26T09:04:50.826820+00:00",
+  "source": {
+    "branch": "codex/beaver-v0.2",
+    "baseCommit": "b67a164e7618179c1665028a516ea6f2bd6dea00",
+    "implementationSha256": "688a57a36ae0bb0a11d34d2914644861079837014306148f0b94f1bcb8ec191a",
+    "localCommitReceipt": ".private/v02/release-receipt.json"
+  },
+  "package": {
+    "path": ".private/dist/v0.2-final-03/beaver_game_tools-0.2.0-py3-none-any.whl",
+    "bytes": 96635,
+    "sha256": "a3889c42c7bba72a182712ac8c551904c891b394359e33ea03e74f4ed7a02f2b",
+    "entries": 35,
+    "nativeCSharpTemplates": 6,
+    "sourceBytesMatch": true,
+    "privateGameContentIncluded": false,
+    "cleanInstall": ".private/v02/install-final-03",
+    "executionCwd": "/private/tmp"
+  },
+  "python": {
+    "tests": 50,
+    "result": "passed",
+    "report": ".private/v02/python-tests-final.txt"
+  },
+  "native": {
+    "editorVersion": "6000.6.2f1",
+    "actualPrefabReopen": {
+      "editedFilesAndSerializedTreesMatch": true,
+      "nodes": 874,
+      "zeroLocalIds": 0,
+      "missingScripts": 0,
+      "staticPotentialRiskCount": 513
+    },
+    "restoredRealWritePaths": 10,
+    "partialFailureCompletedSteps": 1,
+    "partialFailureRestoredWritePaths": 4,
+    "manualLaterEdit": "rejected_before_editor",
+    "finalInstalledVariantChildAndComponent": "saved_reloaded_and_restored_exact_2_paths",
+    "finalInstalledEditorTarget": "ok_recorded_exit_not_live_attachment"
+  },
+  "performance": {
+    "realGroupPlan": {
+      "dependencyTextBytes": 2966081,
+      "editorStarts": 0,
+      "hashedBytes": 13806377,
+      "hashedFiles": 1781,
+      "metaIdentityReads": 28341,
+      "seconds": 4.88939249998657,
+      "statFiles": 54288
+    },
+    "realGroupApply": {
+      "editorStarts": 1,
+      "inventoryPasses": 2,
+      "nativeHashReadOperations": 1841,
+      "pythonHashReadOperations": 1789,
+      "seconds": 12.515912999981083,
+      "statFilesPerInventory": 54288,
+      "writeSetPaths": 10
+    },
+    "actualChangedPaths": 7,
+    "unplannedPaths": [],
+    "finalFrozenGraphCold": {
+      "counts": {
+        "cacheHit": 0,
+        "hash": 34926,
+        "parse": 34926,
+        "skippedBinary": 19354,
+        "skippedLarge": 0,
+        "sourceBytes": 1730434339,
+        "stat": 54280,
+        "textReadBytes": 173271918
+      },
+      "milliseconds": 13413.191
+    },
+    "finalFrozenGraphWarm": {
+      "counts": {
+        "cacheHit": 34926,
+        "hash": 0,
+        "parse": 0,
+        "skippedBinary": 19354,
+        "skippedLarge": 0,
+        "sourceBytes": 1730434339,
+        "stat": 54280,
+        "textReadBytes": 0
+      },
+      "milliseconds": 5418.719
+    },
+    "cacheCrossRoot": "previous_work_cache_invalidated_when_requested_for_freeze",
+    "scope": "Natural execution records only; no generalized speedup claim"
+  },
+  "runtime": {
+    "actualPrefabUI": {
+      "status": "verified",
+      "scene": "BeaverFoodStreetUI",
+      "rows": 17,
+      "elementContentHeight": 723.0,
+      "elementViewportHeight": 590.0,
+      "gooseContentHeight": 1660.0,
+      "gooseViewportHeight": 800.0,
+      "elementScrollMoved": true,
+      "gooseScrollMoved": true,
+      "closeEventsPassed": true,
+      "accountClientAbsent": true,
+      "profileDirectoryAbsent": true,
+      "noMainlineHost": true,
+      "noPreviewHost": true,
+      "claimEventUnbound": true,
+      "disabledMissingDataSpineComponents": 1,
+      "appExitCode": 0,
+      "renderedPngDimensions": [
+        900,
+        1400
+      ]
+    },
+    "ownSample": {
+      "status": "verified",
+      "rows": 15,
+      "counterAfterClick": 1,
+      "scrollMoved": true,
+      "splashFinished": true,
+      "renderedPngDimensions": [
+        960,
+        640
+      ],
+      "company": "BeaverToolsAcceptance",
+      "product": "BeaverBatchV02",
+      "identifier": "com.beavertools.acceptance.v02",
+      "renamedLoadingKey": "BEAVER_LOADING_KEY=verified"
+    },
+    "input": "Synthetic ExecuteEvents; physical mouse/touch not_run",
+    "visual": "Final PNGs viewed: visible layout/text/sprites accepted for these fixtures only; visual parity not_run",
+    "business": "UI-only in-memory sample state; no real account, rewards, wallet, backend or save continuation acceptance",
+    "network": "Game bootstrap/scene boundaries inspected; OS/Unity traffic was not captured"
+  },
+  "artifact": {
+    "policy": "beaver-unity-build/2",
+    "files": 171,
+    "bytes": 1261904766,
+    "largestObservedFileBytes": 974468464,
+    "sourceChangesDuringAcceptedBuild": 0,
+    "preLaunchAndPostExitVerification": "ok",
+    "ordinaryPayloadSingleFileLimitUnchanged": 536870912
+  },
+  "integration": {
+    "greaThinTransport": "capabilities ok, partial exit1 and blocked exit3 preserved",
+    "frozenGreaVersionGuard": "Unsupported beaver version: 0.2.0",
+    "ownerAction": "GREA owner must explicitly extend supported version range and bind the fixed v0.2 artifact",
+    "greaSourceOrGlobalBindingModified": false
+  },
+  "retainedFailures": [
+    {
+      "path": "sample-apply-01",
+      "reason": "TMP obsolete API compile error"
+    },
+    {
+      "path": "sample-apply-03",
+      "reason": "partial import changed existing folder meta; safe recovery remained blocked"
+    },
+    {
+      "path": "sample-apply-05",
+      "reason": "temporary instance identity snapshot mismatch; exact witnessed writes recovered"
+    },
+    {
+      "path": "sample-apply-06",
+      "reason": "snapshot mismatch; exact witnessed writes recovered"
+    },
+    {
+      "path": "sample-app-session-01",
+      "reason": "background pause exceeded process budget; no runtime claim"
+    },
+    {
+      "path": "sample-app-session-03",
+      "reason": "early screenshot darkened by splash; final-04 waited for splash completion"
+    },
+    {
+      "path": "foodstreet-build-run",
+      "reason": "five TMP font placeholder assets normalized; source audit rejected"
+    },
+    {
+      "path": "foodstreet-build-run-02",
+      "reason": "native build succeeded but old512MiB artifact limit rejected; app not launched"
+    },
+    {
+      "path": "foodstreet-reopen-run",
+      "reason": "new diagnostic used removed InstanceID API; no source mutation; corrected to EntityId"
+    },
+    {
+      "path": "release-debug-target.json",
+      "reason": "exit record dropped launch time; partial preserved; final writer/regression/native run fixed it"
+    }
+  ],
+  "limitations": [
+    "Unity 6000.6.2f1/macOS native scope only",
+    "Unknown dynamic loading keys: 2; JSON strings: 61286 unresolved observations; graph remains partial",
+    "Limited Variant overrides only; inherited structure edits require a separate explicit base plan or new child",
+    "No live external Editor attachment; v1 Editor receipts without executable identity remain partial",
+    "No automatic generic account/save/backend isolation",
+    "No physical input, complete game business/save continuation, Spine behavior or visual parity acceptance",
+    "Creator native, Windows/Linux native promotion/build, complex JSON/code semantics deferred",
+    "No remote/push/Release/global install/service or formal game writes"
+  ],
+  "evidence": [
+    {
+      "path": ".private/v02/freeze-receipt.json",
+      "bytes": 19997504,
+      "sha256": "63fba622c3afeded208c963c691c07e6b4d788f73b04f2b9bf53a614b082fe8f"
+    },
+    {
+      "path": ".private/v02/freeze-and-recovery-recheck.json",
+      "bytes": 191,
+      "sha256": "74c75ee6bdd91f752f5960f762e5f9a9f5dbcfc59753cec0d29c21e45634b866"
+    },
+    {
+      "path": ".private/v02/sample-apply-07/journal.json",
+      "bytes": 14591,
+      "sha256": "5d74b7e0bec7c005e5d6f265d627e618d1a27f8a37ec90300c2c8321d2a4fad4"
+    },
+    {
+      "path": ".private/v02/sample-apply-07/native-result.json",
+      "bytes": 12884,
+      "sha256": "6e311cd54b7b8647146f5e219540f3865293a6dfa1768a1b8d78a6383321a9b8"
+    },
+    {
+      "path": ".private/v02/manual-edit-protection.json",
+      "bytes": 363,
+      "sha256": "68bab0b1390609bbb3f7d8fdae7a3b8aa29d0596683b68b36a483d80461695f6"
+    },
+    {
+      "path": ".private/v02/partial-failure-run/journal.json",
+      "bytes": 8481,
+      "sha256": "36d03df6464620b5739d0a201f9e22a63da1901ff0b3582cf9a19005993f40a4"
+    },
+    {
+      "path": ".private/v02/partial-failure-run/native-result.json",
+      "bytes": 7035,
+      "sha256": "198371b0f85cd23aaa1d76e04c9a46803d9b45e9064490cf3bbab452baf5cc3c"
+    },
+    {
+      "path": ".private/v02/partial-failure-recover/recovery.json",
+      "bytes": 233,
+      "sha256": "476a84ad81d8ea784294defc50a3ad281a380ea9ddf12ffb95494358d7146b1e"
+    },
+    {
+      "path": ".private/v02/sample-key-run/journal.json",
+      "bytes": 7842,
+      "sha256": "35d2de02db7a62065c905034b6494647aaa1ea802dcd4620c3dea7841dbcd43f"
+    },
+    {
+      "path": ".private/v02/sample-key-run/native-result.json",
+      "bytes": 3706,
+      "sha256": "12bce3eec6883c5b96151955db0d6cfbc0abeae80dae382286610a89032e00dc"
+    },
+    {
+      "path": ".private/v02/foodstreet-edit-run/journal.json",
+      "bytes": 381339,
+      "sha256": "3c141e87b18577f61d05af34c0372c1a42658d186e35bd9fddf95be4b56fa877"
+    },
+    {
+      "path": ".private/v02/foodstreet-edit-run/native-result.json",
+      "bytes": 450898,
+      "sha256": "3155fe7ab78bf5efd84a4967bddd69f8833be24a1da0931bfae7c35374e0bca9"
+    },
+    {
+      "path": ".private/v02/foodstreet-reopen-run-02/journal.json",
+      "bytes": 359064,
+      "sha256": "f345cdd5f7c09f0faab2a573f17a6405311e865038ddd55607f7137365294fe0"
+    },
+    {
+      "path": ".private/v02/foodstreet-reopen-run-02/native-result.json",
+      "bytes": 423336,
+      "sha256": "f9b7d6e2ac9a5893fba1870fed4f5d876c23673cebefbfee9ce556e05a3ab463"
+    },
+    {
+      "path": ".private/v02/independent-reopen-comparison.json",
+      "bytes": 76073,
+      "sha256": "bb74e410f10b0fd5bc9e2449fbb46a67e37fb2ad27ab92b3c8f3e14ebbd19937"
+    },
+    {
+      "path": ".private/v02/foodstreet-edit-recover/recovery.json",
+      "bytes": 234,
+      "sha256": "c4bb793cdc0db614f4dff6b04a30ae90f00ce17c6a1fd33c34e685470cdcf596"
+    },
+    {
+      "path": ".private/v02/foodstreet-build-run-03/journal.json",
+      "bytes": 15074201,
+      "sha256": "e1132c3b2b99d0d88a6d2d0f6a264f228babdad0f858784fac7b7606f7e390fe"
+    },
+    {
+      "path": ".private/v02/foodstreet-build-run-03/artifact-manifest.json",
+      "bytes": 39163,
+      "sha256": "b46d5538f151a77d0eae1ffd56b823a7d42c943e91d52b1859ba989930f6a451"
+    },
+    {
+      "path": ".private/v02/foodstreet-app-session-01/session.json",
+      "bytes": 2163,
+      "sha256": "24f4ba110b16c95d8600cadd2414f194b6cbea4b3e9c49bea1c04790d1fbe557"
+    },
+    {
+      "path": ".private/v02/foodstreet-app-session-01/status.json",
+      "bytes": 1769,
+      "sha256": "0f51a4cda919e9c8a06c32bb98f798455d7845208f34244bf39372e9e1ef7e77"
+    },
+    {
+      "path": ".private/v02/foodstreet-app-session-01/foodstreet-runtime.json",
+      "bytes": 2231,
+      "sha256": "64d444be356fdb8a30ea9f19c3f8718cb97767cc3322b2a90a3b0f87529b59c6"
+    },
+    {
+      "path": ".private/v02/foodstreet-app-session-01/foodstreet-element-detail.png",
+      "bytes": 350001,
+      "sha256": "29d64d191c58dd3074bccc469673435e626d1b88facdddd6ac7456ad6f81f454"
+    },
+    {
+      "path": ".private/v02/foodstreet-app-session-01/foodstreet-goose-handbook.png",
+      "bytes": 352977,
+      "sha256": "8709c753b43ae9750451449b4d188e9482e87d077821188b8d673282268eea01"
+    },
+    {
+      "path": ".private/v02/sample-build-run-04/journal.json",
+      "bytes": 41802,
+      "sha256": "e58068a667444228b924bd0cb4fc69ce8f18522a0fa8f02e83e64f0d74a5c64d"
+    },
+    {
+      "path": ".private/v02/sample-build-run-04/artifact-manifest.json",
+      "bytes": 35554,
+      "sha256": "8584d64af4a59c9d086ee267cad97bdf184a0cdc45b5840e558ee0600d3fbdfd"
+    },
+    {
+      "path": ".private/v02/sample-app-session-04/session.json",
+      "bytes": 2121,
+      "sha256": "d7cbafac2580b5c9280bb0411aedc1d267a59c7004cf10b8863d77dabbaabd6a"
+    },
+    {
+      "path": ".private/v02/sample-app-session-04/status.json",
+      "bytes": 1722,
+      "sha256": "c6a55124d73394de52e5f1908ba8a08def6f72e54b41d1c1b6ebdd407af443ae"
+    },
+    {
+      "path": ".private/v02/sample-app-session-04/runtime-probe.json",
+      "bytes": 1087,
+      "sha256": "56fd7599400e460f1e2d93770a56ea384095bc67540341e6c63117bfeaa015d7"
+    },
+    {
+      "path": ".private/v02/sample-app-session-04/runtime-probe.png",
+      "bytes": 34768,
+      "sha256": "7f320fea9cef3d49b9593abfa74f707b863f4d8f91774dd69dfd7c92348d2920"
+    },
+    {
+      "path": ".private/v02/sample-app-session-04/player.log",
+      "bytes": 3121,
+      "sha256": "5566de575c335177378b0a0d946cc8ba33190c1b1632d0645c74767e837b24f0"
+    },
+    {
+      "path": ".private/v02/release03-variant-run/journal.json",
+      "bytes": 12088,
+      "sha256": "8def9dcaf5cbaabd119faa41bf094f930ef07a98ecb687e32fd791dc7f2ada5a"
+    },
+    {
+      "path": ".private/v02/release03-variant-run/native-result.json",
+      "bytes": 12535,
+      "sha256": "b78e778784360e74c235be477a3aea156e9fbe2923b3c56577867239a079b219"
+    },
+    {
+      "path": ".private/v02/release03-variant-recover/recovery.json",
+      "bytes": 235,
+      "sha256": "e7c717e5a47825b010a73c92da7e300073331fafbd1d4690b40fa898cc7085e2"
+    },
+    {
+      "path": ".private/v02/release03-version.json",
+      "bytes": 473,
+      "sha256": "ed7d2a532173908c8111c114a4c2ff76ab47d87d2b16f73354076ddf495e9106"
+    },
+    {
+      "path": ".private/v02/release03-capabilities.json",
+      "bytes": 6833,
+      "sha256": "ba78e4b4b0e91d043e10cbca1da06c5ddc9e3c18e2d68286395d2fffe0b71bb2"
+    },
+    {
+      "path": ".private/v02/release03-native-reopen.json",
+      "bytes": 5727,
+      "sha256": "4b02e99449c46c869710beb8f26bcca962a10f1e1ff74d95456562b8298d1e75"
+    },
+    {
+      "path": ".private/v02/release03-reopen-run/journal.json",
+      "bytes": 359067,
+      "sha256": "212fbf2eb52bc25e0876b690b70cd9b6a2979f6fd7b2daa596f3cbb4532a4e5f"
+    },
+    {
+      "path": ".private/v02/release03-reopen-run/native-result.json",
+      "bytes": 423336,
+      "sha256": "51bce23a117e526e4bcbe2408ca00354c0c29a00e02c86a0030f6100cdcdaf4b"
+    },
+    {
+      "path": ".private/v02/release03-reopen-run/process.json",
+      "bytes": 701,
+      "sha256": "663c9a29cdac60ffce02559094a49fae393b83897602e5f1447c5e74aaae581f"
+    },
+    {
+      "path": ".private/v02/release03-debug-target.json",
+      "bytes": 1868,
+      "sha256": "bb4119b6c830428903eba669c4a64aa9fa641989571d962cd0b0887a31ad1c46"
+    },
+    {
+      "path": ".private/v02/release03-reference-cache/reference-graph.json",
+      "bytes": 20026890,
+      "sha256": "03182dbf0c32531904eb1c516e6df11ad5fc1768399a74dce9c32c15218f4891"
+    },
+    {
+      "path": ".private/v02/release03-reference-incremental/reference-graph.json",
+      "bytes": 20026877,
+      "sha256": "f800e916ac253e201fb987cf60c7729bba726a5e8af074db89953fd9fd627a6a"
+    },
+    {
+      "path": ".private/v02/grea-thin-final03-result.json",
+      "bytes": 1038,
+      "sha256": "5b1176119e40d06b5808600c3417793c481e25d101ab5c6572151333b6bd0ae5"
+    },
+    {
+      "path": ".private/v02/font-build-normalization.json",
+      "bytes": 1805,
+      "sha256": "35fe1a7b3f1191ec753a94fc4bdf4fe902fac38766b5ea64d1174fa9d1d36b31"
+    },
+    {
+      "path": ".private/v02/python-tests-final.txt",
+      "bytes": 8616,
+      "sha256": "ceed0dff68e0ebd349d9a75cb9140a5a34f7709e479760739a38b7bc3942ab9e"
+    },
+    {
+      "path": ".private/v02/release03-variant-run/process.json",
+      "bytes": 701,
+      "sha256": "41986ea843857470e1885f01a11564d0e7b6ce7d021472176365587a937bd703"
+    },
+    {
+      "path": ".private/v02/release03-native-variant.json",
+      "bytes": 2004,
+      "sha256": "d9e70b487d03cad227d443fdc3958dedcd24d7ffa587d2a5a3f76d1dfdcc299d"
+    },
+    {
+      "path": ".private/v02/release03-native-recover.json",
+      "bytes": 933,
+      "sha256": "ad805b70acf139f458a10cb5fb102cedd3999bf4ed813d0d04aa35d608daac9d"
+    },
+    {
+      "path": ".private/v02/grea-final03-partial/run.json",
+      "bytes": 5781,
+      "sha256": "1861fa7c8d9d55a739c5ee252fa3b54c0d2e9cf6fd845166762c24c9710333cf"
+    }
+  ]
+}

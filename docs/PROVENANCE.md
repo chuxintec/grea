@@ -19,3 +19,9 @@
 `COLLEAGUE-INTAKE.json`固定四份完整已读脚本与相关清单结构的来源身份。整包源SHA来自总监索引，beaver只核选定ZIP成员CRC/SHA；不重复7GB解压，也不冒称整包完整审计。四份私有源仅保留于.private，不进入Git或wheel。
 
 `payload.py`以既有受限I/O独立实现清单/别名/覆盖身份、独立复制及原子晋升，`unity.py`与`player.py`实际共用核验器；启动回执扩充exe/开始/PID/时限等证据。未复制源私有代码、数据、vendor、WebView/WASM或固定游戏常量。Windows脚本仅提供机制参考，未宣称Windows原生通过。macOS原子晋升常量按本机SDK的sys/stdio.h核对并用自有样例验证。
+
+## v0.2 增量
+
+batch、references、loading_keys、debug 及四份 Batch/ListView/SafeArea C# companion 为本项目新增实现，使用 Python 标准库和工程已有 Unity/uGUI/TMP API，没有再提取其他产品执行代码。v0.1 派生文件及原许可继续保留；大制品预算为显式新合同。
+
+真实验证仅使用固定 f3991c6 交付源的 beaver 私有冻结副本与独立工作副本；54280 项冻结输入最终重新核验一致。真实素材、正式 JSON、业务代码、fixture、原始日志、完整原生报告和 App 全留 `.private/v02`，不进入 Git 或 wheel。公开验证索引只记录身份、计数、路径和支持边界，不分发游戏资料。独立 UI fixture 使用不同 bundle/company/product，无 Entry/Mainline/Preview host，无账号/普通存档或业务服务访问；不将此隔离能力宣称为通用工具自动提供。

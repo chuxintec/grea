@@ -7,11 +7,12 @@ import signal
 import subprocess
 import time
 from .io import safe, inside, read, load, sha, encoded, write_json, new_output
-from .errors import fail
+from .errors import fail,BeaverError
 from .output_limits import digest_file
 from .adoption import project_files, native_lock
 from .transaction_fs import lock
 from .context import inspect
+from .output_limits import BUILD_FILE_BYTES
 
 HELPER_ROOT = "Assets/BeaverTools"
 HELPER = HELPER_ROOT + "/Editor/BeaverNative.cs"
@@ -342,15 +343,19 @@ def apply(plan_path, output, editor, expected, timeout=600):
             if applied.get('moves')!=reopened.get('moves'):
                 audit_fail('UNITY_MOVE_READBACK',str(stage),'Move GUID/localIDs differ after reopen')
         if data['spec']['operation']=='build.macos':
-            artifacts=[]
-            for p in sorted((stage/'player').rglob('*')):
-                if p.is_symlink():artifacts.append(dict(path=p.relative_to(stage).as_posix(),symlink=os.readlink(p)))
-                elif p.is_file():artifacts.append(dict(path=p.relative_to(stage).as_posix(),sha256=digest_file(p),bytes=p.stat().st_size))
-            if not artifacts:fail('BUILD_EMPTY',str(stage),'No actual build artifact')
-            write_json(stage/'artifact-manifest.json',dict(schemaVersion=1,sourceSha256=data['sourceSha256'],planSha256=expected,files=artifacts))
-            from .payload import verify_manifest
-            try:journal['artifactVerification']=verify_manifest(stage,stage/'artifact-manifest.json',scope='player',allow_links=True)
-            except ValueError as error:audit_fail('BUILD_ARTIFACT_FAILED',str(stage),str(error))
+            try:
+                artifacts=[]
+                for p in sorted((stage/'player').rglob('*')):
+                    if p.is_symlink():artifacts.append(dict(path=p.relative_to(stage).as_posix(),symlink=os.readlink(p)))
+                    elif p.is_file():artifacts.append(dict(path=p.relative_to(stage).as_posix(),sha256=digest_file(p,max_bytes=BUILD_FILE_BYTES),bytes=p.stat().st_size))
+                if not artifacts:fail('BUILD_EMPTY',str(stage),'No actual build artifact')
+                write_json(stage/'artifact-manifest.json',dict(schemaVersion=1,artifactPolicy='beaver-unity-build/2',sourceSha256=data['sourceSha256'],planSha256=expected,files=artifacts))
+                from .payload import verify_manifest
+                journal['artifactVerification']=verify_manifest(stage,stage/'artifact-manifest.json',scope='player',allow_links=True,artifact=True)
+            except (BeaverError,OSError,ValueError) as error:
+                journal.update(status='artifact-verification-failed',artifactError=str(error))
+                write_json(stage/'journal.json',journal)
+                fail('BUILD_ARTIFACT_FAILED',str(stage),str(error))
         journal['status']='complete'
         write_json(stage/'journal.json',journal)
     return dict(status='verified',report=str(stage/'journal.json'),transaction=str(stage),changes=changes,

@@ -1,22 +1,24 @@
 # beaver
 
 候选／已有工程 → 可持续开发工程与制品。Python CLI，Unity 使用原生 Editor API。
-恢复候选由 monkey 提供；方法、阶段选择和调用规范由 GREA 提供。
+恢复候选由 monkey 提供；阶段选择、方法和调用规范由 GREA 提供。
 
-本地候选版本：0.1.0。Unity 6000.6.2f1 是首版实证路径；Creator 3.8.8 支持静态工程检查和三方预览，原生执行/构建明确不支持。
+当前版本 **0.2.0**。Unity 6000.6.2f1 已在自有样例和肥鹅固定版本的隔离副本实证。Creator 3.8.8 仅支持静态检查与三方预览，原生执行/构建不支持。
 
 ```sh
 python3 -m venv .private/venv
 .private/venv/bin/pip install '.[images]'
 .private/venv/bin/beaver version
 .private/venv/bin/beaver capabilities
-.private/venv/bin/beaver doctor
 .private/venv/bin/beaver project inspect --project /absolute/project
 ```
 
-输出统一 JSON，失败有非零退出码。原生执行需显式现有 Editor 路径，不安装或升级引擎。
-首版包含：manifest/GUID三方采用与受保护恢复、显式原生移动、uGUI/TMP窗口与列表、Prefab字段/组件/Sprite绑定、原生导入/PlayMode、严格JSON/DTO、无损PNG压缩、同源macOS构建和制品身份校验。payload工具还提供文件/别名完整性、绑定旧哈希的显式覆盖、独立复制与原子不覆盖晋升。复杂游戏业务由开发Agent实现。
+所有业务命令输出 `beaver-result/1` JSON：0=ok、1=partial、2=failed、3=blocked/not_run。原生执行须显式指定已有 Editor；工具不安装或升级引擎。
 
-验证使用自有合成工程；大工程预览只读复用既有隔离样本。肥鹅、向僵尸正式工程保持只读。运行和截图中的按钮事件是合成UI事件，未声称物理输入或完整游戏验收。
+v0.2 增加成组计划/执行/受控恢复、限定 Variant、节点与组件操作、滚动/网格/动态列表、安全区和已有方法事件绑定；提供引用图、精确 JSON/C# 加载键迁移、资源替换/移动，以及复用候选的持续调试会话。关键前置条件按内容哈希核验，一次 Editor 执行相关操作组，人工后改禁止覆盖恢复。
 
-详见 [唯一计划](docs/PLAN.md)、[CLI 契约](docs/CLI-CONTRACT.md)、[来源](docs/PROVENANCE.md) 和 [验证索引](docs/VALIDATION-v0.1.0.json)。本轮不建立远端、推送、Release或全局安装。
+v0.1 的 GUID/manifest 三方采用、JSON/DTO、PNG 无损压缩、原生导入/PlayMode、macOS 构建和制品核验仍可调用，固定旧候选与证据保留。运行时 JSON 是唯一数值源；不生成空业务回调或另一套引擎。
+
+验证覆盖实际详情滚动窗口、17 项图鉴、Closet Variant 和资源引用组，正式游戏、Go、账号及普通存档未被操作。截图、合成事件、物理输入与完整游戏业务分别报告；目前物理输入、完整业务、Spine 行为和视觉还原一致性未验收。
+
+见[用法](docs/USAGE-v0.2.md)、[CLI 合同](docs/CLI-CONTRACT.md)、[唯一进度](docs/PLAN.md)、[v0.2 验证索引](docs/VALIDATION-v0.2.0.json)、[来源许可](docs/PROVENANCE.md)。本轮仅本地提交和隔离安装，无远端、推送、Release 或全局安装。

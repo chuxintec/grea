@@ -17,7 +17,7 @@ def run(manifest_path,output,duration=10,expected=None):
     if doc.get('schemaVersion')!=1 or not doc.get('sourceSha256') or not isinstance(doc.get('files'),list):
         fail('PLAYER_MANIFEST',str(path),'Expected beaver build artifact manifest')
     root=path.parent;files={row['path']:row for row in doc['files']}
-    try:verification=verify_manifest(root,path,scope='player',allow_links=True)
+    try:verification=verify_manifest(root,path,scope='player',allow_links=True,artifact=True)
     except BeaverError as error:
         mapping={'PAYLOAD_DRIFT':'PLAYER_ARTIFACT_DRIFT','PAYLOAD_UNLISTED':'PLAYER_UNKNOWN_FILE','PAYLOAD_SYMLINK':'PLAYER_ARTIFACT_DRIFT','PAYLOAD_COLLISION':'PLAYER_MANIFEST_PATH'}
         fail(mapping.get(error.code,error.code),error.location,error.message)
@@ -64,7 +64,7 @@ def run(manifest_path,output,duration=10,expected=None):
                 report=str(stage/'player-result.json'))
     write_json(stage/'process.json',dict(launch,pid=process.pid,owned=True,exited=True,exitCode=code))
     try:
-        post=verify_manifest(root,path,scope='player',allow_links=True)
+        post=verify_manifest(root,path,scope='player',allow_links=True,artifact=True)
         result.update(artifactVerificationBefore=verification,artifactVerificationAfter=post,launch=launch)
     except ValueError as error:
         result.update(status='failed',artifactVerificationAfter='failed',diagnostic=str(error),launch=launch)

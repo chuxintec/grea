@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "beaver-game-tools"
-version = "0.1.0"
+version = "0.2.0"
 description = "Controlled native game project adoption and development tools"
 requires-python = ">=3.10"
 license = {text = "MIT"}

@@ -3,16 +3,19 @@ import math
 
 
 class BeaverError(ValueError):
-    def __init__(self, code, location, message):
+    def __init__(self, code, location, message, status=None):
         super().__init__(f"{code} at {location}: {message}")
         self.code, self.location, self.message = code, str(location), message
+        self.status = status or ('failed' if any(x in code for x in ('_FAILED','TIMEOUT','_READBACK','UNEXPECTED_CHANGE','BUILD_SOURCE_DRIFT')) else 'blocked')
+        if self.status not in ('blocked','failed'):raise ValueError('Invalid error status')
 
     def as_dict(self):
-        return dict(code=self.code, location=self.location, message=self.message)
+        return dict(code=self.code, location=self.location, message=self.message,status=self.status,
+                    retry='new_plan_after_resolving_precondition' if self.status=='blocked' else 'inspect_transaction_before_retry')
 
 
-def fail(code, location, message):
-    raise BeaverError(code, location, message)
+def fail(code, location, message, status=None):
+    raise BeaverError(code, location, message,status)
 
 
 def budget(document, max_depth=96, max_nodes=500000):

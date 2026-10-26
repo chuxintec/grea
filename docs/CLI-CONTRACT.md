@@ -1,7 +1,7 @@
 # CLI contract v1
 
-版本 0.1.0（开发中）。所有业务命令 stdout 为单个 `beaver-result/1` JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
-退出 0=ok；3=计划有冲突 blocked；2=无效输入、前置条件失败或执行失败。帮助为 argparse 文本；没有任意 shell 透传。
+版本 0.2.0。所有业务命令 stdout 为单个 `beaver-result/1` JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
+退出 0=ok；1=partial；3=blocked/not_run（包括无效参数与前置条件未满足）；2=failed（执行/读回失败）。帮助为 argparse 文本；没有任意 shell 透传。
 
 | 命令 | 参数 | 效果 |
 |---|---|---|
@@ -26,7 +26,7 @@
 
 计划文件 `adoption-plan.json` 使用 `beaver-adopt/1`，旁侧 `plan-identity.json` 绑定字节 SHA256。绑定实现身份、明确根、生成基线、目标全部资产 hash、项目依赖/版本、candidate manifest、逐项动作/冲突与恢复信息。执行需相同计划身份；任何目标前置漂移拒绝。
 
-输入消费 monkey schemaVersion=1 `manifest.json` 或 Unity `recovery-manifest.json`；候选规范沿用 monkey-project/2.0.0，未新增第二解析器。目标 Unity 6000.6.2f1 和 Creator 3.8.8 可预览；只有 Unity 有原生执行实现（尚待本项目实证）。Creator apply 明确不支持。
+输入消费 monkey schemaVersion=1 `manifest.json` 或 Unity `recovery-manifest.json`；候选规范沿用 monkey-project/2.0.0，未新增第二解析器。目标 Unity 6000.6.2f1 和 Creator 3.8.8 可预览；只有 Unity 有原生执行实现（已在自有样例和固定真实工程隔离副本实证）。Creator apply 明确不支持。
 
 首次必须独立共同基线；按 GUID/UUID + namespace + profile 三方比较。保留人工变更和源删除资产；双边变更、身份歧义、未知占位、依赖不匹配均阻止执行。原生移动使用 AssetDatabase，改变 payload 时使用 Unity 导入，检查 GUID/localID 与至多128个未改 prefab/scene直接依赖。字符串加载键和业务/视觉不由此保证。
 
@@ -64,3 +64,32 @@
 物化先生成独立inode的临时树并核验完整清单，再使用macOS `RENAME_EXCL` 原子晋升。并发创建的空目录也保留；失败时最终目录不含半成品，临时树和journal留供检查。Linux/Windows晋升代码尚未原生验收，不因macOS通过而外推。固定34003/307、游戏路径、WebView/WASM、vendor二进制均未接入。
 
 构建后与Player启动前/退出后共用此核验器。运行回执增加实际可执行hash、UTC开始、pid、时限、独立证据目录及清除的旧引擎作业变量。独立日志目录与进程不等于隔离玩家存档；存档隔离必须由项目适配并另行证实，本版明确不声称已提供。
+
+## v0.2 成组编辑合同
+
+旧 `beaver-unity/1` 与采用合同保持可调用；v0.1旧事务须固定原0.1 wheel处理，新工具不会重放它们。日常编辑新增以下入口：
+
+| 命令 | 参数 | 效果 |
+|---|---|---|
+| `batch plan` | `--project --spec --out` | spec v2预览，写集/读取依赖内容哈希、实际扫描计数；不启动Editor |
+| `batch apply` | `--plan --expected-plan --out --editor-path`，可选`--timeout` | 一次Editor执行整个相关操作组，原生保存/重载和逐步哈希checkpoint |
+| `batch recover` | `--transaction --out --editor-path`，可选`--timeout` | 同版本固定执行器恢复完整仍属本次的after状态；人工后改或不确定写入全拒绝 |
+| `references` | `--project --out`，可选`--cache` | GUID正反向依赖、已证明C#加载字面量span、未知动态key、JSON未知字符串；元数据缓存与安全边界分离 |
+| `debug start` | `--manifest --expected --out`，可选`--duration --width --height`（宽高成对） | 复用固定Mac候选；后台worker拥有实际进程，预算1～3600秒 |
+| `debug inspect/stop/tail` | `--session`，tail可选`--lines` | 精确实例观测/向自有worker请求停止/有界脱敏日志；不自动重启 |
+| `debug screenshot` | `--session --input --expected` | 登记已有截图的哈希与调用者来源；不生成或认证截图 |
+| `debug target` | `--transaction` | 关联Editor/PlayMode计划、PID、日志与原生证据；不附着外部Editor |
+
+批处理JSON为封闭 `schemaVersion:2, operation:batch, steps:[...]`，可给readPaths；需要持久通用列表/安全区组件时显式runtimeRoot（产品Assets内且不在Editor）。临时Editor helper使用保留目录Assets/BeaverBatchTools并按拥有的内容清理。运行时组件不是临时helper，属于计划写集与恢复范围。
+
+支持steps：只读`prefab.inspect {assetPath}`、`prefab.patch {assetPath,actions}`、`asset.move {source,target}`、`reference.replace {assetPath,oldGuid,oldLocalId,newGuid,newLocalId,consumers}`、`text.key {assetPath,format:json-pointer,pointer,before,after}`、`script.key {assetPath,patches:[{start,end,before,after}]}`。引用替换必须显式给完整原生直接消费者，Editor先验证AssetDatabase依赖，不自动扩大写集；Prefab/Scene/ScriptableObject使用SerializedObject改对象引用。移动保留GUID/localID；字符串key仍须明确列消费者更新，不承诺动态字符串全覆盖。脚本仅改被词法扫描证明的资源加载字面量span，Editor启动前安装并实际编译；不做类型/命名空间语义重构。
+
+Prefab actions支持`node.add/remove/reparent/order/active`、`component.add/remove`、`property.set`与[UI actions](NATIVE-UI.md)。node.add使用parent/name/index，默认RectTransform，mode=transform可建普通节点；node.active必须flag。property.set用path/component/property/mode/value，mode为string/bool/int/enum/float/object/null，或以numbers给定的color(RGBA)/vector2；object用assetGuid/localId或targetNode/targetComponent。组件须已存在、唯一具体类型；不生成业务方法。Transform/脚本/Prefab身份字段禁止编辑。
+
+Variant允许可保存的属性、事件、组件与新增child override；继承层级的删除/重排/移动和组件删除拒绝，并给出单独显式base计划或新增child替代，不隐式改base、不Unpack。嵌套实例继承结构同样保护；不支持任意Prefab图自动变换。原生树读回规范化内部节点与外部GUID/localID引用，不把Editor临时instanceID当持久身份。
+
+计划按选中GUID依赖闭包、编译脚本/asmdef及Packages/ProjectSettings实际内容hash；目录元信息只用于变化发现，不作为执行前置身份。无关贴图/音频不全量hash。整个批处理期间发现写集外源变化会报告failed；不猜恢复未备份源。每个原生checkpoint带写集真实after hash，恢复需该checkpoint与当前状态完全一致，并核before备份身份。编译失败/强杀导致无checkpoint时明确blocked手工检查；不会把事后猜测当安全恢复证据。
+
+成功的同会话保存重载与独立Editor重开、PlayMode帧数、App运行、合成事件、真实鼠标/触摸、视觉和游戏业务是独立证据。任何partial/未知动态key/身份探测失败不得由GREA包装为业务通过。
+
+大Unity制品使用显式`artifactPolicy=beaver-unity-build/2`：单文件流式上限4GiB、总8GiB，文件/别名/哈希/独立inode检查保持。构建与Player/debug自动使用此已知合同；独立`payload verify`需显式`--unity-artifact`。普通候选/复制/采用512MiB单文件上限保持，不将大制品预算静默扩展给任意输入。构建后制品校验失败标记artifact-verification-failed，不拿原生Build成功冒充可认证候选。

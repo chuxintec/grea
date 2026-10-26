@@ -17,7 +17,7 @@ from . import __version__
 from .errors import fail
 from .io import safe, inside, read, load, sha, encoded, write_json, new_output
 from .owned_fs import RootReader
-from .output_limits import MANIFEST_BYTES, MANIFEST_NODES, FILE_BYTES, CHUNK_BYTES, check_inventory, digest_file
+from .output_limits import MANIFEST_BYTES, MANIFEST_NODES, FILE_BYTES, BUILD_FILE_BYTES, WHOLE_BYTES, WHOLE_FILES, CHUNK_BYTES, check_inventory, digest_file
 
 
 def relative(value):
@@ -44,11 +44,17 @@ def path_set(paths):
             spelling[normalized]=part;kinds[normalized]=kind
 
 
-def manifest(path, allow_links=False):
+def artifact_limit(doc,artifact):
+    if artifact and doc.get('artifactPolicy') not in (None,'beaver-unity-build/2'):
+        fail('PAYLOAD_ARTIFACT_POLICY','manifest','Unsupported Unity artifact budget contract')
+    return BUILD_FILE_BYTES if artifact and doc.get('artifactPolicy')=='beaver-unity-build/2' else FILE_BYTES
+
+
+def manifest(path, allow_links=False,artifact=False):
     path=safe(path);raw=read(path,max_bytes=MANIFEST_BYTES);doc=load(raw,max_nodes=MANIFEST_NODES)
     if not isinstance(doc,dict) or doc.get('schemaVersion')!=1 or not isinstance(doc.get('files'),list):
         fail('PAYLOAD_MANIFEST',str(path),'Expected version-1 files inventory; foreign protocols are not inferred')
-    files={};folded={}
+    max_file=artifact_limit(doc,artifact);files={};folded={}
     for row in doc['files']:
         if not isinstance(row,dict):fail('PAYLOAD_ROW',str(path),'Expected a file identity record')
         rel=relative(row.get('path'));normalized=key(rel)
@@ -59,11 +65,13 @@ def manifest(path, allow_links=False):
                 fail('PAYLOAD_SYMLINK',rel,'Declared symlinks are disabled for this operation')
             if set(row)!={'path','symlink'}:fail('PAYLOAD_ROW',rel,'Ambiguous symlink identity')
         else:
-            if set(row)-{'path','sha256','bytes','owner'} or not re.fullmatch('[a-f0-9]{64}',row.get('sha256','')) or type(row.get('bytes'))is not int or not 0<=row['bytes']<=FILE_BYTES:
+            if set(row)-{'path','sha256','bytes','owner'} or not re.fullmatch('[a-f0-9]{64}',row.get('sha256','')) or type(row.get('bytes'))is not int or not 0<=row['bytes']<=max_file:
                 fail('PAYLOAD_ROW',rel,'Explicit size/SHA256 identity required')
         files[rel]=dict(row)
     path_set(files)
-    check_inventory([r for r in files.values() if 'sha256'in r],dict(scopeMode='whole-input'),str(path))
+    regular=[r for r in files.values() if 'sha256'in r]
+    if max_file==FILE_BYTES:check_inventory(regular,dict(scopeMode='whole-input'),str(path))
+    elif sum(r['bytes'] for r in regular)>WHOLE_BYTES or len(files)>WHOLE_FILES:fail('PAYLOAD_ARTIFACT_BUDGET',str(path),'Unity artifact exceeds 8 GiB/500000 file policy')
     aliases=doc.get('aliases',[]);seen=set()
     if not isinstance(aliases,list) or len(aliases)>500000:fail('PAYLOAD_ALIASES',str(path),'Expected bounded explicit aliases')
     for row in aliases:
@@ -76,14 +84,14 @@ def manifest(path, allow_links=False):
     return doc,files,sha(raw)
 
 
-def stream_identity(stream,location,independent=True,output=None):
+def stream_identity(stream,location,independent=True,output=None,max_file_bytes=None):
     before=os.fstat(stream.fileno())
     if not stat.S_ISREG(before.st_mode) or independent and before.st_nlink!=1:
         fail('PAYLOAD_SHARED_FILE',location,'Expected independent regular file (no hardlinks)')
     digest=hashlib.sha256();size=0
     for chunk in iter(lambda:stream.read(CHUNK_BYTES),b''):
         size+=len(chunk)
-        if size>FILE_BYTES:fail('PAYLOAD_FILE_BUDGET',location,'File exceeds streaming policy')
+        if size>(FILE_BYTES if max_file_bytes is None else max_file_bytes):fail('PAYLOAD_FILE_BUDGET',location,'File exceeds streaming policy')
         digest.update(chunk)
         if output is not None:output.write(chunk)
     after=os.fstat(stream.fileno())
@@ -92,8 +100,8 @@ def stream_identity(stream,location,independent=True,output=None):
     return digest.hexdigest(),size,(before.st_dev,before.st_ino)
 
 
-def verify_manifest(root,path,scope=None,allow_links=False,allow_unlisted=False):
-    root=safe(root);path=safe(path);doc,files,manifest_sha=manifest(path,allow_links)
+def verify_manifest(root,path,scope=None,allow_links=False,allow_unlisted=False,artifact=False):
+    root=safe(root);path=safe(path);doc,files,manifest_sha=manifest(path,allow_links,artifact)
     prefix=relative(scope).rstrip('/')+'/' if scope else ''
     if prefix and any(not p.startswith(prefix) for p in files):
         fail('PAYLOAD_SCOPE',str(path),'Manifest contains paths outside the explicit artifact scope')
@@ -123,7 +131,7 @@ def verify_manifest(root,path,scope=None,allow_links=False,allow_unlisted=False)
     with RootReader(root) as view:
         for rel,row in files.items():
             if 'symlink'in row:continue
-            with view.open(rel) as stream:digest,size,_=stream_identity(stream,rel)
+            with view.open(rel) as stream:digest,size,_=stream_identity(stream,rel,max_file_bytes=artifact_limit(doc,artifact))
             if (digest,size)!=(row['sha256'],row['bytes']):fail('PAYLOAD_DRIFT',rel,'File size or SHA256 differs from the frozen manifest')
             total+=size
     if digest_file(path,max_bytes=MANIFEST_BYTES)!=manifest_sha:fail('PAYLOAD_MANIFEST_DRIFT',str(path),'Manifest changed during verification')
