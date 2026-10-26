@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/adoption.py",
+      "snapshotPath": ".private/sources/monkey/adoption.py",
+      "sha256": "aa7cb434d67c3595d89ad51680fcfabe07ab561be08314d31a2fe93711ca5145",
+      "bytes": 17547
+    },
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/adoption_native.py",
+      "snapshotPath": ".private/sources/monkey/adoption_native.py",
+      "sha256": "04386478d08ca416f232817fe3e5effcfeb41eb2117c12ba43c791d5902f2253",
+      "bytes": 10438
+    },
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/candidate_snapshot.py",
+      "snapshotPath": ".private/sources/monkey/candidate_snapshot.py",
+      "sha256": "40562bcdf92d3dc164a2d8773a0dfc3ab0b1e57569a668b9b3aa0a2ec78f580a",
+      "bytes": 3906
+    },
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/output_limits.py",
+      "snapshotPath": ".private/sources/monkey/output_limits.py",
+      "sha256": "43d77ace372e61e0c246de55b5b75fe9e60fd518a27092d65b54f8c6c0005b84",
+      "bytes": 3222
+    },
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/owned_fs.py",
+      "snapshotPath": ".private/sources/monkey/owned_fs.py",
+      "sha256": "f825b16c7cacf6ad9ff4d081cb6f00ae2a731d6f29d73119727c2ea2046cc591",
+      "bytes": 3445
+    },
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/io.py",
+      "snapshotPath": ".private/sources/monkey/io.py",
+      "sha256": "dcc483824e6e62d645c022dc9adabe072c194d3730fc82f4f7d954478133f05d",
+      "bytes": 4249
+    },
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/incremental.py",
+      "snapshotPath": ".private/sources/monkey/incremental.py",
+      "sha256": "71d7df2a25a8a4d59651eedefdcff7e73aac202da6a3a0d6c793514cb4361591",
+      "bytes": 17305
+    },
+    {
+      "sourcePath": "/Users/wangmeng/Documents/Games/tools/monkey/src/monkey/targets/MonkeyAdoption.cs",
+      "snapshotPath": ".private/sources/monkey/targets/MonkeyAdoption.cs",
+      "sha256": "44307587a2c3cf766e68972b37566be3cef61ace5efac882b262057cdb6ea476",
+      "bytes": 11877
+    }
+  ],
+  "upstreamArchive": {
+    "path": "/Users/wangmeng/Documents/Games/tools/monkey/.private/v050-adoption-20261026/beaver-handoff/monkey-0.5.0.dev1-source.tar.gz",
+    "sha256": "d0cdfbfe44fd655b10ed27322e3d7bebedf5aa6c1044f47c010875fa910408e8",
+    "commit": "db253cb0b0dac4ff426298f005cf6ce5bc0cac31"
+  },
+  "excludedDecoderSnapshot": "Only generic fail/budget contracts extracted; no source decoder retained in beaver snapshots or package"
+}

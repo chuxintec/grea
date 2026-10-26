@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "humanSource": {
+    "thread": "01a14c8c-6402-7d03-bab8-ec7ea8051abf",
+    "turn": "01a17684-3487-7890-a76a-33bc95bf9f91",
+    "message": "01a17684-35f6-7ed2-a252-2f7f73d2898a",
+    "nativeVerified": true
+  },
+  "archive": {
+    "path": "/Users/wangmeng/Downloads/向僵尸开炮_研发交接_20261026.zip/向僵尸开炮_研发交接_20261026.zip",
+    "sha256": "f3387ecedb9820ae664a731644cc2a427da86ba5b464bef9f165333c455d2a9c",
+    "bytes": 2287341755,
+    "identity": "director inventory; local selected ZIP members CRC/SHA verified, full 7GB validation delegated to source owner"
+  },
+  "sources": [
+    {
+      "archiveMember": "Tools/Verify-Handoff.py",
+      "sha256": "09e48a35ab0ca54a82a68a034e278cc2799acfec6b7a765e6910f6ad56002268",
+      "bytes": 1659,
+      "readInFull": true,
+      "sourceCopiedToPackage": false
+    },
+    {
+      "archiveMember": "Tools/Publish-Runtime.py",
+      "sha256": "ab38bbe44c49f941f7eb3f4eb9425b9495ffee82050a1471cea9acf5dc3032d1",
+      "bytes": 2642,
+      "readInFull": true,
+      "sourceCopiedToPackage": false
+    },
+    {
+      "archiveMember": "Tools/Build-Windows.ps1",
+      "sha256": "bc26e692b276c40c30b93589f3669314769cd9cbf169fb910c2cc683d3bab049",
+      "bytes": 3511,
+      "readInFull": true,
+      "sourceCopiedToPackage": false
+    },
+    {
+      "archiveMember": "Tools/Launch-Isolated.ps1",
+      "sha256": "b6978adb2f4dde180bfdd7cb34c4ac38cfe38b6c60b3ae6f6937ce4e50c67450",
+      "bytes": 1891,
+      "readInFull": true,
+      "sourceCopiedToPackage": false
+    }
+  ],
+  "adopted": [
+    {
+      "source": "Verify-Handoff.py",
+      "targets": [
+        "src/beaver/payload.py",
+        "tests/test_payload.py"
+      ],
+      "mechanism": "streaming declared file identity, independent inode and explicit unlisted scope"
+    },
+    {
+      "source": "Publish-Runtime.py",
+      "targets": [
+        "src/beaver/payload.py"
+      ],
+      "mechanism": "all alias redirection bound to old/new hashes, independent copy, atomic no-replace promotion"
+    },
+    {
+      "source": "Build-Windows.ps1",
+      "targets": [
+        "src/beaver/unity.py",
+        "src/beaver/payload.py"
+      ],
+      "mechanism": "BuildReport plus exact source/artifact identity and shared artifact completeness verification; no Windows/WebView execution"
+    },
+    {
+      "source": "Launch-Isolated.ps1",
+      "targets": [
+        "src/beaver/player.py"
+      ],
+      "mechanism": "fresh evidence root, owned pid/start/executable/manifest identity, budget and stale control variable cleanup; save isolation explicitly unclaimed"
+    }
+  ],
+  "method": "independent parameterized implementation; no verbatim private code, assets, vendor or runtime copied",
+  "licensing": "source-local review authority is not a public payload redistribution grant",
+  "manifestSchemas": ".private/colleague-source/manifest-schemas.json",
+  "notAdopted": [
+    "fixed 34003/307/path/ports",
+    "WebView/WASM host",
+    "private source route map parser",
+    "Windows native acceptance",
+    "game save/economy policies"
+  ],
+  "status": "implemented and verified locally; 23 focused tests, installed materialization, GREA-driven matching-source build, shared pre/post Player verification, synthetic click and screenshot passed",
+  "finalWheel": ".private/dist/final-03/beaver_game_tools-0.1.0-py3-none-any.whl",
+  "finalWheelSha256": "09020d42b75497ec39040f08e48fab24378a0baa5b51cebe92529fe67a7ee2f6"
+}
