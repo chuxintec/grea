@@ -1,28 +1,29 @@
 {
   "schemaVersion": 1,
   "contract": "beaver-validation/3",
-  "version": "0.3.0.dev1",
-  "status": "local_candidate_verified_consumer_pending",
+  "version": "0.3.0",
+  "status": "local_fix_candidate_consumer_native_pending",
   "observedUtc": "2026-10-26T13:12:54.032060+00:00",
   "source": {
     "branch": "codex/beaver-v0.3",
     "baseCommit": "fae3845bdddc21e311f87540ff718782fb1f7ea7",
-    "implementationSha256": "b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0",
+    "implementationSha256": "e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882",
     "nativeTransactionProducerSha256": "e799831e07798347fcbb4e9c0338877b1e7c33f652e6f41c5f3295a79bd1ea1e"
   },
   "package": {
-    "path": ".private/dist/v0.3-candidate-07/beaver_game_tools-0.3.0.dev1-py3-none-any.whl",
-    "bytes": 238496,
-    "sha256": "7f085738b5a10a1da72e76debb4eee5641f066abbc89355dcb3c67a2d0c72f10",
-    "packageFiles": 67,
+    "path": ".private/dist/v0.3-candidate-09/beaver_game_tools-0.3.0-py3-none-any.whl",
+    "bytes": 239666,
+    "sha256": "b480fb381a85e8c47711d03169a625725b06648393bcf1e9a91fa1272116d2df",
+    "packageFiles": 68,
     "exactSourceBytes": true,
     "privateContentIncluded": false,
-    "cleanInstall": ".private/v03/clean-venv-01",
+    "cleanInstall": ".private/v03/clean-venv-08",
     "executionCwd": "/private/tmp",
-    "deltaFromNativeProofCandidate": "Only capability evidence description and C# template trailing newline; native06/r18 retained for its journals."
+    "deltaFromNativeProofCandidate": "Editor subprocess restricted environment and UTF8 path via ASCII base64; version0.3.0. Old native transactions remain bound to06/r18.",
+    "metadataOnlyDeltaFrom08": true
   },
   "checks": {
-    "pythonTests": 115,
+    "pythonTests": 118,
     "nativeJointTransaction": {
       "inputFiles": 260,
       "nativeSteps": 10,
@@ -105,14 +106,28 @@
       "formalServicesModified": false
     },
     "finalMetadataTests": 11,
-    "cleanInstalledCandidatePlayer": "verified_exit0_from_private_tmp"
+    "cleanInstalledCandidatePlayer": "verified_exit0_from_private_tmp",
+    "nativeEncodingFix": {
+      "offlineCompanionSources": 8,
+      "unityReferences": 342,
+      "compilerExitCode": 0,
+      "nativeUnicodePath": "not_run",
+      "formalProject08": "not_run_pending_App04_safe_stop",
+      "globalEnvironmentChanged": false
+    }
   },
   "consumer": {
-    "status": "pending",
-    "greaAdapter": "current finite support ends at 0.2.0; 0.3 requires GREA owner work",
-    "formalMainDeveloperUse": "not_run",
-    "crossChatDispatch": "awaiting_direct_human_authorization",
-    "handoff": "docs/HANDOFF-v0.3-candidate.md"
+    "status": "in_progress_after_direct_app_stop_approval",
+    "greaAdapter": "07 private routing verified;08 exact producer integration in progress",
+    "formalMainDeveloperUse": "candidate07 exact source installed; provider native failed;08 prepared, not applied",
+    "crossChatDispatch": "direct_human_approval_received_and_three_messages_sent",
+    "handoff": "docs/HANDOFF-v0.3-candidate.md",
+    "formalReceipt": {
+      "path": "/Users/wangmeng/Documents/Games/projects/20-肥鹅美食街/Analysis/v12-business-20261026/beaver-feedback-01/adoption-result.json",
+      "bytes": 4558,
+      "sha256": "1d5aace2efe8933792a76937225efaaba7104077065a73816b3e1ba77a3bbcaf"
+    },
+    "appStopApproval": "direct_human_approved_and_relayed; owner re-verifies PID identity first"
   },
   "limitations": [
     "Private copies and synthetic Go example do not constitute formal project adoption or full game completion.",
@@ -121,7 +136,8 @@
     "Go is a development HTTP/internal gRPC example; production TLS/mTLS, WSS, payment and full product services remain outside demonstrated scope.",
     "Old failures and explicit repairs remain separate; compile failures without a complete checkpoint do not gain ordinary recovery claims.",
     "Later probe transaction must be recovered before the earlier full transaction; later edits are protected from overwrite.",
-    "Initial physical run timed out during delayed desktop control. Only physical-02 is successful."
+    "Initial physical run timed out during delayed desktop control. Only physical-02 is successful.",
+    "Formal08 native outcome remains pending. The specific App04 safe-stop exception was directly approved and relayed to its owner."
   ],
   "evidence": [
     {
@@ -273,6 +289,36 @@
       "path": ".private/v03/real-player-candidate07-01/foodstreet-runtime.json",
       "bytes": 2681,
       "sha256": "6c61e700c4ca4b261d9f112b0ed49c77ea890061aa79dfdbb6ec901657d31eee"
+    },
+    {
+      "path": ".private/v03/handoff-candidate08.json",
+      "bytes": 531,
+      "sha256": "e86fe4aedffbd2902a9882591616471c3f2d2cc8a087f73dbebdf0d76880ac3c"
+    },
+    {
+      "path": ".private/v03/tests-integration-08.log",
+      "bytes": 19616,
+      "sha256": "6b6d549712f024024260bb5060777dbf19c13fb23e59afc1d20d2322ec6b741f"
+    },
+    {
+      "path": ".private/v03/process-encoding/compile-01/result.txt",
+      "bytes": 423,
+      "sha256": "e56beb3c2568fd9da42cc5f155ad4f902c855b2609817935b412ba608412c292"
+    },
+    {
+      "path": ".private/v03/consumer-dispatch-07.json",
+      "bytes": 533,
+      "sha256": "e93c2c09e96f874afc90ca5357fc3c187e719aae1f50d1c9a45466e95a7a3247"
+    },
+    {
+      "path": ".private/v03/handoff-candidate09.json",
+      "bytes": 675,
+      "sha256": "8030006293f763dda1bb6fbbc0494338f187f82eea8effe08dfce47d2014c67d"
+    },
+    {
+      "path": ".private/v03/consumer-app-stop-authorization.json",
+      "bytes": 432,
+      "sha256": "7ab7135981094d29618fe6686630133c62c7e02727107c78969c7ec600ae63e2"
     }
   ]
 }

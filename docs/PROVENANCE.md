@@ -31,3 +31,5 @@ batch、references、loading_keys、debug 及四份 Batch/ListView/SafeArea C# c
 GREA 通用 Go 六服执行模板按固定交接清单 SHA `283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3` 接收，45份源文件/104020字节，选定22份模板保留于 `server_templates/grea_seed/`，实际源身份逐项记录 SOURCE-MANIFEST。沿用包内 GREA MIT 归属，未复制 Cocos、旧破坏性脚本、运行凭据或游戏业务数据。protobuf 由已验证 protoc/plugin 生成，不手改生成文件。Unity/C#工具及复杂配置读取器为本轮新增实现；运行需要调用方已有 Unity/.NET/Go/protoc，不打包其二进制。
 
 真实 FoodStreet 的 v0.3 资源、JSON、代码快照、改名候选、原始日志和 App 继续只在 `.private/v03`。自有 Go 示例配置可作为模板内容；Docker secrets、容器卷和测试账户不进入 Git/wheel。工具健康、私有试点和正式主开发采用分别记录。
+
+原生进程UTF8 job的ASCII base64封装及受限子环境为beaver独立实现，仅Python/C#标准库，无新增第三方二进制。正式采用的Mono环境枚举失败保留原始日志，根因以实际重试结果界定；未使用文件名编码猜测或改名。Mono编码语义参考 https://www.mono-project.com/docs/faq/technical/ 与 https://www.mono-project.com/docs/advanced/pinvoke/，文档不替代Unity原生验证。

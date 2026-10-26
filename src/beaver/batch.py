@@ -202,8 +202,8 @@ def launch(editor,project,stage,job,timeout):
     if type(timeout)is not int or not 1<=timeout<=1200:fail('BATCH_TIMEOUT_BUDGET','timeout','1..1200 seconds required')
     write_json(stage/'native-job.json',job)
     args=[str(editor),'-batchmode','-nographics','-projectPath',str(project),'-executeMethod','BeaverBatch.Run','-logFile',str(stage/'editor.log')]
-    env=dict(os.environ,BEAVER_BATCH_JOB=str(stage/'native-job.json'))
-    for name in ('BEAVER_NATIVE_JOB','BEAVER_ADOPT_JOB','MONKEY_ADOPT_JOB'):env.pop(name,None)
+    from .native_environment import editor_environment
+    env=editor_environment('BEAVER_BATCH_JOB',stage/'native-job.json')
     started=time.monotonic()
     with (stage/'console.log').open('w') as stream:
         proc=subprocess.Popen(args,cwd=project,env=env,stdout=stream,stderr=subprocess.STDOUT)

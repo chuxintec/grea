@@ -11,6 +11,12 @@ using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
 public static class BeaverBatch {
+    static string JobPath() {
+        var encoded=Environment.GetEnvironmentVariable("BEAVER_BATCH_JOB_BASE64");
+        if(String.IsNullOrEmpty(encoded)||encoded.Length>65536)throw new Exception("Explicit ASCII-encoded native job required");
+        return new System.Text.UTF8Encoding(false,true).GetString(Convert.FromBase64String(encoded));
+    }
+
     [Serializable] public class Action {
         public string kind,path,parent,name,component,property,value,targetNode,targetComponent,assetGuid,method,eventName,mode;
         public long localId;public int index;public bool flag;public float[] numbers;public string[] items;
@@ -305,7 +311,7 @@ public static class BeaverBatch {
     }
     public static void Run() {
         try {
-            var file=Environment.GetEnvironmentVariable("BEAVER_BATCH_JOB");if(String.IsNullOrEmpty(file))throw new Exception("Explicit job required");
+            var file=JobPath();if(String.IsNullOrEmpty(file))throw new Exception("Explicit job required");
             job=JsonUtility.FromJson<Job>(File.ReadAllText(file));report=new Report{status="running",planSha256=job.planSha256,mode=job.mode,editorVersion=Application.unityVersion};
             if(Application.unityVersion!="6000.6.2f1")throw new Exception("Unexpected native Editor version");
             if(Path.GetFullPath(job.projectRoot)!=Path.GetFullPath(Directory.GetCurrentDirectory()))throw new Exception("Target project identity mismatch");

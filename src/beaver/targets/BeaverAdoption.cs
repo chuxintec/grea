@@ -10,6 +10,12 @@ using UnityEditor;
 using UnityEngine;
 
 public static class BeaverAdoption {
+    static string JobPath() {
+        var encoded=Environment.GetEnvironmentVariable("BEAVER_ADOPT_JOB_BASE64");
+        if(String.IsNullOrEmpty(encoded)||encoded.Length>65536)throw new Exception("Explicit ASCII-encoded native job required");
+        return new System.Text.UTF8Encoding(false,true).GetString(Convert.FromBase64String(encoded));
+    }
+
     [Serializable] public class Op {
         public string action, source, target, guid;
         public string beforeFileHash, beforeMetaHash, afterFileHash, afterMetaHash;
@@ -109,7 +115,7 @@ public static class BeaverAdoption {
     public static void Run() {
         int code=1;
         try {
-            var jobPath=Environment.GetEnvironmentVariable("BEAVER_ADOPT_JOB");
+            var jobPath=JobPath();
             if(Application.unityVersion!="6000.6.2f1")throw new Exception("Unexpected Unity version");
             job=JsonUtility.FromJson<Job>(File.ReadAllText(jobPath));root=Path.GetFullPath(job.targetRoot).TrimEnd(Path.DirectorySeparatorChar);
             if(root!=Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName).TrimEnd(Path.DirectorySeparatorChar))throw new Exception("Wrong target project");

@@ -1,6 +1,6 @@
 # beaver v0.3：Unity＋Golang联合开发与交付
 
-2026-10-26，0.3.0.dev1，codex/beaver-v0.3；基线fae3845，0.2全部制品与事务保持。完整范围沿Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md；真实用户三条授权见.private/v03/authorization.json，含最新Golang必选补充。
+2026-10-26，0.3.0本地候选（未发布），codex/beaver-v0.3；基线fae3845，0.2全部制品与事务保持。完整范围沿Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md；真实用户三条授权见.private/v03/authorization.json，含最新Golang必选补充。
 
 | 组 | 状态 | 出口 |
 |---|---|---|
@@ -10,7 +10,7 @@
 | D 模块/C#维护 | native_verified | 有所有权模板、Roslyn语义类型/namespace/字段改名与Unity序列化保护 |
 | E 联合事务 | native_verified | 资源+JSON+C#消费者增量写集、可信checkpoint与受控恢复 |
 | F 实用验证/交付 | private_app_and_physical_input_verified | 受影响编译/PlayMode、匹配Mac候选、过程及输入/日志证据 |
-| G GREA/真实消费者 | pending | 固定包/兼容差异、私有安装与正式项目主开发实际采用 |
+| G GREA/真实消费者 | consumer_in_progress | 固定包/兼容差异、私有安装与正式项目主开发实际采用 |
 | H Go服务器工具 | owned_stack_and_app_verified | BEAVER-V03-GO.md：六服/协议/持久事务/迁移/构建/owned Docker栈、Unity真实联调；共享服务只读 |
 
 主开发单写CLI/公共合同/事务/Editor/集成，优先复用现有模块Agent。开发与原生工具存在、原生执行、真实输入、可见画面、产品业务及真实消费者采用分别记录。正式肥鹅v1.2、Go服务、账号、玩家档、暂停项目和其他工具源码只读。允许beaver.private独立具名Docker项目/网络/数据卷、回环端口和自有测试库；先核占用，不碰QA05/共享容器/卷，不prune。无远端/Release/全局安装/引擎下载/正式服务变更或素材外发。本版整体未完成；不能以私有空壳UI自测替代真实消费者出口。
@@ -58,3 +58,11 @@ run10前9项原生通过（设置/切片/Atlas/主字体/Spine闭包/SO字段引
 完整本地候选06已核67包文件与当前源码逐字节一致；公开证据索引docs/VALIDATION-v0.3-candidate.json列26份私有证据的SHA/字节及限制。G仍pending：未向其他聊天发送候选，等待本聊天人类对已提出的固定接入单协调授权；GREA当前仅显式0.2适配，正式项目采用须由其主开发在既有任务内完成。本版尚未完整交付；无推送/Release/全局安装/正式服务变更。
 
 最终候选07修正公开CLI过期的pending说明及模板末尾空行，除此两项无执行差异；11项相关检查通过，67包文件逐字节一致。07 SHA7f085738…/implementation b6400dbd…，私有干净安装从/private/tmp调用同一固定App再获verified/exit0。原生事务仍用06/r18恢复，身份不混用。提交前精确清单64路径，无私有内容；G仍等待明确跨聊天协调授权与正式采用证据。
+
+用户在本聊天明确回复“同意”，已按固定候选07向肥鹅主开发、GREA及技术总监发送本地接入协调。G状态consumer_in_progress：GREA负责有限版本/能力/Schema薄兼容及旧链保持；肥鹅只选既有批准任务实际采用，原已完成修正不倒退。各自主开发单写，本聊天回读交付，不用ACK算完成。无新功能/服务/玩家数据/发布授权。
+
+正式采用发现07原生启动失败：中文job路径直接置env时，Burst在Mono枚举环境抛Illegal byte sequence，locale-only未解决；源码安装后工具failed、无native checkpoint，项目4项Play及App分别验证，不能据此算production成功。root修复原生子进程最小环境＋ASCII base64 job传输（三套companion，PlaySession保留解码路径），adoption身份纳入依赖；118项全量检查与8源/342实际Unity引用离线编译通过。固定候选08为本地0.3.0、wheel66fd8d32…、implementation e6191235…、68包文件精确。已给肥鹅/GREA新身份，正式工程由原主开发在旧after-image审阅后显式rebind/新计划受控收敛；G仍in_progress。root准备自有中文路径副本及证据目录，未启动Editor以保持单写。
+
+G实际阻塞：肥鹅07已把两份代码按计划安装，4项项目Play通过，但原生companion前Burst失败，因此adoption仍partial。App04构建成功但PID5496卡Metal，未晋升，主开发遵守本项目AGENTS“不强退”。候选08已私有安装、显式rebind计划已准备但尚未apply；本聊天已请求用户授权该主开发核对身份后仅SIGTERM此App再重试。根不越权停进程、不改服务/玩家档；自有中文路径原生验收同等等待资源释放。GREA08适配独立继续。
+
+用户已对本聊天具体问题选择“允许仅停止该App并重试”，已转交肥鹅原主开发：必须先核PID5496仍为原App04，仅此进程SIGTERM/同候选重试/08接入，无其他进程、服务或存档授权；root继续不碰正式工程或GUI。打包09仅更新wheel README元数据，68执行文件与08完全相同、producer e6191235…不变；最终09 SHA b480fb38…，08在途计划保持。

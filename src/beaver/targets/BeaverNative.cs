@@ -10,6 +10,12 @@ using UnityEditor.SceneManagement;
 using UnityEditor.Build.Reporting;
 
 public static class BeaverNative {
+    static string JobPath() {
+        var encoded=Environment.GetEnvironmentVariable("BEAVER_NATIVE_JOB_BASE64");
+        if(String.IsNullOrEmpty(encoded)||encoded.Length>65536)throw new Exception("Explicit ASCII-encoded native job required");
+        return new System.Text.UTF8Encoding(false,true).GetString(Convert.FromBase64String(encoded));
+    }
+
     [Serializable] public class Node {
         public string id, name, parent, kind, text, spriteGuid;
         public long spriteLocalId;
@@ -100,7 +106,7 @@ public static class BeaverNative {
     }
     static void Play() {
         EditorSceneManager.OpenScene(job.scenePath,OpenSceneMode.Single);
-        SessionState.SetString(PlayKey,Environment.GetEnvironmentVariable("BEAVER_NATIVE_JOB"));
+        SessionState.SetString(PlayKey,JobPath());
         ResumePlay();EditorApplication.EnterPlaymode();
     }
     static void Save() {
@@ -358,7 +364,7 @@ public static class BeaverNative {
     public static void Run() {
         int code=1;
         try {
-            job=JsonUtility.FromJson<Job>(File.ReadAllText(Environment.GetEnvironmentVariable("BEAVER_NATIVE_JOB")));
+            job=JsonUtility.FromJson<Job>(File.ReadAllText(JobPath()));
             report=new Report{status="running",operation=job.operation,mode=job.mode,planSha256=job.planSha256,sourceSha256=job.sourceSha256};Save();
             if(Application.unityVersion!="6000.6.2f1")throw new Exception("Unexpected Editor version");
             if(Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName)!=Path.GetFullPath(job.targetRoot))throw new Exception("Wrong project");

@@ -22,7 +22,7 @@ GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$',re.M)
 
 def algorithm_id():
     root=Path(__file__).parent
-    names=['__init__.py','adoption.py','adoption_native.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
+    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
     return sha(encoded({name:digest_file(root/name) for name in names}))
 
 

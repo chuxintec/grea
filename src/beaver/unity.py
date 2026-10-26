@@ -210,6 +210,8 @@ def plan(project, spec, output):
 
 
 def editor_path(path):
+    from .native_environment import editor_environment
+    editor_environment('BEAVER_NATIVE_JOB', path)
     path = safe(path)
     if path.name not in ('Unity','Unity.exe') or not path.is_file() or not os.access(path,os.X_OK):
         fail('UNITY_EDITOR',str(path),'Expected executable Unity Editor')
@@ -221,6 +223,7 @@ def editor_path(path):
 
 
 def run(editor, project, stage, mode, plan, timeout):
+    from .native_environment import editor_environment
     if type(timeout) is not int or not 1 <= timeout <= 1200:
         fail('UNITY_TIMEOUT',str(timeout),'Expected 1..1200 seconds')
     job=dict(plan['spec'],targetRoot=str(project),stage=str(stage),mode=mode,
@@ -229,7 +232,7 @@ def run(editor, project, stage, mode, plan, timeout):
     write_json(jobfile,job)
     args=[str(editor),'-batchmode','-nographics','-projectPath',str(project),'-executeMethod','BeaverNative.Run','-logFile',str(stage/(mode+'.log'))]
     with (stage/(mode+'-console.log')).open('w') as log:
-        process=subprocess.Popen(args,cwd=project,env=dict(os.environ,BEAVER_NATIVE_JOB=str(jobfile)),stdout=log,stderr=subprocess.STDOUT)
+        process=subprocess.Popen(args,cwd=project,env=editor_environment('BEAVER_NATIVE_JOB',jobfile),stdout=log,stderr=subprocess.STDOUT)
         write_json(stage/'process.json',dict(pid=process.pid,mode=mode,owned=True,exited=False))
         try:
             code=process.wait(timeout=timeout)

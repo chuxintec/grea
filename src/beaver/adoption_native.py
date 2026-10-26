@@ -59,7 +59,8 @@ def run_child(stage,plan,journal,editor,mode,budget):
     if threading.current_thread() is not threading.main_thread():raise ValueError('Adoption child requires main-thread signal ownership')
     target=safe(plan['targetRoot']);native_lock(target)
     spec=job_spec(stage,plan,journal,mode,budget);path=stage/('job-'+mode+'.json');write_json(path,spec)
-    env=dict(os.environ,BEAVER_ADOPT_JOB=str(path));args=[str(editor),'-batchmode','-nographics','-projectPath',str(target),'-executeMethod','BeaverAdoption.Run','-logFile',str(stage/(mode+'.log'))]
+    from .native_environment import editor_environment
+    env=editor_environment('BEAVER_ADOPT_JOB',path);args=[str(editor),'-batchmode','-nographics','-projectPath',str(target),'-executeMethod','BeaverAdoption.Run','-logFile',str(stage/(mode+'.log'))]
     interrupted=[];handlers={};process=None;end=time.monotonic()+budget+90
     try:
         with (stage/(mode+'-console.log')).open('w') as stream:
@@ -84,6 +85,8 @@ def run_child(stage,plan,journal,editor,mode,budget):
 
 
 def execute(plan_path,output,editor,budget=1200,expected=None):
+    from .native_environment import editor_environment
+    editor_environment('BEAVER_ADOPT_JOB', output)
     if type(budget)is not int or not 1<=budget<=1200:fail('ADOPT_BUDGET',str(budget),'Expected 1..1200 seconds per Editor step')
     plan,_=checked_plan(plan_path,expected)
     if not plan['targetProfile'].startswith('unity-'):fail('ADOPT_NATIVE_UNSUPPORTED',plan['targetProfile'],'Creator execution requires its asset-db adapter; preview is available')
@@ -112,6 +115,8 @@ def execute(plan_path,output,editor,budget=1200,expected=None):
 
 
 def recover(transaction,editor,budget=1200):
+    from .native_environment import editor_environment
+    editor_environment('BEAVER_ADOPT_JOB', transaction)
     stage=safe(transaction);plan,digest=checked_plan(stage/'adoption-plan.json');journal=load(read(stage/'journal.json',max_bytes=128*1024**2),max_nodes=8_000_000)
     if journal.get('planSha256')!=digest or not journal.get('processExited') or journal.get('state') not in ('complete','prepared','recovery-required'):
         fail('ADOPT_RECOVERY_STATE',str(stage),'Expected an exited complete or recoverable transaction')

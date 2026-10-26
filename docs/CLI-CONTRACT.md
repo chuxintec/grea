@@ -107,3 +107,5 @@ Variant允许可保存的属性、事件、组件与新增child override；继�
 `resource image-inspect/image-produce/validate-step` 为独立图片与封闭资源计划；原生切片/Atlas/TMP/Spine/音频/材质/SO引用按 RESOURCE-PRODUCTION.md。Spine闭包检查与真实播放分开。
 
 `server toolchain/protocol-tools/inspect/generate/module-generate/module-plan/protocol-diff/migration-plan/check/build/compose-plan/migration-state/migration-apply/runtime-inspect` 提供六服 Go 工具，详见 SERVER-GO.md。迁移要求固定候选、计划、Compose归属和当前 schema SHA；实际应用可能产生持久变化，未知/部分状态拒绝盲重放。Compose计划不启动容器，runtime检查不执行游戏业务。
+
+原生Editor进程通过ASCII base64传递UTF8 job路径，由companion严格解码；保留PlaySession中的原路径。子进程继承必要路径/用户/locale、代理证书及已有许可路径，排除PWD/OLDPWD和任意agent环境；不改父进程或全局设置。无效必需环境值在写入前拒绝，诊断仅标变量名。该内部传输变更要求新的固定producer与计划，不用新包恢复旧事务。
