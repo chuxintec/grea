@@ -364,8 +364,9 @@ def inspect_native(transaction):
         fail('DEBUG_NATIVE_RECORD', str(root), 'Plan and journal must be JSON objects')
 
     unity = plan_name == 'unity-plan.json'
-    expected_contract = 'beaver-unity/1' if unity else 'beaver-batch/2'
-    journal_contract = None if unity else 'beaver-batch-transaction/2'
+    production=not unity and plan.get('contract')=='beaver-production/3'
+    expected_contract = 'beaver-unity/1' if unity else 'beaver-production/3' if production else 'beaver-batch/2'
+    journal_contract = None if unity else 'beaver-production-transaction/3' if production else 'beaver-batch-transaction/2'
     expected_plan_sha = sha(encoded(plan))
     diagnostics = []
     blocked = False
@@ -398,7 +399,7 @@ def inspect_native(transaction):
                 diagnostics.append('plan projectRoot contains a symbolic link')
                 blocked = True
     spec = plan.get('spec')
-    operation = spec.get('operation') if unity and isinstance(spec, dict) else 'batch.apply'
+    operation = spec.get('operation') if unity and isinstance(spec, dict) else 'production.apply' if production else 'batch.apply'
     if unity and not isinstance(spec, dict):
         diagnostics.append('Unity plan spec is missing or malformed')
         blocked = True
@@ -413,7 +414,7 @@ def inspect_native(transaction):
     if unity and (not isinstance(operation, str) or journal.get('operation') != operation):
         diagnostics.append('journal operation does not match plan')
         blocked = True
-    if unity and plan.get('schemaVersion') != 1 or not unity and plan.get('schemaVersion') != 2:
+    if plan.get('schemaVersion') != (1 if unity else 3 if production else 2):
         diagnostics.append('plan schema version mismatch')
         blocked = True
 

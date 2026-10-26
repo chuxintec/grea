@@ -12,13 +12,21 @@ from .io import sha, encoded
 
 
 def implementation_identity():
-    root = Path(__file__).parent
-    return sha(encoded({p.relative_to(root).as_posix(): sha(p.read_bytes())
-                        for p in sorted(root.rglob("*")) if p.suffix in (".py", ".cs")}))
+    from .implementation import identity
+    return identity()
 
 
 def capabilities():
     capabilities = [
+        dict(id='workspace.plan/apply/inspect/rebind',state='implemented',effects='explicit-project-local-binding',verification='content-pinned tool/engine/authority, reviewed writes and relocation'),
+        dict(id='production.plan/apply/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit project profile',effects='declared-resource-config-code-writes',verification='schema3; native apply/reopen/recover verified on private fixtures; formal consumer evidence is project-specific'),
+        dict(id='config3.validate/generate/compare',state='implemented',effects='read-and-create-only-generated-code',verification='strict shared schema; actual C# and Go JSON readers; caller must run generated consumer'),
+        dict(id='csharp.inspect/rename/rename-sequence',state='requires_provider',provider='matching Unity Bee context + .NET Roslyn SDK',effects='read-and-create-only-source-candidates',verification='ordered semantic rename, analyzers/generators, exact final fileEdits; dynamic unknowns block'),
+        dict(id='csharp.module',state='implemented',effects='create-only-module-candidate',verification='owned five-layer templates and strict flat JSON reader; no existing assembly mutation'),
+        dict(id='resource.image-inspect/image-produce/validate-step',state='implemented',effects='read-and-create-only-image-variants',verification='closed resource contracts; Pillow required for image operations; native resource execution remains provider-bound'),
+        dict(id='server.generate/module-generate/module-plan/protocol-diff/migration-plan',state='implemented',effects='create-only-go-candidate-and-plans',verification='six roles, explicit ownership, same JSON schema; no production deploy or payment success'),
+        dict(id='server.toolchain/protocol-tools/check/build',state='requires_provider',provider='Go + protoc + pinned Go plugins',effects='local-toolchain-build-output',verification='actual compiler/protocol generation and atomic candidate binaries; no global install'),
+        dict(id='server.compose-plan/migration-state/migration-apply/runtime-inspect',state='requires_provider',provider='explicit owned Docker Compose target + MySQL + Redis',effects='plan-or-explicit-owner-schema-mutation',verification='candidate/compose/container/network/volume identity and current schema SHA; partial or unknown execution requires inspection'),
         dict(id='batch.plan',state='implemented',effects='plan-output',verification='scoped hashes, dependency/compilation inputs; cache is not authority'),
         dict(id='batch.apply',state='requires_provider',provider='Unity 6000.6.2f1 + project uGUI/TMP',effects='declared-project-write',verification='one Editor process; native checkpoint and serialized save/reload checks'),
         dict(id='batch.recover',state='requires_provider',provider='same pinned beaver + Unity 6000.6.2f1',effects='hash-owned-restore',verification='exact witnessed after state required; later edits and missing checkpoints block'),
@@ -56,6 +64,7 @@ def capabilities():
     ]
     return dict(contract="beaver-capabilities/1", capabilities=capabilities, requiredProviders=[],
                 nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",
+                productionOperationContract='beaver-production/3',productionTransactionContract='beaver-production-transaction/3',projectProfileContract='beaver-project/1',
                 limitations=["Provider readiness is not Editor connection or gameplay", "Native tests cover Unity 6000.6.2f1 only", "No source package parser; candidates are produced by monkey", "No global install, release, account/service/savegame writes", "Native receipts do not prove physical input, visual parity or game business acceptance"])
 
 
@@ -125,6 +134,43 @@ def parser():
     bp=batch.add_parser('plan');bp.add_argument('--project',required=True);bp.add_argument('--spec',required=True);bp.add_argument('--out',required=True)
     ba=batch.add_parser('apply');ba.add_argument('--plan',required=True);ba.add_argument('--expected-plan',required=True);ba.add_argument('--out',required=True);ba.add_argument('--editor-path',required=True);ba.add_argument('--timeout',type=int,default=600)
     br=batch.add_parser('recover');br.add_argument('--transaction',required=True);br.add_argument('--out',required=True);br.add_argument('--editor-path',required=True);br.add_argument('--timeout',type=int,default=600)
+    workspace=sub.add_parser('workspace').add_subparsers(dest='action',required=True)
+    wp=workspace.add_parser('plan');wp.add_argument('--project',required=True);wp.add_argument('--spec',required=True);wp.add_argument('--out',required=True)
+    wa=workspace.add_parser('apply');wa.add_argument('--plan',required=True);wa.add_argument('--expected-plan',required=True);wa.add_argument('--out',required=True)
+    wi=workspace.add_parser('inspect');wi.add_argument('--project',required=True);wi.add_argument('--profile')
+    wr=workspace.add_parser('rebind');wr.add_argument('--project',required=True);wr.add_argument('--profile',required=True);wr.add_argument('--expected-profile',required=True);wr.add_argument('--out',required=True);wr.add_argument('--accept-authority-change',action='store_true')
+    wr.add_argument('--spec')
+    production=sub.add_parser('production').add_subparsers(dest='action',required=True)
+    pp=production.add_parser('plan');pp.add_argument('--project',required=True);pp.add_argument('--spec',required=True);pp.add_argument('--out',required=True)
+    pa=production.add_parser('apply');pa.add_argument('--plan',required=True);pa.add_argument('--expected-plan',required=True);pa.add_argument('--out',required=True);pa.add_argument('--editor-path',required=True);pa.add_argument('--timeout',type=int,default=600)
+    pr=production.add_parser('recover');pr.add_argument('--transaction',required=True);pr.add_argument('--out',required=True);pr.add_argument('--editor-path',required=True);pr.add_argument('--timeout',type=int,default=600)
+    config3=sub.add_parser('config3').add_subparsers(dest='action',required=True)
+    cv=config3.add_parser('validate');cv.add_argument('--schema',required=True);cv.add_argument('--input',required=True);cv.add_argument('--tables');cv.add_argument('--project')
+    cg=config3.add_parser('generate');cg.add_argument('--schema',required=True);cg.add_argument('--out',required=True)
+    cc=config3.add_parser('compare');cc.add_argument('--before-schema',required=True);cc.add_argument('--after-schema',required=True);cc.add_argument('--before-input');cc.add_argument('--after-input')
+    csharp=sub.add_parser('csharp').add_subparsers(dest='action',required=True)
+    ci=csharp.add_parser('inspect');ci.add_argument('--project',required=True);ci.add_argument('--out',required=True);ci.add_argument('--toolchain')
+    cr=csharp.add_parser('rename');cr.add_argument('--project',required=True);cr.add_argument('--spec',required=True);cr.add_argument('--out',required=True);cr.add_argument('--toolchain')
+    cs=csharp.add_parser('rename-sequence');cs.add_argument('--project',required=True);cs.add_argument('--spec',required=True);cs.add_argument('--out',required=True);cs.add_argument('--toolchain')
+    cm=csharp.add_parser('module');cm.add_argument('--spec',required=True);cm.add_argument('--out',required=True)
+    resources=sub.add_parser('resource').add_subparsers(dest='action',required=True)
+    ri=resources.add_parser('image-inspect');ri.add_argument('--input',required=True)
+    rp=resources.add_parser('image-produce');rp.add_argument('--input',required=True);rp.add_argument('--out',required=True);rp.add_argument('--policy',required=True);rp.add_argument('--expected-source',required=True)
+    rv=resources.add_parser('validate-step');rv.add_argument('--project',required=True);rv.add_argument('--spec',required=True)
+    server=sub.add_parser('server').add_subparsers(dest='action',required=True)
+    server.add_parser('toolchain')
+    si=server.add_parser('inspect');si.add_argument('--project',required=True)
+    for name in ('generate','module-generate','compose-plan'):
+        item=server.add_parser(name);item.add_argument('--spec',required=True);item.add_argument('--out',required=True)
+    sm=server.add_parser('module-plan');sm.add_argument('--project',required=True);sm.add_argument('--spec',required=True);sm.add_argument('--out',required=True)
+    sd=server.add_parser('protocol-diff');sd.add_argument('--before',required=True);sd.add_argument('--after',required=True)
+    sg=server.add_parser('migration-plan');sg.add_argument('--project',required=True);sg.add_argument('--out',required=True)
+    sb=server.add_parser('check');sb.add_argument('--project',required=True);sb.add_argument('--package',action='append')
+    scb=server.add_parser('build');scb.add_argument('--project',required=True);scb.add_argument('--architecture',choices=('arm64','amd64'),default='arm64')
+    spt=server.add_parser('protocol-tools');spt.add_argument('--out',required=True)
+    sms=server.add_parser('migration-state');sms.add_argument('--compose',required=True);sms.add_argument('--project-name',required=True);sms.add_argument('--owner',required=True,choices=('login','server','chat','world','billing'))
+    sri=server.add_parser('runtime-inspect');sri.add_argument('--compose',required=True);sri.add_argument('--project-name',required=True);sri.add_argument('--gateway-port',required=True,type=int)
+    sma=server.add_parser('migration-apply');sma.add_argument('--project',required=True);sma.add_argument('--plan',required=True);sma.add_argument('--compose',required=True);sma.add_argument('--project-name',required=True);sma.add_argument('--owner',required=True,choices=('login','server','chat','world','billing'));sma.add_argument('--expected-state',required=True)
     refs=sub.add_parser('references');refs.add_argument('--project',required=True);refs.add_argument('--out',required=True);refs.add_argument('--cache')
     debug=sub.add_parser('debug').add_subparsers(dest='action',required=True)
     ds=debug.add_parser('start');ds.add_argument('--manifest',required=True);ds.add_argument('--expected',required=True);ds.add_argument('--out',required=True);ds.add_argument('--duration',type=int,default=3600);ds.add_argument('--width',type=int);ds.add_argument('--height',type=int)
@@ -198,6 +244,54 @@ def dispatch(a):
         if a.action=='plan':return plan(a.project,a.spec,a.out)
         if a.action=='apply':return apply(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
         return recover(a.transaction,a.out,a.editor_path,a.timeout)
+    if a.command=='workspace':
+        from .project_profile import setup_plan,setup_apply,rebind_plan,inspect
+        if a.action=='plan':return setup_plan(a.project,a.spec,a.out)
+        if a.action=='apply':return setup_apply(a.plan,a.expected_plan,a.out)
+        if a.action=='inspect':return inspect(a.project,a.profile)
+        return rebind_plan(a.project,a.profile,a.expected_profile,a.out,a.accept_authority_change,a.spec)
+    if a.command=='production':
+        from .production import plan,apply,recover
+        if a.action=='plan':return plan(a.project,a.spec,a.out)
+        if a.action=='apply':return apply(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
+        return recover(a.transaction,a.out,a.editor_path,a.timeout)
+    if a.command=='config3':
+        from .configuration_v3 import validate,generate,compare
+        from .io import load,read
+        if a.action=='validate':return validate(a.schema,a.input,load(read(a.tables)) if a.tables else None,a.project)
+        if a.action=='generate':return generate(a.schema,a.out)
+        return compare(a.before_schema,a.after_schema,a.before_input,a.after_input)
+    if a.command=='csharp':
+        from .csharp import inspect,rename_plan,rename_sequence_plan,module_generate
+        from .io import load,read
+        if a.action=='module':return module_generate(a.spec,a.out)
+        toolchain=load(read(a.toolchain)) if a.toolchain else None
+        if a.action=='rename-sequence':return rename_sequence_plan(a.project,load(read(a.spec)),a.out,toolchain)
+        return inspect(a.project,a.out,toolchain) if a.action=='inspect' else rename_plan(a.project,a.spec,a.out,toolchain)
+    if a.command=='resource':
+        from .resources import inspect_image,produce_image,validate_step,declared_paths
+        from .io import load,read
+        if a.action=='image-inspect':return dict(status='ok',**inspect_image(a.input))
+        if a.action=='image-produce':return produce_image(a.input,a.out,load(read(a.policy)),a.expected_source)
+        step=validate_step(load(read(a.spec)))
+        return dict(status='ok',step=step,paths=declared_paths(a.project,step),native='not_run')
+    if a.command=='server':
+        from . import server_go as server
+        from .io import load,read
+        if a.action=='toolchain':return server.toolchain_inspect()
+        if a.action=='inspect':return server.inspect(a.project)
+        if a.action=='generate':return server.generate(load(read(a.spec)),a.out)
+        if a.action=='module-generate':return server.generate_module(load(read(a.spec)),a.out)
+        if a.action=='module-plan':return server.module_plan(a.project,load(read(a.spec)),a.out)
+        if a.action=='compose-plan':return server.compose_plan(load(read(a.spec)),a.out)
+        if a.action=='protocol-diff':return server.protocol_diff(a.before,a.after)
+        if a.action=='migration-plan':return server.migration_plan(a.project,a.out)
+        if a.action=='build':return server.build_candidate(a.project,a.architecture)
+        if a.action=='protocol-tools':return server.prepare_protocol_tools(a.out)
+        if a.action=='migration-state':return server.inspect_migration_state(a.compose,a.project_name,a.owner)
+        if a.action=='runtime-inspect':return server.inspect_compose_runtime(a.compose,a.project_name,a.gateway_port)
+        if a.action=='migration-apply':return server.execute_migrations(a.project,a.plan,a.compose,a.project_name,a.owner,a.expected_state)
+        return server.build_diagnostics(a.project,a.package)
     if a.command=='references':
         from .references import inspect_graph
         result=inspect_graph(a.project,a.out,a.cache)
@@ -240,6 +334,10 @@ def main(argv=None):
         data = dispatch(a)
         status = data.get("status") if data.get("status") in ("blocked","partial","failed","not_run") else "ok"
         if data.get('status') in ('identity_unknown','starting','stopping','not_available'):status='partial'
+        if data.get('status')=='needs_action':status='blocked'
+        if data.get('status') in ('stale_plan','migration_order_blocked','blocked_existing_output','partial_or_untracked_database'):status='blocked'
+        if data.get('status')=='failed_or_needs_action':status='failed'
+        if data.get('status') in ('execution_unknown_or_failed','execution_unknown_or_partial'):status='partial'
         base.update(status=status, data=data)
         result_path = data.get("report")
         if result_path and Path(result_path).is_file():
@@ -250,8 +348,15 @@ def main(argv=None):
             base["actualChanges"] = [dict(operation='adoption.apply',transaction=data['transaction'],counts=data.get('counts',{}))]
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
-        if a.command=='batch' and a.action in ('apply','recover'):
-            base['actualChanges']=data.get('changes',[dict(operation='batch.recover',restored=data.get('restored'))])
+        if a.command in ('batch','production') and a.action in ('apply','recover'):
+            base['actualChanges']=data.get('changes',[dict(operation=a.command+'.recover',restored=data.get('restored'))])
+        if a.command=='workspace' and a.action=='apply':
+            base['actualChanges']=[dict(operation='workspace.binding',path=data['profile'],sha256=data['profileSha256'])]
+        if a.command=='server' and a.action=='migration-apply' and data.get('execution')!='not_run':
+            base['actualChanges']=[dict(operation='server.migration',projectName=a.project_name,owner=a.owner,database=data.get('database'),status=data.get('status'),stateBeforeSha256=data.get('stateBeforeSha256'),stateAfterSha256=data.get('stateAfterSha256'))]
+        if a.command=='server':
+            output_path=data.get('composePath') or (a.out if a.action=='migration-plan' else None)
+            if output_path and Path(output_path).is_file():base['artifacts'].append(dict(path=str(Path(output_path).resolve()),sha256=sha(Path(output_path).read_bytes())))
         if a.command=='adopt' and a.action=='rollback':
             base['verification']['native']='rolled_back'
             base['actualChanges']=[dict(operation='adoption.rollback',restored=data.get('restored'),report=data.get('report'))]

@@ -93,3 +93,17 @@ Variant允许可保存的属性、事件、组件与新增child override；继�
 成功的同会话保存重载与独立Editor重开、PlayMode帧数、App运行、合成事件、真实鼠标/触摸、视觉和游戏业务是独立证据。任何partial/未知动态key/身份探测失败不得由GREA包装为业务通过。
 
 大Unity制品使用显式`artifactPolicy=beaver-unity-build/2`：单文件流式上限4GiB、总8GiB，文件/别名/哈希/独立inode检查保持。构建与Player/debug自动使用此已知合同；独立`payload verify`需显式`--unity-artifact`。普通候选/复制/采用512MiB单文件上限保持，不将大制品预算静默扩展给任意输入。构建后制品校验失败标记artifact-verification-failed，不拿原生Build成功冒充可认证候选。
+
+## v0.3 Unity 与 Go 合同
+
+`workspace plan/apply/inspect/rebind` 管理工程内 `.beaver/project.json`；`rebind --spec` 显式审阅写区/生成区策略，仍要求旧 profile SHA、固定新计划和 apply。manifest/lock/编辑器版本均为接入身份。
+
+`production plan/apply/recover` 使用 schemaVersion 3，组合精确 `fileEdits` 与原生 batch/resource 步骤；`requiredPackages` 固定已解析版本，缺包在写入前拒绝。资源、JSON 和代码共同受同一写集与恢复见证保护。显式 ProjectSettings 步骤需要两个 Editor 进程：首轮标 pending_editor_reopen，退出后第二进程严格读取磁盘设置、资源断言及全部写集哈希，任一步失败均不能完成事务。若第一进程已输出完整但失败的原生见证，第二进程仅可建立退出后 checkpoint 供受控恢复，状态 checkpoint_verified 永远不能提升为操作成功；编译失败无完整见证仍明确阻断。
+
+`config3 validate/generate/compare` 使用同一 schema 生成并实际解析 C# 与 Go 复杂 JSON，详见 CONFIGURATION-v3.md。
+
+`csharp inspect/rename/rename-sequence/module` 使用实际 Bee 编译上下文；sequence 的 `--spec` 为有序改名请求数组，合同 `beaver-csharp-rename-sequence/1`，在私有源码快照逐阶段编译，生成原工程旧哈希到最终候选的唯一 fileEdits，不直接写工程。模块严格 JSON 读取与序列化兼容边界见 CSHARP-MAINTENANCE.md。
+
+`resource image-inspect/image-produce/validate-step` 为独立图片与封闭资源计划；原生切片/Atlas/TMP/Spine/音频/材质/SO引用按 RESOURCE-PRODUCTION.md。Spine闭包检查与真实播放分开。
+
+`server toolchain/protocol-tools/inspect/generate/module-generate/module-plan/protocol-diff/migration-plan/check/build/compose-plan/migration-state/migration-apply/runtime-inspect` 提供六服 Go 工具，详见 SERVER-GO.md。迁移要求固定候选、计划、Compose归属和当前 schema SHA；实际应用可能产生持久变化，未知/部分状态拒绝盲重放。Compose计划不启动容器，runtime检查不执行游戏业务。

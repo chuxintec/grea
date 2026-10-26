@@ -3,7 +3,7 @@
 候选／已有工程 → 可持续开发工程与制品。Python CLI，Unity 使用原生 Editor API。
 恢复候选由 monkey 提供；阶段选择、方法和调用规范由 GREA 提供。
 
-当前版本 **0.2.0**。Unity 6000.6.2f1 已在自有样例和肥鹅固定版本的隔离副本实证。Creator 3.8.8 仅支持静态检查与三方预览，原生执行/构建不支持。
+当前开发版本 **0.3.0.dev1**，已交付基线 **0.2.0**。Unity 6000.6.2f1 已在自有样例和肥鹅固定版本的隔离副本实证。Creator 3.8.8 仅支持静态检查与三方预览，原生执行/构建不支持。
 
 ```sh
 python3 -m venv .private/venv
@@ -22,3 +22,8 @@ v0.1 的 GUID/manifest 三方采用、JSON/DTO、PNG 无损压缩、原生导入
 验证覆盖实际详情滚动窗口、17 项图鉴、Closet Variant 和资源引用组，正式游戏、Go、账号及普通存档未被操作。截图、合成事件、物理输入与完整游戏业务分别报告；目前物理输入、完整业务、Spine 行为和视觉还原一致性未验收。
 
 见[用法](docs/USAGE-v0.2.md)、[CLI 合同](docs/CLI-CONTRACT.md)、[唯一进度](docs/PLAN.md)、[v0.2 验证索引](docs/VALIDATION-v0.2.0.json)、[来源许可](docs/PROVENANCE.md)。本轮仅本地提交和隔离安装，无远端、推送、Release 或全局安装。
+
+
+v0.3 将私有工程接入、资源生产、复杂 JSON/C#＋Go 同源读取、Roslyn 语义维护与联合事务接入同一公开 CLI，并提供 Go 六服的协议、迁移、构建及自有 Compose 验证工具。Unity 模块默认使用 `grea-unity-project/1.0.0` 的 Bootstrap/Domain/Gameplay/Presentation/Services；旧五层模板须显式选择兼容 profile。
+
+设置修改使用独立 Editor 重开核验；完整原生 checkpoint 是受控恢复的必要条件。运行能力与实际游戏采用分开记录，v0.3 整版进度以 PLAN 为准。Go 私有 Unity→gateway→MySQL→Unity 链路已实测同请求幂等及重启/缓存丢失，正式服务器与支付不在本轮操作范围。

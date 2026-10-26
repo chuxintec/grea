@@ -20,8 +20,8 @@ VERSION = "6000.6.2f1"
 
 
 def identity():
-    root = Path(__file__).parent
-    return sha(encoded({p.relative_to(root).as_posix():digest_file(p) for p in sorted(root.rglob('*')) if p.suffix in ('.py','.cs')}))
+    from .implementation import identity as package_identity
+    return package_identity()
 
 
 def asset_path(value, suffix):

@@ -25,3 +25,9 @@
 batch、references、loading_keys、debug 及四份 Batch/ListView/SafeArea C# companion 为本项目新增实现，使用 Python 标准库和工程已有 Unity/uGUI/TMP API，没有再提取其他产品执行代码。v0.1 派生文件及原许可继续保留；大制品预算为显式新合同。
 
 真实验证仅使用固定 f3991c6 交付源的 beaver 私有冻结副本与独立工作副本；54280 项冻结输入最终重新核验一致。真实素材、正式 JSON、业务代码、fixture、原始日志、完整原生报告和 App 全留 `.private/v02`，不进入 Git 或 wheel。公开验证索引只记录身份、计数、路径和支持边界，不分发游戏资料。独立 UI fixture 使用不同 bundle/company/product，无 Entry/Mainline/Preview host，无账号/普通存档或业务服务访问；不将此隔离能力宣称为通用工具自动提供。
+
+## v0.3 增量
+
+GREA 通用 Go 六服执行模板按固定交接清单 SHA `283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3` 接收，45份源文件/104020字节，选定22份模板保留于 `server_templates/grea_seed/`，实际源身份逐项记录 SOURCE-MANIFEST。沿用包内 GREA MIT 归属，未复制 Cocos、旧破坏性脚本、运行凭据或游戏业务数据。protobuf 由已验证 protoc/plugin 生成，不手改生成文件。Unity/C#工具及复杂配置读取器为本轮新增实现；运行需要调用方已有 Unity/.NET/Go/protoc，不打包其二进制。
+
+真实 FoodStreet 的 v0.3 资源、JSON、代码快照、改名候选、原始日志和 App 继续只在 `.private/v03`。自有 Go 示例配置可作为模板内容；Docker secrets、容器卷和测试账户不进入 Git/wheel。工具健康、私有试点和正式主开发采用分别记录。

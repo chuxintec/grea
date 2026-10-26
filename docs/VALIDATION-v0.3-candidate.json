@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "contract": "beaver-validation/3",
+  "version": "0.3.0.dev1",
+  "status": "local_candidate_verified_consumer_pending",
+  "observedUtc": "2026-10-26T13:12:54.032060+00:00",
+  "source": {
+    "branch": "codex/beaver-v0.3",
+    "baseCommit": "fae3845bdddc21e311f87540ff718782fb1f7ea7",
+    "implementationSha256": "b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0",
+    "nativeTransactionProducerSha256": "e799831e07798347fcbb4e9c0338877b1e7c33f652e6f41c5f3295a79bd1ea1e"
+  },
+  "package": {
+    "path": ".private/dist/v0.3-candidate-07/beaver_game_tools-0.3.0.dev1-py3-none-any.whl",
+    "bytes": 238496,
+    "sha256": "7f085738b5a10a1da72e76debb4eee5641f066abbc89355dcb3c67a2d0c72f10",
+    "packageFiles": 67,
+    "exactSourceBytes": true,
+    "privateContentIncluded": false,
+    "cleanInstall": ".private/v03/clean-venv-01",
+    "executionCwd": "/private/tmp",
+    "deltaFromNativeProofCandidate": "Only capability evidence description and C# template trailing newline; native06/r18 retained for its journals."
+  },
+  "checks": {
+    "pythonTests": 115,
+    "nativeJointTransaction": {
+      "inputFiles": 260,
+      "nativeSteps": 10,
+      "independentEditors": 2,
+      "actualChangedFiles": 271,
+      "unplannedChanges": 0,
+      "ordinaryRecovery": "exact_before_verified",
+      "reapplied": "verified"
+    },
+    "semanticRename": {
+      "stages": [
+        "namespace",
+        "type",
+        "serialized_field"
+      ],
+      "uniqueFileEdits": 255,
+      "compileContext": "actual Unity Bee/Roslyn with explicit source assembly allowlist",
+      "excludedPackageSource": "exact compiled metadata references; no dynamic-reflection claim"
+    },
+    "moduleProfile": {
+      "id": "grea-unity-project/1.0.0",
+      "layers": [
+        "Bootstrap",
+        "Domain",
+        "Gameplay",
+        "Presentation",
+        "Services"
+      ],
+      "nativeCompileAndPlay": "verified",
+      "badJsonRejections": 4
+    },
+    "runtime": {
+      "actualFoodStreetPrivateCopy": true,
+      "formalProjectWritten": false,
+      "sourceSha256": "8deb67c88e63b35402859b7963d33998548a4ba6fb29a57d386fc5014b7ad84a",
+      "artifactManifestSha256": "46b57b88c066325977e753f09c0ca22731fbede71943f7591cfef62b80ce4630",
+      "buildBytes": 1280445566,
+      "inputSha256": "de216f61feeff8e5a67adee5f86e2c7303582f116bced4a4e9f6fda68ab3577d",
+      "schemaSha256": "4b0ec6d724d41e52bdbbe92d5c9a2ebcf6e6300aec9b514f6a477f4717c520b5",
+      "elements": 1293,
+      "orders": 3432,
+      "spine": {
+        "spineVerified": true,
+        "spineAnimationName": "idle",
+        "spineProbeStatus": "passed",
+        "spineTrackTimeStart": 0.019999992102384567,
+        "spineTrackTimeEnd": 0.16501189768314362,
+        "spineMeshVertexCount": 28,
+        "spineCanvasRendererVisible": true
+      },
+      "physicalMouse": {
+        "elementScrollMoved": true,
+        "elementContentBefore": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "elementContentAfter": {
+          "x": 0.0,
+          "y": 133.01039123535156
+        },
+        "elementClosedInactive": true
+      },
+      "syntheticInputDuringPhysicalRun": false,
+      "artifactBeforeAfter": "exact_manifest_verified"
+    },
+    "ownedGo": {
+      "project": "beaver-go-edge05",
+      "roles": 6,
+      "ownerMigrations": 5,
+      "unityPlayFirstIntent": "APPLIED revision1 balance10",
+      "unityAppResumedSameIntent": true,
+      "exactRetryBodySha256": "8a4eea4414e1bf323dbc20e6c8c7cfb4a5ca89061c411a73dcd9776d70a00aa4",
+      "appliedReceipts": 1,
+      "totalReceipts": 2,
+      "negativeReceipt": "REVISION_CONFLICT",
+      "conflictingPayloadRejected": true,
+      "sixServiceAndMysqlRestartVerified": true,
+      "redisCacheLossVerified": true,
+      "finalState": "stopped_volumes_preserved",
+      "formalServicesModified": false
+    },
+    "finalMetadataTests": 11,
+    "cleanInstalledCandidatePlayer": "verified_exit0_from_private_tmp"
+  },
+  "consumer": {
+    "status": "pending",
+    "greaAdapter": "current finite support ends at 0.2.0; 0.3 requires GREA owner work",
+    "formalMainDeveloperUse": "not_run",
+    "crossChatDispatch": "awaiting_direct_human_authorization",
+    "handoff": "docs/HANDOFF-v0.3-candidate.md"
+  },
+  "limitations": [
+    "Private copies and synthetic Go example do not constitute formal project adoption or full game completion.",
+    "Font positive corpus is 3008 glyphs. Original product fonts lack U+9CAF; full-game glyph coverage is not claimed.",
+    "Audio importer identity is verified; audible playback is not tested.",
+    "Go is a development HTTP/internal gRPC example; production TLS/mTLS, WSS, payment and full product services remain outside demonstrated scope.",
+    "Old failures and explicit repairs remain separate; compile failures without a complete checkpoint do not gain ordinary recovery claims.",
+    "Later probe transaction must be recovered before the earlier full transaction; later edits are protected from overwrite.",
+    "Initial physical run timed out during delayed desktop control. Only physical-02 is successful."
+  ],
+  "evidence": [
+    {
+      "path": ".private/v03/authorization.json",
+      "bytes": 460,
+      "sha256": "45fb71cfc22a15466d065c69319fe4da01fb52364f177f7cd179a08245f85f3e"
+    },
+    {
+      "path": ".private/v03/tests-integration-06.log",
+      "bytes": 100,
+      "sha256": "ff2cd0e9981568756838e8d360a40ffb8cea5dd1c2e9ec3587232e10450a4d01"
+    },
+    {
+      "path": ".private/v03/handoff-candidate06.json",
+      "bytes": 435,
+      "sha256": "01260bd4931936b323e359d15fdb14eab3dc103ee450ab744617f980096bb869"
+    },
+    {
+      "path": ".private/v03/foodstreet-first-import-audit.json",
+      "bytes": 278,
+      "sha256": "b508f5b3b53b7b1d04f0c5473b087bbe55fc8b5b706299aa3b1238d8203585ac"
+    },
+    {
+      "path": ".private/v03/real-production-plan-13/batch-plan.json",
+      "bytes": 1584510,
+      "sha256": "9fe9ca48de0c455f4907e1c5976a7718e13a37e1638b1b0ffe461c880eb2d91d"
+    },
+    {
+      "path": ".private/v03/real-production-run-13/native-result.json",
+      "bytes": 214039,
+      "sha256": "7e50c253dd47f403270c25534b3c9faa8224820965044a76d1a72cacd3e30e70"
+    },
+    {
+      "path": ".private/v03/real-production-recover-13/recovery.json",
+      "bytes": 238,
+      "sha256": "43ac074c5f5c914e427a275fdb0b90b29a3c400a0aa4ad7e3cab64bd5d05d737"
+    },
+    {
+      "path": ".private/v03/real-production-run-14/journal.json",
+      "bytes": 618179,
+      "sha256": "03e40745a532eba1896d56199fbd70f8e3a9bfdb395c2b8539aaa1070ed78a72"
+    },
+    {
+      "path": ".private/v03/real-probe-fix-run-01/journal.json",
+      "bytes": 2487,
+      "sha256": "d24fb4f9d71b81f0c6cd4392d829ae25efdbdb0f1f85e80550a7d424e52fb957"
+    },
+    {
+      "path": ".private/v03/real-build-run-02/journal.json",
+      "bytes": 15079246,
+      "sha256": "36f7200767215900d7834f7027023b6633ddecdee7e4d290592f1d8718e973ab"
+    },
+    {
+      "path": ".private/v03/real-build-run-02/artifact-manifest.json",
+      "bytes": 38822,
+      "sha256": "46b57b88c066325977e753f09c0ca22731fbede71943f7591cfef62b80ce4630"
+    },
+    {
+      "path": ".private/v03/real-player-run-02/player-result.json",
+      "bytes": 2753,
+      "sha256": "f1a4bed2c11c7d08900ce4327f207af457414ecb7e13b19e964622eff3ac8522"
+    },
+    {
+      "path": ".private/v03/real-player-run-02/foodstreet-runtime.json",
+      "bytes": 2666,
+      "sha256": "d6bfe26b7987ac2f3bcd2d23c39ec3ef654477d0f4ed6300e3a26d127ac47976"
+    },
+    {
+      "path": ".private/v03/real-player-physical-02/player-result.json",
+      "bytes": 2763,
+      "sha256": "62253b42ce3f48dd5a5d4009c148ae208b65c0aabeec9f3f854ff8e41c8be7e3"
+    },
+    {
+      "path": ".private/v03/real-player-physical-02/foodstreet-runtime.json",
+      "bytes": 2775,
+      "sha256": "6c849c8855afcad8233c3751dceae0198a17aa7c418b4604bd389c0da202c062"
+    },
+    {
+      "path": ".private/v03/real-player-physical-02/player.log",
+      "bytes": 8115,
+      "sha256": "c9e9089d645454cd40066aa8be947b18ef404f980fdfa88c83b4f7e50bfc6c19"
+    },
+    {
+      "path": ".private/v03/real-player-physical-02/foodstreet-physical-element-detail.png",
+      "bytes": 368471,
+      "sha256": "4ff6965cb1970c292cd3ef56200f1a7d278132a3df210633229d476184ff8135"
+    },
+    {
+      "path": ".private/v03/real-player-physical-02/foodstreet-physical-element-scrolled.png",
+      "bytes": 277537,
+      "sha256": "1aa12d2850f4bde8f42340339d33c42500b959fd21b538a60776d02186e6ddca"
+    },
+    {
+      "path": ".private/v03/resources/font-coverage-scope-08.json",
+      "bytes": 632,
+      "sha256": "53878861cbbed8ac746bebfadfd7282cf183ebdb93065cf79548f168d42c132a"
+    },
+    {
+      "path": ".private/v03/csharp/foodstreet-20261026-refresh01/sequence-final2/plan.json",
+      "bytes": 339160,
+      "sha256": "c4c0c771e9093fb644a18797adea3879cbb76e4c039fedd2a2468b1d8c68b1bb"
+    },
+    {
+      "path": ".private/v03/module-play-run-01/journal.json",
+      "bytes": 53885,
+      "sha256": "eb09fda2f26ac2bc9e021a1d6c845f94b2cba9b0fd1d2463644fd36a341a539e"
+    },
+    {
+      "path": ".private/v03/module-play-run-01/apply.log",
+      "bytes": 33719,
+      "sha256": "70a182615883931754ec2d71f6608bdcbe8b6267c7b6bbdba627267cfb54d7e0"
+    },
+    {
+      "path": ".private/v03/go-unity-player-run-05/player-result.json",
+      "bytes": 2765,
+      "sha256": "beb28166a84b7028dcd08a590dfc404066b733f81790bc59ecc1568dfcf6f45e"
+    },
+    {
+      "path": ".private/v03/go-unity-play-result/app-result-05.json",
+      "bytes": 2403,
+      "sha256": "a5c422457f3725a4d35d6df5eab55eaae5b753bed6bcce04f34d150d94b873cd"
+    },
+    {
+      "path": ".private/v03/server-go/edge05-after-app-replay-mysql-audit-02.json",
+      "bytes": 1456,
+      "sha256": "720513d846ac313936894004ba904cf121f77b38e29e3b7c55dcd4723eceac6b"
+    },
+    {
+      "path": ".private/v03/server-go/edge05-owned-stop.json",
+      "bytes": 170,
+      "sha256": "f47aa8ff44f8acee669ae567307521f6c0ae4a30c30f0d5ea8d0150fa3e029bd"
+    },
+    {
+      "path": ".private/v03/handoff-candidate07.json",
+      "bytes": 660,
+      "sha256": "72f33a47b7b851837f41efcc9f7eacad4ffe30bbf67490dc2e2bda7e46deaf79"
+    },
+    {
+      "path": ".private/v03/tests-final-metadata-07.log",
+      "bytes": 2021,
+      "sha256": "564ea76e54160c07f1d7b324ace675efb6a1ec3fbef6efb002c9a13dd1c46d66"
+    },
+    {
+      "path": ".private/v03/real-player-candidate07-01/player-result.json",
+      "bytes": 2769,
+      "sha256": "228bf28d8aa31a30673e4b62902750550ad6397fc259edc56f86b91327b0921f"
+    },
+    {
+      "path": ".private/v03/real-player-candidate07-01/foodstreet-runtime.json",
+      "bytes": 2681,
+      "sha256": "6c61e700c4ca4b261d9f112b0ed49c77ea890061aa79dfdbb6ec901657d31eee"
+    }
+  ]
+}

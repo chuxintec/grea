@@ -43,6 +43,9 @@ def state(root, paths):
 
 
 def validate(spec):
+    if isinstance(spec,dict) and spec.get('schemaVersion')==3:
+        from .production import validate as production_validate
+        return production_validate(spec)
     if not isinstance(spec,dict) or set(spec)-{'schemaVersion','operation','steps','readPaths','runtimeRoot'} or spec.get('schemaVersion')!=2 or spec.get('operation')!='batch':
         fail('BATCH_SPEC','spec','Expected schemaVersion 2, operation batch and explicit steps')
     steps=spec.get('steps')
@@ -142,8 +145,13 @@ def plan(project,spec_path,output):
     started=time.monotonic();project=safe(project);context=inspect(project)
     if (context['engine'],context['editorVersion'])!=('unity',VERSION):fail('UNITY_VERSION',str(project),'Only existing Unity '+VERSION)
     spec=load(read(spec_path));validate(spec);listing=inventory(project);writes=set();roots=set(spec.get('readPaths',[]));explicit_guids=set()
+    production=spec.get('schemaVersion')==3
+    if production:
+        from .production import paths,binding,verify_sources
+        extra_reads,extra_writes=paths(project,spec);roots.update(extra_reads);writes.update(extra_writes);verify_sources(project,spec)
     for step in spec['steps']:
         kind=step['kind']
+        if kind.startswith('resource.'):continue
         paths=[step['assetPath']] if kind in ('prefab.inspect','prefab.patch','text.key','script.key') else step['consumers'] if kind=='reference.replace' else [step['source'],step['target']]
         if kind!='prefab.inspect':writes.update(p+s for p in paths for s in ('','.meta'))
         roots.update(paths)
@@ -164,26 +172,29 @@ def plan(project,spec_path,output):
             if not inside(project,rel).exists():installs.append(dict(path=rel,sha256=fingerprint))
             roots.add(rel);writes.update((rel,rel+'.meta'))
     for p in list(writes):
+        if not p.startswith('Assets/'):continue
         for parent in Path(p).parents:
             if parent.as_posix() not in ('.','Assets'):
                 meta=parent.as_posix()+'.meta'
                 if meta not in listing:writes.add(meta)
                 else:roots.add(meta)
+    profile=binding(project,spec,writes=writes) if production else None
     reads,metrics=dependencies(project,roots,explicit_guids);before=state(project,reads|writes)
     if any(p==HELPER_ROOT or p.startswith(HELPER_ROOT+'/') or p==HELPER_ROOT+'.meta' for p in before):fail('BATCH_RESERVED_PATH',HELPER_ROOT,'Temporary helper root reserved')
     out=new_output(output,[project,safe(spec_path)])
-    result=dict(contract='beaver-batch/2',schemaVersion=2,implementationSha256=identity(),projectRoot=str(project),
+    result=dict(contract='beaver-production/3' if production else 'beaver-batch/2',schemaVersion=3 if production else 2,implementationSha256=identity(),projectRoot=str(project),
                 spec=spec,readSet=sorted(reads),writeSet=sorted(writes),before=before,installs=installs,
                 metrics=dict(metrics,statFiles=len(listing),hashedFiles=sum(v is not None for v in before.values()),hashedBytes=sum(v['bytes'] for v in before.values() if v),editorStarts=0,seconds=time.monotonic()-started),
                 limitations=['Selected GUID closure and compilation inputs are hashed; unrelated asset bytes are not scanned',
                              'Native dependency preflight rejects unlisted consumers before replacement','Dynamic loading keys require explicit consumer patches; no completeness claim'])
+    if profile:result['projectBinding']=profile
     write_json(out/'batch-plan.json',result);digest=sha(encoded(result));write_json(out/'plan-identity.json',dict(sha256=digest))
     return dict(status='planned',report=str(out/'batch-plan.json'),planSha256=digest,metrics=result['metrics'])
 
 
 def check_plan(path,expected):
     raw=read(path,max_bytes=128*1024**2);data=load(raw,max_nodes=8_000_000)
-    if sha(raw)!=expected or data.get('contract')!='beaver-batch/2' or data.get('implementationSha256')!=identity():fail('BATCH_PLAN_CHANGED',str(path),'Regenerate with current implementation; bind exact plan SHA256')
+    if sha(raw)!=expected or data.get('contract') not in ('beaver-batch/2','beaver-production/3') or data.get('implementationSha256')!=identity():fail('BATCH_PLAN_CHANGED',str(path),'Regenerate with current implementation; bind exact plan SHA256')
     validate(data['spec']);return data
 
 
@@ -214,11 +225,14 @@ def launch(editor,project,stage,job,timeout):
     return code,report
 
 
-def helper(project):
+def helper(project, production=False, sprites=False):
     root=inside(project,HELPER_ROOT)
     if root.exists() or inside(project,HELPER_ROOT+'.meta').exists():fail('BATCH_HELPER_CONFLICT',HELPER_ROOT,'Temporary helper root occupied')
     directory=root/'Editor';directory.mkdir(parents=True);owned={}
-    for name in ('BeaverBatch.cs','BeaverBatchUI.cs'):
+    names=['BeaverBatch.cs','BeaverBatchUI.cs']
+    if production and (Path(__file__).parent/'targets/BeaverResourceProduction.cs').is_file():names.append('BeaverResourceProduction.cs')
+    if sprites:names.append('BeaverResourceSprites.cs')
+    for name in names:
         target=directory/name;target.write_bytes((Path(__file__).parent/'targets'/name).read_bytes());owned[target]=digest_file(target)
     return root,owned
 
@@ -260,34 +274,67 @@ def apply(plan_path,output,editor,expected,timeout=600):
     started=time.monotonic()
     path=safe(plan_path);data=check_plan(path,expected);project=safe(data['projectRoot']);editor=editor_path(editor)
     stage=new_output(output,[project,path.parent]);write_json(stage/'batch-plan.json',data)
-    journal=dict(contract='beaver-batch-transaction/2',status='prepared',projectRoot=str(project),planSha256=expected,
+    production=data.get('schemaVersion')==3
+    if production:
+        from .production import binding,verify_sources
+        if binding(project,data['spec'],data['writeSet'])!=data['projectBinding']:fail('PRODUCTION_BINDING_DRIFT',str(project),'Project profile changed after plan')
+        verify_sources(project,data['spec'])
+    journal=dict(contract='beaver-production-transaction/3' if production else 'beaver-batch-transaction/2',status='prepared',projectRoot=str(project),planSha256=expected,
                  implementationSha256=identity(),writeSet=data['writeSet'],before={p:data['before'][p] for p in data['writeSet']},editorStarts=0)
     write_json(stage/'journal.json',journal)
     with lock(project):
         native_lock(project)
+        if production:
+            if binding(project,data['spec'],data['writeSet'])!=data['projectBinding']:fail('PRODUCTION_BINDING_DRIFT',str(project),'Project profile changed before write lock')
+            verify_sources(project,data['spec'])
         if state(project,data['before'])!=data['before']:fail('BATCH_SOURCE_DRIFT',str(project),'Read/write content changed since plan')
         transforms=text_changes(project,data['spec']);listing=inventory(project)
+        file_edits={edit['path']:read(edit['source'],max_bytes=512*1024**2) for edit in data['spec'].get('fileEdits',[])}
+        for edit in data['spec'].get('fileEdits',[]):
+            if sha(file_edits[edit['path']])!=edit['sha256']:fail('PRODUCTION_SOURCE_DRIFT',edit['source'],'Generated bytes changed before staging')
         for rel in data['writeSet']:
             if data['before'][rel] is not None:
                 dest=stage/'before'/rel;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(read(inside(project,rel),max_bytes=512*1024**2))
         patches=[]
         for rel,raw in transforms.items():
             dest=stage/'patches'/rel;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(raw);patches.append(dict(path=rel,source=str(dest),sha256=sha(raw)))
-        root,owned=helper(project)
+        root,owned=helper(project,production and any(s['kind'].startswith('resource.') for s in data['spec']['steps']),production and any(s['kind']=='resource.sprites' for s in data['spec']['steps']))
         try:
             # Product runtime script imports must compile before the Editor companion.
             for install in data['installs']:
                 source=Path(__file__).parent/'targets'/Path(install['path']).name
                 dest=inside(project,install['path']);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(source.read_bytes())
             preinstalled={rel:raw for rel,raw in transforms.items() if rel.endswith('.cs')}
-            for rel,raw in preinstalled.items():inside(project,rel).write_bytes(raw)
+            preinstalled.update(file_edits)
+            for rel,raw in preinstalled.items():
+                dest=inside(project,rel);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(raw)
             installed={i['path']+s for i in data['installs'] for s in ('','.meta')}
-            preconditions=[dict(path=p,exists=v is not None,sha256=sha(preinstalled[p]) if p in preinstalled else v['sha256'] if v else '') for p,v in data['before'].items() if p not in installed and (v is not None or p in data['writeSet'] and not p.endswith('.meta'))]
+            preconditions=[dict(path=p,exists=p in preinstalled or v is not None,sha256=sha(preinstalled[p]) if p in preinstalled else v['sha256'] if v else '') for p,v in data['before'].items() if p not in installed and (v is not None or p in data['writeSet'] and not p.endswith('.meta'))]
             job=dict(data['spec'],projectRoot=str(project),stage=str(stage),mode='apply',planSha256=expected,
                      writes=data['writeSet'],installs=data['installs'],patches=patches,preconditions=preconditions)
+            job['requiresReopen']=any(s['kind']=='resource.project-settings' for s in data['spec']['steps'])
+            if production:
+                import json
+                from .resources import validate_step
+                job['steps']=[dict(kind=s['kind'],payload=json.dumps(validate_step(s),ensure_ascii=False,allow_nan=False)) if s['kind'].startswith('resource.') else s for s in job['steps']]
             journal['editorStarts']=1;write_json(stage/'journal.json',journal)
             code,report=launch(editor,project,stage,job,timeout)
             journal['native']=report
+            complete_checkpoint={r['path'] for r in report.get('files',[])}==set(data['writeSet'])
+            if job['requiresReopen'] and report.get('planSha256')==expected and complete_checkpoint and (code==0 and report.get('status')=='pending_editor_reopen' or report.get('status')=='failed'):
+                journal['nativeBeforeReopen']=report
+                # Unity flushes some ProjectSettings only while exiting. A new
+                # process must read the persisted settings and all resource
+                # assertions; the first process is deliberately not a verdict.
+                saved=state(project,data['writeSet'])
+                unchanged={p:v for p,v in data['before'].items() if p not in data['writeSet']}
+                if state(project,unchanged)!=unchanged:fail('BATCH_REOPEN_INPUT_DRIFT',str(project),'Read inputs changed before independent native verification')
+                reopen=stage/'native-reopen';reopen.mkdir()
+                recheck=dict(job,stage=str(reopen),mode='verify' if code==0 and report.get('status')=='pending_editor_reopen' else 'checkpoint',requiresReopen=False,
+                             preconditions=[dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '') for p,v in {**unchanged,**saved}.items()])
+                journal['editorStarts']=2;write_json(stage/'journal.json',journal)
+                code,report=launch(editor,project,reopen,recheck,timeout)
+                journal['native']=report
         except BaseException as error:
             journal.update(status='recovery-required',error=str(error));raise
         finally:
@@ -304,16 +351,18 @@ def apply(plan_path,output,editor,expected,timeout=600):
         journal['recoveryWitnessMatches']=witness==journal['after']
         if code!=0 or report.get('status')!='verified' or report.get('planSha256')!=expected or not journal['recoveryWitnessMatches'] or journal['unplannedPaths']:
             journal['status']='recovery-required';write_json(stage/'journal.json',journal)
-            cause=(report.get('error') or 'No verified native report or unexpected source mutation').splitlines()[0][:1000]
+            cause=(report.get('error') or journal.get('nativeBeforeReopen',{}).get('error') or 'No verified native report or unexpected source mutation').splitlines()[0][:1000]
+            if production and 'RESOURCE_NEEDS_ACTION' in report.get('error',''):
+                fail('PRODUCTION_PROVIDER_BLOCKED',str(stage),cause+'; prior steps may have writes; inspect checkpoint before recovery',status='blocked')
             fail('BATCH_NATIVE_FAILED',str(stage),cause+'; inspect journal/native checkpoint; recover only exact witnessed state')
         journal['status']='complete';write_json(stage/'journal.json',journal)
     return dict(status='verified',report=str(stage/'journal.json'),transaction=str(stage),changes=journal['changedPaths'],
-                nativeReadback='saved_and_reloaded_same_editor',metrics=journal['metrics'],diagnostics=report.get('diagnostics',[])[:32],diagnosticCount=len(report.get('diagnostics',[])))
+                nativeReadback='saved_and_reopened_independent_editor' if journal['editorStarts']==2 else 'saved_and_reloaded_same_editor',metrics=journal['metrics'],diagnostics=report.get('diagnostics',[])[:32],diagnosticCount=len(report.get('diagnostics',[])))
 
 
 def recover(transaction,output,editor,timeout=600):
     transaction=safe(transaction);journal=load(read(transaction/'journal.json'));data=load(read(transaction/'batch-plan.json',max_bytes=128*1024**2))
-    if journal.get('contract')!='beaver-batch-transaction/2' or journal.get('status') not in ('complete','recovery-required') or journal.get('implementationSha256')!=identity():fail('BATCH_RECOVERY_CONTRACT',str(transaction),'Current ordinary batch transaction required; no legacy journal replay')
+    if journal.get('contract') not in ('beaver-batch-transaction/2','beaver-production-transaction/3') or journal.get('status') not in ('complete','recovery-required') or journal.get('implementationSha256')!=identity():fail('BATCH_RECOVERY_CONTRACT',str(transaction),'Current ordinary batch transaction required; no legacy journal replay')
     project=safe(journal['projectRoot']);editor=editor_path(editor)
     if data['projectRoot']!=str(project) or sha(encoded(data))!=journal['planSha256']:fail('BATCH_RECOVERY_PLAN',str(transaction),'Pinned transaction plan changed')
     report=journal.get('native') or (load(read(transaction/'native-result.json')) if (transaction/'native-result.json').exists() else {})
@@ -326,9 +375,10 @@ def recover(transaction,output,editor,timeout=600):
     with lock(project):
         native_lock(project)
         if state(project,journal['writeSet'])!=journal['after']:fail('BATCH_LATER_EDIT',str(transaction),'Later manual changes detected; recovery refuses all writes')
-        root,owned=helper(project)
+        root,owned=helper(project,'ProjectSettings/EditorSettings.asset' in journal['before'])
         try:
             job=dict(projectRoot=str(project),stage=str(stage),mode='recover',planSha256=journal['planSha256'],writes=journal['writeSet'],steps=data['spec']['steps'],
+                     preconditions=[dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '') for p,v in journal['after'].items()],
                      restores=[dict(path=p,source=str(transaction/'before'/p),exists=v is not None,sha256=v['sha256'] if v else '') for p,v in journal['before'].items()])
             code,report=launch(editor,project,stage,job,timeout)
         finally:cleanup(project,root,owned)

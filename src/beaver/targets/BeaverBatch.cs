@@ -16,29 +16,32 @@ public static class BeaverBatch {
         public long localId;public int index;public bool flag;public float[] numbers;public string[] items;
     }
     [Serializable] public class Step {
-        public string kind,assetPath,source,target,oldGuid,newGuid,format,pointer,before,after;
+        public string kind,assetPath,source,target,oldGuid,newGuid,format,pointer,before,after,payload;
         public long oldLocalId,newLocalId;public string[] consumers;public Action[] actions;
     }
     [Serializable] public class FileRow {public string path,source,sha256;public bool exists;public long bytes;}
     [Serializable] public class Job {
         public string projectRoot,stage,mode,planSha256;public string[] writes;
+        public bool requiresReopen;
         public Step[] steps;public FileRow[] patches,restores,installs,preconditions;
     }
     [Serializable] public class NodeRow {public string path;public long localId;public string[] components;}
     [Serializable] public class DependencyRow {public string path;public string[] consumers;}
+    [Serializable] public class ResourceState {public string status;}
     [Serializable] public class PrefabRow {
         public string path,guid,kind,basePath,contentSha256,serializedTreeSha256;public int missingScripts;public NodeRow[] nodes;
     }
     [Serializable] public class Report {
         public string status,planSha256,error,mode,editorVersion;public int completedSteps,hashReadOperations;
         public List<FileRow> files=new List<FileRow>();public List<PrefabRow> prefabs=new List<PrefabRow>();
+        public List<string> resourceReadbacks=new List<string>();
         public List<string> diagnostics=new List<string>();
         public List<DependencyRow> nativeConsumers=new List<DependencyRow>();
     }
     static Job job;static Report report;
     static string Hash(string path) {if(report!=null)report.hashReadOperations++;using(var hash=SHA256.Create())using(var stream=File.OpenRead(path))return BitConverter.ToString(hash.ComputeHash(stream)).Replace("-","").ToLowerInvariant();}
     static string Full(string relative) {
-        if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe asset path: "+relative);
+        if(String.IsNullOrEmpty(relative)||!(relative.StartsWith("Assets/",StringComparison.Ordinal)||relative=="ProjectSettings/EditorSettings.asset")||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe asset path: "+relative);
         return Path.Combine(job.projectRoot,relative);
     }
     static void Save() {
@@ -268,6 +271,15 @@ public static class BeaverBatch {
         }
     }
     static void Recover() {
+        if(job.preconditions!=null)Preflight();
+        var projectSettings=job.restores.FirstOrDefault(r=>r.exists&&r.path=="ProjectSettings/EditorSettings.asset");
+        if(projectSettings!=null) {
+            if(Hash(projectSettings.source)!=projectSettings.sha256)throw new Exception("Settings backup drift");
+            var provider=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("Beaver.Tools.BeaverResourceProduction",false)).FirstOrDefault(t=>t!=null);
+            if(provider==null)throw new Exception("Project settings restore provider unavailable");
+            try {provider.GetMethod("RestoreProjectSettings").Invoke(null,new object[]{projectSettings.source});}
+            catch(System.Reflection.TargetInvocationException error){throw error.InnerException??error;}
+        }
         // Reverse engine moves before restoring byte-exact before-images.
         foreach(var step in job.steps.Reverse().Where(s=>s.kind=="asset.move")) {
             if(File.Exists(Full(step.target))&&!File.Exists(Full(step.source))) {
@@ -314,11 +326,41 @@ public static class BeaverBatch {
                         if(!File.Exists(Full(patch.path))||Hash(Full(patch.path))!=patch.sha256) {
                             File.Copy(patch.source,Full(patch.path),true);AssetDatabase.ImportAsset(patch.path,ImportAssetOptions.ForceSynchronousImport);
                         }
+                    } else if(step.kind.StartsWith("resource.",StringComparison.Ordinal)) {
+                        var provider=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("Beaver.Tools.BeaverResourceProduction",false)).FirstOrDefault(t=>t!=null);
+                        if(provider==null)throw new Exception("Declared resource production provider is unavailable");
+                        try {
+                            provider.GetMethod("Apply").Invoke(null,new object[]{step.kind,step.payload});
+                            var evidence=(string)provider.GetMethod(job.requiresReopen?"VerifyBeforeExit":"Verify").Invoke(null,new object[]{step.kind,step.payload});
+                            report.resourceReadbacks.Add(evidence);
+                            var state=JsonUtility.FromJson<ResourceState>(evidence);
+                            if(state==null||String.IsNullOrEmpty(state.status))throw new Exception("Resource verification did not return a status");
+                            if(state.status=="needs_action"||state.status=="not_run")throw new Exception("RESOURCE_NEEDS_ACTION: "+step.kind+": "+state.status);
+                            if(state.status=="failed"||state.status=="blocked")throw new Exception("Resource verification rejected: "+step.kind+": "+state.status);
+                        } catch(System.Reflection.TargetInvocationException error) {throw error.InnerException??error;}
                     } else throw new Exception("Unknown batch step");
                     report.completedSteps++;Save();
                 }
+            } else if(job.mode=="checkpoint") {
+                // Recovery evidence only. Never a resource/business verdict.
+                Preflight();
+            } else if(job.mode=="verify") {
+                Preflight();
+                foreach(var step in job.steps) {
+                    if(step.kind.StartsWith("resource.",StringComparison.Ordinal)) {
+                        var provider=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("Beaver.Tools.BeaverResourceProduction",false)).FirstOrDefault(t=>t!=null);
+                        if(provider==null)throw new Exception("Resource verification provider unavailable on reopen");
+                        string evidence;
+                        try {evidence=(string)provider.GetMethod("Verify").Invoke(null,new object[]{step.kind,step.payload});}
+                        catch(System.Reflection.TargetInvocationException error){throw error.InnerException??error;}
+                        var state=JsonUtility.FromJson<ResourceState>(evidence);
+                        if(state==null||String.IsNullOrEmpty(state.status)||new[]{"failed","blocked","needs_action","not_run","pending_editor_reopen"}.Contains(state.status))throw new Exception("Resource reopen verification rejected: "+step.kind);
+                        report.resourceReadbacks.Add(evidence);
+                    } else if(step.kind=="prefab.patch"||step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
+                    report.completedSteps++;
+                }
             } else throw new Exception("Unknown mode");
-            report.status="verified";Save();EditorApplication.Exit(0);
+            report.status=job.mode=="checkpoint"?"checkpoint_verified":job.requiresReopen&&job.mode=="apply"?"pending_editor_reopen":"verified";Save();EditorApplication.Exit(0);
         } catch(Exception error) {
             if(report!=null){report.status="failed";report.error=error.ToString();Save();}
             Debug.LogException(error);EditorApplication.Exit(1);
