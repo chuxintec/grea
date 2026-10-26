@@ -1,9 +1,9 @@
 # v0.3 固定候选接入
 
-当前是待整版验收的 0.3.0 本地候选；不构成 Release，不授权正式游戏/服务变更。
+当前 0.3.0 已完成本地交付（含已声明限制）；不构成 Release，不扩大正式游戏或服务操作权限。
 
-- wheel：`/Users/wangmeng/Documents/Games/tools/beaver/.private/dist/v0.3-candidate-09/beaver_game_tools-0.3.0-py3-none-any.whl`
-- SHA256：`b480fb381a85e8c47711d03169a625725b06648393bcf1e9a91fa1272116d2df`，239666 bytes。
+- wheel：`/Users/wangmeng/Documents/Games/tools/beaver/.private/dist/v0.3-final/beaver_game_tools-0.3.0-py3-none-any.whl`
+- SHA256：`d4dd7229fa9ce56eabb9054d0af2b88591aa0777fe4e3d0fc139b74a105eb598`，239672 bytes。
 - implementation：`e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882`；干净环境在 `/private/tmp` 执行公开 CLI，68份包文件逐字节一致，含两份隐藏模板，未包含私有资料。
 - Unity：6000.6.2f1；旧事务须保留原固定工具，不能换新wheel重放。
 
@@ -15,7 +15,7 @@
 
 Go自有六服与五owner迁移、同Schema Unity/Go读取、Unity首笔APPLIED、App同intent重试、MySQL单次入账、六服/MySQL重启及Redis丢失后重放均实测，验收栈已普通stop保留卷；不升级现有项目服务。
 
-GREA差异：当前 beaver_operations.py 多个路由明确只允许0.2.0，不能直接把此0.3候选当旧provider。需GREA主开发在其本地范围按固定producer版本/能力/Schema作薄兼容，旧0.2固定链保持；本聊天不改GREA源码或全局安装。公开结果合同仍beaver-result/1，新production schema3、config3 schema2、rename-sequence/1和Unity标准profile均见CLI-CONTRACT与各模块文档。
+GREA本地源码薄适配已完成：49个明确路由、45项定向检查及真实私有CLI/独立stdio通过，按有限版本和精确producer绑定，旧0.1/0.2/dev1固定链保持；全局插件未安装或刷新。本聊天未跨改GREA源码。公开结果合同仍beaver-result/1，新production schema3、config3 schema2、rename-sequence/1和Unity标准profile均见CLI-CONTRACT与各模块文档。
 
 接入时回传：固定wheel/implementation身份、项目和具体既有任务、精确修改清单/plan/journal、原生及项目测试/App结果、未验证项与恢复限制。不要只发ACK或工具版本；也不把一次工具试点写成完整游戏验收。
 
@@ -28,3 +28,5 @@ GREA差异：当前 beaver_operations.py 多个路由明确只允许0.2.0，不�
 候选08修复正式中文路径暴露的Editor启动边界，版本为本地0.3.0（无Release）：UTF8 job文件路径以ASCII base64传递，三套Editor companion严格解码；Editor仅继承必要路径/用户/locale/代理与证书及已有许可路径，不继承PWD/OLDPWD或任意agent变量。父环境不改变，必需变量编码无效则不输出值并提前拒绝。118项标准测试及8份C#真实引用编译通过；正式中文路径原生结果仍待，不预先断言因果已闭合。07的两次失败和旧事务保留；08必须显式重绑定并生成新计划。
 
 最终打包09相对08只改dist-info/METADATA中的README版本/状态及RECORD，68份beaver执行/模板文件逐字相同，版本与producer均不变。08在途计划可保持原包；所有旧包与证据保留。App04特定停止例外已取得本聊天人类直接批准并转交原主开发，原生接入继续。
+
+最终状态：真实肥鹅主开发已在既有购买提示任务实际采用，两份代码安装历史、08独立原生收敛与4项项目测试均核验；App04通过明确-force-gfx-direct正常进出，默认Metal失败仍保留。当前producer自有Play3秒121260帧/0错误及中文apply/recover通过；中文独立副本的Unity Search启动异常严格保留为Play失败。最终包相对09仅README元数据/RECORD，68运行文件不变。旧的“待验”段落为候选演进记录，现行结论以PLAN及51项证据索引为准；不外推完整游戏保真、生产服务、任意Unicode Play或当前全局插件已更新。

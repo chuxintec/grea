@@ -1,6 +1,6 @@
 # beaver v0.3 模块协作
 
-基线fae3845，codex/beaver-v0.3，0.3.0本地候选（未发布）。人类授权三条已原生核验（.private/v03/authorization.json）。执行Manager通用MODULE-DEVELOPERS。主开发单写CLI/公共Schema/proto组合/事务/Editor/桌面与隔离Compose应用，正式项目由其主开发采用。
+基线fae3845，codex/beaver-v0.3，0.3.0本地交付（未发布）。人类授权三条已原生核验（.private/v03/authorization.json）。执行Manager通用MODULE-DEVELOPERS。主开发单写CLI/公共Schema/proto组合/事务/Editor/桌面与隔离Compose应用，正式项目由其主开发采用。
 
 | 实例 | 独占文件/完整模块 | 目标/观测 | 状态 |
 |---|---|---|---|
@@ -13,4 +13,6 @@
 
 消费者协调已获本聊天用户“同意”：FoodStreet 01a15762-0858-7d22-97a2-6785a453620e、GREA 01a12f53-85f0-7ab1-a44f-016d18887dc6 由各自主开发单写；root读取结果并修工具，当前无需唤醒模块实例。
 
-原生环境修复由root单写，native_ui仅在.private/v03/process-encoding/compile-01做8源/342实际引用离线编译并已交付；118测试通过。Editor/桌面仍归肥鹅主开发，App04待其用户停止例外授权；root自有中文路径原生尚未启动。
+原生环境修复由root单写，native_ui仅在.private/v03/process-encoding/compile-01做8源/342实际引用离线编译并已交付；118测试通过。Engine资源已全部释放；App04具体停止例外获人类授权并由其主开发执行。正式08原生和项目回归通过；root当前producer Play及中文apply/recover通过，Unicode Search Play失败保留。
+
+本版消费者交付已核：FoodStreet两份既有UI修正经固定包实际安装/08原生确认/4项目测试/匹配App参数化正常进出；GREA49路由45检查及CLI/stdio通过，旧链保持。root汇总51证据完成本地0.3.0交付；所有模块idle，不自动派发下一版或唤醒Cocos。

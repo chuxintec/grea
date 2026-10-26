@@ -1,6 +1,6 @@
 # beaver v0.3：Unity＋Golang联合开发与交付
 
-2026-10-26，0.3.0本地候选（未发布），codex/beaver-v0.3；基线fae3845，0.2全部制品与事务保持。完整范围沿Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md；真实用户三条授权见.private/v03/authorization.json，含最新Golang必选补充。
+2026-10-26，0.3.0本地交付（未发布），codex/beaver-v0.3；基线fae3845，0.2全部制品与事务保持。完整范围沿Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md；真实用户三条授权见.private/v03/authorization.json，含最新Golang必选补充。
 
 | 组 | 状态 | 出口 |
 |---|---|---|
@@ -10,10 +10,10 @@
 | D 模块/C#维护 | native_verified | 有所有权模板、Roslyn语义类型/namespace/字段改名与Unity序列化保护 |
 | E 联合事务 | native_verified | 资源+JSON+C#消费者增量写集、可信checkpoint与受控恢复 |
 | F 实用验证/交付 | private_app_and_physical_input_verified | 受影响编译/PlayMode、匹配Mac候选、过程及输入/日志证据 |
-| G GREA/真实消费者 | consumer_in_progress | 固定包/兼容差异、私有安装与正式项目主开发实际采用 |
+| G GREA/真实消费者 | local_adapter_and_real_consumer_verified | 固定包/兼容差异、私有安装与正式项目主开发实际采用 |
 | H Go服务器工具 | owned_stack_and_app_verified | BEAVER-V03-GO.md：六服/协议/持久事务/迁移/构建/owned Docker栈、Unity真实联调；共享服务只读 |
 
-主开发单写CLI/公共合同/事务/Editor/集成，优先复用现有模块Agent。开发与原生工具存在、原生执行、真实输入、可见画面、产品业务及真实消费者采用分别记录。正式肥鹅v1.2、Go服务、账号、玩家档、暂停项目和其他工具源码只读。允许beaver.private独立具名Docker项目/网络/数据卷、回环端口和自有测试库；先核占用，不碰QA05/共享容器/卷，不prune。无远端/Release/全局安装/引擎下载/正式服务变更或素材外发。本版整体未完成；不能以私有空壳UI自测替代真实消费者出口。
+主开发单写CLI/公共合同/事务/Editor/集成，优先复用现有模块Agent。开发与原生工具存在、原生执行、真实输入、可见画面、产品业务及真实消费者采用分别记录。正式肥鹅v1.2、Go服务、账号、玩家档、暂停项目和其他工具源码只读。允许beaver.private独立具名Docker项目/网络/数据卷、回环端口和自有测试库；先核占用，不碰QA05/共享容器/卷，不prune。无远端/Release/全局安装/引擎下载/正式服务变更或素材外发。本版整体已按声明限制完成本地交付；真实消费者与上游私有证据分别记录。
 
 v0.2已完成50项Python及固定真实隔离UI/恢复证据，不重复全量基线。当前第一组工作：建立私有工程接入/联合事务合同，同时实现独立资源、复杂配置及C#维护模块。
 
@@ -66,3 +66,9 @@ run10前9项原生通过（设置/切片/Atlas/主字体/Spine闭包/SO字段引
 G实际阻塞：肥鹅07已把两份代码按计划安装，4项项目Play通过，但原生companion前Burst失败，因此adoption仍partial。App04构建成功但PID5496卡Metal，未晋升，主开发遵守本项目AGENTS“不强退”。候选08已私有安装、显式rebind计划已准备但尚未apply；本聊天已请求用户授权该主开发核对身份后仅SIGTERM此App再重试。根不越权停进程、不改服务/玩家档；自有中文路径原生验收同等等待资源释放。GREA08适配独立继续。
 
 用户已对本聊天具体问题选择“允许仅停止该App并重试”，已转交肥鹅原主开发：必须先核PID5496仍为原App04，仅此进程SIGTERM/同候选重试/08接入，无其他进程、服务或存档授权；root继续不碰正式工程或GUI。打包09仅更新wheel README元数据，68执行文件与08完全相同、producer e6191235…不变；最终09 SHA b480fb38…，08在途计划保持。
+
+最终整版收口：固定本地0.3.0包 .private/dist/v0.3-final/beaver_game_tools-0.3.0-py3-none-any.whl，239672字节，SHA d4dd7229fa9ce56eabb9054d0af2b88591aa0777fe4e3d0fc139b74a105eb598，producer e6191235…；68包文件与08/09及当前源码完全一致，仅README元数据收口。118测试、8源/342引用C#编译、当前producer Play3秒121260帧0错误/source无变化，自有中文project/evidence apply与精确3路径recover通过，Engine资源全部释放。中文独立副本Play的Unity Search异常在cleanLibrary仍复现，严格failed不筛除，不能归因旧缓存；正常ASCII基线Play通过，中文apply/recover与正式08原生成功分别保留。
+
+G已完成实际出口：肥鹅既有v1.2购买提示显示层级修正，两份代码原经07精确安装但native失败；08显式rebind、新计划对既有after-image独立原生收敛确认（不虚构新代码delta），compile/save/reload verified、未计划0，4项目Play通过。App04默认Metal失败保留，已用-force-gfx-direct两次正常进出/浏览/正常退出；不是默认渲染已修或完整游戏验收。GREA本地源码49明确路由/45定向检查、真实私有CLI和独立stdio的ok/blocked/failed、旧链/精确版本/producer/rebind均通过；全局插件未更新，未接入Go live路由与旧Go退休不外推。51份证据哈希及两份消费者不可变观察回执见docs/VALIDATION-v0.3-candidate.json。
+
+A–H按本版授权边界完成；0.3.0为本地交付，无推送/Release/全局安装。后续版本与Cocos不自动启动，正式游戏/服务继续各主开发单写。已知限制为本版明确边界，不以失败冒充通过。
