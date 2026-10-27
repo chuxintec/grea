@@ -56,7 +56,7 @@ beaver 对新工程建立独立开发基线；对已有工程比较“旧候选�
 
 执行层统一保留工具版本、输入指纹、计划指纹、实际写入及 provider 原始诊断。GREA 不将 partial/blocked/not_run 提升为通过；进程退出与结果合同不一致时返回 needs_action 并保留原始结果。它不是第三套转换器或工程框架。
 
-方法细节见[候选交接与三方合并](../plugin/skills/grea-unity-standard/references/候选交接与三方合并.md)。工程操作合同由 beaver 单写；本文不宣布未交付 API 已可用。
+方法细节见[候选交接与三方合并](../plugin/skills/grea-develop/references/候选交接与三方合并.md)。工程操作合同由 beaver 单写；本文不宣布未交付 API 已可用。
 
 ## 必选工具与过渡
 

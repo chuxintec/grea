@@ -2,7 +2,7 @@
 """Compatibility diagnostics through grea's single bounded application layer.
 Default is presence-only. Version/help probes require --probe and explicit --tool.
 """
-import argparse, hashlib, json, re, sys
+import argparse, hashlib, json, sys
 from grea.host.paths import Path
 from grea.common import package_root
 ROOT = package_root()
@@ -22,11 +22,11 @@ def main(argv=None):
     if selected:request['tool_ids']=selected
     report=dispatch('doctor',request)
     if args.verify_frida_pair and report['result'] is not None:
-        readme=(ROOT/'docs/providers/Frida接入.md').read_text(encoding='utf-8')
-        version=re.search(r'with `frida` ([\d.]+)',readme)
-        archive=ROOT/'.private/providers/frida'/f'frida-server-{version[1] if version else "missing"}-android-arm64.xz'
+        reference=json.loads((ROOT/'plugin/skills/grea-recover/assets/frida-pair.reference.json').read_text(encoding='utf-8'))
+        version=reference['version']
+        archive=ROOT/'.private/providers/frida'/reference['archive']
         client=next((x for x in report['result']['checks'] if x['tool_id']=='frida'),{})
-        matched=bool(version and archive.is_file() and version[1] in client.get('output','') and hashlib.sha256(archive.read_bytes()).hexdigest() in readme)
+        matched=bool(archive.is_file() and version in client.get('output','') and hashlib.sha256(archive.read_bytes()).hexdigest()==reference['sha256'])
         report['result']['frida_pair']={'matched':matched,'server_executed':False}
         if not matched and report['status']=='ok':report['status']='partial'
     if args.output:write_new(args.output,report)

@@ -1,7 +1,7 @@
 {
   "name": "grea",
   "version": "2026.10.27",
-  "description": "GREA: Skill-first game research, recovery and development workflows, released together with its monkey (recovery) and beaver (engineering) modules.",
+  "description": "GREA: five Skills for orchestration, game research, recovery, development and release; monkey restores candidates and beaver operates development projects.",
   "author": {
     "name": "GREA contributors",
     "url": "https://github.com/chuxintec/grea"

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-10-13",
+  "version": "17.18.0",
+  "archive": "frida-server-17.18.0-android-arm64.xz",
+  "sha256": "77c2a4aadf6010c69766abea5b6a408c66f5e2da43b3f2c920cf75a5fa1ec7f5",
+  "scope": "Historical local ARM64 pairing reference; not a current-release or upstream signature claim."
+}

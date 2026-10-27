@@ -136,6 +136,11 @@ def acceptance(bundle):
         check(manifest.get('target')==target,'Artifact does not match the native acceptance target')
         root = base/'移动后 installed grea'
         (base/'initial/grea').rename(root)
+        skill_layout = root/'plugin/skills/grea/assets/skill-layout.json'
+        installed_skills = sorted(p.parent.name for p in (root/'plugin/skills').glob('*/SKILL.md'))
+        if skill_layout.is_file():
+            check(installed_skills == sorted(json.loads(skill_layout.read_text(encoding='utf-8'))['canonical_skills']),
+                  'Relocated plugin has a stale or missing Skill entry')
         work = base/'empty workspace'; work.mkdir()
         home = base/'clean home'; home.mkdir()
         if windows:
@@ -222,6 +227,16 @@ print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volum
                 _, plan = call('plan_workflow', {'mode':'recover','source_engine':'cocos'})
                 check(plan['status'] == 'ok', 'Bundled workflow references failed')
                 check(all(Path(s['reference']).is_file() and any(os.path.samefile(root,parent) for parent in Path(s['reference']).parents if parent.is_dir()) for s in plan['result']['steps']), 'Missing workflow resource: '+json.dumps(plan['result']['steps'],ensure_ascii=True))
+                skill_routes = {}
+                if skill_layout.is_file():
+                    for intent, skill in [('recover','grea-recover'),('research','grea-research'),
+                                          ('reskin','grea-develop'),('deliver','grea-release'),('maintain','grea')]:
+                        _, routed = call('plan_workflow', {'mode':intent})
+                        data = routed['result']
+                        check(routed['status']=='ok' and data['primary_skill']==skill and not data['executed'],
+                              'Relocated five-Skill workflow route failed: '+intent)
+                        check((root/'plugin/skills'/data['entrypoint']).is_file(), 'Missing installed Skill entrypoint')
+                        skill_routes[intent] = skill
                 source = work/(client+' source'); source.mkdir()
                 (source/'sample.txt').write_text('portable core', encoding='utf-8')
                 output = work/(client+' copied')
@@ -319,6 +334,7 @@ finally:child.settle();child.close()
                 _, provider = call('describe_tool', {'tool_id':'assetripper'})
                 check(provider['result']['availability']['state'] != 'available', 'External provider unexpectedly leaked from host')
                 results[client] = {'status':'pass', 'scope':'manifest launch configuration with independent stdio client; native host loading tested separately',
+                                   'installed_skills':installed_skills, 'skill_routes':skill_routes,
                                    'protocolVersion':initialized['protocolVersion'], 'tools':tools,
                                    'checks':['initialize','catalog_parity','session','bundled_workflow','core_subprocess',
                                              'evidence_manifest','config_preflight','presentation_audit','performance_compare','case_revision_invalidation','legacy_launch','cocos_core_subprocess','native_exit_core_subprocess','typed_config_core_subprocess','native_authoring_core_subprocess','optional_ast_cecil_missing','structured_failure','external_provider_missing']}

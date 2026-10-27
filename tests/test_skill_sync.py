@@ -16,10 +16,10 @@ def plugin(root):
     (source / 'shared').mkdir()
     (source / '.codex-plugin').mkdir()
     (source / '.codex-plugin/plugin.json').write_text('{}')
-    (source.parent / 'docs').mkdir()
-    (source.parent / 'docs/info.md').write_text('info')
+    (source / 'skills/grea/assets').mkdir()
+    (source / 'skills/grea/assets/info.txt').write_text('info')
     (source / 'version.json').write_text('{}')
-    (source / 'shared/common.md').write_text('[info](../../docs/info.md#section) [version](../version.json)')
+    (source / 'shared/common.md').write_text('[info](../skills/grea/assets/info.txt) [version](../version.json)')
     (source / 'skills/grea/SKILL.md').write_text('[common](../../shared/common.md) [port](../grea-port/SKILL.md) [web](https://example.com)')
     (source / 'skills/grea-port/SKILL.md').write_text('[topic](references/topic.md)')
     (source / 'skills/grea-port/references/topic.md').write_text('[common](../../../shared/common.md)')
@@ -48,8 +48,8 @@ class SkillSyncTests(unittest.TestCase):
             self.assertFalse((destination / 'grea/.codex-plugin').exists())
             self.assertIn('(shared/common.md)', (destination / 'grea/SKILL.md').read_text())
             text = (destination / 'grea/shared/common.md').read_text()
-            target = text.split('](')[1].split('#')[0]
-            self.assertEqual((destination / 'grea/shared' / target).resolve(), (source.parent / 'docs/info.md').resolve())
+            target = text.split('](')[1].split(')')[0]
+            self.assertEqual((destination / 'grea/shared' / target).resolve(), (destination / 'grea/assets/info.txt').resolve())
             linked = (destination / 'grea-port/references/topic.md').read_text().split('](')[1].rstrip(')')
             self.assertEqual((destination / 'grea-port/references' / linked).resolve(), (destination / 'grea/shared/common.md').resolve())
             (destination / 'grea/SKILL.md').write_text('edited')
@@ -60,6 +60,20 @@ class SkillSyncTests(unittest.TestCase):
             self.assertFalse((destination / 'grea-port/stale.md').exists())
             self.assertEqual((destination / 'unrelated/SKILL.md').read_text(), 'keep')
             self.assertEqual(sync.synchronize(source, destination, True), [])
+
+    def test_existing_repository_document_is_rejected_before_writes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = plugin(root)
+            (source.parent / 'docs').mkdir()
+            (source.parent / 'docs/info.md').write_text('exists only in checkout')
+            destination = root / 'installed'
+            for text in ('[info](../../docs/info.md)', '[info][manual]\n\n[manual]: ../../docs/info.md'):
+                with self.subTest(text=text):
+                    (source / 'shared/common.md').write_text(text)
+                    with self.assertRaisesRegex(ValueError, 'distributed Skill set'):
+                        sync.synchronize(source, destination)
+                    self.assertFalse(destination.exists())
 
     def test_removed_skill_is_pruned_only_when_recorded(self):
         with tempfile.TemporaryDirectory() as temp:

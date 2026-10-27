@@ -1,0 +1,1534 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "date": "2026-10-27",
+  "scope": "All Skill Markdown reviewed; contracts/assets preserved and checked. Local worktree only.",
+  "source": {
+    "branch": "codex/monkey-toolchain-v040",
+    "head": "4f25ed5ee6cbe35a654adaf77c8fc7fe8b4d7058",
+    "source_dirty": true,
+    "baseline_manifest": ".private/skill-audit-20261027/baseline.json",
+    "baseline_snapshot": ".private/skill-audit-20261027/before"
+  },
+  "statistics": {
+    "markdown_before": 76,
+    "markdown_after": 70,
+    "bytes_before": 484047,
+    "bytes_after": 422669,
+    "unchanged_non_markdown_files": 11,
+    "bytes_reduction_percent": 12.7
+  },
+  "document_records": [
+    {
+      "source": "plugin/skills/grea/SKILL.md",
+      "destination": "plugin/skills/grea/SKILL.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "五阶段路由保留；合并引用去重，明确GREA自身maintain不走游戏开发/发行，外发目标不明先交本地可审阅结果。",
+      "reviewer": "primary",
+      "baseline_sha256": "f9aaec257a20aca1c3f3402a7e459a314888f62e72b4ced6e842c4afa4ab7cbe",
+      "current_sha256": "597b6b637f0c037b8b09b3f43f4f52bb3bc59cb7d8408145ea90b890dcc749ab",
+      "baseline_bytes": 4120,
+      "current_bytes": 4473,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/beaver工程操作合同.md",
+      "destination": "plugin/skills/grea/references/beaver工程操作合同.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "去除具体项目及多版已验流水账和重复哈希表，保留命名操作/版本能力/写后校验失败/事务保护；实际锁与producer决定能力。",
+      "reviewer": "primary",
+      "baseline_sha256": "c86ec5b36a79f47565a8a5e3afb8f61d288232c944c9685b8ba16cd8207d6db0",
+      "current_sha256": "1a8584ec0d332178570cecf0f11cc9597ad8483237e5d00c781c3417714ca94e",
+      "baseline_bytes": 16332,
+      "current_bytes": 10472,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/monkey与beaver调用.md",
+      "destination": "plugin/skills/grea/references/monkey与beaver调用.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "就绪、安装、绑定、执行与失败各一处维护；删除旧dev进度，明确缺失安装与现有授权边界。",
+      "reviewer": "primary",
+      "baseline_sha256": "4af37ec8c0440cf9c3174bd8d99e054843c9c8200a5d4ca7155eec5e04d54b1c",
+      "current_sha256": "7a8ee62869a2671b3933bea0e00051f2eebf7f6d4db860e504b736e6c8bffc63",
+      "baseline_bytes": 7163,
+      "current_bytes": 3453,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/monkey恢复工具合同.md",
+      "destination": "plugin/skills/grea/references/monkey恢复工具合同.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留批量、历史package/slice及handoff各自合同；修0.4.1支持与发布/安装混称，剥离样本状态，未适配开发查询保持可选。",
+      "reviewer": "primary",
+      "baseline_sha256": "868d6dd291a78c5563a04eb77422f592243457c1fdc3e9c860207a3e5af46b8f",
+      "current_sha256": "1d88fbd2f28e2cba38ee08c4d25d28b35b4f32b7458056615d452b3b1d46f131",
+      "baseline_bytes": 15560,
+      "current_bytes": 14905,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/共同约束与执行入口.md",
+      "destination": "plugin/skills/grea/references/共同约束与执行入口.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "共同规则与术语合并，统一阶段/证据/JSON/运行依赖边界；保留按任务复用入口。",
+      "reviewer": "primary",
+      "baseline_sha256": "576df26f65f2ffadf14438a25019bd218f19a0ecaaf336c6afe226b990981f15",
+      "current_sha256": "ae4a1c188785eeb133f5d71f014b15abb18ec87fdcf97289a6bf740d66881dc2",
+      "baseline_bytes": 6021,
+      "current_bytes": 7096,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/功能模块并行协作.md",
+      "destination": "plugin/skills/grea/references/功能模块并行协作.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "独立条件性协作合同，有模块端到端、共享文件/Editor单写与集成交接出口；保留，不并入日常单人入口。",
+      "reviewer": "primary",
+      "baseline_sha256": "3eea4df9fc28c6216c29b5863ee3593544fb9ee176312820db1dad305b91802e",
+      "current_sha256": "3eea4df9fc28c6216c29b5863ee3593544fb9ee176312820db1dad305b91802e",
+      "baseline_bytes": 2641,
+      "current_bytes": 2641,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/历史经验检索.md",
+      "destination": "plugin/skills/grea/references/开发复盘与规范更新.md",
+      "anchor": "历史经验检索",
+      "decision": "merged",
+      "reason": "并入复盘的历史检索小节；删除独立薄页并同步引用。",
+      "reviewer": "primary",
+      "baseline_sha256": "18f224d50e82e552b4c13277148298cab04cf5e15a147cd0158cfc18a7b80379",
+      "current_sha256": "b6bfd0e185c0135724167e4224c0776fcac01486406e8305c03cf8f15a513324",
+      "baseline_bytes": 931,
+      "current_bytes": 2919,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/实际体验与画面对照.md",
+      "destination": "plugin/skills/grea/references/实际体验与画面对照.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "独立可观察体验方法，覆盖输入、状态、媒体回看及权限边界；通用验收通过引用使用，不复制全文。",
+      "reviewer": "primary",
+      "baseline_sha256": "5cc1b756aa0229e9629307cbea2904da965648ba8d1930ed864d606371e14549",
+      "current_sha256": "5cc1b756aa0229e9629307cbea2904da965648ba8d1930ed864d606371e14549",
+      "baseline_bytes": 3070,
+      "current_bytes": 3070,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/工具选择与调用.md",
+      "destination": "plugin/skills/grea/references/工具选择与调用.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留任务→工具ID快速索引；参数与测试细节归专用合同，修源码路径/工具所有权和备份规则。",
+      "reviewer": "primary",
+      "baseline_sha256": "e895832d160c745837df2862a46557afff412f603b7c1df11a02c5a4b00a2cde",
+      "current_sha256": "b34b475fe3d6f4a997cdaab46e15d77f97fd929e38f80207c58fdbbba75cac8e",
+      "baseline_bytes": 8486,
+      "current_bytes": 8530,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/开发复盘与规范更新.md",
+      "destination": "plugin/skills/grea/references/开发复盘与规范更新.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "收敛证据→归属→修原条目→验证闭环，合并历史检索，去掉旧GREA执行实现归属和隐含记忆写入。",
+      "reviewer": "primary",
+      "baseline_sha256": "a1869d903af698231193fd782600e410785bd903c757705c03102ffede9868bb",
+      "current_sha256": "b6bfd0e185c0135724167e4224c0776fcac01486406e8305c03cf8f15a513324",
+      "baseline_bytes": 8628,
+      "current_bytes": 2919,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/开发计划与进度管理.md",
+      "destination": "plugin/skills/grea/references/开发计划与进度管理.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留单一计划和进度/证据区分；去掉固定一页、十工作树等案例推广，澄清全量候选与业务代表闭环的顺序。",
+      "reviewer": "primary",
+      "baseline_sha256": "7e3f78789b401aa4edb9a7b4e01e3288dfbfe560c4d5e28c7bd12ace3c19c9ce",
+      "current_sha256": "f3e19f9f996eca719e328066973e3fc92f6d9222d357d6a8cc60639ff9e24885",
+      "baseline_bytes": 7760,
+      "current_bytes": 7387,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/接口调用与证据记录.md",
+      "destination": "plugin/skills/grea/references/接口调用与证据记录.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留实际CLI/MCP退出码、预算、Case/revision与错误合同；去掉新增/开发候选标题造成的状态误读。",
+      "reviewer": "primary",
+      "baseline_sha256": "a0d38a0233cc42f72ff9f622eecbb4acd731056fadd67a0cace8223c3e14dc4f",
+      "current_sha256": "7b4671dca880998aca24691cb7eb57621aa02c3b3553e761ee42bdd88033c4b3",
+      "baseline_bytes": 6400,
+      "current_bytes": 6377,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/故障排查与重试规则.md",
+      "destination": "plugin/skills/grea/references/故障排查与重试规则.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留症状→最小证据→权威专题的独立排错索引；更新历史检索合并入口。",
+      "reviewer": "primary",
+      "baseline_sha256": "5ce830fa42adc23ba826c5bd543bd73240f8ea350decd747df4a9d5804d69efc",
+      "current_sha256": "f5cb41fe4f42b3ef136aa01bc2601b0a7cb71b308b62f66432db5b8b1caa2ea3",
+      "baseline_bytes": 5166,
+      "current_bytes": 5194,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/术语表.md",
+      "destination": "plugin/skills/grea/references/共同约束与执行入口.md",
+      "anchor": "术语表",
+      "decision": "merged",
+      "reason": "并入共同约束，修恢复不再只指Unity原包的旧定义；候选/计划/连接含义明确。",
+      "reviewer": "primary",
+      "baseline_sha256": "a9f2664492844a39df63e083fd50349e75c581428070ddd4fc5504e70178a96d",
+      "current_sha256": "ae4a1c188785eeb133f5d71f014b15abb18ec87fdcf97289a6bf740d66881dc2",
+      "baseline_bytes": 1381,
+      "current_bytes": 7096,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/测试与结果交付.md",
+      "destination": "plugin/skills/grea/references/测试与结果交付.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留证据维度、QA/身份/失败和复用规则；动画/输入等专题细节转链接，修重复技能名及JSON/SO矛盾。",
+      "reviewer": "primary",
+      "baseline_sha256": "0707ff80353b71dbe458f06be248605fce3b9ff080fada2e9070f4627dcd931e",
+      "current_sha256": "d2f5cca49f8b6dd650a83b28e81a350dfc658eb29a4414853a2c372acbad40ce",
+      "baseline_bytes": 18274,
+      "current_bytes": 6544,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/规则差分与数值纹理工具.md",
+      "destination": "plugin/skills/grea/references/规则差分与数值纹理工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "集中轨迹、事件、ELF、数值纹理和Laya有限回归合同；去掉另一份资产工具目录及合成测试历史。",
+      "reviewer": "primary",
+      "baseline_sha256": "e9404073df312b58c9aec49d838cbac9931c004f76b657d0ebea3d0d49023bb5",
+      "current_sha256": "baac95b80ffebef59bc29a8d018a4d3d2ae72bc883f89968c8546ad37ad56b0d",
+      "baseline_bytes": 3968,
+      "current_bytes": 3417,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/资源审计与制品校验工具.md",
+      "destination": "plugin/skills/grea/references/资源审计与制品校验工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留工具调用、产物和失败边界；删除重复工具晋升过程和多份历史测试流水，轨迹/ELF统一到差分专题。",
+      "reviewer": "primary",
+      "baseline_sha256": "9ade23ed5f927f9725ed94a0492ce6ca104abd7e8069ce3cb7a886a03de1de6f",
+      "current_sha256": "65043e1431317e2ed6d35caaa9998292692d198cac8c75c8d9d9ee110d97ab04",
+      "baseline_bytes": 17749,
+      "current_bytes": 10411,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea/references/项目脚本沉淀与工具晋升.md",
+      "destination": "plugin/skills/grea/references/项目脚本沉淀与工具晋升.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "删除具体项目数量/脚本名堆积的历史审计背景，保留接收/迁移/退役闭环；能力表明确是核对线索而非可调用授权。",
+      "reviewer": "primary",
+      "baseline_sha256": "de13d5bf5b1b995a1c40536f4e29389891f592ad4cbabf2af3dd13d316444499",
+      "current_sha256": "8e6be1dd05e75870803180b7441cd20d0efe0dadef022f8bc906983dd2069c08",
+      "baseline_bytes": 5005,
+      "current_bytes": 4447,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-develop/SKILL.md",
+      "destination": "plugin/skills/grea-develop/SKILL.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "入口已经将开发、恢复和发布分开，并转向模式表与按需专题；当前入口无需复制各专题细节。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "3ed02b87bf18cb7cb617f696a68a8870b42f31340666af5bea07c3260dd0b207",
+      "current_sha256": "3ed02b87bf18cb7cb617f696a68a8870b42f31340666af5bea07c3260dd0b207",
+      "baseline_bytes": 2165,
+      "current_bytes": 2165,
+      "retained_boundaries": [
+        "stage_scope",
+        "authorization_and_evidence_layers"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Cocos工程与迁移.md",
+      "destination": "plugin/skills/grea-develop/references/Cocos工程与迁移.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "保留已采用 Creator 工程的五层结构与具体迁移语义；与工具合同职责不同。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "b67adde0eeaa7273401333e2b6328d5046c4df1c72cdf31ae47b20839cd73cc2",
+      "current_sha256": "b67adde0eeaa7273401333e2b6328d5046c4df1c72cdf31ae47b20839cd73cc2",
+      "baseline_bytes": 2894,
+      "current_bytes": 2894,
+      "retained_boundaries": [
+        "explicit_creator_target",
+        "JSON_runtime_config",
+        "bounded_migration"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Cocos目标工程工具.md",
+      "destination": "plugin/skills/grea-develop/references/Cocos目标工程工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "源码中的 cocos_project/cocos_convert 提供有限能力；输出仍待 Creator 导入、编译和运行验证，当前 session 用 session/工具清单回读。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "516b48cccc91159f3a1775438902e46857efc8c3bdea6c6a59885d473594f11c",
+      "current_sha256": "6782f0e62e603d80690d26a24fb016787cd6e71459c6ff0398d8e24850ee68fa",
+      "baseline_bytes": 2831,
+      "current_bytes": 3269,
+      "retained_boundaries": [
+        "cocos_project_create_only",
+        "cocos_convert_bounded",
+        "unsupported_not_dropped"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Go六服与事务.md",
+      "destination": "plugin/skills/grea-develop/references/Go六服与事务.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留六服归属、数据库/缓存边界、持久幂等、未知提交结果和客户端 pending 语义；移除与模板工具重复的生成样例/栈说明。 主审修正必须乐观更新/每N步及合并部署误导：以产品权威合同决定预测策略，保持六类独立进程/容器。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "5895999428726d6879aabeced541f97e7c81881ca6fa0c283fd7c0474911ca42",
+      "current_sha256": "2c8c722d2ed39d99bfd205f280f6eb6c87f3e9fef3fef8920b7eb2450904ee52",
+      "baseline_bytes": 3731,
+      "current_bytes": 3303,
+      "retained_boundaries": [
+        "MySQL_authoritative",
+        "Redis_cache_only",
+        "RPC_no_cross_service_SQL",
+        "Unavailable_not_fake_success"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Go六服模板工具.md",
+      "destination": "plugin/skills/grea-develop/references/Go六服模板工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "GREA 源码仍保留 server_go_project consumer 与既有生成合同；Beaver 接收能力等价尚未核验，源码生成不代表已发布/已部署。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "3fc58914c7512827fd41df1774c6543568644848f5372bf71e939df95f52fef9",
+      "current_sha256": "46823f6ffc58dcdcfea6a5af6e606810a142039e76a5fd2cab0d725f65553c9e",
+      "baseline_bytes": 2921,
+      "current_bytes": 2683,
+      "retained_boundaries": [
+        "source_generation_not_deployment",
+        "development_only",
+        "local_stack_identity"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/MemoryProfiler调用准备.md",
+      "destination": "plugin/skills/grea-develop/references/Unity性能分析与优化验证.md",
+      "anchor": "memory-profiler-包准备",
+      "decision": "merged",
+      "reason": "薄页只有单一显式包准备流程，按少量且唯一来源原则并入性能专题；旧文件删除。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "53c17a5a3635f40b8fdd7e11bc1bf7d725cb8f65a50a0ec51245eea7051a4349",
+      "current_sha256": "e737970ed017286d08b4e80d4814cdb7b9d3ee2effe0cb2114b9019bb22d262d",
+      "baseline_bytes": 424,
+      "current_bytes": 11474,
+      "retained_boundaries": "保留固定com.unity.memoryprofiler@1.1.12、无启动钩子、Install勿加-quit、退出码0/1/2、Verify仅检查包版本和编译程序集、依赖回退要求。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/UnityUI框架迁移.md",
+      "destination": "plugin/skills/grea-develop/references/UnityUI框架迁移.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "框架替换具有独立的转换、动态状态、输入和生产退出门；与一般界面复原/输入故障处理职责不同。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "3f06c94c456318cc6fccbc5b92c01623f50ed15f955d2d4a4f38e08fa2eae332",
+      "current_sha256": "466979e7221b31cada30ede62ad2f257bd6c591ecfda74c56a8858080e6c5205",
+      "baseline_bytes": 5711,
+      "current_bytes": 5720,
+      "retained_boundaries": "需本次明确框架迁移授权；一次性转换器不得成为生产运行时；静态状态覆盖不了动态 Loader、真实输入或Player。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity动画特效与事件时序.md",
+      "destination": "plugin/skills/grea-develop/references/Unity动画特效与事件时序.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "动画/特效引用链和业务事件时序独立于通用分层验收；本次补足时间口径、timeScale、真实中间态、焦点和中断清理，以承接共享验收精简后的专题细节。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "9006b159a675c896716e4eab4aa53fc71b7e7ba3b6308088dd43a17be1481ff6",
+      "current_sha256": "dc93d24820a19f6ae0b63e20396d4183f43ccd84d955c55517a6634345219c12",
+      "baseline_bytes": 7029,
+      "current_bytes": 7812,
+      "retained_boundaries": "候选调度不得替代真实流程；业务奖励与表现分离；一个Transform的写入所有权明确；录像/事件日志/真实画面分层。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity工程工具与生成.md",
+      "destination": "plugin/skills/grea-develop/references/Unity工程工具与生成.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "删除表格可选Excel/JSON/SO真源的矛盾说法，简化为引用DAT-01；SO候选工具能力不等于正式数值路径。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "0ebfd9c794c4aa32046b8009d7632146109d2835a59ba75b1201e83b96482147",
+      "current_sha256": "2dc62d0d188673a9d0d184c90f977802e65aab807522c581623dcfa02f978058",
+      "baseline_bytes": 3169,
+      "current_bytes": 3289,
+      "retained_boundaries": "静态规划、生成、资源工具各自效果范围不变；provider存在/help或候选输出不等于目标工程验收。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity工程标准验收.md",
+      "destination": "plugin/skills/grea-develop/references/Unity工程标准验收.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "制作验收引用DAT-01并要求Player消费同一JSON输入；候选工具输出不算正式数值路径通过。反例表明确是验收oracle，GEN/PFB/LIF/DAT操作契约以对应章节为唯一来源，保持反例但不复制契约。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "4445c5ed2f314c4fa906e5c85edcea0a5f3d8e7303392d0d67e30ddbab3954fd",
+      "current_sha256": "e27b83170b527f6659c764737ae59e85fd16fef6681c290250c621dec61db3d2",
+      "baseline_bytes": 5746,
+      "current_bytes": 6328,
+      "retained_boundaries": "标准符合性、原版一致性、原生退出分别报告；Candidate不等同生产采用或Player验收。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity工程目录与资产归类.md",
+      "destination": "plugin/skills/grea-develop/references/Unity工程目录与资产归类.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "Config分类改引用DAT-01；目录迁移步骤引用Unity重构与资源迁移，保留本篇的目录目标、完成证据要求与ledger工具独有覆盖限制，避免两套迁移流程。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "27d28c462e9f2dc75f706b87dd43cb4a909c4e2b51b6c598ccc2184d05870b67",
+      "current_sha256": "b378db9ff02157ced342a95abac3203b8a1653ee42e27bfc101beafd20587ba8",
+      "baseline_bytes": 10073,
+      "current_bytes": 10263,
+      "retained_boundaries": "既有项目不因目录树自动搬迁；动态键、GUID/fileID和删除授权限制仍然有效。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
+      "destination": "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "移除旧静态组合、历史样例Editor/PlayMode和Player进度；保留标准版本规则、能力矩阵的状态/证据要求和实际检查入口。UPG-01不重复资产盘点步骤，改引用迁移专题。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "c41944a222791826f6e1c356c39a0af9e03842749271a81fafdad8fba0d2ba4d",
+      "current_sha256": "19a3552f52848a69c4f0209b1a8425cb89ec78cebc387266d081ffcacfa061a2",
+      "baseline_bytes": 8089,
+      "current_bytes": 8129,
+      "retained_boundaries": "矩阵状态仅对其精确版本、输入、范围及证据成立；静态检查不运行Editor/Player，历史结果不外推。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity性能分析与优化验证.md",
+      "destination": "plugin/skills/grea-develop/references/Unity性能分析与优化验证.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "合并独立MemoryProfiler薄页至“Memory Profiler 包准备”专用小节；保留显式安装、固定版本、异步退出码、Verify范围与包回退限制。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "3ee1e81756613a85d0db13479fb30a31d0aef3d33f5d5279458ae97301a610c2",
+      "current_sha256": "e737970ed017286d08b4e80d4814cdb7b9d3ee2effe0cb2114b9019bb22d262d",
+      "baseline_bytes": 10279,
+      "current_bytes": 11474,
+      "retained_boundaries": "安装与性能分析分开；安装、Verify、仪器资格和性能结果是不同证据层。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity桌面窗口与显示适配.md",
+      "destination": "plugin/skills/grea-develop/references/Unity桌面窗口与显示适配.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "桌面窗口尺寸口径、原生窗口消息和DPI/显示器矩阵不适合并入Unity Editor会话或发布专题。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "eba523d1be4986a16bf8bbb8c432eabbb5a2ca38c64098005724c4c0678d929e",
+      "current_sha256": "eba523d1be4986a16bf8bbb8c432eabbb5a2ca38c64098005724c4c0678d929e",
+      "baseline_bytes": 3923,
+      "current_bytes": 3923,
+      "retained_boundaries": "macOS和Windows原生约束不同；几何/交叉构建不代表目标系统输入/窗口验收；指定目标覆盖默认尺寸。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity界面还原与输入交互.md",
+      "destination": "plugin/skills/grea-develop/references/Unity界面还原与输入交互.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "覆盖恢复界面与真实输入具体语义，不同于UI框架迁移；本次补足输入命中/接受/拒绝/预约/提交状态边界，保留共享验收迁出的手势、焦点和轨道细节。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "bcb420465bad121fbc09b14aae91654f9a62051d325fec5cfd4d69ae19cd5ddd",
+      "current_sha256": "3ca8a6f75a0261243875f8e171342fef9962e5a392dc96031e43db9318419320",
+      "baseline_bytes": 13309,
+      "current_bytes": 13839,
+      "retained_boundaries": "合成事件、自动化与真人输入分开；拖动捕获与起拖资格分开；焦点、取消、失焦及业务资格不可由直调回调替代。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity程序集分层与生命周期.md",
+      "destination": "plugin/skills/grea-develop/references/Unity程序集分层与生命周期.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "DAT-01确立唯一数值源规则；组件表引用DAT-01而不复制这份规范，避免配置架构重复。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "bce61a3f85abdc67de24f8c467a17947a8beaf9aed48e29df01e64e57f932494",
+      "current_sha256": "f18e5e65f6e5bc0655c1bc3dfb79dda2947db5c65ff10072c28f34e431c16604",
+      "baseline_bytes": 10655,
+      "current_bytes": 11133,
+      "retained_boundaries": "正式数值JSON由Player实际解析；SO仅保留资源引用、不复制数值行。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity编辑器连接与任务执行.md",
+      "destination": "plugin/skills/grea-develop/references/Unity编辑器连接与任务执行.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "连接状态发现、Editor会话、长任务和原生执行陷阱属于操作准备，不应混进工程标准。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "cce2af27b9a903d010951193f98f27f20d3c08d18dfb270e0f3c848cd7fa4bb9",
+      "current_sha256": "cce2af27b9a903d010951193f98f27f20d3c08d18dfb270e0f3c848cd7fa4bb9",
+      "baseline_bytes": 4577,
+      "current_bytes": 4577,
+      "retained_boundaries": "能力发现不是连接/编译/Player证据；所有状态须当前会话重新发现；失败后不盲目重试有副作用操作。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity脚本与生成契约.md",
+      "destination": "plugin/skills/grea-develop/references/Unity脚本与生成契约.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "脚本角色、所有权、静态规划和创建型生成的分界及失败恢复构成独立契约。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "de41d7d8ba8a024110ed43c25e48e7e604279abdce67f42f488c84766541d7af",
+      "current_sha256": "de41d7d8ba8a024110ed43c25e48e7e604279abdce67f42f488c84766541d7af",
+      "baseline_bytes": 9919,
+      "current_bytes": 9919,
+      "retained_boundaries": "schema/注册不是实现证明；new/adopt/refactor边界；人工修改不得被静默覆盖；任何未实现入口不可宣传可执行。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity通用组件与Prefab.md",
+      "destination": "plugin/skills/grea-develop/references/Unity通用组件与Prefab.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "通用组件准入、主流方案选择和Prefab身份/Variant是框架标准的独立主题。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "5ab43314be65f8d8fc230272ff5bf29bf925fb9a78ff0b2eea2c4bb846569f3f",
+      "current_sha256": "5ab43314be65f8d8fc230272ff5bf29bf925fb9a78ff0b2eea2c4bb846569f3f",
+      "baseline_bytes": 11821,
+      "current_bytes": 11821,
+      "retained_boundaries": "候选类型不保证已实现；每种能力选一种实现；跨消费者证据不能推成原游戏或其它平台验收。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity配置与资源制作工具.md",
+      "destination": "plugin/skills/grea-develop/references/Unity配置与资源制作工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "配置候选工具仍记录其封闭 schema、离线输入与 SO 输出；现在明确SO authoring仅为候选/受限兼容能力，正式数值唯一维护源和Player实际消费要求统一引用DAT-01。保留候选工具字段与覆盖限制，不把历史工具能力升格为规范。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "f08bdd6d8b76ce8abca878ca84051b9da97056aa5cb1c02a43669e661763fe47",
+      "current_sha256": "42a73bde0bb6f057120cf35727ad275873fa566fabb13bc6a12c93dfc3f00595",
+      "baseline_bytes": 6730,
+      "current_bytes": 7310,
+      "retained_boundaries": "候选、Editor导入、正式项目采用和Player JSON消费是分开的证据层；当前候选无生产JSON loader、任意游戏codec、Excel解析或存档迁移能力。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/Unity重构与资源迁移.md",
+      "destination": "plugin/skills/grea-develop/references/Unity重构与资源迁移.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "既有工程的冻结基线、资源闭包、命名/身份迁移和重跑恢复步骤是执行方法，工程标准只定义默认结构。",
+      "reviewer": "unity-audit",
+      "baseline_sha256": "14b42672296837ed5a0ea440d7a1d345f75c44d36f141aea7cfdfb639451f572",
+      "current_sha256": "7c281e3bab9c94994e0f6ef1bcf57eee5006dd52e9efd38a84a13a32c78f6732",
+      "baseline_bytes": 12302,
+      "current_bytes": 12248,
+      "retained_boundaries": "未引用不等于可删除；资产台账及GUID闭包有覆盖限制；隔离与Editor回读；不覆盖未提交WIP。"
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/主题资源映射与台账工具.md",
+      "destination": "plugin/skills/grea-develop/references/主题资源映射与台账工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "源码中的 theme_assets 提供有限能力；清单/预览/增量包是候选，Editor apply 和最终视觉结果需分别核验，当前 session 由工具清单回读。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "839d5c6823eb97e7ee4ec1dbcaf0e13ff2b94b0cab2f561f0c1dac61532e9758",
+      "current_sha256": "31c4cbe81de979767d2be2c9482a4352b6cf3495865d369e526458e3bba32f51",
+      "baseline_bytes": 9247,
+      "current_bytes": 9261,
+      "retained_boundaries": [
+        "single_sprite_only",
+        "new_incremental_bundle",
+        "Editor_geometry_and_identity_checks",
+        "rollback_own_changes_only"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/候选交接与三方合并.md",
+      "destination": "plugin/skills/grea-develop/references/候选交接与三方合并.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "吸收研发交接资料核验中的交付物身份、宿主识别、业务依据、采用记录与分层验收，保留候选三方比较/受控 apply/恢复流程。 前向评审后明确清单通过仅准入规划/原生检查，核交接门后才固定业务基线。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "ce2ed99af293e797497d67cfe9c02713d0e36c44109005a4b9243c26f2c2dde7",
+      "current_sha256": "c133a28b0b5060d90072c4f1ef8faa42e00b33430362ec1422e72da2c16622f7",
+      "baseline_bytes": 1538,
+      "current_bytes": 4135,
+      "retained_boundaries": [
+        "source_adapted_source_player_distinct",
+        "three_way_comparison",
+        "expected_before",
+        "restore_own_changes_only"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/图像联系表与规格工具.md",
+      "destination": "plugin/skills/grea-develop/references/图像联系表与规格工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留图像输入契约、字形/尺寸/像素上限、alpha 静态审计限制和 Apache 方法来源；补充当前 Beaver 0.4.0 provider 状态，保留工具 ID。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "1644fedbdbffd662d382f9c87292270bbc96ed6091d32aeb725b2a4797f9970c",
+      "current_sha256": "4719600f707a1423c0f09f2807a7fd660b2956cb55bb88891aa2b42474533f9f",
+      "baseline_bytes": 2680,
+      "current_bytes": 3042,
+      "retained_boundaries": [
+        "explicit_manifest_only",
+        "static_not_visual_acceptance",
+        "license_and_asset_rights_distinct"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/增量设计与版本兼容.md",
+      "destination": "plugin/skills/grea-develop/references/生命周期与变更合同.md",
+      "anchor": null,
+      "decision": "merged",
+      "reason": "内容并入生命周期与变更合同，保留 feature/tuning/prototype 目标、测量条件、数据兼容和候选迁移边界；原文档已删除。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "f613bb433bbbfb061c876dd440027f7fcfe641aff022f37e22fc941cf1c143ab",
+      "current_sha256": "b0a732c006b871e73d623dc31a02adde8caa0213b5de71e94feefe4a0af2edf8",
+      "baseline_bytes": 2139,
+      "current_bytes": 4772,
+      "retained_boundaries": [
+        "distinct_config_hash_and_save_schema",
+        "pending_and_idempotency",
+        "candidate_not_migration"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/开发任务与模式选择.md",
+      "destination": "plugin/skills/grea-develop/references/开发任务与模式选择.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "重写为开发/恢复/发布边界、模式基线及按需专题索引；恢复阶段路由改为仅已采用工程业务接续。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "0f6a95b68ad983bd135e7a03284676e2c1c1030ebda6ac122fb5487ada5194df",
+      "current_sha256": "c60fa3af6ac2d27a8a2019294a31fac54e25239fb4bfd6e38b1061adacc2ce1a",
+      "baseline_bytes": 11029,
+      "current_bytes": 6366,
+      "retained_boundaries": [
+        "existing_project_not_reexported",
+        "feature_modes_bound_contract",
+        "explicit_creator_target"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/开发前检查与迭代.md",
+      "destination": "plugin/skills/grea-develop/references/开发前检查与迭代.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "压缩为范围、定向调查、代表路径、接口集成和收尾；Unity 时序细节转 Unity 专题。保留跨文档既有锚点。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "9269c66e8f8dee76d8e61c49794f3d29899977e24bea68c8e49719d22945677b",
+      "current_sha256": "24f7cbaa9986b330ed4f8b3902082913650c6d03eb0923b973381e0f89b4e3fb",
+      "baseline_bytes": 10179,
+      "current_bytes": 3749,
+      "retained_boundaries": [
+        "ordinary_fix_scoped",
+        "no_repeated_failed_route",
+        "representative_entry",
+        "anchors_5_and_7_preserved"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/有限二次开发.md",
+      "destination": "plugin/skills/grea-develop/references/生命周期与变更合同.md",
+      "anchor": "v1-uiue-兼容",
+      "decision": "merged",
+      "reason": "旧v1 UI/UE兼容边界并入生命周期合同，删除未被Skill引用的重复薄页；evolve工具mode保留。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "9d18eaee8b76a940497fb67343f233fd7f921f7a9d2547fcb03a4fd27660f487",
+      "current_sha256": "b0a732c006b871e73d623dc31a02adde8caa0213b5de71e94feefe4a0af2edf8",
+      "baseline_bytes": 4440,
+      "current_bytes": 4772,
+      "retained_boundaries": [
+        "legacy_ui_only",
+        "identity_readback",
+        "no_implicit_gameplay_or_release"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/游戏恢复开发.md",
+      "destination": "plugin/skills/grea-develop/references/已采用工程的业务接续.md",
+      "anchor": null,
+      "decision": "renamed_and_reframed",
+      "reason": "改为已采用工程的业务接续；来源冻结、完整初版、跨引擎候选和接收准入明确归 grea-recover。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "793f2eb3bf64823a6ec5ce5a3770f1e4fbd953b5cd42851d28a6775100a86232",
+      "current_sha256": "0cf7408d5afef2b3316b462fa1e6a5e03c795676dd17bd6109b0f9d8f3f25676",
+      "baseline_bytes": 5718,
+      "current_bytes": 1851,
+      "retained_boundaries": [
+        "adopted_project_only",
+        "representative_business_loop",
+        "JSON_config_and_save_compatibility"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/游戏换皮与资源制作.md",
+      "destination": "plugin/skills/grea-develop/references/游戏换皮与资源制作.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "保留唯一 S1-S5 换皮流程和完整资产/Spine/样板/批准门槛；其他换皮文件只链接到这里。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "ea6c9657b5adcf7dd719581b3c0f43549479f3fd9db4e080cd4e6d3e6840d0d9",
+      "current_sha256": "ea6c9657b5adcf7dd719581b3c0f43549479f3fd9db4e080cd4e6d3e6840d0d9",
+      "baseline_bytes": 6649,
+      "current_bytes": 6649,
+      "retained_boundaries": [
+        "approved_design_before_full_reskin",
+        "original_behavior_preserved",
+        "stage_outputs_distinct"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/版本兼容与运营预览工具.md",
+      "destination": "plugin/skills/grea-develop/references/版本兼容与运营预览工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留工具 Schema 和统计限制，更新 compatibility_plan/operations_preview 到 Beaver 0.4.0 当前 provider，同时保留原 tool IDs 与只读候选限制。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "41cf6ba6e58f15a625f948d8f9d7ab931b02e94742d4a0fe85abfcf3de0ee1aa",
+      "current_sha256": "7f32b27595da83c6779bfaa020334770160455446bed8cf690ad38aee30402e5",
+      "baseline_bytes": 5383,
+      "current_bytes": 5529,
+      "retained_boundaries": [
+        "read_only_synthetic_limits",
+        "no_save_migration",
+        "production_write_unavailable"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/生命周期与变更合同.md",
+      "destination": "plugin/skills/grea-develop/references/生命周期与变更合同.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "合并增量设计/版本兼容；明确模式基线、v1/v2合同、产品/存档身份、pending/幂等保护及兼容计划的只读边界。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "5bf4fe05a3dc14e342f6423870bb28eeeb225f09e28f7721e0df5fb58a3e6955",
+      "current_sha256": "b0a732c006b871e73d623dc31a02adde8caa0213b5de71e94feefe4a0af2edf8",
+      "baseline_bytes": 3390,
+      "current_bytes": 4772,
+      "retained_boundaries": [
+        "caller_declaration_not_authorization",
+        "config_hash_distinct_from_save_schema",
+        "feature_reskin_prototype_identity"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/研发交接资料核验.md",
+      "destination": "plugin/skills/grea-develop/references/候选交接与三方合并.md",
+      "anchor": null,
+      "decision": "merged",
+      "reason": "独有的交付物身份分类与采用决定并入候选交接与三方合并；重复的来源解析/工具命令表删除。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "b2fd18800a9df71f92741062318ab868a920facf8117ebe08f62570f7de07ac1",
+      "current_sha256": "c133a28b0b5060d90072c4f1ef8faa42e00b33430362ec1422e72da2c16622f7",
+      "baseline_bytes": 7678,
+      "current_bytes": 4135,
+      "retained_boundaries": [
+        "current_source_candidate_player_separate",
+        "actual_host_shape",
+        "evidence_based_adoption"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/规则与随机一致性.md",
+      "destination": "plugin/skills/grea-develop/references/规则与随机一致性.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留唯一的规则 oracle、JS/C# 数值与随机语义、事务/几何对照专项；不与一般开发前检查合并。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "7ce5dfdb79426b16b3f8fec86d2d10c8dcc38eba6a0fa83c05f42ce745400336",
+      "current_sha256": "c4edd1317763cbc90176661637c5db6c99307c5d0263f1bd536dfd7de259c55c",
+      "baseline_bytes": 10671,
+      "current_bytes": 10699,
+      "retained_boundaries": [
+        "oracle_first_divergence",
+        "RNG_channels",
+        "transaction_and_geometry_semantics"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-develop/references/配置表现与性能预检工具.md",
+      "destination": "plugin/skills/grea-develop/references/配置表现与性能预检工具.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留 typed-json/presentation/performance 契约和不支持数据语义；工具 provider 更新为 Beaver 0.4.0，去掉指向已移出 GREA 的自有测试路径。",
+      "reviewer": "develop-audit",
+      "baseline_sha256": "2e84cab1846e8d57013971d204906d2007abddd72129efe568f5eddc7e59de3d",
+      "current_sha256": "e03a33b913e9978ade04329ec836b285bfcb04226126b91b2e730da857c5b36f",
+      "baseline_bytes": 4957,
+      "current_bytes": 5115,
+      "retained_boundaries": [
+        "missing_not_zero",
+        "measurement_identity_fixed",
+        "synthetic_not_target_acceptance"
+      ]
+    },
+    {
+      "source": "plugin/skills/grea-recover/SKILL.md",
+      "destination": "plugin/skills/grea-recover/SKILL.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Concise stage entrypoint already distinguishes evidence-only, full recovery, source/target routes, outputs, and development handoff.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "c4cfbf373699f6381b96611c638647b0bb4a00c132f2729c4bd6e95aee59da87",
+      "current_sha256": "c4cfbf373699f6381b96611c638647b0bb4a00c132f2729c4bd6e95aee59da87",
+      "baseline_bytes": 3000,
+      "current_bytes": 3000,
+      "retained_boundaries": "A candidate, lookup, stub, exit 0, or import success does not establish a playable game; existing maintainable projects go to develop."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Android旧模拟器调用.md",
+      "destination": "plugin/skills/grea-recover/references/Android旧模拟器调用.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Narrow compatibility-provider reference with useful provenance, hash scope, ABI, invocation, and readiness limits.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "0bbec45135310dbe41f8a8b79097c15576690406d86a383763d4fcb44fd3148d",
+      "current_sha256": "0bbec45135310dbe41f8a8b79097c15576690406d86a383763d4fcb44fd3148d",
+      "baseline_bytes": 2212,
+      "current_bytes": 2212,
+      "retained_boundaries": "The emulator archive is not distributed; hash mismatch requires provenance review; invocation does not create an AVD or install a game; no-audio cannot verify sound."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Cocos离线解析与模块证据.md",
+      "destination": "plugin/skills/grea-recover/references/Cocos离线解析与模块证据.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Format-specific parser behavior, adapters, resource budgets, status meanings, and static-analysis limits are unique and decision-relevant.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "39b44a863022f615e8f0b06ee8b7e3ac005b5ca8c74a38b5116e53707e3a957a",
+      "current_sha256": "39b44a863022f615e8f0b06ee8b7e3ac005b5ca8c74a38b5116e53707e3a957a",
+      "baseline_bytes": 4475,
+      "current_bytes": 4475,
+      "retained_boundaries": "Only declared Creator 2.4 subsets are supported; optional Node/Acorn is not installed by Skills; source JavaScript is never executed; partial syntax evidence is not runtime or Unity conversion proof."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Creator序列化与CCON证据.md",
+      "destination": "plugin/skills/grea-recover/references/Creator序列化与CCON证据.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Creator 3.4.1 index, CCON JSON/BIN, and System.register adapters have independent format boundaries and evidence claims.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "079fc287091d1226c4c93b933960bd2afd632a191e39d3fc07613f5b22960676",
+      "current_sha256": "079fc287091d1226c4c93b933960bd2afd632a191e39d3fc07613f5b22960676",
+      "baseline_bytes": 2728,
+      "current_bytes": 2728,
+      "retained_boundaries": "Header 1 does not prove engine version; CCONB, multiple chunks, animation playback, and gameplay are out of scope; replay coverage does not generalize to all 3.x."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Frida配对与调用.md",
+      "destination": "plugin/skills/grea-recover/references/Frida配对与调用.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "The version-pair/hash reference and explicit device/process authorization boundary are narrow and useful.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "1a15d34511e54699b570848376e4929e148c00fdc3ea4867dd6781c34341691f",
+      "current_sha256": "1a15d34511e54699b570848376e4929e148c00fdc3ea4867dd6781c34341691f",
+      "baseline_bytes": 1774,
+      "current_bytes": 1774,
+      "retained_boundaries": "No server push, start, attach, or app-storage read is implied; the fixed 17.18.0 pair is a historical local observation, not current upstream proof."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/IL2CPP辅助解析器.md",
+      "destination": "plugin/skills/grea-recover/references/IL2CPP辅助解析器.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Optional parser installation identity, .NET dependency, timeout, and output trust limits are distinct from the primary Unity recovery path.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "9fd5d94f4ba200febcbf9d2c0f2d262eadc147752890c6375865996b100175ad",
+      "current_sha256": "9fd5d94f4ba200febcbf9d2c0f2d262eadc147752890c6375865996b100175ad",
+      "baseline_bytes": 1402,
+      "current_bytes": 1402,
+      "retained_boundaries": "Il2CppInspectorRedux is optional; historical paths do not prove installation; timeout output may be partial; stubs are not recovered methods; exports are not executed."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Shader检查工具.md",
+      "destination": "plugin/skills/grea-recover/references/Shader检查工具.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "A small, task-specific probe reference with a precise accepted input profile and output boundary.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "47073d66dd28dd3c65e3e08d1e6e21afee87631bd54ebb12ee31d42b2f9dafca",
+      "current_sha256": "47073d66dd28dd3c65e3e08d1e6e21afee87631bd54ebb12ee31d42b2f9dafca",
+      "baseline_bytes": 849,
+      "current_bytes": 849,
+      "retained_boundaries": "Only the described combined GLES text is supported; generated SPIR-V/HLSL/MSL is not Unity integration or visual acceptance."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Unity原生转换规范.md",
+      "destination": "plugin/skills/grea-recover/references/Unity原生转换规范.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Authoritative target architecture, native/runtime exclusions, compatibility rules, and three acceptance gates are central and not reducible to a tool manual.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "a9abb847b99c37bd285f404f668738ac4f933f959b69a5ee033e644f04f042d7",
+      "current_sha256": "a9abb847b99c37bd285f404f668738ac4f933f959b69a5ee033e644f04f042d7",
+      "baseline_bytes": 11974,
+      "current_bytes": 11974,
+      "retained_boundaries": "Rules and observable behavior are preserved while source-engine runtime semantics are not; production must not depend on the one-time converter; guard, original parity, and native maintainability are separate gates."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Unity原生退出检查工具.md",
+      "destination": "plugin/skills/grea-recover/references/Unity原生退出检查工具.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Static, Editor, and Player evidence have distinct tool contracts, schemas, budgets, and limits that must remain available for the native-exit stage.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "79ea42bb6d2a365cb17f2223d91ab1da3a4e255f6ecd0036baf0edddbeda7f68",
+      "current_sha256": "79ea42bb6d2a365cb17f2223d91ab1da3a4e255f6ecd0036baf0edddbeda7f68",
+      "baseline_bytes": 5787,
+      "current_bytes": 5787,
+      "retained_boundaries": "Static checks are not semantic; Editor observation is not Player metadata; IL2CPP is unsupported by the Player DLL tool; no layer substitutes for parity or maintainability."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Unity工程重建与恢复.md",
+      "destination": "plugin/skills/grea-recover/references/Unity工程重建与恢复.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Unity-source recovery needs its own GUID/script identity, code confidence, asset import, and runtime compatibility workflow.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "c0e080a13af05fdf461325b070f965e86cfad27a9788add49307dc01fa007374",
+      "current_sha256": "c0e080a13af05fdf461325b070f965e86cfad27a9788add49307dc01fa007374",
+      "baseline_bytes": 8238,
+      "current_bytes": 8238,
+      "retained_boundaries": "Original exports stay read-only; DummyDLL and pseudocode do not prove method recovery; Unity asset edits use native APIs; no blind package or engine upgrades."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Unity源引擎映射-Cocos.md",
+      "destination": "plugin/skills/grea-recover/references/Unity源引擎映射-Cocos.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "The dense component mapping table is a format/version-specific reference needed for one-time Cocos-to-Unity conversion.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "49648e9f1cc25bde1bc52cad70ad6b8bb6561e21d20fd8521ac6e963223a635f",
+      "current_sha256": "49648e9f1cc25bde1bc52cad70ad6b8bb6561e21d20fd8521ac6e963223a635f",
+      "baseline_bytes": 13070,
+      "current_bytes": 13070,
+      "retained_boundaries": "Primarily Creator 2.4; values come from the current package; unsupported components remain gaps; mappings are comparisons, not permission to emulate Cocos runtime; 3.x fields require rechecking."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/Unity跨引擎移植与行为一致性.md",
+      "destination": "plugin/skills/grea-recover/references/Unity跨引擎移植与行为一致性.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Provides targeted behavior contracts across source and Unity host semantics without recreating the source engine.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "456e01904f6ec2a6661a7d3ea0407d77aabdd3a5b8dcd0a2b18bbf282617e533",
+      "current_sha256": "456e01904f6ec2a6661a7d3ea0407d77aabdd3a5b8dcd0a2b18bbf282617e533",
+      "baseline_bytes": 6457,
+      "current_bytes": 6457,
+      "retained_boundaries": "Use only contracts relevant to the current source; preserve original evidence identities; validate actual callers, timing, and state; no universal constants or source-runtime clone."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/全量初版工程与协作.md",
+      "destination": "plugin/skills/grea-recover/references/全量初版工程与协作.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "The original repeated shared monkey discovery/install/bind/plan/run/audit procedures. Kept the initial-project scope and handoff gates here; exact provider calls now have one owner in the shared monkey contract.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "078fd33a781bc3780cf6c16cf717d0061679393dcdc525fa41b08112adb38b7a",
+      "current_sha256": "d947e596e417c900e63a547b6418a95a5f7afd5c36bc4dcb1ce5a75db3adb94a",
+      "baseline_bytes": 3928,
+      "current_bytes": 3436,
+      "retained_boundaries": "Full means the frozen, explicit source set; each asset needs disposition and identity mapping; actual applicable Scene/Prefab artifacts and native import/compile are checked; candidate completeness is separate from playable business acceptance; develop begins only after handoff; existing work code, GUIDs, formal JSON, and saves remain protected during adoption/merge."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/恢复阶段执行与交接.md",
+      "destination": "plugin/skills/grea-recover/references/恢复阶段执行与交接.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "The original detailed the same provider command sequence as shared monkey references and repeated full-initial-project steps. Refocused it on evidence-only versus full recovery, source/target routing, phase ownership, and the handoff boundary.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "4c342c23fe9b3d44f7b28b2cfad810389ab2d8dbb76ad749dfbd97a527fab717",
+      "current_sha256": "a3aba09d7c406d7209dd84b35e22e817e38bd7669a8a3ceb949cdda2a2513a02",
+      "baseline_bytes": 4323,
+      "current_bytes": 3385,
+      "retained_boundaries": "Evidence-only does not generate a project; full recovery requires explicit target and scope; existing maintainable projects do not re-export; Unity and Cocos target declarations remain explicit; business continuation belongs to develop."
+    },
+    {
+      "source": "plugin/skills/grea-recover/references/提取与引用恢复.md",
+      "destination": "plugin/skills/grea-recover/references/提取与引用恢复.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "Source identity, asset categorization, schema validation, and targeted lookup are distinct from initial-project orchestration and Unity import.",
+      "reviewer": "recovery-audit",
+      "baseline_sha256": "31d109d5575f98ace976d6bb9973c020ac11b0a863287e41bc99c7290e7b87c9",
+      "current_sha256": "31d109d5575f98ace976d6bb9973c020ac11b0a863287e41bc99c7290e7b87c9",
+      "baseline_bytes": 5140,
+      "current_bytes": 5140,
+      "retained_boundaries": "Initial extraction is broad only over available package content; reruns are incremental; paths/PPtr/fileIDs and source hashes remain explicit; file counts and one missed lookup do not prove completeness or absence."
+    },
+    {
+      "source": "plugin/skills/grea-release/SKILL.md",
+      "destination": "plugin/skills/grea-release/SKILL.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留入口/交付层级和必要路由；重复的详细构建清单仅在发布参考维护。",
+      "reviewer": "primary",
+      "baseline_sha256": "8d4fdb38f5ad6abfb078c777eddf1861b030a21d0085f8ed7cc124ba19a37bb9",
+      "current_sha256": "a1499550d08a8633a3cf9fe3a28b16014eeba1515d0625e61941d581aa4d80f2",
+      "baseline_bytes": 3681,
+      "current_bytes": 2344,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-release/references/Windows供应方与桌面验收.md",
+      "destination": "plugin/skills/grea-release/references/Windows供应方与桌面验收.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留平台差异与provider配置；去掉失效docs依赖及某次发布豁免，桌面/引擎未验按当前范围判断。",
+      "reviewer": "primary",
+      "baseline_sha256": "4001b71ae469bd8157145e98ef09b104f68f6b48255303ac66f0b0b99f65f86f",
+      "current_sha256": "0dbc4b91a7254c8ac1c164861c3d84bfc4f931ac658b88d8275ef90022407b45",
+      "baseline_bytes": 2840,
+      "current_bytes": 2467,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-release/references/游戏构建与版本发布.md",
+      "destination": "plugin/skills/grea-release/references/游戏构建与版本发布.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "保留身份、版本、构建、平台封装、校验、晋升和回退的完整链；长度来自不同操作合同，入口仅摘要并按需加载，不再拆重复清单。",
+      "reviewer": "primary",
+      "baseline_sha256": "bf61386cdf34630dc7532b180c30264241407d5fbf5f01f70107688ef6eff558",
+      "current_sha256": "bf61386cdf34630dc7532b180c30264241407d5fbf5f01f70107688ef6eff558",
+      "baseline_bytes": 19681,
+      "current_bytes": 19681,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-release/references/许可证与再分发.md",
+      "destination": "plugin/skills/grea-release/references/许可证与再分发.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "将源运行时退出限定为跨引擎转Unity；扫描命中须审查，不删除合法版权声明；实际许可证决定分发，不从包名推断。",
+      "reviewer": "primary",
+      "baseline_sha256": "d67e8e4e5de3a3fed84e4c2ca200773aaf950d13d96b004f13974da725f26f0e",
+      "current_sha256": "14ca85db0367a5f542db925e89a2a4b92eef948537cc6376816b591c841d643b",
+      "baseline_bytes": 4728,
+      "current_bytes": 5296,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-research/SKILL.md",
+      "destination": "plugin/skills/grea-research/SKILL.md",
+      "anchor": null,
+      "decision": "retained",
+      "reason": "保留分析决策与只读取证转交，不自动开发；工具声明和分析者判断分离。",
+      "reviewer": "primary",
+      "baseline_sha256": "8f57900c1e63169fd100a9c88fe5da22414a8b570f695a5e0d0b7ccb5fc0b193",
+      "current_sha256": "8f57900c1e63169fd100a9c88fe5da22414a8b570f695a5e0d0b7ccb5fc0b193",
+      "baseline_bytes": 1946,
+      "current_bytes": 1946,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-research/references/原版运行与内容取证.md",
+      "destination": "plugin/skills/grea-research/references/原版运行与内容取证.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "保留独立包/运行基线、可达覆盖、媒体与中断恢复方法；修阶段标题，覆盖受本期范围限制。",
+      "reviewer": "primary",
+      "baseline_sha256": "129b5f5cc68fcaa7232984d61d9a911e6e5ee720e6b196ca81769f745cfb2b96",
+      "current_sha256": "ecb97545a357c618480d9d60aafa7be8b25ce7f348d42fc5abab7f2f56e3d7fe",
+      "baseline_bytes": 5906,
+      "current_bytes": 5896,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-research/references/游戏调研与成本判断.md",
+      "destination": "plugin/skills/grea-research/references/游戏调研与成本判断.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "只维护研究方法、成本前提与判断出口；将重复Schema/字段/状态细节集中到工具合同。",
+      "reviewer": "primary",
+      "baseline_sha256": "504dbb2404e7de8f61cda4a730bb7f77d005cef90fc16cf75607c7e661007373",
+      "current_sha256": "66c8d755e0d30c28c715b2dc1e500e67c3072b2da1856b555cf85e21b95341c6",
+      "baseline_bytes": 3220,
+      "current_bytes": 2366,
+      "retained_boundaries": null
+    },
+    {
+      "source": "plugin/skills/grea-research/references/调研工具与证据合同.md",
+      "destination": "plugin/skills/grea-research/references/调研工具与证据合同.md",
+      "anchor": null,
+      "decision": "revised",
+      "reason": "输入、来源校验、play_coverage、输出与限制形成闭环；已实现有限工具与安装/产物验收分开，去掉模糊开发候选标签。",
+      "reviewer": "primary",
+      "baseline_sha256": "d6e45ece8089609139f4f64d7740fb43ac986df54e55ed1f032e91d7c384f793",
+      "current_sha256": "6c5f33dd8f1cdac8203e5966391469663e60ba2023e7dbb480ea6208a54d8c60",
+      "baseline_bytes": 4037,
+      "current_bytes": 4143,
+      "retained_boundaries": null
+    }
+  ],
+  "supporting_assets": [
+    {
+      "path": "plugin/skills/grea/agents/openai.yaml",
+      "sha256": "e8aabbbb6c3aa376c710e9bd76388bb0ca4b2449642430de885b0b959545fb1c",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea/assets/skill-layout.json",
+      "sha256": "0436e945eb1b34b645474be839b4ee67e3fe5bbb00a500e76332838a10e0d28b",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-develop/assets/art-ledger.example.json",
+      "sha256": "600ff16885be9fb35f82fb509b186fb8887f59933da12780e925dc9b1987457a",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-develop/assets/art-ledger.schema.json",
+      "sha256": "41dc634415480aed9d49dfe7247a9e6464606526b483dc56bfcbd8bd32f9110f",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-develop/assets/change-contract.schema.json",
+      "sha256": "8d2a1366219cc431c4661223feaaa3c00879539a45003ac144312ead88dbfae4",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-develop/assets/theme-map.example.json",
+      "sha256": "411da241e38db5c37319ba03ee63218d3c6e6970547bcc6fd55c395b65cc1311",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-develop/assets/theme-map.schema.json",
+      "sha256": "5f525c9c50efc1b1891e8df42e14e75e4d9451af1d15a3ffc052e08cbc98cb5b",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-develop/assets/third-party/awesome-gamedev-agent-skills/LICENSE",
+      "sha256": "6f82dcfeb95a1c0a0452180a3b16f21bf82111780018fed59d95a052b5b75f6c",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-develop/assets/third-party/awesome-gamedev-agent-skills/NOTICE",
+      "sha256": "2dcb65b1c5be24e5ba11e937f3996100f4e980d8cf8ac5b30ba1d70dae6c40f8",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-recover/assets/frida-pair.reference.json",
+      "sha256": "9056fd1c46720167f67e33e6855939e123db451c25ae60e746f250f5fab2a4b7",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    },
+    {
+      "path": "plugin/skills/grea-research/assets/research-input.schema.json",
+      "sha256": "b9e4eaec02cb997289435ab1a7e273cc3ff7f589ae4f3099148f3d024970e251",
+      "decision": "preserved",
+      "reason": "第三方许可/声明保持原文；Schema和示例同源校验；UI元数据和迁移表保持五技能结构。"
+    }
+  ],
+  "candidate_classification": [
+    {
+      "kind": "implemented_finite_tools",
+      "decision": "Clarify actual source capability; installation, generated candidates and target verification remain separate.",
+      "examples": [
+        "research_report",
+        "cocos_project/cocos_convert",
+        "theme_assets",
+        "unity_config_candidate"
+      ]
+    },
+    {
+      "kind": "candidate_artifacts",
+      "decision": "Keep candidate status until applicable checks; not a reason to delete method documents.",
+      "examples": [
+        "monkey exports",
+        "theme bundle",
+        "SO import candidate",
+        "Go server scaffold"
+      ]
+    },
+    {
+      "kind": "unsupported_or_optional_routes",
+      "decision": "Keep explicit capability limits, no raw argv fallback or unapproved install.",
+      "examples": [
+        "monkey optional development queries",
+        "beaver unadapted server/Creator operations"
+      ]
+    },
+    {
+      "kind": "historical_progress",
+      "decision": "Remove task/version sample history from daily instructions; immutable existing receipts remain unchanged.",
+      "examples": [
+        "beaver 07/08/09/final hash/progress narration",
+        "old project script counts",
+        "old Windows release exemption"
+      ]
+    }
+  ],
+  "compatibility": {
+    "status": "pass",
+    "registry_tools": 88,
+    "fields_compared": [
+      "id",
+      "alias_of",
+      "execution",
+      "delegate",
+      "inputs",
+      "outputs",
+      "effects",
+      "required_arguments",
+      "optional_arguments",
+      "provider"
+    ],
+    "reference_only_runtime_edits": [
+      "src/grea/workflows.py"
+    ],
+    "input_and_result_schemas_unchanged": true,
+    "workflow_modes_unchanged": true
+  },
+  "validation": {
+    "tests": {
+      "count": 52,
+      "status": "pass",
+      "log": ".private/skill-audit-20261027/tests.log",
+      "includes": [
+        "CLI/MCP and mode routes",
+        "document closure and deleted-source fixture",
+        "managed-install upgrade/pruning",
+        "schema/example identity",
+        "lifecycle, research and reskin compatibility",
+        "complete product Skill inclusion"
+      ]
+    },
+    "repository_documents": {
+      "ok": true,
+      "documents": 157,
+      "localLinks": 680,
+      "errors": [],
+      "scope": "Local links/anchors only; external URLs not fetched."
+    },
+    "isolated_closure": {
+      "ok": true,
+      "skills": 5,
+      "markdown_files": 70,
+      "local_links": 337,
+      "errors": [],
+      "scope": "Skill-set document/resource closure only; runtime tools remain separate dependencies."
+    },
+    "semantic_docs": {
+      "ok": true,
+      "checked_explicit_references": 14,
+      "errors": [],
+      "scope": "Explicit grea annotations and current generated capability matrix; prose and historical statements need human review"
+    },
+    "generated_contracts": {
+      "ok": true,
+      "drifted": [],
+      "written": []
+    },
+    "frontmatter": [
+      {
+        "skill": "grea",
+        "exit_code": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-develop",
+        "exit_code": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-recover",
+        "exit_code": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-release",
+        "exit_code": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-research",
+        "exit_code": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      }
+    ],
+    "artifact": {
+      "version": "2026.10.27",
+      "target": "macos-arm64",
+      "source_revision": "4f25ed5ee6cbe35a654adaf77c8fc7fe8b4d7058",
+      "source_dirty": true,
+      "source_kind": "worktree-preview",
+      "source_tree_sha256": "f5e875db6bd383a8628e8e6bc7b53d0586d886ac9d2088c3c61fcb62e65c89ce",
+      "modules": [
+        {
+          "name": "monkey",
+          "version": "0.4.1",
+          "file": "monkey_native-0.4.1-py3-none-any.whl",
+          "sha256": "caa21fab96a5527f9892847e749a1e532e338699bc97f06d87bff886b082f8df",
+          "bytes": 552898,
+          "releaseStatus": "bundled_with_grea"
+        },
+        {
+          "name": "beaver",
+          "version": "0.4.0",
+          "file": "beaver_game_tools-0.4.0-py3-none-any.whl",
+          "sha256": "9d509f509c574a91e18e17053f11f4ce3fa37a27a857600c2791287876eb4ed8",
+          "bytes": 324925,
+          "releaseStatus": "bundled_with_grea"
+        }
+      ],
+      "archive": "grea-plugin-macos-arm64.zip",
+      "sha256": "98c66da1923a96ca8c39df9f662b9464f87e21d12f137455c4a3ccfc29348a0f",
+      "bytes": 48924086,
+      "files": 3678
+    },
+    "isolated_plugin": {
+      "archive_sha256": "98c66da1923a96ca8c39df9f662b9464f87e21d12f137455c4a3ccfc29348a0f",
+      "clients": {
+        "claude": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "evidence_manifest",
+            "config_preflight",
+            "presentation_audit",
+            "performance_compare",
+            "case_revision_invalidation",
+            "legacy_launch",
+            "cocos_core_subprocess",
+            "native_exit_core_subprocess",
+            "typed_config_core_subprocess",
+            "native_authoring_core_subprocess",
+            "optional_ast_cecil_missing",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "installed_skills": [
+            "grea",
+            "grea-develop",
+            "grea-recover",
+            "grea-release",
+            "grea-research"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "skill_routes": {
+            "deliver": "grea-release",
+            "maintain": "grea",
+            "recover": "grea-recover",
+            "research": "grea-research",
+            "reskin": "grea-develop"
+          },
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "start_case_revision",
+            "validate_unity_project"
+          ]
+        },
+        "codex": {
+          "checks": [
+            "initialize",
+            "catalog_parity",
+            "session",
+            "bundled_workflow",
+            "core_subprocess",
+            "evidence_manifest",
+            "config_preflight",
+            "presentation_audit",
+            "performance_compare",
+            "case_revision_invalidation",
+            "legacy_launch",
+            "cocos_core_subprocess",
+            "native_exit_core_subprocess",
+            "typed_config_core_subprocess",
+            "native_authoring_core_subprocess",
+            "optional_ast_cecil_missing",
+            "structured_failure",
+            "external_provider_missing"
+          ],
+          "installed_skills": [
+            "grea",
+            "grea-develop",
+            "grea-recover",
+            "grea-release",
+            "grea-research"
+          ],
+          "protocolVersion": "2025-03-26",
+          "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+          "skill_routes": {
+            "deliver": "grea-release",
+            "maintain": "grea",
+            "recover": "grea-recover",
+            "research": "grea-research",
+            "reskin": "grea-develop"
+          },
+          "status": "pass",
+          "tools": [
+            "add_evidence",
+            "audit_unity_dependencies",
+            "case_status",
+            "compare_gameplay_traces",
+            "describe_tool",
+            "doctor",
+            "generate_unity_project",
+            "init_case",
+            "inspect_numeric_texture",
+            "inspect_target",
+            "list_tools",
+            "plan_unity_generation",
+            "plan_unity_project",
+            "plan_workflow",
+            "record_verification",
+            "recover_unity_generation",
+            "run_tool",
+            "session",
+            "snapshot_unity_assets",
+            "start_case_revision",
+            "validate_unity_project"
+          ]
+        }
+      },
+      "filesystem_view": "owned temporary directories",
+      "isolation": {
+        "independent_home": true,
+        "install_write_denied": true,
+        "installation_unchanged": true,
+        "minimal_path": true,
+        "moved_unicode_space_path": true,
+        "network_denied": true,
+        "source_read_denied": true
+      },
+      "isolation_probe_errors": [
+        "source 1 None",
+        "install_write 1 None",
+        "network 1 None"
+      ],
+      "limits": [
+        "Native client loading is a separate acceptance layer.",
+        "Unity Editor and gameplay not run.",
+        "Other platforms not run."
+      ],
+      "network_control": "Exact live loopback TCP listener reachable before and after boxed denial/timeout; no model or application data sent",
+      "path_resolution": {
+        "method": "standard canonical path",
+        "status": "pass"
+      },
+      "source_kind": "worktree-preview",
+      "source_tree_sha256": "f5e875db6bd383a8628e8e6bc7b53d0586d886ac9d2088c3c61fcb62e65c89ce",
+      "status": "pass",
+      "target": "macos-arm64",
+      "verified_operations": [
+        "session",
+        "plan_workflow",
+        "run_tool",
+        "init_case",
+        "start_case_revision",
+        "case_status"
+      ],
+      "verified_tool_ids": [
+        "static_asset_copy",
+        "cocos_assets",
+        "unity_native_exit",
+        "unity_config_candidate",
+        "unity_native_assets",
+        "evidence_manifest",
+        "config_preflight",
+        "presentation_audit",
+        "performance_compare"
+      ],
+      "version": "2026.10.27"
+    }
+  },
+  "forward_evaluation": {
+    "scope": "Two independent document-only reviewers over isolated installed Skills; eight realistic scenarios, no engine or service execution.",
+    "result": "pass after targeted clarification",
+    "scenarios": [
+      "offline package/video research without development",
+      "existing SO numeric data to runtime JSON with save compatibility",
+      "old evolve UI contract with theme candidate",
+      "native Creator local Web package with license scan match",
+      "provider already wrote before outer needs_action",
+      "monkey manifest-only candidate before business adoption",
+      "Memory Profiler installation versus performance improvement",
+      "GREA document maintenance versus game release"
+    ],
+    "corrections": [
+      "Explicit maintain route for GREA itself",
+      "Manifest-only pass allows adoption planning/native checks; applicable handoff gates precede business baseline"
+    ],
+    "final_targeted_review": "Reviewer confirmed both corrected decisions in the resynchronized isolated set."
+  },
+  "environment_notes": [
+    "Skill validator initially lacked PyYAML in repository venv; reused already-installed Python with PyYAML 6.0.3, no dependency installation.",
+    "Plugin verifier launched outside outer sandbox to permit its own restrictive macOS sandbox; source-read/network/install-write denials all enforced."
+  ],
+  "limits": [
+    "No Unity/Creator Editor or game/Go service runtime executed.",
+    "Codex/Claude manifests tested with independent stdio clients, not native host plugin replacement/loading.",
+    "macOS arm64 isolation only; Windows native not run.",
+    "External documentation URLs not fetched.",
+    "Receipt written after bundle; tested artifact identity is the recorded archive SHA, not a new release."
+  ],
+  "not_done": [
+    "git commit/push/merge/tag/release",
+    "global or workspace skill replacement",
+    "game or provider changes"
+  ]
+}

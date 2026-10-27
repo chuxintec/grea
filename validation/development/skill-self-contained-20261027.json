@@ -1,0 +1,472 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-10-27",
+  "status": "implemented_and_validated_locally",
+  "branch": "codex/monkey-toolchain-v040",
+  "baseline_head": "4f25ed5ee6cbe35a654adaf77c8fc7fe8b4d7058",
+  "grea": {
+    "version": "2026.10.27",
+    "core_sha256": "6042f7dd165716f22c672bfebebc006c8801a785670989696b673169d8eca574",
+    "files": 72
+  },
+  "request": "Skill set operates independently of repository docs; docs only project/user/maintenance manuals",
+  "ownership": {
+    "workflow_contracts": "plugin/skills/*/references",
+    "input_examples_and_portable_data": "plugin/skills/*/assets",
+    "manuals": "docs",
+    "executable_tools": "existing GREA CLI/MCP and monkey/beaver modules; still required for execution"
+  },
+  "migration": {
+    "documents": 23,
+    "entries": [
+      {
+        "manual": {
+          "path": "docs/providers/monkey.md",
+          "bytes": 423,
+          "sha256": "9d4341afe9bc940e5f4871fad3dfe3cfa0c5f44a56be2a8791fe936e567e2fcd"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea/references/monkey恢复工具合同.md",
+          "bytes": 15543,
+          "sha256": "f594d08d509ec6bf3d9fd5dc45d5211e4a5abb7c8dc3a828aa28cf441488b511"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/beaver.md",
+          "bytes": 411,
+          "sha256": "a8e98c0f28d17fdc343a5faaa62e6c7fe1b318e0530661c533930a4be63aba60"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea/references/beaver工程操作合同.md",
+          "bytes": 16332,
+          "sha256": "c86ec5b36a79f47565a8a5e3afb8f61d288232c944c9685b8ba16cd8207d6db0"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/lifecycle-analysis.md",
+          "bytes": 455,
+          "sha256": "d04a529155e2f5c65e4b577555bce26e5fe0ad8a5877afdc59dd27d32a155626"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-evolve/references/版本兼容与运营预览工具.md",
+          "bytes": 5384,
+          "sha256": "6c0a8a417420abca9705d515f7555c58f537f90c97329421c638611c62736000"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/asset-preview.md",
+          "bytes": 450,
+          "sha256": "af3b8ca3f83b05a9bebfab98eeff519bdff18ca79f44b4f31a0ceee0b29d701a"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-reskin/references/图像联系表与规格工具.md",
+          "bytes": 2680,
+          "sha256": "1644fedbdbffd662d382f9c87292270bbc96ed6091d32aeb725b2a4797f9970c"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/research.md",
+          "bytes": 583,
+          "sha256": "275481f9409a5ae0eccda0d191f0342f31f2c9f31791bcb7e1208946ab7909a3"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-research/references/调研工具与证据合同.md",
+          "bytes": 4037,
+          "sha256": "d6e45ece8089609139f4f64d7740fb43ac986df54e55ed1f032e91d7c384f793"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/cocos-static.md",
+          "bytes": 796,
+          "sha256": "69373578e1785776a9f7965efaf9596797f4483aafd218b8621b0e17fed67e72"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-evidence/references/Cocos离线解析与模块证据.md",
+          "bytes": 4475,
+          "sha256": "39b44a863022f615e8f0b06ee8b7e3ac005b5ca8c74a38b5116e53707e3a957a"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/cocos3-evidence.md",
+          "bytes": 554,
+          "sha256": "48547abe101237425d5c8654ce93e13b476d09d1f4ec31e253c1d94871d89704"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-evidence/references/Creator序列化与CCON证据.md",
+          "bytes": 2728,
+          "sha256": "079fc287091d1226c4c93b933960bd2afd632a191e39d3fc07613f5b22960676"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/cocos-target.md",
+          "bytes": 532,
+          "sha256": "1257b52db540c765e7a711de788b53bb92b02a37ec763bf9690e5b108b4b6434"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-cocos/references/Cocos目标工程工具.md",
+          "bytes": 2831,
+          "sha256": "516b48cccc91159f3a1775438902e46857efc8c3bdea6c6a59885d473594f11c"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/Android旧模拟器接入.md",
+          "bytes": 464,
+          "sha256": "cdce4f4a95880d2841a671e0454ba7e301adf6ec00036fc3c91b859d5cc0eb5e"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-evidence/references/Android旧模拟器调用.md",
+          "bytes": 2212,
+          "sha256": "0bbec45135310dbe41f8a8b79097c15576690406d86a383763d4fcb44fd3148d"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/Frida接入.md",
+          "bytes": 379,
+          "sha256": "2354e8c3ce3ed1699f2c1e610cf2480d12b39cf4876e58ee96a0c937d7cdacc6"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-evidence/references/Frida配对与调用.md",
+          "bytes": 1774,
+          "sha256": "1a15d34511e54699b570848376e4929e148c00fdc3ea4867dd6781c34341691f"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/IL2CPP解析器接入.md",
+          "bytes": 424,
+          "sha256": "dea995f6b16b153dae729877aaded7e44e0fa7baa24192bd7270b4d7ff971f3b"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-unity-recovery/references/IL2CPP辅助解析器.md",
+          "bytes": 1402,
+          "sha256": "9fd5d94f4ba200febcbf9d2c0f2d262eadc147752890c6375865996b100175ad"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/unity-authoring.md",
+          "bytes": 419,
+          "sha256": "1efc1f049cd26ad4f4ffbdf5cfcfacdfac5aff88e7557e90e78ccf949c58e48d"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-unity-standard/references/Unity配置与资源制作工具.md",
+          "bytes": 6730,
+          "sha256": "f08bdd6d8b76ce8abca878ca84051b9da97056aa5cb1c02a43669e661763fe47"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/unity-native-exit.md",
+          "bytes": 399,
+          "sha256": "7f744363257cc9e4a33897abca2edf5b2d87b23fa424999d35563355775f7a2d"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-native-port/references/Unity原生退出检查工具.md",
+          "bytes": 5787,
+          "sha256": "79ea42bb6d2a365cb17f2223d91ab1da3a4e255f6ecd0036baf0edddbeda7f68"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/observation-tools.md",
+          "bytes": 434,
+          "sha256": "72cb950128114d46acea9e61d66324d66eb68f217e5608b3f6f46c6afe816540"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-unity-standard/references/配置表现与性能预检工具.md",
+          "bytes": 4957,
+          "sha256": "2e84cab1846e8d57013971d204906d2007abddd72129efe568f5eddc7e59de3d"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/theme-assets.md",
+          "bytes": 416,
+          "sha256": "3a1f7b8a6027098ea0e3d861691d8f0b2ca6533fbc9a28f436e15197fa493fa2"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-reskin/references/主题资源映射与台账工具.md",
+          "bytes": 9262,
+          "sha256": "e6ffe45c3ec010fd49e2f96a2515ac63769f4f4a260e932aebd5daaca3f783b4"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/server-go.md",
+          "bytes": 411,
+          "sha256": "6c37477a9b58be0332291d7e403524fc8e8a582f9fd09b50d474f8e8e04aee31"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-server-go/references/Go六服模板工具.md",
+          "bytes": 2921,
+          "sha256": "3fc58914c7512827fd41df1774c6543568644848f5372bf71e939df95f52fef9"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/providers/windows-native.md",
+          "bytes": 423,
+          "sha256": "6c04acb572822d3089d76b6a1506c5a5ca7860c267ac488eca0c97b18de5b9a3"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-delivery/references/Windows供应方与桌面验收.md",
+          "bytes": 2840,
+          "sha256": "4001b71ae469bd8157145e98ef09b104f68f6b48255303ac66f0b0b99f65f86f"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/tools/制品与资源检查.md",
+          "bytes": 554,
+          "sha256": "8114a14dae7cb618bed5333638f62fa600b55b0cb8dacbb8bdf711d9297bde37"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea/references/资源审计与制品校验工具.md",
+          "bytes": 17757,
+          "sha256": "69bd38c2a165547fa44fefb88d5d6e19b83366afefef122f0dec83d876a620cf"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/tools/规则与格式检查.md",
+          "bytes": 480,
+          "sha256": "bbdea0dd9f69a4511286c8bdd61449e8aab8f61cbe98e86a217c112721332b90"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea/references/规则差分与数值纹理工具.md",
+          "bytes": 3968,
+          "sha256": "e9404073df312b58c9aec49d838cbac9931c004f76b657d0ebea3d0d49023bb5"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/tools/Shader工具.md",
+          "bytes": 466,
+          "sha256": "80f83e01010eecd63edbe1356d885878f6279730462381ec9926d9af7c91834b"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-unity-recovery/references/Shader检查工具.md",
+          "bytes": 849,
+          "sha256": "47073d66dd28dd3c65e3e08d1e6e21afee87631bd54ebb12ee31d42b2f9dafca"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/tools/MemoryProfiler安装.md",
+          "bytes": 441,
+          "sha256": "a996ae0ea50f6df9cc18afbf3ec1bbf007e043b47ebe6a4ba17a7c2e6a10f1ec"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-unity-standard/references/MemoryProfiler调用准备.md",
+          "bytes": 424,
+          "sha256": "53c17a5a3635f40b8fdd7e11bc1bf7d725cb8f65a50a0ec51245eea7051a4349"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/Unity指南.md",
+          "bytes": 496,
+          "sha256": "872d4fe3d7b36c91bf3192e94e97fb3dfa21ac8814fa6190b7313eeeb986dbfc"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea-unity-standard/references/Unity工程工具与生成.md",
+          "bytes": 3173,
+          "sha256": "725aab3d504cae16fcdf80b48e29ecd5f61e1ed79fa01ab6c487930cfa28f418"
+        }
+      },
+      {
+        "manual": {
+          "path": "docs/接口与证据说明.md",
+          "bytes": 4372,
+          "sha256": "ba56d1bc5368232b3fa25a938ec710e274be2320bf73676d0509df99e5b0b7f3"
+        },
+        "skill_reference": {
+          "path": "plugin/skills/grea/references/接口调用与证据记录.md",
+          "bytes": 6412,
+          "sha256": "881ec8175a1ed14fda76f15ff7cd2206e41b69f0b750633103bf148cee55dea7"
+        }
+      }
+    ],
+    "json_assets": [
+      {
+        "path": "plugin/skills/grea-evidence/assets/frida-pair.reference.json",
+        "bytes": 322,
+        "sha256": "9056fd1c46720167f67e33e6855939e123db451c25ae60e746f250f5fab2a4b7"
+      },
+      {
+        "path": "plugin/skills/grea-evolve/assets/change-contract.schema.json",
+        "bytes": 8681,
+        "sha256": "8d2a1366219cc431c4661223feaaa3c00879539a45003ac144312ead88dbfae4"
+      },
+      {
+        "path": "plugin/skills/grea-research/assets/research-input.schema.json",
+        "bytes": 8419,
+        "sha256": "b9e4eaec02cb997289435ab1a7e273cc3ff7f589ae4f3099148f3d024970e251"
+      },
+      {
+        "path": "plugin/skills/grea-reskin/assets/art-ledger.example.json",
+        "bytes": 6244,
+        "sha256": "600ff16885be9fb35f82fb509b186fb8887f59933da12780e925dc9b1987457a"
+      },
+      {
+        "path": "plugin/skills/grea-reskin/assets/art-ledger.schema.json",
+        "bytes": 10158,
+        "sha256": "41dc634415480aed9d49dfe7247a9e6464606526b483dc56bfcbd8bd32f9110f"
+      },
+      {
+        "path": "plugin/skills/grea-reskin/assets/theme-map.example.json",
+        "bytes": 1977,
+        "sha256": "411da241e38db5c37319ba03ee63218d3c6e6970547bcc6fd55c395b65cc1311"
+      },
+      {
+        "path": "plugin/skills/grea-reskin/assets/theme-map.schema.json",
+        "bytes": 13091,
+        "sha256": "5f525c9c50efc1b1891e8df42e14e75e4d9451af1d15a3ffc052e08cbc98cb5b"
+      }
+    ],
+    "examples_moved": 2,
+    "schemas_generated_from_single_runtime_contract": 4,
+    "manual_bodies_retained_as_second_normative_source": false
+  },
+  "compatibility": {
+    "tool_ids_and_aliases": "unchanged",
+    "registry_changed_fields": [
+      "output_schema",
+      "remediation",
+      "usage"
+    ],
+    "registry_changed_values": 98,
+    "registry_execution_routes": "unchanged",
+    "frida_diagnostic": "reads historical pairing values from Skill JSON asset instead of parsing a manual; same flags/status/result fields, no server execution",
+    "platform_matrix": "baseline generated table missed 5 already-registered tool IDs (83 vs 88); regenerated declarations only; existing rows unchanged, native_validation remains not_run_per_tool"
+  },
+  "validation": {
+    "targeted_tests": 23,
+    "tests": "sync, isolated source-deletion closure, escaping inline/image/reference links, hidden literal docs paths, schema/example validation, Frida matched/mismatched archive without docs, existing ledger and source-projection consumers, doctor/default and strict catalog",
+    "frontmatter_skills": 12,
+    "source": {
+      "ok": true,
+      "skills": 12,
+      "markdown_files": 81,
+      "local_links": 391,
+      "errors": [],
+      "scope": "Skill-set document/resource closure only; runtime tools remain separate dependencies."
+    },
+    "isolated": {
+      "ok": true,
+      "skills": 12,
+      "markdown_files": 81,
+      "local_links": 391,
+      "errors": [],
+      "scope": "Skill-set document/resource closure only; runtime tools remain separate dependencies."
+    },
+    "docs": {
+      "ok": true,
+      "documents": 167,
+      "localLinks": 729,
+      "errors": [],
+      "scope": "Local links/anchors only; external URLs not fetched."
+    },
+    "semantic": {
+      "ok": true,
+      "checked_explicit_references": 14,
+      "errors": [],
+      "scope": "Explicit grea annotations and current generated capability matrix; prose and historical statements need human review"
+    },
+    "contracts": {
+      "ok": true,
+      "drifted": [],
+      "written": []
+    },
+    "routing": {
+      "ok": true,
+      "markdown_files": 81,
+      "local_links": 391,
+      "warnings": []
+    },
+    "private_sync_check": true,
+    "full_runtime_plugin_rebuild": false,
+    "whole_runtime_test_suite": false
+  },
+  "independent_forward_review": {
+    "scenarios": [
+      "research evidence and cost reporting",
+      "post-execution production.apply outer error",
+      "authorized UI reskin and macOS candidate delivery"
+    ],
+    "execution": "read-only Skill-only reasoning, no runtime execution",
+    "findings_resolved": [
+      "research exact input fields packaged as generated Skill Schema",
+      "source vs target product/save identity clarified without changing policy",
+      "same-Skill production guide and generated input Schema links repaired"
+    ],
+    "runtime_limits": "CLI/MCP, locked provider and Editor installation remain required; forward walkthrough is not native/gameplay acceptance"
+  },
+  "scope_guards": {
+    "game_writes": false,
+    "provider_writes": false,
+    "global_or_workspace_skill_install": false,
+    "private_preview_only": true,
+    "editor_or_player_run": false,
+    "commit": false,
+    "push": false,
+    "merge": false,
+    "release": false
+  },
+  "evidence": [
+    {
+      "path": ".private/skill-self-contained-20261027/targeted-tests.log",
+      "bytes": 98,
+      "sha256": "6e5f4d8ed9d2b886ff2c3a960e53f2dc44d34509d54d2548cd3cc400ea9917bf"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/frontmatter-check.json",
+      "bytes": 1297,
+      "sha256": "707a828e931479b7db9532d564fcf464fee01cf2a9be8e56b63fd8fe0913fcca"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/docs-check.json",
+      "bytes": 141,
+      "sha256": "aa0c0b96b68e8b6cf70495ea05fa48f8650d05e30145bea21cf42c97e1e394af"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/semantic-check.json",
+      "bytes": 201,
+      "sha256": "cb74ccbf76749985a09863d1ad2cfdd3a14b334b27d43d63813203b9bc3756a8"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/source-closure.json",
+      "bytes": 195,
+      "sha256": "51963a5128f599353da03588b98b1bf8368a81bb5783c92a241ea644dce73c48"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/isolated-closure.json",
+      "bytes": 195,
+      "sha256": "51963a5128f599353da03588b98b1bf8368a81bb5783c92a241ea644dce73c48"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/contracts-check.json",
+      "bytes": 43,
+      "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/skill-check.json",
+      "bytes": 1246,
+      "sha256": "2a0a26e8e26bfdf5ffef0931910043899340c0de540b0d31b656da2f16e9854d"
+    },
+    {
+      "path": ".private/skill-self-contained-20261027/sync-check.log",
+      "bytes": 22,
+      "sha256": "53bd66641e0747255c6648146708adbdae21143e53f23754684aa717b57f2f04"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'src'))
 from grea.tools.check_skill import heading_ids, without_fences
 from grea.contracts import catalog
+from check_skill_closure import check as check_skill_closure
 
 
 def operation_table():
@@ -37,6 +38,8 @@ def check(root):
     api = Path(root)/'docs/接口与证据说明.md'
     if api.exists() and operation_table() not in api.read_text(encoding='utf-8'):
         errors.append({'file':'docs/接口与证据说明.md','code':'operation_catalog_drift'})
+    if (root/'plugin/skills/grea/SKILL.md').is_file():
+        errors.extend(dict(item, check='skill_closure') for item in check_skill_closure(root/'plugin/skills')['errors'])
     return {'ok':not errors,'documents':documents,'localLinks':count,'errors':errors,'scope':'Local links/anchors only; external URLs not fetched.'}
 
 

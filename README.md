@@ -2,7 +2,7 @@
 
 GREA 以 Skill、规范与方法为主，编排两个随版本统一发布的模块：**monkey 恢复原游戏为独立候选，beaver 操作可开发工程**。游戏开发者负责具体业务与实际可玩结果。CLI、stdio MCP 与轻量脚本只提供发现、版本锁定、模块委托和调用回执。
 
-当前版本 **2026.10.27**：GREA 以 [modules.lock.json](modules.lock.json) 固定 monkey 0.4.1 与 beaver 0.4.0，完整插件内置两者 wheel，`grea_modules` 校验并隔离安装。原 GREA 执行工具已移入模块（工具 ID 不变，`run-tool` 自动委托 `monkey tool <id>` / `beaver tool <id>`）。12 个技能按工作流阶段组织，只承载规范与流程且不依赖仓库其他目录；项目概览与使用说明在 `docs/`。见[本版说明](validation/release-notes/v2026.10.27.md)、[工具链审计与统一发布](proposals/triad-toolchain-audit-20261027.md)与[beaver接入](docs/providers/beaver.md)。
+当前版本 **2026.10.27**：GREA 以 [modules.lock.json](modules.lock.json) 固定 monkey 0.4.1 与 beaver 0.4.0，完整插件内置两者 wheel，`grea_modules` 校验并隔离安装。原 GREA 执行工具已移入模块（工具 ID 不变，`run-tool` 自动委托 `monkey tool <id>` / `beaver tool <id>`）。五技能按调研、恢复、开发、发布阶段组织，只承载规范与流程且不依赖仓库其他目录；项目概览与使用说明在 `docs/`。见[本版说明](validation/release-notes/v2026.10.27.md)、[工具链审计与统一发布](proposals/triad-toolchain-audit-20261027.md)与[beaver接入](docs/providers/beaver.md)。
 
 提取、编译、readiness、真实输入和原版一致性分别报告，未执行层保持未验。
 
@@ -12,12 +12,12 @@ GREA 以 Skill、规范与方法为主，编排两个随版本统一发布的模
 
 | 任务 | 当前能力 | 边界与入口 |
 | --- | --- | --- |
-| 原包盘点与取证 | 文件/目录摘要、包体清单、证据清单；wxapkg、XAPK 及资源解包工具；可选反编译和资源提取供应方 | 不执行待分析源代码，不推断隐藏服务器规则；[取证技能](plugin/skills/grea-evidence/SKILL.md) |
+| 原包盘点与取证 | 文件/目录摘要、包体清单、证据清单；wxapkg、XAPK 及资源解包工具；可选反编译和资源提取供应方 | 不执行待分析源代码，不推断隐藏服务器规则；[取证技能](plugin/skills/grea-recover/SKILL.md) |
 | 资源与代码分析 | Unity GUID/依赖闭包与资产台账；Cocos 资源/模块有限静态解析、配置预检、Shader/数值纹理与透明边检查 | 版本/格式按 adapter 声明；缺失、动态拼装及未支持输入保持 partial/unsupported；[专项契约](docs/providers/README.md) |
-| 跨引擎原生转换 | 从 Cocos/Laya/H5 等来源的证据建立原生 Unity 制作、规则与可观察结果契约；有限 Sprite/Clip 配方、强类型配置候选与 Editor 伴随工具 | 不在 Player 重建源节点图或源生命周期；完整游戏仍需工程实现与验证；[原生转换](plugin/skills/grea-native-port/SKILL.md) |
-| Unity 包体恢复 | 结合 AssetRipper、UnityPy、ILSpy、Cpp2IL 等可选供应方，恢复资源引用与 Mono/IL2CPP 代码证据 | 工具检测不等于恢复完成；受版本、裁剪、符号和供应方格式限制；[Unity恢复](plugin/skills/grea-unity-recovery/SKILL.md) |
+| 跨引擎原生转换 | 从 Cocos/Laya/H5 等来源的证据建立原生 Unity 制作、规则与可观察结果契约；有限 Sprite/Clip 配方、强类型配置候选与 Editor 伴随工具 | 不在 Player 重建源节点图或源生命周期；完整游戏仍需工程实现与验证；[原生转换](plugin/skills/grea-recover/SKILL.md) |
+| Unity 包体恢复 | 结合 AssetRipper、UnityPy、ILSpy、Cpp2IL 等可选供应方，恢复资源引用与 Mono/IL2CPP 代码证据 | 工具检测不等于恢复完成；受版本、裁剪、符号和供应方格式限制；[Unity恢复](plugin/skills/grea-recover/SKILL.md) |
 | 工程标准与生成 | 项目配置/Schema、静态校验、只读规划、受控生成与中断恢复；明确文件所有权；Foundation/uGUI/Editor 三个 UPM 源码包及最小消费者 | 现有工程不自动迁移；生成不覆盖人工修改；[Unity指南](docs/Unity指南.md) |
-| 一致性与回归 | 规则/事件轨迹首差异、表现与性能合同检查、资源/载荷回读；源代码、Editor、实际 Player 元数据分层 | 合同检查不证明输入采集正确、可玩或完整视觉/性能通过；[一致性技能](plugin/skills/grea-parity/SKILL.md) |
+| 一致性与回归 | 规则/事件轨迹首差异、表现与性能合同检查、资源/载荷回读；源代码、Editor、实际 Player 元数据分层 | 合同检查不证明输入采集正确、可玩或完整视觉/性能通过；[一致性技能](plugin/skills/grea-develop/SKILL.md) |
 | 证据、候选与交付 | Case/revision、证据哈希、追加式审阅声明；执行预算/日志/退出与清理回执；包体身份、封装及交付规则 | 审阅声明不执行游戏；安装/发布沿用户授权，未测平台单列；[接口说明](docs/接口与证据说明.md) |
 
 ## 安装与第一次调用
@@ -74,26 +74,21 @@ uv sync --frozen
 
 Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执、stdout/stderr、退出码和产物哈希；不能复用旧运行目录掩盖失败。CLI 与 MCP 共用 [契约](schemas/operations.json) 及执行层；MCP 使用本地 **stdio**，无需另开 HTTP 服务。CLI 操作用短横线，MCP 用下划线，例如 `run-tool` / `run_tool`。既有工具 ID 和兼容入口保留。
 
-## 12 个技能按工作流分工
+## 五技能工作流
 
-| 阶段 | 技能 | 职责 | 执行模块 |
+| 阶段 | 技能 | 职责 | 执行工具 |
 | --- | --- | --- | --- |
-| 入口 | [grea](plugin/skills/grea/SKILL.md) | 辨识来源、任务模式与验收范围，按阶段路由；跨阶段流程（计划、协作、工具、复盘） | — |
-| 1 调研立项 | [grea-research](plugin/skills/grea-research/SKILL.md) | 调研判断、证据归一、覆盖缺口和成本报告 | — |
-| 2 取证与交接 | [grea-evidence](plugin/skills/grea-evidence/SKILL.md) | 原版运行、包体与资源/代码提取、研发交接资料核验、来源台账 | monkey |
-| 3 恢复为候选 | [grea-unity-recovery](plugin/skills/grea-unity-recovery/SKILL.md) | 原本就是 Unity 的包体恢复、GUID/脚本引用与依赖重建 | monkey |
-| 3 恢复为候选 | [grea-native-port](plugin/skills/grea-native-port/SKILL.md) | 非 Unity 来源转原生 Unity；清理源引擎运行机制与双真源 | monkey |
-| 3 恢复为候选 | [grea-cocos](plugin/skills/grea-cocos/SKILL.md) | Creator 目标五层示例、有限序列化迁移及浏览器流程 | monkey |
-| 4 工程开发 | [grea-unity-standard](plugin/skills/grea-unity-standard/SKILL.md) | 候选采用、工程/程序集结构、生命周期、配置、资产治理与性能 | beaver |
-| 4 工程开发 | [grea-evolve](plugin/skills/grea-evolve/SKILL.md) | 有界 UI/UE 与 feature/tuning/prototype 合同；生命周期与变更合同 | beaver |
-| 4 工程开发 | [grea-reskin](plugin/skills/grea-reskin/SKILL.md) | 有明确设计与授权的换皮，保持指定玩法和交互 | beaver |
-| 4 工程开发 | [grea-server-go](plugin/skills/grea-server-go/SKILL.md) | Go 六服、MySQL 持久命令、Redis 辅助及双客户端合同 | beaver |
-| 5 对照修复 | [grea-parity](plugin/skills/grea-parity/SKILL.md) | 规则、随机、视觉、动画、布局和输入的局部差异；真实体验对照 | beaver |
-| 6 构建交付 | [grea-delivery](plugin/skills/grea-delivery/SKILL.md) | 测试与结果分层、Editor 任务、构建、制品身份、封装、预览与发布 | beaver |
+| 总入口 | [grea](plugin/skills/grea/SKILL.md) | 根据目标和现有工程状态路由，维护共享约束、证据及工具调用方法 | 按阶段选择 |
+| 调研 | [grea-research](plugin/skills/grea-research/SKILL.md) | 体验取证、玩法/系统分析、成本与立项建议 | 按需只读工具 |
+| 恢复 | [grea-recover](plugin/skills/grea-recover/SKILL.md) | 技术取证、来源冻结、Unity/Cocos恢复路线、独立候选与缺口交接 | monkey |
+| 开发 | [grea-develop](plugin/skills/grea-develop/SKILL.md) | 工程采用、功能/一致性修复、换皮、Go服务端、配置/资产/性能和Editor工作 | beaver |
+| 发布 | [grea-release](plugin/skills/grea-release/SKILL.md) | 构建、目标Player验收、打包校验、版本说明及获准发布 | beaver及已配置平台工具 |
 
-技能只承载规范与工作流且独立于仓库：阶段专属规范在各技能 `references/`，跨阶段共用规范只有一份，在 grea 技能的 `references/`；`check_grea_skill` 拒绝离开 `plugin/skills` 的链接。项目概览与产品使用说明在 [docs](docs/README.md)。研究建议不自动创建开发项目，目标选择独立于源引擎，旧调用省略目标仍为 Unity。
+调研 → 恢复 → 开发 → 发布。已有可维护工程或已批准原创设计直接进入开发；已有候选可直接交付；只读取证不自动执行恢复。换皮和Go服务端属于开发阶段专题，不再以独立技能安装。研究建议不批准开发，构建不等于可玩或已发布。
 
-这些技能面向有原版依据的恢复与维护及明确获准的目标工程。原创 Unity 开发不自动套用恢复门槛。权威流程维护在 `plugin/skills/*/SKILL.md` 与各自 references；docs 解释产品使用，避免两套竞争规范。
+整套Skills的流程、参考、示例与输入Schema独立于仓库手册，按任务选读。共用内容在 `grea/references/`，其他内容归所属阶段。旧工具ID、CLI/MCP输入和工作流mode不变；[旧技能名称映射](plugin/skills/grea/assets/skill-layout.json)及[历史路径映射](schemas/document-path-map.json)用于解释已有引用，安装列表仅五个入口。
+
+项目介绍、安装与使用说明在 [docs](docs/README.md)。CLI/MCP、固定monkey/beaver与引擎仍是运行依赖，技能文件存在不表示工具就绪。
 
 ## 工具、原生制作与框架
 

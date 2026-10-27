@@ -2,7 +2,8 @@
 """Install the authoritative grea plugin skills into a skills root, rebasing local Markdown links; --check is read-only.
 
 Layout mapping: plugin/skills/<name>/ -> <dest>/<name>/; legacy plugin/shared/ (when present) and plugin/version.json
-are installed inside the router skill (<dest>/grea/). Only directories recorded as managed are
+are installed inside the router skill (<dest>/grea/). Links must stay within that mapped set.
+Only directories recorded as managed are
 written or pruned, so unrelated skills in the same root are left alone.
 """
 import argparse
@@ -14,6 +15,7 @@ import sys
 from urllib.parse import unquote, urlsplit
 
 LINK = re.compile(r"(\]\()(<[^>]+>|[^\s)]+)(\))")
+REFERENCE_LINK = re.compile(r"(^[ \t]{0,3}\[[^\]]+\]:[ \t]*)(<[^>]+>|[^\s]+)()", re.MULTILINE)
 ROOT = Path(__file__).resolve().parents[1]
 # tools/grea remains a product repo; shared skills belong to the enclosing workspace.
 def workspace_root(product_root: Path) -> Path:
@@ -29,6 +31,11 @@ def skill_names(source: Path) -> list[str]:
     names = sorted(p.name for p in (source / 'skills').iterdir() if (p / 'SKILL.md').is_file())
     if ROUTER not in names:
         raise ValueError('Plugin must contain the router skill skills/grea/SKILL.md')
+    layout = source / 'skills/grea/assets/skill-layout.json'
+    if layout.is_file():
+        declared = json.loads(layout.read_text(encoding='utf-8'))['canonical_skills']
+        if len(declared) != len(set(declared)) or set(declared) != set(names):
+            raise ValueError('Declared Skill set differs from source entries')
     return names
 
 
@@ -62,18 +69,23 @@ def render(source: Path, destination: Path) -> dict[Path, bytes]:
                 raw = match[2]
                 target = raw.strip('<>')
                 parsed = urlsplit(target)
-                if parsed.scheme or parsed.netloc or not parsed.path or parsed.path.startswith('/'):
+                if parsed.scheme in ('http', 'https', 'mailto') or parsed.netloc or not parsed.path:
                     return match[0]
+                if parsed.scheme or Path(unquote(parsed.path)).is_absolute():
+                    raise ValueError(f'Nonportable Skill link: {relative}: {target}')
                 linked = (file.parent / unquote(parsed.path)).resolve()
                 if not linked.exists():
                     raise ValueError(f'Broken source link: {relative}: {target}')
-                mapped = destination / by_source[linked] if linked in by_source else linked
+                if linked not in by_source:
+                    raise ValueError(f'Skill link must stay inside the distributed Skill set: {relative}: {target}')
+                mapped = destination / by_source[linked]
                 rebased = Path(os.path.relpath(mapped, (destination / installed).parent)).as_posix()
                 rewritten = rebased + target[len(parsed.path):]
                 if raw.startswith('<') or ' ' in rewritten:
                     rewritten = '<' + rewritten + '>'
                 return match[1] + rewritten + match[3]
-            data = LINK.sub(replace, data.decode('utf-8')).encode('utf-8')
+            text = LINK.sub(replace, data.decode('utf-8'))
+            data = REFERENCE_LINK.sub(replace, text).encode('utf-8')
         result[installed] = data
     return result
 

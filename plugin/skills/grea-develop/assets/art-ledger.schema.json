@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "selection",
+    "settings",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interfaces",
+        "characters",
+        "monsters"
+      ],
+      "properties": {
+        "interfaces": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "characters": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "monsters": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interface",
+        "character",
+        "monster",
+        "effect",
+        "level"
+      ],
+      "properties": {
+        "interface": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "character": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "monster": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "effect": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "level": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "feature_id",
+          "original_resource",
+          "design_source",
+          "design_version",
+          "source_art",
+          "slices",
+          "targets",
+          "kind",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "feature_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "original_resource": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "design_source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "design_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "source_art": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 256,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          "slices": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 256,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          "targets": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 256,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 256,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "source_url": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "creator": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "license": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "license_reference": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "generation_tool": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "tool_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "prompt_reference": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "restrictions": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "source_references": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              }
+            }
+          },
+          "kind": {
+            "enum": [
+              "interface",
+              "icon",
+              "character",
+              "monster",
+              "effect",
+              "level"
+            ]
+          },
+          "state": {
+            "enum": [
+              "planned",
+              "designed",
+              "produced",
+              "integrated",
+              "verified"
+            ]
+          },
+          "spine": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "state"
+            ],
+            "properties": {
+              "editor_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "runtime_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "skeleton": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "attachments": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "animations": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "events": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "atlas": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "textures": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "exports": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "evidence": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 256,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              },
+              "state": {
+                "enum": [
+                  "not_required",
+                  "pending",
+                  "authored",
+                  "exported",
+                  "integrated",
+                  "verified"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

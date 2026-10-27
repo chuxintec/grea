@@ -16,10 +16,10 @@
         "阻塞所有独立静态任务"
       ],
       "primary_references": [
-        "plugin/skills/grea-evidence/references/原版运行与内容取证.md",
-        "plugin/skills/grea-evidence/references/提取与引用恢复.md",
-        "plugin/skills/grea/references/游戏恢复开发.md",
-        "plugin/skills/grea-unity-recovery/references/Unity工程重建与恢复.md"
+        "plugin/skills/grea-research/references/原版运行与内容取证.md",
+        "plugin/skills/grea-recover/references/提取与引用恢复.md",
+        "plugin/skills/grea-develop/references/已采用工程的业务接续.md",
+        "plugin/skills/grea-recover/references/Unity工程重建与恢复.md"
       ]
     },
     {
@@ -36,7 +36,7 @@
         "无性能风险也跑五轮基准"
       ],
       "primary_references": [
-        "plugin/skills/grea-parity/references/Unity界面还原与输入交互.md",
+        "plugin/skills/grea-develop/references/Unity界面还原与输入交互.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -54,8 +54,8 @@
         "重复收费生成"
       ],
       "primary_references": [
-        "plugin/skills/grea-reskin/references/游戏换皮与资源制作.md",
-        "plugin/skills/grea-parity/references/Unity界面还原与输入交互.md",
+        "plugin/skills/grea-develop/references/游戏换皮与资源制作.md",
+        "plugin/skills/grea-develop/references/Unity界面还原与输入交互.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -73,7 +73,7 @@
         "自动安装模型"
       ],
       "primary_references": [
-        "plugin/skills/grea-reskin/references/游戏换皮与资源制作.md",
+        "plugin/skills/grea-develop/references/游戏换皮与资源制作.md",
         "plugin/skills/grea/references/工具选择与调用.md"
       ]
     },
@@ -91,8 +91,8 @@
         "自动换皮或修改玩法"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity重构与资源迁移.md",
-        "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
+        "plugin/skills/grea-develop/references/Unity重构与资源迁移.md",
+        "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -110,9 +110,9 @@
         "套用 Unity 包体解析器处理全部源文件"
       ],
       "primary_references": [
-        "plugin/skills/grea-native-port/references/Unity跨引擎移植与行为一致性.md",
-        "plugin/skills/grea-evidence/references/提取与引用恢复.md",
-        "plugin/skills/grea-unity-recovery/references/Unity工程重建与恢复.md"
+        "plugin/skills/grea-recover/references/Unity跨引擎移植与行为一致性.md",
+        "plugin/skills/grea-recover/references/提取与引用恢复.md",
+        "plugin/skills/grea-recover/references/Unity工程重建与恢复.md"
       ]
     },
     {
@@ -129,7 +129,7 @@
         "本地测量冒充渠道真机"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity性能分析与优化验证.md"
+        "plugin/skills/grea-develop/references/Unity性能分析与优化验证.md"
       ]
     },
     {
@@ -146,7 +146,7 @@
         "发布 Release"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md",
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -164,7 +164,7 @@
         "把超时当成功或已终止"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/Unity编辑器连接与任务执行.md",
+        "plugin/skills/grea-develop/references/Unity编辑器连接与任务执行.md",
         "plugin/skills/grea/references/故障排查与重试规则.md"
       ]
     },
@@ -231,8 +231,8 @@
         "顺带迁移别的项目或正式发布"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -248,7 +248,7 @@
         "覆盖旧版本附件冒称同一内容"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -265,7 +265,7 @@
         "丢弃失败证据"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -281,7 +281,7 @@
         "重复请求同一发布许可"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -297,7 +297,7 @@
         "仅重命名 ZIP 就表示包含新版本"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -314,7 +314,7 @@
         "把未检索到当成永久不可达或已体验"
       ],
       "primary_references": [
-        "plugin/skills/grea-evidence/references/原版运行与内容取证.md",
+        "plugin/skills/grea-research/references/原版运行与内容取证.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -333,10 +333,10 @@
         "夹具通过即宣称长流程与全部列表通过"
       ],
       "primary_references": [
-        "plugin/skills/grea-native-port/references/Unity跨引擎移植与行为一致性.md",
-        "plugin/skills/grea-parity/references/Unity界面还原与输入交互.md",
+        "plugin/skills/grea-recover/references/Unity跨引擎移植与行为一致性.md",
+        "plugin/skills/grea-develop/references/Unity界面还原与输入交互.md",
         "plugin/skills/grea/references/测试与结果交付.md",
-        "plugin/skills/grea-unity-standard/references/Unity程序集分层与生命周期.md"
+        "plugin/skills/grea-develop/references/Unity程序集分层与生命周期.md"
       ]
     },
     {
@@ -353,7 +353,7 @@
         "用手动成功声称自动拖动通过"
       ],
       "primary_references": [
-        "plugin/skills/grea-parity/references/Unity界面还原与输入交互.md",
+        "plugin/skills/grea-develop/references/Unity界面还原与输入交互.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -371,7 +371,7 @@
         "将所有弹窗或本地消费一律禁用"
       ],
       "primary_references": [
-        "plugin/skills/grea-native-port/references/Unity跨引擎移植与行为一致性.md",
+        "plugin/skills/grea-recover/references/Unity跨引擎移植与行为一致性.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -390,7 +390,7 @@
       ],
       "primary_references": [
         "plugin/skills/grea/references/测试与结果交付.md",
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -407,7 +407,7 @@
         "用解包校验冒充 Windows 运行或 Mac 公证"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -424,8 +424,8 @@
         "用计划时长代替实测或隐去剪辑和已知问题"
       ],
       "primary_references": [
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md",
-        "plugin/skills/grea-evidence/references/原版运行与内容取证.md",
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md",
+        "plugin/skills/grea-research/references/原版运行与内容取证.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -443,7 +443,7 @@
         "提前注册不存在的生成命令或宣称框架实测通过"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
+        "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
         "plugin/skills/grea/references/开发复盘与规范更新.md"
       ]
     },
@@ -461,8 +461,8 @@
         "为符合默认配置升级 Unity 或替换渲染管线"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
-        "plugin/skills/grea-unity-standard/references/Unity重构与资源迁移.md"
+        "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
+        "plugin/skills/grea-develop/references/Unity重构与资源迁移.md"
       ]
     },
     {
@@ -479,8 +479,8 @@
         "把再生成当成删除清单外资产的授权"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
-        "plugin/skills/grea-unity-standard/references/Unity重构与资源迁移.md"
+        "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
+        "plugin/skills/grea-develop/references/Unity重构与资源迁移.md"
       ]
     },
     {
@@ -497,7 +497,7 @@
         "跳过关闭重入只测试新建对象"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
+        "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -516,8 +516,8 @@
         "以开发机编译成功替代可恢复性或目标平台运行"
       ],
       "primary_references": [
-        "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-develop/references/Unity工程结构与开发规范.md",
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -533,7 +533,7 @@
         "推荐 AssetRipper 解析 Cocos"
       ],
       "primary_references": [
-        "plugin/skills/grea-native-port/references/Unity原生转换规范.md",
+        "plugin/skills/grea-recover/references/Unity原生转换规范.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -553,7 +553,7 @@
         "把Editor-only对照候选当生产违规"
       ],
       "primary_references": [
-        "plugin/skills/grea-native-port/references/Unity原生转换规范.md",
+        "plugin/skills/grea-recover/references/Unity原生转换规范.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -570,7 +570,7 @@
         "删除持续导表工具"
       ],
       "primary_references": [
-        "plugin/skills/grea-native-port/references/Unity原生转换规范.md",
+        "plugin/skills/grea-recover/references/Unity原生转换规范.md",
         "plugin/skills/grea/references/测试与结果交付.md"
       ]
     },
@@ -586,10 +586,10 @@
         "把旧截图升级为新包通过"
       ],
       "primary_references": [
-        "plugin/skills/grea-native-port/references/Unity原生转换规范.md",
+        "plugin/skills/grea-recover/references/Unity原生转换规范.md",
         "plugin/skills/grea/references/测试与结果交付.md",
         "plugin/skills/grea/references/开发计划与进度管理.md",
-        "plugin/skills/grea-delivery/references/游戏构建与版本发布.md"
+        "plugin/skills/grea-release/references/游戏构建与版本发布.md"
       ]
     },
     {
@@ -607,8 +607,8 @@
         "不改未授权玩法或自动发布/安装"
       ],
       "primary_references": [
-        "plugin/skills/grea-evolve/SKILL.md",
-        "plugin/skills/grea-evolve/references/有限二次开发.md",
+        "plugin/skills/grea-develop/SKILL.md",
+        "plugin/skills/grea-develop/references/生命周期与变更合同.md",
         "docs/providers/theme-assets.md"
       ]
     },
@@ -628,7 +628,7 @@
       ],
       "primary_references": [
         "docs/providers/theme-assets.md",
-        "plugin/skills/grea-reskin/SKILL.md"
+        "plugin/skills/grea-develop/SKILL.md"
       ]
     }
   ]

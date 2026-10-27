@@ -1,0 +1,376 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "game": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "sha256"
+        ]
+      }
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "kind": {
+            "enum": [
+              "prefab",
+              "scene",
+              "eui",
+              "spine",
+              "character",
+              "level",
+              "config_row",
+              "system"
+            ]
+          },
+          "stage": {
+            "enum": [
+              "declared",
+              "acquired",
+              "parsed",
+              "reference_closed",
+              "runtime"
+            ]
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "stage",
+          "source_id"
+        ]
+      }
+    },
+    "protocols": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "direction": {
+            "enum": [
+              "client_to_server",
+              "server_to_client",
+              "internal"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "rpc",
+              "message",
+              "field"
+            ]
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "name",
+          "direction",
+          "kind",
+          "source_id"
+        ]
+      }
+    },
+    "complete_kinds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "prefab",
+          "scene",
+          "eui",
+          "spine",
+          "character",
+          "level",
+          "config_row",
+          "system"
+        ]
+      }
+    },
+    "judgments": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "type": {
+            "enum": [
+              "fact",
+              "inference",
+              "hypothesis",
+              "experience",
+              "unknown"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "source_ids": {
+            "type": "array",
+            "maxItems": 100000,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          }
+        },
+        "required": [
+          "topic",
+          "type",
+          "text",
+          "source_ids"
+        ]
+      }
+    },
+    "estimates": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "active_hours": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "collaboration_days": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "backend_included": {
+            "type": "boolean"
+          },
+          "assumptions": {
+            "type": "array",
+            "maxItems": 100000,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048
+            }
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        },
+        "required": [
+          "role",
+          "active_hours",
+          "collaboration_days",
+          "backend_included",
+          "assumptions",
+          "confidence"
+        ]
+      }
+    },
+    "play_coverage": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "enum": [
+              "core_loop",
+              "tutorial",
+              "progression",
+              "ui_comparison"
+            ]
+          },
+          "system": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "status": {
+            "enum": [
+              "played",
+              "observed",
+              "partial",
+              "locked",
+              "blocked",
+              "static_only",
+              "not_run",
+              "not_applicable"
+            ]
+          },
+          "identity": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "operator": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "entry": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "actions": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "result": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "understanding": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "next_step": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "media": {
+            "type": "array",
+            "maxItems": 100000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "screenshot",
+                    "video"
+                  ]
+                },
+                "source_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2048
+                },
+                "timecode": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2048
+                }
+              },
+              "required": [
+                "kind",
+                "source_id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "area",
+          "system",
+          "status",
+          "identity",
+          "operator",
+          "entry",
+          "actions",
+          "result",
+          "understanding",
+          "next_step",
+          "media"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "game",
+    "sources",
+    "items",
+    "protocols"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

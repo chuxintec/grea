@@ -27,6 +27,13 @@ ARCHIVE = 'grea-plugin-macos-arm64.zip'
 
 def write_product(source, destination, target="macos-arm64", revision="HEAD"):
     source=project_product(source,revision)
+    layout_key = 'plugin/skills/grea/assets/skill-layout.json'
+    if layout_key in source:
+        expected = json.loads(source[layout_key][0])['canonical_skills']
+        actual = {name.split('/')[2] for name in source
+                  if name.startswith('plugin/skills/') and name.endswith('/SKILL.md')}
+        if len(expected) != len(set(expected)) or set(expected) != actual:
+            raise ValueError('Plugin Skill set differs from declared stage architecture')
     destination.mkdir(parents=True, exist_ok=False)
     for name, (data, mode) in sorted(source.items()):
         # Preserve the audited public resource closure, including linked docs and fixtures.

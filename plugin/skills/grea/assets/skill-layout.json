@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "canonical_skills": [
+    "grea",
+    "grea-research",
+    "grea-recover",
+    "grea-develop",
+    "grea-release"
+  ],
+  "legacy_skill_names": {
+    "grea-evidence": "grea-recover",
+    "grea-unity-recovery": "grea-recover",
+    "grea-native-port": "grea-recover",
+    "grea-cocos": "grea-develop",
+    "grea-unity-standard": "grea-develop",
+    "grea-evolve": "grea-develop",
+    "grea-parity": "grea-develop",
+    "grea-reskin": "grea-develop",
+    "grea-server-go": "grea-develop",
+    "grea-delivery": "grea-release"
+  },
+  "scope": "Name migration only. Install five Skills; legacy tool IDs, workflow modes and CLI/MCP input contracts are unchanged.",
+  "split_responsibilities": {
+    "grea-evidence": {
+      "original_observation": "grea-research",
+      "technical_evidence": "grea-recover",
+      "project_intake": "grea-develop"
+    },
+    "grea-native-port": {
+      "source_conversion": "grea-recover",
+      "existing_project_cleanup": "grea-develop"
+    },
+    "grea-cocos": {
+      "source_conversion": "grea-recover",
+      "existing_or_new_project_development": "grea-develop"
+    },
+    "grea-delivery": {
+      "ordinary_editor_operations": "grea-develop",
+      "build_and_release": "grea-release"
+    }
+  }
+}

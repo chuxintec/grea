@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "date": "2026-10-27",
+  "scope": "Local five-Skill integration, worktree preview; no push, merge, publication or host plugin replacement.",
+  "source": {
+    "branch": "codex/monkey-toolchain-v040",
+    "head": "4f25ed5ee6cbe35a654adaf77c8fc7fe8b4d7058",
+    "dirty": true,
+    "preexisting_work_preserved": true,
+    "receipt_written_after_artifact": true
+  },
+  "canonical_skills": [
+    "grea",
+    "grea-research",
+    "grea-recover",
+    "grea-develop",
+    "grea-release"
+  ],
+  "ownership": {
+    "grea": "routing and shared methods",
+    "grea-research": "research and original observation",
+    "grea-recover": "technical evidence, source recovery and candidate handoff",
+    "grea-develop": "adoption, gameplay, parity, reskin, Go backend, assets/config and ordinary Editor work",
+    "grea-release": "target build, runtime/package acceptance and authorized delivery"
+  },
+  "migration": {
+    "layout": "plugin/skills/grea/assets/skill-layout.json",
+    "document_paths": "schemas/document-path-map.json",
+    "private_frozen_baseline": ".private/five-skills-20261027/baseline.json",
+    "private_path_map": ".private/five-skills-20261027/path-map.json",
+    "old_skill_entries_removed": true,
+    "old_managed_install_upgrade_test": "pass",
+    "unrelated_user_skills_preserved_test": "pass",
+    "deleted_fixture_source_isolated_read_test": "pass",
+    "historical_receipts_not_rewritten": true
+  },
+  "compatibility": {
+    "ok": true,
+    "tool_entries": 88,
+    "compared_fields": [
+      "id",
+      "alias_of",
+      "execution",
+      "delegate",
+      "inputs",
+      "outputs",
+      "effects",
+      "required_arguments",
+      "optional_arguments",
+      "provider"
+    ],
+    "changed_fields": [],
+    "note": "Compared against current-turn frozen pre-migration registry, including existing WIP."
+  },
+  "workflow_contract": {
+    "old_modes_retained": true,
+    "input_schemas_unchanged": true,
+    "existing_result_fields_retained": true,
+    "additive_fields": [
+      "primary_skill",
+      "stage",
+      "entrypoint"
+    ],
+    "recovery_to_development_handoff": true,
+    "evidence_only_no_implementation": true,
+    "cocos_go_delivery_routes_release": true
+  },
+  "tests": {
+    "status": "pass",
+    "count": 52,
+    "groups": [
+      {
+        "count": 27,
+        "log": ".private/five-skills-20261027/targeted-tests.log",
+        "modules": [
+          "test_five_skill_workflows",
+          "test_five_skill_distribution",
+          "test_skill_closure",
+          "test_skill_sync",
+          "test_document_dispositions",
+          "test_art_ledger",
+          "test_reskin_production",
+          "test_windows_distribution.TargetTests.test_complete_product_keeps_current_skills_sync_and_document_closure"
+        ]
+      },
+      {
+        "count": 25,
+        "log": ".private/five-skills-20261027/interface-tests.log",
+        "modules": [
+          "test_workflow_profiles",
+          "test_lifecycle",
+          "test_research",
+          "test_grea",
+          "test_mcp"
+        ]
+      }
+    ]
+  },
+  "document_checks": {
+    "repository_links": {
+      "ok": true,
+      "documents": 162,
+      "localLinks": 703,
+      "errors": [],
+      "scope": "Local links/anchors only; external URLs not fetched."
+    },
+    "isolated_skills": {
+      "ok": true,
+      "skills": 5,
+      "markdown_files": 76,
+      "local_links": 368,
+      "errors": [],
+      "scope": "Skill-set document/resource closure only; runtime tools remain separate dependencies."
+    },
+    "contracts": {
+      "ok": true,
+      "drifted": [],
+      "written": []
+    },
+    "semantic_annotations": {
+      "ok": true,
+      "checked_explicit_references": 14,
+      "errors": [],
+      "scope": "Explicit grea annotations and current generated capability matrix; prose and historical statements need human review"
+    },
+    "frontmatter": [
+      {
+        "skill": "grea",
+        "exit": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-develop",
+        "exit": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-recover",
+        "exit": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-release",
+        "exit": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      },
+      {
+        "skill": "grea-research",
+        "exit": 0,
+        "output": "Skill is valid!",
+        "error": ""
+      }
+    ],
+    "sync_check": "pass",
+    "platform_matrix_check": "pass"
+  },
+  "forward_review": {
+    "scope": "Document-only reasoning over isolated Skills, no engine or game execution",
+    "scenarios": [
+      "research without development approval",
+      "Unity IL2CPP candidate recovery then development",
+      "existing Unity parity fix without reexport",
+      "approved reskin plus Go feature contracts",
+      "existing candidate local macOS delivery",
+      "explicit Cocos local delivery"
+    ],
+    "result": "pass after closing Cocos/Web delivery and target-neutral report requirements",
+    "reskin_save_boundary": "Derived product identity stays separate; same-product Go feature compatibility uses explicit migration contract."
+  },
+  "artifact": {
+    "version": "2026.10.27",
+    "target": "macos-arm64",
+    "source_revision": "4f25ed5ee6cbe35a654adaf77c8fc7fe8b4d7058",
+    "source_dirty": true,
+    "source_kind": "worktree-preview",
+    "source_tree_sha256": "cef31a9d4d2261f4c0853cb6d0e206b971344e15df7f192f8b879fff95625df5",
+    "modules": [
+      {
+        "name": "monkey",
+        "version": "0.4.1",
+        "file": "monkey_native-0.4.1-py3-none-any.whl",
+        "sha256": "caa21fab96a5527f9892847e749a1e532e338699bc97f06d87bff886b082f8df",
+        "bytes": 552898,
+        "releaseStatus": "bundled_with_grea"
+      },
+      {
+        "name": "beaver",
+        "version": "0.4.0",
+        "file": "beaver_game_tools-0.4.0-py3-none-any.whl",
+        "sha256": "9d509f509c574a91e18e17053f11f4ce3fa37a27a857600c2791287876eb4ed8",
+        "bytes": 324925,
+        "releaseStatus": "bundled_with_grea"
+      }
+    ],
+    "archive": "grea-plugin-macos-arm64.zip",
+    "sha256": "5ccc34697d227fb41b17403de7f8e4a7333ba2b50c88ba76174677f4455c9a48",
+    "bytes": 48957034,
+    "files": 3684
+  },
+  "artifact_source_readback": {
+    "status": "pass",
+    "skill_and_runtime_source_files_compared": 159,
+    "differences": []
+  },
+  "isolated_plugin_acceptance": {
+    "archive_sha256": "5ccc34697d227fb41b17403de7f8e4a7333ba2b50c88ba76174677f4455c9a48",
+    "clients": {
+      "claude": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "evidence_manifest",
+          "config_preflight",
+          "presentation_audit",
+          "performance_compare",
+          "case_revision_invalidation",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "installed_skills": [
+          "grea",
+          "grea-develop",
+          "grea-recover",
+          "grea-release",
+          "grea-research"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "skill_routes": {
+          "deliver": "grea-release",
+          "maintain": "grea",
+          "recover": "grea-recover",
+          "research": "grea-research",
+          "reskin": "grea-develop"
+        },
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "start_case_revision",
+          "validate_unity_project"
+        ]
+      },
+      "codex": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "evidence_manifest",
+          "config_preflight",
+          "presentation_audit",
+          "performance_compare",
+          "case_revision_invalidation",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "installed_skills": [
+          "grea",
+          "grea-develop",
+          "grea-recover",
+          "grea-release",
+          "grea-research"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "skill_routes": {
+          "deliver": "grea-release",
+          "maintain": "grea",
+          "recover": "grea-recover",
+          "research": "grea-research",
+          "reskin": "grea-develop"
+        },
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "start_case_revision",
+          "validate_unity_project"
+        ]
+      }
+    },
+    "filesystem_view": "owned temporary directories",
+    "isolation": {
+      "independent_home": true,
+      "install_write_denied": true,
+      "installation_unchanged": true,
+      "minimal_path": true,
+      "moved_unicode_space_path": true,
+      "network_denied": true,
+      "source_read_denied": true
+    },
+    "isolation_probe_errors": [
+      "source 1 None",
+      "install_write 1 None",
+      "network 1 None"
+    ],
+    "limits": [
+      "Native client loading is a separate acceptance layer.",
+      "Unity Editor and gameplay not run.",
+      "Other platforms not run."
+    ],
+    "network_control": "Exact live loopback TCP listener reachable before and after boxed denial/timeout; no model or application data sent",
+    "path_resolution": {
+      "method": "standard canonical path",
+      "status": "pass"
+    },
+    "source_kind": "worktree-preview",
+    "source_tree_sha256": "cef31a9d4d2261f4c0853cb6d0e206b971344e15df7f192f8b879fff95625df5",
+    "status": "pass",
+    "target": "macos-arm64",
+    "verified_operations": [
+      "session",
+      "plan_workflow",
+      "run_tool",
+      "init_case",
+      "start_case_revision",
+      "case_status"
+    ],
+    "verified_tool_ids": [
+      "static_asset_copy",
+      "cocos_assets",
+      "unity_native_exit",
+      "unity_config_candidate",
+      "unity_native_assets",
+      "evidence_manifest",
+      "config_preflight",
+      "presentation_audit",
+      "performance_compare"
+    ],
+    "version": "2026.10.27"
+  },
+  "initial_environment_failure": {
+    "status": "retained",
+    "report": ".private/five-skills-20261027/plugin/acceptance.json",
+    "reason": "Outer sandbox denied sandbox-exec sandbox_apply before client checks.",
+    "resolution": "Ran identical verifier outside outer sandbox with approved escalation; verifier still enforced source/network/install-write denials."
+  },
+  "evidence": {
+    "artifact": ".private/five-skills-20261027/plugin-verified/grea-plugin-macos-arm64.zip",
+    "checksums": ".private/five-skills-20261027/plugin-verified/SHA256SUMS",
+    "acceptance": ".private/five-skills-20261027/plugin-verified/acceptance.json",
+    "private_skill_install": ".private/five-skills-20261027/skills"
+  },
+  "limits": [
+    "Codex and Claude manifest launches were tested using independent stdio clients; native desktop/CLI host plugin loading was not tested or updated.",
+    "macOS arm64 only; Windows native installation not run.",
+    "Unity/Creator Editor, gameplay, actual Go services and provider end-to-end consumer adoption were not run.",
+    "Skill document independence does not remove executable runtime/provider dependencies."
+  ],
+  "actions_not_taken": [
+    "game engineering changes",
+    "global plugin installation",
+    "git stage/commit/push",
+    "merge to main",
+    "tag or Release publication"
+  ]
+}

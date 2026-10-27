@@ -29,11 +29,22 @@ outputs.update(monkey_documents())
 from grea.beaver_contracts import documents as beaver_documents
 outputs.update(beaver_documents())
 outputs['unity-capabilities.json']=capability_matrix()
+# Input documents authored from Skills ship the same generated schema bytes.
+# Runtime contracts remain canonical here, never manually copied into references.
+skill_assets={
+ 'research-input.schema.json':'grea-research',
+ 'change-contract.schema.json':'grea-develop',
+ 'theme-map.schema.json':'grea-develop',
+ 'art-ledger.schema.json':'grea-develop',
+}
+paths={str(Path('schemas')/name):value for name,value in outputs.items()}
+paths.update({str(Path('plugin/skills')/skill/'assets'/name):outputs[name]
+              for name,skill in skill_assets.items()})
 failed=[]
-for name,value in outputs.items():
- path=root/'schemas'/name;content=json.dumps(value,ensure_ascii=False,indent=2)+'\n'
+for name,value in paths.items():
+ path=root/name;content=json.dumps(value,ensure_ascii=False,indent=2)+'\n'
  if a.check:
-  if not path.exists() or path.read_text(encoding='utf-8')!=content:failed.append(name)
- else:path.write_text(content, encoding='utf-8')
-print(json.dumps({'ok':not failed,'drifted':failed,'written':[] if a.check else list(outputs)}))
+  if not path.exists() or path.read_text(encoding='utf-8')!=content:failed.append(name.removeprefix('schemas/'))
+ else:path.parent.mkdir(parents=True,exist_ok=True);path.write_text(content, encoding='utf-8')
+print(json.dumps({'ok':not failed,'drifted':failed,'written':[] if a.check else [name.removeprefix('schemas/') for name in paths]}))
 raise SystemExit(1 if failed else 0)
