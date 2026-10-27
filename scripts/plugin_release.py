@@ -50,7 +50,12 @@ def validate(archive, report, source, version, revision):
     actual = manifest['files']
     if any(actual.get(name) != record for name,record in expected.items()):
         raise ValueError('Portable product bytes differ from the release source')
-    if any(name not in expected and not name.startswith('runtime/') and name not in
+    # Bundled GREA modules: exactly the wheels pinned by the released modules.lock.json.
+    modules = {'modules/wheels/'+m['wheel']['file']: m['wheel']['sha256']
+               for m in json.loads(source['modules.lock.json'][0]).get('modules', [])}
+    if any(actual.get(name,{}).get('sha256') != digest for name,digest in modules.items()):
+        raise ValueError('Bundled module wheels differ from modules.lock.json')
+    if any(name not in expected and name not in modules and not name.startswith('runtime/') and name not in
            ('runtime-requirements.txt','runtime-manifest.json') for name in actual):
         raise ValueError('Unexpected portable product payload')
     acceptance = json.loads(Path(report).read_text(encoding='utf-8'))
