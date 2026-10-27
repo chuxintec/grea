@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 class PluginBundleTests(unittest.TestCase):
     def source_fixture(self):
         # Works both in a checkout and in a Git-free source release extraction.
-        names = ['LICENSE','registry.json','launch.py','launch_tool.py','src/grea/cli.py','src/grea/mcp_server.py',
+        names = ['LICENSE','registry.json','modules.lock.json','launch_module.py','launch.py','launch_tool.py','src/grea/cli.py','src/grea/mcp_server.py',
                  'plugin/version.json','plugin/.codex-plugin/plugin.json','plugin/.claude-plugin/plugin.json',
                  'plugin/.mcp.json','plugin/launcher/grea','plugin/launcher/start.py',
                  'plugin/skills/grea/references/工具选择与调用.md','schemas/operations.json','schemas/unity-project.schema.json']

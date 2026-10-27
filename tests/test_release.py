@@ -115,7 +115,7 @@ class BundleTests(unittest.TestCase):
         values={'plugin/.mcp.json':'{}','plugin/runtime-lock.json':'{}',
                 'plugin/runtime-windows-x64.lock.json':'{}','plugin/launcher/grea':'#!/bin/sh\n',
                 'plugin/launcher/start.py':'# fixture','src/grea/cli.py':'# fixture',
-                'registry.json':'{}','launch.py':'# fixture','launch_tool.py':'# fixture',
+                'registry.json':'{}','modules.lock.json':'{}','launch_module.py':'# fixture','launch.py':'# fixture','launch_tool.py':'# fixture',
                 'schemas/operations.json':'{"operations":[{"name":"session"}]}','schemas/unity-project.schema.json':'{}'}
         for name,text in values.items():
             p=self.root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text,encoding='utf-8')
