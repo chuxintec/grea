@@ -60,7 +60,10 @@ def capabilities():
         dict(id="payload.plan", state="implemented", effects="plan-output", verification="explicit source/override identities and alias redirection"),
         dict(id="payload.apply", state="implemented", effects="new-independent-payload", verification="macOS independent-copy and atomic no-replace fixtures; Linux/Windows promotion not_run"),
         dict(id="creator.apply", state="not_supported", effects="none", verification="explicit rejection before provider lookup"),
-        dict(id="creator.build", state="not_supported", effects="none", verification="not_run")
+        dict(id="creator.build", state="not_supported", effects="none", verification="not_run"),
+        dict(id="toolkit.grea", state="implemented", effects="explicit-output-write",
+             verification="23 execution tools received from GREA 2026.10.26 with unchanged IDs, reports and exit codes; run as `beaver tool <id>`",
+             tools=list(__import__("beaver.toolkit", fromlist=["TOOLS"]).TOOLS))
     ]
     return dict(contract="beaver-capabilities/1", capabilities=capabilities, requiredProviders=[],
                 nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",
@@ -324,6 +327,10 @@ def main(argv=None):
     argv=list(sys.argv[1:] if argv is None else argv)
     if argv==['--version']:
         argv=['version']
+    if argv[:1]==['tool']:
+        # Tools received from GREA keep their own JSON reports and exit codes, not beaver-result/1.
+        from beaver.toolkit.runner import main as run_tool
+        return run_tool(argv[1:])
     run_id = uuid.uuid4().hex
     base = dict(schemaVersion=1, contract="beaver-result/1", operationId=run_id,
                 producer=dict(name="beaver", version=__version__, implementationSha256=implementation_identity()),
