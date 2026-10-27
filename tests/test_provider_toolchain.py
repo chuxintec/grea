@@ -8,24 +8,33 @@ from grea.integrations import beaver
 from grea import registry
 from grea.application import dispatch
 
+def provider_env(root, *, path=''):
+    root=Path(root)
+    env={'HOME':str(root),'USERPROFILE':str(root),'PATH':str(path),
+         'GREA_PROVIDER_STATE_DIR':str(root/'state')}
+    if os.name=='nt':
+        env['HOMEDRIVE']=root.drive
+        env['HOMEPATH']=str(root)[len(root.drive):] or '\\'
+    return env
+
 
 class BeaverReadinessTests(unittest.TestCase):
     def test_discovery_missing_is_readonly(self):
-        with tempfile.TemporaryDirectory() as t, patch.dict(os.environ, {'HOME':t,'PATH':'','GREA_PROVIDER_STATE_DIR':t+'/state'}), patch.object(beaver.subprocess,'run') as run:
+        with tempfile.TemporaryDirectory() as t, patch.dict(os.environ, provider_env(t)), patch.object(beaver.subprocess,'run') as run:
             self.assertEqual(beaver.discover()['status'],'not_installed')
             run.assert_not_called();self.assertFalse((Path(t)/'state').exists())
 
     def test_stale_binding_does_not_choose_path(self):
-        with tempfile.TemporaryDirectory() as t, patch.dict(os.environ,{'GREA_PROVIDER_STATE_DIR':t}):
-            state=beaver.state_root();state.mkdir();(state/'binding.json').write_text(json.dumps(dict(schema_version=1,command=['/missing/beaver'],lock='/missing/lock',version='0.1.0')))
+        with tempfile.TemporaryDirectory() as t, patch.dict(os.environ,provider_env(t)):
+            state=beaver.state_root();state.mkdir(parents=True);(state/'binding.json').write_text(json.dumps(dict(schema_version=1,command=['/missing/beaver'],lock='/missing/lock',version='0.1.0')))
             with patch.object(beaver.shutil,'which') as which:
                 self.assertEqual(beaver.discover()['command'],['/missing/beaver']);which.assert_not_called()
 
     def test_ambiguous_installation_does_not_choose(self):
-        with tempfile.TemporaryDirectory() as t,patch.dict(os.environ,{'HOME':t,'GREA_PROVIDER_STATE_DIR':t+'/state'}):
+        with tempfile.TemporaryDirectory() as t:
             r=Path(t);a=r/'.local/bin/beaver';a.parent.mkdir(parents=True);a.write_text('a');a.chmod(0o755)
             b=r/'other';b.write_text('b');b.chmod(0o755)
-            with patch.object(beaver.shutil,'which',return_value=str(b)):
+            with patch.dict(os.environ,provider_env(r,path=str(b.parent))),patch.object(beaver.shutil,'which',return_value=str(b)):
                 self.assertEqual(beaver.discover()['status'],'ambiguous')
 
     def test_capability_success_without_lock_is_not_ready(self):
@@ -77,7 +86,7 @@ class BeaverReadinessTests(unittest.TestCase):
     def test_explicit_provider_configuration_wins(self):
         with tempfile.TemporaryDirectory() as t:
             p=Path(t)/'providers.json';p.write_text(json.dumps(dict(schema_version=1,providers={'beaver':dict(command=['/explicit/beaver'],probe=['/explicit/beaver','capabilities'],systems=['Darwin'])})))
-            with patch.dict(os.environ,{'GREA_PROVIDERS':str(p)}),patch.object(beaver,'provider_override') as auto:
+            with patch.dict(os.environ,{**provider_env(t),'GREA_PROVIDERS':str(p)}),patch.object(beaver,'provider_override') as auto:
                 self.assertEqual(registry.tool('beaver')['execution']['command'],['/explicit/beaver']);auto.assert_not_called()
 
     def test_session_declares_dependencies_without_spawning(self):

@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "status": "pass_with_limits",
+  "date": "2026-10-27",
+  "scope": "Fixed local beaver0.5.0 finite adapter and Skill increment; no default module replacement.",
+  "grea_source": {
+    "branch": "codex/monkey-toolchain-v040",
+    "head": "9c261fac23a3983cc5e73b6ba16d52101d9c434f",
+    "dirty": true
+  },
+  "provider": {
+    "version": "0.5.0",
+    "source_revision": "9d15c50deeaf07817944ad7032598bf70b6a2b99",
+    "wheel": "beaver_game_tools-0.5.0-py3-none-any.whl",
+    "bytes": 352373,
+    "sha256": "595a4c992d42b664f0e30b74aa7563dc3ffc34de1927f9ae5c6653e3f12ac438",
+    "producer": {
+      "name": "beaver",
+      "version": "0.5.0",
+      "implementationSha256": "ba439efac14c887e8343af5a5edbcde646be0f05c3668364970bb3ce9df4139a"
+    },
+    "runtime_files_equal_fixed_commit": 116
+  },
+  "changes": {
+    "new_named_operations": [
+      "ui.inspect",
+      "ui.analyze",
+      "ui.repair-plan",
+      "wiring.plan",
+      "diagnostics.summarize"
+    ],
+    "operation_count": 54,
+    "entry_tool_id": "beaver_pipeline",
+    "diagnostic_input": "ordered absolute path array, 1..256, repeated --input; limit1..10000",
+    "identity_gate": "exact fixed producer plus contracts and declared groups; no generic 0.5.x support",
+    "execution": "Existing batch transaction for wiring/repairs; no new executor or UI implementation"
+  },
+  "validation": {
+    "unit_tests": {
+      "passed": 12,
+      "scope": "Six increment tests, existing post-write actualChanges regression, two existing argv/schema boundaries",
+      "log": "[私有本地路径已脱敏]"
+    },
+    "actual_cli": [
+      {
+        "label": "analysis",
+        "operation": "ui.analyze",
+        "status": "partial",
+        "exit_code": 1,
+        "executed": true
+      },
+      {
+        "label": "wiring",
+        "operation": "wiring.plan",
+        "status": "ok",
+        "exit_code": 0,
+        "executed": true
+      },
+      {
+        "label": "repair",
+        "operation": "ui.repair-plan",
+        "status": "ok",
+        "exit_code": 0,
+        "executed": true
+      },
+      {
+        "label": "ambiguous",
+        "operation": "wiring.plan",
+        "status": "blocked",
+        "exit_code": 1,
+        "executed": true
+      },
+      {
+        "label": "diagnostics",
+        "operation": "diagnostics.summarize",
+        "status": "partial",
+        "exit_code": 1,
+        "executed": true
+      }
+    ],
+    "actual_stdio_mcp": [
+      {
+        "label": "analysis",
+        "outer_status": "partial",
+        "provider_status": "partial",
+        "executed": true,
+        "native": "not_run"
+      },
+      {
+        "label": "diagnostics",
+        "outer_status": "partial",
+        "provider_status": "partial",
+        "executed": true,
+        "native": "not_run"
+      }
+    ],
+    "ui_inspect": {
+      "status": "pass",
+      "engine_executed": false,
+      "parsed": {
+        "command": "ui",
+        "action": "inspect",
+        "project": "<private-evidence>/owned-project",
+        "spec": "<private-evidence>/ui-spec.json",
+        "out": "<private-evidence>/not-executed/provider-output",
+        "editor_path": "/not-launched/Unity",
+        "timeout": 20
+      }
+    },
+    "legacy_toolkit": {
+      "tool": "static_asset_copy",
+      "status": "pass",
+      "raw_output_preserved": true,
+      "file_bytes_equal": true,
+      "scope": "one owned non-game fixture, not all23 runtime operations"
+    },
+    "postexecution_diagnostic": {
+      "status": "postexecution_outer_schema_rejection",
+      "applied_paths_preserved": true,
+      "no_replay": true
+    },
+    "docs": {
+      "ok": true,
+      "documents": 157,
+      "localLinks": 682,
+      "errors": [],
+      "scope": "Local links/anchors only; external URLs not fetched."
+    },
+    "semantic_docs": {
+      "ok": true,
+      "checked_explicit_references": 14,
+      "errors": [],
+      "scope": "Explicit grea annotations and current generated capability matrix; prose and historical statements need human review"
+    },
+    "generated_schemas": {
+      "ok": true,
+      "drifted": [],
+      "written": []
+    },
+    "isolated_skill_closure": {
+      "ok": true,
+      "skills": 5,
+      "markdown_files": 70,
+      "local_links": 338,
+      "errors": [],
+      "scope": "Skill-set document/resource closure only; runtime tools remain separate dependencies."
+    }
+  },
+  "compatibility": {
+    "old_tool_ids_unchanged": 88,
+    "old_execution_delegate_and_alias_fields_unchanged": true,
+    "bundled_module_lock_unchanged": true,
+    "grea_version_unchanged": true,
+    "legacy_cli_parser_diff_reviewed": "Fixed 6791ddf..9d15c50 parser has additive five commands, inherited flags unchanged; existing dispatch contracts retained. No full old route execution rerun.",
+    "old_producers_and_transactions": "preserved; new plans use their own fixed lock, old transactions not replayed"
+  },
+  "evidence_root": "[私有本地路径已脱敏]",
+  "limits": [
+    "ui.inspect only actual installed argparse mapping checked; no Unity Editor launched by GREA.",
+    "Wiring/repair inputs are owned fabricated static snapshots over minimal project files; they prove forwarding/guarded planning, not authentic native collection or binding execution.",
+    "Analysis remains caller-supplied; raycast/visual/physical-input/gameplay acceptance not inferred.",
+    "Upstream native receipt uses its original dev producer and is not counted as new final-wheel native execution here.",
+    "Formal SampleA adoption awaits a natural authorized task; no game or shared Go services changed.",
+    "No global/workspace plugin replacement, commit/push/merge/tag/Release."
+  ],
+  "files": {
+    "src/grea/integrations/beaver.py": "da9ffd2bada0b8c97cb222f8605f8d124c8e973639414e8421e7859c610df4aa",
+    "src/grea/integrations/beaver_operations.py": "e1843577dbef3e4e763cc1e951250475c2f2b74de8eb6864f7ac70158af8016c",
+    "src/grea/beaver_contracts.py": "9b6b60fd5e7f6c510ee9b9d8fb9cbf3fa537744679146d92b6e6b969655cb4d8",
+    "schemas/beaver-operation.schema.json": "44000f6d0f3927bc9de65f2eb8c6586f961e147bf11240ae6f0fcd802578ec83",
+    "schemas/beaver-result.schema.json": "87290c897f6bcd9b9a1eccf8034a21583283123fede55d5ec1c76bad9c8bdc8a",
+    "tests/test_beaver_v05.py": "568e147d1df5e587ef287bf424bec90b52caaa1ebd5162ba9e31205a583b89b4"
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "b169f54687f01271ba494c101d8b45d38be42984ab1c741b8f4363513fcf63ec",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
+}

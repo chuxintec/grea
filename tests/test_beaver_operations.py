@@ -14,39 +14,47 @@ def request(name='payload.verify',**options):
     return dict(schema_version=1,operation=name,options=options,timeout_seconds=60)
 
 
+def fixture_path(name):
+    return str((Path(tempfile.gettempdir()) / 'grea-fixtures' / name).resolve())
+
+
 class BeaverOperationTests(unittest.TestCase):
     def test_unknown_options_and_unbounded_effects_rejected(self):
-        bad=[request('shell',command='echo unsafe'),request(root='/a',manifest='/b',out='/override'),
-             request(root='relative',manifest='/b'),request(root='/a',manifest='/b',**{'allow-unlisted':'true'}),
-             request('adoption.apply',plan='/p',**{'expected-plan':'bad','editor-path':'/e','timeout':10}),
-             request('player.run',manifest='/a',**{'expected-manifest':'a'*64,'duration':60}),
-             request('image.compress',input='/a',apply=True)]
+        root,manifest=fixture_path('project'),fixture_path('manifest.json')
+        bad=[request('shell',command='echo unsafe'),request(root=root,manifest=manifest,out=fixture_path('override')),
+             request(root='relative',manifest=manifest),request(root=root,manifest=manifest,**{'allow-unlisted':'true'}),
+             request('adoption.apply',plan=fixture_path('plan.json'),**{'expected-plan':'bad','editor-path':fixture_path('editor'),'timeout':10}),
+             request('player.run',manifest=manifest,**{'expected-manifest':'a'*64,'duration':60}),
+             request('image.compress',input=root,apply=True)]
         for value in bad:
             with self.subTest(value=value),self.assertRaises(ValueError):ops.validate(value)
 
     def test_named_argv_and_generated_schema_share_contract(self):
-        value=request('adoption.apply',plan='/p',**{'expected-plan':'a'*64,'editor-path':'/e','timeout':20})
-        argv=ops.argv_for(value,'/receipt')
-        self.assertEqual(argv[:2],['adopt','apply']);self.assertEqual(argv[-2:],['--out','/receipt/provider-output'])
+        value=request('adoption.apply',plan=fixture_path('plan.json'),**{'expected-plan':'a'*64,'editor-path':fixture_path('editor'),'timeout':20})
+        receipt=fixture_path('receipt')
+        argv=ops.argv_for(value,receipt)
+        self.assertEqual(argv[:2],['adopt','apply']);self.assertEqual(argv[-2:],['--out',str(Path(receipt)/'provider-output')])
         self.assertEqual(argv[argv.index('--expected-plan')+1],'a'*64)
         schema=documents()['beaver-operation.schema.json'];Draft202012Validator.check_schema(schema)
         Draft202012Validator(schema).validate(value)
         with self.assertRaises(ValueError):ops.validate(dict(value,options=dict(value['options'],**{'execute-shell':'bad'})))
 
     def test_command_snapshot_is_receipt_local_and_override_restored(self):
-        with tempfile.TemporaryDirectory() as t,patch.dict(os.environ,{'GREA_PROVIDERS':'/original-config'}):
-            with ops.bound_command({'command':['/pinned/beaver']},t):
+        original=fixture_path('original-config')
+        command=fixture_path('pinned-beaver')
+        with tempfile.TemporaryDirectory() as t,patch.dict(os.environ,{'GREA_PROVIDERS':original}):
+            with ops.bound_command({'command':[command]},t):
                 path=Path(os.environ['GREA_PROVIDERS']);self.assertEqual(path.parent,Path(t))
-                cfg=json.loads(path.read_text());self.assertEqual(cfg['providers']['beaver']['command'],['/pinned/beaver'])
-                self.assertEqual(cfg['providers']['beaver']['probe'],['/pinned/beaver','capabilities'])
-            self.assertEqual(os.environ['GREA_PROVIDERS'],'/original-config')
+                cfg=json.loads(path.read_text());self.assertEqual(cfg['providers']['beaver']['command'],[command])
+                self.assertEqual(cfg['providers']['beaver']['probe'],[command,'capabilities'])
+            self.assertEqual(os.environ['GREA_PROVIDERS'],original)
 
     def test_request_rewrite_during_read_rejected_before_execution(self):
         with tempfile.TemporaryDirectory() as t:
-            root=Path(t);p=root/'request.json';p.write_text(json.dumps(request(root='/a',manifest='/b')))
+            root=Path(t);p=root/'request.json';p.write_text(json.dumps(request(root=fixture_path('project'),manifest=fixture_path('manifest.json'))))
             original=ops.read_json
             def rewrite(path):
-                value=original(path);p.write_text(json.dumps(request(root='/different',manifest='/b')));return value
+                value=original(path);p.write_text(json.dumps(request(root=fixture_path('different'),manifest=fixture_path('manifest.json'))));return value
             with patch.object(ops,'read_json',side_effect=rewrite),patch('grea.runner.execute')as run:
                 with self.assertRaises(ValueError):ops.invoke(root/'lock',p,root/'receipt')
                 run.assert_not_called();self.assertFalse((root/'receipt').exists())
@@ -65,7 +73,7 @@ class BeaverOperationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             root=Path(t).resolve();project=root/'project';project.mkdir();manifest=root/'manifest.json';manifest.write_text('{}')
             req=root/'request.json';req.write_text(json.dumps(request(root=str(project),manifest=str(manifest))))
-            cfg=dict(identity_root='/package',package_files={'file':'hash'},command=['/beaver'],command_files={'cmd':'hash'},version='0.1.0')
+            cfg=dict(identity_root=fixture_path('package'),package_files={'file':'hash'},command=[fixture_path('beaver')],command_files={'cmd':'hash'},version='0.1.0')
             lock=root/'lock.json';lock.write_text(json.dumps(cfg))
             producer=dict(name='beaver',version='0.1.0',implementationSha256='b'*64)
             cap=dict(contract='beaver-result/1',producer=producer,data={'capabilities':[dict(id='payload.verify',state='implemented')]if declared else []})

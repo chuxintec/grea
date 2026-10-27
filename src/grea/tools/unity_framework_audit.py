@@ -52,12 +52,14 @@ def inspect(packages, sample=None):
         if not any(node['path'].startswith(label + '/') for node in nodes.values()):
             report('INSUFFICIENT_COVERAGE', label, reason='No assemblies were found in this selected root')
 
+    project_namespaces = {'Game'} | {name.split('.')[0] for name, node in nodes.items() if not node['package']}
+    project_prefix = '(?:' + '|'.join(re.escape(name) for name in sorted(project_namespaces)) + ')'
     for name, node in nodes.items():
         for ref in node['data'].get('references', []):
             if ref.startswith('GUID:'):
                 report('UNSUPPORTED_GUID_REFERENCE', node['path'], reference=ref)
             target = nodes.get(ref)
-            if node['package'] and (target and not target['package'] or re.match(r'^(Game|IceFire)(\.|$)', ref)):
+            if node['package'] and (target and not target['package'] or re.match('^' + project_prefix + r'(\.|$)', ref)):
                 report('PACKAGE_PROJECT_REFERENCE', node['path'], reference=ref)
             if node['pure'] and (ref.startswith(('UnityEngine', 'UnityEditor', 'Unity.')) or target and not target['pure']):
                 report('PURE_LAYER_ENGINE_REFERENCE', node['path'], reference=ref)
@@ -100,7 +102,7 @@ def inspect(packages, sample=None):
             text = lexical.sub('', path.read_text(encoding='utf-8'))
             if owner['pure'] and re.search(r'\b(?:UnityEngine|UnityEditor)\b', text):
                 report('PURE_LAYER_ENGINE_SOURCE', relative)
-            if owner['package'] and re.search(r'\b(?:using|namespace)\s+(?:Game|IceFire)(?:\.|\s|;)', text):
+            if owner['package'] and re.search(r'\b(?:using|namespace)\s+' + project_prefix + r'(?:\.|\s|;)', text):
                 report('PACKAGE_PROJECT_SOURCE', relative)
             if not owner['test'] and re.search(r'\bNUnit\b', text):
                 report('TEST_PLAYER_SOURCE', relative)

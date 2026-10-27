@@ -54,7 +54,7 @@
   "generated_preview": "local_GREA_private_directory_only",
   "pushed_or_released": false,
   "evidence": {
-    "private_read_identities": ".private/colleague-intake-20261026/read-identities.json",
+    "private_read_identities": "[私有本地路径已脱敏]",
     "read_identities_sha256": "3ca22a8367787f2945479c710f343a664a15ee7726222a4a3d4e8876b8adf47f"
   },
   "validation": {
@@ -97,5 +97,11 @@
       "path": "plugin/skills/grea/references/测试与结果交付.md",
       "sha256": "34ea623043f72964f0ced0b6904b56c8a918f1bae50fcb8c5dbdd85def50a675"
     }
-  ]
+  ],
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "b633e312edac6870fc5692f17913206c85b7d8c4a798a3910ff70f08d957dc29",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

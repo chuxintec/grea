@@ -4,7 +4,7 @@
   "date": "2026-10-16",
   "branch": "codex/project-tool-extraction-20261016",
   "baseline_commit": "8521ca5468454da147306a1047ddd5e9d1c0426a",
-  "private_evidence": ".private/project-tool-extraction-20261016",
+  "private_evidence": "[私有本地路径已脱敏]",
   "u1": {
     "assets": [
       {
@@ -982,5 +982,11 @@
     "alternate_index": true,
     "real_index_preserved": true,
     "report_only_metadata_after_audit": true
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "0f045e37371546d9444da3a0fde1d088711dcad9767fdac13c1afc580eaf359d",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

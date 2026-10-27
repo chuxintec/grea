@@ -21,7 +21,7 @@
     "Native Editor/Player not run; control-plane readiness is separate from game acceptance",
     "Automatic missing-provider installation currently supports POSIX; tests executed on macOS arm64"
   ],
-  "evidence_directory": ".private/monkey-readiness-20261026",
+  "evidence_directory": "[私有本地路径已脱敏]",
   "installation": {
     "codex_version": "2026.10.26.dev2",
     "installed_files_checked": 3585,
@@ -47,5 +47,11 @@
     "install/installed-mcp.json": "4781bef22cf3211b86de784a2f21110fbf487ab3b5b19c993fb2a9a1b4d5cd61",
     "current-session-invocation/run.json": "6d78b2b61196549316c69bdfa8684ae4fac066517745b7e70037a82d89b74c86",
     "package-acceptance-final.json": "07a2dc4d10fe439e9df3f72211b67e6cae4b154def3389ec3aada2c424f88926"
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "bd5b563a2ec5182e3d2a46a0e58f69c45ff8e0cc525d4bd64e4cd3a091d7136e",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

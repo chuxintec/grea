@@ -5837,11 +5837,11 @@
         "--help"
       ],
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
-      "formats": "Finite beaver0.1/0.2 plus exact0.3 candidates07/08; 49 routes; no arbitrary future producers or live Go dispatch",
+      "formats": "Finite pinned beaver0.1/0.2/0.3/0.4 plus exact0.5.0; 54 named routes, including five UI/wiring/diagnostics entries; no arbitrary future producers or live Go dispatch",
       "side_effects": "Explicit receipts plus effects declared by the selected beaver operation; engineering implementation remains external",
       "usage": "invoke --config LOCK --request REQUEST --output NEW; named request schema schemas/beaver-operation.schema.json",
       "output_schema": "beaver-result/1 retained inside GREA wrapper result; partial/blocked/failed/not_run are not success",
-      "tested_samples": "See validation/development/beaver03-integration-20261026.json; previous0.1/0.2 reports remain separate",
+      "tested_samples": "See validation/development/beaver05-integration-20261027.json for the finite increment; previous0.1/0.2/0.3 receipts remain separate",
       "execution": {
         "command": [
           "{python}",
@@ -5900,7 +5900,7 @@
           "filesystem_write",
           "provider_declared_effects"
         ],
-        "support_formats": "Finite beaver0.1/0.2 plus exact0.3 candidates07/08; 49 routes; no arbitrary future producers or live Go dispatch",
+        "support_formats": "Finite pinned beaver0.1/0.2/0.3/0.4 plus exact0.5.0; 54 named routes, including five UI/wiring/diagnostics entries; no arbitrary future producers or live Go dispatch",
         "named_operations": [
           "adoption.apply",
           "adoption.plan",
@@ -5924,6 +5924,7 @@
           "debug.stop",
           "debug.tail",
           "debug.target",
+          "diagnostics.summarize",
           "image.compress",
           "image.inspect",
           "payload.apply",
@@ -5945,8 +5946,12 @@
           "server.module-plan",
           "server.protocol-diff",
           "server.toolchain",
+          "ui.analyze",
+          "ui.inspect",
+          "ui.repair-plan",
           "unity.apply",
           "unity.plan",
+          "wiring.plan",
           "workspace.apply",
           "workspace.inspect",
           "workspace.plan",
@@ -5958,7 +5963,9 @@
           "0.1.0.dev1",
           "0.2.0",
           "0.3.0.dev1",
-          "0.3.0"
+          "0.3.0",
+          "0.4.0",
+          "0.5.0"
         ],
         "unsupported_v03": {
           "server.inspect": "CLI exists but fixed candidate does not declare this capability",
@@ -5982,6 +5989,12 @@
             "wheel_sha256": "66fd8d326806cb275fa68fc319d46ca679b5ef3fee1b3f525e1e1a51a62a4321",
             "metadata_equivalent_wheel_sha256": "b480fb381a85e8c47711d03169a625725b06648393bcf1e9a91fa1272116d2df",
             "final_metadata_equivalent_wheel_sha256": "d4dd7229fa9ce56eabb9054d0af2b88591aa0777fe4e3d0fc139b74a105eb598"
+          },
+          "0.5.0": {
+            "implementation_sha256": "ba439efac14c887e8343af5a5edbcde646be0f05c3668364970bb3ce9df4139a",
+            "wheel_sha256": "595a4c992d42b664f0e30b74aa7563dc3ffc34de1927f9ae5c6653e3f12ac438",
+            "source_revision": "9d15c50deeaf07817944ad7032598bf70b6a2b99",
+            "scope": "Private explicit pin; default bundled module unchanged. No engine or real game acceptance by GREA."
           }
         },
         "result_schema": "{grea}/schemas/beaver-result.schema.json"

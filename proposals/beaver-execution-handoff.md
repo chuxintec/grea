@@ -1,3 +1,5 @@
+> 发布脱敏摘要：本文含原始回执的公开摘要；脱敏前原件仅保存在私有冻结目录。
+
 # GREA 执行工具向 beaver 交接
 
 状态：本地冻结及恢复侧归属评审完成；beaver 已返回逐项接手意见，完整接口替代与消费者切换尚未完成。开发进度统一见[路线与进度](lifecycle-roadmap.md)。
@@ -6,13 +8,13 @@
 
 [机器清单](../validation/development/grea-beaver-handoff-20261026.json)包含工具入口、内容哈希、静态本地 import 闭包、registry 输入/效果/平台合同、词法调用者候选、模板与 Editor companion 文件。40 个 Python 工具入口中，28 项建议 beaver 接收，7 项恢复侧已由 monkey 评审，均保留兼容存量，5 项保留 GREA 薄接入/方法辅助；这不是接收验收，也不是完整依赖分析。
 
-冻结快照位于仓库本地 `.private/triad-20261026/source-freeze/source/`，903 个文件/7,219,104 字节；`manifest.json` 的 SHA256 为 `327164597eee56a6cef06f09a047270a2c0f5320fd6e779e8e3bb1637c940761`。快照保存整改前 WIP、HEAD、分支和精确文件身份，不依赖变动中的工作树。快照含机器路径 AGENTS，仅作本地交接，不能整份打包公开。`.private/triad-20261026/source-owner-observations.json` 保存总监种子清单的只读复核，未复制游戏源码/资源。
+冻结快照位于仓库本地 `[私有本地路径已脱敏]/`，903 个文件/7,219,104 字节；`manifest.json` 的 SHA256 为 `327164597eee56a6cef06f09a047270a2c0f5320fd6e779e8e3bb1637c940761`。快照保存整改前 WIP、HEAD、分支和精确文件身份，不依赖变动中的工作树。快照含机器路径 AGENTS，仅作本地交接，不能整份打包公开。`[私有本地路径已脱敏]` 保存总监种子清单的只读复核，未复制游戏源码/资源。
 
 GREA 自有代码 MIT，依赖见快照 LICENSE、THIRD_PARTY.md、pyproject.toml/uv.lock 和各模板实际 notice。367 个工具模板/companion 文件仅作为逐项审查来源，不因此取得第三方再分发权。项目规则、原游戏素材、账号/服务配置不进入 beaver 包。
 
 ## Go服务器能力的定向交接
 
-Go为beaver0.3必选，不留待后续版，也不维持GREA新执行主线。此次仅冻结 `.private/go-beaver-handoff-20261026/source/` 的45文件/104020字节：完整tools/server-go/template（含隐藏忽略文件）、server_go_project与publication/path/identity直接辅助、测试、当前IDL生成文件/依赖锁、许可和有限验证说明。机器入口 `.private/go-beaver-handoff-20261026/manifest.json` SHA256为 `283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3`；`contract.json`给出旧CLI/MCP输入、输出、退出语义与registry副本。[公开交接回执](../validation/development/go-beaver-handoff-20261026.json)记录来源和未验边界。此次不再复制903文件整库，不含游戏、凭据、.local、缓存或二进制。
+Go为beaver0.3必选，不留待后续版，也不维持GREA新执行主线。此次仅冻结 `[私有本地路径已脱敏]/` 的45文件/104020字节：完整tools/server-go/template（含隐藏忽略文件）、server_go_project与publication/path/identity直接辅助、测试、当前IDL生成文件/依赖锁、许可和有限验证说明。机器入口 `[私有本地路径已脱敏]` SHA256为 `283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3`；`contract.json`给出旧CLI/MCP输入、输出、退出语义与registry副本。[公开交接回执](../validation/development/go-beaver-handoff-20261026.json)记录来源和未验边界。此次不再复制903文件整库，不含游戏、凭据、.local、缓存或二进制。
 
 旧生成器只在新目录发布有限development六服示例：stdout为status/files，完整grea-generated.json为template_version0.1.0与逐文件hash；错误仍是exit2与文本，不冒充统一JSON错误。`server_go_project`、原模板和消费者继续保留，未切换、不允许退休。辅助文件只供机制提取；beaver不得依赖运行中的GREA源码。历史Cocos客户端文件随旧模板冻结作出处，不新增Cocos执行任务。
 
@@ -39,7 +41,7 @@ GREA持有grea-server-go与六服规范；beaver实现通用Go工程/模块/协�
 
 ## 兼容切换条件
 
-每项按“冻结 → 接收与参数化 → 自有隔离验证 → GREA 薄入口适配 → 消费者切换验证 → 退休重复实现”收口。接收记录固定 beaver 版本/实现、具体能力与验证回执；原工具 ID/输入输出/退出语义不变，partial/needs_action 不提升为 pass。替代没有完成前保留原实现，不破坏肥鹅在途固定链。
+每项按“冻结 → 接收与参数化 → 自有隔离验证 → GREA 薄入口适配 → 消费者切换验证 → 退休重复实现”收口。接收记录固定 beaver 版本/实现、具体能力与验证回执；原工具 ID/输入输出/退出语义不变，partial/needs_action 不提升为 pass。替代没有完成前保留原实现，不破坏[项目 A]在途固定链。
 
 正式游戏 Tools 保持自包含，不能移走变符号链接。三产品各单写自身代码；本交接不授权改原工程、唤醒暂停项目、全局安装或发布。
 

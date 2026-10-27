@@ -424,49 +424,55 @@
   },
   "evidence": [
     {
-      "path": ".private/skill-self-contained-20261027/targeted-tests.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 98,
       "sha256": "6e5f4d8ed9d2b886ff2c3a960e53f2dc44d34509d54d2548cd3cc400ea9917bf"
     },
     {
-      "path": ".private/skill-self-contained-20261027/frontmatter-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1297,
       "sha256": "707a828e931479b7db9532d564fcf464fee01cf2a9be8e56b63fd8fe0913fcca"
     },
     {
-      "path": ".private/skill-self-contained-20261027/docs-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 141,
       "sha256": "aa0c0b96b68e8b6cf70495ea05fa48f8650d05e30145bea21cf42c97e1e394af"
     },
     {
-      "path": ".private/skill-self-contained-20261027/semantic-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 201,
       "sha256": "cb74ccbf76749985a09863d1ad2cfdd3a14b334b27d43d63813203b9bc3756a8"
     },
     {
-      "path": ".private/skill-self-contained-20261027/source-closure.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 195,
       "sha256": "51963a5128f599353da03588b98b1bf8368a81bb5783c92a241ea644dce73c48"
     },
     {
-      "path": ".private/skill-self-contained-20261027/isolated-closure.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 195,
       "sha256": "51963a5128f599353da03588b98b1bf8368a81bb5783c92a241ea644dce73c48"
     },
     {
-      "path": ".private/skill-self-contained-20261027/contracts-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 43,
       "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
     },
     {
-      "path": ".private/skill-self-contained-20261027/skill-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1246,
       "sha256": "2a0a26e8e26bfdf5ffef0931910043899340c0de540b0d31b656da2f16e9854d"
     },
     {
-      "path": ".private/skill-self-contained-20261027/sync-check.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 22,
       "sha256": "53bd66641e0747255c6648146708adbdae21143e53f23754684aa717b57f2f04"
     }
-  ]
+  ],
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "44e84575c62751fb6c428d18815195d672bdead110ed516e16b4ce96d4c800ac",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

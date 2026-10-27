@@ -381,7 +381,7 @@
     "two distinct game pilots",
     "offline or clean-machine dependency restore"
   ],
-  "rawEvidence": "Retained locally under ignored .private/unity-m2; public report includes only sanitized test names and fingerprints",
+  "rawEvidence": "Retained locally under ignored [私有本地路径已脱敏]; public report includes only sanitized test names and fingerprints",
   "maintenance": {
     "generatedContracts": "pass_no_drift",
     "skillChecker": "pass",
@@ -396,5 +396,11 @@
       "scope": "Git index bytes",
       "findings": 0
     }
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "c2ce85ec8ede0d1c55dea1443e481baf1bb2f2c63831369f9803505adfddc9d3",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

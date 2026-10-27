@@ -294,138 +294,138 @@
   },
   "evidence": [
     {
-      "path": ".private/beaver03-integration-20261026/evidence-reuse.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 10468,
       "sha256": "0286cf9c8364537e042381292354e346097f3b9bc64ea47c7a9e0d910f530369"
     },
     {
-      "path": ".private/beaver03-integration-20261026/adapter-tests.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 489,
       "sha256": "ec83ebc235a60b361288d77d83250d806308b7dc7ef5ee1ce6f0ae869923ff67"
     },
     {
-      "path": ".private/beaver03-integration-20261026/adapter-tests-final.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 489,
       "sha256": "1180ff5fec516bf02ab6c6a66ed36fcd5bb1d0502855c8fee8544fc56a4b602a"
     },
     {
-      "path": ".private/beaver03-integration-20261026/execution/installed-package-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 2870,
       "sha256": "05c8589e4f34dba6b4622fb1f76efe71227ec6ac1e5bcaa1e0f89b1fbbb58929"
     },
     {
-      "path": ".private/beaver03-integration-20261026/execution/argv-parser-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 31,
       "sha256": "94d142cb717a766fc3a3f148582ac39fe20d850b8140a51e8d8b3927f9c801a5"
     },
     {
-      "path": ".private/beaver03-integration-20261026/execution/integration-result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1456,
       "sha256": "0aa54221a6000d93eec3f6ca7ec3b98209b526e2c2bf50af8c42d6c0cb4e94d8"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate08/evidence-reuse.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 3352,
       "sha256": "df8c8b1b9d2abca6ba4edc3d0e2d36e4b695f24f7d4f85b7a05a1dcde35f7edd"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate08/package-delta.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 338,
       "sha256": "150b050a839c91b5aad7c66498a4a4e24daf5bd8f634cdd3a7117c14d311ac5a"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate08/adapter-tests.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 489,
       "sha256": "31da005b9a005139c8fb25270d57b2c0dce30209474797607dfbe6924c0c9165"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate08/execution/integration-result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1466,
       "sha256": "d630c0d4995dd00c8204f56b60e1de48927c68c49b3087fa2a2fe59ffc9e5ccc"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate08/execution/installed-package-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 2906,
       "sha256": "a69de7c2242d6d6ebbc179e18429943df0641df5d46ef8e29071e23bd8464109"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate08/execution/argv-parser-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 31,
       "sha256": "94d142cb717a766fc3a3f148582ac39fe20d850b8140a51e8d8b3927f9c801a5"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate09/package-equivalence.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 507,
       "sha256": "bd458418b321d8739db8947bda851a7d5b224416e5c8dad8b92751f24e9acf23"
     },
     {
-      "path": ".private/beaver03-integration-20261026/candidate09/installation-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 335,
       "sha256": "37aa22c03449be77cd5fc63821c047fca9fa2cd8f128fd7717e6e2b5f5dd5427"
     },
     {
-      "path": ".private/beaver03-integration-20261026/final-source-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 426,
       "sha256": "fca067a5311f465ad7895f52480a55ccf993ce562cc32b6d900f7d3c7e730a8e"
     },
     {
-      "path": ".private/beaver03-integration-20261026/final-source-stdio.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 4354,
       "sha256": "0aa2a2f6602f89ddfccb526e68329624bffb691cc144bf41c999860110dfc246"
     },
     {
-      "path": ".private/beaver03-integration-20261026/interface-gaps.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1969,
       "sha256": "dcc297181b75da9dc98c9d37e1e7e1e22d62f5cfd2980e44d13b9e19b1a9c45b"
     },
     {
-      "path": ".private/beaver03-integration-20261026/docs-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 141,
       "sha256": "0b0559440684794c61049bcdba20e68aaae5c8b16dd2c87eb2e49978f6901bf6"
     },
     {
-      "path": ".private/beaver03-integration-20261026/skill-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1246,
       "sha256": "b409be58a778afd356975ea0c1f54901681990e3ed4376d2762e96c9ca788ff3"
     },
     {
-      "path": ".private/beaver03-integration-20261026/contracts-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 43,
       "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
     },
     {
-      "path": ".private/beaver03-integration-20261026/formal-adoption/receipt-index.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 5154,
       "sha256": "3ef954e8fee2f40f1513b59605bbba6fcca1da466cdda6081d28c2750107ddda"
     },
     {
-      "path": ".private/beaver03-integration-20261026/final-package/package-equivalence.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 559,
       "sha256": "19ea19b0863f6459672497a5c5e77bd36d3ff4590b27f9fdcce15c6dc004f943"
     },
     {
-      "path": ".private/beaver03-integration-20261026/final-package/upstream-final-package.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 679,
       "sha256": "d929460fc4c5f390b3a5b777526cc798a5a167684bf46e2d18dcae83af3f92fa"
     },
     {
-      "path": ".private/beaver03-integration-20261026/formal-adoption/docs-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 141,
       "sha256": "282b4f48c9a516c32b1b5c5cabe1dc66c388643c72189d6181c7e98e13f26bc8"
     },
     {
-      "path": ".private/beaver03-integration-20261026/formal-adoption/skill-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1246,
       "sha256": "4bcaf7fabe7be8171edd0baf1437144fb98c3a6dcb51b40332c8ec1d6f3b96d4"
     },
     {
-      "path": ".private/beaver03-integration-20261026/formal-adoption/contracts-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 43,
       "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
     }
   ],
   "source_handoff_manifest": {
-    "path": ".private/beaver03-integration-20261026/selected-source-handoff/manifest.json",
+    "path": "[私有本地路径已脱敏]",
     "bytes": 3008,
     "sha256": "0344b27e5608216a14ea372701a40cce78f8807a89cd4e4d5748bc6d4d7caa10"
   },
@@ -496,7 +496,7 @@
     "full_game_acceptance": false,
     "formal_Go_service_adoption": false,
     "evidence_index": {
-      "path": ".private/beaver03-integration-20261026/formal-adoption/receipt-index.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 5154,
       "sha256": "3ef954e8fee2f40f1513b59605bbba6fcca1da466cdda6081d28c2750107ddda"
     }
@@ -530,7 +530,7 @@
       "private_skill_preview": "official sync and --check consistent; no global/workspace installation"
     },
     "document_handoff_manifest": {
-      "path": ".private/beaver03-integration-20261026/formal-adoption/document-handoff/manifest.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1557,
       "sha256": "721ad6359f7341dad100c68a1c362d1805bc1b940f4bc9161e6e7ec9e1039a16"
     }
@@ -549,5 +549,11 @@
       "files": 99
     },
     "scope": "real post-execution actualChanges schema defect; 8 targeted checks; no transaction replay; original45-check baseline retained"
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "ceb22fc246830b1b053a753b7e042e1696492fe052903c3b08ccf6191468a207",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

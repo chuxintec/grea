@@ -14,6 +14,10 @@ def request(operation='workspace.inspect',**options):
     return dict(schema_version=1,operation=operation,options=options,timeout_seconds=30)
 
 
+def fixture_path(name):
+    return str((Path(tempfile.gettempdir()) / 'grea-fixtures' / name).resolve())
+
+
 def result(status='ok',version=beaver.V03_VERSION):
     data=dict(schemaVersion=1,contract='beaver-result/1',operationId='fixture',
               producer=dict(name='beaver',version=version,implementationSha256=beaver.V03_CANDIDATES[version]['implementation_sha256']),
@@ -36,8 +40,8 @@ class BeaverV03Tests(unittest.TestCase):
             with self.subTest(update=update),self.assertRaises(ValueError):beaver.validate_capabilities(dict(cap,**update))
 
     def test_finite_route_version_matrix_and_explicit_unsupported_operations(self):
-        for version in ('0.2.0',*beaver.V03_CANDIDATES):ops.validate_provider_version(request('references',project='/p'),version)
-        value=request(project='/p');ops.validate_provider_version(value,beaver.V03_VERSION)
+        for version in ('0.2.0',*beaver.V03_CANDIDATES):ops.validate_provider_version(request('references',project=fixture_path('project')),version)
+        value=request(project=fixture_path('project'));ops.validate_provider_version(value,beaver.V03_VERSION)
         for version in ('0.1.0','0.2.0','0.3.1','0.3.0.dev2'):
             with self.subTest(version=version),self.assertRaises(ValueError):ops.validate_provider_version(value,version)
         for name in ops.UNSUPPORTED_V03:
@@ -48,15 +52,15 @@ class BeaverV03Tests(unittest.TestCase):
         self.assertEqual(ops.required_capability(request('server.module-plan')),'server.generate/module-generate/module-plan/protocol-diff/migration-plan')
         self.assertEqual(ops.required_capability(request('csharp.rename-sequence')),'csharp.inspect/rename/rename-sequence')
         schema=documents()['beaver-operation.schema.json'];Draft202012Validator.check_schema(schema)
-        Draft202012Validator(schema).validate(request('workspace.rebind',project='/p',profile='/q',**{'expected-profile':'a'*64,'accept-authority-change':True}))
+        Draft202012Validator(schema).validate(request('workspace.rebind',project=fixture_path('project'),profile=fixture_path('profile'),**{'expected-profile':'a'*64,'accept-authority-change':True}))
 
     def test_new_request_parameters_reject_untyped_authority_and_output_override(self):
-        for value in [request('workspace.rebind',project='/p',profile='/q',**{'expected-profile':'a'*64,'accept-authority-change':'yes'}),
-                      request('workspace.rebind',project='/p',profile='/q',**{'expected-profile':'short'}),
-                      request('production.plan',project='/p',spec='relative'),
-                      request('csharp.rename-sequence',project='/p',spec='/s',out='/escape'),
-                      request('resource.image-produce',input='/p',policy='/q',**{'expected-source':'bad'}),
-                      request('server.migration-apply',project='/p'),request(['shell'])]:
+        for value in [request('workspace.rebind',project=fixture_path('project'),profile=fixture_path('profile'),**{'expected-profile':'a'*64,'accept-authority-change':'yes'}),
+                      request('workspace.rebind',project=fixture_path('project'),profile=fixture_path('profile'),**{'expected-profile':'short'}),
+                      request('production.plan',project=fixture_path('project'),spec='relative'),
+                      request('csharp.rename-sequence',project=fixture_path('project'),spec=fixture_path('spec'),out=fixture_path('escape')),
+                      request('resource.image-produce',input=fixture_path('input'),policy=fixture_path('policy'),**{'expected-source':'bad'}),
+                      request('server.migration-apply',project=fixture_path('project')),request(['shell'])]:
             with self.subTest(value=value),self.assertRaises(ValueError):ops.validate(value)
 
     def test_workspace_and_production_apply_plan_contracts_do_not_accept_old_transactions(self):
@@ -80,7 +84,7 @@ class BeaverV03Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory()as temp:
             root=Path(temp).resolve();project=root/'project';project.mkdir()
             req=root/'request.json';req.write_text(json.dumps(request(project=str(project))))
-            cfg=dict(identity_root='/package',package_files={'file':'hash'},command=['/beaver'],command_files={'cmd':'hash'},version=version or provider_version)
+            cfg=dict(identity_root=fixture_path('package'),package_files={'file':'hash'},command=[fixture_path('beaver')],command_files={'cmd':'hash'},version=version or provider_version)
             lock=root/'lock.json';lock.write_text(json.dumps(cfg));probe=result(version=provider_version)
             probe['data']={'capabilities':[dict(id=declared or 'workspace.plan/apply/inspect/rebind',state='implemented')]}
             def checked(output,**kwargs):
@@ -121,8 +125,8 @@ class BeaverV03Tests(unittest.TestCase):
     def test_candidate08_has_same_finite_routes_without_future_version_support(self):
         for name,spec in ops.OPERATIONS.items():
             if beaver.V03_VERSION in spec.get('versions',()):self.assertIn('0.3.0',spec['versions'],name)
-        ops.validate_provider_version(request(project='/p'),'0.3.0')
-        with self.assertRaises(ValueError):ops.validate_provider_version(request(project='/p'),'0.3.0.rc1')
+        ops.validate_provider_version(request(project=fixture_path('project')),'0.3.0')
+        with self.assertRaises(ValueError):ops.validate_provider_version(request(project=fixture_path('project')),'0.3.0.rc1')
 
     def test_candidate08_status_schema_and_cross_candidate_result_drift(self):
         value,count=self.invoke_fixture('blocked',3,provider_version='0.3.0')

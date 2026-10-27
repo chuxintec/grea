@@ -11,6 +11,10 @@ from grea.integrations import beaver, beaver_operations as ops
 PATHS=['Assets/Game/ViewA.cs','Assets/Game/ViewB.cs','Assets/Game/StorageView.cs','Assets/Game/Tests/ViewTests.cs']
 
 
+def fixture_path(name):
+    return str((Path(tempfile.gettempdir()) / 'grea-fixtures' / name).resolve())
+
+
 def payload(changes):
     return dict(schemaVersion=1,contract='beaver-result/1',operationId='recorded-shape-fixture',
         producer=dict(name='beaver',version='0.3.0',implementationSha256=beaver.V03_CANDIDATES['0.3.0']['implementation_sha256']),
@@ -31,8 +35,8 @@ class BeaverResultChangesTests(unittest.TestCase):
     def invoke_recorded_shape(self, actual):
         with tempfile.TemporaryDirectory()as tmp:
             root=Path(tmp).resolve();plan=root/'plan.json';plan.write_text(json.dumps(dict(contract='beaver-production/3',schemaVersion=3)))
-            req=root/'request.json';req.write_text(json.dumps(dict(schema_version=1,operation='production.apply',options={'plan':str(plan),'expected-plan':'a'*64,'editor-path':'/not-a-live-editor','timeout':1},timeout_seconds=30)))
-            cfg=dict(identity_root='/package',package_files={'file':'hash'},command=['/beaver'],command_files={'cmd':'hash'},version='0.3.0')
+            req=root/'request.json';req.write_text(json.dumps(dict(schema_version=1,operation='production.apply',options={'plan':str(plan),'expected-plan':'a'*64,'editor-path':fixture_path('not-a-live-editor'),'timeout':1},timeout_seconds=30)))
+            cfg=dict(identity_root=fixture_path('package'),package_files={'file':'hash'},command=[fixture_path('beaver')],command_files={'cmd':'hash'},version='0.3.0')
             lock=root/'lock.json';lock.write_text(json.dumps(cfg))
             def checked(output,**kwargs):
                 probe=Path(output)/'probe';probe.mkdir(parents=True)

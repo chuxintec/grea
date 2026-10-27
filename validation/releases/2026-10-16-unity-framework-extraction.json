@@ -674,7 +674,7 @@
     "No offline/clean-machine, Windows, mobile, IL2CPP, multiwriter, real power-loss or performance benchmark claim.",
     "These are own synthetic consumers, not original-game parity or a production battle/economy system."
   ],
-  "privateEvidence": ".private/framework-extraction-20261016/run-20261016T052634Z-226f0c45",
+  "privateEvidence": "[私有本地路径已脱敏]",
   "publicAudit": {
     "result": "pass",
     "scope": "All public working bytes staged in an alternate Git index; real index and branch refs preserved",
@@ -834,7 +834,7 @@
       "result": "pass",
       "logSha256": "cc0247db27b940689a8e3c93ccec201bae5f376cc9315232f54567db410bee5b"
     },
-    "privateEvidenceRoot": ".private/framework-extraction-20261016",
+    "privateEvidenceRoot": "[私有本地路径已脱敏]",
     "pointerCalibration": {
       "attempts": 1,
       "hypothesis": "Two screenshot pixels per window coordinate",
@@ -845,5 +845,11 @@
       "previousAcceptedSaveUnchanged": true
     },
     "osMouseClickDrag": "not_run_reliably; original-coordinate and bounded half-coordinate calibration did not establish reliable game dispatch"
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "7d5059ae42468f616a4f6feb174cc57abe803fe5f630b739f4b00b125a25a9a8",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

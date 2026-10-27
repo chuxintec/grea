@@ -271,5 +271,11 @@
     "Power-loss durability or hostile concurrent filesystem writers",
     "Offline clean-machine restore"
   ],
-  "rawEvidence": "Ignored .private/unity-m3; raw logs and private package backups excluded from public source"
+  "rawEvidence": "Ignored [私有本地路径已脱敏]; raw logs and private package backups excluded from public source",
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "0cb7e3b531854f8f34ee63170dd6bc84717c887971aae3f195c794c88b380584",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

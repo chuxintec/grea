@@ -9,11 +9,14 @@ from grea.safe_paths import disjoint
 
 V03_VERSION = '0.3.0.dev1'
 V03_IMPLEMENTATION = 'b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0'
+V05_VERSION = '0.5.0'
+# The historical name is retained; entries pin compatible lineage, never a version range.
 V03_CANDIDATES = {
     V03_VERSION:dict(candidate='07',implementation_sha256=V03_IMPLEMENTATION),
     '0.3.0':dict(candidate='08',implementation_sha256='e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882'),
     # 0.4.0 = 0.3.0 contracts plus the toolkit received from GREA; released as a GREA module.
     '0.4.0':dict(candidate='module-2026.10.27',implementation_sha256='06a710a70b8e9257e68e6e3b83a34db41e7e1f4e32b2810fe80367db518717f7'),
+    V05_VERSION:dict(candidate='local-main-9d15c50',implementation_sha256='ba439efac14c887e8343af5a5edbcde646be0f05c3668364970bb3ce9df4139a'),
 }
 SUPPORTED_VERSIONS = ('0.1.0', '0.1.0.dev1', '0.2.0', *V03_CANDIDATES)
 V02_CONTRACTS = dict(nativeOperationContract='beaver-unity/1', adoptionContract='beaver-adopt/1',
@@ -30,6 +33,7 @@ V03_GROUPS = {
     'server.toolchain/protocol-tools/check/build',
     'server.compose-plan/migration-state/migration-apply/runtime-inspect',
 }
+V05_GROUPS = {'ui.inspect/analyze/repair-plan', 'wiring.plan', 'diagnostics.summarize', 'toolkit.grea'}
 
 
 def validate_capabilities(cap):
@@ -45,14 +49,17 @@ def validate_capabilities(cap):
             raise ValueError('Invalid beaver capability declaration')
         ids=[row['id'] for row in rows]
         required=V02_OPERATIONS | V03_GROUPS if version in V03_CANDIDATES else V02_OPERATIONS
+        if version == V05_VERSION: required = required | V05_GROUPS
         if len(ids)!=len(set(ids)) or not required<=set(ids):
             raise ValueError('Missing or duplicated beaver capabilities')
         if version in V03_CANDIDATES and cap.get('producer_implementation_sha256')!=V03_CANDIDATES[version]['implementation_sha256']:
-            raise ValueError('Only the fixed beaver 0.3 candidate'+V03_CANDIDATES[version]['candidate']+' implementation is supported')
+            raise ValueError('Only the fixed beaver '+V03_CANDIDATES[version]['candidate']+' implementation is supported')
 
 
 def state_root():
-    return Path(os.environ.get('GREA_PROVIDER_STATE_DIR', Path.home()/'.local/share/grea/providers')).expanduser().absolute()/'beaver'
+    configured_root = os.environ.get('GREA_PROVIDER_STATE_DIR')
+    root = Path(configured_root) if configured_root is not None else Path.home()/'.local/share/grea/providers'
+    return root.expanduser().absolute()/'beaver'
 
 
 def discover():

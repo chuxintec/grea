@@ -1,4 +1,4 @@
-"""Finite named forwarding to beaver 0.1/0.2 and fixed 0.3 candidates07/08."""
+"""Finite named forwarding to explicitly pinned beaver implementations."""
 import json
 import os
 import platform
@@ -87,6 +87,16 @@ for _spec in OPERATIONS.values():
     if beaver.V03_VERSION in _spec.get('versions',set()):_spec['versions'].update(beaver.V03_CANDIDATES)
 OPERATIONS['payload.verify']['option_versions']['unity-artifact'].update(beaver.V03_CANDIDATES)
 
+# Fixed 0.5 increment only. Inspection executes an Editor; the other four only
+# read caller inputs and write independent reports/plans. No new apply engine.
+OPERATIONS.update({
+    'ui.inspect':dict(command=['ui','inspect'],required={'project','spec','editor-path','timeout'},paths={'project','spec','editor-path'},integers={'timeout':(1,1700)},output='out',versions={beaver.V05_VERSION},capability='ui.inspect/analyze/repair-plan'),
+    'ui.analyze':dict(command=['ui','analyze'],required={'snapshot','spec'},paths={'snapshot','spec'},output='out',versions={beaver.V05_VERSION},capability='ui.inspect/analyze/repair-plan'),
+    'ui.repair-plan':dict(command=['ui','repair-plan'],required={'project','snapshot','spec'},paths={'project','snapshot','spec'},output='out',versions={beaver.V05_VERSION},capability='ui.inspect/analyze/repair-plan'),
+    'wiring.plan':dict(command=['wiring','plan'],required={'project','snapshot','spec'},paths={'project','snapshot','spec'},output='out',versions={beaver.V05_VERSION},capability='wiring.plan'),
+    'diagnostics.summarize':dict(command=['diagnostics','summarize'],required={'input'},path_lists={'input':(1,256)},integers={'limit':(1,10000)},output='out',versions={beaver.V05_VERSION},capability='diagnostics.summarize'),
+})
+
 
 def read_json(path, max_bytes=8*1024**2):
     path=canonical_path(path)
@@ -107,13 +117,20 @@ def validate(request):
     if not isinstance(request['operation'],str):raise ValueError('Expected a named operation string')
     spec=OPERATIONS.get(request['operation']);options=request['options']
     if spec is None or not isinstance(options,dict):raise ValueError('Unsupported named beaver operation')
-    allowed=set().union(*(set(spec.get(k,()))for k in ('paths','hashes','integers','text','flags')))
+    allowed=set().union(*(set(spec.get(k,()))for k in ('paths','path_lists','hashes','integers','text','flags')))
     if set(options)-allowed or not spec['required']<=options.keys():raise ValueError('Unknown or missing named options')
     timeout=request['timeout_seconds']
     if type(timeout)is not int or not 1<=timeout<=1800:raise ValueError('timeout_seconds must be 1..1800')
     values={}
     for name,value in options.items():
-        if name in spec.get('flags',()):
+        if name in spec.get('path_lists',{}):
+            lower,upper=spec['path_lists'][name]
+            if not isinstance(value,list) or not lower<=len(value)<=upper:
+                raise ValueError('Expected a bounded nonempty path array')
+            if any(not isinstance(p,str) or not p or '\x00' in p or not Path(p).expanduser().is_absolute() for p in value):
+                raise ValueError('Provider paths must be absolute strings')
+            value=[str(canonical_path(p)) for p in value]
+        elif name in spec.get('flags',()):
             if type(value)is not bool:raise ValueError('Expected boolean flag')
         elif name in spec.get('integers',{}):
             lower,upper=spec['integers'][name]
@@ -146,7 +163,9 @@ def validate_provider_version(request, version):
 def argv_for(request, output):
     spec,values=validate(request);argv=list(spec['command'])
     for name,value in sorted(values.items()):
-        if name in spec.get('flags',()):
+        if name in spec.get('path_lists',{}):
+            for path in value:argv+=['--'+name,path]
+        elif name in spec.get('flags',()):
             if value:argv.append('--'+name)
         else:argv+=['--'+name,str(value)]
     if spec.get('output'):
@@ -197,6 +216,7 @@ def invoke(lock, request_file, output):
     if hash_file(request_file,8*1024**2)!=before:raise ValueError('Request changed while reading')
     lock=canonical_path(lock);lock_before=hash_file(lock,8*1024**2)
     paths=[v for k,v in values.items()if k in spec.get('paths',())]
+    paths += [p for k,v in values.items() if k in spec.get('path_lists',{}) for p in v]
     out=disjoint(output,lock,request_file,beaver.state_root(),monkey_state(),*paths)
     if out.exists() or not out.parent.is_dir():raise ValueError('Use a fresh invocation directory')
     out.mkdir()

@@ -5,7 +5,7 @@ from .integrations.beaver import SUPPORTED_VERSIONS
 
 BEAVER_RESULT_SCHEMA = {
     '$schema':'https://json-schema.org/draft/2020-12/schema',
-    'title':'beaver-result/1 envelope checked for fixed 0.3 candidates07/08; engineering data remains provider-owned',
+    'title':'beaver-result/1 envelope for pinned implementations; engineering data remains provider-owned',
     'type':'object',
     'required':['schemaVersion','contract','operationId','producer','status','actualChanges','artifacts','diagnostics','limitations','verification'],
     'properties':{
@@ -38,6 +38,9 @@ def documents():
     variants=[]
     for name,spec in OPERATIONS.items():
         properties={k:{'type':'string','minLength':1}for k in spec.get('paths',())}
+        properties.update({k:{'type':'array','minItems':bounds[0],'maxItems':bounds[1],
+                              'items':{'type':'string','minLength':1}}
+                           for k,bounds in spec.get('path_lists',{}).items()})
         properties.update({k:{'type':'string','pattern':'^[a-f0-9]{64}$'}for k in spec.get('hashes',())})
         properties.update({k:{'type':'integer','minimum':b[0],'maximum':b[1]}for k,b in spec.get('integers',{}).items()})
         properties.update({k:{'type':'string','minLength':1,'maxLength':4096}for k in spec.get('text',())})
@@ -53,5 +56,5 @@ def documents():
             'properties':{'schema_version':{'const':1},'operation':{'const':name},'options':options,
                           'timeout_seconds':{'type':'integer','minimum':1,'maximum':1800}}})
     return {'beaver-operation.schema.json':{'$schema':'https://json-schema.org/draft/2020-12/schema',
-        'title':'Finite beaver 0.1/0.2 and fixed 0.3 candidates07/08 forwarding; exact version, capability and identity checked at runtime','oneOf':variants},
+        'title':'Finite pinned beaver forwarding; exact version, capability and identity checked at runtime','oneOf':variants},
         'beaver-result.schema.json':BEAVER_RESULT_SCHEMA}

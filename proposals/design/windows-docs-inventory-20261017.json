@@ -640,7 +640,13 @@
       "status": "executed",
       "resolved_target": "validation/releases/2026-10-13-unity-m2.json",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "c2ce85ec8ede0d1c55dea1443e481baf1bb2f2c63831369f9803505adfddc9d3"
+      "target_sha256": "c2ce85ec8ede0d1c55dea1443e481baf1bb2f2c63831369f9803505adfddc9d3",
+      "publication_redaction": {
+        "status": "redacted_public_summary",
+        "source_sha256": "c2ce85ec8ede0d1c55dea1443e481baf1bb2f2c63831369f9803505adfddc9d3",
+        "public_sha256": "97a98c0940693e2e4147113be1462aba2a36483957971fc09eddf6c811df19a3",
+        "date": "2026-10-27"
+      }
     },
     {
       "source": "docs/validation/2026-10-13-unity-m3.json",
@@ -652,7 +658,13 @@
       "status": "executed",
       "resolved_target": "validation/releases/2026-10-13-unity-m3.json",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "0cb7e3b531854f8f34ee63170dd6bc84717c887971aae3f195c794c88b380584"
+      "target_sha256": "0cb7e3b531854f8f34ee63170dd6bc84717c887971aae3f195c794c88b380584",
+      "publication_redaction": {
+        "status": "redacted_public_summary",
+        "source_sha256": "0cb7e3b531854f8f34ee63170dd6bc84717c887971aae3f195c794c88b380584",
+        "public_sha256": "8e1481c2bc401546817ebf7ac90579312225563e2520d8f53de8727fc260f8b4",
+        "date": "2026-10-27"
+      }
     },
     {
       "source": "docs/validation/2026-10-13-unity-m4.json",
@@ -664,7 +676,13 @@
       "status": "executed",
       "resolved_target": "validation/releases/2026-10-13-unity-m4.json",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "19877b67bd32d7ab795a76c1170d8f23708ada04917374bdd26ad026ce76a951"
+      "target_sha256": "19877b67bd32d7ab795a76c1170d8f23708ada04917374bdd26ad026ce76a951",
+      "publication_redaction": {
+        "status": "redacted_public_summary",
+        "source_sha256": "19877b67bd32d7ab795a76c1170d8f23708ada04917374bdd26ad026ce76a951",
+        "public_sha256": "84b3144ce1ac07e0d9bb4349d102974791d031e951791dadcdb369f1199bbd5c",
+        "date": "2026-10-27"
+      }
     },
     {
       "source": "docs/validation/2026-10-13-unity-m5.json",
@@ -784,7 +802,13 @@
       "status": "executed",
       "resolved_target": "validation/releases/2026-10-16-project-tools.json",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "0f045e37371546d9444da3a0fde1d088711dcad9767fdac13c1afc580eaf359d"
+      "target_sha256": "0f045e37371546d9444da3a0fde1d088711dcad9767fdac13c1afc580eaf359d",
+      "publication_redaction": {
+        "status": "redacted_public_summary",
+        "source_sha256": "0f045e37371546d9444da3a0fde1d088711dcad9767fdac13c1afc580eaf359d",
+        "public_sha256": "c2f01f8656970a1b6c6d95b1d333d468256414b2fc2d8536aaffa615a3315d8a",
+        "date": "2026-10-27"
+      }
     },
     {
       "source": "docs/validation/2026-10-16-unity-framework-extraction.json",
@@ -796,7 +820,13 @@
       "status": "executed",
       "resolved_target": "validation/releases/2026-10-16-unity-framework-extraction.json",
       "execution_note": "Consumers migrated; completed process available at frozen base commit; no duplicate archive tree.",
-      "target_sha256": "7d5059ae42468f616a4f6feb174cc57abe803fe5f630b739f4b00b125a25a9a8"
+      "target_sha256": "7d5059ae42468f616a4f6feb174cc57abe803fe5f630b739f4b00b125a25a9a8",
+      "publication_redaction": {
+        "status": "redacted_public_summary",
+        "source_sha256": "7d5059ae42468f616a4f6feb174cc57abe803fe5f630b739f4b00b125a25a9a8",
+        "public_sha256": "460323ed0d93495694abaa9484202c4e844ec0000cb2f37daf8e6994d61f1017",
+        "date": "2026-10-27"
+      }
     },
     {
       "source": "docs/使用指南.md",

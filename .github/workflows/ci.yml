@@ -66,13 +66,15 @@ jobs:
         with:
           version: '0.12.21'
           python-version: '3.12'
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra modules
+      - name: Fetch locked module wheels for the release artifact
+        run: .venv/bin/python scripts/fetch_modules.py --out .cache/modules
       - name: Build and accept relocatable native plugin
         run: |
           test "$(uname -m)" = arm64
-          .venv/bin/python scripts/build_plugin.py --out dist/plugin
+          .venv/bin/python scripts/build_plugin.py --out dist/plugin --modules .cache/modules
           .venv/bin/python scripts/verify_plugin.py --bundle dist/plugin/grea-plugin-macos-arm64.zip --report dist/plugin/plugin-acceptance.json
-          .venv/bin/python scripts/build_plugin.py --out dist/plugin-repeat
+          .venv/bin/python scripts/build_plugin.py --out dist/plugin-repeat --modules .cache/modules
           cmp dist/plugin/grea-plugin-macos-arm64.zip dist/plugin-repeat/grea-plugin-macos-arm64.zip
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
@@ -151,14 +153,16 @@ jobs:
         with:
           version: '0.12.21'
           python-version: '3.12'
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra modules
+      - name: Fetch locked module wheels for the release artifact
+        run: .venv/Scripts/python.exe scripts/fetch_modules.py --out .cache/modules
       - name: Build, relocate and exercise Windows native plugin
         run: |
-          .venv/Scripts/python.exe scripts/build_plugin.py --target windows-x64 --out dist/plugin
+          .venv/Scripts/python.exe scripts/build_plugin.py --target windows-x64 --out dist/plugin --modules .cache/modules
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           .venv/Scripts/python.exe scripts/verify_plugin.py --bundle dist/plugin/grea-plugin-windows-x64.zip --report dist/plugin/plugin-acceptance.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          .venv/Scripts/python.exe scripts/build_plugin.py --target windows-x64 --out dist/plugin-repeat
+          .venv/Scripts/python.exe scripts/build_plugin.py --target windows-x64 --out dist/plugin-repeat --modules .cache/modules
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           if ((Get-FileHash dist/plugin/grea-plugin-windows-x64.zip).Hash -ne (Get-FileHash dist/plugin-repeat/grea-plugin-windows-x64.zip).Hash) { throw 'Nonreproducible Windows plugin' }
       - name: Native Codex temporary installation and discovery only

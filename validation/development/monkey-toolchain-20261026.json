@@ -7,7 +7,7 @@
   "branch": "codex/monkey-toolchain-v040",
   "scope": "External monkey bulk orchestration and modular GREA toolchain; no original game changes",
   "upstream": {
-    "thread": "01a16363-03ce-7222-a8a1-2041d7a2681b",
+    "thread": "[私有会话标识已脱敏]",
     "release": "0.4.0",
     "verified": "Native thread read plus actual installed capabilities and owned conversion",
     "limitations": "Upstream game results do not establish all-source recovery"
@@ -162,10 +162,16 @@
     "github_push": false,
     "release": false
   },
-  "evidence_directory": ".private/monkey-toolchain-20261026",
+  "evidence_directory": "[私有本地路径已脱敏]",
   "historical_attempts": [
     "Initial full test exposed missing new documentation receipt and outdated reference/skill test assumptions; corrected.",
     "Source snapshot needed its explicit test runtime and ignored dependency links; final full suite passed.",
     "Nested sandbox blocked sandbox-exec; approved native verifier passed without disabling its isolation."
-  ]
+  ],
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "cc4d391b555fe1692c2f8490ed21ea52afb0d6a3e3d284f6a9b76341a8220cb3",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

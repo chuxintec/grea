@@ -608,7 +608,7 @@
     "Production save migrations or power-loss durability",
     "Exhaustive aspect ratios, accessibility, human audio perception or performance budgets"
   ],
-  "rawEvidence": "Ignored .private/unity-m4; logs, saves, images, caches and local binaries excluded from Git",
+  "rawEvidence": "Ignored [私有本地路径已脱敏]; logs, saves, images, caches and local binaries excluded from Git",
   "maintenance": {
     "contracts": "pass",
     "skillCheck": "pass",
@@ -625,5 +625,11 @@
       "broken": 0
     },
     "diffCheck": "pass; preserve Unity serialized empty-value whitespace via scoped gitattributes"
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "19877b67bd32d7ab795a76c1170d8f23708ada04917374bdd26ad026ce76a951",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-27",
+  "base_revision": "9c261fac23a3983cc5e73b6ba16d52101d9c434f",
+  "scope": "Fixed beaver 0.5 forwarding, portable provider fixtures, Skill closure and public-evidence redaction. Source working-tree checks; not a release or installed-client acceptance.",
+  "changes": [
+    "Five additional finite beaver UI/wiring/diagnostics routes; exact implementation identity remains required.",
+    "CI plugin builds explicitly fetch and bundle the locked modules.",
+    "Provider state roots avoid evaluating the home directory when an explicit state root is supplied.",
+    "Windows fixtures use native absolute paths, portable manifest separators and isolated home directories.",
+    "Framework source audit derives consumer namespace prefixes rather than naming a real game.",
+    "Public evidence summaries redact private identifiers; original evidence and its source hashes remain distinct from public summary hashes."
+  ],
+  "checks": {
+    "source_tests": {
+      "collected": 356,
+      "passed": 344,
+      "skipped": 12,
+      "failed": 0,
+      "host": "macOS arm64"
+    },
+    "targeted_tests": {
+      "collected": 56,
+      "passed": 56
+    },
+    "skill_isolated_sync": "pass",
+    "skill_closure": {
+      "skills": 5,
+      "markdown_files": 70,
+      "local_links": 338,
+      "errors": 0
+    },
+    "document_links": {
+      "documents": 157,
+      "local_links": 682,
+      "errors": 0
+    },
+    "generated_contracts": "pass",
+    "semantic_references": "pass",
+    "brand_exports": "pass",
+    "staged_public_audit": "pass before adding this report; repeated on final index",
+    "diff_whitespace": "pass"
+  },
+  "limits": [
+    "Windows-native and plugin isolation acceptance require the remote CI run for the resulting commit.",
+    "No new Editor, Player, game, Go-service or installed-client execution.",
+    "Default module lock unchanged; the new beaver implementation is an explicit pin, not a claim of formal-release adoption.",
+    "Pattern scanning does not prove that all private information is absent."
+  ]
+}

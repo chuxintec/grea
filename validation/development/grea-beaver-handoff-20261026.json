@@ -3,7 +3,7 @@
   "source_head": "e093c4ee15318b412e7ca2dd107791017ff30eb7",
   "source_branch": "codex/monkey-toolchain-v040",
   "snapshot_manifest_sha256": "327164597eee56a6cef06f09a047270a2c0f5320fd6e779e8e3bb1637c940761",
-  "snapshot_relative_path": ".private/triad-20261026/source-freeze",
+  "snapshot_relative_path": "[私有本地路径已脱敏]",
   "snapshot_files": 903,
   "license_files": [
     {
@@ -8260,5 +8260,11 @@
       "consumer_switch": "not_verified",
       "commit": "b67a164e7618179c1665028a516ea6f2bd6dea00"
     }
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "446a3c46739fe9a597054dbba64da57ce61a4ec163df03208fe64a110f07cf01",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

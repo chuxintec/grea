@@ -79,7 +79,7 @@
     "runtime_summary": {
       "actualPrefabUI": {
         "status": "verified",
-        "scene": "BeaverFoodStreetUI",
+        "scene": "BeaverSampleAUI",
         "rows": 17,
         "elementContentHeight": 723.0,
         "elementViewportHeight": 590.0,
@@ -155,87 +155,87 @@
   },
   "evidence": [
     {
-      "path": ".private/beaver02-integration-20261026/evidence-reuse.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 12564,
       "sha256": "c2ae3908b843f4585afab4769efa37a83619ca5f15b0b9b06638f9669143792f"
     },
     {
-      "path": ".private/beaver02-integration-20261026/adapter-tests.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 489,
       "sha256": "f7c2c83a1c154a428826d3c4c9076b3226fa31511a682ae7c1e887cad5f9a50d"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/argv-parser-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 31,
       "sha256": "f0b6ad78ab4c30c8f6d3c4e5a0844a08b04f40f76b1e77c6e8e1c5be3c62493d"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/installed-package-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 901,
       "sha256": "ca50e3b1c70d975508a88c2084040b3f921ad5378f108173863465eacc029d00"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/integration-result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 876,
       "sha256": "7c19308086ba739e034dd1bc810108195ab3c8ef4fa0aae7be330b2f253b11e8"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/pin/beaver-lock.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 7297,
       "sha256": "65f337f155eff1ab2bd2d68456ce2ad83b4944c95d9db264e640201827e73753"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/batch-plan-invocation/result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 3026,
       "sha256": "fbb36380c3fec9d47fd5d840e961ade4f42d6e603611e6ae17472a21db4cf216"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/references-invocation/result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 3408,
       "sha256": "a7a55a707d074628a92f7e98ac41898ecba1860e9348aa90276c5d6941ee08ee"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/blocked-invocation/result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 2994,
       "sha256": "aaf5ea01bf32dd2cbb8cf7786069f9fa54863e8661fc4b58cf8662c6b4b9be7c"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/unity-artifact-owned-invocation/result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 2847,
       "sha256": "10391fcf888d3e6956984dcb4513848191b6c0cf046824aca95e0cf7715b07b2"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/v01-retained-invocation/result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 2839,
       "sha256": "70bbbeee1027d682b426675fd3799d91b38b21feca8744b3c6d624c7c560e8eb"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/mcp-references-result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 10733,
       "sha256": "686158a57d0c8fc8c3a41899dafc5e2221623f1198eb3e50e8d6346e4a17e055"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/mcp-blocked-result.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 9919,
       "sha256": "a0edd3f3c6321981b85049c7c286c1e684bf594d660eab48617f58497f601ae6"
     },
     {
-      "path": ".private/beaver02-integration-20261026/execution-final/source-session.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 28175,
       "sha256": "b765d050c49a473e8718d7fe6b21e2b34babf7d8ce61c3bbc1f235ad8ddf1ae0"
     },
     {
-      "path": ".private/beaver02-integration-20261026/docs-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 141,
       "sha256": "9573583d71ea9faaeb320228afa7585e5afd9b7b7719c7d5701b08965fe8eb2f"
     },
     {
-      "path": ".private/beaver02-integration-20261026/skill-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1246,
       "sha256": "05631b0983f649fe1c7c585cb2d4235f2586a6a34ffa16072a071e3ee8b14728"
     },
     {
-      "path": ".private/beaver02-integration-20261026/contracts-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 43,
       "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
     }
@@ -264,9 +264,15 @@
     "private_skill_preview": "synchronized and --check consistent; workspace/global not updated"
   },
   "source_handoff_manifest": {
-    "path": ".private/beaver02-integration-20261026/selected-source-handoff/manifest.json",
+    "path": "[私有本地路径已脱敏]",
     "bytes": 2888,
     "sha256": "cc19ab0980b047e5aa87f817a94e0c1f6a3508222eb3b6427122d38c69974664"
   },
-  "related_go_handoff": "validation/development/go-beaver-handoff-20261026.json"
+  "related_go_handoff": "validation/development/go-beaver-handoff-20261026.json",
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "3051c3921b0fb35abd2b3a1d40028aa0b555708b6dea962f2f2a96d4e292bd97",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

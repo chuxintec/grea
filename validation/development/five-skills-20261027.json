@@ -27,8 +27,8 @@
   "migration": {
     "layout": "plugin/skills/grea/assets/skill-layout.json",
     "document_paths": "schemas/document-path-map.json",
-    "private_frozen_baseline": ".private/five-skills-20261027/baseline.json",
-    "private_path_map": ".private/five-skills-20261027/path-map.json",
+    "private_frozen_baseline": "[私有本地路径已脱敏]",
+    "private_path_map": "[私有本地路径已脱敏]",
     "old_skill_entries_removed": true,
     "old_managed_install_upgrade_test": "pass",
     "unrelated_user_skills_preserved_test": "pass",
@@ -72,7 +72,7 @@
     "groups": [
       {
         "count": 27,
-        "log": ".private/five-skills-20261027/targeted-tests.log",
+        "log": "[私有本地路径已脱敏]",
         "modules": [
           "test_five_skill_workflows",
           "test_five_skill_distribution",
@@ -86,7 +86,7 @@
       },
       {
         "count": 25,
-        "log": ".private/five-skills-20261027/interface-tests.log",
+        "log": "[私有本地路径已脱敏]",
         "modules": [
           "test_workflow_profiles",
           "test_lifecycle",
@@ -387,15 +387,15 @@
   },
   "initial_environment_failure": {
     "status": "retained",
-    "report": ".private/five-skills-20261027/plugin/acceptance.json",
+    "report": "[私有本地路径已脱敏]",
     "reason": "Outer sandbox denied sandbox-exec sandbox_apply before client checks.",
     "resolution": "Ran identical verifier outside outer sandbox with approved escalation; verifier still enforced source/network/install-write denials."
   },
   "evidence": {
-    "artifact": ".private/five-skills-20261027/plugin-verified/grea-plugin-macos-arm64.zip",
-    "checksums": ".private/five-skills-20261027/plugin-verified/SHA256SUMS",
-    "acceptance": ".private/five-skills-20261027/plugin-verified/acceptance.json",
-    "private_skill_install": ".private/five-skills-20261027/skills"
+    "artifact": "[私有本地路径已脱敏]",
+    "checksums": "[私有本地路径已脱敏]",
+    "acceptance": "[私有本地路径已脱敏]",
+    "private_skill_install": "[私有本地路径已脱敏]"
   },
   "limits": [
     "Codex and Claude manifest launches were tested using independent stdio clients; native desktop/CLI host plugin loading was not tested or updated.",
@@ -409,5 +409,11 @@
     "git stage/commit/push",
     "merge to main",
     "tag or Release publication"
-  ]
+  ],
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "3bd6a62220da7269990c44ffa5c270ee4ebd25e8fb477f9f7077e4c0f7f55391",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

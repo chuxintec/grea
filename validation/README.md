@@ -1,6 +1,6 @@
 # 验证索引
 
-历史报告保留原字节与原版本，只证明其声明范围。当前证据按 [工具 ID 索引](tool-evidence-index.json)定位。v2026.10.17 的双平台包、原生隔离报告及临时 Codex 报告绑定同一源码提交，见 [Release](https://github.com/chuxintec/grea/releases/tag/v2026.10.17) 的 manifest 与 SHA256SUMS。平台声明不是业务验证；未测可选供应方保持 not_run。Windows 11 桌面、Unity/Player、性能和人工输入为本轮明确排除项，不作为正式发布门槛。
+历史报告只证明其声明版本与范围。含私有信息的报告以带 `publication_redaction` 标记的脱敏摘要公开，原字节另行私有保全；摘要不是原始执行回执，也不改变通过、失败或未验结论。文档迁移清单保留原始 SHA256，脱敏后的公开文件另记哈希，不能用新摘要冒充历史原件。当前证据按 [工具 ID 索引](tool-evidence-index.json)定位。v2026.10.17 的双平台包、原生隔离报告及临时 Codex 报告绑定同一源码提交，见 [Release](https://github.com/chuxintec/grea/releases/tag/v2026.10.17) 的 manifest 与 SHA256SUMS。平台声明不是业务验证；未测可选供应方保持 not_run。Windows 11 桌面、Unity/Player、性能和人工输入为本轮明确排除项，不作为正式发布门槛。
 
 - [v2026.10.17 实现检查点与发布证据入口](releases/2026-10-17-native-plugin.json)
 - [v2026.10.17 变更说明](release-notes/v2026.10.17.md)

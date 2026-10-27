@@ -8,7 +8,7 @@ class BulkHandoff(unittest.TestCase):
   inv=r/'inventory.json';inv.write_text(json.dumps(inspect_target(source)))
   project=r/'export/project';(project/'Assets').mkdir(parents=True);(project/'Packages').mkdir();(project/'ProjectSettings').mkdir();(project/'Packages/manifest.json').write_text('{}');(project/'ProjectSettings/ProjectVersion.txt').write_text('m_EditorVersion: 6000.6.2f1');(project/'README.md').write_text('Continue business from evidence; no original script execution')
   self.sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-  self.ref=lambda p,base:dict(path=str(p.relative_to(base)),sha256=self.sha(p))
+  self.ref=lambda p,base:dict(path=p.relative_to(base).as_posix(),sha256=self.sha(p))
   file=project/('Assets/one.prefab' if category=='prefab' else 'Assets/image.png');file.write_text('Synthetic native declaration; not an executed Editor test')
   c=dict(schema_version=1,provider_version='owned',target_engine='unity',source_inventory=self.ref(inv,r),project_path='project',assets=[dict(source_id='owned-one',category=category,source_files=['one'],disposition='native',outputs=[self.ref(file,project)],reason='')],entry=self.ref(project/'README.md',project),native_check=None);path=r/'contract.json';return source,project,c,path
  def check(self,r,c,p):p.write_text(json.dumps(c));return collect_handoff(r/'export','owned',p)

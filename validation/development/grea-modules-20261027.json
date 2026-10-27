@@ -2,10 +2,10 @@
   "schema_version": 1,
   "date": "2026-10-27",
   "status": "local_source_candidate_not_committed_not_released",
-  "scope": "GREA module lock, grea_modules tool, plugin build bundling, provider discovery of module installs, registry receiver map, skill lessons from FoodStreet/Zombie",
+  "scope": "GREA module lock, grea_modules tool, plugin build bundling, provider discovery of module installs, registry receiver map, skill lessons from SampleA/SampleB",
   "grea_version": "2026.10.26.dev4 (unchanged version string; changes layered on uncommitted dev4)",
   "wip_snapshot": {
-    "path": ".private/wip-snapshot-20261027-triad/",
+    "path": "[私有本地路径已脱敏]/",
     "tracked_patch_sha256": "71155aeeca81096640e2ab9f32aad45a92ed9d5024d8901d6188c2e6093605d9",
     "untracked_tgz_sha256": "4e224b6aec7d0298b387b80f7326d294fa181b02faebdb539a91a84f6c7ed50a",
     "head": "e093c4ee15318b412e7ca2dd107791017ff30eb7"
@@ -14,13 +14,13 @@
     "monkey": {
       "version": "0.4.0",
       "wheel_sha256": "ec5a4b1655c4bc7994e17eeba495b108d6a90fc61570f2e990c50decd6d6208b",
-      "source": "tools/monkey/.private/release-v0.4.0/package"
+      "source": "[私有本地路径已脱敏]"
     },
     "beaver": {
       "version": "0.3.0",
       "wheel_sha256": "d4dd7229fa9ce56eabb9054d0af2b88591aa0777fe4e3d0fc139b74a105eb598",
       "implementation_sha256": "e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882",
-      "source": "tools/beaver/.private/dist/v0.3-final"
+      "source": "[私有本地路径已脱敏]"
     }
   },
   "real_install_isolated_state": {
@@ -51,5 +51,11 @@
     "tagged": 35,
     "receiver_capability_available_equivalence_unverified": 17,
     "gap_open_no_receiver_capability": 18
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "086a4e09637d52671ada1f6c32fd3bcecfb2db3394638b1679cda72df4fd519d",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

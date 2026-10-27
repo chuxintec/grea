@@ -2,7 +2,7 @@
   "schema_version": 1,
   "date": "2026-10-23",
   "scope": "Owned isolated Creator fixture -> explicit adopted Unity project -> bounded playable feature; no original game files changed",
-  "local_evidence_root": ".private/lifecycle-native",
+  "local_evidence_root": "[私有本地路径已脱敏]",
   "provider": {
     "name": "monkey",
     "version": "0.3.0.dev1",
@@ -302,5 +302,11 @@
     "visual": "not_run_candidate_design",
     "declared_acceptance": "incomplete",
     "verified_game_equivalence": false
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "eccdf1d2132e4ed425681e5b2e120d9a244301ad63f2be1ef19ad9a29af3e66d",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

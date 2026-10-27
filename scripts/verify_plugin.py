@@ -243,7 +243,7 @@ print(json.dumps(dict(status='pass',method='normalized NT volume name',dos_volum
                 _, copied = call('run_tool', {'tool_id':'static_asset_copy', 'arguments':['--source',str(source),'--output',str(output),'--map','sample.txt=renamed.txt'], 'run_dir':str(work/(client+' copy receipt'))})
                 if windows and copied['status']!='ok':
                     diagnosis="""import pathlib,sys,traceback,subprocess
-p=pathlib.Path(sys.argv[1]);sys.path.insert(0,sys.argv[2])
+p=pathlib.Path(sys.argv[1]);plugin=pathlib.Path(sys.argv[2]);sys.path.insert(0,str(plugin/'src'))
 sys.stdout.reconfigure(encoding='utf-8');sys.stderr.reconfigure(encoding='utf-8')
 for parent in p.parents:
  try:parent.lstat();state='metadata readable'
@@ -252,13 +252,13 @@ for parent in p.parents:
 for label,fn in [('stat',p.stat),('resolve',lambda:p.resolve(strict=True)),('list',lambda:list(p.iterdir())),('read',lambda:(p/'sample.txt').read_bytes())]:
  try:print(label,repr(fn()),flush=True)
  except Exception:traceback.print_exc()
-code='import pathlib,sys;sys.path.insert(0,'+repr(sys.argv[2])+');from grea.tools.static_asset_copy import copy_assets;print(copy_assets(sys.argv[1],sys.argv[2],["sample.txt=x.txt"]))'
 from grea.host.windows_process import OwnedProcess
-child=OwnedProcess([sys.executable,'-c',code,str(p),str(p.parent/'diagnosis-copy')],p.parent)
+child=OwnedProcess([sys.executable,'-I','-B',str(plugin/'launch_module.py'),'beaver','tool','static_asset_copy',
+                   '--source',str(p),'--output',str(p.parent/'diagnosis-copy'),'--map','sample.txt=x.txt'],p.parent)
 try:print('nested',child.communicate(timeout=10),flush=True)
 finally:child.settle();child.close()
 """
-                    diagnosed=native_run([str(python),'-I','-B','-c',diagnosis,str(source),str(root/'src')],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
+                    diagnosed=native_run([str(python),'-I','-B','-c',diagnosis,str(source),str(root)],env=env,cwd=work,capture_output=True,text=True,encoding='utf-8',timeout=20,security=security)
                     print('Windows owned fixture diagnosis:',diagnosed.stdout,diagnosed.stderr,flush=True)
                     acl=subprocess.run([str(Path(os.environ['SystemRoot'])/'System32/icacls.exe'),str(source)],capture_output=True,text=True,encoding='utf-8')
                     print('Fixture ACL:',acl.stdout,acl.stderr,flush=True)

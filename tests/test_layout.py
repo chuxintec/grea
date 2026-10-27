@@ -15,9 +15,22 @@ ROOT = package_root()
 
 
 class LayoutCompatibilityTests(unittest.TestCase):
+    def isolated_environment(self, home):
+        home = Path(home).resolve()
+        env = {
+            'HOME': str(home),
+            'USERPROFILE': str(home),
+            'GREA_PROVIDER_STATE_DIR': str(home / 'provider-state'),
+            'PATH': '',
+        }
+        if os.name == 'nt':
+            env['HOMEDRIVE'] = home.drive
+            env['HOMEPATH'] = str(home)[len(home.drive):]
+        return env
+
     def test_release_tool_ids_and_alias_targets_remain_available(self):
         baseline = json.loads((ROOT / 'tests/fixtures/tool-ids-v2026.10.13-rc1.json').read_text())
-        with patch.dict(os.environ, {}, clear=True):
+        with tempfile.TemporaryDirectory() as home, patch.dict(os.environ, self.isolated_environment(home), clear=True):
             current = {entry['id']: entry for entry in registry.load()}
             for tool_id, alias in baseline.items():
                 with self.subTest(tool_id=tool_id):
@@ -29,7 +42,7 @@ class LayoutCompatibilityTests(unittest.TestCase):
 
     def test_bundled_python_tools_launch_by_id_outside_repository(self):
         # Optional third-party programs are excluded: --help is not a runtime probe.
-        with patch.dict(os.environ, {}, clear=True), tempfile.TemporaryDirectory() as cwd:
+        with tempfile.TemporaryDirectory() as home, tempfile.TemporaryDirectory() as cwd, patch.dict(os.environ, self.isolated_environment(home), clear=True):
             for entry in registry.load():
                 command = (entry.get('execution') or {}).get('command', [])
                 if not command or command[0] != '{python}':

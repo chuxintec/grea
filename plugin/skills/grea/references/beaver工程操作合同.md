@@ -89,3 +89,27 @@ GREA请求仍是schema_version1的命名参数封装。工程spec与执行数据
 ## 交付判断
 
 工具安装、能力发现、参数转发、原生事务、独立重开、Player真实输入和业务结果是不同证据层。返回的producer/status/verification仅支持其明确范围；上游样本和项目采用历史不证明本次目标通过。保留旧lock与事务，切换实现后不重放旧事务；业务缺口与工具失败分别定位。
+
+## 固定0.5的UI接线与诊断
+
+GREA源码支持明确固定的beaver 0.5.0（来源main `9d15c50`），实际producer须匹配适配器；不接受任意0.5.x。默认随包模块仍由模块锁决定，不因此更新用户安装或旧绑定。新包先按本页发现/固定绑定流程使用独立lock，旧事务仍交原producer处理。
+
+以下五项均通过现有`beaver_pipeline invoke`，请求仍是`schema_version/operation/options/timeout_seconds`。所有路径使用绝对路径；报告输出由适配器固定在新回执的`provider-output`，调用者不能覆盖`out`。具体字段由安装根`schemas/beaver-operation.schema.json`提供。
+
+| operation | options | 执行与结果边界 |
+| --- | --- | --- |
+| `ui.inspect` | project、spec、editor-path、timeout | 启动指定Editor做原生静态采集，可能导入和使用临时辅助代码；不是普通文件只读。外层预算至少比timeout多10秒。GREA本轮只核参数，未重跑Editor。 |
+| `ui.analyze` | snapshot、spec | 分析调用者快照，保留caller-supplied来源标记；不认证真实采集、物理输入或视觉。 |
+| `ui.repair-plan` | project、snapshot、spec | 显式布局/字号修正降为既有batch计划，不自动应用、不从告警猜美术预期。 |
+| `wiring.plan` | project、snapshot、spec | 按实际类型/精确身份或显式角色选择唯一目标；歧义/漂移/非空绑定保护不满足则blocked，不生成可执行计划。 |
+| `diagnostics.summarize` | input（1～256条绝对文件路径数组）、可选limit（1～10000） | 只读显式日志/回执并生成新报告；重复`--input`按原顺序转发，未知原因不编造，写后拒收不当零写入。 |
+
+例：`{"schema_version":1,"operation":"diagnostics.summarize","options":{"input":["/evidence/journal.json","/evidence/editor.log"],"limit":100},"timeout_seconds":30}`。旧操作的options和退出码不变，新增input数组只适用于该诊断操作。
+
+UI spec包含`schemaVersion:1`、mode和显式assets；静态模式为`static-prefab`或`static-scene`。预期值逐项写asset/nodePath/componentType/field/equals及来源。运行状态须由已Play的Editor显式调用公开`BeaverUIInspection.Collect(liveRoot,label)`采集，再交analyze；静态inspect不假装runtime。中心射线采样只说明该状态下的命中，不是物理点击，条件隐藏/禁用也不自动构成缺陷。
+
+接线spec为`schemaVersion:1`与bindings，条目含asset/nodePath/componentType/field/source，目标通过精确target或targetRole/roles给出；没有显式target时只接受类型兼容的唯一候选。Sprite等子资源GUID/localId来自原生回读，不猜fileID。仅支持已声明的Prefab单值引用及Button到真实public instance void()方法；数组、复杂泛型、动态方法和持久化Scene接线未支持。非空引用只有显式replace才可替换；事件不覆盖已有监听，不生成空方法。
+
+修正spec包含`schemaVersion:1`与repairs，每项明确asset/nodePath/componentType/field/mode/value/source。计划保留来源/meta哈希；输出的batch计划及摘要按既有`batch.apply`合同和本次授权执行，使用生成它的固定producer。保存/重载是另一层检查，不把计划通过写成应用成功。
+
+诊断原输入保留，报告带路径/哈希/JSON指针或日志行。跨文件关联需要同一显式操作身份或匹配的stdout路径/哈希；writeSet不等于actualChanges。外层partial/finding继续读内部provider状态，执行后失败只查原事务与实际写集，不自动重放。GREA只验证上述转发、规划/分析和状态保留；原生执行、真实窗口效果与正式游戏采用按项目证据另记。

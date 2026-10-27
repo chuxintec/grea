@@ -7,7 +7,9 @@ from grea.safe_paths import canonical_path,disjoint
 
 
 def state_root():
-    return Path(os.environ.get('GREA_PROVIDER_STATE_DIR',Path.home()/'.local/share/grea/providers')).expanduser().absolute()/'monkey'
+    configured_root = os.environ.get('GREA_PROVIDER_STATE_DIR')
+    root = Path(configured_root) if configured_root is not None else Path.home()/'.local/share/grea/providers'
+    return root.expanduser().absolute()/'monkey'
 
 
 def binding():

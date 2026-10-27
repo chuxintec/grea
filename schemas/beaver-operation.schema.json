@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Finite beaver 0.1/0.2 and fixed 0.3 candidates07/08 forwarding; exact version, capability and identity checked at runtime",
+  "title": "Finite pinned beaver forwarding; exact version, capability and identity checked at runtime",
   "oneOf": [
     {
       "type": "object",
@@ -17,7 +17,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "project.inspect",
       "properties": {
@@ -65,7 +66,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "adoption.plan",
       "properties": {
@@ -124,7 +126,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "adoption.apply",
       "properties": {
@@ -185,7 +188,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "adoption.rollback",
       "properties": {
@@ -241,7 +245,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "unity.plan",
       "properties": {
@@ -291,7 +296,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "unity.apply",
       "properties": {
@@ -352,7 +358,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "player.run",
       "properties": {
@@ -408,7 +415,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "payload.verify",
       "properties": {
@@ -448,7 +456,8 @@
                 "0.2.0",
                 "0.3.0",
                 "0.3.0.dev1",
-                "0.4.0"
+                "0.4.0",
+                "0.5.0"
               ]
             }
           }
@@ -475,7 +484,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "payload.plan",
       "properties": {
@@ -538,7 +548,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "payload.apply",
       "properties": {
@@ -588,7 +599,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "image.inspect",
       "properties": {
@@ -633,7 +645,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "image.compress",
       "properties": {
@@ -704,7 +717,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "config.validate",
       "properties": {
@@ -754,7 +768,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "config.generate",
       "properties": {
@@ -799,7 +814,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "code.inspect",
       "properties": {
@@ -842,7 +858,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "batch.plan",
       "properties": {
@@ -890,7 +907,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "batch.apply",
       "properties": {
@@ -949,7 +967,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "batch.recover",
       "properties": {
@@ -1003,7 +1022,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "references",
       "properties": {
@@ -1050,7 +1070,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "debug.start",
       "properties": {
@@ -1122,7 +1143,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "debug.inspect",
       "properties": {
@@ -1165,7 +1187,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "debug.stop",
       "properties": {
@@ -1208,7 +1231,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "debug.tail",
       "properties": {
@@ -1256,7 +1280,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "debug.screenshot",
       "properties": {
@@ -1309,7 +1334,8 @@
         "0.2.0",
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "debug.target",
       "properties": {
@@ -1351,7 +1377,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1398,7 +1425,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1444,7 +1472,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1503,7 +1532,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1550,7 +1580,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "production.plan/apply/recover",
       "properties": {
@@ -1597,7 +1628,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "production.plan/apply/recover",
       "properties": {
@@ -1655,7 +1687,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "production.plan/apply/recover",
       "properties": {
@@ -1708,7 +1741,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "config3.validate/generate/compare",
       "properties": {
@@ -1763,7 +1797,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "config3.validate/generate/compare",
       "properties": {
@@ -1805,7 +1840,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "config3.validate/generate/compare",
       "properties": {
@@ -1860,7 +1896,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
       "properties": {
@@ -1906,7 +1943,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
       "properties": {
@@ -1957,7 +1995,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
       "properties": {
@@ -2008,7 +2047,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "csharp.module",
       "properties": {
@@ -2050,7 +2090,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
       "properties": {
@@ -2092,7 +2133,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
       "properties": {
@@ -2144,7 +2186,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
       "properties": {
@@ -2191,7 +2234,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2233,7 +2277,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2275,7 +2320,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2322,7 +2368,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2369,7 +2416,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2411,7 +2459,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "server.compose-plan/migration-state/migration-apply/runtime-inspect",
       "properties": {
@@ -2453,7 +2502,8 @@
       "x-beaver-versions": [
         "0.3.0",
         "0.3.0.dev1",
-        "0.4.0"
+        "0.4.0",
+        "0.5.0"
       ],
       "x-beaver-capability": "server.toolchain/protocol-tools/check/build",
       "properties": {
@@ -2468,6 +2518,257 @@
           "additionalProperties": false,
           "required": [],
           "properties": {}
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.0"
+      ],
+      "x-beaver-capability": "ui.inspect/analyze/repair-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "ui.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "project",
+            "spec",
+            "timeout"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.0"
+      ],
+      "x-beaver-capability": "ui.inspect/analyze/repair-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "ui.analyze"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "snapshot",
+            "spec"
+          ],
+          "properties": {
+            "snapshot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.0"
+      ],
+      "x-beaver-capability": "ui.inspect/analyze/repair-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "ui.repair-plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "snapshot",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "snapshot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.0"
+      ],
+      "x-beaver-capability": "wiring.plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "wiring.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "snapshot",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "snapshot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.0"
+      ],
+      "x-beaver-capability": "diagnostics.summarize",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "diagnostics.summarize"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input"
+          ],
+          "properties": {
+            "input": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 256,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            }
+          }
         },
         "timeout_seconds": {
           "type": "integer",

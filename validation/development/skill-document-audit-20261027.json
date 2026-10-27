@@ -7,8 +7,8 @@
     "branch": "codex/monkey-toolchain-v040",
     "head": "4f25ed5ee6cbe35a654adaf77c8fc7fe8b4d7058",
     "source_dirty": true,
-    "baseline_manifest": ".private/skill-audit-20261027/baseline.json",
-    "baseline_snapshot": ".private/skill-audit-20261027/before"
+    "baseline_manifest": "[私有本地路径已脱敏]",
+    "baseline_snapshot": "[私有本地路径已脱敏]"
   },
   "statistics": {
     "markdown_before": 76,
@@ -1219,7 +1219,7 @@
     "tests": {
       "count": 52,
       "status": "pass",
-      "log": ".private/skill-audit-20261027/tests.log",
+      "log": "[私有本地路径已脱敏]",
       "includes": [
         "CLI/MCP and mode routes",
         "document closure and deleted-source fixture",
@@ -1530,5 +1530,11 @@
     "git commit/push/merge/tag/release",
     "global or workspace skill replacement",
     "game or provider changes"
-  ]
+  ],
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "60dff650e26220d3beac8ca213f84b29266ed2997402158a6ef48f44270c601f",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

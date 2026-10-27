@@ -11,12 +11,12 @@
     "recovery": "monkey does not reconstruct unknown backend"
   },
   "manifest": {
-    "path": ".private/go-beaver-handoff-20261026/manifest.json",
+    "path": "[私有本地路径已脱敏]",
     "bytes": 11867,
     "sha256": "283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3"
   },
   "contract": {
-    "path": ".private/go-beaver-handoff-20261026/contract.json",
+    "path": "[私有本地路径已脱敏]",
     "bytes": 3372,
     "sha256": "fa3442a22e721014f32d18e04a5582726d0580badf80892d6eb69311db8c3e1c"
   },
@@ -277,28 +277,28 @@
     "production": "not_run",
     "historical_local_logs": [
       {
-        "path": ".private/research-cocos-go/go-final-tests.log",
+        "path": "[私有本地路径已脱敏]",
         "bytes": 543,
         "sha256": "c9983f2f05cb549eacced1ed673587f6f23d8198dd962d0321f7fc9f57382abb",
         "copied": false,
         "reason": "Historical local log reference only; no raw runtime/log/secret directories transferred"
       },
       {
-        "path": ".private/research-cocos-go/go-template-tests.log",
+        "path": "[私有本地路径已脱敏]",
         "bytes": 430,
         "sha256": "713c63483deefa3338a3871bca6766bd4539717a194a0a47ff7b1136bbe70065",
         "copied": false,
         "reason": "Historical local log reference only; no raw runtime/log/secret directories transferred"
       },
       {
-        "path": ".private/research-cocos-go/server-smoke.log",
+        "path": "[私有本地路径已脱敏]",
         "bytes": 844,
         "sha256": "1198698b6873907c7e8dfc7df268c18bc6fea6cb0d15570d66c161187715a2a3",
         "copied": false,
         "reason": "Historical local log reference only; no raw runtime/log/secret directories transferred"
       },
       {
-        "path": ".private/research-cocos-go/stack-down.log",
+        "path": "[私有本地路径已脱敏]",
         "bytes": 1928,
         "sha256": "27d351e137a4c26577a35452a2dac16a3dd5bbc1b396a5fc43629d6984940710",
         "copied": false,
@@ -336,5 +336,11 @@
     "beaver03_commands_claimed": false
   },
   "frozen_source_hashes_rechecked": 45,
-  "note": "Frozen source is the intake snapshot; subsequent GREA explanatory documentation was updated without changing frozen implementation. No new runtime verification."
+  "note": "Frozen source is the intake snapshot; subsequent GREA explanatory documentation was updated without changing frozen implementation. No new runtime verification.",
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "05c2de6b2c6bef6ff1ab06a7a4200b1d148af1911136c48c58fa4e6e7382b97c",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
+  }
 }

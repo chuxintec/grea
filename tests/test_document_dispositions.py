@@ -12,7 +12,16 @@ class DocumentationTests(unittest.TestCase):
   for row in inventory['entries']:
    self.assertIn(row['status'],('executed','retained_with_reason'))
    if row['action']=='move_immutable':
-    self.assertEqual(hashlib.sha256((ROOT/row['resolved_target']).read_bytes()).hexdigest(),row['sha256'])
+    data=(ROOT/row['resolved_target']).read_bytes()
+    redaction=row.get('publication_redaction')
+    if redaction:
+     self.assertEqual(redaction['source_sha256'],row['sha256'])
+     self.assertEqual(redaction['status'],'redacted_public_summary')
+     report=json.loads(data)
+     self.assertEqual(report['publication_redaction']['status'],'redacted_public_summary')
+     self.assertTrue(report['publication_redaction']['original_preserved_privately'])
+     self.assertEqual(hashlib.sha256(data).hexdigest(),redaction['public_sha256'])
+    else:self.assertEqual(hashlib.sha256(data).hexdigest(),row['sha256'])
    if row['status']=='retained_with_reason':self.assertTrue(row['execution_note'])
  def test_core_navigation_and_current_links(self):
   expected={'README.md','安装与平台.md','使用指南.md','接口与证据说明.md','Unity指南.md','维护与发布.md','故障排查.md'}

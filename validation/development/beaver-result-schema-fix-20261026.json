@@ -66,7 +66,7 @@
       },
       "official_skill_sync": {
         "ok": true,
-        "destination": ".private/beaver03-integration-20261026/result-schema-fix/skill-preview",
+        "destination": "[私有本地路径已脱敏]",
         "check": "Skills are consistent",
         "installed": false
       },
@@ -76,7 +76,7 @@
     }
   },
   "feedback": {
-    "foodstreet": "fixed source and no-replay instructions delivered for continuing existing project verification",
+    "sample-a": "fixed source and no-replay instructions delivered for continuing existing project verification",
     "beaver": "joint contract semantics confirmed; GREA-only code/schema repair; provider owner maintains its docs/tests"
   },
   "scope_guards": {
@@ -93,60 +93,66 @@
   },
   "evidence": [
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/offline-assessment.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 3535,
       "sha256": "1eea3884554f395a3abd2a7c3cfe3fee58e6238745173b73fd18bbb58a5cda68"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-tests.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 97,
       "sha256": "8d23cea08027ef2370c4b0bfedbdb3a01ea9fc1d2017b6382fb01e308c50c21b"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-generation.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 774,
       "sha256": "bbf12faba88d91972b4b9d9c8ed924926c6d0abd72c3b0380178e4c16ae05a47"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/docs-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 141,
       "sha256": "f762ab8d36e3fff8f204153f0f5a11857a6ffd15e5fc9fdb559a4973adb0a4b9"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/skill-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1246,
       "sha256": "e2c2a51ef2c21262029f331ab370a132a4907bb1d2c0cfa9907167fe98b87880"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/contracts-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 43,
       "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/skill-sync.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 39,
       "sha256": "e89788d98e6784da0a178b5e81db05959182d7d4e53e93fa40571877192d694a"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/skill-sync-check.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 22,
       "sha256": "53bd66641e0747255c6648146708adbdae21143e53f23754684aa717b57f2f04"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/diff-check.log",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "path": ".private/beaver03-integration-20261026/result-schema-fix/selected-source-manifest.json",
+      "path": "[私有本地路径已脱敏]",
       "bytes": 1742,
       "sha256": "dc7ca0a7014bfe35d3983feef034b81afab420cb465b3eb92fd374a0c12b3634"
     }
   ],
   "selected_source_snapshot": {
-    "manifest": ".private/beaver03-integration-20261026/result-schema-fix/selected-source-manifest.json",
+    "manifest": "[私有本地路径已脱敏]",
     "files": 8,
     "selection_sha256": "f5d70d20c16335e9782691ef43f1a434c4a5bd012105c6db0a3c142e30f3bc32",
     "scope": "selected repair source only; not a complete plugin, no game source, no runtime or installation"
+  },
+  "publication_redaction": {
+    "status": "redacted_public_summary",
+    "source_sha256": "2e2f939438a0039c563f25e3ee7ada663513bd9a0e25fb2587b98589900157ec",
+    "original_preserved_privately": true,
+    "notice": "Publication-redacted summary, not the original raw execution receipt."
   }
 }

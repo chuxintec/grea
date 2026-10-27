@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "beaver-result/1 envelope checked for fixed 0.3 candidates07/08; engineering data remains provider-owned",
+  "title": "beaver-result/1 envelope for pinned implementations; engineering data remains provider-owned",
   "type": "object",
   "required": [
     "schemaVersion",

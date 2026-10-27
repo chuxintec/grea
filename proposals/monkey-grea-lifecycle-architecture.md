@@ -1,3 +1,5 @@
+> 发布脱敏摘要：本文含原始回执的公开摘要；脱敏前原件仅保存在私有冻结目录。
+
 # GREA、monkey 与 beaver：游戏恢复与开发架构 v2
 
 2026-10-26。用户批准的三产品结构取代本文件 v1“两执行产品、六模块全部留 GREA”的建议。本文为架构与归属说明；实现进度以[生命周期路线](lifecycle-roadmap.md)为唯一入口。底层路径/CLI/Skill ID 保持兼容。
@@ -62,7 +64,7 @@ beaver 对新工程建立独立开发基线；对已有工程比较“旧候选�
 
 GREA 新主线 required providers 为 monkey、beaver，缺失/不兼容/漂移明确 needs_action。恢复实际用 monkey，开发工程实际用 beaver；已有工程复用已核恢复基线，不为双调用重导。纯规划可继续。
 
-当前已安装 GREA dev2/monkey0.4.0 保持。本地源码dev4补齐beaver0.1.0命名转发与生成Schema。beaver最终本地wheel已交付，GREA dev3的匹配源码构建/Player前后身份检查可直接复用；早期Prefab读回属于不同wheel，不混称同版全链。已有monkey候选采用预览、beaver原生样例及正式游戏采用分别记录，本轮只收口本地工具集成，不冒称肥鹅已切换。
+当前已安装 GREA dev2/monkey0.4.0 保持。本地源码dev4补齐beaver0.1.0命名转发与生成Schema。beaver最终本地wheel已交付，GREA dev3的匹配源码构建/Player前后身份检查可直接复用；早期Prefab读回属于不同wheel，不混称同版全链。已有monkey候选采用预览、beaver原生样例及正式游戏采用分别记录，本轮只收口本地工具集成，不冒称[项目 A]已切换。
 
 dev4先按固定beaver0.2.0合同扩展为25个命名操作，记录见[0.2接入回执](../validation/development/beaver02-integration-20261026.json)；现另固定07（0.3.0.dev1）和08/元数据等价09（本地0.3.0），共49路由，核精确producer、组合能力及请求/结果Schema。最终45项适配检查、CLI和独立stdio通过，旧0.1/0.2/07锁实调且哈希不变；证据分层见[0.3回执](../validation/development/beaver03-integration-20261026.json)。正式项目主开发的08新计划已在中文路径完成原生收敛，GREA只读核验其producer、计划、相同C# after-image和同Editor读回，不重跑或推断完整游戏验收。0.3整版G结论由beaver主开发汇总；旧事务不换包重放，旧Go链不自动退休。
 
@@ -72,6 +74,6 @@ monkey0.5.0.dev1已有三类来源查询，须使用显式开发入口；当前m
 
 ## 验证与实施顺序
 
-先 Skill 与归属清单，再 beaver 只读检查/规划和可恢复工程操作，继而隔离副本的采用、原生 UI/Prefab、资源/JSON、回归与构建，最后迁消费者和退休旧实现。肥鹅为已批准试点；暂停项目仅按授权只读提供工具来源，不恢复开发。
+先 Skill 与归属清单，再 beaver 只读检查/规划和可恢复工程操作，继而隔离副本的采用、原生 UI/Prefab、资源/JSON、回归与构建，最后迁消费者和退休旧实现。[项目 A]为已批准试点；暂停项目仅按授权只读提供工具来源，不恢复开发。
 
 分别记录代码/静态、provider readiness、原生连接与回读、Player/输入/视觉、产品业务、安装/发布。当前未完成三方真实链时不能合称架构已交付。本轮不新增推送、发布、全局安装或原工程修改。
