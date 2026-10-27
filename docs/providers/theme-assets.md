@@ -14,7 +14,7 @@
 
 也可通过run-tool传相同argv并指定新run_dir。0表示有限任务完成，2为输入/依赖/IO失败；生成失败保留部分输出，新输出不覆盖。
 
-映射JSON为 `{schema_version:1,change_contract:{...},assets:[...]}`。严格JSON；设计reference及SHA绑定实际设计文件；candidate不冒称批准。合同见 Schema（GREA 安装目录 `schemas/change-contract.schema.json`）；[完整清单示例](../examples/theme-map.example.json)中的路径/摘要/Importer字段均为占位，必须换成实际输入和Editor观察，不能直接当已验清单。测试 `tests/test_theme_assets.py` 在临时目录生成自有素材。每行字段：
+映射JSON为 `{schema_version:1,change_contract:{...},assets:[...]}`。严格JSON；设计reference及SHA绑定实际设计文件；candidate不冒称批准。合同见 [Schema](../../schemas/change-contract.schema.json)；[完整清单示例](../examples/theme-map.example.json)中的路径/摘要/Importer字段均为占位，必须换成实际输入和Editor观察，不能直接当已验清单。测试 `tests/test_theme_assets.py` 在临时目录生成自有素材。每行字段：
 
 - `alpha_required` 为切出按钮/图标声明透明像素要求；背景可false，完全透明仍拒绝。
 - `usage` 固定为 `ui_sprite`，其他用途包括骨骼图集明确不支持；类型仍需Editor实际确认，声明不能隐藏真实依赖。
@@ -44,7 +44,7 @@ prepare 只收录摘要不同的行，按索引存 before/after PNG，生成 `th
 
 ## 美术优先的阶段与持续台账
 
-换皮主线顺序为 S1真实选样定风格 → S2 UI/ICON切分、原画与所需角色/怪物/特效Spine成套生产 → S3选样范围100%原功能替换 → S4用户确认样板风格后的全量换皮与Bug修复 → S5最后游戏调优。前四阶段保持原布局、入口和操作；约30%如有约定只用于S5整体页面/流程范围，不是美术替换覆盖率。不为每页增加审批，不把可玩/改色/静态PNG冒称完整美术或Spine。具体执行规范以 [换皮制作](../../../grea-reskin/references/游戏换皮与资源制作.md) 为准。
+换皮主线顺序为 S1真实选样定风格 → S2 UI/ICON切分、原画与所需角色/怪物/特效Spine成套生产 → S3选样范围100%原功能替换 → S4用户确认样板风格后的全量换皮与Bug修复 → S5最后游戏调优。前四阶段保持原布局、入口和操作；约30%如有约定只用于S5整体页面/流程范围，不是美术替换覆盖率。不为每页增加审批，不把可玩/改色/静态PNG冒称完整美术或Spine。具体执行规范以 [换皮制作](../../plugin/skills/grea-reskin/references/游戏换皮与资源制作.md) 为准。
 
 `change_contract.art_production` 可选新增 `stage`、`ledger:{reference,sha256}`；阶段值依次为 `style_sample`、`art_production`、`sample_replace`、`full_reskin`、`game_tuning`。前四阶段允许维度仅 `visual_style`，S4/S5要求design声明approved，S5要求额外 `reskin_complete:{reference,sha256}` 绑定全量换皮与Bug修复完成回执。这是有限声明约束，不是审批服务或自动验收；既有不带该字段的合同/API继续兼容。没有换皮前置的独立UI/UE任务不强套美术阶段。
 
@@ -54,7 +54,7 @@ prepare 只收录摘要不同的行，按索引存 before/after PNG，生成 `th
 ./bin/grea legacy theme_assets validate-ledger --manifest /work/art-ledger.json --output /work/new-ledger-report.json
 ```
 
-此动作不需要工程、替换图或Editor。读取1MiB以内JSON，按 art-ledger Schema（GREA 安装目录 `schemas/art-ledger.schema.json`） 校验后输出 `validated_declared_art_ledger`、选样数量和**声明状态**统计；引用的媒体/设置/证据不打开。输出必须全新，旧文件不覆盖。台账示例见 [自有占位示例](../examples/art-ledger.example.json)：10个示例界面、1角色、2个轮廓/动作差异怪物，**不是某真实项目的已完成选样**；概念角色/怪物/特效的Spine明确pending。
+此动作不需要工程、替换图或Editor。读取1MiB以内JSON，按 art-ledger [Schema](../../schemas/art-ledger.schema.json) 校验后输出 `validated_declared_art_ledger`、选样数量和**声明状态**统计；引用的媒体/设置/证据不打开。输出必须全新，旧文件不覆盖。台账示例见 [自有占位示例](../examples/art-ledger.example.json)：10个示例界面、1角色、2个轮廓/动作差异怪物，**不是某真实项目的已完成选样**；概念角色/怪物/特效的Spine明确pending。
 
 台账字段：
 

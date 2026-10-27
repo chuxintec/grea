@@ -45,7 +45,7 @@
 4. 区分仍运行、仅编辑/生成需要、仅历史证据、待确认和可退休。102个文件、729个图标之类数量不能直接推导可玩关卡覆盖。
 5. 产出逐项旧路径、目标路径、GUID、实际导入类型、理由、动态键/对象name契约、调用方更新和验证方式。未使用只是调查结论，不是删除授权；按当前会话范围执行，权限审查拒绝时提供具体清单，不拆批规避拒绝。
 
-[依赖审计器](../../grea/references/tools/制品与资源检查.md#unity-导出依赖审计)只覆盖文本GUID闭包；[资产台账](../../grea/references/tools/制品与资源检查.md#unity-资产迁移台账与预检)记录身份及路径变化，二者都不证明资产可删除。
+依赖审计器（项目文档 `docs/tools/制品与资源检查.md`）只覆盖文本GUID闭包；资产台账（项目文档 `docs/tools/制品与资源检查.md`）记录身份及路径变化，二者都不证明资产可删除。
 
 ## 5. 命名、移动与可恢复执行
 
@@ -85,14 +85,14 @@ Unity生成的YAML/meta可能含合法行尾空格；源码/文档格式检查�
 
 ## 来源与可复用范围
 
-案例出处见 [历史来源（外部历史资料）](../../grea/references/维护与发布.md)；项目具体数量和当时未验收状态不作为当前任务门槛。
+案例出处见 历史来源（外部历史资料）（项目文档 `docs/维护与发布.md`）；项目具体数量和当时未验收状态不作为当前任务门槛。
 
 ## 迁移结果与重跑工具
 
 `unity_asset_ledger compare` 会把计划内移动也报告为变化；不要把退出 1 一律当失败或忽略。用 `verify-moves --before ... --after ... --plan ... --output ...` 核对计划内文件的 GUID、内容/meta 哈希与 Resources 相对键；再审查 compare 的目录增删和计划外变化。该只读检查不证明 Unity 类型、名称和子资源加载。
 
-需要子资源与实际 Editor 类型证据时，使用 NativeExitEditorAudit 的 GUID/local fileID、Sprite 几何及对象依赖观察，再由 `unity_asset_ledger compare-editor` 对照前后报告。自动 Assets Resources 根排除 Editor 目录，Package Resources 与动态键仍显式传入。观察始终为 editor_observed；静态、Editor、实际 Player 和玩法验收分别记录。新配置或资源转换可使用显式有限候选工具，先在自有样本验证 schema、人工冲突、关闭重开、直接 Play 与删除转换器后的构建；不得把有限切片推定为全 Cocos 转换能力。调用边界见[制作链](../../grea/references/providers/unity-authoring.md)。
+需要子资源与实际 Editor 类型证据时，使用 NativeExitEditorAudit 的 GUID/local fileID、Sprite 几何及对象依赖观察，再由 `unity_asset_ledger compare-editor` 对照前后报告。自动 Assets Resources 根排除 Editor 目录，Package Resources 与动态键仍显式传入。观察始终为 editor_observed；静态、Editor、实际 Player 和玩法验收分别记录。新配置或资源转换可使用显式有限候选工具，先在自有样本验证 schema、人工冲突、关闭重开、直接 Play 与删除转换器后的构建；不得把有限切片推定为全 Cocos 转换能力。调用边界见制作链（项目文档 `docs/providers/unity-authoring.md`）。
 
 精确文件路径替换、可证明一致的目录前缀替换与动态拼接分别审查。迁移脚本本身、旧提交 git-show 路径、原包证据不能一起全局替换。重跑须按 GUID 核对原路径、显式过渡路径或目标路径，并拒绝占用目标；脚本编译失败后先修错误，不重复运行整个迁移。
 
-类型整理的返工依据见 [历史来源（外部历史资料）](../../grea/references/维护与发布.md)。
+类型整理的返工依据见 历史来源（外部历史资料）（项目文档 `docs/维护与发布.md`）。

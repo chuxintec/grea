@@ -1,8 +1,8 @@
 # Go六服示例框架（开发候选）
 
-通用Go执行能力归beaver。模板/生成器/依赖/合同/许可与历史验证已定向冻结交接（GREA 安装目录 `proposals/beaver-execution-handoff.md`），0.3候选07已交付通用Go工具与自有六服/Unity联调证据；GREA现按固定07及08/09身份接入部分候选、协议和计划路由，详见[有限适配](beaver.md#固定03候选07和08的有限适配)。数据库/Docker和Go构建执行未在本轮命名适配中接入，不代表上游未实现。原server_go_project合同和消费者仍未替代；下文是旧有限示例的实际合同，不用新工具证据升级它。
+[通用Go执行能力归beaver。模板/生成器/依赖/合同/许可与历史验证已定向冻结交接](../../proposals/beaver-execution-handoff.md)，0.3候选07已交付通用Go工具与自有六服/Unity联调证据；GREA现按固定07及08/09身份接入部分候选、协议和计划路由，详见[有限适配](beaver.md#固定03候选07和08的有限适配)。数据库/Docker和Go构建执行未在本轮命名适配中接入，不代表上游未实现。原server_go_project合同和消费者仍未替代；下文是旧有限示例的实际合同，不用新工具证据升级它。
 
-`grea legacy server_go_project --output new-server`只生成，不安装、编译、启动容器或部署。模板在tools/server-go/template，独立虚构Signal奖励业务；六服入口cmd/gateway、chat、server、login、world、billing。内部gRPC/Proto；MySQL独立所有者库/账号，Redis只限流，真实支付Unavailable。详细边界以 [Go技能](../../../grea-server-go/SKILL.md) 为准。
+`grea legacy server_go_project --output new-server`只生成，不安装、编译、启动容器或部署。模板在tools/server-go/template，独立虚构Signal奖励业务；六服入口cmd/gateway、chat、server、login、world、billing。内部gRPC/Proto；MySQL独立所有者库/账号，Redis只限流，真实支付Unavailable。详细边界以 [Go技能](../../plugin/skills/grea-server-go/SKILL.md) 为准。
 
 Go 1.26.2及go.mod/go.sum固定依赖。生成的api/game.pb.go/game_grpc.pb.go由本例IDL和具名protoc插件产生；重新生成使用protoc-gen-go 1.36.12、protoc-gen-go-grpc 1.6.2与系统protoc。编译各入口或统一`go build -o bin/role ./cmd/role`；Docker需`CGO_ENABLED=0 GOOS=linux GOARCH=arm64`或按目标架构设置，不能把macOS二进制放入Linux镜像。
 

@@ -11,7 +11,7 @@ GREA 维护方法、规范和工具选择。**monkey 恢复原游戏为独立工
 
 ## 按工作流阶段选技能
 
-GREA 的技能按实际工作流划分。阶段专属文档在各自技能的 `references/`；跨阶段共用文档（含原 `docs/` 的产品指南、provider 与工具说明、示例）只有一份，集中在本技能的 `references/`，其他技能直接链接这里。所有文档都在技能环境内，不依赖仓库其他目录。只加载当前阶段的技能和需要的 reference。
+GREA 技能只承载规范与工作流，按实际工作流划分且独立于仓库：阶段专属规范在各自技能的 `references/`，跨阶段共用规范只有一份，在本技能的 `references/`，其他技能直接链接这里。产品安装、接口和工具使用说明属于项目文档 `docs/`，技能只以路径提及、不依赖它。只加载当前阶段的技能和需要的 reference。
 
 | 阶段 | 用户任务 | 技能 | 执行模块 |
 | --- | --- | --- | --- |
@@ -37,13 +37,13 @@ GREA 的技能按实际工作流划分。阶段专属文档在各自技能的 `r
 - 判断本次结果时读[测试与结果交付](references/测试与结果交付.md)，代码、原生、真实输入、视觉及产品业务分别报告。
 - 记录开发状态或协作范围时读[开发计划与进度管理](references/开发计划与进度管理.md)和[功能模块并行协作](references/功能模块并行协作.md)。是否并行仍服从用户授权。
 - 工具维护读[选择与调用](references/工具选择与调用.md)；项目脚本复制增多或想把能力交给 monkey/beaver 时读[项目脚本沉淀与工具晋升](references/项目脚本沉淀与工具晋升.md)；复盘读[开发复盘与规范更新](references/开发复盘与规范更新.md)。术语含义不清时读[术语表](references/术语表.md)；历史经验及失败处理由共同约束按需导航。
-- 本地运营数据分析见[数据与预览](references/providers/lifecycle-analysis.md)：过渡旧入口，不执行生产运营。
+- 本地运营数据分析见数据与预览（项目文档 `docs/providers/lifecycle-analysis.md`）：过渡旧入口，不执行生产运营。
 
-## 共享参考
+## 共享规范
 
-- 产品使用：[使用指南](references/使用指南.md)、[安装与平台](references/安装与平台.md)、[Unity指南](references/Unity指南.md)、[接口与证据说明](references/接口与证据说明.md)、[故障排查](references/故障排查.md)、[维护与发布](references/维护与发布.md)；总索引见[产品文档索引](references/产品文档索引.md)。
 - 跨阶段结果与对照：[测试与结果交付](references/测试与结果交付.md)、[实际体验与画面对照](references/实际体验与画面对照.md)。
-- 外部工具与模块：[provider 说明](references/providers/README.md)（含 monkey、beaver、Go、换皮、研究等接入）、工具说明（[制品与资源检查](references/tools/制品与资源检查.md)、[规则与格式检查](references/tools/规则与格式检查.md)、[Shader 工具](references/tools/Shader工具.md)、[Memory Profiler 安装](references/tools/MemoryProfiler安装.md)），示例数据在 `references/examples/`。
+- 工具链：[monkey与beaver调用](references/monkey与beaver调用.md)、[工具选择与调用](references/工具选择与调用.md)。
+- 产品使用说明（安装、接口、provider 与工具细节）见项目 `docs/README.md`；它是项目概览，不是技能规范的组成部分。
 
 ## 模块与执行
 

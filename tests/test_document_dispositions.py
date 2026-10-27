@@ -16,9 +16,7 @@ class DocumentationTests(unittest.TestCase):
    if row['status']=='retained_with_reason':self.assertTrue(row['execution_note'])
  def test_core_navigation_and_current_links(self):
   expected={'README.md','安装与平台.md','使用指南.md','接口与证据说明.md','Unity指南.md','维护与发布.md','故障排查.md'}
-  # Product guides live in the skill environment (grea's shared references); docs/ is gone.
-  expected=(expected-{'README.md'})|{'产品文档索引.md'}
-  self.assertTrue(expected<={p.name for p in (ROOT/'plugin/skills/grea/references').glob('*.md')})
-  self.assertFalse((ROOT/'docs').exists())
+  # docs/ is the project overview and product usage; skills hold standards and workflows only.
+  self.assertEqual({p.name for p in (ROOT/'docs').glob('*.md')},expected)
   self.assertTrue(check_docs.check(ROOT)['ok'])
   self.assertEqual(list((ROOT/'docs/history').glob('*.md')),[])

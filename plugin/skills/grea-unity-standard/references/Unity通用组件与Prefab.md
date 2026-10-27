@@ -7,7 +7,7 @@
 
 ## 通用组件
 
-以下是 v1 候选能力及准入契约；实际已实现类型见 [基础框架包说明](../../grea/references/Unity指南.md)，例如 LifetimeScope/ServiceScope、CommandButton/ButtonPressFeedback/ModalPanel/ScreenHost、Catalog 句柄、AudioPlayer、FileSaveStore 和 DiagnosticBuffer。候选名不保证有同名类；池化/列表/异步资源后端/复杂导航仍为计划项，不生成空类。
+以下是 v1 候选能力及准入契约；实际已实现类型见 基础框架包说明（项目文档 `docs/Unity指南.md`），例如 LifetimeScope/ServiceScope、CommandButton/ButtonPressFeedback/ModalPanel/ScreenHost、Catalog 句柄、AudioPlayer、FileSaveStore 和 DiagnosticBuffer。候选名不保证有同名类；池化/列表/异步资源后端/复杂导航仍为计划项，不生成空类。
 
 | 能力与候选类型 | 输入/所有权 | 输出、故障与最低验收 |
 | --- | --- | --- |
@@ -49,14 +49,14 @@ GREA 的 `com.grea.*` 包（foundation、ui.ugui、editor）是**薄胶水**：�
 
 1. 列出需求和候选的 Unity 官方功能、主流插件。能满足需求时直接使用，记录版本与许可证。
 2. 只有缺口是"把现成方案接到工程标准端口或生命周期"时，才写 GREA 组件；组件只包含这层接缝。
-3. 新组件通过 CMP-01 准入，并在 [基础框架包说明](../../grea/references/Unity指南.md) 登记它对应的主流方案。
+3. 新组件通过 CMP-01 准入，并在 基础框架包说明（项目文档 `docs/Unity指南.md`） 登记它对应的主流方案。
 4. 同一项目中，每项能力只保留一种实现：采用主流方案后，相应 GREA 组件不再挂载或装配。
 
 已实现组件的行为约定：存档恢复由应用显式调用 `FileSaveStore.Recover()`，校验通过的 pending 优先提交，损坏副本隔离保留，主档损坏时从有效 backup 恢复，没有有效副本时拒绝覆盖；`CommandButton` 隐藏时取消当前绑定与旧操作，重新显示时只为仍存活的 owner 恢复绑定，显式 Unbind 或 owner 退出后保持解绑。
 
 有限按压使用 `ButtonPressFeedback`，明确引用独立视觉子节点，点击区域保持稳定；业务仍由 Unity Button/CommandButton 拥有。退出、拖动、失焦、禁用应取消表现，其他指针不能释放当前按压；不将源引擎 Tween/输入缓存搬成通用框架。命令临时不可交互时保留原导航选择；完成不抢回用户或新弹窗已经取得的焦点。接口事件测试、操作系统键盘和鼠标分别验收，不能互相替代。
 
-基础包与两个自有不同结构消费者的当前实现和版本见 [框架说明](../../grea/references/Unity指南.md)，实证边界见 提炼验收（GREA 安装目录 `validation/releases/2026-10-16-unity-framework-extraction.json`）。合成战斗/拼图通过不能推出原游戏完整一致性、其他输入后端或其他平台已通过；品类玩法仍归各项目 Domain/Gameplay。
+基础包与两个自有不同结构消费者的当前实现和版本见 框架说明（项目文档 `docs/Unity指南.md`），实证边界见 提炼验收（GREA 安装目录 `validation/releases/2026-10-16-unity-framework-extraction.json`）。合成战斗/拼图通过不能推出原游戏完整一致性、其他输入后端或其他平台已通过；品类玩法仍归各项目 Domain/Gameplay。
 
 ## 通用 Prefab
 

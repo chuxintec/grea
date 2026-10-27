@@ -15,7 +15,7 @@
 | unity/lifecycle-sample | 自有原生接续／可玩增量验证输入与Editor API示例 |
 | lifecycle-feedback | 合成事件→配置／兼容／回退预览→本地交接调用示例；复用已有工具 |
 
-按任务选工具见 [工具目录](../TOOLS.md)，参数见 [工具说明](../plugin/skills/grea/references/tools/制品与资源检查.md)，第三方接入见 [providers](../plugin/skills/grea/references/providers/README.md)。脚本路径不是工具身份；正式调用使用已登记 ID。
+按任务选工具见 [工具目录](../TOOLS.md)，参数见 [工具说明](../docs/tools/制品与资源检查.md)，第三方接入见 [providers](../docs/providers/README.md)。脚本路径不是工具身份；正式调用使用已登记 ID。
 
 外部转换编排集中在 `src/grea/integrations/monkey/`：identity 固定工具，pipeline 处理计划与执行，audit 核新版产物，package/slice/handoff 保留版本化旧合同。`src/grea/tools/monkey_pipeline.py`、`monkey_bridge.py` 只作为登记入口；解析器由独立 monkey 产品维护。
 

@@ -23,7 +23,7 @@ description: 恢复或转换工程的构建与交付：macOS/Windows 构建、�
 
 衍生工程按 `grea-evolve` 技能 分开来源与新产品/存档/构建身份，原验收和新设计验收不互相替代；交付时区分美术/Spine制作、Unity接入和Player实测状态，可玩构建不等于样板风格批准，约定UI/UE调优在全量换皮与Bug修复之后；本模式不新增发布权限。
 
-生命周期增量版本需一起给源码、配置、制品、存档/协议兼容和已知缺口；本地[配置与发行预览](../grea/references/providers/lifecycle-analysis.md)不执行上传或上线，也不证明渠道支持。
+生命周期增量版本需一起给源码、配置、制品、存档/协议兼容和已知缺口；本地配置与发行预览（项目文档 `docs/providers/lifecycle-analysis.md`）不执行上传或上线，也不证明渠道支持。
 
 
 完整初版导出与接续边界遵循[全量初版工程与协作](../grea/references/全量初版工程与协作.md)。批量转换由固定monkey负责，GREA核交接并编排后续开发；lookup/静态候选不等于原生初版。已有工程的局部修复不无条件重导。

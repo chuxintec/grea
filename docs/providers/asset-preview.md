@@ -1,6 +1,6 @@
 # 资产总览、来源与规格
 
-工具为独立实现，方法来源和许可见第三方说明（GREA 安装目录 `THIRD_PARTY.md`）。继续使用art-ledger，不另建来源台账。每条记录新增可选provenance：source_url、creator、license、license_reference、restrictions、generation_tool/tool_version/model、prompt_reference、source_references；未知保留缺省/明确unknown，不要求老项目伪造许可。版本、来源及许可是声明，工具不自动确权；不在公开仓库存完整私有提示词。
+[工具为独立实现，方法来源和许可见第三方说明](../../THIRD_PARTY.md)。继续使用art-ledger，不另建来源台账。每条记录新增可选provenance：source_url、creator、license、license_reference、restrictions、generation_tool/tool_version/model、prompt_reference、source_references；未知保留缺省/明确unknown，不要求老项目伪造许可。版本、来源及许可是声明，工具不自动确权；不在公开仓库存完整私有提示词。
 
 设计brief记录功能用途、引擎/相机/显示尺寸、画布/透明、原生尺度读图、视觉锁（轮廓/色板角色/视角/光照/边缘/运动）、状态/变体、资源预算及验收。先沿已有设计挑代表样板，授权后按资源族制作；生成结果不等于可交付。原图、切片、Spine及目标引用沿现有台账维护。
 

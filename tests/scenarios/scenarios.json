@@ -609,7 +609,7 @@
       "primary_references": [
         "plugin/skills/grea-evolve/SKILL.md",
         "plugin/skills/grea-evolve/references/有限二次开发.md",
-        "plugin/skills/grea/references/providers/theme-assets.md"
+        "docs/providers/theme-assets.md"
       ]
     },
     {
@@ -627,7 +627,7 @@
         "不强制覆盖后续改动或把预览当美术批准"
       ],
       "primary_references": [
-        "plugin/skills/grea/references/providers/theme-assets.md",
+        "docs/providers/theme-assets.md",
         "plugin/skills/grea-reskin/SKILL.md"
       ]
     }

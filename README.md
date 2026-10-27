@@ -2,23 +2,23 @@
 
 GREA 以 Skill、规范与方法为主，编排两个随版本统一发布的模块：**monkey 恢复原游戏为独立候选，beaver 操作可开发工程**。游戏开发者负责具体业务与实际可玩结果。CLI、stdio MCP 与轻量脚本只提供发现、版本锁定、模块委托和调用回执。
 
-当前版本 **2026.10.27**：GREA 以 [modules.lock.json](modules.lock.json) 固定 monkey 0.4.1 与 beaver 0.4.0，完整插件内置两者 wheel，`grea_modules` 校验并隔离安装。原 GREA 执行工具已移入模块（工具 ID 不变，`run-tool` 自动委托 `monkey tool <id>` / `beaver tool <id>`）。12 个技能按工作流阶段组织且各自自成一体。见[本版说明](validation/release-notes/v2026.10.27.md)、[工具链审计与统一发布](proposals/triad-toolchain-audit-20261027.md)与[beaver接入](plugin/skills/grea/references/providers/beaver.md)。
+当前版本 **2026.10.27**：GREA 以 [modules.lock.json](modules.lock.json) 固定 monkey 0.4.1 与 beaver 0.4.0，完整插件内置两者 wheel，`grea_modules` 校验并隔离安装。原 GREA 执行工具已移入模块（工具 ID 不变，`run-tool` 自动委托 `monkey tool <id>` / `beaver tool <id>`）。12 个技能按工作流阶段组织，只承载规范与流程且不依赖仓库其他目录；项目概览与使用说明在 `docs/`。见[本版说明](validation/release-notes/v2026.10.27.md)、[工具链审计与统一发布](proposals/triad-toolchain-audit-20261027.md)与[beaver接入](docs/providers/beaver.md)。
 
 提取、编译、readiness、真实输入和原版一致性分别报告，未执行层保持未验。
 
-[下载正式版](https://github.com/chuxintec/grea/releases/latest) · [开始使用](plugin/skills/grea/references/使用指南.md) · [工具目录](TOOLS.md) · [验证记录](validation/README.md)
+[下载正式版](https://github.com/chuxintec/grea/releases/latest) · [开始使用](docs/使用指南.md) · [工具目录](TOOLS.md) · [验证记录](validation/README.md)
 
 ## 能解决什么问题
 
 | 任务 | 当前能力 | 边界与入口 |
 | --- | --- | --- |
 | 原包盘点与取证 | 文件/目录摘要、包体清单、证据清单；wxapkg、XAPK 及资源解包工具；可选反编译和资源提取供应方 | 不执行待分析源代码，不推断隐藏服务器规则；[取证技能](plugin/skills/grea-evidence/SKILL.md) |
-| 资源与代码分析 | Unity GUID/依赖闭包与资产台账；Cocos 资源/模块有限静态解析、配置预检、Shader/数值纹理与透明边检查 | 版本/格式按 adapter 声明；缺失、动态拼装及未支持输入保持 partial/unsupported；[专项契约](plugin/skills/grea/references/providers/README.md) |
+| 资源与代码分析 | Unity GUID/依赖闭包与资产台账；Cocos 资源/模块有限静态解析、配置预检、Shader/数值纹理与透明边检查 | 版本/格式按 adapter 声明；缺失、动态拼装及未支持输入保持 partial/unsupported；[专项契约](docs/providers/README.md) |
 | 跨引擎原生转换 | 从 Cocos/Laya/H5 等来源的证据建立原生 Unity 制作、规则与可观察结果契约；有限 Sprite/Clip 配方、强类型配置候选与 Editor 伴随工具 | 不在 Player 重建源节点图或源生命周期；完整游戏仍需工程实现与验证；[原生转换](plugin/skills/grea-native-port/SKILL.md) |
 | Unity 包体恢复 | 结合 AssetRipper、UnityPy、ILSpy、Cpp2IL 等可选供应方，恢复资源引用与 Mono/IL2CPP 代码证据 | 工具检测不等于恢复完成；受版本、裁剪、符号和供应方格式限制；[Unity恢复](plugin/skills/grea-unity-recovery/SKILL.md) |
-| 工程标准与生成 | 项目配置/Schema、静态校验、只读规划、受控生成与中断恢复；明确文件所有权；Foundation/uGUI/Editor 三个 UPM 源码包及最小消费者 | 现有工程不自动迁移；生成不覆盖人工修改；[Unity指南](plugin/skills/grea/references/Unity指南.md) |
+| 工程标准与生成 | 项目配置/Schema、静态校验、只读规划、受控生成与中断恢复；明确文件所有权；Foundation/uGUI/Editor 三个 UPM 源码包及最小消费者 | 现有工程不自动迁移；生成不覆盖人工修改；[Unity指南](docs/Unity指南.md) |
 | 一致性与回归 | 规则/事件轨迹首差异、表现与性能合同检查、资源/载荷回读；源代码、Editor、实际 Player 元数据分层 | 合同检查不证明输入采集正确、可玩或完整视觉/性能通过；[一致性技能](plugin/skills/grea-parity/SKILL.md) |
-| 证据、候选与交付 | Case/revision、证据哈希、追加式审阅声明；执行预算/日志/退出与清理回执；包体身份、封装及交付规则 | 审阅声明不执行游戏；安装/发布沿用户授权，未测平台单列；[接口说明](plugin/skills/grea/references/接口与证据说明.md) |
+| 证据、候选与交付 | Case/revision、证据哈希、追加式审阅声明；执行预算/日志/退出与清理回执；包体身份、封装及交付规则 | 审阅声明不执行游戏；安装/发布沿用户授权，未测平台单列；[接口说明](docs/接口与证据说明.md) |
 
 ## 安装与第一次调用
 
@@ -41,7 +41,7 @@ codex plugin list --marketplace grea-local --json
 
 重启客户端并开新会话，调用 MCP `session`，确认版本与包路径来自安装副本，再执行一次实际工具调用。installed/enabled、技能可见、MCP 工具发现与工具业务成功分别检查。
 
-Claude Code 的安装入口和 stdio 清单也随包提供，按 [安装与平台](plugin/skills/grea/references/安装与平台.md) 操作。两份 stdio 配置可验证，不等于两个原生客户端都已验收。完整插件支持原生 macOS Apple Silicon、Windows x64；Intel Mac、Windows ARM64、WSL/Wine 不自动支持。升级采用新目录并保留旧版本回退，不覆盖游戏或 Case。
+Claude Code 的安装入口和 stdio 清单也随包提供，按 [安装与平台](docs/安装与平台.md) 操作。两份 stdio 配置可验证，不等于两个原生客户端都已验收。完整插件支持原生 macOS Apple Silicon、Windows x64；Intel Mac、Windows ARM64、WSL/Wine 不自动支持。升级采用新目录并保留旧版本回退，不覆盖游戏或 Case。
 
 ### 源码使用与开发
 
@@ -91,7 +91,7 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 | 5 对照修复 | [grea-parity](plugin/skills/grea-parity/SKILL.md) | 规则、随机、视觉、动画、布局和输入的局部差异；真实体验对照 | beaver |
 | 6 构建交付 | [grea-delivery](plugin/skills/grea-delivery/SKILL.md) | 测试与结果分层、Editor 任务、构建、制品身份、封装、预览与发布 | beaver |
 
-全部文档都在技能环境内：阶段专属文档在各技能 `references/`，跨阶段共用文档（含原 `docs/` 的产品指南、provider/工具说明与示例）只有一份，集中在 [grea 技能的 references](plugin/skills/grea/references/产品文档索引.md)，其他技能直接链接；`check_grea_skill` 拒绝离开 `plugin/skills` 的链接。研究建议不自动创建开发项目，目标选择独立于源引擎，旧调用省略目标仍为 Unity。
+技能只承载规范与工作流且独立于仓库：阶段专属规范在各技能 `references/`，跨阶段共用规范只有一份，在 grea 技能的 `references/`；`check_grea_skill` 拒绝离开 `plugin/skills` 的链接。项目概览与产品使用说明在 [docs](docs/README.md)。研究建议不自动创建开发项目，目标选择独立于源引擎，旧调用省略目标仍为 Unity。
 
 这些技能面向有原版依据的恢复与维护及明确获准的目标工程。原创 Unity 开发不自动套用恢复门槛。权威流程维护在 `plugin/skills/*/SKILL.md` 与各自 references；docs 解释产品使用，避免两套竞争规范。
 
@@ -105,11 +105,11 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 - **原生制作**：`unity_config_candidate`、`unity_native_assets` 生成有限、受契约保护的候选；Editor API 导入后由原生资产制作。不解释完整源引擎，每张表保持一个制作源，人工冲突拒绝覆盖。
 - **交付辅助**：`verify_payload_tree`、`package_windows_portable`、`video_manifest`、`video_sheet` 与包备份/恢复工具；是否支持当前目标先查工具说明。
 
-Cocos 2.4 与 Creator 3.4.1 的有限格式解析有各自适配边界，不能互相猜解；Laya/H5/Egret 工作流不意味着任意版本解析器已实现。Spine 数据闭包检查也不等于渲染、运行时兼容或许可已满足。详见 [供应方与格式契约](plugin/skills/grea/references/providers/README.md)。
+Cocos 2.4 与 Creator 3.4.1 的有限格式解析有各自适配边界，不能互相猜解；Laya/H5/Egret 工作流不意味着任意版本解析器已实现。Spine 数据闭包检查也不等于渲染、运行时兼容或许可已满足。详见 [供应方与格式契约](docs/providers/README.md)。
 
 Unity 侧已有 [Foundation/uGUI/Editor 三个 UPM 包](tools/unity/framework/packages)、受控工程生成与恢复入口，以及 [数值战斗/网格益智自有最小消费者](tools/unity/templates/framework-samples/README.md)。它们验证薄胶水与有限闭环，不是完整 IAA 模板；复杂背包、Buff、商业奖励和列表框架仍是 [候选范围](proposals/numeric-template.md)，不声明已批量适配所有品类。项目可沿用自己的框架和主流插件。
 
-开发候选的 [主题映射](plugin/skills/grea/references/providers/theme-assets.md) 提供校验、前后预览及可回退增量包；独立Editor伴随工具保护单Sprite PNG身份与几何。骨骼、多Sprite、尺寸迁移和游戏玩法不自动处理。
+开发候选的 [主题映射](docs/providers/theme-assets.md) 提供校验、前后预览及可回退增量包；独立Editor伴随工具保护单Sprite PNG身份与几何。骨骼、多Sprite、尺寸迁移和游戏玩法不自动处理。
 
 ## Case 与典型工作流
 
@@ -120,7 +120,7 @@ Case 是显式创建的项目内追加记录：来源基线→候选 revision→
 3. **维护/修复**：冻结本次候选，按差异选择受影响检查。仅审计器变化可重审未变载荷；运行时或资源变化须验证相关实际消费者。普通包的销毁/退出不能只借开发包结果。
 4. **交付**：固定输入与目标，新 buildId 输出，检查完整载荷与封装，按授权发布；同源不等于跨平台已运行，元数据或解包校验不等于安装/实机通过。
 
-Case 操作、严格 JSON Schema、退出码、预算、清理和审阅边界见 [接口与证据说明](plugin/skills/grea/references/接口与证据说明.md)。原始游戏包、玩家档、许可证材料、GUI/性能证据留项目，不进入公共工具仓库。
+Case 操作、严格 JSON Schema、退出码、预算、清理和审阅边界见 [接口与证据说明](docs/接口与证据说明.md)。原始游戏包、玩家档、许可证材料、GUI/性能证据留项目，不进入公共工具仓库。
 
 ## 依赖、验收与许可
 
@@ -134,20 +134,20 @@ Case 操作、严格 JSON Schema、退出码、预算、清理和审阅边界见
 
 | 文档 | 内容 |
 | --- | --- |
-| [安装与平台](plugin/skills/grea/references/安装与平台.md) | 插件/源码安装、供应方、升级与回退 |
-| [使用指南](plugin/skills/grea/references/使用指南.md) | 首次调用、输入、回执与任务选择 |
-| [接口与证据说明](plugin/skills/grea/references/接口与证据说明.md) | CLI/MCP 操作、Schema、Case、错误与执行预算 |
-| [Unity指南](plugin/skills/grea/references/Unity指南.md) | 规划、生成、制作、框架及验收边界 |
-| [故障排查](plugin/skills/grea/references/故障排查.md) | 依赖、进程、路径与失败回执 |
-| [维护与发布](plugin/skills/grea/references/维护与发布.md) | 源码职责、检查、构建与发布流程 |
-| [全部文档导航](plugin/skills/grea/references/产品文档索引.md) / [贡献指南](CONTRIBUTING.md) | 专项格式、测试和贡献入口 |
+| [安装与平台](docs/安装与平台.md) | 插件/源码安装、供应方、升级与回退 |
+| [使用指南](docs/使用指南.md) | 首次调用、输入、回执与任务选择 |
+| [接口与证据说明](docs/接口与证据说明.md) | CLI/MCP 操作、Schema、Case、错误与执行预算 |
+| [Unity指南](docs/Unity指南.md) | 规划、生成、制作、框架及验收边界 |
+| [故障排查](docs/故障排查.md) | 依赖、进程、路径与失败回执 |
+| [维护与发布](docs/维护与发布.md) | 源码职责、检查、构建与发布流程 |
+| [全部文档导航](docs/README.md) / [贡献指南](CONTRIBUTING.md) | 专项格式、测试和贡献入口 |
 
 Skill 维护源只在 `plugin/skills/`，发现/绑定/薄适配放 `src/grea/`，自身维护脚本放 `scripts/`。旧 `src/grea/tools/` 与 `tools/` 执行实现冻结交 beaver 接收，验证后再退休。保留工具 ID、调用契约和旧证据；改动按实际风险运行相关测试，发布前完成既有 CI 和制品门禁。
 
-开发候选工具：[调研归一与报告](plugin/skills/grea/references/providers/research.md)、[Creator3.8.8五层示例与有限转换](plugin/skills/grea/references/providers/cocos-target.md)、[Go六服虚构事务示例](plugin/skills/grea/references/providers/server-go.md)。生成/编译不替代Editor、浏览器、数据库或六服运行；实际完成边界见 [本地开发记录](proposals/design/research-cocos-go.md)。
+开发候选工具：[调研归一与报告](docs/providers/research.md)、[Creator3.8.8五层示例与有限转换](docs/providers/cocos-target.md)、[Go六服虚构事务示例](docs/providers/server-go.md)。生成/编译不替代Editor、浏览器、数据库或六服运行；实际完成边界见 [本地开发记录](proposals/design/research-cocos-go.md)。
 
-未发布生命周期增量：stage/work_mode/delivery_level规划与变更v2合同、固定[monkey候选接续](plugin/skills/grea/references/providers/monkey.md)、静态资产联系表及尺寸/色数检查已实现；不代表原生可玩或生产运营。当前范围/待验只维护在[生命周期计划](proposals/lifecycle-roadmap.md)。
+未发布生命周期增量：stage/work_mode/delivery_level规划与变更v2合同、固定[monkey候选接续](docs/providers/monkey.md)、静态资产联系表及尺寸/色数检查已实现；不代表原生可玩或生产运营。当前范围/待验只维护在[生命周期计划](proposals/lifecycle-roadmap.md)。
 
-`compatibility_plan`和`operations_preview`已提供有限本地兼容/事件/经济流/配置候选工具；见[精确边界](plugin/skills/grea/references/providers/lifecycle-analysis.md)。没有真实运营数据、线上写入或发行渠道验收，不能把候选分析称为全体系交付完成。
+`compatibility_plan`和`operations_preview`已提供有限本地兼容/事件/经济流/配置候选工具；见[精确边界](docs/providers/lifecycle-analysis.md)。没有真实运营数据、线上写入或发行渠道验收，不能把候选分析称为全体系交付完成。
 
-批量恢复统一从[monkey 工具链](plugin/skills/grea/references/providers/monkey.md)进入：GREA 固定来源与工具 → monkey 导出独立初版 → GREA 核验文件与原生交接 → 游戏开发。`monkey_pipeline` 为新入口，历史工具 ID 保持兼容；新版 GREA 源码中的能力不等于已安装客户端自动升级。
+批量恢复统一从[monkey 工具链](docs/providers/monkey.md)进入：GREA 固定来源与工具 → monkey 导出独立初版 → GREA 核验文件与原生交接 → 游戏开发。`monkey_pipeline` 为新入口，历史工具 ID 保持兼容；新版 GREA 源码中的能力不等于已安装客户端自动升级。

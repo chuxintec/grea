@@ -12,7 +12,7 @@
 
 已知文件/标识仍在 Player 源候选中时报告 fail；移除、改名或未命中时仍为 not_run / requires_editor_confirmation。合法 JSON DTO、存档 ID、GUID、Spine、有限业务 Tick 不因拼写被禁止。开放值映射配合生命周期/派发只列 review hint。C# 词法结果不是语义绑定；条件编译、asmref、UPM、别名、反射和计算型动态加载需后两层核验。报告含源码字节 SHA、程序集候选、待审队列、已复用的 GUID 闭包和覆盖限制。
 
-Editor 层位于 NativeExitEditorAudit.cs（GREA 安装目录 `tools/unity/audit/NativeExitEditorAudit.cs`）。只复制到明确授权的**隔离工程**的 Editor 目录，通过既有 `unity_cli`/`unity_pipeline` 调用 `Grea.Tools.NativeExitEditorAudit.Run`，显式传 `-greaAuditRequest /absolute/request.json`：
+Editor 层位于 [NativeExitEditorAudit.cs](../../tools/unity/audit/NativeExitEditorAudit.cs)。只复制到明确授权的**隔离工程**的 Editor 目录，通过既有 `unity_cli`/`unity_pipeline` 调用 `Grea.Tools.NativeExitEditorAudit.Run`，显式传 `-greaAuditRequest /absolute/request.json`：
 
 ```json
 {"schema_version":1,"roots":["Assets/Game/Scenes/Main.unity"],"dynamic_roots":[],"output":"/absolute/outside-project/new-editor-report.json"}

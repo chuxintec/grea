@@ -18,4 +18,4 @@
 
 Unity/Cocos Services适配共用HTTP JSON；Gameplay先持久pending后发送，异常保留同号内容，销毁/会话切换拒绝迟到结果。客户端渲染失败不重发业务。接口示例不代替各引擎的真实网络/存档验收。
 
-按 [Go模板说明](../../grea/references/providers/server-go.md) 在独立栈验证。容器名/网络/卷/端口与产品分离，只清理本次身份；不能重启现有服务或部署公网。实际MySQL提交/回读、同号重试和未知结果测试与只编译/compose配置分别报告。
+按 Go模板说明（项目文档 `docs/providers/server-go.md`） 在独立栈验证。容器名/网络/卷/端口与产品分离，只清理本次身份；不能重启现有服务或部署公网。实际MySQL提交/回读、同号重试和未知结果测试与只编译/compose配置分别报告。

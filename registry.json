@@ -40,7 +40,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/unity-assets/AssetRipper-2.0.0/AssetRipper.GUI.Free"
@@ -111,7 +111,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/Cpp2IL/Cpp2IL-2022.1.0-pre-release.21-OSX-ARM64-adhoc"
@@ -182,7 +182,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/ILSpy/ilspycmd"
@@ -252,7 +252,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "apktool",
       "capability": {
@@ -309,7 +309,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "jadx",
       "capability": {
@@ -367,7 +367,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "rizin",
       "capability": {
@@ -435,7 +435,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "binwalk",
       "capability": {
@@ -493,7 +493,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "7zz",
       "capability": {
@@ -555,7 +555,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -605,7 +605,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -660,7 +660,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -714,7 +714,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -780,7 +780,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -834,7 +834,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -883,7 +883,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "dependency_library",
@@ -932,7 +932,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "dependency_library",
@@ -982,7 +982,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "dependency_library",
@@ -1038,7 +1038,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -1082,7 +1082,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "provider_inventory",
@@ -1131,7 +1131,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "provider_inventory",
@@ -1167,7 +1167,7 @@
       "formats": "Unity Assets and ledger JSON",
       "side_effects": "read-only snapshots and explicit new reports; no migration",
       "usage": "grea describe-tool {\"tool_id\": \"unity_asset_ledger\"}",
-      "output_schema": "JSON; grea/plugin/skills/grea/references/tools/制品与资源检查.md",
+      "output_schema": "JSON; grea/docs/tools/制品与资源检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
@@ -1193,7 +1193,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1274,7 +1274,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1355,7 +1355,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1436,7 +1436,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1517,7 +1517,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1596,7 +1596,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1651,7 +1651,7 @@
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"audit_numeric_texture\"}",
-      "output_schema": "JSON; see plugin/skills/grea/references/tools/规则与格式检查.md",
+      "output_schema": "JSON; see docs/tools/规则与格式检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
@@ -1677,7 +1677,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1732,7 +1732,7 @@
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"compare_events\"}",
-      "output_schema": "JSON; see plugin/skills/grea/references/tools/规则与格式检查.md",
+      "output_schema": "JSON; see docs/tools/规则与格式检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
@@ -1758,7 +1758,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1813,7 +1813,7 @@
       "formats": "raw floats / JSONL / explicitly trusted Laya parser",
       "side_effects": "read-only except explicit new report; Laya loads selected local Python",
       "usage": "grea describe-tool {\"tool_id\": \"laya_contract_audit\"}",
-      "output_schema": "JSON; see plugin/skills/grea/references/tools/规则与格式检查.md",
+      "output_schema": "JSON; see docs/tools/规则与格式检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
@@ -1838,7 +1838,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -1915,7 +1915,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "glslangValidator",
       "capability": {
@@ -1984,7 +1984,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "spirv-cross",
       "capability": {
@@ -2053,7 +2053,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "spirv-val",
       "capability": {
@@ -2121,7 +2121,7 @@
         ],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/providers/il2cpp/Il2CppInspectorRedux/2026.2/cli/Il2CppInspectorRedux.CLI-osx-arm64/Il2CppInspector.Redux.CLI",
@@ -2162,7 +2162,7 @@
       "formats": "Pillow supported raster images; Pillow required",
       "side_effects": "reads images; writes explicit new JSON only",
       "usage": "grea describe-tool {\"tool_id\": \"image_alpha_audit\"}",
-      "output_schema": "JSON; grea/plugin/skills/grea/references/tools/制品与资源检查.md",
+      "output_schema": "JSON; grea/docs/tools/制品与资源检查.md",
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
@@ -2188,7 +2188,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -2262,7 +2262,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -2396,7 +2396,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -2474,7 +2474,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -2552,7 +2552,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -2636,7 +2636,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -2751,7 +2751,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/tools/dotnet/AssemblySanitizer/bin/Release/net8.0/AssemblySanitizer.dll"
@@ -2857,7 +2857,7 @@
         ],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "system_binary": "spirv-dis",
       "capability": {
@@ -2920,7 +2920,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/adapters/wechat/export_all_bundle_assets.py",
@@ -2982,7 +2982,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [],
       "capability": {
@@ -3078,7 +3078,7 @@
         "architectures": [],
         "windows_status": "native_configuration_required",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [
         "{grea}/.private/adapters/wechat/decrypt_webgl_xxtea.py",
@@ -3138,7 +3138,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [],
       "capability": {
@@ -3231,7 +3231,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "required_files": [],
       "capability": {
@@ -3332,7 +3332,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -3392,7 +3392,7 @@
         "architectures": [],
         "windows_status": "native_adapter_requires_independent_verification",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "editor_only",
@@ -3450,7 +3450,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "editor_only",
@@ -4103,7 +4103,7 @@
         "--help"
       ],
       "check_level": "help-only",
-      "usage": "Copy explicit FROM=TO mappings unchanged into a new or empty disjoint output; see plugin/skills/grea/references/tools/制品与资源检查.md.",
+      "usage": "Copy explicit FROM=TO mappings unchanged into a new or empty disjoint output; see docs/tools/制品与资源检查.md.",
       "execution": {
         "command": [
           "beaver",
@@ -4183,8 +4183,8 @@
       "check_level": "synthetic-and-private-replay",
       "formats": "Cocos 2.4 compiled-v1 / explicit pack and selected bundle import assets; explicit Creator 3.4.1 index/CCON JSON v1 (no CCONB or curve execution)",
       "side_effects": "Read explicit sources; create a new candidate directory only; never execute input JS or modify Unity",
-      "usage": "grea run-tool with explicit --input/--output and --adapter; see plugin/skills/grea/references/providers/cocos-static.md",
-      "output_schema": "Versioned structural evidence JSON; see plugin/skills/grea/references/providers/cocos-static.md",
+      "usage": "grea run-tool with explicit --input/--output and --adapter; see docs/providers/cocos-static.md",
+      "output_schema": "Versioned structural evidence JSON; see docs/providers/cocos-static.md",
       "tested_samples": "Own synthetic success/failure inputs; private replay hashes and limitations in docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
@@ -4210,7 +4210,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/cocos-static.md; optional AST provider requires Node and npm ci with the pinned lock."
+        "remediation": "See docs/providers/cocos-static.md; optional AST provider requires Node and npm ci with the pinned lock."
       },
       "required_files": [],
       "capability": {
@@ -4262,8 +4262,8 @@
       "check_level": "synthetic-and-private-replay",
       "formats": "ECMAScript 2020 literal loader tables; obfuscated factory candidates remain partial",
       "side_effects": "Read explicit sources; create a new candidate directory only; never execute input JS or modify Unity",
-      "usage": "grea run-tool with explicit --input/--output and --adapter; see plugin/skills/grea/references/providers/cocos-static.md",
-      "output_schema": "Versioned structural evidence JSON; see plugin/skills/grea/references/providers/cocos-static.md",
+      "usage": "grea run-tool with explicit --input/--output and --adapter; see docs/providers/cocos-static.md",
+      "output_schema": "Versioned structural evidence JSON; see docs/providers/cocos-static.md",
       "tested_samples": "Own synthetic success/failure inputs; private replay hashes and limitations in docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
@@ -4290,7 +4290,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/cocos-static.md; optional AST provider requires Node and npm ci with the pinned lock."
+        "remediation": "See docs/providers/cocos-static.md; optional AST provider requires Node and npm ci with the pinned lock."
       },
       "required_files": [
         "{grea}/tools/cocos/node_modules/acorn/package.json"
@@ -4345,7 +4345,7 @@
       "check_level": "synthetic-and-isolated-native-evidence",
       "formats": "Unity Assets C# lexical candidates and text GUID roots; never a complete native-pass verdict",
       "side_effects": "Read explicitly selected source/metadata; create a new report; no inspected DLL execution or project mutation",
-      "usage": "grea run-tool with explicit policy and source paths; see plugin/skills/grea/references/providers/unity-native-exit.md",
+      "usage": "grea run-tool with explicit policy and source paths; see docs/providers/unity-native-exit.md",
       "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
@@ -4372,7 +4372,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/unity-native-exit.md; no automatic SDK/Editor install."
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
       "required_files": [],
       "capability": {
@@ -4428,7 +4428,7 @@
       "check_level": "synthetic-and-isolated-native-evidence",
       "formats": "Mono managed DLL metadata with explicit complete manifest and policy; IL2CPP unsupported",
       "side_effects": "Read explicitly selected source/metadata; create a new report; no inspected DLL execution or project mutation",
-      "usage": "grea run-tool with explicit policy and source paths; see plugin/skills/grea/references/providers/unity-native-exit.md",
+      "usage": "grea run-tool with explicit policy and source paths; see docs/providers/unity-native-exit.md",
       "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
@@ -4456,7 +4456,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/unity-native-exit.md; no automatic SDK/Editor install."
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
       "required_files": [
         "{grea}/tools/unity/assembly-audit/bin/Release/net8.0/Grea.AssemblyAudit.dll",
@@ -4509,7 +4509,7 @@
       "check_level": "synthetic-and-isolated-native-evidence",
       "formats": "Closed scalar schema + JSON rows → strongly typed C#/Editor-only importer candidates; no runtime JSON",
       "side_effects": "Read explicit inputs; create candidate output directory, repeat identical candidates unchanged; refuse manual conflicts. Editor companion requires explicit isolated project and creates native assets.",
-      "usage": "See plugin/skills/grea/references/providers/unity-authoring.md",
+      "usage": "See docs/providers/unity-authoring.md",
       "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
@@ -4534,7 +4534,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/unity-native-exit.md; no automatic SDK/Editor install."
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
       "required_files": [],
       "capability": {
@@ -4590,7 +4590,7 @@
       "check_level": "synthetic-and-isolated-native-evidence",
       "formats": "Finite Sprite trim/rotation/border and explicit linear Transform clip recipe; Spine closure check only",
       "side_effects": "Read explicit inputs; create candidate output directory, repeat identical candidates unchanged; refuse manual conflicts. Editor companion requires explicit isolated project and creates native assets.",
-      "usage": "See plugin/skills/grea/references/providers/unity-authoring.md",
+      "usage": "See docs/providers/unity-authoring.md",
       "output_schema": "Versioned layer-separated evidence; input schemas generated under schemas/",
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
@@ -4617,7 +4617,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/unity-native-exit.md; no automatic SDK/Editor install."
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
       "required_files": [],
       "capability": {
@@ -4679,7 +4679,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/unity-native-exit.md; no automatic SDK/Editor install."
+        "remediation": "See docs/providers/unity-native-exit.md; no automatic SDK/Editor install."
       },
       "id": "evidence_manifest",
       "probe": [
@@ -4763,7 +4763,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/observation-tools.md"
+        "remediation": "See docs/providers/observation-tools.md"
       },
       "id": "config_preflight",
       "probe": [
@@ -4782,7 +4782,7 @@
       },
       "formats": "typed-json-v1 explicit table contracts, JSON exports and reference rules",
       "usage": "--contract CONTRACT --output NEW_REPORT",
-      "output_schema": "Versioned JSON report; see plugin/skills/grea/references/providers/observation-tools.md",
+      "output_schema": "Versioned JSON report; see docs/providers/observation-tools.md",
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
@@ -4844,7 +4844,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/observation-tools.md"
+        "remediation": "See docs/providers/observation-tools.md"
       },
       "id": "presentation_audit",
       "probe": [
@@ -4865,7 +4865,7 @@
       },
       "formats": "presentation-observation-v1 actual per-frame component state",
       "usage": "--input CAPTURE --output NEW_REPORT",
-      "output_schema": "Versioned JSON report; see plugin/skills/grea/references/providers/observation-tools.md",
+      "output_schema": "Versioned JSON report; see docs/providers/observation-tools.md",
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
@@ -4927,7 +4927,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "See plugin/skills/grea/references/providers/observation-tools.md"
+        "remediation": "See docs/providers/observation-tools.md"
       },
       "id": "performance_compare",
       "probe": [
@@ -4946,7 +4946,7 @@
       },
       "formats": "performance-run-v1 fixed workload and measurement identities",
       "usage": "--before RUN --after RUN --output NEW_DIRECTORY",
-      "output_schema": "Versioned JSON report; see plugin/skills/grea/references/providers/observation-tools.md",
+      "output_schema": "Versioned JSON report; see docs/providers/observation-tools.md",
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
@@ -5003,8 +5003,8 @@
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
       "formats": "theme-map-v1 and declared art-ledger-v1; automatic assets limited to existing single-Sprite UI PNG",
       "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "See plugin/skills/grea/references/providers/theme-assets.md; validate-ledger without project/media; validate/preview/prepare with explicit roots",
-      "output_schema": "JSON plan/bundle declarations; plugin/skills/grea/references/providers/theme-assets.md",
+      "usage": "See docs/providers/theme-assets.md; validate-ledger without project/media; validate/preview/prepare with explicit roots",
+      "output_schema": "JSON plan/bundle declarations; docs/providers/theme-assets.md",
       "tested_samples": "Own PNG and rejection fixtures; actual Editor/GUI remain separately recorded",
       "execution": {
         "command": [
@@ -5027,7 +5027,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -5078,7 +5078,7 @@
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
       "formats": "research-input-v1; stage and protocol direction normalization; explicit evidence hashes",
       "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "See plugin/skills/grea/references/providers/research.md; --input JSON --output new-directory",
+      "usage": "See docs/providers/research.md; --input JSON --output new-directory",
       "output_schema": "JSON metrics and Markdown analyst report",
       "tested_samples": "Owned evidence fixtures; no full game re-analysis",
       "execution": {
@@ -5102,7 +5102,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -5148,7 +5148,7 @@
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
       "formats": "Creator3.8.8 create-only five-layer sample",
       "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "See plugin/skills/grea/references/providers/cocos-target.md",
+      "usage": "See docs/providers/cocos-target.md",
       "output_schema": "Versioned generation/conversion JSON manifest",
       "tested_samples": "Owned synthetic fixtures; live runtime status separately recorded",
       "execution": {
@@ -5172,7 +5172,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -5222,7 +5222,7 @@
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
       "formats": "2.4.15 and 3.8.8 bounded serialized objects, explicit UUID closure; unsupported refuses graph",
       "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "See plugin/skills/grea/references/providers/cocos-target.md",
+      "usage": "See docs/providers/cocos-target.md",
       "output_schema": "Versioned generation/conversion JSON manifest",
       "tested_samples": "Owned synthetic fixtures; live runtime status separately recorded",
       "execution": {
@@ -5246,7 +5246,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -5296,7 +5296,7 @@
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
       "formats": "Go six-role development framework; generates source only; no Docker deployment",
       "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "See plugin/skills/grea/references/providers/server-go.md",
+      "usage": "See docs/providers/server-go.md",
       "output_schema": "Versioned generation/conversion JSON manifest",
       "tested_samples": "Owned synthetic fixtures; live runtime status separately recorded",
       "execution": {
@@ -5320,7 +5320,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -5398,7 +5398,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -5447,7 +5447,7 @@
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
       "formats": "Explicitly configured monkey capabilities/convert package-v1; not bundled",
       "side_effects": "Read explicit inputs; create new previews/incremental bundles; never mutate project from Python",
-      "usage": "Configure canonical monkey ID using GREA_PROVIDERS; see plugin/skills/grea/references/providers/monkey.md",
+      "usage": "Configure canonical monkey ID using GREA_PROVIDERS; see docs/providers/monkey.md",
       "output_schema": "JSON metrics and Markdown analyst report",
       "tested_samples": "External provider; current input/version must be pinned",
       "execution": {
@@ -5472,7 +5472,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",
@@ -5538,7 +5538,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -5621,7 +5621,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -5702,7 +5702,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "module_delegate",
@@ -5788,7 +5788,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -5869,7 +5869,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -6032,7 +6032,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -6104,7 +6104,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "builtin",
@@ -6174,7 +6174,7 @@
         "architectures": [],
         "windows_status": "portable_unverified",
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
-        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea/references/providers/windows-native.md."
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
         "implementation": "external_cli",

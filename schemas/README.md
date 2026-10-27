@@ -24,17 +24,17 @@ python3 scripts/generate_contracts.py
 python3 scripts/generate_contracts.py --check
 ```
 
-实际调用从 [使用指南](../plugin/skills/grea/references/使用指南.md) 开始。项目输入示例见 [静态配置](../tests/fixtures/unity-project-v1.json) 和 [生成配置](../tests/fixtures/unity-generation-v1.json)；先核对各自支持范围。
+实际调用从 [使用指南](../docs/使用指南.md) 开始。项目输入示例见 [静态配置](../tests/fixtures/unity-project-v1.json) 和 [生成配置](../tests/fixtures/unity-generation-v1.json)；先核对各自支持范围。
 
 ## 有限制作输入
 
-`unity-config-authoring.schema.json` 定义闭合标量字段表的制作契约；`unity-native-assets.schema.json` 定义明确 Sprite 与 Transform 动画切片。跨字段范围、主键、目标、坐标和生成所有权由工具完整预检。两者由 `src/grea/authoring_contracts.py` 生成，不改变既有操作 Schema；具体边界见 [制作链](../plugin/skills/grea/references/providers/unity-authoring.md)。
+`unity-config-authoring.schema.json` 定义闭合标量字段表的制作契约；`unity-native-assets.schema.json` 定义明确 Sprite 与 Transform 动画切片。跨字段范围、主键、目标、坐标和生成所有权由工具完整预检。两者由 `src/grea/authoring_contracts.py` 生成，不改变既有操作 Schema；具体边界见 [制作链](../docs/providers/unity-authoring.md)。
 
-`change-contract.schema.json` 的可选 art_production 约束换皮阶段与后置调优；`art-ledger.schema.json` 描述持续选样/资源/设定与Spine生产状态，供 theme_assets validate-ledger 消费。结构/引用声明通过不等于真实媒体、用户批准或Editor/Player验收；使用说明见 [主题映射](../plugin/skills/grea/references/providers/theme-assets.md)。
+`change-contract.schema.json` 的可选 art_production 约束换皮阶段与后置调优；`art-ledger.schema.json` 描述持续选样/资源/设定与Spine生产状态，供 theme_assets validate-ledger 消费。结构/引用声明通过不等于真实媒体、用户批准或Editor/Player验收；使用说明见 [主题映射](../docs/providers/theme-assets.md)。
 
 ## 生命周期与本地运营数据
 
-change-contract.schema.json以oneOf显式分开旧v1 ui_ux与有界变更v2；operations.json中的stage/work_mode/delivery_level只作合同/规划，不授予权限。art-ledger新增可选provenance，旧记录仍兼容。operations-event.schema.json由lifecycle_data_contracts生成，定义本地只读事件v1；IANA时区、重复ID/回执、窗口等语义由工具检查。参见[兼容及预览](../plugin/skills/grea/references/providers/lifecycle-analysis.md)。
+change-contract.schema.json以oneOf显式分开旧v1 ui_ux与有界变更v2；operations.json中的stage/work_mode/delivery_level只作合同/规划，不授予权限。art-ledger新增可选provenance，旧记录仍兼容。operations-event.schema.json由lifecycle_data_contracts生成，定义本地只读事件v1；IANA时区、重复ID/回执、窗口等语义由工具检查。参见[兼容及预览](../docs/providers/lifecycle-analysis.md)。
 
 ## monkey 批量工具链
 

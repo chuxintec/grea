@@ -44,7 +44,7 @@ unity run /absolute/own-project --timeout 300 --format json -- -executeMethod Gr
 
 本机观察到的项目 runtime 包含项目兼容修改，许可证要求单独满足 Spine 授权条件；尚无确认可用于本批独立分发的 pristine 匹配 runtime 与授权证据。因此 Spine 原生导入/Player 渲染保留 not_run，不能把闭包检查写成完整 Spine 转换通过。
 
-自有可见渲染补验使用显式相机与原生 SpriteRenderer：五个动画相位、每相位 25 项颜色/透明边/pivot/九宫格及可见动画像素断言，并另验移除转换器的实际 Player backbuffer。复现步骤见 样例（GREA 安装目录 `tools/unity/fixtures/native-authoring/README.md`）。这些是自有有限契约验收，不能替代原游戏画面对照或真实鼠标输入。
+自有可见渲染补验使用显式相机与原生 SpriteRenderer：五个动画相位、每相位 25 项颜色/透明边/pivot/九宫格及可见动画像素断言，并另验移除转换器的实际 Player backbuffer。复现步骤见 [样例](../../tools/unity/fixtures/native-authoring/README.md)。这些是自有有限契约验收，不能替代原游戏画面对照或真实鼠标输入。
 
 ## 审计后的导出边界
 

@@ -10,7 +10,7 @@ import test_theme_assets as fixtures
 ROOT=Path(__file__).resolve().parents[1]
 
 def ledger():
-    return json.loads((ROOT/'plugin/skills/grea/references/examples/art-ledger.example.json').read_text())
+    return json.loads((ROOT/'docs/examples/art-ledger.example.json').read_text())
 
 def production_contract(stage='style_sample',state='candidate'):
     value=fixtures.contract(state=state)

@@ -12,7 +12,7 @@
 
 ## 复验步骤
 
-1. 用GREA包内Python执行`fixture.py --output /path/fresh-owned-source`，锁定外部monkey实现及capabilities，再调用[显式slice入口](../../../plugin/skills/grea/references/providers/monkey.md)。全程不执行Counter.js。
+1. 用GREA包内Python执行`fixture.py --output /path/fresh-owned-source`，锁定外部monkey实现及capabilities，再调用[显式slice入口](../../../docs/providers/monkey.md)。全程不执行Counter.js。
 2. 固定Unity6000.6.2f1。先保留候选、manifest及来源SHA。在全新Unity Editor脚手架中，经PackageManager添加`com.unity.ugui`、必要时`com.unity.2d.sprite`；记录**解析后的实际版本**（本机uGUI builtin2.6.0，不能只记录请求的2.0.0）。候选原件不修，显式复制Assets/Analysis到接续工程并记录差异。
 3. 在接续工程`Assets/Game/Editor/`放NativeAdoption.cs，通过batch executeMethod调用`NativeAdoption.Import`。检查provider的Analysis/editor-readback.json：正确Unity版本、Missing Script0、editableRoundtrip、实际Sprite/UI引用及逐个原生文件hash。导入是create-only；失败半成品保留并另开干净副本，不无条件删除重跑。
 4. 将Runtime/放`Assets/Game/Runtime/`，LifecycleBuilder.cs放`Assets/Game/Editor/`，lc1.json放`Assets/Game/Resources/Config/counter.json`。调用`LifecycleBuilder.Build`，检查Analysis/grea-native-acceptance.json、构建日志、实际.app。只在这个样例执行构建，不对任意用户工程套用。

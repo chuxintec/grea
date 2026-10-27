@@ -86,7 +86,7 @@ def load():
 def check_host(entry):
     support=entry.get('host_support',{})
     if support.get('systems') and platform.system() not in support['systems']:
-        raise GreaError('UNSUPPORTED_HOST','Registered adapter is not configured for this host.',details={'tool_id':entry['id'],'host':platform.system(),'support':support},next_action='Read plugin/skills/grea/references/安装与平台.md; configure the same provider explicitly for this host.')
+        raise GreaError('UNSUPPORTED_HOST','Registered adapter is not configured for this host.',details={'tool_id':entry['id'],'host':platform.system(),'support':support},next_action='Read docs/安装与平台.md; configure the same provider explicitly for this host.')
     if support.get('architectures') and machine() not in support['architectures']:
         raise GreaError('UNSUPPORTED_ARCH','Bundled adapter does not match this CPU.',details={'tool_id':entry['id'],'architecture':platform.machine()},next_action='Install a matching native build and configure its canonical provider ID.')
 

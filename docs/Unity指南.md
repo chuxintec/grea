@@ -1,10 +1,10 @@
 # Unity指南
 
-用途：选择 GREA 已有的 Unity 检查、生成、框架与隔离恢复能力。不自动改动已有游戏；目录/生命周期/制作约束以 [Unity标准技能](../../grea-unity-standard/SKILL.md)为准。
+用途：选择 GREA 已有的 Unity 检查、生成、框架与隔离恢复能力。不自动改动已有游戏；目录/生命周期/制作约束以 [Unity标准技能](../plugin/skills/grea-unity-standard/SKILL.md)为准。
 
 ## 项目检查与只读规划
 
-先读取真实 Editor 版本、局部约定和验收记录。`validate-unity-project` 检查项目配置，`plan-unity-project` 输出只读计划与所有权；配置 Schema（GREA 安装目录 `schemas/unity-project.schema.json`）是实际契约，不能把提案 profile 当支持选项。
+先读取真实 Editor 版本、局部约定和验收记录。`validate-unity-project` 检查项目配置，`plan-unity-project` 输出只读计划与所有权；配置 [Schema](../schemas/unity-project.schema.json)是实际契约，不能把提案 profile 当支持选项。
 
 使用 `describe-tool` 核对正式 ID/旧别名。存在工具、连接到 Editor、导入成功、运行和 Player 实测分别报告；Windows Unity 未经本机原生证据不能借用 Mac 结果。
 
@@ -16,9 +16,9 @@
 
 ## 框架与消费者
 
-三个 UPM 包（GREA 安装目录 `tools/unity/framework/packages`）分别承担 Foundation、uGUI 与 Editor。五层 Domain/Gameplay/Presentation/Services/Bootstrap 是业务职责，不是五个通用库；公共包不引用项目业务。
+三个 UPM [包](../tools/unity/framework/packages)分别承担 Foundation、uGUI 与 Editor。五层 Domain/Gameplay/Presentation/Services/Bootstrap 是业务职责，不是五个通用库；公共包不引用项目业务。
 
-两个自有示例（GREA 安装目录 `tools/unity/templates/framework-samples/README.md`）为数值战斗和网格益智，验证待领奖、取消、失败保存、重开与布局；Counter 示例（GREA 安装目录 `tools/unity/templates/counter-composition/README.md`）保留兼容。复杂背包/Buff/商业广告仍为 候选（GREA 安装目录 `proposals/numeric-template.md`）。实际通过边界见 框架报告（GREA 安装目录 `validation/releases/2026-10-16-unity-framework-extraction.json`）。
+[两个自有示例](../tools/unity/templates/framework-samples/README.md)为数值战斗和网格益智，验证待领奖、取消、失败保存、重开与布局；Counter [示例](../tools/unity/templates/counter-composition/README.md)保留兼容。复杂背包/Buff/商业广告仍为 [候选](../proposals/numeric-template.md)。实际通过边界见 [框架报告](../validation/releases/2026-10-16-unity-framework-extraction.json)。
 
 ```sh
 python scripts/testing/prepare-unity-framework.py --help

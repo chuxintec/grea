@@ -5,7 +5,7 @@
 
 规范标识：`grea-unity-project`；规范版本：`1.0.0`；制定日期：2026-10-13。本标准是 GREA 恢复工程的目录、开发框架、组件、Prefab、脚本与生成验收的权威设计。2026-10-16 起按主题拆为本篇与五篇分篇，规则 ID 与内容不变。
 
-可调用功能、安装步骤和支持范围以工具当前契约及 [功能指南](../../grea/references/Unity指南.md) 为准；规范要求不等于能力已实现。历史交付记录只用于追溯，不改变本次项目的验收状态。
+可调用功能、安装步骤和支持范围以工具当前契约及 功能指南（项目文档 `docs/Unity指南.md`） 为准；规范要求不等于能力已实现。历史交付记录只用于追溯，不改变本次项目的验收状态。
 
 ## 分篇索引
 
@@ -33,7 +33,7 @@
 
 标准版本、框架包版本、模板版本、生成器版本和游戏发布版本分别锁定。标准的破坏性契约修改升主版本；兼容新增升次版本；不改语义的修正升补丁版本。项目升级必须选择目标版本及迁移说明，不随 GREA 更新自动升级所有项目。
 
-项目根的 `grea-project.json` 保存机器可读选择；项目 `Docs/PROJECT-STRUCTURE.md` 解释实际所有权与例外，引用该配置，不能再手工维护另一套版本值。静态规划已提供 项目 Schema（GREA 安装目录 `schemas/unity-project.schema.json`） 及 静态能力矩阵（GREA 安装目录 `schemas/unity-capabilities.json`），经统一契约生成；新工程生成与恢复使用独立操作和 planId，见 [生成与恢复](../../grea/references/Unity指南.md)。
+项目根的 `grea-project.json` 保存机器可读选择；项目 `Docs/PROJECT-STRUCTURE.md` 解释实际所有权与例外，引用该配置，不能再手工维护另一套版本值。静态规划已提供 项目 Schema（GREA 安装目录 `schemas/unity-project.schema.json`） 及 静态能力矩阵（GREA 安装目录 `schemas/unity-capabilities.json`），经统一契约生成；新工程生成与恢复使用独立操作和 planId，见 生成与恢复（项目文档 `docs/Unity指南.md`）。
 
 | 字段组 | 必填内容及约束 |
 | --- | --- |

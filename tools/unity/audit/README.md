@@ -12,4 +12,4 @@ Run报告包含observations与findings：Missing Script、Sprite.texture为空�
 
 先在匹配 Editor 版本的隔离工程中编译并执行 SelfTest。批处理-nographics只能验证编辑器API与字节回读，不能验证Metal渲染效果。
 
-有限原生制作入口 `NativeAssetImport.cs` 及 NativeExitEditorAudit 的 Resources/对象台账扩展见 [制作链说明](../../../plugin/skills/grea/references/providers/unity-authoring.md)；均要求显式隔离工程，前者创建原生资产，后者只报告 Editor 观察。
+有限原生制作入口 `NativeAssetImport.cs` 及 NativeExitEditorAudit 的 Resources/对象台账扩展见 [制作链说明](../../../docs/providers/unity-authoring.md)；均要求显式隔离工程，前者创建原生资产，后者只报告 Editor 观察。

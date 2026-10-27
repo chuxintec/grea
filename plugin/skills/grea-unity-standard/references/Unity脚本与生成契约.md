@@ -25,7 +25,7 @@ partial 只用于明确的生成/人工接缝，同一类放同一职责范围�
 
 ## 自动生成契约
 
-本节包含静态规划已实现的只读入口与后续生成设计。**plan_unity_project / validate_unity_project 保持静态规划静态范围；工程生成新增 plan_unity_generation / generate_unity_project / recover_unity_generation，实际限制见 [工程生成](../../grea/references/Unity指南.md)。** 当前 validate 不接收 Editor/PlayMode/Player 层级参数；静态规划 plan 不执行或授权写入，实际范围见 [静态规划使用说明](../../grea/references/Unity指南.md)。后续实现必须按 [统一接口](../../grea/references/接口与证据说明.md) 更新 contracts.py、registry.json、schema 和 CLI/MCP 同源分发。
+本节包含静态规划已实现的只读入口与后续生成设计。**plan_unity_project / validate_unity_project 保持静态规划静态范围；工程生成新增 plan_unity_generation / generate_unity_project / recover_unity_generation，实际限制见 工程生成（项目文档 `docs/Unity指南.md`）。** 当前 validate 不接收 Editor/PlayMode/Player 层级参数；静态规划 plan 不执行或授权写入，实际范围见 静态规划使用说明（项目文档 `docs/Unity指南.md`）。后续实现必须按 统一接口（项目文档 `docs/接口与证据说明.md`） 更新 contracts.py、registry.json、schema 和 CLI/MCP 同源分发。
 
 ### 输入与操作边界
 

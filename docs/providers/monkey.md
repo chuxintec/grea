@@ -45,7 +45,7 @@ lock v2 固定实际安装包文件集、launcher、解释器文件、command/pr
 
 ## 请求合同与批量阶段
 
-请求使用生成的 Schema（GREA 安装目录 `schemas/monkey-pipeline.schema.json`），源定义在 `src/grea/monkey_contracts.py`。JSON 路径显式指向本机输入；`input_roots` 是互不重叠的文件或目录，包含选项及 input-set/Unity pool 引用的所有来源。配置文件也要在冻结范围内。默认静态预算最多 20 万文件、32 GiB，每段执行 1–1800 秒；这是适配器上限，monkey 自身更严格的预算继续有效。
+请求使用生成的 [Schema](../../schemas/monkey-pipeline.schema.json)，源定义在 `src/grea/monkey_contracts.py`。JSON 路径显式指向本机输入；`input_roots` 是互不重叠的文件或目录，包含选项及 input-set/Unity pool 引用的所有来源。配置文件也要在冻结范围内。默认静态预算最多 20 万文件、32 GiB，每段执行 1–1800 秒；这是适配器上限，monkey 自身更严格的预算继续有效。
 
 ```json
 {
@@ -73,7 +73,7 @@ Unity 全集使用 `convert`，options 必须含 `source-family: unity`、`targe
 
 结果保持 `needs_action`，`native_validation` / `business_validation` 独立为 `not_run`。后续使用真实引擎回执和显式 handoff 合同审计来源去向。Sprite 身份需原生类型、GUID+local fileID、Importer/border/pivot/geometry 和 Prefab PPtr，不以相同字节/GUID直接覆盖人工绑定。
 
-本轮实际验证见工具链验收（GREA 安装目录 `validation/development/monkey-toolchain-20261026.json`）：已安装 0.4.0 的自有双端样本和防漂移测试；Unity 全容器阶段参数已接入，但本轮不重新运行真实游戏的 AssetRipper/Editor。monkey 上游 601 容器、剩余 36 个未解析对象是该特定样本的历史结果，不能当所有游戏的成功率。
+[本轮实际验证见工具链验收](../../validation/development/monkey-toolchain-20261026.json)：已安装 0.4.0 的自有双端样本和防漂移测试；Unity 全容器阶段参数已接入，但本轮不重新运行真实游戏的 AssetRipper/Editor。monkey 上游 601 容器、剩余 36 个未解析对象是该特定样本的历史结果，不能当所有游戏的成功率。
 
 ## 历史入口兼容
 
@@ -107,7 +107,7 @@ bin/grea legacy monkey_bridge --config /path/lock.json --workflow slice --worksp
 
 切片的GREA接续边界`grea-native-continuation`允许`Assets/Game/`，标明它是GREA声明的开发边界，**不是转换器自动翻译出的业务任务**。来源合同、原生引用和新增实现须分别核验。包级仍保留provider的细粒度任务，不改旧ID。
 
-自有最小原生示例见生命周期接续验收样例（GREA 安装目录 `tools/unity/lifecycle-sample/README.md`）。固定provider原始候选遇到无效依赖与Editor导入边界时，保留原件，在新Editor脚手架中显式修复、记录差异后接续。**修复后的Editor通过属于GREA adopted工程验收，不伪造原候选的provider resume pass**。这不是任意Cocos游戏自动恢复能力或真实项目完整度百分比。
+[自有最小原生示例见生命周期接续验收样例](../../tools/unity/lifecycle-sample/README.md)。固定provider原始候选遇到无效依赖与Editor导入边界时，保留原件，在新Editor脚手架中显式修复、记录差异后接续。**修复后的Editor通过属于GREA adopted工程验收，不伪造原候选的provider resume pass**。这不是任意Cocos游戏自动恢复能力或真实项目完整度百分比。
 
 
 ## 显式原生交接审计
@@ -118,7 +118,7 @@ bin/grea legacy monkey_bridge --config /path/lock.json --workflow handoff --work
 
 此审计不执行批量导出，`all_scope_export=not_executed_by_handoff_audit`。合同 v1 包含 schema_version、provider_version、target_engine、project_path、source_inventory、assets、entry、native_check；逻辑资产每项声明 source_id/category/source_files/disposition/outputs/reason，outputs 与 entry/native_check 都用相对 path/sha256。source_inventory 为完整 inspect_target 目录结果；native_check 位于工程外，包含 schema_version、target_engine、import_status、compile_status、artifacts，绑定当前全部交付工程文件（排除根级引擎缓存/构建目录）。原生回执仍是提交者声明，GREA 核文件，不冒充重新运行 Editor。
 
-自动发现/绑定/缺失安装与插件随包运行时验证见就绪验收（GREA 安装目录 `validation/development/monkey-readiness-20261026.json`）。
+[自动发现/绑定/缺失安装与插件随包运行时验证见就绪验收](../../validation/development/monkey-readiness-20261026.json)。
 
 ## 开发版来源查询
 

@@ -61,7 +61,7 @@ def audit(manifest,managed,policy):
     unique_paths(names)
     actual={p.name for p in managed.iterdir() if p.is_file() and p.suffix.lower()=='.dll'}
     if {str(n) for n in names}!=actual:reject('PAYLOAD_SET_MISMATCH','Manifest must enumerate every immediate managed DLL; missing/extra files cannot pass')
-    if not READER.is_file() or not shutil.which('dotnet'):reject('READER_UNAVAILABLE','Build the optional locked Cecil provider first; see plugin/skills/grea/references/providers/unity-native-exit.md')
+    if not READER.is_file() or not shutil.which('dotnet'):reject('READER_UNAVAILABLE','Build the optional locked Cecil provider first; see docs/providers/unity-native-exit.md')
     lock=json.loads((ROOT/'tools/unity/assembly-audit/cecil-lock.json').read_text(encoding='utf-8'))
     cecil=READER.parent/'Mono.Cecil.dll'
     if not cecil.is_file() or sha(cecil)!=lock['sha256']:reject('READER_DEPENDENCY_IDENTITY','Cecil provider does not match its pinned binary identity')

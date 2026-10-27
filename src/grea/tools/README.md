@@ -6,4 +6,4 @@ GREA 2026.10.27 起，执行工具归 monkey 与 beaver 模块：来源侧工具
 
 CLI/MCP → application → registry/runner → launch_tool.py → grea.tools 模块；委托 ID 则 → 模块 CLI。launch_tool.py 只做包定位和模块启动。子进程边界保留超时、取消和日志预算。legacy 保留原始 argv、输出和退出码。
 
-模块导入不得解析命令行或写文件。可复用逻辑用函数提供；main 仅负责参数与调用。修改路径不修改工具 ID。文件路径迁移见 [映射](../../../schemas/document-path-map.json)，运行方法见 [使用指南](../../../plugin/skills/grea/references/使用指南.md)。
+模块导入不得解析命令行或写文件。可复用逻辑用函数提供；main 仅负责参数与调用。修改路径不修改工具 ID。文件路径迁移见 [映射](../../../schemas/document-path-map.json)，运行方法见 [使用指南](../../../docs/使用指南.md)。

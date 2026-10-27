@@ -35,7 +35,7 @@
 | W07 | P1 | [CI](../../.github/workflows/ci.yml)的 windows-smoke 只有 uv sync 和 bin/grea.cmd session；[隔离验证](../../scripts/verify_plugin.py)使用 sandbox-exec；[客户端验证](../../scripts/verify_plugin_clients.py)使用 POSIX 进程组 | 缺少 Windows 全套运行/插件/客户端证据；Mac 的测试布尔值不能直接移植到 Windows 报告 |
 | W08 | P1 | registry 共有 73 项，其中 42 项直接声明 Windows；剩余 31 项含别名、Mac 包装器和生成入口 | 数量不等于实际覆盖。逐个解析 alias 和 provider 条件；保留工具 ID，在平台原生实现经过验证后开放对应能力 |
 | D01 | P1 | docs 共 77 文件、51 Markdown、顶层 16 Markdown；design 24 文件、validation 15 文件 | 使用导航、实现过程、提案与证据混排；建立六份核心说明和一个导航入口，按消费关系处理其余内容 |
-| D02 | P1 | README 仍突出预览/旧 rc 发布入口；[迁移指南](../../plugin/skills/grea/references/安装与平台.md)有“7 个技能”“纯源码分发”等未限定的旧表述，而当前是 8 个技能和完整运行时包 | 历史事实混入当前说明，须逐句核对版本和状态，不能一键替换历史报告中的版本号 |
+| D02 | P1 | README 仍突出预览/旧 rc 发布入口；[迁移指南](../../docs/安装与平台.md)有“7 个技能”“纯源码分发”等未限定的旧表述，而当前是 8 个技能和完整运行时包 | 历史事实混入当前说明，须逐句核对版本和状态，不能一键替换历史报告中的版本号 |
 | D03 | P1 | 安装、平台、兼容、工作区接入与维护分散重复；Unity 五篇入口又与包内 README/技能规范交叉 | 按读者任务合并并删除重复解释，保留实际调用、失败处理和能力边界，不把 16 份拼成一篇超长文档 |
 | D04 | P1 | [build_plugin.write_product](../../scripts/build_plugin.py)目前复制完整公开源码闭包；[check_docs](../../scripts/check_docs.py)固定读取接口文档路径 | 文档整理涉及打包投影、链接、工作流、Skill 和测试；搬文件而不修改消费者会导致分发断链或身份校验失效 |
 

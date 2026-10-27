@@ -37,7 +37,7 @@ beaver `capabilities` 默认JSON，没有 `--json`。GREA读取 `beaver-result/1
 
 ## 命名操作转发
 
-CLI/MCP共用 `beaver_pipeline invoke --config LOCK --request REQUEST --output NEW`。请求以生成Schema（GREA 安装目录 `schemas/beaver-operation.schema.json`）为准，只有命名操作/参数，不接受raw argv、shell或任意输出覆盖：
+CLI/MCP共用 `beaver_pipeline invoke --config LOCK --request REQUEST --output [NEW`。请求以生成Schema](../../schemas/beaver-operation.schema.json)为准，只有命名操作/参数，不接受raw argv、shell或任意输出覆盖：
 
 ```json
 {
@@ -78,9 +78,9 @@ MCP `run_tool`外层的finding/partial只表示适配进程的诊断出口，必
 
 ## 0.2消费者增量与复用证据
 
-固定上游提交 `fae3845bdddc21e311f87540ff718782fb1f7ea7`：49份验收证据的字节与哈希已核，复用其50项Python检查、原生/独立重开、合成UI与Player结果。0.2增量当时运行32项GREA适配检查，以实际wheel解析器核对25个命名参数；真实batch.plan、references partial、debug.inspect blocked、显式Unity制品选项和旧0.1固定调用通过，独立源码stdio保留partial/blocked。见0.2接入回执（GREA 安装目录 `validation/development/beaver02-integration-20261026.json`）。
+固定上游提交 `fae3845bdddc21e311f87540ff718782fb1f7ea7`：49份验收证据的字节与哈希已核，复用其50项Python检查、原生/独立重开、合成UI与Player结果。0.2增量当时运行32项GREA适配检查，以实际wheel解析器核对25个命名参数；真实batch.plan、references partial、debug.inspect [blocked、显式Unity制品选项和旧0.1固定调用通过，独立源码stdio保留partial/blocked。见0.2接入回执](../../validation/development/beaver02-integration-20261026.json)。
 
-这是0.2历史验收范围，不覆盖后续0.3证据；Go的旧资产交接（GREA 安装目录 `proposals/beaver-execution-handoff.md`）和原消费者继续保留。
+[这是0.2历史验收范围，不覆盖后续0.3证据；Go的旧资产交接](../../proposals/beaver-execution-handoff.md)和原消费者继续保留。
 
 ## 固定0.3候选07和08的有限适配
 
@@ -95,15 +95,15 @@ GREA请求仍是schema_version1的命名参数封装。工程spec与执行数据
 | resource.image-inspect/image-produce/validate-step | 封闭policy/spec，image-produce必须expected-source；validate-step不执行原生资源操作 |
 | server.generate/module-generate/module-plan/protocol-diff/migration-plan/compose-plan/toolchain | 仅候选/计划/有限检查；generate可能调用显式固定protoc，module生成可使用gofmt，Compose计划不启动服务；依赖缺口由provider原样返回 |
 
-组合ID按固定能力声明逐项映射，例如workspace.inspect只能使用 `workspace.plan/apply/inspect/rebind`，不能把任意斜线字符串展开成授权。公开结果Schema（GREA 安装目录 `schemas/beaver-result.schema.json`）限定beaver-result/1外壳、producer、状态/诊断/制品和验证字段；对两个固定0.3实现启用，不改变旧消费者；data仍属provider合同，GREA不重新判定游戏业务。
+组合ID按固定能力声明逐项映射，例如workspace.inspect只能使用 [workspace.plan/apply/inspect/rebind`，不能把任意斜线字符串展开成授权。公开结果Schema](../../schemas/beaver-result.schema.json)限定beaver-result/1外壳、producer、状态/诊断/制品和验证字段；对两个固定0.3实现启用，不改变旧消费者；data仍属provider合同，GREA不重新判定游戏业务。
 
-`actualChanges`逐项可为非空路径字符串（原生batch/production的已变路径）或对象摘要（操作/恢复/失败见证）；GREA原样保留，不强转对象，数字/null/数组和空字符串仍拒绝。执行后才发生的Schema、身份或退出码校验失败会保留 `executed=true`、原provider结果和事务，顶层native记unverified并提示检查回执；不能据外层needs_action/error推断零写入或自动重放apply。真实采用暴露的此项消费缺陷及原stdout离线重验见修复回执（GREA 安装目录 `validation/development/beaver-result-schema-fix-20261026.json`），原外层失败与原生成功记录均未追改。
+`actualChanges`逐项可为非空路径字符串（原生batch/production的已变路径）或对象摘要（操作/恢复/失败见证）；GREA原样保留，不强转对象，数字/null/数组和空字符串仍拒绝。执行后才发生的Schema、身份或退出码校验失败会保留 [executed=true`、原provider结果和事务，顶层native记unverified并提示检查回执；不能据外层needs_action/error推断零写入或自动重放apply。真实采用暴露的此项消费缺陷及原stdout离线重验见修复回执](../../validation/development/beaver-result-schema-fix-20261026.json)，原外层失败与原生成功记录均未追改。
 
 未接入项：server.inspect虽有CLI但候选未声明其能力；server.protocol-tools/check/build及migration-state/migration-apply/runtime-inspect不在此次有限适配范围，禁止以raw argv兜底。Creator执行/构建仍不支持。完整清单见registry中的unsupported_v03。
 
 07阶段41项适配检查及49操作与wheel真实parser一致性检查通过；私有工程workspace四入口、production只读规划、config3校验/生成及坏配置failed、默认五层模块、Go协议比较/模块候选、旧0.1/0.2与独立stdio均已实调。30份上游证据哈希及67个安装文件字节已核，复用115项测试＋11项收口检查、06原生事务/恢复、07固定App调用及私有Go六服证据。
 
-最终45项适配检查通过（含08增量和大计划边界）；68文件私有安装与49参数parser核验、旧07 profile拒绝→按旧SHA显式rebind→新profile核验、中文路径内production只读计划、config3有效/无效数据及stdio的ok/blocked/failed通过。旧0.1/0.2/07固定lock实调正常且哈希不变。08新增最小Editor继承环境和UTF8 job路径的ASCII base64内部传输，复用其118测试日志与8源/342 Unity引用离线编译回执；GREA未启动Editor，因此中文路径CLI通过不能证明原生编码修复通过。上游总验证索引的07历史层、08新增静态证据和09等价包分别记录，见0.3接入回执（GREA 安装目录 `validation/development/beaver03-integration-20261026.json`）。
+最终45项适配检查通过（含08增量和大计划边界）；68文件私有安装与49参数parser核验、旧07 profile拒绝→按旧SHA显式rebind→新profile核验、中文路径内production只读计划、config3有效/无效数据及stdio的ok/blocked/failed通过。旧0.1/0.2/07固定lock实调正常且哈希不变。08新增最小Editor继承环境和UTF8 job路径的ASCII base64内部传输，复用其118测试日志与8源/342 [Unity引用离线编译回执；GREA未启动Editor，因此中文路径CLI通过不能证明原生编码修复通过。上游总验证索引的07历史层、08新增静态证据和09等价包分别记录，见0.3接入回执](../../validation/development/beaver03-integration-20261026.json)。
 
 ## 正式08采用回执与剩余边界
 
@@ -111,7 +111,7 @@ GREA请求仍是schema_version1的命名参数封装。工程spec与执行数据
 
 这是既有反馈任务中两份C# after-image的原生收敛：before/after内容哈希相同，1个Editor完成编译/保存/同Editor重载；当前两份代码仍匹配原生after-image。不能写成08首次产生新代码、独立Editor重开或正式资源/Prefab整组验收。项目原4项PlayMode结果已读回passed4/failed0，复用既有结果，本轮未重跑。
 
-项目App04默认渲染的Metal启动问题独立保留；最新项目回执同时记录了 `-force-gfx-direct` 下正常进出/重开，不再笼统写成App始终等待。正向购买反馈L3仍not_run，这些项目出口不归类为工具native失败，也不表示完整游戏已验。原始代码/日志/回执留项目内，GREA仅保存定位、哈希和限定摘要，详见采用记录（GREA 安装目录 `validation/development/beaver03-integration-20261026.json`）。
+项目App04默认渲染的Metal启动问题独立保留；最新项目回执同时记录了 `-force-gfx-direct` [下正常进出/重开，不再笼统写成App始终等待。正向购买反馈L3仍not_run，这些项目出口不归类为工具native失败，也不表示完整游戏已验。原始代码/日志/回执留项目内，GREA仅保存定位、哈希和限定摘要，详见采用记录](../../validation/development/beaver03-integration-20261026.json)。
 
 GREA薄适配及这次有限正式原生采用证据可据此交付；0.3整版G结论由beaver主开发汇总。07旧失败和事务仍保留，不能换08重放；旧Go消费者不自动退休。本轮GREA没有启动引擎、Player或Docker，没有改动游戏工程或部署服务。
 
@@ -128,4 +128,4 @@ GREA薄适配及这次有限正式原生采用证据可据此交付；0.3整版G
 | GREA dev4新增适配 | 命名参数/能力/状态边界、最终wheel真实payload.verify及partial、独立源码stdio MCP调用 | 不宣称新增Unity/Player验收或当前会话全局插件已刷新 |
 | 原monkey候选→beaver计划 | 既有冻结自有候选已被真实消费为采用预览 | 0动作不是采用/迁移成功，未把该候选与另一自有工程的Player混成同一全链 |
 
-Creator执行/构建、其他宿主原生交付、复杂游戏业务/视觉/物理输入仍按真实未验项保留。旧工具接收情况见交接材料（GREA 安装目录 `proposals/beaver-execution-handoff.md`），唯一进度见路线（GREA 安装目录 `proposals/lifecycle-roadmap.md`）。
+[Creator执行/构建、其他宿主原生交付、复杂游戏业务/视觉/物理输入仍按真实未验项保留。旧工具接收情况见交接材料](../../proposals/beaver-execution-handoff.md)[，唯一进度见路线](../../proposals/lifecycle-roadmap.md)。

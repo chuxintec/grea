@@ -14,7 +14,7 @@ description: 已有恢复工程的授权换皮：按当前授权制作或采用�
 
 - 换皮以美术为先：真实界面/角色/怪物选样定风格 → UI/ICON切片及原画/Spine成套生产 → 样板范围100%原功能替换 → 用户确认风格后全量换皮与Bug修复 → 最后才按约定做UI/UE游戏调优。约30%如有约定不是美术覆盖率，S1–S4保持原布局、入口和操作。
 - 从选样起持续更新同一份资源台账及界面/角色/怪物/特效/关卡设定；可玩Player、静态PNG和改色不能冒充完整美术或Spine。已授权样板直接做候选，不逐页追加审批。后置调优见 有限二次开发（`grea-evolve` 技能）。
-- 资源替换使用 [theme_assets 合同](../grea/references/providers/theme-assets.md)，先预览与校验，再在授权隔离工程通过Editor应用/回退。骨骼、事件及多Sprite不在首版自动替换范围。
+- 资源替换使用 theme_assets 合同（项目文档 `docs/providers/theme-assets.md`），先预览与校验，再在授权隔离工程通过Editor应用/回退。骨骼、事件及多Sprite不在首版自动替换范围。
 
 ## 执行工具与边界
 

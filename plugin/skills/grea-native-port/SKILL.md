@@ -55,7 +55,7 @@ description: 把 Cocos Creator、Laya/FairyGUI、Egret、H5 等非 Unity 游戏�
 {"tool_id":"monkey_pipeline","arguments":["ensure","--install-if-missing","--output","/absolute/new-readiness"],"run_dir":"/absolute/new-invocation","timeout_seconds":900}
 ```
 
-安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见[monkey 接入](../grea/references/providers/monkey.md)。
+安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见monkey 接入（项目文档 `docs/providers/monkey.md`）。
 
 ## 执行工具与边界
 
