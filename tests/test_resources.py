@@ -17,7 +17,7 @@ def sprite_step():
 
 def serialized_asset_step():
     return {"kind":"resource.serialized-asset","assetPath":"Assets/Game/Content/Data/Mainline/Mainline.asset",
-            "assetType":"FoodStreet.Presentation.Content.Mainline.MainlineAsset","expectedGuid":"a"*32,
+            "assetType":"ExampleGame.Presentation.Content.Mainline.MainlineAsset","expectedGuid":"a"*32,
             "references":[{"property":"areaTextureAtlas","guid":"b"*32,"localId":123456789}]}
 
 

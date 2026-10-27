@@ -124,7 +124,7 @@ namespace Legacy.UI {
         source = FIXTURES / "Assets" / "Scripts" / "MigratedWidget.cs"
         source.write_text(
             'using UnityEngine; using UnityEngine.Scripting.APIUpdating; namespace Legacy.UI { '
-            '[MovedFrom(true, "FoodStreet.Configuration", "FoodStreet.Configuration", "OriginalWidget")] '
+            '[MovedFrom(true, "ExampleGame.Configuration", "ExampleGame.Configuration", "OriginalWidget")] '
             'public sealed class MigratedWidget : MonoBehaviour { } }\n', encoding="utf-8")
         assemblies = [dict(item) for item in self.assemblies]
         app = next(row for row in assemblies if row["name"] == "Assembly-CSharp")

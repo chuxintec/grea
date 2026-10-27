@@ -54,7 +54,7 @@ cfg, snapshot, err := configv3.ReadConfiguration[configv3.RootType](inputJSON, s
 
 ## Read-only Mainline exercise
 
-`.private/v03/config/mainline.schema.json` and `mainline.call.json` record a private call spec derived from the frozen FoodStreet `MainlineRules` DTOs and `MainlineRuleIndex` checks. The active Mainline JSON and frozen copy had the same SHA-256 (`de216f...3577d`); validation returned zero diagnostics across 45 root properties, including 1,293 elements, 3,432 orders, 954 builds, 732 cooking recipes, and declared cross-table references. `.private/v03/config/mainline-generated/` contains the generated C#/Go candidates and ownership manifest. No code or asset was installed into the game. The private report is structural validation evidence, not proof that Unity Player or server consumers have loaded it.
+`.private/v03/config/mainline.schema.json` and `mainline.call.json` record a private call spec derived from the frozen ExampleGame `MainlineRules` DTOs and `MainlineRuleIndex` checks. The active Mainline JSON and frozen copy had the same SHA-256 (`de216f...3577d`); validation returned zero diagnostics across 45 root properties, including 1,293 elements, 3,432 orders, 954 builds, 732 cooking recipes, and declared cross-table references. `.private/v03/config/mainline-generated/` contains the generated C#/Go candidates and ownership manifest. No code or asset was installed into the game. The private report is structural validation evidence, not proof that Unity Player or server consumers have loaded it.
 
 `.private/v03/config/example-game.*` is an independent, self-owned demonstration schema and JSON input with generated output in `example-game-generated/`; its sample values are illustrative and are not product configuration.
 

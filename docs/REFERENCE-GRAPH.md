@@ -11,6 +11,6 @@ The cache identity includes schema `beaver-reference-cache/2`, canonical project
 Focused module verification:
 
 ```sh
-cd /Users/wangmeng/Documents/Games/tools/beaver
+# Run from the beaver repository root.
 PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_references.py' -v
 ```

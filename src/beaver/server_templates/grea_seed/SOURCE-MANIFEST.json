@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "sourceOwner": "GREA",
-  "sourceManifestPath": "/Users/wangmeng/Documents/Games/tools/grea/.private/go-beaver-handoff-20261026/manifest.json",
+  "sourceManifestPath": "private upstream provenance record (not distributed)",
   "sourceManifestSha256": "283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3",
   "greaVersion": "2026.10.26.dev4",
   "sourceGitHead": "e093c4ee15318b412e7ca2dd107791017ff30eb7",
   "license": "MIT",
-  "sourceLicensePath": "/Users/wangmeng/Documents/Games/tools/grea/.private/go-beaver-handoff-20261026/source/LICENSE",
+  "sourceLicensePath": "private upstream provenance record (not distributed)",
   "fixedProtoPins": {
     "go_language_directive": "1.26.0",
     "historical_toolchain": "1.26.2 declared; not probed this turn",
@@ -189,6 +189,7 @@
   "selectionRationale": "Only Go six-service shared template sources retained; Cocos client, sample duplicate config, legacy shared-role runner and GREA-specific stack/smoke lifecycle excluded. Generator-produced Go protocol bindings are omitted and regenerated from .proto.",
   "sourceSnapshotSha256": "283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3",
   "licenseSha256": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e",
-  "handoffContractPath": "/Users/wangmeng/Documents/Games/tools/grea/.private/go-beaver-handoff-20261026/contract.json",
-  "handoffContractSha256": "fa3442a22e721014f32d18e04a5582726d0580badf80892d6eb69311db8c3e1c"
+  "handoffContractPath": "private upstream provenance record (not distributed)",
+  "handoffContractSha256": "fa3442a22e721014f32d18e04a5582726d0580badf80892d6eb69311db8c3e1c",
+  "privacyNote": "Original provenance records are retained locally; listed source digests refer to those originals. Required license files are distributed separately."
 }

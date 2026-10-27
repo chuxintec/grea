@@ -1,135 +1,21 @@
 {
   "schemaVersion": 1,
   "version": "0.5.0",
-  "status": "local_tool_delivery_ready_pending_real_consumer_task",
-  "implementationSha256": "ba439efac14c887e8343af5a5edbcde646be0f05c3668364970bb3ce9df4139a",
-  "integration": {
-    "base": "1f624503f7728b8670d63e09c12ac12acab0807d",
-    "preservedImplementation": "97d4d653c021938ea1487712de6c684f372896af",
-    "toolkitSource": "b7e6718768f9768eb5a3a8a7b29e51bc6fe2de9a",
-    "integrationMerge": "e25466b1fe85c43fa52f5bac18cf0935e6950002",
-    "toolkitAndTestFilesByteEqual": 63,
-    "sourceCoverageReceipt": ".private/v05/source-coverage.json"
+  "scope": "Public release validation summary; underlying private evidence is not distributed",
+  "verified": {
+    "relatedChecks": 47,
+    "relatedNativeCompanionSourcesCompiled": 10,
+    "nativeFixture": [
+      "UI text overflow and explicit expectation detection",
+      "six-action grouped Prefab transaction",
+      "three references and one event persisted across reload",
+      "exact Sprite subasset identity read back",
+      "live button-center raycast sample",
+      "fallback-aware missing-glyph negative case"
+    ]
   },
-  "ui": {
-    "nativeBefore": "owned isolated Prefab",
-    "sourceUnchanged": true,
-    "located": [
-      "Title TMP overflow",
-      "explicit font-size expectation difference"
-    ],
-    "repair": {
-      "fontSize": 20.0,
-      "sizeDelta": [
-        600,
-        70
-      ]
-    },
-    "glyphNegative": [
-      {
-        "nodePath": "Title",
-        "componentType": "TMPro.TextMeshProUGUI",
-        "observed": "",
-        "characters": "378",
-        "relatedNodePath": "",
-        "glyphLookupStatus": "missing",
-        "glyphLookupError": ""
-      }
-    ],
-    "runtimeHit": [
-      {
-        "stage": "button-center",
-        "state": "hit",
-        "buttonPath": "Submit",
-        "topHitPath": "Submit",
-        "topHitType": "UnityEngine.UI.Image",
-        "topHitCanvasPath": "",
-        "topHitCamera": "",
-        "raycastCamera": "",
-        "canvasRenderMode": "ScreenSpaceOverlay",
-        "cameraState": "overlay-no-camera-required",
-        "reason": "",
-        "source": "live EventSystem.RaycastAll at active Button RectTransform center",
-        "screenPosition": [
-          320.0,
-          240.0
-        ],
-        "raycastObserved": true,
-        "buttonIsAncestor": true
-      }
-    ],
-    "actualViewport": [
-      640,
-      480
-    ],
-    "designReference": [
-      750,
-      1334
-    ],
-    "physicalInput": "not_run",
-    "visualParity": "not_established"
-  },
-  "wiring": {
-    "referenceReadback": {
-      "submit": true,
-      "title": true,
-      "icon": true
-    },
-    "eventTarget": true,
-    "eventMethod": true,
-    "persistentCalls": 1,
-    "spriteGuid": "4e8491e0fba2140c79c2a9604366c790",
-    "spriteLocalId": -2278566297644842510,
-    "nativeApply": "saved_and_reloaded_same_editor",
-    "independentEditorPlayReadback": true,
-    "changedPaths": [
-      "Assets/V04Acceptance/Panel.prefab"
-    ],
-    "transaction": ".private/v05/group-apply/journal.json"
-  },
-  "diagnostics": {
-    "originalPostexecutionContractFailure": ".private/v04/diagnostics/storage-feedback-01-reviewed-2/diagnostics.json",
-    "licensePreconditionFailure": ".private/v04/diagnostics/fixture-editor-entitlement/diagnostics.json",
-    "currentGroup": ".private/v05/unified-group-diagnostics/diagnostics.json",
-    "noReplay": true
-  },
-  "validation": {
-    "relatedUnitTests": 47,
-    "batchAndProductionIntegrationTests": "prior affected 39-test group includes same unchanged batch/production code; not repeated",
-    "nativeCompanionOfflineCompile": ".private/v05/compile-01/final-result.json",
-    "old118AndToolkit69": "reused historical evidence; not rerun"
-  },
-  "efficiency": {
-    "observedSteps": "one selected-UI collection, one generated six-action transaction, one independent Play readback replaced separate manual hierarchy/Inspector edits",
-    "actionsInOnePlan": 6,
-    "editorStarts": {
-      "preflightCollection": 1,
-      "batch": 1,
-      "independentRuntime": "initial plus one targeted TMP API correction rerun"
-    },
-    "comparableManualBaseline": "unavailable",
-    "speedupClaim": null
-  },
-  "realFoodStreetAdoption": {
-    "status": "pending_next_existing_ready_task",
-    "ownerThread": "01a17c47-6765-7aa0-9abb-c881904b9ceb",
-    "requestSent": true,
-    "completedApp11App12NotRepeated": true
-  },
-  "limitations": [
-    "Prefab direct scalar/reference fields and empty Button.onClick public instance void() supported; Scene diagnosis only",
-    "Geometry and native center raycast do not establish visual parity or physical input",
-    "Historical consumer failure was read offline, not reapplied",
-    "No Go maintenance requirement; no new server stack or Cocos work",
-    "No push/tag/Release/global install/production/service/save operation"
-  ],
   "greaAdapter": {
-    "status": "pass_with_limits",
-    "report": "/Users/wangmeng/Documents/Games/tools/grea/validation/development/beaver05-integration-20261027.json",
-    "reportSha256": "b169f54687f01271ba494c101d8b45d38be42984ab1c741b8f4363513fcf63ec",
-    "sourceFilesVerified": 6,
-    "fixedIdentityMatches": true,
-    "affectedChecksReportedPassed": 12,
+    "affectedChecks": 12,
     "operations": [
       "ui.inspect",
       "ui.analyze",
@@ -137,76 +23,27 @@
       "wiring.plan",
       "diagnostics.summarize"
     ],
-    "actualCLI": [
-      {
-        "label": "analysis",
-        "operation": "ui.analyze",
-        "status": "partial",
-        "exit_code": 1,
-        "executed": true
-      },
-      {
-        "label": "wiring",
-        "operation": "wiring.plan",
-        "status": "ok",
-        "exit_code": 0,
-        "executed": true
-      },
-      {
-        "label": "repair",
-        "operation": "ui.repair-plan",
-        "status": "ok",
-        "exit_code": 0,
-        "executed": true
-      },
-      {
-        "label": "ambiguous",
-        "operation": "wiring.plan",
-        "status": "blocked",
-        "exit_code": 1,
-        "executed": true
-      },
-      {
-        "label": "diagnostics",
-        "operation": "diagnostics.summarize",
-        "status": "partial",
-        "exit_code": 1,
-        "executed": true
-      }
-    ],
-    "actualMCP": [
-      {
-        "label": "analysis",
-        "outer_status": "partial",
-        "provider_status": "partial",
-        "executed": true,
-        "native": "not_run"
-      },
-      {
-        "label": "diagnostics",
-        "outer_status": "partial",
-        "provider_status": "partial",
-        "executed": true,
-        "native": "not_run"
-      }
-    ],
-    "legacyRawToolkit": {
-      "tool": "static_asset_copy",
-      "status": "pass",
-      "raw_output_preserved": true,
-      "file_bytes_equal": true,
-      "scope": "one owned non-game fixture, not all23 runtime operations"
-    },
-    "uiInspectEngineExecuted": false,
-    "greaSourceDirtyUncommitted": true,
-    "defaultLockAndGlobalPluginUnchanged": true,
-    "limits": [
-      "ui.inspect only actual installed argparse mapping checked; no Unity Editor launched by GREA.",
-      "Wiring/repair inputs are owned fabricated static snapshots over minimal project files; they prove forwarding/guarded planning, not authentic native collection or binding execution.",
-      "Analysis remains caller-supplied; raycast/visual/physical-input/gameplay acceptance not inferred.",
-      "Upstream native receipt uses its original dev producer and is not counted as new final-wheel native execution here.",
-      "Formal FoodStreet adoption awaits a natural authorized task; no game or shared Go services changed.",
-      "No global/workspace plugin replacement, commit/push/merge/tag/Release."
-    ]
-  }
+    "cliAndStdio": "bounded local forwarding verified; partial/blocked and postexecution failure facts preserved",
+    "uiInspectEditorExecutedByAdapter": false,
+    "legacyToolkitRawOutputPreserved": true
+  },
+  "actualFixtureViewport": [
+    640,
+    480
+  ],
+  "designReference": [
+    750,
+    1334
+  ],
+  "pending": [
+    "production-project adoption on a naturally ready authorized task",
+    "physical input and visual parity acceptance"
+  ],
+  "limits": [
+    "Static or caller-supplied snapshots do not authenticate live collection.",
+    "Native center raycast sampling is not a physical click.",
+    "Historical private validation does not mean all engines, platforms or applications passed.",
+    "No speedup multiplier is claimed without a comparable manual baseline."
+  ],
+  "rawEvidencePublished": false
 }

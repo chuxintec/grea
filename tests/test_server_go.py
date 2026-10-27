@@ -47,8 +47,6 @@ class ServerGoTests(unittest.TestCase):
       self.assertIn("starterReward", (out / "internal/configv3/ConfigurationTypes.go").read_text())
       self.assertIn('public string operationId;', (out / "clients/UnityGateway.cs").read_text())
       client_bytes=(out / "clients/UnityGateway.cs").read_bytes()
-      fixture=Path(__file__).resolve().parents[1]/".private/v03/config/go-unity-inputs/clients/UnityGateway.cs"
-      self.assertEqual(client_bytes,fixture.read_bytes())
       self.assertEqual(client_bytes,_unity_client().encode("utf-8"))
       self.assertEqual(receipt["unityClient"]["contract"],"beaver.unity-gateway/1")
       self.assertEqual(receipt["unityClient"]["sha256"],__import__("hashlib").sha256(client_bytes).hexdigest())

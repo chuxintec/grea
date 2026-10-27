@@ -158,7 +158,7 @@ def start(manifest, output, expected, duration=MAX_DURATION, width=None, height=
                   runDirectory=str(stage), logPath=str(stage/'player.log'), screenshotEvidence=[],
                   targetInspection=dict(status='candidate_app', kind='App', note='This API launches a fixed app candidate; it does not assert gameplay success'),
                   artifactVerificationBefore=before,
-                  scope='fixed candidate only; no real FoodStreet, backend or player saves')
+                  scope='fixed candidate only; no real project, backend or player saves')
     write_json(stage/'session.json', record)
     _write_status(stage/'session.json', 'starting')
     # The worker writes status.json separately; the immutable session record

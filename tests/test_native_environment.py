@@ -10,8 +10,8 @@ from beaver.native_environment import editor_environment
 
 class NativeEnvironmentTests(unittest.TestCase):
     def test_non_ascii_job_roundtrips_without_entering_environment_as_raw_text(self):
-        job = Path('/workspace/肥鹅美食街/证据/native-job.json')
-        parent = {'PATH': '/usr/bin', 'HOME': '/home/example', 'PWD': '/workspace/肥鹅美食街',
+        job = Path('/workspace/示例项目/证据/native-job.json')
+        parent = {'PATH': '/usr/bin', 'HOME': '/workspace/example', 'PWD': '/workspace/示例项目',
                   'OLDPWD': '/旧目录', 'UNRELATED_SECRET': 'private',
                   'BEAVER_NATIVE_JOB': '/stale', 'BEAVER_BATCH_JOB_BASE64': 'stale',
                   'HTTPS_PROXY': 'http://localhost:8000', 'LC_ALL': 'C.UTF-8'}

@@ -9,6 +9,6 @@ The owning transaction must hash and recheck the original file, apply the return
 Focused verification:
 
 ```sh
-cd /Users/wangmeng/Documents/Games/tools/beaver
+# Run from the beaver repository root.
 PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_loading_keys.py' -v
 ```

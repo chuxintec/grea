@@ -1,6 +1,6 @@
 # CLI contract v1
 
-当前本地版本 0.3.0，沿用 `beaver-result/1`。所有业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
+当前版本 0.5.0，沿用 `beaver-result/1`。除保留原始输出和退出码的 `tool <id>` 子命令外，业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
 退出 0=ok；1=partial；3=blocked/not_run（包括无效参数与前置条件未满足）；2=failed（执行/读回失败）。帮助为 argparse 文本；没有任意 shell 透传。
 
 `actualChanges` 是数组，每项为**非空路径字符串或对象摘要**，消费者须保留类型、顺序及原值。`batch/production apply` 通常返回已变资源相对路径字符串，`unity apply` 沿用原生变化记录；工程绑定、迁移、采用/恢复和失败检查点可返回操作/数量/身份或待核写入对象。对象内部字段由操作定义，不能将整个数组限定为对象，也不能把字符串强转为对象后丢失原值；数字、布尔、null 和嵌套数组不是合法变更项。对应 JSON Schema 项合同为 `{"oneOf":[{"type":"string","minLength":1},{"type":"object"}]}`。这是既有固定 producer 的合同澄清，不改变其输出或身份。
