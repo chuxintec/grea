@@ -11,7 +11,7 @@ from grea.safe_paths import canonical_path, disjoint
 from .identity import read, pinned
 
 # 0.4.1 = 0.4.0 conversion plus the toolkit received from GREA (same CLI options).
-SUPPORTED_VERSIONS = ('0.4.0', '0.4.1')
+SUPPORTED_VERSIONS = ('0.4.0', '0.4.1', '0.6.0')
 # Options are transcribed from the versioned CLI, not passed through wholesale.
 OPERATIONS = {
     'convert': {
@@ -65,7 +65,7 @@ def probe(lock, output):
     cfg=pinned(lock)
     if cfg['schema_version']!=2:raise ValueError('Bulk pipeline requires launcher-bound provider lock v2')
     if cfg['version'] not in SUPPORTED_VERSIONS:
-        raise ValueError('New pipeline supports pinned monkey 0.4.0; use monkey_bridge for historical contracts')
+        raise ValueError('Unsupported pinned monkey version; use a supported fixed provider or monkey_bridge for historical contracts')
     value,_,error=runner.execute('monkey',[],output,probe=True,timeout_seconds=20,
                                 max_output_bytes=1024**2,max_inline_bytes=1024**2)
     cap=value.get('parsed_stdout')

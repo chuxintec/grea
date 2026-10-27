@@ -2,7 +2,7 @@
 
 GREA 维护 Skill 与方法，monkey 恢复独立候选，beaver 执行开发工程操作。完整执行链两者必选，按阶段使用；已有工程不为形式重导。旧 GREA 工具 ID 保留，未经完整合同和消费者验证不退休。
 
-当前源码模块锁指定 beaver **0.4.0**（见`modules.lock.json`，不表示已发布或本机已安装）：0.3.0 全部合同不变，另含从 GREA 移入的 23 个执行工具，以 `beaver tool <id>` 运行；GREA 中这些工具 ID 带 `delegate`，`run-tool`/MCP/类型化操作自动转到已绑定的 beaver。仍保留固定 beaver **0.1.0 / 0.1.0.dev1 / 0.2.0** 与下列 0.3 精确实现的有限适配；旧 lock 继续绑定各自原包，不自动切换。0.3.x 绑定没有 `tool` 子命令，委托工具在其上返回 provider 错误。
+当前源码模块锁指定正式 beaver **0.5.0**（见 `modules.lock.json`）：保留 0.3/0.4 合同和 23 个 `beaver tool <id>` 工具，新增本页的五个 UI/接线/诊断入口。GREA 的委托工具通过已绑定 provider 或随包 wheel 执行。历史 0.1/0.2/0.3/0.4 精确实现仍可按原 lock 使用，不自动升级绑定或重放旧事务；0.3.x 无 `tool` 子命令，不能用于委托工具。
 
 版本之外还需核producer实现身份。当前支持的精确实现及wheel以已安装的模块锁、GREA适配器和调用生成的lock为准；不在Skill重复维护哈希清单。相同版本号不能替代字节核验，未知实现拒绝。
 
@@ -18,7 +18,7 @@ beaver `capabilities` 默认JSON，没有 `--json`。GREA读取 `beaver-result/1
 
 0.2还须声明 `beaver-batch/2`、`beaver-batch-transaction/2`、`beaver-unity/1` 和 `beaver-adopt/1` 及对应能力；缺失、重复声明或未知版本不就绪。不同版本分别使用显式provider配置与lock，不能只编辑lock里的版本号。monkey显式命令覆盖只表示可发现，不等于已绑定。
 
-支持0.3系列/0.4的固定实现还核 `beaver-project/1`、`beaver-production/3`、`beaver-production-transaction/3` 与明确组合能力ID。包内Python、C#、Go模板/配置/许可均进入producer实现身份，再由GREA核包文件和launcher锁。相同版本号但未知producer也拒绝；旧原生事务不能换实现重放。旧0.1/0.2能力摘要算法保持不变。
+支持0.3系列/0.4/0.5的固定实现还核 `beaver-project/1`、`beaver-production/3`、`beaver-production-transaction/3` 与明确组合能力ID。包内Python、C#、Go模板/配置/许可均进入producer实现身份，再由GREA核包文件和launcher锁。相同版本号但未知producer也拒绝；旧原生事务不能换实现重放。旧0.1/0.2能力摘要算法保持不变。
 
 - `pin --identity-root PACKAGE --output NEW`：显式核实际导入的包，写NEW/beaver-lock.json；不修改全局安装或客户端配置。
 - `check --config LOCK --output NEW`：核包、程序和能力身份。无锁仅探测成功也不是完整执行链就绪。
@@ -92,7 +92,7 @@ GREA请求仍是schema_version1的命名参数封装。工程spec与执行数据
 
 ## 固定0.5的UI接线与诊断
 
-GREA源码支持明确固定的beaver 0.5.0（来源main `9d15c50`），实际producer须匹配适配器；不接受任意0.5.x。默认随包模块仍由模块锁决定，不因此更新用户安装或旧绑定。新包先按本页发现/固定绑定流程使用独立lock，旧事务仍交原producer处理。
+GREA源码支持明确固定的beaver 0.5.0（来源main `e0c7e0c`），实际producer须匹配适配器；不接受任意0.5.x。默认随包模块仍由模块锁决定，不因此更新用户安装或旧绑定。新包先按本页发现/固定绑定流程使用独立lock，旧事务仍交原producer处理。
 
 以下五项均通过现有`beaver_pipeline invoke`，请求仍是`schema_version/operation/options/timeout_seconds`。所有路径使用绝对路径；报告输出由适配器固定在新回执的`provider-output`，调用者不能覆盖`out`。具体字段由安装根`schemas/beaver-operation.schema.json`提供。
 

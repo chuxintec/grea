@@ -18,4 +18,4 @@ def documents():
                 'input_roots':{'type':'array','minItems':1,'maxItems':64,'items':{'type':'string','minLength':1}},
                 'timeout_seconds':{'type':'integer','minimum':1,'maximum':1800}}})
     return {'monkey-pipeline.schema.json':{'$schema':'https://json-schema.org/draft/2020-12/schema',
-        'title':'Pinned monkey 0.4.0 pipeline request; path/identity checks are runtime requirements','oneOf':variants}}
+        'title':'Pinned monkey finite pipeline request; path/identity checks are runtime requirements','oneOf':variants}}

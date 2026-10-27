@@ -1,6 +1,6 @@
 # monkey 批量恢复与开发交接
 
-当前新工作流适配 **monkey 0.4.0 / 0.4.1**。当前源码的模块锁指定 monkey **0.4.1**（不表示已发布或本机已安装）（`modules.lock.json`）：转换功能与 0.4.0 相同，另含从 GREA 移入的 7 个来源侧工具（`monkey tool <id>`：laya_contract_audit、read_elf_values、unpack_xapk、shader_probe、decrypt_v1mmwx_wxapkg、unpack_wxapkg、export_config_tables），GREA 的同名 ID 及 `wxapkg-unpack`/`wxapkg-decrypt`/`unity-export-config` 自动委托。monkey 仓库与版本独立开发，GREA 不复制转换器；显式 ensure 可安装缺失工具，已有安装不自动升级。已安装版本、锁定能力、来源库存、导出候选、原生回读、游戏业务分别记录。monkey 的目录规范以实际产物的 `projectLayout` 为准；GREA 不把新工程强行搬回历史路径。
+当前新工作流有限适配 **monkey 0.4.0 / 0.4.1 / 0.6.0**。源码模块锁指定正式 **0.6.0** 的精确 wheel（`modules.lock.json`），旧版本继续按原 lock 使用。既有来源工具通过 `monkey tool <id>` 委托：Laya 契约、ELF 常量、XAPK/wxapkg、配置表和 Shader 探针。GREA 不复制转换器、不放开任意 CLI 参数；实际 launcher、包树、完整 capabilities 摘要与所选操作均须匹配。显式 ensure 可安装缺失工具，已有安装不自动升级。候选完整性、原生回读与游戏业务分层验收；新工程布局以实际产物 `projectLayout` 为准。
 
 <!-- grea:tool monkey_pipeline -->
 <!-- grea:tool monkey_bridge -->
@@ -39,7 +39,7 @@ bin/grea legacy monkey_pipeline audit --workspace /path/new-run/provider-output 
 
 默认绑定和 GREA 管理的缺失安装位于 `~/.local/share/grea/providers/monkey/`；测试或受控部署可设置 `GREA_PROVIDER_STATE_DIR`。新安装用独立 venv；从插件自带 Python 安装时另保留独立 Python 副本，不让 provider 依赖会被替换的插件缓存。文件夹已存在但安装不完整、绑定失效、发现歧义均保留并报错，不自动重装。已有外部 monkey 安装只绑定，不移动文件或替换日常入口。
 
-安装最新版不等于适配器支持所有新版本：当前批量适配接受 0.4.0 / 0.4.1，若 GitHub 最新版超出范围，安装结果保留、ready=false，不降级或冒称可转换。已固定计划继续使用旧身份，执行前后检查变化。
+安装最新版不等于适配器支持所有新版本：当前批量适配接受 0.4.0 / 0.4.1 / 0.6.0，若 GitHub 最新版超出范围，安装结果保留、ready=false，不降级或冒称可转换。已固定计划继续使用旧身份，执行前后检查变化。
 
 lock v2 固定实际安装包文件集、launcher、解释器文件、command/probe 与 capabilities 摘要；pyc 缓存不纳入产品身份，非全部第三方依赖认证。计划 `--config` 可显式固定旧 lock；省略时读取当前已验证绑定。历史 bridge 保留 v1/v2 显式 lock 接口。自定义 provider 仍可按[安装与平台](monkey与beaver调用.md)配置，再用 `pin --package-root <安装包目录> --output <新目录>` 固定；多参数自定义 launcher 不自动推断包位置。
 

@@ -16,7 +16,7 @@ V03_CANDIDATES = {
     '0.3.0':dict(candidate='08',implementation_sha256='e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882'),
     # 0.4.0 = 0.3.0 contracts plus the toolkit received from GREA; released as a GREA module.
     '0.4.0':dict(candidate='module-2026.10.27',implementation_sha256='06a710a70b8e9257e68e6e3b83a34db41e7e1f4e32b2810fe80367db518717f7'),
-    V05_VERSION:dict(candidate='local-main-9d15c50',implementation_sha256='ba439efac14c887e8343af5a5edbcde646be0f05c3668364970bb3ce9df4139a'),
+    V05_VERSION:dict(candidate='official-v0.5.0-e0c7e0c',implementation_sha256='bee1d06780155a50735d9e836041cd967a3da0bc2dbe368d1d55cb2cd8700e90'),
 }
 SUPPORTED_VERSIONS = ('0.1.0', '0.1.0.dev1', '0.2.0', *V03_CANDIDATES)
 V02_CONTRACTS = dict(nativeOperationContract='beaver-unity/1', adoptionContract='beaver-adopt/1',

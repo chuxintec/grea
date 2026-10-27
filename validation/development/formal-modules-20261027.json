@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-27",
+  "scope": "Official module download identity and finite GREA consumer checks; source worktree before release.",
+  "modules": [
+    {
+      "name": "monkey",
+      "version": "0.6.0",
+      "wheel": {
+        "file": "monkey_native-0.6.0-py3-none-any.whl",
+        "sha256": "79ddc2e5dde82b7e19014992c864627b669ca3b1b290958624e3911257d103b5",
+        "bytes": 926589,
+        "url": "https://github.com/chuxintec/monkey/releases/download/v0.6.0/monkey_native-0.6.0-py3-none-any.whl"
+      },
+      "source": {
+        "repository": "https://github.com/chuxintec/monkey",
+        "tag": "v0.6.0",
+        "commit": "ff57c75fdf5c456e279460889fe6e1cdf7cd2aa5",
+        "published": "official stable release"
+      }
+    },
+    {
+      "name": "beaver",
+      "version": "0.5.0",
+      "wheel": {
+        "file": "beaver_game_tools-0.5.0-py3-none-any.whl",
+        "sha256": "7472b16960f2e3d8cb0be75b34be71efc5065839963adc6689a6ee3bbd2be8f9",
+        "bytes": 351775,
+        "url": "https://github.com/chuxintec/beaver/releases/download/v0.5.0/beaver_game_tools-0.5.0-py3-none-any.whl"
+      },
+      "source": {
+        "repository": "https://github.com/chuxintec/beaver",
+        "tag": "v0.5.0",
+        "commit": "e0c7e0cecf5480b9c67f3250f14b2d3fe6358c70",
+        "published": "official stable release"
+      }
+    }
+  ],
+  "checks": {
+    "downloads": "Both upstream official release checksum files and downloaded artifact bytes agree.",
+    "monkey": {
+      "version": "0.6.0",
+      "readiness": "ready",
+      "planned_and_executed": true,
+      "provider_status": "partial",
+      "grea_status": "needs_action",
+      "verified_files": 72,
+      "manifest_sha256": "4a1c1c997fb9a6a4632f5119e90518c61ddb4230be3d7779d1c8763d4dffab0a",
+      "native": "not_run",
+      "business": "not_run",
+      "handoff_ready": false
+    },
+    "beaver": {
+      "version": "0.5.0",
+      "producer_implementation_sha256": "bee1d06780155a50735d9e836041cd967a3da0bc2dbe368d1d55cb2cd8700e90",
+      "operations": [
+        {
+          "label": "analysis",
+          "operation": "ui.analyze",
+          "status": "partial",
+          "exit_code": 1,
+          "executed": true
+        },
+        {
+          "label": "wiring",
+          "operation": "wiring.plan",
+          "status": "ok",
+          "exit_code": 0,
+          "executed": true
+        },
+        {
+          "label": "repair",
+          "operation": "ui.repair-plan",
+          "status": "ok",
+          "exit_code": 0,
+          "executed": true
+        },
+        {
+          "label": "ambiguous",
+          "operation": "wiring.plan",
+          "status": "blocked",
+          "exit_code": 1,
+          "executed": true
+        },
+        {
+          "label": "diagnostics",
+          "operation": "diagnostics.summarize",
+          "status": "partial",
+          "exit_code": 1,
+          "executed": true
+        }
+      ],
+      "ui_inspect": "argparse only; no Editor launched"
+    }
+  },
+  "limits": [
+    "Owned synthetic input only; no real game project touched.",
+    "Package installation used an isolated acceptance directory; final Codex installation and bundled-runtime acceptance occur after publication.",
+    "Source checks and release artifact validation must bind the final commit; this report does not declare those future runs passed.",
+    "Exact hashes permit only these implementations; old project locks are not upgraded implicitly."
+  ]
+}

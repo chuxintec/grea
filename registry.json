@@ -5991,10 +5991,10 @@
             "final_metadata_equivalent_wheel_sha256": "d4dd7229fa9ce56eabb9054d0af2b88591aa0777fe4e3d0fc139b74a105eb598"
           },
           "0.5.0": {
-            "implementation_sha256": "ba439efac14c887e8343af5a5edbcde646be0f05c3668364970bb3ce9df4139a",
-            "wheel_sha256": "595a4c992d42b664f0e30b74aa7563dc3ffc34de1927f9ae5c6653e3f12ac438",
-            "source_revision": "9d15c50deeaf07817944ad7032598bf70b6a2b99",
-            "scope": "Private explicit pin; default bundled module unchanged. No engine or real game acceptance by GREA."
+            "implementation_sha256": "bee1d06780155a50735d9e836041cd967a3da0bc2dbe368d1d55cb2cd8700e90",
+            "wheel_sha256": "7472b16960f2e3d8cb0be75b34be71efc5065839963adc6689a6ee3bbd2be8f9",
+            "source_revision": "e0c7e0cecf5480b9c67f3250f14b2d3fe6358c70",
+            "scope": "Official beaver v0.5.0 release. No engine or real game acceptance by GREA."
           }
         },
         "result_schema": "{grea}/schemas/beaver-result.schema.json"
