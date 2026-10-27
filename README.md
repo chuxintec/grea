@@ -29,3 +29,8 @@ v0.3 将私有工程接入、资源生产、复杂 JSON/C#＋Go 同源读取、R
 设置修改使用独立 Editor 重开核验；完整原生 checkpoint 是受控恢复的必要条件。运行能力与实际游戏采用分开记录，v0.3 整版进度以 PLAN 为准。Go 私有 Unity→gateway→MySQL→Unity 链路已实测同请求幂等及重启/缓存丢失，正式服务器与支付不在本轮操作范围。
 
 本版 UI 检查、原生字段/事件接线、明确字段修正与统一诊断见 [v0.5 开发用法](docs/DEVELOPMENT-v0.5.md)；实际验证与正式采用以唯一 PLAN 为准。
+
+
+## 0.4.0：接收 GREA 执行工具
+
+GREA 2026.10.27 起把 23 个执行工具移交 beaver，工具 ID、参数、报告与退出码不变，用 `beaver tool <id> [args]` 运行（GREA 的 `run-tool` 同 ID 自动委托）。源码在 `src/beaver/toolkit/`，所需 GREA 辅助模块随附于 `toolkit/support/`；运行库见 `toolkit` extra（Pillow、jsonschema）。清单：`beaver tool --help` 或 capabilities 的 `toolkit.grea`。

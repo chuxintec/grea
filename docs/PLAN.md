@@ -29,6 +29,12 @@ UI采集/接线/统一诊断已实现并完成模块相关检查；10个C#compan
 
 ## v0.3 冻结历史
 
+## toolkit 来源分支历史记录（原编号保留）
+
+# beaver v0.4：接收GREA执行工具（2026-10-27）
+
+用户要求GREA以技能为主、执行代码迁入monkey/beaver并统一发布。0.4.0在0.3.0上新增`toolkit`包：23个GREA执行工具原样迁入（ID/报告/退出码不变），`beaver tool <id>`运行，对应测试69项迁入`tests/toolkit`。全量190项中188项通过；2项Go测试依赖主checkout的`.private`私有工具/夹具，在隔离worktree中缺失，主checkout原样通过。v0.3全部事务与制品不变。
+
 # beaver v0.3：Unity＋Golang联合开发与交付
 
 2026-10-26，0.3.0本地交付（未发布），codex/beaver-v0.3；基线fae3845，0.2全部制品与事务保持。完整范围沿Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md；真实用户三条授权见.private/v03/authorization.json，含最新Golang必选补充。

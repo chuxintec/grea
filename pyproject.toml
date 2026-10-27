@@ -13,6 +13,7 @@ dependencies = []
 
 [project.optional-dependencies]
 images = ["Pillow>=10,<13"]
+# Runtime libraries of the GREA toolkit (`beaver tool <id>`); GREA modules get them from the GREA runtime.
 toolkit = ["Pillow>=10,<13", "jsonschema>=4.20,<5"]
 
 [project.scripts]
