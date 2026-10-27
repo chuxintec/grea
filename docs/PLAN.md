@@ -2,13 +2,13 @@
 
 2026-10-26，0.3.0本地交付（未发布），codex/beaver-v0.3；基线fae3845，0.2全部制品与事务保持。完整范围沿Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md；真实用户三条授权见.private/v03/authorization.json，含最新Golang必选补充。
 
-当前维护定位（2026-10-26）：支持肥鹅 v1.2 在真实任务中使用 GREA＋beaver，按[总监 V12-PLAN 第五节](/Users/wangmeng/Documents/Manager/decisions/20261026-foodstreet-standard-migration/V12-PLAN.md)维护当前能力。已原生核验总监聊天 turn `01a1789b-99a7-7913-8ad1-db8949a18f37` / human `01a1789b-99d5-7c50-97fc-163cfe0b2d90` 的实际用户指令；v0.3 带限制本地交付记录、固定包及历史失败保持。
+当前维护定位（2026-10-27）：将既有肥鹅 v1.2 按需支持延续至 v1.3 完整主体，按[总监 v1.3 计划第四节](/Users/wangmeng/Documents/Manager/decisions/20261027-foodstreet-v13/PLAN.md)支持真实任务中的 GREA＋beaver 通用工程执行缺口。已原生核验总监聊天 turn `01a17af6-4be7-7651-a107-2dca3728f7a7` / human `01a17af6-4c06-7682-b8eb-0ef50e01cc28` 的实际用户指令；复用已验证的 beaver 0.3 固定包，带限制本地交付记录及历史失败保持，不因支持范围延续而新建工具版本。
 
 优先接收批量 Prefab、资源引用、代码、JSON 配置及构建的具体通用执行缺口；小范围纯代码修改不强制复杂工具事务，工具失败不阻断可独立推进的游戏业务。最小复现记录固定工具身份、命令/目标、预期与实际、错误定位、影响和可用替代；只有真实任务依赖且有可操作证据时，才针对性修复并验证受影响部分。历史中文 Play／Metal 问题不作为自动清零任务，不重复已验证整套，也不自动开启广泛新版本。
 
-游戏业务及正式工程由肥鹅单写，Skill／方法／薄适配由 GREA 单写，通用执行问题及私有复现由 beaver 负责。本轮真实缺口可在三位已登记开发者与技术总监间直接低通信协调，严重阻塞、数据/架构风险或权限裁定交总监；不跨写正式游戏、服务或存档，不新增全局安装、推送或 Release。普通 ACK 不作为开发前置。
+游戏业务及正式工程由肥鹅单写，Skill／方法／薄适配由 GREA 单写，通用执行问题及私有复现由 beaver 负责。项目专用证书和启动修复由肥鹅实施，仅其中有最小复现的通用工具缺口交 beaver。本轮真实缺口可在三位已登记开发者与技术总监间直接低通信协调，严重阻塞、数据/架构风险或权限裁定交总监；不跨写正式游戏、服务或存档，不新增全局安装、推送或 Release。普通 ACK 不作为开发前置。
 
-当前维护队列：肥鹅 `storage-feedback-01` 暴露执行后的结果合同差异。固定 beaver 已原生 verified、退出 0，但 GREA 将合法 `actualChanges` 路径字符串限定为对象而拒收。beaver 已明确逐项 string/object 合同，并以固定安装版通过 6 项 CLI 合同检查；保存原始 provider stdout 后，只读验证 GREA 修正后的校验可接受原四路径并拒绝五类非法项；生成 Schema 与代码一致，GREA 的 8 项受影响检查及原结果离线重验通过，原 invocation/外层失败文件哈希未变。原外层 needs_action、原生成功及事务分别保留，不重放、不改旧回执。GREA 主开发已修正消费侧 Schema/生成文件及执行后失败提示，并向肥鹅交接；beaver 仅改文档/回归，版本、wheel 与 producer `e6191235…` 不变，无 Engine/游戏/服务写入。证据在 `.private/v03/result-contract/` 与 `.private/v03/result-contract-tests.log`。本项目无新增执行器实现任务，不派发子 Agent或循环巡检。
+已完成维护：肥鹅 `storage-feedback-01` 暴露执行后的结果合同差异。固定 beaver 已原生 verified、退出 0，但 GREA 将合法 `actualChanges` 路径字符串限定为对象而拒收。beaver 已明确逐项 string/object 合同，并以固定安装版通过 6 项 CLI 合同检查；保存原始 provider stdout 后，只读验证 GREA 修正后的校验可接受原四路径并拒绝五类非法项；生成 Schema 与代码一致，GREA 的 8 项受影响检查及原结果离线重验通过，原 invocation/外层失败文件哈希未变。原外层 needs_action、原生成功及事务分别保留，不重放、不改旧回执。GREA 主开发已修正消费侧 Schema/生成文件及执行后失败提示，并向肥鹅交接；beaver 仅改文档/回归，版本、wheel 与 producer `e6191235…` 不变，无 Engine/游戏/服务写入。证据在 `.private/v03/result-contract/` 与 `.private/v03/result-contract-tests.log`。v1.3 当前暂无新增具体通用缺陷或执行器实现任务，不派发子 Agent或循环巡检。
 
 | 组 | 状态 | 出口 |
 |---|---|---|
