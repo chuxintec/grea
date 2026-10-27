@@ -122,5 +122,91 @@
     "Historical consumer failure was read offline, not reapplied",
     "No Go maintenance requirement; no new server stack or Cocos work",
     "No push/tag/Release/global install/production/service/save operation"
-  ]
+  ],
+  "greaAdapter": {
+    "status": "pass_with_limits",
+    "report": "/Users/wangmeng/Documents/Games/tools/grea/validation/development/beaver05-integration-20261027.json",
+    "reportSha256": "b169f54687f01271ba494c101d8b45d38be42984ab1c741b8f4363513fcf63ec",
+    "sourceFilesVerified": 6,
+    "fixedIdentityMatches": true,
+    "affectedChecksReportedPassed": 12,
+    "operations": [
+      "ui.inspect",
+      "ui.analyze",
+      "ui.repair-plan",
+      "wiring.plan",
+      "diagnostics.summarize"
+    ],
+    "actualCLI": [
+      {
+        "label": "analysis",
+        "operation": "ui.analyze",
+        "status": "partial",
+        "exit_code": 1,
+        "executed": true
+      },
+      {
+        "label": "wiring",
+        "operation": "wiring.plan",
+        "status": "ok",
+        "exit_code": 0,
+        "executed": true
+      },
+      {
+        "label": "repair",
+        "operation": "ui.repair-plan",
+        "status": "ok",
+        "exit_code": 0,
+        "executed": true
+      },
+      {
+        "label": "ambiguous",
+        "operation": "wiring.plan",
+        "status": "blocked",
+        "exit_code": 1,
+        "executed": true
+      },
+      {
+        "label": "diagnostics",
+        "operation": "diagnostics.summarize",
+        "status": "partial",
+        "exit_code": 1,
+        "executed": true
+      }
+    ],
+    "actualMCP": [
+      {
+        "label": "analysis",
+        "outer_status": "partial",
+        "provider_status": "partial",
+        "executed": true,
+        "native": "not_run"
+      },
+      {
+        "label": "diagnostics",
+        "outer_status": "partial",
+        "provider_status": "partial",
+        "executed": true,
+        "native": "not_run"
+      }
+    ],
+    "legacyRawToolkit": {
+      "tool": "static_asset_copy",
+      "status": "pass",
+      "raw_output_preserved": true,
+      "file_bytes_equal": true,
+      "scope": "one owned non-game fixture, not all23 runtime operations"
+    },
+    "uiInspectEngineExecuted": false,
+    "greaSourceDirtyUncommitted": true,
+    "defaultLockAndGlobalPluginUnchanged": true,
+    "limits": [
+      "ui.inspect only actual installed argparse mapping checked; no Unity Editor launched by GREA.",
+      "Wiring/repair inputs are owned fabricated static snapshots over minimal project files; they prove forwarding/guarded planning, not authentic native collection or binding execution.",
+      "Analysis remains caller-supplied; raycast/visual/physical-input/gameplay acceptance not inferred.",
+      "Upstream native receipt uses its original dev producer and is not counted as new final-wheel native execution here.",
+      "Formal FoodStreet adoption awaits a natural authorized task; no game or shared Go services changed.",
+      "No global/workspace plugin replacement, commit/push/merge/tag/Release."
+    ]
+  }
 }
