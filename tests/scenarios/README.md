@@ -1,4 +1,4 @@
-# grea 维护验证
+# GREA 维护验证
 
 技能维护的场景数据统一在 tests/scenarios，检查实现位于 src/grea/tools，通过统一工具 ID 调用；本页是维护验证入口，不规定游戏开发流程。静态通过与 Agent 行为正确分别记录。
 

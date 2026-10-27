@@ -1,6 +1,6 @@
 # 贡献指南
 
-从 [使用说明](docs/使用指南.md) 配置 Python 环境。维护约定见 [维护说明](docs/维护与发布.md)，游戏流程在 `plugin/`（grea 插件），执行契约在 `src/grea/contracts.py`，工具目录在 `registry.json`。
+从 [使用说明](docs/使用指南.md) 配置 Python 环境。维护约定见 [维护说明](docs/维护与发布.md)，游戏流程在 `plugin/`（GREA 插件），执行契约在 `src/grea/contracts.py`，工具目录在 `registry.json`。
 
 完整维护测试和发布工具使用 Python 3.12；运行时最低版本仍以 pyproject.toml 为准。标签发布及只验证不发布的入口见 [自动发布](docs/维护与发布.md)。
 

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "generator": "scripts/skill_closure.py",
+  "sources": {
+    "Unity工程结构与开发规范.md": "plugin/skills/grea-unity-standard/references/Unity工程结构与开发规范.md",
+    "Unity指南.md": "docs/Unity指南.md",
+    "Unity跨引擎移植与行为一致性.md": "plugin/skills/grea-native-port/references/Unity跨引擎移植与行为一致性.md",
+    "monkey.md": "docs/providers/monkey.md",
+    "monkey与beaver调用.md": "plugin/skills/grea/references/monkey与beaver调用.md",
+    "全量初版工程与协作.md": "plugin/skills/grea/references/全量初版工程与协作.md",
+    "共同约束与执行入口.md": "plugin/skills/grea/references/共同约束与执行入口.md",
+    "工具选择与调用.md": "plugin/skills/grea/references/工具选择与调用.md",
+    "提取与引用恢复.md": "plugin/skills/grea-evidence/references/提取与引用恢复.md",
+    "测试与结果交付.md": "plugin/skills/grea-delivery/references/测试与结果交付.md",
+    "游戏恢复开发.md": "plugin/skills/grea/references/游戏恢复开发.md",
+    "研发交接资料核验.md": "plugin/skills/grea-evidence/references/研发交接资料核验.md"
+  }
+}

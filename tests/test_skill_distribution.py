@@ -30,10 +30,6 @@ class SkillDistributionTests(unittest.TestCase):
         from grea import __version__
         value=json.loads((ROOT/'plugin/version.json').read_text());self.assertEqual(value['version'],__version__);self.assertEqual(value['greaVersion'],__version__)
         self.assertTrue(set(value['requiredOperations']) <= set(CONTRACTS))
-    def test_tool_modules_import_without_execution(self):
-        # These modules formerly parsed argv/wrote output during import.
-        with tempfile.TemporaryDirectory() as tmp:
-            result=subprocess.run([sys.executable,'-c','import grea.tools.shader_probe, grea.tools.unpack_xapk'],cwd=tmp,capture_output=True,text=True)
-            self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(list(Path(tmp).iterdir()),[])
+
 
 if __name__=='__main__':unittest.main()

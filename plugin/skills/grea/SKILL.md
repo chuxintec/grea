@@ -1,48 +1,44 @@
 ---
 name: grea
-description: 游戏调研、恢复与目标工程开发的总入口。当用户分析或恢复已发布的游戏（Cocos Creator、Laya/FairyGUI、Egret、H5、微信小游戏 wxapkg、APK/XAPK、Unity Mono/IL2CPP 包）依据原版分析、恢复、复刻或选择 Unity/Cocos 客户端及Go后端，但还没有明确具体环节时使用；本技能判断任务模式，并转到 grea-evidence、grea-native-port、grea-unity-recovery、grea-parity、grea-unity-standard、grea-delivery 、grea-reskin 、grea-evolve、grea-research、grea-cocos 或 grea-server-go。Use for game research and explicit Unity/Cocos client or Go backend targets. 研究建议不自动批准开发，普通引擎修复不强套恢复流程。
+description: GREA 游戏调研、恢复与工程开发的方法入口：按实际工作流阶段（调研→取证→恢复→工程开发→对照修复→构建交付）选择子技能，编排随 GREA 发布的 monkey 与 beaver 模块。适用于已发布游戏分析恢复、已有可维护工程的迭代和明确的客户端或 Go 目标；调研结论不自动批准开发，普通原创开发不强套恢复门槛。
 ---
 
-# grea · 游戏调研、恢复与目标选择
+# GREA · 游戏调研、恢复与开发
 
-grea 插件把游戏调研、恢复与显式目标工程开发拆成若干技能。源引擎、目标引擎与后端分别选择；用户指定目标时尊重选择。本技能只负责判断模式并转交；生命周期兼容、事件/经济只读分析及配置候选按文末有限工具入口，不意味着已支持生产运营。所有技能共同遵守 [共同约束与执行入口](../../shared/01-流程-共同约束与执行入口.md)，先读它。
+GREA 维护方法、规范和工具选择。**monkey 恢复原游戏为独立工程候选；beaver 操作开发工程；游戏开发者负责业务与可玩结果。** 底层 `grea` 命令与 Skill ID 保持小写兼容。
 
-## 选择模式
+开始核对用户目标、实际工程、局部约定、引擎版本和已有验收。执行前读[共同约束与执行入口](references/共同约束与执行入口.md)；工具链准备与缺依赖处理见[monkey与beaver调用](references/monkey与beaver调用.md)。纯方案可继续，不把工具存在当执行通过。
 
-先核对实际项目、局部 AGENTS、编辑器版本、当前计划与验收，以及用户本期目标，再按下表选择。混合请求分别列出各部分的门槛。
+## 按工作流阶段选技能
 
-| 模式 | 比较基线与必要结果 | 使用的技能 |
-| --- | --- | --- |
-| 已恢复工程的feature/tuning/prototype | v2合同＋旧不变量/批准增量＋配置/save/协议影响；可玩结果另验 | `grea-evolve` |
-| 本地运营数据/配置候选 | 明确授权输入、口径/窗口及版本；只读分析，不自动生产写入 | 读取[数据与预览](../../../docs/providers/lifecycle-analysis.md) |
-| 游戏调研/多游戏比较 | 品类/循环/差异、成本与发行判断，事实/推断/经验/未知分开；推荐不是开发批准 | `grea-research` |
-| Cocos目标工程 | 明确Creator目标版本、五层模板、有限转换子集与浏览器运行 | `grea-cocos` |
-| 自有Go后端 | 六服、gRPC/MySQL/Redis、持久幂等与双客户端合同 | `grea-server-go` |
-| 只读取证或成本评估 | 声明输入、已证实能力与未知范围；提取/解析不等于服务端或可玩恢复 | `grea-evidence`；本期不启动游戏实现 |
-| 完整恢复或首次重建 | 原版同版本、同状态；完整取证和提取库存、工作工程、差异清单。总体顺序见 [恢复开发](../../shared/01-流程-游戏恢复开发.md) | 先用 `grea-evidence`；源游戏是 Unity 时接 `grea-unity-recovery`，目标明确为Unity且源为其他引擎时接 `grea-native-port`；目标Cocos转 `grea-cocos` |
-| 跨引擎转原生 Unity，或清理源引擎残留 | 原版的规则语义与可观察结果；原生可维护门 | `grea-native-port` |
-| 局部一致性修复 | 相关原版依据和受影响入口；只补缺失的证据和回归 | `grea-parity` |
-| 结构重构、资源治理、性能优化 | 当前已核验工程的行为与资源身份；性能任务要有固定设备、场景和负载的前后数据 | `grea-unity-standard`；替换 UI 框架时加 `grea-native-port` |
-| 构建、预览、发布 | 明确的源码、平台、制品身份和本次交付层级 | `grea-delivery` |
-| 授权换皮 | 美术选样/成套生产/样板完整替换，风格获批后全量换皮与修Bug；最后才做另行约定的UI/UE调优；保持原布局、操作和规则 | `grea-reskin` |
-| 已恢复工程的有限二次开发 | 冻结旧基线玩法/存档不变量，允许的UI/UE维度按新设计；显式UI/UE或v2 feature/tuning/prototype合同 | `grea-evolve` |
-| 工具、技能维护与复盘 | 文档、工具和调用方契约；不重跑无关的游戏流程 | [工具清单](../../shared/02-工具-选择与调用.md)、[复盘维护](../../shared/10-维护-开发复盘与规范更新.md) |
+GREA 的技能按实际工作流划分，每个技能自成一体：它需要的文档都在自己的 `references/` 中（跨阶段共用的文档以 `references/shared/` 生成副本提供，权威来源只有一处）。只加载当前阶段的技能和需要的 reference。
 
-`grea plan-workflow` 新增 target_engine（unity/cocos/none，省略仍unity）与backend（none/go），不把非Unity来源一律送Unity；研究不自动进入实现。其余以 intent、source_engine、engine_version/source_format、target_platform 和 acceptance_profile 给出步骤与必验项；`assess`/`evidence` 只做只读评估/取证，unknown 先辨识来源。拿到计划不表示执行，格式支持须核对工具 adapter。
+| 阶段 | 用户任务 | 技能 | 执行模块 |
+| --- | --- | --- | --- |
+| 1 调研立项 | 分析游戏、估算成本、选择目标引擎与平台 | `grea-research`：事实、推断与未知分开；不自动立项 | — |
+| 2 取证与交接 | 原版运行录制、识别、解包、资产/代码证据、他人研发交接包 | `grea-evidence`：固定版本和来源 | monkey（解包、来源工具） |
+| 3 恢复为候选 | Unity 原包恢复为 Unity 工程 | `grea-unity-recovery`：monkey 候选与引用依据 | monkey |
+| 3 恢复为候选 | Cocos/Laya/Egret/H5 转原生 Unity | `grea-native-port`：原规则与可观察结果 | monkey |
+| 3 恢复为候选 | 明确选择 Cocos Creator 目标 | `grea-cocos`：声明的版本和有限转换能力 | monkey |
+| 4 工程开发 | 候选采用、工程治理、资源迁移、性能 | `grea-unity-standard`：保护当前行为和资源身份 | beaver |
+| 4 工程开发 | 已有工程加功能、调优、原型 | `grea-evolve`：旧不变量＋批准增量 | beaver |
+| 4 工程开发 | 授权换皮 | `grea-reskin`：批准设计，保护指定布局/规则 | beaver |
+| 4 工程开发 | 明确批准的自有 Go 服务 | `grea-server-go`：产品业务留项目；不恢复未知原厂服务 | beaver |
+| 5 对照修复 | 原版局部差异修复、真实体验对照 | `grea-parity`：受影响原版证据 | beaver（轨迹/事件/表现对照） |
+| 6 构建交付 | 结果分层报告、构建、安装、预览、发布支持 | `grea-delivery`：同源制品及本次权限 | beaver |
 
-## 全量初版与开发分工
+同一内容只归一个阶段：取证方法在 `grea-evidence`，候选采用与三方合并在 `grea-unity-standard`，生命周期与变更合同在 `grea-evolve`，真实体验对照在 `grea-parity`，测试与结果交付在 `grea-delivery`。混合任务按阶段顺序组合；已有工程正常开发无需重导原包，缺来源基线不假装能够三方合并。新恢复的总体交接见[全量初版工程与协作](references/全量初版工程与协作.md)，整体恢复流程见[游戏恢复开发](references/游戏恢复开发.md)。
 
-完整恢复／首次重建先读[全量初版工程与协作](../../shared/01-流程-全量初版工程与协作.md)：GREA冻结来源→monkey批量导出独立初版→GREA核真实交接→游戏Agent接续业务。当前all-scope适配not_available，不能把lookup、素材池或completed当完整工程；不等待全玩法才交初版。
+## 跨阶段流程
 
-## 验收维度
+收到他人研发交接包时先转 `grea-evidence` 技能的研发交接资料核验；仅采用获准部分，不由接收资料自动批准游戏开发或政策变化。
 
-各模式的结果按 [分层验收](../../shared/08-验收-测试与结果交付.md) 分别报告。涉及跨引擎实现、原生残留整改或其受影响回归时，另记 [原生可维护门](../../shared/08-验收-测试与结果交付.md#原生可维护性跨引擎转换)；术语含义见 [术语表](../../shared/01-流程-术语表.md)。
+- 声明有界功能、存档或协议影响时读[生命周期与变更合同](references/shared/生命周期与变更合同.md)。
+- 判断本次结果时读[测试与结果交付](references/shared/测试与结果交付.md)，代码、原生、真实输入、视觉及产品业务分别报告。
+- 记录开发状态或协作范围时读[开发计划与进度管理](references/开发计划与进度管理.md)和[功能模块并行协作](references/功能模块并行协作.md)。是否并行仍服从用户授权。
+- 工具维护读[选择与调用](references/工具选择与调用.md)；项目脚本复制增多或想把能力交给 monkey/beaver 时读[项目脚本沉淀与工具晋升](references/项目脚本沉淀与工具晋升.md)；复盘读[开发复盘与规范更新](references/开发复盘与规范更新.md)。术语含义不清时读[术语表](references/术语表.md)；历史经验及失败处理由共同约束按需导航。
+- 本地运营数据分析见[数据与预览](references/shared/lifecycle-analysis.md)：过渡旧入口，不执行生产运营。
 
-## 判断源引擎
+## 模块与执行
 
-- 源包是 Unity（有 `globalgamemanagers`、`*.assets`、`il2cpp_data` 或 Mono 程序集）时，目标是找回或重建 Unity 工程，见 `grea-unity-recovery`。
-- 源包是 Cocos（有 `cc.` 类型、`project.json`/`settings.js`、bundle 中的 uuid 资源）、Laya、FairyGUI、Egret 或 H5 时，目标是纯原生 Unity 工程，见 `grea-native-port`。目标为Unity时**不在 Unity 中复刻源引擎运行时**；目标Cocos见 `grea-cocos`。
-- Cocos 先核对实际 2.x/3.x 版本与序列化格式，不能用 2.4 reader 猜解 3.x/CCON；其他原生格式单列支持表，不因 APK 或资源扩展名就判为 Unity。
-- 判断不了源引擎时，先用 `grea-evidence` 解包和盘点，再回到这里选择。
-
-生命周期阶段/模式及有界feature/tuning/prototype合同见[生命周期与变更](../../shared/01-流程-生命周期与变更合同.md)。monkey仅负责声明支持的转换候选，全量初版核验后才接续业务；不自动启动Agent或执行源代码；运营当前只规划，不声称已有生产工具。
+monkey 与 beaver 作为 GREA 模块随版本统一发布，固定版本见 `modules.lock.json`，`grea_modules status/install` 查看或隔离安装。原先在 GREA 内的执行工具已移入模块：工具 ID 不变，`run-tool` 自动委托 `monkey tool <id>` 或 `beaver tool <id>`。`grea plan-workflow`/MCP `plan_workflow` 返回阶段、reference 与必选模块声明，不执行任务。`toolchain_check` 显式核验两模块；恢复使用 `monkey_pipeline`，开发阶段调用已绑定 beaver 的真实能力。未支持的工程操作返回 needs_action，不复制一套执行器补位。

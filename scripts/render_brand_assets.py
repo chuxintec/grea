@@ -43,7 +43,7 @@ def main():
         raw=(assets/(name+'.svg')).read_bytes();validate_asset('plugin/assets/'+name+'.svg',raw);identity[name+'.svg']=hashlib.sha256(raw).hexdigest()
         for size in SIZES:
             image=render(raw,size);assert image.getextrema()[3]==(0,255);data=png_bytes(image);path=name+'_'+str(size)+'.png';validate_asset('plugin/assets/'+path,data);expected[path]=data;identity[path]=hashlib.sha256(data).hexdigest()
-    expected['brand.json']=(json.dumps(dict(schema_version=1,author='grea contributors',license='MIT',design='Original geometric G with reassembled tiles; no game/vendor trademark assets',renderer='restricted SVG rect/polygon, Pillow 12.2.0, 4x antialias; stored DEFLATE PNG',files=identity),indent=2,sort_keys=True)+'\n').encode()
+    expected['brand.json']=(json.dumps(dict(schema_version=1,author='GREA contributors',license='MIT',design='Original geometric G with reassembled tiles; no game/vendor trademark assets',renderer='restricted SVG rect/polygon, Pillow 12.2.0, 4x antialias; stored DEFLATE PNG',files=identity),indent=2,sort_keys=True)+'\n').encode()
     for name,data in expected.items():
         target=assets/name
         if args.check:

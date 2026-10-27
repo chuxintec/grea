@@ -19,7 +19,7 @@ class BulkHandoff(unittest.TestCase):
    old=project/'Assets/one.prefab';lookup=project/'Assets/lookup.json';old.rename(lookup);c['assets'][0].update(disposition='native',outputs=[self.ref(lookup,project)],reason='');v=self.check(r,c,p);self.assertFalse(v['handoff_ready']);self.assertIn('source_graph_not_native:owned-one',v['issues'])
  def test_bound_receipt_is_not_business_or_independent_engine_proof(self):
   with tempfile.TemporaryDirectory() as td:
-   r=Path(td).resolve();source,project,c,p=self.fixture(r,'texture');receipt=r/'native.json';receipt.write_text(json.dumps(dict(schema_version=1,target_engine='unity',import_status='pass',compile_status='pass',artifacts=[self.ref(f,project) for f in project.rglob('*') if f.is_file()])));c['native_check']=self.ref(receipt,r);v=self.check(r,c,p);self.assertTrue(v['handoff_ready']);self.assertEqual(v['business_complete'],'not_proven');self.assertEqual(v['all_scope_export'],'not_available_in_grea_adapter');self.assertNotIn('prefab',v['logical_asset_counts'])
+   r=Path(td).resolve();source,project,c,p=self.fixture(r,'texture');receipt=r/'native.json';receipt.write_text(json.dumps(dict(schema_version=1,target_engine='unity',import_status='pass',compile_status='pass',artifacts=[self.ref(f,project) for f in project.rglob('*') if f.is_file()])));c['native_check']=self.ref(receipt,r);v=self.check(r,c,p);self.assertTrue(v['handoff_ready']);self.assertEqual(v['business_complete'],'not_proven');self.assertEqual(v['all_scope_export'],'not_executed_by_handoff_audit');self.assertNotIn('prefab',v['logical_asset_counts'])
    (project/'Assets/new.cs').write_text('Changed after native receipt')
    with self.assertRaises(ValueError):self.check(r,c,p)
  def test_all_input_dispositions_and_source_bytes_are_required(self):
@@ -28,8 +28,8 @@ class BulkHandoff(unittest.TestCase):
    with self.assertRaises(ValueError):self.check(r,c,p)
    c['assets'][0]['source_files']=['one'];(source/'new').write_text('Not in inventory')
    with self.assertRaises(ValueError):self.check(r,c,p)
- def test_plan_routes_bulk_first_without_claiming_export_support(self):
+ def test_plan_routes_bulk_first_without_claiming_execution(self):
   from grea.application import dispatch
   for target in ('unity','cocos'):
-   v=dispatch('plan_workflow',dict(mode='recover',source_engine='cocos',target_engine=target));self.assertEqual(v['status'],'ok',v);p=v['result'];self.assertEqual(p['initial_project_pipeline']['export_owner'],'monkey');self.assertEqual(p['initial_project_pipeline']['all_scope_export'],'not_available_in_grea_adapter');self.assertFalse(p['steps'][0]['executed']);self.assertNotIn('cocos_convert',[t for step in p['steps'] for t in step['tool_ids']])
+   v=dispatch('plan_workflow',dict(mode='recover',source_engine='cocos',target_engine=target));self.assertEqual(v['status'],'ok',v);p=v['result'];self.assertEqual(p['initial_project_pipeline']['export_owner'],'monkey');self.assertEqual(p['initial_project_pipeline']['all_scope_export'],'pinned_monkey_0_4_0_pipeline');self.assertFalse(p['steps'][0]['executed']);self.assertNotIn('cocos_convert',[t for step in p['steps'] for t in step['tool_ids']])
   p=dispatch('plan_workflow',dict(mode='fix',source_engine='unity'))['result'];self.assertNotIn('initial_project_pipeline',p)

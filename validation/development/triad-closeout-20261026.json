@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "status": "local_triad_integration_closed_with_layered_evidence",
+  "grea": {
+    "version": "2026.10.26.dev4",
+    "source_implementation": {
+      "version": "2026.10.26.dev4",
+      "core_sha256": "a8071537f8f92ac61c7b027903211b7c8618267f6bbb56aaa152f41f2579e4c6",
+      "files": 99
+    },
+    "branch": "codex/monkey-toolchain-v040",
+    "delivery_kind": "local_source_candidate_and_explicit_provider_profile",
+    "global_installed_version": "2026.10.26.dev2_unchanged",
+    "complete_plugin_baseline": "2026.10.26.dev3 sha256 ab881bd7359203c3fa85fe25586702b3ce040258520d67517a168abc32a4165b; historical isolated bundle acceptance reused, no dev4 full rebuild claimed",
+    "selected_source_handoff": {
+      "path": ".private/triad-closeout-20261026/source-handoff/manifest.json",
+      "bytes": 2102,
+      "sha256": "0dfb1ffba708671f3d30a887f39fe315baf0846ab6852deebab50a2dd5387439"
+    }
+  },
+  "baseline": {
+    "monkey": "0.4.0 pinned stable pipeline",
+    "beaver": "0.1.0 final-03 local unpublished wheel",
+    "beaver_commit": "b67a164e7618179c1665028a516ea6f2bd6dea00",
+    "beaver_wheel_sha256": "09020d42b75497ec39040f08e48fab24378a0baa5b51cebe92529fe67a7ee2f6",
+    "beaver_wheel_bytes": 59166,
+    "beaver_validation_sha256": "0099fc2317ff4a153a70d080c91ac391ef9d425519d896b6338f77b5cf2b12ed",
+    "verified_evidence_artifacts": 34,
+    "wheel_package_files_verified": 21
+  },
+  "implemented": [
+    "15 named beaver operations via one shared CLI/MCP thin adapter",
+    "Generated beaver-operation request schema",
+    "Actual pinned capability check and unchanged package/command after execution",
+    "Producer/status/exit/capture checks without upgrading partial/blocked/failed/not_run",
+    "Beaver native plan/expected-before/rollback/artifact mechanics remain external",
+    "Default engineering workflow selects beaver_pipeline; old GREA operations retained only as compatibility metadata"
+  ],
+  "new_verification": {
+    "adapter_boundary_tests": 9,
+    "affected_routing_tests": 2,
+    "real_cli_payload_verify": "ok",
+    "real_cli_partial_response": "preserved_partial",
+    "independent_source_stdio_mcp": "2026.10.26.dev4 actual beaver 0.1.0 invocation; partial retained",
+    "scope": "new forwarding only; no Engine/Player/full suite rerun",
+    "real_cli_blocked_response": "provider blocked/exit2 detected as status-exit mismatch; wrapper needs_action; raw provider result retained",
+    "document_links": {
+      "ok": true,
+      "documents": 140,
+      "localLinks": 705,
+      "errors": [],
+      "scope": "Local links/anchors only; external URLs not fetched."
+    },
+    "generated_contracts": "consistent",
+    "private_skill_preview": "consistent",
+    "git_diff_check": "passed",
+    "git_index": "empty; HEAD e093c4ee15318b412e7ca2dd107791017ff30eb7 unchanged"
+  },
+  "reused_validation_layers": {
+    "final_03_wheel_grea_dev3": [
+      "pinned project.inspect",
+      "matching source build with unchanged source hash",
+      "160-entry artifact payload verification before/after Player",
+      "Player exit0 and runtime JSON/synthetic UI evidence",
+      "post-run provider identity"
+    ],
+    "source_sha256": "c53acc9c17824525b154246c08890b4efcb98e39d63ca455bf016dc18214f16b",
+    "player": {
+      "status": "verified",
+      "exitCode": 0,
+      "counter": 1,
+      "syntheticUIEvent": true,
+      "runtimeJsonValid": true,
+      "rejectedMissingField": true,
+      "rejectedWrongType": true,
+      "prePostPayloadVerification": "ok",
+      "visual": "viewed basic 960x640 visibility/layout; no original-game parity claim",
+      "physicalInput": "not_run",
+      "saveIsolation": "not_claimed"
+    },
+    "earlier_prefab": {
+      "wheelSha256": "c111b92ca122c26b25a1f71f850d3db143e5c32818b1a4a6069cca8dde62bc69",
+      "location": ".private/grea-verification/native-inspect-transaction",
+      "scope": "earlier wheel; same C# source; historical receipt not a final-03 rerun",
+      "same_final_wheel": false
+    },
+    "monkey_candidate_preview": "Earlier real 0.4 frozen candidates consumed by beaver adopt plan, 0 changes; not the same candidate as the native sample Player"
+  },
+  "remaining": [
+    "FoodStreet formal consumer adoption and old full-contract replacement not verified",
+    "Native Prefab historical wheel and final-03 build/Player are distinct layers, not one-version end-to-end claim",
+    "Physical input, save isolation, complete game business/parity not verified by tool sample",
+    "Creator apply/build and Windows/Linux native execution not verified",
+    "monkey 0.5.0.dev1 query-methods/query-tables/inspect-aliases available through explicit development entry only; no new GREA query wrapper or stable0.4 claim",
+    "Pinned beaver 0.1.0 exception path can return blocked with exit2; strict GREA adapter reports needs_action with raw result, rather than accepting an inconsistent exit contract"
+  ],
+  "scope_guards": {
+    "engine_processes_started": 0,
+    "player_processes_started": 0,
+    "full_test_suites_rerun": 0,
+    "game_source_modified": false,
+    "other_product_source_modified": false,
+    "legacy_implementations_removed": false,
+    "global_installation_updated": false,
+    "pushed": false,
+    "merged": false,
+    "released": false
+  },
+  "evidence": [
+    {
+      "path": ".private/triad-closeout-20261026/evidence-reuse-check.json",
+      "bytes": 7540,
+      "sha256": "3bdc589f0a74b191caa41a27cc798f6a9bbfae30907f1b6d6152a7565930d5d6"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/adapter-tests-final.log",
+      "bytes": 97,
+      "sha256": "972e1ae302508b97f1f562e07f1748025f6b0368f27d9a33cd57243c2fe7e9e2"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/routing-tests.log",
+      "bytes": 97,
+      "sha256": "cfdbaa93d0beda58778d6fc50983b6bedf91164b421a69e1d41c4316c1b2e7ff"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/verify-wrapper.json",
+      "bytes": 2275,
+      "sha256": "df52ae3a63c19d50ba6b6f85b514df76c4d4087c6bb1919526afd5ea17a10f89"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/partial-wrapper.json",
+      "bytes": 2305,
+      "sha256": "094727a1c48b90d227b777f107543d8588c6e3a8206b38b837fec78488cb5363"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/blocked-wrapper.json",
+      "bytes": 1835,
+      "sha256": "545d49355c154b6ee0d7319c6cb449855e35d060103eeb42dae89af0da9a5a5a"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/mcp-final-result.json",
+      "bytes": 9209,
+      "sha256": "82a5079d5fa319554ad79d71bec63ee5d025a5cd7c6f88282c0eb2cac5cea284"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/source-session.json",
+      "bytes": 28169,
+      "sha256": "ccbd2c235aa34de9fecb11967ad13baee1f414f42935513e27ec4cab5bbd97ba"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/pin/beaver-lock.json",
+      "bytes": 5367,
+      "sha256": "3b2332ba6972f15fbb5b5fb64ceeff8b9fbcd73d4aae8ee789e7157dd9b1c8ab"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/docs-check.json",
+      "bytes": 141,
+      "sha256": "aa22350ea4089470a2cf56b48c68ddcef331927ba87a6182182cdb424a776741"
+    },
+    {
+      "path": ".private/triad-closeout-20261026/skill-check.json",
+      "bytes": 1246,
+      "sha256": "39ae844e29ae3907d2c0cbfdc139fe68a09446afd5fc34afda5c0ee11daed0d5"
+    }
+  ]
+}

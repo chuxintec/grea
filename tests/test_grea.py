@@ -5,6 +5,7 @@ from jsonschema import Draft202012Validator
 from grea.application import dispatch
 from grea.contracts import catalog,ENVELOPE_SCHEMA
 from grea.common import package_root
+from module_support import with_modules
 
 ROOT=package_root();CLI=ROOT/'bin/grea'
 
@@ -46,7 +47,7 @@ class GreaTests(unittest.TestCase):
         link=self.root/'link';link.symlink_to(p);self.assertEqual(self.call('inspect_target',{'path':str(link)})['status'],'error')
     def test_workflows_and_provider_not_ready(self):
         r=self.call('plan_workflow',{'mode':'recover','source_engine':'laya'})
-        self.assertEqual(r['status'],'ok',r);self.assertFalse(r['result']['executed']);self.assertTrue(Path(r['result']['steps'][0]['reference']).is_file());self.assertIn('全量初版工程与协作',r['result']['steps'][0]['reference']);self.assertTrue(any('Unity-原生转换规范' in step['reference'] for step in r['result']['steps']));self.assertTrue(any('Unity-跨引擎' in s['reference'] for s in r['result']['steps']));self.assertFalse(any('Unity-工程重建' in s['reference'] for s in r['result']['steps']))
+        self.assertEqual(r['status'],'ok',r);self.assertFalse(r['result']['executed']);self.assertTrue(Path(r['result']['steps'][0]['reference']).is_file());self.assertIn('全量初版工程与协作',r['result']['steps'][0]['reference']);self.assertTrue(any('Unity原生转换规范' in step['reference'] for step in r['result']['steps']));self.assertTrue(any('Unity跨引擎' in s['reference'] for s in r['result']['steps']));self.assertFalse(any('Unity工程重建' in s['reference'] for s in r['result']['steps']))
         self.assertEqual(self.call('describe_tool',{'tool_id':'unity_pipeline'})['result']['availability']['runtime'],'not_checked')
         self.assertEqual(self.call('doctor',{'probe':True})['error']['code'],'EXPLICIT_SELECTION_REQUIRED')
     def test_existing_case_and_unknown_not_complete(self):
@@ -70,6 +71,7 @@ class GreaTests(unittest.TestCase):
     def test_tamper_detection(self):
         case=self.init();eid=self.evidence(case,'test_report','test.json');p=case/'evidence'/f'{eid}.json';v=json.loads(p.read_text());v['kind']='original_runtime';p.write_text(json.dumps(v))
         self.assertEqual(self.call('case_status',{'case_dir':str(case)})['error']['code'],'TAMPERED_EVIDENCE')
+    @with_modules
     def test_real_helper_and_nonzero_parity(self):
         a=self.artifact('a.jsonl',b'{"value":1}\n');b=self.artifact('b.jsonl',b'{"value":2}\n')
         args={'tool_id':'compare_traces','arguments':[str(a),str(b),'--field','/value'],'run_dir':str(self.root/'run')}
@@ -79,6 +81,7 @@ class GreaTests(unittest.TestCase):
         self.assertEqual(receipt['limits']['timeout_seconds'],120)
         self.assertEqual(receipt['identity_observed_at'],'before_launch')
         self.assertEqual(self.call('run_tool',args)['error']['code'],'OUTPUT_EXISTS')
+    @with_modules
     def test_typed_unity_adapters(self):
         assets=self.root/'Assets';assets.mkdir()
         (assets/'Panel.prefab').write_text('%YAML 1.1\n--- !u!1 &1\nGameObject: {m_Name: Panel}\n')
@@ -127,6 +130,8 @@ class GreaTests(unittest.TestCase):
     def test_cli_json_failure(self):
         p=subprocess.run([sys.executable,str(ROOT/'launch.py'),'session','{"extra":1}'],capture_output=True,text=True,cwd=tempfile.gettempdir())
         self.assertEqual(p.returncode,2);self.assertEqual(json.loads(p.stdout)['error']['code'],'INVALID_ARGUMENTS')
+
+    @with_modules
 
     def test_typed_cli_paths_resolve_from_caller(self):
         self.artifact('a.jsonl',b'{"value":1}\n');self.artifact('b.jsonl',b'{"value":1}\n')

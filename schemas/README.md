@@ -35,3 +35,13 @@ python3 scripts/generate_contracts.py --check
 ## 生命周期与本地运营数据
 
 change-contract.schema.json以oneOf显式分开旧v1 ui_ux与有界变更v2；operations.json中的stage/work_mode/delivery_level只作合同/规划，不授予权限。art-ledger新增可选provenance，旧记录仍兼容。operations-event.schema.json由lifecycle_data_contracts生成，定义本地只读事件v1；IANA时区、重复ID/回执、窗口等语义由工具检查。参见[兼容及预览](../docs/providers/lifecycle-analysis.md)。
+
+## monkey 批量工具链
+
+[monkey-pipeline.schema.json](monkey-pipeline.schema.json)由`src/grea/monkey_contracts.py`从版本化操作表生成，定义plan请求与预算；实际路径、完整输入引用、版本/hash和执行前后身份另由运行时验证。不是转换结果或原生验收证明。
+
+`beaver-operation.schema.json` 由命名转发表生成，限定旧0.1/0.2及固定0.3候选07和08/元数据等价09的49个路由；`x-beaver-versions`标适用版本，`x-beaver-capability`给出精确声明ID或apply的动态能力入口。版本/producer、绝对路径、实现锁、预期hash及预算由运行时校验；debug宽高成对也进入Schema。GREA封装schema_version1不等于provider的production spec3、config3 spec2，不复制其工程执行Schema。
+
+`beaver-result.schema.json` 为两个固定0.3实现接入使用的beaver-result/1结果外壳校验；约束producer、状态、诊断/制品和验证字段，保留provider的data。旧0.1/0.2合同和摘要算法不因此改变；Schema存在不证明原生、游戏采用或0.3整版通过。
+
+其中actualChanges逐项为非空路径string或object摘要，不统一包装；数字/null/数组等不合法。外层校验失败可能发生在原生已写入之后，需结合executed、原stdout/退出码及事务见证判断，不能以Schema拒收推断零写入或回滚成功。

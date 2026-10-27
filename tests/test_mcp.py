@@ -6,6 +6,7 @@ from mcp.client.stdio import StdioServerParameters
 from jsonschema import Draft202012Validator
 from grea.common import package_root
 from grea.contracts import catalog,ENVELOPE_SCHEMA
+from module_support import with_modules
 
 class MCPTests(unittest.IsolatedAsyncioTestCase):
     async def test_stdio_catalog_parity_success_and_failure(self):
@@ -29,9 +30,10 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
                 result=await client.call_tool('inspect_target',{'path':str(p)})
                 self.assertEqual(result.structured_content['result']['target']['format'],'unity-bundle')
 
+    @with_modules
     async def test_stdio_case_and_typed_helper(self):
         root=package_root()
-        async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=20) as client:
+        async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp'],env=dict(__import__("os").environ)),read_timeout_seconds=20) as client:
             with tempfile.TemporaryDirectory() as d:
                 base=Path(d);source=base/'source.apk';source.write_bytes(b'fixture')
                 result=await client.call_tool('init_case',{'project_dir':d,'source':str(source),'mode':'fix'})

@@ -1,4 +1,4 @@
 interface:
-  display_name: "grea · 游戏逆向恢复与原生 Unity 转换"
-  short_description: "依据已发布游戏恢复或转换为原生 Unity 工程：取证、原生转换、一致性修复、工程治理与交付"
+  display_name: "GREA · 游戏调研、恢复与开发工作流"
+  short_description: "用 Skill 编排 monkey 恢复与 beaver 工程开发，按阶段组织证据与验收"
   default_prompt: "使用 $grea，先判断源引擎和本次任务模式，再转到对应的 grea 子技能，按本期验收基线执行。"

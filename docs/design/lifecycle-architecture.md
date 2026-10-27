@@ -1,5 +1,8 @@
 # GREA 生命周期架构与接口合同（批准设计，部分实现）
 
+> 职责整改：本文保留此前生命周期设计与已实现边界；执行工具归属以[三产品架构](../../proposals/monkey-grea-lifecycle-architecture.md)为准，GREA维护Skill与薄入口，monkey负责恢复，beaver负责开发工程执行。唯一进度仍为生命周期路线。
+
+
 ## 编排结构
 
 ```mermaid

@@ -1,9 +1,9 @@
 {
   "name": "grea",
-  "version": "2026.10.24rc1",
-  "description": "grea unpublished development source: research, Unity/Cocos targets, Go backend and bounded reskin workflows; 12 skills. Frozen release identities remain separate.",
+  "version": "2026.10.27",
+  "description": "GREA: Skill-first game research, recovery and development workflows, released together with its monkey (recovery) and beaver (engineering) modules.",
   "author": {
-    "name": "grea contributors",
+    "name": "GREA contributors",
     "url": "https://github.com/chuxintec/grea"
   },
   "homepage": "https://github.com/chuxintec/grea",
@@ -22,10 +22,10 @@
   "mcpServers": "./.mcp.json",
   "requires_local_executor": true,
   "interface": {
-    "displayName": "grea",
-    "shortDescription": "已发布游戏 → 原生 Unity 工程",
-    "longDescription": "依据原版实玩、包体资源和代码证据，把游戏恢复或转换为原生 Unity 工程。完整 macOS arm64 / Windows x64 插件包含本地 MCP、Python 与核心工具；平台与桌面实测范围见对应报告。Unity 和可选外部工具按需安装。",
-    "developerName": "grea contributors",
+    "displayName": "GREA",
+    "shortDescription": "游戏调研、恢复与开发工作流",
+    "longDescription": "GREA 维护 Skill 与方法；monkey 恢复原游戏，beaver 操作开发工程。随包 MCP 与 Python 提供薄调用层；外部 provider 需核验固定版本及实际能力。",
+    "developerName": "GREA contributors",
     "category": "Developer Tools",
     "capabilities": [
       "Read",

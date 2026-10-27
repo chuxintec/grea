@@ -4,6 +4,13 @@ from grea.host.paths import Path
 from .host.info import machine
 from .common import GreaError,package_root,digest
 
+def bundled_module(name):
+    """True when this install ships the locked wheel of a GREA module (release plugins do)."""
+    lock=package_root()/'modules.lock.json'
+    if not lock.is_file():return False
+    entry=next((m for m in json.loads(lock.read_text(encoding='utf-8'))['modules'] if m['name']==name),None)
+    return bool(entry) and (package_root()/'modules'/'wheels'/entry['wheel']['file']).is_file()
+
 def load():
     value=json.loads((package_root()/'registry.json').read_text(encoding='utf-8'))
     entries=value['tools'];ids=[x['id'] for x in entries]
@@ -27,6 +34,14 @@ def load():
                 if field in override and (not isinstance(override[field],list) or not override[field] or not all(isinstance(x,str) and x for x in override[field])):
                     raise GreaError('INVALID_PROVIDER_CONFIG','Override arrays must contain nonempty strings.')
             if not any(k in override for k in ('command','probe')):raise GreaError('INVALID_PROVIDER_CONFIG','Override must specify command or probe.')
+    if 'monkey' in by_id and 'monkey' not in overrides:
+        from .integrations.monkey.local import provider_override
+        auto=provider_override()
+        if auto:overrides['monkey']=auto
+    if 'beaver' in by_id and 'beaver' not in overrides:
+        from .integrations.beaver import provider_override
+        auto=provider_override()
+        if auto:overrides['beaver']=auto
     def resolve(key,seen=()):
         if key in seen or key not in by_id:raise GreaError('INVALID_REGISTRY','Missing or cyclic alias.',details={'tool_id':key})
         entry=dict(by_id[key])
@@ -34,6 +49,21 @@ def load():
             canonical=resolve(entry['alias_of'],(*seen,key))
             for field in ('execution','probe','files','required_files','host_support','configuration_source','system_binary'):entry[field]=canonical.get(field)
             entry['canonical_id']=canonical.get('canonical_id',canonical['id'])
+        delegate=entry.get('delegate')
+        if delegate:
+            # Execution moved to a GREA module; the ID stays and runs through the bound module CLI.
+            module=resolve(delegate['module'],(*seen,key))
+            base=(module.get('execution') or {}).get('command') or [delegate['module']]
+            if delegate['module'] not in overrides and bundled_module(delegate['module']):
+                # No bound/discovered module: run the hash-locked wheel shipped with this GREA install.
+                base=['{python}','{grea}/launch_module.py',delegate['module']]
+                module=dict(module,required_files=['{grea}/launch_module.py'],host_support=dict(module.get('host_support') or {},systems=['Darwin','Windows','Linux']),configuration_source='bundled-grea-module')
+            entry['execution']=dict(entry.get('execution') or {},command=[*base,'tool',delegate['tool']])
+            entry['probe']=[*base,'tool',delegate['tool'],'--help']
+            entry['files']=[];entry['required_files']=module.get('required_files') or [];entry['system_binary']=None
+            entry['host_support']=dict(module.get('host_support') or {})
+            entry['configuration_source']=module.get('configuration_source')
+            return entry
         native=entry.get('platform_commands',{}).get(platform.system())
         if native:
             entry['execution']=dict(entry.get('execution') or {},command=native['command'])
@@ -49,7 +79,7 @@ def load():
             entry['required_files']=[]
             entry['host_support']={'systems':override['systems'],'architectures':override.get('architectures',[]),'verification':'explicit local configuration; runtime not checked'}
             entry['system_binary']=None
-            entry['configuration_source']=str(Path(os.environ['GREA_PROVIDERS']).expanduser().resolve())
+            entry['configuration_source']=str(Path(os.environ['GREA_PROVIDERS']).expanduser().resolve()) if os.environ.get('GREA_PROVIDERS') else 'local-provider-discovery-or-binding'
         return entry
     return [resolve(key) for key in sorted(by_id)]
 

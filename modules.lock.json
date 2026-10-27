@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "contract": "grea-modules/1",
+  "description": "monkey and beaver ship as GREA modules: GREA owns skills, methods and thin routing; each module keeps its own repository, version and CLI. A GREA release bundles exactly these wheels.",
+  "modules": [
+    {
+      "name": "monkey",
+      "role": "Original game package or frozen source -> independent, standard, continuable engine candidate. Also runs GREA source-side tools: monkey tool <id>.",
+      "distribution": "monkey-native",
+      "version": "0.4.1",
+      "import": "monkey",
+      "console": "monkey",
+      "entry": "monkey.cli:main",
+      "requiresPython": ">=3.11",
+      "wheel": {
+        "file": "monkey_native-0.4.1-py3-none-any.whl",
+        "sha256": "caa21fab96a5527f9892847e749a1e532e338699bc97f06d87bff886b082f8df",
+        "bytes": 552898,
+        "url": "https://github.com/chuxintec/grea/releases/download/modules-2026.10.27/monkey_native-0.4.1-py3-none-any.whl"
+      },
+      "dependencies": [
+        "pillow==12.2.0",
+        "pypinyin==0.55.0"
+      ],
+      "optionalDependencies": {
+        "astc": [
+          "texture2ddecoder==1.0.6"
+        ]
+      },
+      "capabilitiesProbe": [
+        "capabilities",
+        "--json"
+      ],
+      "source": {
+        "repository": "https://github.com/chuxintec/monkey",
+        "branch": "codex/v0.4.1-grea-toolkit",
+        "base_tag": "v0.4.0",
+        "commit": "5ae2079",
+        "published": "wheel only, as a GREA module release asset; branch not pushed"
+      },
+      "releaseStatus": "bundled_with_grea",
+      "inFlight": "0.6.0.dev1 on codex/v0.6-csharp-recovery; not bundled until its own release"
+    },
+    {
+      "name": "beaver",
+      "role": "Candidate or existing engineering project -> maintainable project and deliverable artifacts (Unity native operations, resources, JSON/C#, Go, validation, build). Also runs GREA engineering/media/evidence tools: beaver tool <id>.",
+      "distribution": "beaver-game-tools",
+      "version": "0.4.0",
+      "import": "beaver",
+      "console": "beaver",
+      "entry": "beaver.cli:main",
+      "requiresPython": ">=3.10",
+      "wheel": {
+        "file": "beaver_game_tools-0.4.0-py3-none-any.whl",
+        "sha256": "9d509f509c574a91e18e17053f11f4ce3fa37a27a857600c2791287876eb4ed8",
+        "bytes": 324925,
+        "url": "https://github.com/chuxintec/grea/releases/download/modules-2026.10.27/beaver_game_tools-0.4.0-py3-none-any.whl"
+      },
+      "implementationSha256": "06a710a70b8e9257e68e6e3b83a34db41e7e1f4e32b2810fe80367db518717f7",
+      "dependencies": [],
+      "optionalDependencies": {
+        "images": [
+          "pillow==12.2.0"
+        ],
+        "toolkit": [
+          "pillow==12.2.0",
+          "jsonschema==4.26.0"
+        ]
+      },
+      "capabilitiesProbe": [
+        "capabilities"
+      ],
+      "source": {
+        "repository": "local:tools/beaver",
+        "branch": "codex/beaver-v0.4-grea-toolkit",
+        "base_branch": "codex/beaver-v0.3",
+        "commit": "6791ddf",
+        "published": "wheel only, as a GREA module release asset; repository is local"
+      },
+      "releaseStatus": "bundled_with_grea",
+      "inFlight": "none"
+    }
+  ],
+  "wheelSource": "https://github.com/chuxintec/grea/releases/download/modules-2026.10.27"
+}

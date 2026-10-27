@@ -1,0 +1,340 @@
+{
+  "schema_version": 1,
+  "status": "frozen_directed_handoff_not_replacement",
+  "target": "beaver0.3 Go required scope",
+  "grea_version": "2026.10.26.dev4",
+  "legacy_tool_id": "server_go_project",
+  "owner": {
+    "methods_skill": "GREA",
+    "generic_engineering": "beaver",
+    "actual_game_business": "game project",
+    "recovery": "monkey does not reconstruct unknown backend"
+  },
+  "manifest": {
+    "path": ".private/go-beaver-handoff-20261026/manifest.json",
+    "bytes": 11867,
+    "sha256": "283f5fca66e95f1fa65a52fa3c43169f40661ded30a13db375a6e0bb37ab92b3"
+  },
+  "contract": {
+    "path": ".private/go-beaver-handoff-20261026/contract.json",
+    "bytes": 3372,
+    "sha256": "fa3442a22e721014f32d18e04a5582726d0580badf80892d6eb69311db8c3e1c"
+  },
+  "files": 45,
+  "bytes": 104020,
+  "source_files": [
+    {
+      "path": "tools/server-go/template/.dockerignore",
+      "bytes": 50,
+      "sha256": "63e22a4a6c7d1a062a3d5f1f2ced730b3f742be62698589485a6a71a4df9d59f"
+    },
+    {
+      "path": "tools/server-go/template/.gitignore",
+      "bytes": 26,
+      "sha256": "ec20796a3540f79365bb302f4f3280bd2490c7b18881d918708aee095db72210"
+    },
+    {
+      "path": "tools/server-go/template/DEPENDENCIES.md",
+      "bytes": 880,
+      "sha256": "673566748989e6c6b4e342735097cc932b80b6d8ed69910e074dd89e9326a372"
+    },
+    {
+      "path": "tools/server-go/template/Dockerfile",
+      "bytes": 108,
+      "sha256": "a7a0e8be79932dbc9f58e9f345cbf8c4110917ec2655ecc3915a3ae1792c4442"
+    },
+    {
+      "path": "tools/server-go/template/api/game.pb.go",
+      "bytes": 9152,
+      "sha256": "ffe0fa669d6fdc36ee0d0eec0494c543ea7c5838391fd73c20c85afe6dc48e40"
+    },
+    {
+      "path": "tools/server-go/template/api/game.proto",
+      "bytes": 725,
+      "sha256": "d80b2c00a25d7391fcf62211e3f453d2e71656e63329a7056fd8435a2d9e2305"
+    },
+    {
+      "path": "tools/server-go/template/api/game_grpc.pb.go",
+      "bytes": 17994,
+      "sha256": "877568d5464555256eca126c794c4e91be9ef50f978d8e249ec4ce18f0d0508e"
+    },
+    {
+      "path": "tools/server-go/template/clients/CocosGateway.ts",
+      "bytes": 820,
+      "sha256": "96102416122e42a5d2640b3b84c29b870cb31a51e97b36f404ecc2cea1d1b331"
+    },
+    {
+      "path": "tools/server-go/template/clients/UnityGateway.cs",
+      "bytes": 1166,
+      "sha256": "7ba0778e5598c8b9795f0d091f70e6e1146729e01553d23a8b9bc0e4dae0c993"
+    },
+    {
+      "path": "tools/server-go/template/clients/wire.json",
+      "bytes": 446,
+      "sha256": "7b5bafb6f9de5e45ba6f4b4d505fa126a64f4a0523525b0459eaba0c15617ea8"
+    },
+    {
+      "path": "tools/server-go/template/cmd/billing/main.go",
+      "bytes": 241,
+      "sha256": "e1377f5e9046f74fa9f5ee9055ec61929bc44c40f660c10ac9ec148628cf79df"
+    },
+    {
+      "path": "tools/server-go/template/cmd/chat/main.go",
+      "bytes": 235,
+      "sha256": "3259f7139509fa569ef5f9c30b984d31fc050791936f06cc3042fd0fb5303261"
+    },
+    {
+      "path": "tools/server-go/template/cmd/gateway/main.go",
+      "bytes": 241,
+      "sha256": "568ce8c5a919b9faa33610fcea9205909444dd5873f75b001280542a2cc755cd"
+    },
+    {
+      "path": "tools/server-go/template/cmd/login/main.go",
+      "bytes": 237,
+      "sha256": "4e21314b20f8b18552a2efb5684f0b24ff6907ce2bbaa9d69bc2ca0f288b5d81"
+    },
+    {
+      "path": "tools/server-go/template/cmd/role/main.go",
+      "bytes": 281,
+      "sha256": "aa4f4b87167328380b1115469ad1cd594afa949896fc324603e609948386c3ca"
+    },
+    {
+      "path": "tools/server-go/template/cmd/server/main.go",
+      "bytes": 239,
+      "sha256": "1e38f97eb6cca48d39432a96300913be56120d3e27a606bf18ff37b61a721e9e"
+    },
+    {
+      "path": "tools/server-go/template/cmd/world/main.go",
+      "bytes": 237,
+      "sha256": "724dfb3eac0b645f1ad822d0dbbefe048ce6a7de25b915f2e084be35a9b4d983"
+    },
+    {
+      "path": "tools/server-go/template/config/game.json",
+      "bytes": 43,
+      "sha256": "de385ca0a77a7da897fe25b69f665a3743fefbd38b95eda6582c542674c0ae58"
+    },
+    {
+      "path": "tools/server-go/template/go.mod",
+      "bytes": 553,
+      "sha256": "3ae840b43a34bdedf3cea265ccceb046d059e273bdd621abd75ace5a1fece94a"
+    },
+    {
+      "path": "tools/server-go/template/go.sum",
+      "bytes": 4979,
+      "sha256": "5f7c9ca4ab45fb06d493989efa4ed5abc9dfb5310436566a2da5cb3f8152ffeb"
+    },
+    {
+      "path": "tools/server-go/template/internal/demo/config.go",
+      "bytes": 489,
+      "sha256": "aa030fc8741a02cf67b26429a8ef09b2349afdd52e00b9a3bfb64c6e136b7860"
+    },
+    {
+      "path": "tools/server-go/template/internal/demo/config_test.go",
+      "bytes": 304,
+      "sha256": "e4e7a58a3f8b3caa32b61c8f523791d579134a4e4b3a98cb567df5c2f28b5ecd"
+    },
+    {
+      "path": "tools/server-go/template/internal/platform/gateway.go",
+      "bytes": 4574,
+      "sha256": "f540c7688f76b685aeb837cc2addf355ddf3cacd18b08276f6afbb100264c6f3"
+    },
+    {
+      "path": "tools/server-go/template/internal/platform/gateway_test.go",
+      "bytes": 542,
+      "sha256": "f010df88685c210458ce42af7a463839249684f63487be0c84b93ff793c33fb4"
+    },
+    {
+      "path": "tools/server-go/template/internal/platform/int.go",
+      "bytes": 100,
+      "sha256": "42eb90537da864347b18a2387f4b0b8278b0a2f5202f859ffef5a533f6ec8b81"
+    },
+    {
+      "path": "tools/server-go/template/internal/platform/rpc.go",
+      "bytes": 6563,
+      "sha256": "30255386be1d70d6f6f1acb569537e6e79d7dfdfb9c595a19e9e9000ee8f8c6a"
+    },
+    {
+      "path": "tools/server-go/template/internal/platform/run.go",
+      "bytes": 3938,
+      "sha256": "fd4189092734d7ed2c99c897856a407e6164166d52bc1177c98ef9499a19d57e"
+    },
+    {
+      "path": "tools/server-go/template/internal/platform/store.go",
+      "bytes": 4219,
+      "sha256": "84fba2a9fa9985634c827502dcdf727346b85a4a83d08e553cccb80963b6d648"
+    },
+    {
+      "path": "tools/server-go/template/internal/platform/store_test.go",
+      "bytes": 1962,
+      "sha256": "01eb5f187778639b3f03f09c5b459cbf8e7373cd2da8e14e6b02ad4eec44b72f"
+    },
+    {
+      "path": "tools/server-go/template/smoke.py",
+      "bytes": 4639,
+      "sha256": "77aa701b16303baa0075eaeb97b45905b2090953d4ea68dca55ad05648c4870f"
+    },
+    {
+      "path": "tools/server-go/template/stack.py",
+      "bytes": 4473,
+      "sha256": "9801ebc73759f21bf34dbf46688d1c1b9c8a840e3523772332c615ddf6d6c8b3"
+    },
+    {
+      "path": "src/grea/tools/server_go_project.py",
+      "bytes": 1034,
+      "sha256": "ad8df4318ae5000f9b1a49217367daad9a6592086bc5dfd1f4cf004ef3e73823"
+    },
+    {
+      "path": "src/grea/tools/project_templates.py",
+      "bytes": 1486,
+      "sha256": "e4133efee52d995947aa762c45a5e77191821157e2f0ae7fca4a0663dee8083a"
+    },
+    {
+      "path": "src/grea/safe_paths.py",
+      "bytes": 3211,
+      "sha256": "fdceb8800ae518db25b2a2a4f7b7c925d5cec5aae21f8480bd8b72ce3d838b14"
+    },
+    {
+      "path": "src/grea/common.py",
+      "bytes": 3119,
+      "sha256": "8324bf07a14eb7fcb821ba7a6e38588d088af6d71c68aba379be12bad6bce55d"
+    },
+    {
+      "path": "src/grea/__init__.py",
+      "bytes": 116,
+      "sha256": "d7e25257ae9deecced02cf412b0c20a19c08903b0255e563785ee58f878b08b5"
+    },
+    {
+      "path": "src/grea/host/paths.py",
+      "bytes": 4139,
+      "sha256": "8ed6fa9234cf6e5399c577150d14332832f1f061a6184ee0a46abd5f4fe2c045"
+    },
+    {
+      "path": "src/grea/host/files.py",
+      "bytes": 5064,
+      "sha256": "30672792d3a44e1c3656cad65451b075ddbb2989d6725b9fe391f153990b57ad"
+    },
+    {
+      "path": "tests/test_server_go_template.py",
+      "bytes": 1176,
+      "sha256": "9cc932bf70df84246312bf20b6eb7754a44cba4f401c00c37c3b777716d2af9b"
+    },
+    {
+      "path": "docs/providers/server-go.md",
+      "bytes": 2444,
+      "sha256": "ad50864072e80b6be01898c3dfb590daf83c078767e76bb16f99dd774a7b9da8"
+    },
+    {
+      "path": "docs/design/research-cocos-go.md",
+      "bytes": 4005,
+      "sha256": "cb48cac3313e6a0283cfebd5beca62b0c7766ceaf94f0160ec50475b80ec0c92"
+    },
+    {
+      "path": "validation/development/research-cocos-go.json",
+      "bytes": 2413,
+      "sha256": "6eeb91131feecc0c7ce17ef5acd882b5805ee76fd3f53ad6fe919d5ab82f1c45"
+    },
+    {
+      "path": "plugin/skills/grea-server-go/SKILL.md",
+      "bytes": 1486,
+      "sha256": "cae54682a977e763a9c25e1f1fd3d17070b4c87b0ffe8423ef6fc327ade7cab0"
+    },
+    {
+      "path": "plugin/skills/grea-server-go/references/Go六服与事务.md",
+      "bytes": 2797,
+      "sha256": "38f9dd03b28716bee2b52cec344fd30b705f0ea892f5358f53e458cbf432f272"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1074,
+      "sha256": "023464f82fdd9559e762f1057cc2d6bc9686bffebb9e99093c4a2dc673d04c4e"
+    }
+  ],
+  "dependencies": {
+    "go_language_directive": "1.26.0",
+    "historical_toolchain": "1.26.2 declared; not probed this turn",
+    "protoc_generated_header": "7.34.1",
+    "protoc_gen_go": "1.36.12",
+    "protoc_gen_go_grpc": "1.6.2",
+    "resolved_graph": "source/tools/server-go/template/go.mod + go.sum",
+    "redis_replacement": "public.ecr.aws/docker/library/redis@sha256:4fa24486b8bcca8eec45ee0eb166edc674795e53a2b53d1a9ef263eecebaac85",
+    "mysql": "mysql@sha256:2952e3be7807f06fc18de50b3ea1a632d5c70d63482ff7d7376fe3aa8999babf"
+  },
+  "licensing": {
+    "own": "MIT, source/LICENSE retained",
+    "third_party": "Declarations in template/DEPENDENCIES.md; actual linked/vendor/library/image licenses remain separate. No binaries/vendor/images transferred"
+  },
+  "validation": {
+    "reused_summary": "source/validation/development/research-cocos-go.json",
+    "go_checks": 3,
+    "isolated_six_service_checks": 11,
+    "cors": "unit-only after historical live chain",
+    "historical_source_equivalence": "not_proven for current frozen bytes; no old runtime result upgraded to new snapshot acceptance",
+    "source_generation": "historically verified",
+    "current_execution": "not_run",
+    "go_build": "not_run_this_turn",
+    "containers": "not_started_this_turn",
+    "unity_network_client": "not_run",
+    "production": "not_run",
+    "historical_local_logs": [
+      {
+        "path": ".private/research-cocos-go/go-final-tests.log",
+        "bytes": 543,
+        "sha256": "c9983f2f05cb549eacced1ed673587f6f23d8198dd962d0321f7fc9f57382abb",
+        "copied": false,
+        "reason": "Historical local log reference only; no raw runtime/log/secret directories transferred"
+      },
+      {
+        "path": ".private/research-cocos-go/go-template-tests.log",
+        "bytes": 430,
+        "sha256": "713c63483deefa3338a3871bca6766bd4539717a194a0a47ff7b1136bbe70065",
+        "copied": false,
+        "reason": "Historical local log reference only; no raw runtime/log/secret directories transferred"
+      },
+      {
+        "path": ".private/research-cocos-go/server-smoke.log",
+        "bytes": 844,
+        "sha256": "1198698b6873907c7e8dfc7df268c18bc6fea6cb0d15570d66c161187715a2a3",
+        "copied": false,
+        "reason": "Historical local log reference only; no raw runtime/log/secret directories transferred"
+      },
+      {
+        "path": ".private/research-cocos-go/stack-down.log",
+        "bytes": 1928,
+        "sha256": "27d351e137a4c26577a35452a2dac16a3dd5bbc1b396a5fc43629d6984940710",
+        "copied": false,
+        "reason": "Historical local log reference only; no raw runtime/log/secret directories transferred"
+      }
+    ]
+  },
+  "compatibility": {
+    "legacy_id_preserved": true,
+    "consumer_switch": "not_verified",
+    "retire_allowed": false,
+    "beaver_02_go_support": "not_supported_by_GREA_named_table",
+    "beaver_03_go": "required_planned_not_implemented_or_integrated"
+  },
+  "adaptations": [
+    "Port publication/path/identity helpers into beaver; do not depend on live GREA source",
+    "Keep CocosGateway.ts only as historical frozen source; no Cocos execution planned",
+    "Demo stack down deletes only owned development volumes; beaver v0.3 upgrade/recovery must preserve data and must not generalize this cleanup",
+    "Real game rules, production identity/TLS/WSS, payment, owner migration and outbox/inbox are absent; do not turn sample into false production success"
+  ],
+  "exclusions": [
+    "game source/assets",
+    "credentials and .local",
+    "Go cache/toolchain/vendor",
+    "Docker images, runtime processes, databases",
+    "unrelated source/template families"
+  ],
+  "scope_guards": {
+    "go_checks_rerun": 0,
+    "go_builds": 0,
+    "services_started": 0,
+    "game_service_modified": false,
+    "legacy_files_removed": false,
+    "beaver_source_modified": false,
+    "beaver03_commands_claimed": false
+  },
+  "frozen_source_hashes_rechecked": 45,
+  "note": "Frozen source is the intake snapshot; subsequent GREA explanatory documentation was updated without changing frozen implementation. No new runtime verification."
+}

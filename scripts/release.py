@@ -101,7 +101,7 @@ def prepare(tag, out, require_tag=False):
                               'windows_desktop_unity_player_performance':'not_run: excluded by user scope'}}
     write_manifest(out,manifest)
     (out/'release-notes.md').write_text(
-        f'grea {tag}\n\n'+('预发行版本。' if prerelease else '正式版本。')+
+        f'GREA {tag}\n\n'+('预发行版本。' if prerelease else '正式版本。')+
         f'版本 `{package}`，源码提交 `{sha}`。\n\n'+
         changes+'\n\n完整插件自带 Python、MCP、'+str(sum(n.startswith('plugin/skills/') and n.endswith('/SKILL.md') for n in files))+' 个技能、参考和许可证。源码由 Git/GitHub 自动下载提供。\n\n'+
         'Windows x64 通过 Windows Server 原生 CI、隔离工具执行、重复构建及临时 Codex 安装发现验证。'
@@ -205,7 +205,7 @@ def publish(tag, out, repo):
     release = release_state(repo, tag)
     if release is None:
         release = api(repo, 'releases', 'POST', {
-            'tag_name': tag, 'target_commitish': sha, 'name': 'grea ' + tag,
+            'tag_name': tag, 'target_commitish': sha, 'name': 'GREA ' + tag,
             'body': (out / 'release-notes.md').read_text(encoding='utf-8'), 'draft': True, 'prerelease': prerelease})
     if release['prerelease'] != prerelease:
         raise ValueError('Existing release type differs; refusing overwrite.')

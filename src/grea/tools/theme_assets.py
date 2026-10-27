@@ -11,7 +11,7 @@ from grea.safe_paths import canonical_path,relative_name,unique_paths,disjoint
 from grea.common import digest
 from grea.change_contracts import validate as change_contract, validate_ledger
 from ._artifact_common import digest as file_sha
-from .image_alpha_audit import inspect_image
+from ._image_alpha import inspect_image  # private copy; the image_alpha_audit tool runs in beaver
 
 MAX_BYTES=128*1024*1024
 

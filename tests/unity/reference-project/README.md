@@ -1,8 +1,8 @@
-# Signal Garden — grea reference game 1.0.2 candidate
+# Signal Garden — GREA reference game 1.0.2 candidate
 
 Collect five mint signals, pause/resume, finish a run, return to the menu and play again. Completed runs persist between launches. Original geometric UI and synthesized tone; game and framework sources are MIT licensed. Unity runtime, built-in font and official Unity packages retain their own licenses.
 
-This source directory is maintained inside grea. Materialize it with `./bin/grea legacy unity_reference prepare --output <new-directory>` before opening: the helper embeds the canonical framework packages instead of maintaining duplicate implementations here. A distributed ZIP already contains those packages and needs no grea checkout.
+This source directory is maintained inside grea. Materialize it with `./bin/grea legacy unity_reference prepare --output <new-directory>` before opening: the helper embeds the canonical framework packages instead of maintaining duplicate implementations here. A distributed ZIP already contains those packages and needs no GREA checkout.
 
 Use **Unity 6000.6.2f1** with macOS support, URP 17.6.0, uGUI 2.6.0 and Test Framework 1.8.0. The Editor restores official dependencies using Packages/manifest.json and packages-lock.json. Library, Temp, local credentials and preinstalled private packages are not distributed. Do not open this unmaterialized repository directory directly in Unity.
 

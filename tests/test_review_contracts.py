@@ -9,6 +9,7 @@ from unittest.mock import patch
 from grea import cases, registry, runner
 from grea.application import dispatch
 from grea.common import GreaError
+from module_support import with_modules
 
 
 class ReviewContractTests(unittest.TestCase):
@@ -42,6 +43,8 @@ class ReviewContractTests(unittest.TestCase):
         self.assertEqual(dispatch('session',{'skill_dir':str(self.root)})['result']['skill']['scope'],'explicit_install')
         (self.root/'version.json').write_text(json.dumps({'greaVersion':'wrong','requiredOperations':['session']}))
         self.assertEqual(dispatch('session',{'skill_dir':str(self.root)})['error']['code'],'SKILL_VERSION_MISMATCH')
+
+    @with_modules
 
     def test_explicit_cwd_resolves_relative_argv_without_guessing(self):
         (self.root/'a.jsonl').write_text('{"a":1}\n');(self.root/'b.jsonl').write_text('{"a":1}\n')

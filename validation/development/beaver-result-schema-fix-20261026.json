@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "status": "fixed_and_original_result_revalidated_offline",
+  "grea": {
+    "version": "2026.10.26.dev4",
+    "core_sha256": "803670c36155ab9b4c1a3ac67328e40158bc9177545cc6bf1970374df3c483eb",
+    "files": 99
+  },
+  "branch": "codex/monkey-toolchain-v040",
+  "git_head": "e093c4ee15318b412e7ca2dd107791017ff30eb7",
+  "task": "real v1.2 consumer feedback; current-version repair only",
+  "root_cause": {
+    "owner": "GREA consumer",
+    "provider_version": "0.3.0",
+    "provider_implementation": "e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882",
+    "contract": "beaver-result/1",
+    "invalid_assumption": "actualChanges items restricted to object although fixed native batch/production returns path strings",
+    "provider_change_required": false
+  },
+  "changes": {
+    "actualChanges": "array of nonempty string or object; preserve original rows, reject number/null/array/empty string",
+    "post_execution_validation_error": "executed=true and raw provider result retained; native=unverified plus receipt-review/no-automatic-replay instruction",
+    "version_and_producer_guards": "unchanged",
+    "tool_ids": "unchanged",
+    "new_version": false
+  },
+  "original_execution": {
+    "outer_status": "needs_action",
+    "executed": true,
+    "misleading_top_native_at_time": "not_run",
+    "provider_status": "ok",
+    "exit_code": 0,
+    "capture_complete": true,
+    "actualChanges": "4 path strings",
+    "native": "saved_and_reloaded_same_editor",
+    "journal": "complete/verified, unplanned0; journal artifact SHA bound to original stdout",
+    "plan_sha256": "30605d2e8fbcfcdadc56344f8454a7b8c2edd41c82908172c605253c10b639a2",
+    "original_receipts": "preserved unchanged"
+  },
+  "validation": {
+    "targeted_tests": 8,
+    "new_regression_tests": 4,
+    "scope": "schema shapes, original object compatibility, one-dispatch status handling and post-execution uncertainty",
+    "recorded_real_result": "accepted under corrected schema; version/producer/exit/plan/journal bindings verified without execution",
+    "new_provider_or_native_run": false,
+    "baseline49_routes_rerun": false,
+    "baseline45_tests_rerun": false,
+    "rollback": false,
+    "transactions_replayed": 0,
+    "final_consistency_checks": {
+      "docs": {
+        "ok": true,
+        "documents": 140,
+        "localLinks": 724,
+        "scope": "Local links/anchors only; external URLs not fetched."
+      },
+      "skill": {
+        "ok": true,
+        "warnings": [],
+        "scope": "Static inline Markdown links/heading anchors, routing reachability and explicit recovery IDs only. No external URL, tool runtime or Agent behavior validation. Git-excluded project source links may warn; counts are not tokens."
+      },
+      "generated_contracts": {
+        "ok": true,
+        "drifted": [],
+        "written": []
+      },
+      "official_skill_sync": {
+        "ok": true,
+        "destination": ".private/beaver03-integration-20261026/result-schema-fix/skill-preview",
+        "check": "Skills are consistent",
+        "installed": false
+      },
+      "git_diff_check": true,
+      "head_unchanged": true,
+      "index_empty": true
+    }
+  },
+  "feedback": {
+    "foodstreet": "fixed source and no-replay instructions delivered for continuing existing project verification",
+    "beaver": "joint contract semantics confirmed; GREA-only code/schema repair; provider owner maintains its docs/tests"
+  },
+  "scope_guards": {
+    "game_source_writes": false,
+    "other_product_source_writes": false,
+    "editor_starts": 0,
+    "player_starts": 0,
+    "service_operations": 0,
+    "global_install": false,
+    "commit": false,
+    "push": false,
+    "merge": false,
+    "release": false
+  },
+  "evidence": [
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/offline-assessment.json",
+      "bytes": 3535,
+      "sha256": "1eea3884554f395a3abd2a7c3cfe3fee58e6238745173b73fd18bbb58a5cda68"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-tests.log",
+      "bytes": 97,
+      "sha256": "8d23cea08027ef2370c4b0bfedbdb3a01ea9fc1d2017b6382fb01e308c50c21b"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-generation.json",
+      "bytes": 774,
+      "sha256": "bbf12faba88d91972b4b9d9c8ed924926c6d0abd72c3b0380178e4c16ae05a47"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/docs-check.json",
+      "bytes": 141,
+      "sha256": "f762ab8d36e3fff8f204153f0f5a11857a6ffd15e5fc9fdb559a4973adb0a4b9"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/skill-check.json",
+      "bytes": 1246,
+      "sha256": "e2c2a51ef2c21262029f331ab370a132a4907bb1d2c0cfa9907167fe98b87880"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/contracts-check.json",
+      "bytes": 43,
+      "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/skill-sync.json",
+      "bytes": 39,
+      "sha256": "e89788d98e6784da0a178b5e81db05959182d7d4e53e93fa40571877192d694a"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/skill-sync-check.json",
+      "bytes": 22,
+      "sha256": "53bd66641e0747255c6648146708adbdae21143e53f23754684aa717b57f2f04"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/result-schema-fix/selected-source-manifest.json",
+      "bytes": 1742,
+      "sha256": "dc7ca0a7014bfe35d3983feef034b81afab420cb465b3eb92fd374a0c12b3634"
+    }
+  ],
+  "selected_source_snapshot": {
+    "manifest": ".private/beaver03-integration-20261026/result-schema-fix/selected-source-manifest.json",
+    "files": 8,
+    "selection_sha256": "f5d70d20c16335e9782691ef43f1a434c4a5bd012105c6db0a3c142e30f3bc32",
+    "scope": "selected repair source only; not a complete plugin, no game source, no runtime or installation"
+  }
+}

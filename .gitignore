@@ -11,6 +11,9 @@ outputs/
 unity-assets/AssetRipper-2.0.0/temp/
 unity-assets/AssetRipper-2.0.0/Logs/
 
+# Module wheels are bundled only into built plugins (fetched by URL from modules.lock.json).
+/modules/wheels/
+
 # Explicit host-local provider paths are not portable repository configuration.
 providers.local.json
 

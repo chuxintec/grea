@@ -1158,8 +1158,8 @@
     {
       "id": "unity_asset_ledger",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "unity_asset_ledger",
         "--help"
       ],
@@ -1171,8 +1171,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "unity_asset_ledger"
         ],
         "finding_exit_codes": [
@@ -1196,11 +1196,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1216,13 +1216,31 @@
           "explicit_output_write"
         ],
         "support_formats": "Unity Assets and ledger JSON"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool unity_asset_ledger",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "unity_asset_ledger",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "unity_dependency_audit",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "unity_dependency_audit",
         "--help"
       ],
@@ -1234,8 +1252,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "unity_dependency_audit"
         ],
         "finding_exit_codes": [
@@ -1259,11 +1277,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1279,13 +1297,31 @@
           "explicit_output_write"
         ],
         "support_formats": "see skill tool catalog"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool unity_dependency_audit",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "unity_dependency_audit",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "compare_traces",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "compare_traces",
         "--help"
       ],
@@ -1297,8 +1333,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "compare_traces"
         ],
         "finding_exit_codes": [
@@ -1322,11 +1358,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1342,13 +1378,31 @@
           "explicit_output_write"
         ],
         "support_formats": "see skill tool catalog"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool compare_traces",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "compare_traces",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "video_manifest",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "video_manifest",
         "--help"
       ],
@@ -1360,8 +1414,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "video_manifest"
         ],
         "finding_exit_codes": [
@@ -1385,11 +1439,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1405,13 +1459,31 @@
           "explicit_output_write"
         ],
         "support_formats": "see skill tool catalog"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool video_manifest",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "video_manifest",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "verify_payload_tree",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "verify_payload_tree",
         "--help"
       ],
@@ -1423,8 +1495,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "verify_payload_tree"
         ],
         "finding_exit_codes": [
@@ -1448,11 +1520,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1468,13 +1540,31 @@
           "explicit_output_write"
         ],
         "support_formats": "see skill tool catalog"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool verify_payload_tree",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "verify_payload_tree",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "package_windows_portable",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "package_windows_portable",
         "--help"
       ],
@@ -1486,8 +1576,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "package_windows_portable"
         ],
         "finding_exit_codes": []
@@ -1509,11 +1599,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1529,13 +1619,31 @@
           "explicit_output_write"
         ],
         "support_formats": "see skill tool catalog"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool package_windows_portable",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "package_windows_portable",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "audit_numeric_texture",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "audit_numeric_texture",
         "--help"
       ],
@@ -1547,8 +1655,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "audit_numeric_texture"
         ],
         "finding_exit_codes": [
@@ -1572,11 +1680,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1592,13 +1700,31 @@
           "explicit_output_write"
         ],
         "support_formats": "raw floats / JSONL / explicitly trusted Laya parser"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool audit_numeric_texture",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "audit_numeric_texture",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "compare_events",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "compare_events",
         "--help"
       ],
@@ -1610,8 +1736,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "compare_events"
         ],
         "finding_exit_codes": [
@@ -1635,11 +1761,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1655,13 +1781,31 @@
           "explicit_output_write"
         ],
         "support_formats": "raw floats / JSONL / explicitly trusted Laya parser"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool compare_events",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "compare_events",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "laya_contract_audit",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "monkey",
+        "tool",
         "laya_contract_audit",
         "--help"
       ],
@@ -1673,8 +1817,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "monkey",
+          "tool",
           "laya_contract_audit"
         ],
         "finding_exit_codes": []
@@ -1697,11 +1841,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "monkey"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -1718,7 +1862,25 @@
           "executes_explicit_project_parser"
         ],
         "support_formats": "raw floats / JSONL / explicitly trusted Laya parser"
-      }
+      },
+      "ownership": {
+        "target": "monkey",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey tool laya_contract_audit",
+          "status": "moved_in_monkey_0.4.1"
+        }
+      },
+      "delegate": {
+        "module": "monkey",
+        "tool": "laya_contract_audit",
+        "since": {
+          "grea": "2026.10.27",
+          "monkey": "0.4.1"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "glslangValidator",
@@ -1991,8 +2153,8 @@
     {
       "id": "image_alpha_audit",
       "probe": [
-        "python3",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "image_alpha_audit",
         "--help"
       ],
@@ -2004,8 +2166,8 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "image_alpha_audit"
         ],
         "finding_exit_codes": [
@@ -2029,11 +2191,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -2049,7 +2211,25 @@
           "explicit_output_write"
         ],
         "support_formats": "Pillow supported raster images; Pillow required"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool image_alpha_audit",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "image_alpha_audit",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "pngquant",
@@ -2184,8 +2364,8 @@
     {
       "id": "video_sheet",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "video_sheet",
         "--help"
       ],
@@ -2196,8 +2376,8 @@
       "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "video_sheet"
         ],
         "finding_exit_codes": []
@@ -2219,11 +2399,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -2239,13 +2419,31 @@
           "explicit_output_write"
         ],
         "support_formats": "See helper --help"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool video_sheet",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "video_sheet",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "read_elf_values",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "monkey",
+        "tool",
         "read_elf_values",
         "--help"
       ],
@@ -2256,8 +2454,8 @@
       "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "monkey",
+          "tool",
           "read_elf_values"
         ],
         "finding_exit_codes": []
@@ -2279,11 +2477,11 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "monkey"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -2299,13 +2497,31 @@
           "explicit_output_write"
         ],
         "support_formats": "See helper --help"
-      }
+      },
+      "ownership": {
+        "target": "monkey",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey tool read_elf_values",
+          "status": "moved_in_monkey_0.4.1"
+        }
+      },
+      "delegate": {
+        "module": "monkey",
+        "tool": "read_elf_values",
+        "since": {
+          "grea": "2026.10.27",
+          "monkey": "0.4.1"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "unpack_xapk",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "monkey",
+        "tool",
         "unpack_xapk",
         "--help"
       ],
@@ -2316,8 +2532,8 @@
       "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "monkey",
+          "tool",
           "unpack_xapk"
         ],
         "finding_exit_codes": []
@@ -2339,7 +2555,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "apk-assets",
           "apk-all-entries",
@@ -2348,7 +2564,7 @@
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python"
+          "monkey"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -2365,7 +2581,25 @@
         ],
         "support_formats": "APK or XAPK with APK entries; explicit assets/all-entries scope, OBB preserved opaque"
       },
-      "tested_samples": "tests/test_xapk_extraction.py; complete inventory does not prove game recovery"
+      "tested_samples": "tests/test_xapk_extraction.py; complete inventory does not prove game recovery",
+      "ownership": {
+        "target": "monkey",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey tool unpack_xapk",
+          "status": "moved_in_monkey_0.4.1"
+        }
+      },
+      "delegate": {
+        "module": "monkey",
+        "tool": "unpack_xapk",
+        "since": {
+          "grea": "2026.10.27",
+          "monkey": "0.4.1"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "registry_doctor",
@@ -2425,6 +2659,11 @@
           "explicit_output_write"
         ],
         "support_formats": "See helper --help"
+      },
+      "ownership": {
+        "target": "GREA",
+        "transition": "thin-provider-or-workflow-helper",
+        "old_interface_preserved": true
       }
     },
     {
@@ -2720,7 +2959,9 @@
       ],
       "execution": {
         "command": [
-          "{grea}/bin/unity-export-config"
+          "monkey",
+          "tool",
+          "export_config_tables"
         ],
         "finding_exit_codes": [
           1
@@ -2743,18 +2984,16 @@
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
-      "required_files": [
-        "{grea}/.private/runtimes/python/.venv/bin/python"
-      ],
+      "required_files": [],
       "capability": {
-        "implementation": "external_cli",
+        "implementation": "module_delegate",
         "adapters": [
           "textasset-generic",
           "level-datas-v1"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "{grea}/.private/runtimes/python/.venv/bin/python"
+          "monkey"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -2786,6 +3025,29 @@
             "export_config_tables",
             "--help"
           ]
+        }
+      },
+      "delegate": {
+        "module": "monkey",
+        "tool": "export_config_tables",
+        "since": {
+          "grea": "2026.10.27",
+          "monkey": "0.4.1"
+        }
+      },
+      "probe": [
+        "monkey",
+        "tool",
+        "export_config_tables",
+        "--help"
+      ],
+      "ownership": {
+        "target": "monkey",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey tool export_config_tables",
+          "status": "moved_in_monkey_0.4.1"
         }
       }
     },
@@ -2855,7 +3117,9 @@
       ],
       "execution": {
         "command": [
-          "{grea}/bin/wxapkg-decrypt"
+          "monkey",
+          "tool",
+          "decrypt_v1mmwx_wxapkg"
         ],
         "finding_exit_codes": []
       },
@@ -2876,15 +3140,13 @@
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
-      "required_files": [
-        "{grea}/.private/runtimes/python/.venv/bin/python"
-      ],
+      "required_files": [],
       "capability": {
-        "implementation": "external_cli",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "{grea}/.private/runtimes/python/.venv/bin/python"
+          "monkey"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -2914,6 +3176,29 @@
             "--help"
           ]
         }
+      },
+      "delegate": {
+        "module": "monkey",
+        "tool": "decrypt_v1mmwx_wxapkg",
+        "since": {
+          "grea": "2026.10.27",
+          "monkey": "0.4.1"
+        }
+      },
+      "probe": [
+        "monkey",
+        "tool",
+        "decrypt_v1mmwx_wxapkg",
+        "--help"
+      ],
+      "ownership": {
+        "target": "monkey",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey tool decrypt_v1mmwx_wxapkg",
+          "status": "moved_in_monkey_0.4.1"
+        }
       }
     },
     {
@@ -2925,7 +3210,9 @@
       ],
       "execution": {
         "command": [
-          "{grea}/bin/wxapkg-unpack"
+          "monkey",
+          "tool",
+          "unpack_wxapkg"
         ],
         "finding_exit_codes": []
       },
@@ -2946,15 +3233,13 @@
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
-      "required_files": [
-        "{grea}/.private/runtimes/python/.venv/bin/python"
-      ],
+      "required_files": [],
       "capability": {
-        "implementation": "external_cli",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "{grea}/.private/runtimes/python/.venv/bin/python"
+          "monkey"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -2983,6 +3268,29 @@
             "unpack_wxapkg",
             "--help"
           ]
+        }
+      },
+      "delegate": {
+        "module": "monkey",
+        "tool": "unpack_wxapkg",
+        "since": {
+          "grea": "2026.10.27",
+          "monkey": "0.4.1"
+        }
+      },
+      "probe": [
+        "monkey",
+        "tool",
+        "unpack_wxapkg",
+        "--help"
+      ],
+      "ownership": {
+        "target": "monkey",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey tool unpack_wxapkg",
+          "status": "moved_in_monkey_0.4.1"
         }
       }
     },
@@ -3047,6 +3355,11 @@
           "explicit_output_write"
         ],
         "support_formats": "local Markdown skill, recovery dispatcher and registry JSON; Python 3.9+"
+      },
+      "ownership": {
+        "target": "GREA",
+        "transition": "thin-provider-or-workflow-helper",
+        "old_interface_preserved": true
       }
     },
     {
@@ -3536,13 +3849,22 @@
           "filesystem_write"
         ],
         "support_formats": "Only the documented provider interface; inspect usage before execution"
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver references",
+          "status": "receiver_capability_available_equivalence_unverified"
+        }
       }
     },
     {
       "id": "unity_pilot",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "unity_pilot",
         "--help"
       ],
@@ -3550,8 +3872,8 @@
       "usage": "Freeze selected authoring inputs, create isolated copies and verify source identity; see docs/Unity隔离迁移指南.md.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "unity_pilot"
         ],
         "finding_exit_codes": [
@@ -3578,11 +3900,11 @@
         "Cooperative local filesystem only; reject symlinks and detect drift, not an adversarial concurrent-writer sandbox."
       ],
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -3598,13 +3920,31 @@
           "filesystem_write"
         ],
         "support_formats": "Only the documented provider interface; inspect usage before execution"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool unity_pilot",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "unity_pilot",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "shader_probe",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "monkey",
+        "tool",
         "shader_probe",
         "--help"
       ],
@@ -3612,8 +3952,8 @@
       "usage": "Probe combined GLES sources through explicitly installed shader compilers.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "monkey",
+          "tool",
           "shader_probe"
         ],
         "finding_exit_codes": [
@@ -3637,11 +3977,11 @@
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "monkey"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -3658,13 +3998,31 @@
           "subprocess"
         ],
         "support_formats": "Only the documented provider interface; inspect usage before execution"
-      }
+      },
+      "ownership": {
+        "target": "monkey",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey tool shader_probe",
+          "status": "moved_in_monkey_0.4.1"
+        }
+      },
+      "delegate": {
+        "module": "monkey",
+        "tool": "shader_probe",
+        "since": {
+          "grea": "2026.10.27",
+          "monkey": "0.4.1"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "unity_package_backup",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "package_backup",
         "--help"
       ],
@@ -3672,8 +4030,8 @@
       "usage": "Snapshot selected UPM dependencies or prepare a verified restore plan; no Editor execution.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "package_backup"
         ],
         "finding_exit_codes": [
@@ -3696,11 +4054,11 @@
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -3716,13 +4074,31 @@
           "filesystem_write"
         ],
         "support_formats": "Only the documented provider interface; inspect usage before execution"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool package_backup",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "package_backup",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "static_asset_copy",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "static_asset_copy",
         "--help"
       ],
@@ -3730,8 +4106,8 @@
       "usage": "Copy explicit FROM=TO mappings unchanged into a new or empty disjoint output; see docs/tools/制品与资源检查.md.",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "static_asset_copy"
         ],
         "finding_exit_codes": []
@@ -3756,11 +4132,11 @@
         "Preflight rejects source symlinks, traversal and overlapping mappings; copy-time failure retains partial output. Cooperative filesystem only."
       ],
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -3776,7 +4152,25 @@
           "filesystem_write"
         ],
         "support_formats": "Only the documented provider interface; inspect usage before execution"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool static_asset_copy",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "static_asset_copy",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "cocos_assets",
@@ -3846,6 +4240,15 @@
           "explicit_output_write"
         ],
         "support_formats": "Cocos 2.4 compiled-v1 / explicit pack and selected bundle import assets; explicit Creator 3.4.1 index/CCON JSON v1 (no CCONB or curve execution)"
+      },
+      "ownership": {
+        "target": "monkey",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey convert (cocos source profiles)",
+          "status": "receiver_capability_available_equivalence_unverified"
+        }
       }
     },
     {
@@ -3920,13 +4323,22 @@
           "process"
         ],
         "support_formats": "ECMAScript 2020 literal loader tables; obfuscated factory candidates remain partial"
+      },
+      "ownership": {
+        "target": "monkey",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey convert (cocos source profiles)",
+          "status": "receiver_capability_available_equivalence_unverified"
+        }
       }
     },
     {
       "id": "unity_native_exit",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "unity_native_exit",
         "--help"
       ],
@@ -3938,8 +4350,8 @@
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "unity_native_exit"
         ],
         "finding_exit_codes": [
@@ -3964,14 +4376,13 @@
       },
       "required_files": [],
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "unity-native-exit-policy-v1"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python",
-          "unity-editor-for-confirmation"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -3987,6 +4398,23 @@
           "explicit_output_write"
         ],
         "support_formats": "Unity Assets C# lexical candidates and text GUID roots; never a complete native-pass verdict"
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool unity_native_exit",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "unity_native_exit",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
       }
     },
     {
@@ -4059,13 +4487,22 @@
           "process"
         ],
         "support_formats": "Mono managed DLL metadata with explicit complete manifest and policy; IL2CPP unsupported"
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": null,
+          "status": "gap_open_no_receiver_capability"
+        }
       }
     },
     {
       "id": "unity_config_candidate",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "unity_config_candidate",
         "--help"
       ],
@@ -4077,8 +4514,8 @@
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "unity_config_candidate"
         ],
         "finding_exit_codes": []
@@ -4101,13 +4538,13 @@
       },
       "required_files": [],
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "unity-config-authoring-v1"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -4123,13 +4560,30 @@
           "explicit_output_write"
         ],
         "support_formats": "Closed scalar schema + JSON rows → strongly typed C#/Editor-only importer candidates; no runtime JSON"
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool unity_config_candidate",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "unity_config_candidate",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
       }
     },
     {
       "id": "unity_native_assets",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "unity_native_assets",
         "--help"
       ],
@@ -4141,8 +4595,8 @@
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "unity_native_assets"
         ],
         "finding_exit_codes": [
@@ -4167,16 +4621,14 @@
       },
       "required_files": [],
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "unity-native-assets-v1",
           "spine-json-text-atlas"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python",
-          "pillow",
-          "unity-editor-for-import"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -4192,6 +4644,23 @@
           "explicit_output_write"
         ],
         "support_formats": "Finite Sprite trim/rotation/border and explicit linear Transform clip recipe; Spine closure check only"
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool unity_native_assets",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "unity_native_assets",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
       }
     },
     {
@@ -4214,15 +4683,15 @@
       },
       "id": "evidence_manifest",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "evidence_manifest",
         "--help"
       ],
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "evidence_manifest"
         ],
         "finding_exit_codes": [
@@ -4235,14 +4704,14 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_evidence_manifest.py and tests/test_audit_regressions.py; execution evidence is versioned separately.",
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "flat-v1",
           "layers-v1"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -4258,7 +4727,25 @@
           "explicit_output_write"
         ],
         "support_formats": "Versioned flat-v1 or layers-v1 manifest with explicit local root"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool evidence_manifest",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "evidence_manifest",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "check_level": "synthetic-and-isolated-native-evidence",
@@ -4280,15 +4767,15 @@
       },
       "id": "config_preflight",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "config_preflight",
         "--help"
       ],
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "config_preflight"
         ],
         "finding_exit_codes": []
@@ -4299,13 +4786,13 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "typed-json-v1"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -4321,7 +4808,25 @@
           "explicit_output_write"
         ],
         "support_formats": "typed-json-v1 explicit table contracts, JSON exports and reference rules"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool config_preflight",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "config_preflight",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "check_level": "synthetic-and-isolated-native-evidence",
@@ -4343,15 +4848,15 @@
       },
       "id": "presentation_audit",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "presentation_audit",
         "--help"
       ],
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "presentation_audit"
         ],
         "finding_exit_codes": [
@@ -4364,13 +4869,13 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "presentation-observation-v1"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -4386,7 +4891,25 @@
           "explicit_output_write"
         ],
         "support_formats": "presentation-observation-v1 actual per-frame component state"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool presentation_audit",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "presentation_audit",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "check_level": "synthetic-and-isolated-native-evidence",
@@ -4408,15 +4931,15 @@
       },
       "id": "performance_compare",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "performance_compare",
         "--help"
       ],
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "performance_compare"
         ],
         "finding_exit_codes": []
@@ -4427,13 +4950,13 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "performance-run-v1"
         ],
         "format_scope": "explicit_adapters",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -4449,7 +4972,25 @@
           "explicit_output_write"
         ],
         "support_formats": "performance-run-v1 fixed workload and measurement identities"
-      }
+      },
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool performance_compare",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "performance_compare",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      },
+      "required_files": []
     },
     {
       "id": "theme_assets",
@@ -4515,7 +5056,16 @@
       },
       "required_files": [
         "{grea}/src/grea/tools/theme_assets.py"
-      ]
+      ],
+      "ownership": {
+        "target": "beaver",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver resource.image-produce/validate-step",
+          "status": "receiver_capability_available_equivalence_unverified"
+        }
+      }
     },
     {
       "id": "research_report",
@@ -4580,7 +5130,12 @@
       },
       "required_files": [
         "{grea}/src/grea/tools/research_report.py"
-      ]
+      ],
+      "ownership": {
+        "target": "GREA",
+        "transition": "thin-provider-or-workflow-helper",
+        "old_interface_preserved": true
+      }
     },
     {
       "id": "cocos_project",
@@ -4645,7 +5200,16 @@
       },
       "required_files": [
         "{grea}/src/grea/tools/cocos_project.py"
-      ]
+      ],
+      "ownership": {
+        "target": "beaver",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": null,
+          "status": "gap_open_no_receiver_capability"
+        }
+      }
     },
     {
       "id": "cocos_convert",
@@ -4710,7 +5274,16 @@
       },
       "required_files": [
         "{grea}/src/grea/tools/cocos_convert.py"
-      ]
+      ],
+      "ownership": {
+        "target": "monkey",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "monkey convert --target cocos38",
+          "status": "receiver_capability_available_equivalence_unverified"
+        }
+      }
     },
     {
       "id": "server_go_project",
@@ -4775,7 +5348,16 @@
       },
       "required_files": [
         "{grea}/src/grea/tools/server_go_project.py"
-      ]
+      ],
+      "ownership": {
+        "target": "beaver",
+        "transition": "retained_until_verified_receiver_and_consumer_switch",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver server.generate/module-generate",
+          "status": "receiver_capability_available_equivalence_unverified"
+        }
+      }
     },
     {
       "id": "monkey_bridge",
@@ -4848,7 +5430,12 @@
       },
       "required_files": [
         "{grea}/src/grea/tools/monkey_bridge.py"
-      ]
+      ],
+      "ownership": {
+        "target": "GREA",
+        "transition": "thin-provider-or-workflow-helper",
+        "old_interface_preserved": true
+      }
     },
     {
       "id": "monkey",
@@ -4918,8 +5505,8 @@
     {
       "id": "image_contact_sheet",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "image_contact_sheet",
         "--help"
       ],
@@ -4931,10 +5518,11 @@
       "tested_samples": "Owned wide/tall images, Chinese font review, limits and source protection",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "image_contact_sheet"
-        ]
+        ],
+        "finding_exit_codes": []
       },
       "category": "helper",
       "effects": [
@@ -4953,13 +5541,13 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "image-contact-v1"
         ],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -4976,15 +5564,30 @@
         ],
         "support_formats": "Explicit image label manifest v1; Pillow static previews"
       },
-      "required_files": [
-        "{grea}/src/grea/tools/image_contact_sheet.py"
-      ]
+      "required_files": [],
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool image_contact_sheet",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "image_contact_sheet",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      }
     },
     {
       "id": "compatibility_plan",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "compatibility_plan",
         "--help"
       ],
@@ -4996,8 +5599,8 @@
       "tested_samples": "Owned local fixtures; no ordinary save migration, real player data, production or channel execution",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "compatibility_plan"
         ],
         "finding_exit_codes": [
@@ -5021,13 +5624,13 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "compatibility_plan-v1"
         ],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -5044,15 +5647,30 @@
         ],
         "support_formats": "Declared top-level save/config/protocol compatibility v1"
       },
-      "required_files": [
-        "{grea}/src/grea/tools/compatibility_plan.py"
-      ]
+      "required_files": [],
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool compatibility_plan",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "compatibility_plan",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      }
     },
     {
       "id": "operations_preview",
       "probe": [
-        "{python}",
-        "{grea}/launch_tool.py",
+        "beaver",
+        "tool",
         "operations_preview",
         "--help"
       ],
@@ -5064,10 +5682,11 @@
       "tested_samples": "Owned local fixtures; no ordinary save migration, real player data, production or channel execution",
       "execution": {
         "command": [
-          "{python}",
-          "{grea}/launch_tool.py",
+          "beaver",
+          "tool",
           "operations_preview"
-        ]
+        ],
+        "finding_exit_codes": []
       },
       "category": "helper",
       "effects": [
@@ -5086,13 +5705,13 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
       },
       "capability": {
-        "implementation": "builtin",
+        "implementation": "module_delegate",
         "adapters": [
           "operations_preview-v1"
         ],
         "format_scope": "provider_documented",
         "provider_requirements": [
-          "python"
+          "beaver"
         ],
         "availability_check": "presence_only",
         "validation": {
@@ -5109,12 +5728,484 @@
         ],
         "support_formats": "operations-event-v1 JSONL and local config/schema preview"
       },
+      "required_files": [],
+      "ownership": {
+        "target": "beaver",
+        "transition": "moved_to_module",
+        "old_interface_preserved": true,
+        "receiver": {
+          "capability": "beaver tool operations_preview",
+          "status": "moved_in_beaver_0.4.0"
+        }
+      },
+      "delegate": {
+        "module": "beaver",
+        "tool": "operations_preview",
+        "since": {
+          "grea": "2026.10.27",
+          "beaver": "0.4.0"
+        }
+      }
+    },
+    {
+      "id": "monkey_pipeline",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "monkey_pipeline",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "monkey 0.4.0: discover/check/ensure (explicit missing install from GitHub latest stable), pin/plan/run/audit; persistent local binding",
+      "side_effects": "discover is read-only; check writes a new receipt; ensure binds user state and --install-if-missing downloads verified GitHub wheel/dependencies into an isolated user environment. Never upgrades existing providers.",
+      "usage": "monkey 0.4.0: discover/check/ensure (explicit missing install from GitHub latest stable), pin/plan/run/audit; persistent local binding",
+      "output_schema": "Provider lock v2, execution plan v1, result.json and captured process receipts",
+      "tested_samples": "See validation/development/monkey-toolchain-20261026.json; engine/game verification remains separate",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "monkey_pipeline"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "process",
+        "explicit_output_write",
+        "network",
+        "filesystem_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "monkey-0.4.0-bulk-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Missing installation requires explicit ensure --install-if-missing; no implicit install during discovery.",
+          "Latest upstream versions outside the tested adapter remain not ready; engine/game acceptance stays separate."
+        ],
+        "effects": [
+          "filesystem_read",
+          "process",
+          "explicit_output_write",
+          "network",
+          "filesystem_write"
+        ],
+        "support_formats": "monkey 0.4.0: discover/check/ensure (explicit missing install from GitHub latest stable), pin/plan/run/audit; persistent local binding"
+      },
       "required_files": [
-        "{grea}/src/grea/tools/operations_preview.py"
+        "{grea}/src/grea/tools/monkey_pipeline.py",
+        "{grea}/src/grea/integrations/monkey/pipeline.py"
+      ],
+      "ownership": {
+        "target": "GREA",
+        "transition": "thin-provider-or-workflow-helper",
+        "old_interface_preserved": true
+      }
+    },
+    {
+      "id": "beaver_pipeline",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "beaver_pipeline",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Finite beaver0.1/0.2 plus exact0.3 candidates07/08; 49 routes; no arbitrary future producers or live Go dispatch",
+      "side_effects": "Explicit receipts plus effects declared by the selected beaver operation; engineering implementation remains external",
+      "usage": "invoke --config LOCK --request REQUEST --output NEW; named request schema schemas/beaver-operation.schema.json",
+      "output_schema": "beaver-result/1 retained inside GREA wrapper result; partial/blocked/failed/not_run are not success",
+      "tested_samples": "See validation/development/beaver03-integration-20261026.json; previous0.1/0.2 reports remain separate",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "beaver_pipeline"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "process",
+        "explicit_output_write",
+        "filesystem_write",
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "beaver-0.1.0-result-v1-named-operations",
+          "beaver-0.2.0-batch2-debug-references",
+          "beaver-fixed-candidates07-08-finite-v3-contracts"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Default discovery does not install or probe external tools.",
+          "Only invoke the user-authorized stage; source and capability locks are checked before and implementation after execution.",
+          "Native/Player receipts from beaver do not establish physical input, game save isolation or full gameplay."
+        ],
+        "effects": [
+          "filesystem_read",
+          "process",
+          "explicit_output_write",
+          "filesystem_write",
+          "provider_declared_effects"
+        ],
+        "support_formats": "Finite beaver0.1/0.2 plus exact0.3 candidates07/08; 49 routes; no arbitrary future producers or live Go dispatch",
+        "named_operations": [
+          "adoption.apply",
+          "adoption.plan",
+          "adoption.rollback",
+          "batch.apply",
+          "batch.plan",
+          "batch.recover",
+          "code.inspect",
+          "config.generate",
+          "config.validate",
+          "config3.compare",
+          "config3.generate",
+          "config3.validate",
+          "csharp.inspect",
+          "csharp.module",
+          "csharp.rename",
+          "csharp.rename-sequence",
+          "debug.inspect",
+          "debug.screenshot",
+          "debug.start",
+          "debug.stop",
+          "debug.tail",
+          "debug.target",
+          "image.compress",
+          "image.inspect",
+          "payload.apply",
+          "payload.plan",
+          "payload.verify",
+          "player.run",
+          "production.apply",
+          "production.plan",
+          "production.recover",
+          "project.inspect",
+          "references",
+          "resource.image-inspect",
+          "resource.image-produce",
+          "resource.validate-step",
+          "server.compose-plan",
+          "server.generate",
+          "server.migration-plan",
+          "server.module-generate",
+          "server.module-plan",
+          "server.protocol-diff",
+          "server.toolchain",
+          "unity.apply",
+          "unity.plan",
+          "workspace.apply",
+          "workspace.inspect",
+          "workspace.plan",
+          "workspace.rebind"
+        ],
+        "request_schema": "{grea}/schemas/beaver-operation.schema.json",
+        "supported_provider_versions": [
+          "0.1.0",
+          "0.1.0.dev1",
+          "0.2.0",
+          "0.3.0.dev1",
+          "0.3.0"
+        ],
+        "unsupported_v03": {
+          "server.inspect": "CLI exists but fixed candidate does not declare this capability",
+          "server.protocol-tools": "Private protocol-tool build is outside this finite consumer increment",
+          "server.check": "Go test/build execution is outside this finite consumer increment",
+          "server.build": "Go binary build execution is outside this finite consumer increment",
+          "server.migration-state": "Live Docker/database access is outside this increment",
+          "server.migration-apply": "Live database mutation is outside this increment",
+          "server.runtime-inspect": "Live Docker access is outside this increment",
+          "creator.apply": "Not supported by the provider",
+          "creator.build": "Not supported by the provider"
+        },
+        "fixed_candidates": {
+          "0.3.0.dev1": {
+            "implementation_sha256": "b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0",
+            "wheel_sha256": "7f085738b5a10a1da72e76debb4eee5641f066abbc89355dcb3c67a2d0c72f10"
+          },
+          "0.3.0": {
+            "candidate": "08 runtime / 09 metadata-equivalent",
+            "implementation_sha256": "e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882",
+            "wheel_sha256": "66fd8d326806cb275fa68fc319d46ca679b5ef3fee1b3f525e1e1a51a62a4321",
+            "metadata_equivalent_wheel_sha256": "b480fb381a85e8c47711d03169a625725b06648393bcf1e9a91fa1272116d2df",
+            "final_metadata_equivalent_wheel_sha256": "d4dd7229fa9ce56eabb9054d0af2b88591aa0777fe4e3d0fc139b74a105eb598"
+          }
+        },
+        "result_schema": "{grea}/schemas/beaver-result.schema.json"
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/beaver_pipeline.py",
+        "{grea}/src/grea/integrations/beaver.py",
+        "{grea}/src/grea/integrations/beaver_operations.py",
+        "{grea}/src/grea/beaver_contracts.py"
       ]
+    },
+    {
+      "id": "toolchain_check",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "toolchain_check",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
+      "formats": "Explicit readiness of required monkey and beaver; no automatic install or upgrade.",
+      "side_effects": "Explicit receipt writes and bounded capability subprocess; no engineering writes, installation or upgrade.",
+      "usage": "Explicit readiness of required monkey and beaver; no automatic install or upgrade.",
+      "output_schema": "JSON readiness receipt; needs_action never means execution passed",
+      "tested_samples": "See validation/development/triad-skill-first-20261026.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "toolchain_check"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "beaver-readiness-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Readiness is not engine connection or business acceptance.",
+          "No automatic installation of beaver; explicit development binding is not a released installation."
+        ],
+        "effects": [
+          "filesystem_read",
+          "process",
+          "explicit_output_write"
+        ],
+        "support_formats": "Explicit readiness of required monkey and beaver; no automatic install or upgrade."
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/toolchain_check.py",
+        "{grea}/src/grea/integrations/beaver.py"
+      ]
+    },
+    {
+      "id": "grea_modules",
+      "probe": [
+        "{python}",
+        "{grea}/launch_tool.py",
+        "grea_modules",
+        "--help"
+      ],
+      "check_level": "synthetic-fixtures-and-real-locked-wheels",
+      "formats": "List bundled monkey/beaver modules pinned by modules.lock.json and explicitly install one into an isolated venv; never binds, replaces bindings or downloads.",
+      "side_effects": "status is read-only; install writes only a fresh receipt and a new versioned venv under the provider state directory.",
+      "usage": "List bundled monkey/beaver modules pinned by modules.lock.json and explicitly install one into an isolated venv; never binds, replaces bindings or downloads.",
+      "output_schema": "JSON module status/install receipt; installed is not provider readiness",
+      "tested_samples": "See validation/development/grea-modules-20261027.json",
+      "execution": {
+        "command": [
+          "{python}",
+          "{grea}/launch_tool.py",
+          "grea_modules"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "helper",
+      "effects": [
+        "filesystem_read",
+        "process",
+        "explicit_output_write",
+        "provider_state_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "builtin",
+        "adapters": [
+          "grea-modules-v1"
+        ],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "python"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Install is POSIX only; Windows reports needs_action.",
+          "Readiness still requires monkey_pipeline/beaver_pipeline pinning or toolchain_check.",
+          "No automatic binding replacement, download or global installation."
+        ],
+        "effects": [
+          "filesystem_read",
+          "process",
+          "explicit_output_write",
+          "provider_state_write"
+        ],
+        "support_formats": "List bundled monkey/beaver modules pinned by modules.lock.json and explicitly install one into an isolated venv; never binds, replaces bindings or downloads."
+      },
+      "required_files": [
+        "{grea}/src/grea/tools/grea_modules.py",
+        "{grea}/src/grea/modules.py",
+        "{grea}/modules.lock.json"
+      ]
+    },
+    {
+      "id": "beaver",
+      "probe": [
+        "beaver",
+        "capabilities"
+      ],
+      "check_level": "presence-and-explicit-capability-probe",
+      "formats": "External engineering CLI; exact operations depend on actual pinned capabilities",
+      "side_effects": "Provider declared engineering effects; caller selects explicit scope",
+      "usage": "Discover/check and pin with beaver_pipeline; no source path guessing.",
+      "output_schema": "JSON metrics and Markdown analyst report",
+      "tested_samples": "External provider; current input/version must be pinned",
+      "execution": {
+        "command": [
+          "beaver"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "category": "provider",
+      "effects": [
+        "process",
+        "provider_declared_effects"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ],
+        "architectures": [],
+        "windows_status": "portable_unverified",
+        "verification": "Routing declaration only; see validation reports for actual executed host/input/version.",
+        "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See docs/providers/windows-native.md."
+      },
+      "capability": {
+        "implementation": "external_cli",
+        "adapters": [],
+        "format_scope": "provider_documented",
+        "provider_requirements": [
+          "beaver"
+        ],
+        "availability_check": "presence_only",
+        "validation": {
+          "status": "versioned_separately",
+          "evidence": [],
+          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
+        },
+        "limitations": [
+          "Presence, help and adapter availability do not establish target sample or game acceptance."
+        ],
+        "effects": [
+          "process",
+          "explicit_output_write"
+        ],
+        "support_formats": "External engineering CLI; exact operations depend on actual pinned capabilities"
+      },
+      "required_files": []
     }
   ],
   "product": "grea",
-  "product_version": "0.1.0",
-  "version": "0.1.1"
+  "product_version": "2026.10.26.dev4",
+  "version": "0.1.1",
+  "required_providers": [
+    "monkey",
+    "beaver"
+  ]
 }

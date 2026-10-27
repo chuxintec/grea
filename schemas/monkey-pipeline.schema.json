@@ -1,0 +1,387 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pinned monkey 0.4.0 pipeline request; path/identity checks are runtime requirements",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "input_roots",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "convert"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target"
+          ],
+          "properties": {
+            "asset-ripper": {
+              "type": "string",
+              "minLength": 1
+            },
+            "cocos-code-language": {
+              "type": "string",
+              "enum": [
+                "ts",
+                "js"
+              ]
+            },
+            "input-set": {
+              "type": "string",
+              "minLength": 1
+            },
+            "layout": {
+              "type": "string",
+              "minLength": 1
+            },
+            "numeric-code-contract": {
+              "type": "string",
+              "minLength": 1
+            },
+            "offline": {
+              "type": "boolean"
+            },
+            "provider-budget-seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1800
+            },
+            "provider-python": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reuse-source-stages": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source-family": {
+              "type": "string",
+              "enum": [
+                "cocos",
+                "unity"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "enum": [
+                "unity6",
+                "cocos38",
+                "both"
+              ]
+            },
+            "unity-code-evidence": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unity-container-value-limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16000000
+            },
+            "unity-dependency-manifest": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unity-export-scope": {
+              "type": "string",
+              "enum": [
+                "all"
+              ]
+            },
+            "unity-object-value-limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "unity-prepared-textures": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unity-quarantine-invalid-textures": {
+              "type": "boolean"
+            },
+            "unity-reuse-inspection": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unity-reuse-provider-export": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unity-schema-manifest": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unity-texture-cache": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "input_roots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "input_roots",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "prepare-unity-bulk"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "capture",
+            "inspection",
+            "provider-python",
+            "texture-cache"
+          ],
+          "properties": {
+            "budget-seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1800
+            },
+            "capture": {
+              "type": "string",
+              "minLength": 1
+            },
+            "inspection": {
+              "type": "string",
+              "minLength": 1
+            },
+            "provider-python": {
+              "type": "string",
+              "minLength": 1
+            },
+            "texture-cache": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "input_roots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "input_roots",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "export-unity-bulk"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "asset-ripper",
+            "deadline-utc",
+            "prepared",
+            "window-end-utc"
+          ],
+          "properties": {
+            "asset-ripper": {
+              "type": "string",
+              "minLength": 1
+            },
+            "budget-seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1800
+            },
+            "deadline-utc": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "prepared": {
+              "type": "string",
+              "minLength": 1
+            },
+            "window-end-utc": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "input_roots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "input_roots",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "layout-preview"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conversion",
+            "layout"
+          ],
+          "properties": {
+            "conversion": {
+              "type": "string",
+              "minLength": 1
+            },
+            "layout": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "input_roots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "input_roots",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "layout-migration"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "type": "string",
+              "minLength": 1
+            },
+            "to": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "input_roots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    }
+  ]
+}

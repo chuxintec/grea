@@ -1,0 +1,553 @@
+{
+  "schema_version": 1,
+  "status": "finite_adapter_and_formal08_native_receipts_verified_root_G_decision_owned_upstream",
+  "grea": {
+    "version": "2026.10.26.dev4",
+    "core_sha256": "27880a3d82b982f38e7d8f6cf4801e0e1424bae070733fa19e28cd36ef26a64c",
+    "files": 99
+  },
+  "branch": "codex/monkey-toolchain-v040",
+  "git_head": "e093c4ee15318b412e7ca2dd107791017ff30eb7",
+  "supported": {
+    "legacy_versions": [
+      "0.1.0",
+      "0.1.0.dev1",
+      "0.2.0"
+    ],
+    "exact_v03_implementations": {
+      "0.3.0.dev1": {
+        "candidate": "07",
+        "implementation_sha256": "b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0"
+      },
+      "0.3.0": {
+        "candidate": "08",
+        "implementation_sha256": "e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882"
+      }
+    },
+    "named_routes": 49,
+    "routes": [
+      "adoption.apply",
+      "adoption.plan",
+      "adoption.rollback",
+      "batch.apply",
+      "batch.plan",
+      "batch.recover",
+      "code.inspect",
+      "config.generate",
+      "config.validate",
+      "config3.compare",
+      "config3.generate",
+      "config3.validate",
+      "csharp.inspect",
+      "csharp.module",
+      "csharp.rename",
+      "csharp.rename-sequence",
+      "debug.inspect",
+      "debug.screenshot",
+      "debug.start",
+      "debug.stop",
+      "debug.tail",
+      "debug.target",
+      "image.compress",
+      "image.inspect",
+      "payload.apply",
+      "payload.plan",
+      "payload.verify",
+      "player.run",
+      "production.apply",
+      "production.plan",
+      "production.recover",
+      "project.inspect",
+      "references",
+      "resource.image-inspect",
+      "resource.image-produce",
+      "resource.validate-step",
+      "server.compose-plan",
+      "server.generate",
+      "server.migration-plan",
+      "server.module-generate",
+      "server.module-plan",
+      "server.protocol-diff",
+      "server.toolchain",
+      "unity.apply",
+      "unity.plan",
+      "workspace.apply",
+      "workspace.inspect",
+      "workspace.plan",
+      "workspace.rebind"
+    ],
+    "unsupported_v03": {
+      "server.inspect": "CLI exists but fixed candidate does not declare this capability",
+      "server.protocol-tools": "Private protocol-tool build is outside this finite consumer increment",
+      "server.check": "Go test/build execution is outside this finite consumer increment",
+      "server.build": "Go binary build execution is outside this finite consumer increment",
+      "server.migration-state": "Live Docker/database access is outside this increment",
+      "server.migration-apply": "Live database mutation is outside this increment",
+      "server.runtime-inspect": "Live Docker access is outside this increment",
+      "creator.apply": "Not supported by the provider",
+      "creator.build": "Not supported by the provider"
+    }
+  },
+  "packages": {
+    "candidate07": {
+      "version": "0.3.0.dev1",
+      "wheel_sha256": "7f085738b5a10a1da72e76debb4eee5641f066abbc89355dcb3c67a2d0c72f10",
+      "wheel_bytes": 238496,
+      "package_files": 67,
+      "upstream_commit": "a8c42b387542035a9709f3b2216df8af62a27a58"
+    },
+    "candidate08": {
+      "version": "0.3.0",
+      "wheel_sha256": "66fd8d326806cb275fa68fc319d46ca679b5ef3fee1b3f525e1e1a51a62a4321",
+      "wheel_bytes": 239631,
+      "package_files": 68,
+      "source_commit": "ad876dad06e2097424a7b855f4bc7fb13fff6a13",
+      "committed_runtime_files_match": 68,
+      "source_state_at_intake": "WIP based on a8c42b3; exact wheel/producer identity used, not claimed committed",
+      "source_state": "fix now committed; exact08/09 runtime bytes match ad876da"
+    },
+    "candidate09": {
+      "version": "0.3.0",
+      "wheel_sha256": "b480fb381a85e8c47711d03169a625725b06648393bcf1e9a91fa1272116d2df",
+      "wheel_bytes": 239666,
+      "package_files": 68,
+      "same68_runtime_files_as08": true,
+      "changed_members": [
+        "dist-info/METADATA",
+        "dist-info/RECORD"
+      ],
+      "execution_reuse": "08 CLI/stdio;09 private installation/pin/check and final-source stdio binding check only",
+      "source_commit": "ad876dad06e2097424a7b855f4bc7fb13fff6a13",
+      "committed_runtime_files_match": 68
+    },
+    "final": {
+      "version": "0.3.0",
+      "bytes": 239672,
+      "wheel_sha256": "d4dd7229fa9ce56eabb9054d0af2b88591aa0777fe4e3d0fc139b74a105eb598",
+      "runtime_same_as08_09": true,
+      "metadata_only_delta": true,
+      "source_commit": "ad876dad06e2097424a7b855f4bc7fb13fff6a13",
+      "installation_and_execution": "08/09 fixed runtime evidence reused; final zip byte equivalence checked, not reinstalled or executed",
+      "published": false
+    }
+  },
+  "contracts": {
+    "grea_request": 1,
+    "public_result": "beaver-result/1",
+    "workspace_profile": "beaver-project/1",
+    "workspace_plan": "beaver-project-setup/1",
+    "production": "beaver-production/3",
+    "production_transaction": "beaver-production-transaction/3",
+    "configuration_schema": 2,
+    "csharp_sequence": "beaver-csharp-rename-sequence/1",
+    "default_module_profile": "grea-unity-project/1.0.0",
+    "module_layers": [
+      "Bootstrap",
+      "Domain",
+      "Gameplay",
+      "Presentation",
+      "Services"
+    ],
+    "request_lock_json_limit_bytes": 8388608,
+    "apply_plan_json_limit_bytes": 134217728,
+    "schemas": [
+      "schemas/beaver-operation.schema.json",
+      "schemas/beaver-result.schema.json"
+    ]
+  },
+  "new_verification": {
+    "targeted_tests": 45,
+    "scope": "GREA adapter/version/identity/status/schema and private fixtures only",
+    "candidate07_cli": {
+      "workspace-plan": "ok",
+      "workspace-apply": "ok",
+      "workspace-inspect": "ok",
+      "workspace-rebind": "ok",
+      "production-plan": "ok",
+      "config3-validate": "ok",
+      "config3-generate": "ok",
+      "config3-invalid": "failed",
+      "module": "ok",
+      "server-protocol": "ok",
+      "server-module": "ok",
+      "debug-blocked": "blocked"
+    },
+    "candidate07_stdio": {
+      "config3": {
+        "outer": "ok",
+        "semantic": "ok"
+      },
+      "blocked": {
+        "outer": "partial",
+        "semantic": "blocked"
+      },
+      "failed": {
+        "outer": "error",
+        "semantic": "failed"
+      }
+    },
+    "candidate08_cli": {
+      "old07_profile_refused": "blocked",
+      "explicit_rebind": "ok",
+      "new_profile_inspect": "ok",
+      "production_plan": "ok",
+      "valid_config": "ok",
+      "bad_config": "failed"
+    },
+    "candidate08_stdio": {
+      "valid": {
+        "outer": "ok",
+        "semantic": "ok"
+      },
+      "blocked": {
+        "outer": "partial",
+        "semantic": "blocked"
+      },
+      "failed": {
+        "outer": "error",
+        "semantic": "failed"
+      }
+    },
+    "parser_operations_per_fixed_runtime": 49,
+    "candidate09_metadata": {
+      "status": "passed",
+      "candidate": "09",
+      "version": "0.3.0",
+      "installed_package_files": 68,
+      "capabilities_sha256": "5ee75c604a4907e7b34f897dfad58d7f474211a28cc52ccb900052035f6c6073",
+      "same_capability_digest_as08": true,
+      "pin": "ok",
+      "check": "ok",
+      "reused08_cli_stdio": true,
+      "native_at_intake": "not_run_by_GREA; pending"
+    },
+    "final_source_stdio": {
+      "status": "passed",
+      "scope": "current final source stdio candidate09 binding check;08 engineering calls reused",
+      "grea": {
+        "version": "2026.10.26.dev4",
+        "core_sha256": "27880a3d82b982f38e7d8f6cf4801e0e1424bae070733fa19e28cd36ef26a64c",
+        "files": 99
+      },
+      "source_session_version": "2026.10.26.dev4",
+      "provider_version": "0.3.0",
+      "ready": true,
+      "native": "not_run",
+      "global_plugin_updated": false
+    },
+    "unchanged_old_locks": {
+      "0.1.0": "3b2332ba6972f15fbb5b5fb64ceeff8b9fbcd73d4aae8ee789e7157dd9b1c8ab",
+      "0.2.0": "65f337f155eff1ab2bd2d68456ce2ad83b4944c95d9db264e640201827e73753",
+      "0.3.0.dev1": "cce0c236f7c15f0a12d24d40a2a13be7434f4b3409e9395a4d08700cb982cd55"
+    },
+    "old_chains": {
+      "0.1.0": "ok",
+      "0.2.0": "ok",
+      "0.3.0.dev1": "ok"
+    },
+    "original07_fixture_profile": "hash unchanged",
+    "legacy_go_source_template_files_unchanged": 32
+  },
+  "reused_layers": {
+    "candidate07": {
+      "verified_evidence_count": 30,
+      "python_tests": 115,
+      "final_checks": 11,
+      "native_producer": "e799831e07798347fcbb4e9c0338877b1e7c33f652e6f41c5f3295a79bd1ea1e",
+      "native": "06/r18 joint apply/reopen/recover; cannot replay with07 or08",
+      "player": "07 clean installation used same fixed App; private source UI/JSON/Spine/physical mouse subset",
+      "owned_go": "six services, persistent idempotence, restart/cache-loss and Unity roundtrip; not formal game server adoption"
+    },
+    "candidate08": {
+      "frozen_static_receipts": 7,
+      "python_tests": 118,
+      "offline_csharp_sources": 8,
+      "offline_unity_references": 342,
+      "compile_exit": 0,
+      "historical_index": "upstream main v0.3 validation snapshot still07 at intake; never relabeled08",
+      "native_environment_fix_at_intake": "minimal Editor environment and ASCII-base64 UTF8 job path; actual Editor result pending",
+      "native_current": "formal08 receipts independently read; narrow same-Editor native convergence verified; no GREA execution"
+    },
+    "candidate09": "68 runtime files identical to08; no repeated upstream execution"
+  },
+  "remaining": [
+    "GREA starts no Editor/Player/Docker; formal08 native receipt is verified separately; root alone concludes overall G",
+    "Project default-renderer Metal startup and positive-purchase L3 remain project-specific limits; force-gfx-direct normal entries are separately recorded, not tool native failure",
+    "server.inspect is a CLI/capability declaration gap; grouped IDs are not guessed",
+    "Live Go diagnostics/build/tool preparation and Docker/database operations are deliberately outside finite routing",
+    "Old server_go_project and consumers not retired; full legacy contract replacement not verified",
+    "No complete dev4 plugin bundle/installation or current-chat plugin refresh claimed"
+  ],
+  "scope_guards": {
+    "engine_starts": 0,
+    "player_starts": 0,
+    "docker_starts": 0,
+    "service_operations": 0,
+    "upstream_full_suites_rerun": 0,
+    "formal_game_writes": false,
+    "other_product_source_writes": false,
+    "global_plugin_install": false,
+    "commit": false,
+    "push": false,
+    "merge": false,
+    "release": false
+  },
+  "evidence": [
+    {
+      "path": ".private/beaver03-integration-20261026/evidence-reuse.json",
+      "bytes": 10468,
+      "sha256": "0286cf9c8364537e042381292354e346097f3b9bc64ea47c7a9e0d910f530369"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/adapter-tests.log",
+      "bytes": 489,
+      "sha256": "ec83ebc235a60b361288d77d83250d806308b7dc7ef5ee1ce6f0ae869923ff67"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/adapter-tests-final.log",
+      "bytes": 489,
+      "sha256": "1180ff5fec516bf02ab6c6a66ed36fcd5bb1d0502855c8fee8544fc56a4b602a"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/execution/installed-package-check.json",
+      "bytes": 2870,
+      "sha256": "05c8589e4f34dba6b4622fb1f76efe71227ec6ac1e5bcaa1e0f89b1fbbb58929"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/execution/argv-parser-check.json",
+      "bytes": 31,
+      "sha256": "94d142cb717a766fc3a3f148582ac39fe20d850b8140a51e8d8b3927f9c801a5"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/execution/integration-result.json",
+      "bytes": 1456,
+      "sha256": "0aa54221a6000d93eec3f6ca7ec3b98209b526e2c2bf50af8c42d6c0cb4e94d8"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate08/evidence-reuse.json",
+      "bytes": 3352,
+      "sha256": "df8c8b1b9d2abca6ba4edc3d0e2d36e4b695f24f7d4f85b7a05a1dcde35f7edd"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate08/package-delta.json",
+      "bytes": 338,
+      "sha256": "150b050a839c91b5aad7c66498a4a4e24daf5bd8f634cdd3a7117c14d311ac5a"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate08/adapter-tests.log",
+      "bytes": 489,
+      "sha256": "31da005b9a005139c8fb25270d57b2c0dce30209474797607dfbe6924c0c9165"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate08/execution/integration-result.json",
+      "bytes": 1466,
+      "sha256": "d630c0d4995dd00c8204f56b60e1de48927c68c49b3087fa2a2fe59ffc9e5ccc"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate08/execution/installed-package-check.json",
+      "bytes": 2906,
+      "sha256": "a69de7c2242d6d6ebbc179e18429943df0641df5d46ef8e29071e23bd8464109"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate08/execution/argv-parser-check.json",
+      "bytes": 31,
+      "sha256": "94d142cb717a766fc3a3f148582ac39fe20d850b8140a51e8d8b3927f9c801a5"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate09/package-equivalence.json",
+      "bytes": 507,
+      "sha256": "bd458418b321d8739db8947bda851a7d5b224416e5c8dad8b92751f24e9acf23"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/candidate09/installation-check.json",
+      "bytes": 335,
+      "sha256": "37aa22c03449be77cd5fc63821c047fca9fa2cd8f128fd7717e6e2b5f5dd5427"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/final-source-check.json",
+      "bytes": 426,
+      "sha256": "fca067a5311f465ad7895f52480a55ccf993ce562cc32b6d900f7d3c7e730a8e"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/final-source-stdio.json",
+      "bytes": 4354,
+      "sha256": "0aa2a2f6602f89ddfccb526e68329624bffb691cc144bf41c999860110dfc246"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/interface-gaps.json",
+      "bytes": 1969,
+      "sha256": "dcc297181b75da9dc98c9d37e1e7e1e22d62f5cfd2980e44d13b9e19b1a9c45b"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/docs-check.json",
+      "bytes": 141,
+      "sha256": "0b0559440684794c61049bcdba20e68aaae5c8b16dd2c87eb2e49978f6901bf6"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/skill-check.json",
+      "bytes": 1246,
+      "sha256": "b409be58a778afd356975ea0c1f54901681990e3ed4376d2762e96c9ca788ff3"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/contracts-check.json",
+      "bytes": 43,
+      "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/formal-adoption/receipt-index.json",
+      "bytes": 5154,
+      "sha256": "3ef954e8fee2f40f1513b59605bbba6fcca1da466cdda6081d28c2750107ddda"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/final-package/package-equivalence.json",
+      "bytes": 559,
+      "sha256": "19ea19b0863f6459672497a5c5e77bd36d3ff4590b27f9fdcce15c6dc004f943"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/final-package/upstream-final-package.json",
+      "bytes": 679,
+      "sha256": "d929460fc4c5f390b3a5b777526cc798a5a167684bf46e2d18dcae83af3f92fa"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/formal-adoption/docs-check.json",
+      "bytes": 141,
+      "sha256": "282b4f48c9a516c32b1b5c5cabe1dc66c388643c72189d6181c7e98e13f26bc8"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/formal-adoption/skill-check.json",
+      "bytes": 1246,
+      "sha256": "4bcaf7fabe7be8171edd0baf1437144fb98c3a6dcb51b40332c8ec1d6f3b96d4"
+    },
+    {
+      "path": ".private/beaver03-integration-20261026/formal-adoption/contracts-check.json",
+      "bytes": 43,
+      "sha256": "0f3d6969ae7609558cc250d2def28d1e07b7ad9738e66d96635a1323e18be16c"
+    }
+  ],
+  "source_handoff_manifest": {
+    "path": ".private/beaver03-integration-20261026/selected-source-handoff/manifest.json",
+    "bytes": 3008,
+    "sha256": "0344b27e5608216a14ea372701a40cce78f8807a89cd4e4d5748bc6d4d7caa10"
+  },
+  "documentation_checks": {
+    "documents": {
+      "ok": true,
+      "documents": 140,
+      "localLinks": 721,
+      "errors": [],
+      "scope": "Local links/anchors only; external URLs not fetched."
+    },
+    "contracts": {
+      "ok": true,
+      "drifted": [],
+      "written": []
+    },
+    "skill": {
+      "ok": true,
+      "markdown_files": 57,
+      "local_links": 363,
+      "errors": [],
+      "warnings": []
+    },
+    "quick_validate": "passed with existing system python3",
+    "private_skill_preview": "official sync then --check consistent; no workspace/global installation",
+    "diff_check": "passed; HEAD and empty index unchanged"
+  },
+  "status_history": [
+    {
+      "status": "finite_grea_v03_adapter_verified_overall_G_open",
+      "superseded_by": "verified formal08 native receipts; original intake snapshots retained"
+    }
+  ],
+  "formal_consumer_adoption": {
+    "status": "formal08_narrow_native_adoption_verified",
+    "actor": "formal project main developer; GREA read-only verification",
+    "producer": "e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882",
+    "source_commit": "ad876dad06e2097424a7b855f4bc7fb13fff6a13",
+    "plan_sha256": "62dc58b4ea95cd046740928043c9b4e27777a423d7a753ea2bc15154786da3fc",
+    "rebind_receipt": "verified",
+    "native_transaction": "complete",
+    "native_result": "verified_no_error",
+    "unplanned_paths": 0,
+    "editor_starts": 1,
+    "declared_CSharp_files": 2,
+    "write_set_entries": 4,
+    "before_after_content_equal": true,
+    "scope": "same-Editor compile/save/reload of already-installed exact two C# after-images; not new source-content change, independent reopen, Prefab/resource or full-game verdict",
+    "current_code_hashes_match_native_after": true,
+    "existing_project_PlayMode": {
+      "passed": 4,
+      "failed": 0,
+      "reused": true,
+      "not_a_new_GREA_run": true
+    },
+    "project_App_boundary": {
+      "default_renderer": "two startup hangs retained",
+      "accepted_launch_arguments": [
+        "-force-gfx-direct"
+      ],
+      "positive_purchase_L3": "not_run: insufficient natural diamonds; L2 passed",
+      "new_asset_commands": false,
+      "normal_reopen_fields": 13,
+      "normal_reopen_equal": true
+    },
+    "old07_failures_preserved": true,
+    "old_transactions_replayed_with08": false,
+    "full_game_acceptance": false,
+    "formal_Go_service_adoption": false,
+    "evidence_index": {
+      "path": ".private/beaver03-integration-20261026/formal-adoption/receipt-index.json",
+      "bytes": 5154,
+      "sha256": "3ef954e8fee2f40f1513b59605bbba6fcca1da466cdda6081d28c2750107ddda"
+    }
+  },
+  "root_G_conclusion": "owned by beaver root; this record verifies GREA finite adapter and narrow formal08 native use, not whole-version release or game completion",
+  "read_only_adoption_followup": {
+    "core_unchanged": true,
+    "new_tests": 0,
+    "new_Engine_Player_Docker_runs": 0,
+    "game_code_or_logs_copied": false,
+    "document_validation": {
+      "docs": {
+        "ok": true,
+        "documents": 140,
+        "localLinks": 722,
+        "errors": [],
+        "scope": "Local links/anchors only; external URLs not fetched."
+      },
+      "skill": {
+        "ok": true,
+        "markdown_files": 57,
+        "local_links": 363,
+        "errors": [],
+        "warnings": []
+      },
+      "contracts": {
+        "ok": true,
+        "drifted": [],
+        "written": []
+      },
+      "private_skill_preview": "official sync and --check consistent; no global/workspace installation"
+    },
+    "document_handoff_manifest": {
+      "path": ".private/beaver03-integration-20261026/formal-adoption/document-handoff/manifest.json",
+      "bytes": 1557,
+      "sha256": "721ad6359f7341dad100c68a1c362d1805bc1b940f4bc9161e6e7ec9e1039a16"
+    }
+  },
+  "upstream_additional_play_report": {
+    "source": "provider owner message; not independently loaded or executed by GREA",
+    "owned_existing_project": "3 seconds, playErrors0, unchanged source reported",
+    "separate_chinese_copy": "Unity SearchDatabase exception remained failed even with cleanLibrary; no cache attribution or universal Chinese Play pass claimed",
+    "decision_owner": "beaver main developer"
+  },
+  "current_maintenance_followup": {
+    "record": "validation/development/beaver-result-schema-fix-20261026.json",
+    "grea": {
+      "version": "2026.10.26.dev4",
+      "core_sha256": "803670c36155ab9b4c1a3ac67328e40158bc9177545cc6bf1970374df3c483eb",
+      "files": 99
+    },
+    "scope": "real post-execution actualChanges schema defect; 8 targeted checks; no transaction replay; original45-check baseline retained"
+  }
+}

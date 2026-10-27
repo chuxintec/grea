@@ -1,13 +1,13 @@
 # 合成示例：从配置到奖励与持久化
 
-本目录全部为本次新编的设计样例，不含原游戏源码/数值/资源。版本 `0.1.0-draft.2`，状态 **illustrative / not executed**。它不是可运行 Unity 工程，也不注册任何 grea 模板、Schema 或接口。
+本目录全部为本次新编的设计样例，不含原游戏源码/数值/资源。版本 `0.1.0-draft.2`，状态 **illustrative / not executed**。它不是可运行 Unity 工程，也不注册任何 GREA 模板、Schema 或接口。
 
 | 文件 | 用途 | 明确限制 |
 | --- | --- | --- |
 | [template-profile.example.json](template-profile.example.json) | 展示配方、模块、目标环境、默认服务策略和所有权选择 | 不是grea-project.json；现有生成器不会接受 |
 | [configuration.example.json](configuration.example.json) | 合成物品、技能、敌人、波次、装备、奖励、服务入口与UI路由 | 数值仅演示关系；资产key是待制作声明，没有资源文件 |
 | [prefab-contracts.example.json](prefab-contracts.example.json) | UIHost、基础壳、奖励窗、列表项和HUD的slot/生命周期 | 是结构描述，不是Prefab/YAML；没有伪造GUID/fileID |
-| [reward-claim.pseudocode.cs.txt](reward-claim.pseudocode.cs.txt) | 展示请求幂等、资格/版本复核、原子提交与展示分界 | 伪代码，不编译；接口是设计名，不是grea已发布API |
+| [reward-claim.pseudocode.cs.txt](reward-claim.pseudocode.cs.txt) | 展示请求幂等、资格/版本复核、原子提交与展示分界 | 伪代码，不编译；接口是设计名，不是GREA已发布API |
 | [expected-flow.example.jsonl](expected-flow.example.jsonl) | 一条编辑的预期状态序列 | 手写预期，不是测试输出，不可记作PASS |
 | [ui-regression-contracts.example.json](ui-regression-contracts.example.json) | Sprite尺寸、动态组合、精确事件例外、射线命中、选择状态与依赖身份反例 | 第二次复评新编；仅合同预期，未执行Unity或输入 |
 

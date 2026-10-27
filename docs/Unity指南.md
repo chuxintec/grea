@@ -1,6 +1,6 @@
 # Unity指南
 
-用途：选择 grea 已有的 Unity 检查、生成、框架与隔离恢复能力。不自动改动已有游戏；目录/生命周期/制作约束以 [Unity标准技能](../plugin/skills/grea-unity-standard/SKILL.md)为准。
+用途：选择 GREA 已有的 Unity 检查、生成、框架与隔离恢复能力。不自动改动已有游戏；目录/生命周期/制作约束以 [Unity标准技能](../plugin/skills/grea-unity-standard/SKILL.md)为准。
 
 ## 项目检查与只读规划
 

@@ -1,13 +1,17 @@
 {
   "schemaVersion": 1,
   "name": "grea",
-  "version": "2026.10.24rc1",
-  "greaVersion": "2026.10.24rc1",
+  "version": "2026.10.27",
+  "greaVersion": "2026.10.27",
   "requiredOperations": [
     "session",
     "describe_tool",
     "plan_workflow",
     "run_tool",
     "start_case_revision"
+  ],
+  "requiredProviders": [
+    "monkey",
+    "beaver"
   ]
 }

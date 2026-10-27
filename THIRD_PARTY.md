@@ -1,6 +1,6 @@
 # 第三方依赖与许可边界
 
-grea 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许可证；MIT 不重新授权 Unity、Spine、游戏包、素材、源码或供应方工具。只处理自己拥有或获准分析的输入。
+GREA 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许可证；MIT 不重新授权 Unity、Spine、游戏包、素材、源码或供应方工具。只处理自己拥有或获准分析的输入。
 
 公开仓库只分发通用源码、流程、测试与接入说明。第三方二进制、安装副本、UPM 快照、插件包、Spine vendor 源码和项目派生解析器不随 Git 分发。已有本机副本可以继续使用，但其存在不等于获得再分发许可。
 
@@ -10,7 +10,7 @@ grea 自有代码与文档采用 [MIT](LICENSE)。第三方依赖保留各自许
 
 完整 macOS arm64 插件制品携带 [python-build-standalone](https://github.com/astral-sh/python-build-standalone) 的 CPython 3.12.14（20260929）及锁定的核心 Python 依赖；来源、平台、大小和 SHA256 见 [运行时锁](plugin/runtime-lock.json)。构建从固定归档恢复，不复制开发机 `.venv`。构建工具 uv 为 0.12.21，安装插件后的运行不依赖 uv。
 
-发行包的 `runtime-manifest.json` 记录解释器来源和各 Python 包的实际版本、许可元数据；`runtime/` 内保留 CPython、内置库与 wheel 的许可文本，`runtime-requirements.txt` 记录依赖哈希。第三方许可不被 grea 的 MIT 覆盖。运行时二进制与下载缓存仅进入构建制品，不提交 Git；完整插件的这一分发范围与仅含源码、文档的两类旧制品分开说明。
+发行包的 `runtime-manifest.json` 记录解释器来源和各 Python 包的实际版本、许可元数据；`runtime/` 内保留 CPython、内置库与 wheel 的许可文本，`runtime-requirements.txt` 记录依赖哈希。第三方许可不被 GREA 的 MIT 覆盖。运行时二进制与下载缓存仅进入构建制品，不提交 Git；完整插件的这一分发范围与仅含源码、文档的两类旧制品分开说明。
 
 所锁定 macOS 归档的上游元数据为四个使用系统 libz 的扩展同时列出了 zlib-ng 备选许可路径，该文件不在归档中。构建保留原始元数据和实际的 19 份许可证，并验证这四个扩展均链接系统 `z`、没有打包 zlib-ng；例外记录在 `runtime/license-manifest.json`。未知缺项、目标改变或链接方式改变会阻止构建，不能沿用此例外。
 
@@ -47,6 +47,6 @@ AssemblySanitizer 使用 [Mono.Cecil 0.11.6](https://github.com/jbevain/cecil)�
 
 有限制作链使用已锁定的 Pillow 处理自有/授权图片，Unity Editor API 创建原生资产；没有新增 Spine runtime 分发。Spine 页闭包检查不建立运行时授权，匹配来源与适用许可应另核验，见 [制作边界](docs/providers/unity-authoring.md)。
 
-构建期使用锁定的 [python-zstandard 0.25.0](https://github.com/indygreg/python-zstandard/tree/0.25.0) 单次流式读取 CPython 许可归档，许可为 BSD-3-Clause（上游内含 zstd 许可）；仅在 dev 依赖组，运行插件的依赖仍从 `uv export --no-dev` 生成。原始许可随其构建环境包保留，不重新授权为 grea 代码。
+构建期使用锁定的 [python-zstandard 0.25.0](https://github.com/indygreg/python-zstandard/tree/0.25.0) 单次流式读取 CPython 许可归档，许可为 BSD-3-Clause（上游内含 zstd 许可）；仅在 dev 依赖组，运行插件的依赖仍从 `uv export --no-dev` 生成。原始许可随其构建环境包保留，不重新授权为 GREA 代码。
 
-资源制作brief/来源字段与联系表方法参考[awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills)固定commit `38a4c2500eeb5ff9ac084336b8f66108069d2f8d`，Apache-2.0。选用范围与独立改写见[来源记录](UPSTREAM.json)，保留[LICENSE](docs/providers/licenses/awesome-gamedev-agent-skills/LICENSE)和[NOTICE](docs/providers/licenses/awesome-gamedev-agent-skills/NOTICE)。没有运行其安装器或复制Python工具；grea检查器保留自身边界及色数上限修正。
+资源制作brief/来源字段与联系表方法参考[awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills)固定commit `38a4c2500eeb5ff9ac084336b8f66108069d2f8d`，Apache-2.0。选用范围与独立改写见[来源记录](UPSTREAM.json)，保留[LICENSE](docs/providers/licenses/awesome-gamedev-agent-skills/LICENSE)和[NOTICE](docs/providers/licenses/awesome-gamedev-agent-skills/NOTICE)。没有运行其安装器或复制Python工具；GREA检查器保留自身边界及色数上限修正。

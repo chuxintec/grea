@@ -1,0 +1,2480 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Finite beaver 0.1/0.2 and fixed 0.3 candidates07/08 forwarding; exact version, capability and identity checked at runtime",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "project.inspect",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "project.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "assets": {
+              "type": "boolean"
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "adoption.plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "adoption.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidate",
+            "target"
+          ],
+          "properties": {
+            "baseline": {
+              "type": "string",
+              "minLength": 1
+            },
+            "candidate": {
+              "type": "string",
+              "minLength": 1
+            },
+            "lineage": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "target": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "adoption.apply",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "adoption.apply"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "expected-plan",
+            "plan",
+            "timeout"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected-plan": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "plan": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "adoption.rollback",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "adoption.rollback"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "timeout",
+            "transaction"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            },
+            "transaction": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "unity.plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "unity.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "unity.apply",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "unity.apply"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "expected-plan",
+            "plan",
+            "timeout"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected-plan": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "plan": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "player.run",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "player.run"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "duration",
+            "expected-manifest",
+            "manifest"
+          ],
+          "properties": {
+            "duration": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            },
+            "expected-manifest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "manifest": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "payload.verify",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "payload.verify"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "manifest",
+            "root"
+          ],
+          "properties": {
+            "allow-unlisted": {
+              "type": "boolean"
+            },
+            "manifest": {
+              "type": "string",
+              "minLength": 1
+            },
+            "root": {
+              "type": "string",
+              "minLength": 1
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "unity-artifact": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.2.0",
+                "0.3.0",
+                "0.3.0.dev1",
+                "0.4.0"
+              ]
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "payload.plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "payload.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "manifest",
+            "root",
+            "target"
+          ],
+          "properties": {
+            "manifest": {
+              "type": "string",
+              "minLength": 1
+            },
+            "override-root": {
+              "type": "string",
+              "minLength": 1
+            },
+            "overrides": {
+              "type": "string",
+              "minLength": 1
+            },
+            "root": {
+              "type": "string",
+              "minLength": 1
+            },
+            "target": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "payload.apply",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "payload.apply"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expected-plan",
+            "plan"
+          ],
+          "properties": {
+            "expected-plan": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "plan": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "image.inspect",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "image.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input"
+          ],
+          "properties": {
+            "input": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "image.compress",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "image.compress"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input"
+          ],
+          "properties": {
+            "apply": {
+              "type": "boolean"
+            },
+            "expected-source": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "input": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "required": [
+                  "apply"
+                ],
+                "properties": {
+                  "apply": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "expected-source"
+                ]
+              }
+            }
+          ]
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "config.validate",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "config.validate"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "schema"
+          ],
+          "properties": {
+            "input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "config.generate",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "config.generate"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema"
+          ],
+          "properties": {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.1.0",
+        "0.1.0.dev1",
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "code.inspect",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "code.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "batch.plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "batch.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "batch.apply",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "batch.apply"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "expected-plan",
+            "plan",
+            "timeout"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected-plan": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "plan": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "batch.recover",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "batch.recover"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "timeout",
+            "transaction"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            },
+            "transaction": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "references",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "references"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "cache": {
+              "type": "string",
+              "minLength": 1
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "debug.start",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "debug.start"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "duration",
+            "expected",
+            "manifest"
+          ],
+          "properties": {
+            "duration": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3600
+            },
+            "expected": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 64,
+              "maximum": 8192
+            },
+            "manifest": {
+              "type": "string",
+              "minLength": 1
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 64,
+              "maximum": 8192
+            }
+          },
+          "dependentRequired": {
+            "width": [
+              "height"
+            ],
+            "height": [
+              "width"
+            ]
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "debug.inspect",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "debug.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "session"
+          ],
+          "properties": {
+            "session": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "debug.stop",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "debug.stop"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "session"
+          ],
+          "properties": {
+            "session": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "debug.tail",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "debug.tail"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "session"
+          ],
+          "properties": {
+            "lines": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            },
+            "session": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "debug.screenshot",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "debug.screenshot"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expected",
+            "input",
+            "session"
+          ],
+          "properties": {
+            "expected": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "session": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "debug.target",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "debug.target"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "transaction"
+          ],
+          "properties": {
+            "transaction": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "workspace.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "workspace.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "profile": {
+              "type": "string",
+              "minLength": 1
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "workspace.rebind"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expected-profile",
+            "profile",
+            "project"
+          ],
+          "properties": {
+            "accept-authority-change": {
+              "type": "boolean"
+            },
+            "expected-profile": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "profile": {
+              "type": "string",
+              "minLength": 1
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "workspace.apply"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expected-plan",
+            "plan"
+          ],
+          "properties": {
+            "expected-plan": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "plan": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "production.plan/apply/recover",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "production.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "production.plan/apply/recover",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "production.apply"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "expected-plan",
+            "plan",
+            "timeout"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected-plan": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "plan": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "production.plan/apply/recover",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "production.recover"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "timeout",
+            "transaction"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            },
+            "transaction": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "config3.validate/generate/compare",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "config3.validate"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "schema"
+          ],
+          "properties": {
+            "input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tables": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "config3.validate/generate/compare",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "config3.generate"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema"
+          ],
+          "properties": {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "config3.validate/generate/compare",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "config3.compare"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "after-schema",
+            "before-schema"
+          ],
+          "properties": {
+            "after-input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "after-schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "before-input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "before-schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "csharp.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "toolchain": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "csharp.rename"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            },
+            "toolchain": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "csharp.rename-sequence"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            },
+            "toolchain": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "csharp.module",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "csharp.module"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec"
+          ],
+          "properties": {
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "resource.image-inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input"
+          ],
+          "properties": {
+            "input": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "resource.image-produce"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expected-source",
+            "input",
+            "policy"
+          ],
+          "properties": {
+            "expected-source": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "policy": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "resource.validate-step"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "server.generate"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec"
+          ],
+          "properties": {
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "server.module-generate"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec"
+          ],
+          "properties": {
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "server.module-plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "spec"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "server.protocol-diff"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "after",
+            "before"
+          ],
+          "properties": {
+            "after": {
+              "type": "string",
+              "minLength": 1
+            },
+            "before": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "server.migration-plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "server.compose-plan/migration-state/migration-apply/runtime-inspect",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "server.compose-plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "spec"
+          ],
+          "properties": {
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.3.0",
+        "0.3.0.dev1",
+        "0.4.0"
+      ],
+      "x-beaver-capability": "server.toolchain/protocol-tools/check/build",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "server.toolchain"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {}
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    }
+  ]
+}

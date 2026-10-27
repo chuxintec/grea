@@ -44,7 +44,7 @@ prepare 只收录摘要不同的行，按索引存 before/after PNG，生成 `th
 
 ## 美术优先的阶段与持续台账
 
-换皮主线顺序为 S1真实选样定风格 → S2 UI/ICON切分、原画与所需角色/怪物/特效Spine成套生产 → S3选样范围100%原功能替换 → S4用户确认样板风格后的全量换皮与Bug修复 → S5最后游戏调优。前四阶段保持原布局、入口和操作；约30%如有约定只用于S5整体页面/流程范围，不是美术替换覆盖率。不为每页增加审批，不把可玩/改色/静态PNG冒称完整美术或Spine。具体执行规范以 [换皮制作](../../plugin/skills/grea-reskin/references/07-美术-游戏换皮与资源制作.md) 为准。
+换皮主线顺序为 S1真实选样定风格 → S2 UI/ICON切分、原画与所需角色/怪物/特效Spine成套生产 → S3选样范围100%原功能替换 → S4用户确认样板风格后的全量换皮与Bug修复 → S5最后游戏调优。前四阶段保持原布局、入口和操作；约30%如有约定只用于S5整体页面/流程范围，不是美术替换覆盖率。不为每页增加审批，不把可玩/改色/静态PNG冒称完整美术或Spine。具体执行规范以 [换皮制作](../../plugin/skills/grea-reskin/references/游戏换皮与资源制作.md) 为准。
 
 `change_contract.art_production` 可选新增 `stage`、`ledger:{reference,sha256}`；阶段值依次为 `style_sample`、`art_production`、`sample_replace`、`full_reskin`、`game_tuning`。前四阶段允许维度仅 `visual_style`，S4/S5要求design声明approved，S5要求额外 `reskin_complete:{reference,sha256}` 绑定全量换皮与Bug修复完成回执。这是有限声明约束，不是审批服务或自动验收；既有不带该字段的合同/API继续兼容。没有换皮前置的独立UI/UE任务不强套美术阶段。
 

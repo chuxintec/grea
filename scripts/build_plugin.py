@@ -52,13 +52,13 @@ def write_product(source, destination, target="macos-arm64", revision="HEAD"):
     (destination / '.mcp.json').write_bytes(encoded({'mcpServers':{'grea':client_launch(target,'codex')}}))
     marketplace = destination/'.agents/plugins/marketplace.json'
     marketplace.parent.mkdir(parents=True)
-    marketplace.write_bytes(encoded({'name':'grea-local','description':'Portable grea skills and local MCP runtime.','plugins':[{
+    marketplace.write_bytes(encoded({'name':'grea-local','description':'Portable GREA skills and local MCP runtime.','plugins':[{
         'name':'grea','source':{'source':'local','path':'./'},
         'policy':{'installation':'AVAILABLE','authentication':'ON_USE'},'category':'Developer Tools'}]}))
     (destination/'.claude-plugin/marketplace.json').write_bytes(encoded({
-        'name':'grea-local','description':'Portable grea skills and local MCP runtime.',
-        'owner':{'name':'grea contributors'},'plugins':[{'name':'grea','source':'./'}]}))
-    required = ['registry.json', 'launch.py', 'launch_tool.py', 'src/grea/cli.py',
+        'name':'grea-local','description':'Portable GREA skills and local MCP runtime.',
+        'owner':{'name':'GREA contributors'},'plugins':[{'name':'grea','source':'./'}]}))
+    required = ['registry.json', 'modules.lock.json', 'launch_module.py', 'launch.py', 'launch_tool.py', 'src/grea/cli.py',
                 'plugin/version.json', 'plugin/launcher/grea', 'plugin/launcher/start.py',
                 'schemas/operations.json', 'schemas/unity-project.schema.json']
     for name in required:
@@ -97,8 +97,9 @@ def install_dependencies(tree, cache, lock):
     env = dict(os.environ, UV_CACHE_DIR=str(cache/'uv'), UV_NO_PROGRESS='1', UV_PYTHON_DOWNLOADS='never')
     for key in ('PYTHONHOME', 'PYTHONPATH', 'VIRTUAL_ENV'):
         env.pop(key, None)
+    # The modules extra carries the runtime libraries of the bundled monkey/beaver wheels.
     command = [uv, 'export', '--project', str(tree), '--frozen', '--no-header', '--no-dev', '--no-editable',
-               '--no-emit-project', '--format', 'requirements-txt']
+               '--no-emit-project', '--extra', 'modules', '--format', 'requirements-txt']
     requirements = subprocess.check_output(command, env=env)
     (tree/'runtime-requirements.txt').write_bytes(requirements)
     _,layout=target_config(lock['target'])
@@ -164,7 +165,7 @@ def normalize_records(site, runtime, upstream_files=None):
     return preserved
 
 
-def build(out, *, worktree=False, cache=None, tag=None, target=None):
+def build(out, *, worktree=False, cache=None, tag=None, target=None, modules=None):
     selected,layout=target_config(target)
     if target_config()[0]!=selected:raise ValueError('Build requires the matching native host')
     artifact=archive_name(selected)
@@ -194,6 +195,15 @@ def build(out, *, worktree=False, cache=None, tag=None, target=None):
         from runtime_licenses import install_licenses
         licenses = install_licenses(license_archive, tree/'runtime', lock)
         packages, normalization = install_dependencies(tree, cache, lock)
+        # monkey and beaver are released as GREA modules: exact locked wheels, installed on demand.
+        from grea.modules import stage as stage_modules
+        # The lock travels with the product source; staging fails if it is absent.
+        if not modules and tag:
+            # Tagged releases always bundle the modules; fetch the locked wheels when no local copy is given.
+            from grea.modules import fetch as fetch_modules
+            modules = cache/'modules'; fetch_modules(modules, root=tree)
+        if modules: bundled_modules = stage_modules(modules, tree/'modules/wheels', root=tree)
+        else: bundled_modules = 'not_bundled_preview'
         subprocess.run([str(tree/layout['python']), '-I', '-B', str(tree/'launch_tool.py'),
                         'check_skill', '--workspace-root', str(tree), '--json'],
                        cwd=tree, check=True, stdout=sys.stderr)
@@ -207,14 +217,14 @@ def build(out, *, worktree=False, cache=None, tag=None, target=None):
         (tree/'runtime-manifest.json').write_bytes(encoded(runtime_identity))
         manifest = {'schemaVersion': 1, 'name': 'grea', 'kind': 'complete-plugin',
                     'version': version, 'target': selected, **identity,
-                    'runtime': runtime_identity, 'files': inventory(tree, selected),
+                    'runtime': runtime_identity, 'modules': bundled_modules, 'files': inventory(tree, selected),
                     'limits': 'Local core MCP is bundled; Unity Editor and optional external providers are separate. No other platform is accepted by this artifact.'}
         (tree/'plugin-manifest.json').write_bytes(encoded(manifest))
         out.mkdir()
         write_archive(tree, out/artifact, identity['source_timestamp'])
     verify_archive(out/artifact)
     summary = {k: manifest[k] for k in ('version', 'target', 'source_revision', 'source_dirty', 'source_kind', 'source_tree_sha256')}
-    summary.update(archive=artifact, sha256=sha256(out/artifact), bytes=(out/artifact).stat().st_size,
+    summary.update(modules=manifest['modules'], archive=artifact, sha256=sha256(out/artifact), bytes=(out/artifact).stat().st_size,
                    files=len(manifest['files']), runtime=runtime_identity)
     (out/'plugin-build.json').write_bytes(encoded(summary))
     (out/'SHA256SUMS').write_text(''.join(sha256(out/name)+'  '+name+'\n' for name in (artifact, 'plugin-build.json')), encoding='utf-8')
@@ -228,6 +238,7 @@ if __name__ == '__main__':
     parser.add_argument('--worktree', action='store_true', help='Unpublished preview of audited current worktree bytes')
     parser.add_argument('--tag')
     parser.add_argument('--target', choices=('macos-arm64','windows-x64'))
+    parser.add_argument('--modules', type=Path, help='Directory holding the exact monkey/beaver wheels named in modules.lock.json')
     args = parser.parse_args()
-    result = build(args.out, worktree=args.worktree, cache=args.cache, tag=args.tag, target=args.target)
+    result = build(args.out, worktree=args.worktree, cache=args.cache, tag=args.tag, target=args.target, modules=args.modules)
     print(json.dumps({k: v for k, v in result.items() if k != 'runtime'}, ensure_ascii=False))

@@ -4,13 +4,17 @@ build-backend = "hatchling.build"
 
 [project]
 name = "grea"
-version = "2026.10.24rc1"
-description = "Game Reverse Engineering and Assembly: evidence-first Unity recovery CLI and MCP"
+version = "2026.10.27"
+description = "GREA: skill-first game research, recovery and development, with monkey and beaver modules"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = ["mcp==2.3.0", "jsonschema==4.26.0", "pillow==12.2.0"]
+
+[project.optional-dependencies]
+# Runtime libraries of the bundled monkey/beaver modules (modules.lock.json); Pillow is already core.
+modules = ["pypinyin==0.55.0"]
 
 [project.scripts]
 grea = "grea.cli:main"

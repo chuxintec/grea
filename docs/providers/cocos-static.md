@@ -2,7 +2,7 @@
 
 工具只读取明确选择的文件，完整预检后生成不存在的候选目录。它们不运行源 JavaScript，不创建 Unity 资产，不证明玩法或渲染一致。原项目的脚本和原始证据继续归原项目。
 
-`cocos_assets` 0.1.0 使用 grea 自带 Python，无新增第三方依赖。支持显式 `cocos-2.4-compiled-v1`（header=1、11 段）、共享表 pack 和 Texture2D pack；不是对所有 Creator 2.4 变体的兼容承诺。UUID 当前仅接受标准 36 字符或压缩 22 字符形式；其他身份编码明确拒绝。自定义 payload/内联值保留类型标签，不宣称全部引擎语义已恢复。实例和资源引用保留为 `__id__`、`__uuid__`，不会变成生产运行时对象。未知版本/kind 返回 unsupported；损坏下标、表长、JSON、非有限数、预算超限和覆盖冲突返回 error。
+`cocos_assets` 0.1.0 使用 GREA 自带 Python，无新增第三方依赖。支持显式 `cocos-2.4-compiled-v1`（header=1、11 段）、共享表 pack 和 Texture2D pack；不是对所有 Creator 2.4 变体的兼容承诺。UUID 当前仅接受标准 36 字符或压缩 22 字符形式；其他身份编码明确拒绝。自定义 payload/内联值保留类型标签，不宣称全部引擎语义已恢复。实例和资源引用保留为 `__id__`、`__uuid__`，不会变成生产运行时对象。未知版本/kind 返回 unsupported；损坏下标、表长、JSON、非有限数、预算超限和覆盖冲突返回 error。
 
 ```sh
 bin/grea run-tool '{"tool_id":"cocos_assets","arguments":["--input","/absolute/source.json","--output","/absolute/new-candidate","--adapter","cocos-2.4-compiled-v1"],"run_dir":"/absolute/new-run"}'

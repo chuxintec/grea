@@ -1,6 +1,6 @@
-# grea Git 管理
+# GREA Git 管理
 
-公开仓库：[chuxintec/grea](https://github.com/chuxintec/grea)。Git 根目录是 grea 本身，克隆目录由使用者自行选择。
+公开仓库：[chuxintec/grea](https://github.com/chuxintec/grea)。Git 根目录是 GREA 本身，克隆目录由使用者自行选择。
 
 公开树只纳入自有产品源码、流程规范、文档、合成测试和匿名验证摘要。第三方程序、运行时、UPM/插件备份、vendor 源码、项目工程、原始日志、记忆、客户端配置及本机路径不纳入 Git；详见 [第三方依赖](THIRD_PARTY.md) 和 [.gitignore](.gitignore)。本地保留文件与公开树是不同范围，不使用 Git LFS 存放私人库存。
 

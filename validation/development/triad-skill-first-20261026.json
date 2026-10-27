@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "version": "2026.10.26.dev3",
+  "status": "G1_G2_verified_G3_engineering_pending",
+  "scope": "local_skill_first_triad",
+  "branch": "codex/monkey-toolchain-v040",
+  "installed_global_plugin": "2026.10.26.dev2_unchanged",
+  "workspace_skill_copy": "generated_and_checked",
+  "original_games_modified": false,
+  "other_product_source_modified": false,
+  "pushed": false,
+  "released": false,
+  "tests": {
+    "full_suite": 369,
+    "passed": 355,
+    "skipped": 14,
+    "scope": "private source snapshot excluding preserved machine-path AGENTS header; locked runtime and Acorn reused",
+    "later_targeted_provider_tests": 14,
+    "later_targeted_passed": 14,
+    "reference_routes_and_assets_tests": 8,
+    "core_contract_tests": 15,
+    "target_selection_tests": 3
+  },
+  "documents": {
+    "skill_entries": 12,
+    "skill_markdown": 56,
+    "skill_links": 349,
+    "documents": 139,
+    "local_links": 689,
+    "errors": 0
+  },
+  "handoff": {
+    "snapshot_files": 903,
+    "python_tool_entries": 40,
+    "proposed_beaver": 28,
+    "recovery_side_review": 7,
+    "retained_workflow_helper": 5,
+    "templates_companions": 367,
+    "receiver_acceptance": "not_verified",
+    "consumer_switch": "not_verified"
+  },
+  "providers": {
+    "default_machine": {
+      "monkey": "ready_0.4.0",
+      "beaver": "not_installed",
+      "combined": "needs_action"
+    },
+    "isolated_development": {
+      "monkey": "ready_0.4.0",
+      "beaver": "0.1.0_explicit_frozen_snapshot_wheel_not_release",
+      "capability_contract": "beaver-capabilities/1 inside beaver-result/1; no --json",
+      "combined": "ready",
+      "actual_project_inspect": "ok",
+      "original_beaver_source_executed": false
+    }
+  },
+  "not_run": [
+    "beaver adoption/apply/rollback",
+    "native UI/Prefab operation through GREA adapter",
+    "Unity native connection",
+    "Player/input/visual/business",
+    "matching game build",
+    "public release or global upgrade"
+  ],
+  "evidence": [
+    {
+      "path": ".private/triad-20261026/source-freeze/manifest.json",
+      "bytes": 170810,
+      "sha256": "327164597eee56a6cef06f09a047270a2c0f5320fd6e779e8e3bb1637c940761"
+    },
+    {
+      "path": ".private/triad-20261026/beaver-source-freeze.json",
+      "bytes": 4695,
+      "sha256": "beab5e39a87fe1d70804ff08cde2d0ba071c7dfd73c93421c1a323899732115c"
+    },
+    {
+      "path": ".private/triad-20261026/beaver-wheel/beaver_game_tools-0.1.0-py3-none-any.whl",
+      "bytes": 44826,
+      "sha256": "d8bd696d21e80b73da32efa2c0ded93ca9f7681a59539d985eb7a6279e6f6cf7"
+    },
+    {
+      "path": ".private/triad-20261026/beaver-pin/beaver-lock.json",
+      "bytes": 4743,
+      "sha256": "6429a9ab660dc6b17bbee1a729c0d1a5a60ac275ade636dfc6c995b85ba1967c"
+    },
+    {
+      "path": ".private/triad-20261026/actual-toolchain/result.json",
+      "bytes": 1223,
+      "sha256": "8c78a0e090a5fe59222f21db72c09df0fea4a8966227bf39f58c8a11790354e4"
+    },
+    {
+      "path": ".private/triad-20261026/isolated-toolchain/result.json",
+      "bytes": 1261,
+      "sha256": "2b259a78a29312b1b0d4797dfcd81200615ffc03b04d5dc740f60a6aa40ba76c"
+    },
+    {
+      "path": ".private/triad-20261026/beaver-inspect/result.json",
+      "bytes": 2232,
+      "sha256": "e2a05335dbbab33da2259c9a2ac5b580a40ef8f039e86c884be9890b201f2300"
+    },
+    {
+      "path": ".private/triad-20261026/tests-final-retry.log",
+      "bytes": 2225,
+      "sha256": "054c8562ba32229d52d7294ff3299a02cb306c7feb77ae726647252f919afd6c"
+    },
+    {
+      "path": ".private/triad-20261026/routing-walkthrough.json",
+      "bytes": 5163,
+      "sha256": "1d9825bc273606922b1d62e4725502a574abd558924c0fc4ad2c5fcf68978733"
+    },
+    {
+      "path": ".private/triad-20261026/provider-tests-final4.log",
+      "bytes": 489,
+      "sha256": "68f66a2e3d47fe33996b18903dab3baa683562afb0edd43eef7b43ab9143b368"
+    },
+    {
+      "path": ".private/triad-20261026/reference-tests-final4.log",
+      "bytes": 97,
+      "sha256": "c40a4c653890a8ec737c1e96411fc3dc8ecec86488e5153bf04c554505c217b9"
+    },
+    {
+      "path": ".private/triad-20261026/core-tests-final.log",
+      "bytes": 98,
+      "sha256": "f7802412c9ab37e1d7d325b202371c686b7a8f581a4d2db69ae953e54d755245"
+    },
+    {
+      "path": ".private/triad-20261026/targets-tests-final.log",
+      "bytes": 97,
+      "sha256": "61dad650608d0c1cac41a1ca37208581fc401b7c7b37e8508217a525ecb73303"
+    },
+    {
+      "path": ".private/triad-20261026/package-ready-acceptance.json",
+      "bytes": 4322,
+      "sha256": "a7d9b407fb29251f767fd78c31da4b67b8d0d5179b7d64ac5fbfd2140c481a11"
+    },
+    {
+      "path": ".private/triad-20261026/package-ready/plugin-build.json",
+      "bytes": 10591,
+      "sha256": "2e1c813500317d974de19d1bb7150786cb6425cc6ec9838e649b2de632b64fa0"
+    },
+    {
+      "path": ".private/triad-20261026/docs-final.json",
+      "bytes": 141,
+      "sha256": "dac36e9cb181ba85658e642f8cdfead91a357892d3cc235cba1c832590a34cb2"
+    },
+    {
+      "path": ".private/triad-20261026/skill-final.json",
+      "bytes": 1246,
+      "sha256": "c9555ce518eca8ee2e957ddd1e99b350d119b482bf6fb977de85bec95188d8f4"
+    },
+    {
+      "path": ".private/triad-20261026/recovery-review/integration-check.json",
+      "bytes": 597,
+      "sha256": "deaa345baefd8a881e53a792fe722e485f170d0e42ee08938a0accfc5f57531e"
+    },
+    {
+      "path": ".private/triad-20261026/g3-preview/request.json",
+      "bytes": 766,
+      "sha256": "e7045ec8bde35f2579a73bbec7375594df7ed594a1c3de228278e49949db2fe9"
+    },
+    {
+      "path": ".private/triad-20261026/g3-preview/readiness/result.json",
+      "bytes": 390,
+      "sha256": "230a1c6b9b713e50c51ad3b2222aa0d164174ebc3417aa3df6aeb50a9bc2ccfb"
+    },
+    {
+      "path": ".private/triad-20261026/g3-preview/grea-result.json",
+      "bytes": 5707,
+      "sha256": "a339aee00dfd4f6978d9ae0134511a22e4661f2a158d29c1cc43ebf614bef27c"
+    },
+    {
+      "path": ".private/triad-20261026/g3-preview/before.json",
+      "bytes": 19422,
+      "sha256": "b5cadb0354cc2b08d0383f720d1532fffa2063ae6d110bbfec36c640aefee500"
+    },
+    {
+      "path": ".private/triad-20261026/g3-preview/after.json",
+      "bytes": 19422,
+      "sha256": "b5cadb0354cc2b08d0383f720d1532fffa2063ae6d110bbfec36c640aefee500"
+    },
+    {
+      "path": ".private/triad-20261026/g3-preview/plan/adoption-plan.json",
+      "bytes": 15694,
+      "sha256": "d41cdb43a6d55290cc9f97cc6792b1ffac28d2596448d46db5ceced52fa063a3"
+    }
+  ],
+  "limitations": [
+    "Readiness and project.inspect are not end-to-end engineering acceptance.",
+    "Pre-existing GREA execution implementations retained until receiver and consumer validation.",
+    "Isolated beaver wheel is this consumer test snapshot, not upstream release acceptance."
+  ],
+  "portable_candidate": {
+    "version": "2026.10.26.dev3",
+    "target": "macos-arm64",
+    "source_kind": "private_local_verification_snapshot_not_product_commit",
+    "result_location": ".private/triad-20261026/package-ready-acceptance.json",
+    "installed_globally": false,
+    "status": "pass",
+    "archive_sha256": "ab881bd7359203c3fa85fe25586702b3ce040258520d67517a168abc32a4165b",
+    "bytes": 47250038,
+    "files": 3590,
+    "clients": [
+      "codex_launch_manifest",
+      "claude_launch_manifest"
+    ],
+    "native_client_installation": "not_run",
+    "isolation": {
+      "independent_home": true,
+      "install_write_denied": true,
+      "installation_unchanged": true,
+      "minimal_path": true,
+      "moved_unicode_space_path": true,
+      "network_denied": true,
+      "source_read_denied": true
+    }
+  },
+  "ownership_followup": {
+    "monkey_commit": "dad5dc1cc8552d7adcebec2647eeb22737de9e0a",
+    "monkey_review_sha256": "4f96b7d784f6eaea0f19ad5db5202db0bccdbe28e135b220db20ae25defa512f",
+    "reviewed_recovery_items": 7,
+    "all_retire_allowed": false,
+    "consumer_switch": "not_verified",
+    "beaver_reference_only_items": 26,
+    "beaver_parameterized_subset_items": 2,
+    "legacy_dispatch_changed": false,
+    "runtime_code_changed": false,
+    "repeated_behavior_tests": false
+  },
+  "g3_adoption_preview": {
+    "status": "planned_only",
+    "provider": "explicit_frozen_beaver_0.1.0_snapshot",
+    "grea_invocation_status": "ok",
+    "beaver_status": "ok",
+    "counts": {
+      "operations": 0,
+      "conflicts": 0,
+      "preserved": 11,
+      "retainedRemoved": 0
+    },
+    "plan_sha256": "d41cdb43a6d55290cc9f97cc6792b1ffac28d2596448d46db5ceced52fa063a3",
+    "existing_monkey_candidates_reused": true,
+    "baseline_candidate_and_working_files_unchanged": true,
+    "apply": "not_run",
+    "native": "not_run",
+    "build": "not_run",
+    "meaning": "Provider candidate/plan contract exercised; zero asset changes is not adoption or migration acceptance."
+  },
+  "current_followup": {
+    "record": "validation/development/triad-closeout-20261026.json",
+    "status": "local_G3_integration_closed_with_reused_layered_evidence",
+    "note": "Earlier per-step not_run fields describe that checkpoint, not current beaver delivery."
+  }
+}

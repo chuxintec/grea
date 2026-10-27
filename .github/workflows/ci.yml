@@ -27,12 +27,15 @@ jobs:
         with:
           version: '0.12.21'
           python-version: ${{ matrix.python }}
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra modules
       - name: Install locked optional AST test provider
         run: npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
+      - name: Fetch the locked monkey/beaver module wheels for delegated-tool tests
+        run: .venv/bin/python scripts/fetch_modules.py --out .cache/modules
       - run: python3 scripts/audit_public_tree.py
       - run: .venv/bin/python scripts/generate_contracts.py --check
       - run: .venv/bin/python scripts/render_brand_assets.py --check
+      - run: .venv/bin/python scripts/skill_closure.py --check
       - run: .venv/bin/python scripts/check_docs.py
       - run: .venv/bin/python scripts/check_semantic_docs.py
       - run: .venv/bin/python -m unittest discover -s tests -v
@@ -93,8 +96,9 @@ jobs:
         with:
           version: '0.12.21'
           python-version: '3.12'
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra modules
       - run: npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
+      - run: .venv/Scripts/python.exe scripts/fetch_modules.py --out .cache/modules
       - shell: cmd
         run: bin\grea.cmd session
       - name: Build optional locked Cecil provider for native tests

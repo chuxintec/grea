@@ -1,9 +1,9 @@
 {
   "name": "grea",
-  "version": "2026.10.24rc1",
-  "description": "grea unpublished development source: research, Unity/Cocos targets, Go backend and bounded reskin workflows; 12 skills. Frozen release identities remain separate.",
+  "version": "2026.10.27",
+  "description": "GREA: Skill-first game research, recovery and development workflows, released together with its monkey (recovery) and beaver (engineering) modules.",
   "author": {
-    "name": "grea contributors",
+    "name": "GREA contributors",
     "url": "https://github.com/chuxintec/grea"
   },
   "homepage": "https://github.com/chuxintec/grea",

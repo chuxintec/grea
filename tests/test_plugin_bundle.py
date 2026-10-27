@@ -22,7 +22,7 @@ class PluginBundleTests(unittest.TestCase):
         names = ['LICENSE','registry.json','launch.py','launch_tool.py','src/grea/cli.py','src/grea/mcp_server.py',
                  'plugin/version.json','plugin/.codex-plugin/plugin.json','plugin/.claude-plugin/plugin.json',
                  'plugin/.mcp.json','plugin/launcher/grea','plugin/launcher/start.py',
-                 'plugin/shared/02-工具-选择与调用.md','schemas/operations.json','schemas/unity-project.schema.json']
+                 'plugin/skills/grea/references/工具选择与调用.md','schemas/operations.json','schemas/unity-project.schema.json']
         for directory in ['tools/unity/framework/packages','tests/unity/reference-project']:
             names.append(next(p.relative_to(ROOT).as_posix() for p in (ROOT/directory).rglob('*') if p.is_file()))
         names.extend(p.relative_to(ROOT).as_posix() for p in (ROOT/'plugin/assets').rglob('*') if p.is_file())
@@ -147,7 +147,7 @@ class PluginBundleTests(unittest.TestCase):
             tree=Path(tmp)/'grea'
             build_plugin.write_product(files, tree)
             for name in ['registry.json','launch.py','launch_tool.py','src/grea/mcp_server.py',
-                         'schemas/unity-project.schema.json','plugin/shared/02-工具-选择与调用.md',
+                         'schemas/unity-project.schema.json','plugin/skills/grea/references/工具选择与调用.md',
                          'tools/unity/framework/packages','tests/unity/reference-project']:
                 self.assertTrue((tree/name).exists(), name)
             for client in ('.codex-plugin', '.claude-plugin'):

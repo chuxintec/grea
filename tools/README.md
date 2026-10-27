@@ -1,6 +1,6 @@
 # 工具源码与自有验证样例
 
-Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools)，通过 `bin/grea` 和 [registry.json](../registry.json) 调度；本目录保存其他技术栈的源码、构建输入和跨工具自有验证样例，不建立第二套工具 ID。
+过渡期旧 Python 执行能力保留在 [src/grea/tools](../src/grea/tools)，通过 `bin/grea` 和 [registry.json](../registry.json) 调度；本目录保存其他技术栈的源码、构建输入和跨工具自有验证样例，不建立第二套工具 ID。
 
 | 目录 | 内容 |
 | --- | --- |
@@ -16,3 +16,7 @@ Python 产品能力统一维护在 [src/grea/tools](../src/grea/tools)，通过 
 | lifecycle-feedback | 合成事件→配置／兼容／回退预览→本地交接调用示例；复用已有工具 |
 
 按任务选工具见 [工具目录](../TOOLS.md)，参数见 [工具说明](../docs/tools/制品与资源检查.md)，第三方接入见 [providers](../docs/providers/README.md)。脚本路径不是工具身份；正式调用使用已登记 ID。
+
+外部转换编排集中在 `src/grea/integrations/monkey/`：identity 固定工具，pipeline 处理计划与执行，audit 核新版产物，package/slice/handoff 保留版本化旧合同。`src/grea/tools/monkey_pipeline.py`、`monkey_bridge.py` 只作为登记入口；解析器由独立 monkey 产品维护。
+
+工程操作实现按[beaver交接](../proposals/beaver-execution-handoff.md)转移，接收验证前保留原实现；新执行能力归 beaver，恢复解析归 monkey，GREA 以 Skill 和薄调用为主。

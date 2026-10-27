@@ -48,12 +48,12 @@ class TargetTests(unittest.TestCase):
    record.write_text('missing_runtime_library.py,,\n',encoding='utf-8')
    with self.assertRaises(ValueError):build_plugin.normalize_records(site,runtime)
 
- def test_complete_product_keeps_eight_skills_sync_and_document_closure(self):
+ def test_complete_product_keeps_current_skills_sync_and_document_closure(self):
   import check_docs
   source,_=plugin_bundle.read_source(ROOT,worktree=True)
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp)/'grea';build_plugin.write_product(source,root,'macos-arm64','a'*40)
-   self.assertEqual(len(list((root/'plugin/skills').glob('*/SKILL.md'))),8)
+   self.assertEqual({p.parent.name for p in (root/'plugin/skills').glob('*/SKILL.md')},{p.parent.name for p in (ROOT/'plugin/skills').glob('*/SKILL.md')})
    self.assertTrue((root/'scripts/sync_skill.py').is_file())
    self.assertTrue((root/'LICENSE').is_file());self.assertTrue((root/'THIRD_PARTY.md').is_file())
    result=check_docs.check(root);self.assertTrue(result['ok'],result['errors'])

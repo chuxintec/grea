@@ -24,5 +24,5 @@ class CocosTarget(unittest.TestCase):
    graph.append(dict(__type__='UnknownScript'));source.write_text(json.dumps(graph));r=convert(source,p/'blocked','2.4.15');self.assertEqual(r['status'],'blocked_unsupported');self.assertFalse((p/'blocked/Converted.prefab').exists())
  def test_explicit_cocos_plan_and_legacy_unity_route(self):
   c=dispatch('plan_workflow',dict(mode='recover',source_engine='cocos',target_engine='cocos'))
-  self.assertEqual(c['status'],'ok',c);self.assertNotIn('native',c['result']['required_dimensions']);self.assertTrue(any('05-Cocos' in x['reference'] for x in c['result']['steps']))
+  self.assertEqual(c['status'],'ok',c);self.assertNotIn('native',c['result']['required_dimensions']);self.assertTrue(any('Cocos工程与迁移' in x['reference'] for x in c['result']['steps']))
   u=dispatch('plan_workflow',dict(mode='recover',source_engine='cocos'));self.assertEqual(u['result']['target_engine'],'unity');self.assertIn('native',u['result']['required_dimensions'])

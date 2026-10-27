@@ -1,5 +1,8 @@
 # GREA 生命周期开发实施说明
 
+> 职责整改：本文保留此前生命周期设计与已实现边界；执行工具归属以[三产品架构](../../proposals/monkey-grea-lifecycle-architecture.md)为准，GREA维护Skill与薄入口，monkey负责恢复，beaver负责开发工程执行。唯一进度仍为生命周期路线。
+
+
 当前状态与版本出口见proposals/lifecycle-roadmap.md。本文件说明落点和检查范围，不另设进度表。
 
 ## 实现位置

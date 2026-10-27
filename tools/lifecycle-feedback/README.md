@@ -4,7 +4,7 @@
 
 本例只有一个start、没有finish，合成漏斗为[1,0]；没有session_start活跃事件，因此没有D1结果。数据不足以建议提高奖励。reward1→2只是原有手工配置候选，用于演示有限diff和兼容预览，不是分析器给出的调优建议。新配置没有应用，未选择商业平台。
 
-从GREA仓库根执行以下命令；安装版可替换为对应grea入口。输出为新临时目录，输入只读，重跑另建目录：
+从GREA仓库根执行以下命令；安装版可替换为对应GREA入口。输出为新临时目录，输入只读，重跑另建目录：
 
 ```sh
 grea_feedback_run=$(mktemp -d /tmp/grea-feedback.XXXXXX)
@@ -52,6 +52,6 @@ bin/grea inspect-target "{\"path\":\"$grea_feedback_run/results\",\"max_files\":
 | 身份 | inventory.json与本目录输入hash；来源提交、源码是否修改、工具版本另记，不能用目录SHA替代 |
 | 交付状态 | 仅本地候选；releaseVersion=null、channel=development；platform=none，production_write=Unavailable；标签/Release/安装/上传均无 |
 
-这些字段对应[现有交付清单](../../plugin/skills/grea-delivery/references/09-交付-游戏构建与版本发布.md#5-清单与current晋升)，没有新建current、晋升候选或发版。清单/报告可能含本机绝对路径；外发需另作脱敏，当前不外发。
+这些字段对应[现有交付清单](../../plugin/skills/grea-delivery/references/游戏构建与版本发布.md#5-清单与current晋升)，没有新建current、晋升候选或发版。清单/报告可能含本机绝对路径；外发需另作脱敏，当前不外发。
 
 LC1/LC2真实自有原生与键盘验证见[原生接续样例](../unity/lifecycle-sample/README.md)和[验收报告](../../validation/development/lifecycle-native.json)。它们与本例的模拟运营指标分开；原始provider、鼠标、正式视觉、完整游戏等价、未选平台及真实运营效果的限制继续保留。全生命周期当前状态见[唯一计划](../../proposals/lifecycle-roadmap.md)。

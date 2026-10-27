@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "completed_current_chat_verified",
+  "grea_version": "2026.10.26.dev2",
+  "monkey_version": "0.4.0",
+  "tests": {
+    "total": 358,
+    "passed": 344,
+    "skipped": 14,
+    "targeted": 31
+  },
+  "actual_checks": [
+    "existing official installation discovered and persistently bound in isolated state",
+    "missing installation obtained from official latest stable Release and bound",
+    "bundled Python installation succeeded with independent persistent Python",
+    "installed plugin session/check/plan/run passed without explicit provider environment",
+    "current live chat MCP session and monkey readiness passed after client refresh"
+  ],
+  "wheel_sha256": "ec5a4b1655c4bc7994e17eeba495b108d6a90fc61570f2e990c50decd6d6208b",
+  "limitations": [
+    "Native Editor/Player not run; control-plane readiness is separate from game acceptance",
+    "Automatic missing-provider installation currently supports POSIX; tests executed on macOS arm64"
+  ],
+  "evidence_directory": ".private/monkey-readiness-20261026",
+  "installation": {
+    "codex_version": "2026.10.26.dev2",
+    "installed_files_checked": 3585,
+    "other_configuration_unchanged": true,
+    "archive_sha256": "d0b93e349ac9c4050ee31603a180a0df652e31057b84dc8aa5323a660f158a42",
+    "archive_bytes": 47236938,
+    "isolated_plugin_acceptance": "pass_codex_and_claude_launch_configs"
+  },
+  "current_chat": {
+    "version": "2026.10.26.dev2",
+    "package_root_suffix": "Konanw/grea/2026.10.26.dev2",
+    "actual_mcp": true,
+    "operation": "run_tool monkey_pipeline check",
+    "status": "ok",
+    "provider_version": "0.4.0",
+    "provider_ready": true,
+    "run_id": "c6dd1b038d804e3bbb4e3f816faea1bf",
+    "uses_bundled_runtime": true,
+    "explicit_provider_config_not_required": true
+  },
+  "evidence_sha256": {
+    "tests.log": "4227462ee8d4cbb3933860fc1fcbff887fa7f08c97da11b7c06926b17cd00359",
+    "install/installed-mcp.json": "4781bef22cf3211b86de784a2f21110fbf487ab3b5b19c993fb2a9a1b4d5cd61",
+    "current-session-invocation/run.json": "6d78b2b61196549316c69bdfa8684ae4fac066517745b7e70037a82d89b74c86",
+    "package-acceptance-final.json": "07a2dc4d10fe439e9df3f72211b67e6cae4b154def3389ec3aada2c424f88926"
+  }
+}

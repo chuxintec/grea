@@ -56,6 +56,9 @@ def dispatcher_contract(workspace):
         result = {}
         for entry in entries:
             command = (entry.get('execution') or {}).get('command', [])
+            if entry.get('delegate'):
+                result[entry['id']] = None  # Implemented by the monkey/beaver module, not a local file.
+                continue
             if command:
                 if '{grea}/launch_tool.py' in command:
                     index = command.index('{grea}/launch_tool.py')
@@ -63,6 +66,10 @@ def dispatcher_contract(workspace):
                     continue
                 script = next((x for x in command if x.endswith('.py')), command[0])
                 result[entry['id']] = Path(script.replace('{grea}', str(tool_root)).replace('{tools}', str(tool_root)).replace('{python}', sys.executable))
+        for entry in entries:
+            # Aliases name their canonical tool; they are valid wherever the canonical ID is.
+            if entry.get('alias_of') in result and entry['id'] not in result:
+                result[entry['id']] = result[entry['alias_of']]
         return result
     source = tool_root / 'bin/recovery'
     tables = {}
@@ -151,6 +158,12 @@ def check(workspace, skill):
                 errors.append(dict(item, code='link_outside_workspace'))
                 continue
             real = actual(dest)
+            # Each plugin skill is standalone: its links may not leave its own directory.
+            if relative.parts[0] == 'skills' and len(relative.parts) > 2:
+                own = virtual_skill / 'skills' / relative.parts[1]
+                if not within(dest, own):
+                    errors.append(dict(item, code='link_outside_skill'))
+                    continue
             allowed_root = skill if within(dest, virtual_skill) else workspace
             if not within(real.resolve(), allowed_root):
                 errors.append(dict(item, code='link_symlink_escape'))
@@ -174,7 +187,7 @@ def check(workspace, skill):
                 errors.append({'code': 'unknown_recovery_id', 'file': str(relative), 'id': name})
                 continue
             used.add(name)
-            if not contract[name].is_file():
+            if contract[name] is not None and not contract[name].is_file():
                 errors.append({'code': 'missing_tool_implementation', 'file': str(relative), 'id': name})
     reached, pending = set(), list(entries)
     while pending:

@@ -1,6 +1,6 @@
 # 第三方工具接入
 
-这些文档说明如何取得和配置可选提供方；目录中不分发工具二进制。官方来源与许可边界统一见 [第三方依赖](../../THIRD_PARTY.md)，实际命令通过仓库根的 providers.example.json 和 GREA_PROVIDERS 配置。
+这些文档说明如何取得和配置提供方：monkey 与 beaver 是完整执行链必选工具，其他供应方按任务准备；目录中不分发工具二进制。官方来源与许可边界统一见 [第三方依赖](../../THIRD_PARTY.md)，实际命令通过仓库根的 providers.example.json 和 GREA_PROVIDERS 配置。
 
 - [Frida](Frida接入.md)：本机客户端与设备端版本配对，以及操作授权边界。
 - [IL2CPP 辅助解析器](IL2CPP解析器接入.md)：Il2CppInspectorRedux 的安装与调用限制。
@@ -23,3 +23,5 @@ Spine 的构建配置位于 [tools/unity/spine](../../tools/unity/spine)，包�
 - [资产总览与规格](asset-preview.md)：中文标签联系表、来源元数据、尺寸和可选RGBA色数。
 
 - [生命周期兼容与只读分析](lifecycle-analysis.md)：配置/save差异、事件与经济流、配置候选；无生产写入。
+
+- [beaver工程开发](beaver.md)：发现、固定身份、只读工程检查和旧实现交接；没有 provider 时明确 needs_action。

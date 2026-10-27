@@ -4,6 +4,7 @@ from unittest.mock import patch
 from grea import registry
 from grea.application import dispatch
 from grea.common import package_root,GreaError
+from module_support import with_modules
 ROOT=package_root()
 
 class PlatformTests(unittest.TestCase):
@@ -22,6 +23,8 @@ class PlatformTests(unittest.TestCase):
             a=registry.tool(alias);c=registry.tool(canonical)
             self.assertEqual(a['execution'],c['execution']);self.assertEqual(a['probe'],c.get('probe'))
             self.assertEqual(a['canonical_id'],canonical)
+
+    @with_modules
 
     def test_windows_rejects_mac_bundle_but_keeps_inventory(self):
         with patch('grea.registry.platform.system',return_value='Windows'),patch('grea.registry.platform.machine',return_value='AMD64'):
@@ -59,17 +62,6 @@ class PlatformTests(unittest.TestCase):
         if os.name=='nt':self.assertEqual(command[0],'adb.exe')
         else:self.assertIn('platform-tools',command[0])
         self.assertNotIn('platform-grea',command[0])
-
-    def test_event_wrapper_keeps_schema_and_difference_semantics(self):
-        with tempfile.TemporaryDirectory() as d:
-            a=Path(d)/'a.jsonl';b=Path(d)/'b.jsonl'
-            a.write_text('{"seq":1,"event":"start","state":{"n":1}}\n')
-            b.write_text(a.read_text())
-            cmd=[sys.executable,str(ROOT/'src/grea/tools/compare_events.py'),str(a),str(b)]
-            self.assertEqual(subprocess.run(cmd,capture_output=True).returncode,0)
-            b.write_text('{"seq":1,"event":"start","state":{"n":2}}\n')
-            self.assertEqual(subprocess.run(cmd,capture_output=True).returncode,1)
-            b.write_text('{}\n');self.assertEqual(subprocess.run(cmd,capture_output=True).returncode,2)
 
     def test_portable_launcher(self):
         p=subprocess.run([sys.executable,str(ROOT/'launch.py'),'session'],cwd=tempfile.gettempdir(),capture_output=True,text=True)

@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "status": "passed_scoped_acceptance",
+  "date": "2026-10-26",
+  "grea_version": "2026.10.26.dev1",
+  "monkey_version": "0.4.0",
+  "branch": "codex/monkey-toolchain-v040",
+  "scope": "External monkey bulk orchestration and modular GREA toolchain; no original game changes",
+  "upstream": {
+    "thread": "01a16363-03ce-7222-a8a1-2041d7a2681b",
+    "release": "0.4.0",
+    "verified": "Native thread read plus actual installed capabilities and owned conversion",
+    "limitations": "Upstream game results do not establish all-source recovery"
+  },
+  "tests": {
+    "discovered": 346,
+    "passed": 332,
+    "skipped": 14,
+    "failures": 0,
+    "log_sha256": "f3f1a9d437b9a05db684c3ebbfdbc2d1766194da6dcad162b2c46a4fc24f97a3",
+    "targeted_monkey_tests": 19,
+    "source_snapshot": "Isolated source copy; pre-existing user AGENTS relocation header excluded, test runtime/dependencies shared. Outdated category and fixed skill count tests updated."
+  },
+  "actual_provider": {
+    "source_case": "Owned Cocos package plus two-root input-set, targets Unity and Creator",
+    "projects": 2,
+    "verified_files": 104,
+    "verified_bytes": 266795,
+    "result": "needs_action",
+    "input_mutations": false,
+    "run_receipt_sha256": "f0e5b853247a329a72874dbc9bffa516a96a23a5e48ace2894b609e00ec289dc"
+  },
+  "contracts": {
+    "schema_check": "pass",
+    "documentation_links": 630,
+    "semantic_references": 17,
+    "workspace_skill_sync": "pass",
+    "legacy_ids": "preserved"
+  },
+  "plugin": {
+    "version": "2026.10.26.dev1",
+    "target": "macos-arm64",
+    "status": "pass",
+    "client_configs": {
+      "claude": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "evidence_manifest",
+          "config_preflight",
+          "presentation_audit",
+          "performance_compare",
+          "case_revision_invalidation",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "start_case_revision",
+          "validate_unity_project"
+        ]
+      },
+      "codex": {
+        "checks": [
+          "initialize",
+          "catalog_parity",
+          "session",
+          "bundled_workflow",
+          "core_subprocess",
+          "evidence_manifest",
+          "config_preflight",
+          "presentation_audit",
+          "performance_compare",
+          "case_revision_invalidation",
+          "legacy_launch",
+          "cocos_core_subprocess",
+          "native_exit_core_subprocess",
+          "typed_config_core_subprocess",
+          "native_authoring_core_subprocess",
+          "optional_ast_cecil_missing",
+          "structured_failure",
+          "external_provider_missing"
+        ],
+        "protocolVersion": "2025-03-26",
+        "scope": "manifest launch configuration with independent stdio client; native host loading tested separately",
+        "status": "pass",
+        "tools": [
+          "add_evidence",
+          "audit_unity_dependencies",
+          "case_status",
+          "compare_gameplay_traces",
+          "describe_tool",
+          "doctor",
+          "generate_unity_project",
+          "init_case",
+          "inspect_numeric_texture",
+          "inspect_target",
+          "list_tools",
+          "plan_unity_generation",
+          "plan_unity_project",
+          "plan_workflow",
+          "record_verification",
+          "recover_unity_generation",
+          "run_tool",
+          "session",
+          "snapshot_unity_assets",
+          "start_case_revision",
+          "validate_unity_project"
+        ]
+      }
+    },
+    "archive_sha256": "bb49062ca509842d05790fe9a0df0c8103835cad8ffc264e0a12dabbe01ba464",
+    "archive_bytes": 47222228,
+    "source_modules_checked": 92,
+    "source_module_mismatches": [],
+    "relocated_mcp": {
+      "status": "pass",
+      "tool": "monkey_pipeline",
+      "projects": 2,
+      "verified_files": 104,
+      "runtime": "bundled Python",
+      "scope": "Independent relocated stdio, not installed current-chat plugin"
+    },
+    "acceptance_receipt_sha256": "9e4657165f28e1e0bde682ec2419f57f9f23dd1b5cde32bd3a719efce4993a4a"
+  },
+  "boundaries": {
+    "unity_all_container_provider_execution": "not_run_this_turn; command contract and bounded planning implemented",
+    "native_editor": "not_run",
+    "player": "not_run",
+    "original_games_modified": false,
+    "installed_codex_plugin_updated": false,
+    "github_push": false,
+    "release": false
+  },
+  "evidence_directory": ".private/monkey-toolchain-20261026",
+  "historical_attempts": [
+    "Initial full test exposed missing new documentation receipt and outdated reference/skill test assumptions; corrected.",
+    "Source snapshot needed its explicit test runtime and ignored dependency links; final full suite passed.",
+    "Nested sandbox blocked sandbox-exec; approved native verifier passed without disabling its isolation."
+  ]
+}

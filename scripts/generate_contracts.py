@@ -24,6 +24,10 @@ from grea.evidence_contracts import documents as evidence_documents
 outputs.update(evidence_documents())
 from grea.lifecycle_data_contracts import documents as lifecycle_data_documents
 outputs.update(lifecycle_data_documents())
+from grea.monkey_contracts import documents as monkey_documents
+outputs.update(monkey_documents())
+from grea.beaver_contracts import documents as beaver_documents
+outputs.update(beaver_documents())
 outputs['unity-capabilities.json']=capability_matrix()
 failed=[]
 for name,value in outputs.items():

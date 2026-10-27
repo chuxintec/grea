@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Install the authoritative grea plugin skills into a skills root, rebasing local Markdown links; --check is read-only.
 
-Layout mapping: plugin/skills/<name>/ -> <dest>/<name>/; plugin/shared/ and plugin/version.json
+Layout mapping: plugin/skills/<name>/ -> <dest>/<name>/; legacy plugin/shared/ (when present) and plugin/version.json
 are installed inside the router skill (<dest>/grea/). Only directories recorded as managed are
 written or pruned, so unrelated skills in the same root are left alone.
 """

@@ -1,8 +1,51 @@
 # GREA 全生命周期版本路线与开发进度
 
-2026-10-23｜状态：用户已批准本地开发，LC1有限工具切片已实现，原生/可玩验收仍待具体验证。**本文件为本轮唯一产品进度入口。** 历史研究/Cocos/Go成果见docs/design/research-cocos-go.md，保留原状态，不重做或补造通过。
+2026-10-26｜状态：固定beaver0.3候选07及0.3.0运行实现（08/09/final等价包）的有限GREA适配通过；已只读核验正式08中文路径原生收敛采用回执，旧0.1/0.2/07链保留。0.3整版G由beaver主开发汇总；项目App默认渲染和正向购买L3仍是独立边界。安装和发布分别保留范围。**本文件为本轮唯一产品进度入口。** 历史研究/Cocos/Go成果见docs/design/research-cocos-go.md，保留原状态，不重做或补造通过。
 
-## 目标与基线
+## 当前主线：三产品职责整改（2026-10-26）
+
+本节覆盖下方历史 LC 规划中“GREA 自行维护通用执行实现”的归属；历史已验/未验不重写。品牌 GREA，兼容 GREA ID。monkey 负责恢复候选，beaver 负责开发工程操作，GREA 以 Skill/方法与薄调用为主。详细架构见[三产品架构](monkey-grea-lifecycle-architecture.md)，交接见[执行工具交接](beaver-execution-handoff.md)。
+
+当前源码 2026.10.26.dev4 为本地候选，已装 dev2 保持；未提交/推送/发布/全局升级。原游戏工程不改。
+
+### 当前维护范围：肥鹅v1.3实际采用支持（2026-10-27）
+
+按2026-10-27已原生核验的用户授权及肥鹅v1.3主体收口计划，沿v1.2支持契约继续由真实开发驱动维护。复用已验证的本地GREA dev4入口、beaver0.3有限路由、私有绑定、旧固定链及下述结果Schema修复；未更新的全局插件不视为具有本地源码能力。本次支持范围更新未收到具体新工具缺陷，不新增实现或重跑旧验收。无实际缺口时仅保持既有范围；真实反馈按下文同版修正，不另起版本、任务或广泛拆解，不循环巡检/等候，不重复基线49路由、45检查、消费者回读或引擎验证。
+
+肥鹅主开发单写游戏业务；GREA单写实际采用暴露的Skill、方法、调用合同和薄适配缺口；通用工程执行实现仍由beaver单写，不复制执行器。小范围纯代码修复不强制完整workspace/production/Editor流程；复用有效绑定和证据，工具问题不阻断无依赖业务，也不为展示工具制造采用任务或增加前置验收。
+
+v1.3的一次有界盘点、主体开发、界面完善、本机证书轮换和启动/连接修复由肥鹅主开发负责，GREA不接管正式工程、服务配置或存档。专用仓自然正向实玩按用户决定保留待验，不冒称通过，也不设为其余主体工作的等待门槛；monkey恢复另行推进，不要求既有工程重导。产品唯一计划和版本交付仍由肥鹅维护，本节仅记录工具支持边界，不另建产品差额表或拆小版本。
+
+已处理的真实反馈：storage-feedback的production.apply原生complete/verified、写集外0，但GREA错误地只接受actualChanges对象列表，在四条已变路径字符串返回后拒收。现修为非空string/object联合合同并生成Schema，执行后拒收明确标unverified/可能已写入、查事务且不自动重放。8项受影响定向检查与原stdout/exit0/journal离线重验通过；原失败记录保留，不改游戏、不重放、不重跑基线49路由/45检查或引擎，已向肥鹅/beaver交接。[修复回执](../validation/development/beaver-result-schema-fix-20261026.json)记录当前源码身份；既有45检查和原生采用记录仍按其原检查点保存，不把只读/规划覆盖当作全部effectful返回已验。
+
+出现真实缺口后成组处理：必要最小复现包含固定身份、命令/目标、预期与实际、输入/错误定位、影响及可用替代，不发全量日志或原件。本轮允许与肥鹅主开发、beaver及技术总监做必要接口交接；普通ACK不是继续开发的前提，不逐小包例行汇报。严重阻塞、数据/架构风险或范围权限裁定交技术总监，独立工作继续。成熟修正再沉淀原Skill条目，不建立竞争流程。
+
+原有未替代Go工具和消费者继续保留；本授权不新增全局安装、推送/Release、服务升级/迁移或真实资产改动。游戏版本和自然实玩前置条件由肥鹅及总监处理，GREA不注入资格/资产、不缩减产品出口，也不把工具验收当完整游戏验收。
+
+| 工作 | 当前状态 | 剩余与验收 |
+| --- | --- | --- |
+| G1 Skill 与 reference 重组 | 已实现并验证 | 42 份参考去数字/类别前缀，共用参考移入路由 references；原G1检查点12 Skill基础校验/139文档通过；当前文档指标见收口回执。后续仅仓库私有生成预览，不升级工作区或全局安装 |
+| 来源冻结与 beaver 交接 | 已冻结 | 903 个整改前 WIP 文件；40 个 Python 工具入口及367个模板/companion 文件索引；beaver已返回参考/子集接手意见，完整接口替代与消费方切换未验，旧实现保留 |
+| 恢复侧7项评审 | 结论已核入矩阵 | monkey核心/子集可复用不等于legacy合同等价；XAPK/ELF/Laya/Shader缺口保留；7项均禁止退休，不交beaver，不新增profile或parser执行 |
+| G2 双 provider 与薄绑定 | 已实现并验证 | required monkey/beaver、显式双检查、包身份锁；dev4增加15个命名操作及生成Schema，能力/状态/预算约束与实现仍由两工具执行；9项新增边界＋2项路由检查通过 |
+| 同事研发交接方法 | 已纳入本地Skill并验证 | 读取6份Docs、README、关键Evidence与四类Manifest；来源/适配/源码/Player、签名/方法体、表变体与协议分层；monkey0.5专用查询已交付但仅显式开发入口；beaver0.1物化/校验已有命名转发，不冒充稳定monkey0.4能力；140文档/697链接及57份技能Markdown/356链接通过，仅仓库私有生成预览，未安装。见[方法接收回执](../validation/development/colleague-handoff-methodology-20261026.json) |
+| G3 真实新链 | 本地集成收口（分层证据） | monkey0.4候选→beaver采用预览已验；最终beaver wheel的GREA dev3项目检查、匹配源码构建/Player前后核验直接复用；dev4薄转发真实CLI及独立stdio MCP通过。早期Prefab读回属于另一wheel，不混称同版全链；肥鹅正式采用/物理输入未验 |
+| beaver0.2消费者兼容 | 已实现并验证 | 固定fae3845最终wheel；显式batch/transaction合同与25命名路由/生成Schema，旧0.1绑定保持。32项适配检查、全部25操作与wheel实际parser一致、真实CLI及独立stdio保留partial/blocked；49份证据身份已核，复用上游50检查与原生/Player，无引擎重测。见[0.2回执](../validation/development/beaver02-integration-20261026.json) |
+| beaver0.3 Unity＋Go固定候选接续 | 有限适配及正式08原生采用回执已核，整版由beaver汇总 | 精确wheel/producer、49路由及45适配检查通过；07、08、09的原生/静态/等价包证据分别保留。现已核正式08 rebind→新计划→native complete/verified、写集外0：对既有两份C#相同after-image编译/保存/同Editor重载，非新代码变化或独立重开；原4项项目Play通过，未重跑。68运行文件匹配本地ad876da。App默认Metal问题与direct-render正常进出、购买L3 not_run分别保留；旧Go链不退休。见[0.3回执](../validation/development/beaver03-integration-20261026.json) |
+| Go执行资产移交与旧链过渡 | 固定交接已被上游提取，旧消费者未退休 | 通用Go来源45文件104020字节保持冻结；beaver07已交出工具/自有服务证据，本轮GREA仅实际消费Go模块候选和协议比较。旧server_go_project、模板和消费者不删、不假转发，完整合同替代和正式项目接入仍待各自证明。见[Go交接回执](../validation/development/go-beaver-handoff-20261026.json) |
+| 兼容切换与旧实现退休 | 未执行 | beaver接收/隔离验证＋消费者切换后才薄转发；肥鹅在途旧固定链保持 |
+
+本轮验证：全量测试在保持本机 AGENTS 预存迁移头的独立源码快照中运行，369 项/355通过/14按环境跳过；后续 provider 变更以14项针对性测试和真实隔离CLI核验。快照仅去除本机路径迁移头以通过公开树检查，产品源文件保留。详见[本地验证回执](../validation/development/triad-skill-first-20261026.json)。
+
+dev3 完整 macOS arm64 私有候选已构建并校验，Codex/Claude 两种启动清单的随包 MCP 在禁止源码读取、网络、安装目录写入的隔离环境通过；不是客户端安装验收。此为历史dev3完整包的隔离验证。本轮dev4复用其基础与beaver已验构建/Player，新增适配仅做窄验证；未重新构建/验收全部平台插件或更新全局安装。当前源码 HEAD 与暂存区未改变，未推送/发布/全局升级。
+
+当前集成身份和可复用证据见[三工具收口回执](../validation/development/triad-closeout-20261026.json)。monkey0.5开发查询不阻塞稳定0.4＋beaver0.1基线；原生资源/引用缺口仍由monkey维护，不转成GREA新引擎任务。
+
+以上G1–G3与0.2记录为既有检查点，不以后续适配重写其原生层结果。当前候选07接入身份见新回执；全局安装、完整dev3历史插件包与本地dev4源码仍是独立交付层，本轮未构建或安装完整dev4插件。GREA不放行未知0.3 producer，也不等待修复包而重跑已有上游验收。
+
+后续只读收口：已核ad876da的68运行文件与08/09/final一致；final仅METADATA/RECORD修订，身份见接入回执，不重跑45检查或调用。正式08原生采用的边界为同Editor收敛；上游其他Play通过/中文副本SearchDatabase失败和项目App出口分别保留，整版不由GREA代判。
+
+## 历史目标与基线
 
 GREA覆盖游戏调研、取证恢复、美术换皮、功能开发、持续迭代、发行与运营反馈。GREA负责路线/合同/证据/工具编排；monkey负责包与资源/代码初稿到原生工程；引擎、美术、后端和渠道保持独立provider。不是全量安装74个技能，也不建设第二套游戏服务器或项目经理后台。
 
@@ -158,8 +201,8 @@ LC1/LC2/LC3是本轮内部版本标识，分别包含实质开发成果。正式
 - 新权威参考01-流程-全量初版工程与协作，统一路由／恢复／Cocos／交付与provider说明：GREA来源取证冻结→monkey全量资源与可恢复代码／依据导出独立初版→GREA核交接→游戏Agent业务、视觉、服务器和后续迭代。不把未知方法、空类、lookup／媒体／IR或completed标志说成完整初版。GREA不新写转换器；原转换ID保留兼容，非批量恢复主路径。
 - 实际plan_workflow完整恢复／port输出批量先行分工和未支持状态；局部fix不强制重导。monkey_bridge保持旧package/slice接口，新增显式handoff合同审计来源完整盘点、逻辑资产处置、实际原生图、代码依据／TODO、AI入口及外置导入编译收据；只核字节和提交者声明，不冒充重跑Editor。新all-scope自动导出适配明确not_available，未等待上游或复制解析器。
 - 30项受影响桥接／规划／兼容检查已通过（旧首步骤断言按新流水线修正；输出预算测试在允许本轮子进程信号的环境复验通过），另补lookup伪原生图反例。真实CLI对自有静态样例维持needs_action，未执行引擎；文档、契约及技能验证通过。LC1／2／3既有实跑和限制复用，不开游戏Editor、不做全平台重验。
-- 代码／Python包／uv锁及两种客户端源码manifest统一候选版本2026.10.24rc1；不是远端已发布版本。本轮从固定提交构建完整macOS arm64插件，用官方Codex plugin命令更新已有grea@Konanw；旧包与注册备份，其他插件／凭据不改。
-- 完整macOS包已从56e7179干净提交构建，版本2026.10.24rc1、SHA d5770a8fb6539dc812972335b0b6d5ffe96c20aab70a9b758127614db2648e92；隔离验证通过，安装副本3571文件hash匹配、12技能可见。官方Codex plugin add已安装并启用唯一grea@Konanw，其他配置／marketplace条目不变，Claude未安装更新。
+- 代码／Python包／uv锁及两种客户端源码manifest统一候选版本2026.10.24rc1；不是远端已发布版本。本轮从固定提交构建完整macOS arm64插件，用官方Codex plugin命令更新已有GREA@Konanw；旧包与注册备份，其他插件／凭据不改。
+- 完整macOS包已从56e7179干净提交构建，版本2026.10.24rc1、SHA d5770a8fb6539dc812972335b0b6d5ffe96c20aab70a9b758127614db2648e92；隔离验证通过，安装副本3571文件hash匹配、12技能可见。官方Codex plugin add已安装并启用唯一GREA@Konanw，其他配置／marketplace条目不变，Claude未安装更新。
 - 安装副本独立stdio的session/describe_tool/plan_workflow通过，package_root与随包Python均在新版缓存；这是独立stdio层。当前会话仍连接2026.10.17，未热加载新版；官方安装器清理旧缓存后已仅恢复原字节保证旧会话正常，不回滚新版注册、不启用第二服务。当前session和只读能力恢复ok。
 - 最后待验是正常刷新／新会话后的真实客户端session版本与package_root；必要时由用户在合适时机正常重开Codex，不强重启当前或其他工作。分层回执见validation/development/codex-upgrade-20261024.json。未推送、打标签或发布；LC1／2／3原有未验边界继续保留。
 

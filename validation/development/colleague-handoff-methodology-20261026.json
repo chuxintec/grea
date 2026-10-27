@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "scope": "local_skill_methodology_only",
+  "source": {
+    "kind": "colleague_development_handoff",
+    "archive_sha256_from_director_index": "f3387ecedb9820ae664a731644cc2a427da86ba5b464bef9f165333c455d2a9c",
+    "archive_hash_recomputed_here": false,
+    "declared_manifest_sha256": "e3e246a598913d516736eb25a757b08b1eed0113b88e21d981a5a77503607734",
+    "declared_manifest_entries": 75285,
+    "all_six_docs_and_readme_read": true,
+    "selected_source_documents_read": 29,
+    "whole_archive_verification": "centralized_by_receiving_game_owner_not_repeated_by_GREA",
+    "source_reports": "upstream_assertions_not_new_GREA_runtime_acceptance",
+    "source_and_accepted_player_versions": "309_source_and_307_player_are_distinct"
+  },
+  "adopted": [
+    "Original/adapted/source/candidate/accepted-player identity separation",
+    "Signature declarations versus recovered method bodies",
+    "Decoded table variants versus business table counts",
+    "Original protocol evidence versus owned JSON contracts",
+    "URL aliases versus unique payload and fresh content identities",
+    "Bounded source queries and staged provider capabilities",
+    "Independent delivery, host build versus resource materialization",
+    "QA fixture versus natural progression and evidence-sized regression",
+    "Unity-origin WebView/WASM host is not maintainable-native-Unity acceptance"
+  ],
+  "not_adopted": [
+    "WebView/WASM host as native Unity solution",
+    "Gift, free-stamina or loot policies of the source project",
+    "Thousands-of-checks-per-small-change as GREA gate",
+    "Embedded source scripts/binaries, game data or third-party payload",
+    "Source309 as byte-identical accepted Player307 or original-server recovery"
+  ],
+  "provider_status": {
+    "monkey_source_method_table_alias_query": "implemented_in_monkey_0.5.0.dev1_explicit_development_entry; stable_0.4_pipeline_unchanged",
+    "beaver_project_inspect": "existing_locked_readonly_adapter_only",
+    "beaver_manifest_materialization_build_contract": "beaver_0.1.0_delivered; named forwarding added; existing fixed build/player evidence reused"
+  },
+  "changed_files": [
+    "plugin/skills/grea-evidence/references/研发交接资料核验.md",
+    "plugin/skills/grea/SKILL.md",
+    "plugin/skills/grea-evidence/SKILL.md",
+    "plugin/skills/grea-unity-recovery/SKILL.md",
+    "plugin/skills/grea-delivery/SKILL.md",
+    "plugin/skills/grea-server-go/SKILL.md",
+    "plugin/skills/grea/references/测试与结果交付.md"
+  ],
+  "source_material_publicly_copied": false,
+  "game_or_provider_source_modified": false,
+  "incoming_scripts_executed": false,
+  "full_behavior_tests_repeated": false,
+  "global_plugin_updated": false,
+  "workspace_skill_installation_updated": false,
+  "generated_preview": "local_GREA_private_directory_only",
+  "pushed_or_released": false,
+  "evidence": {
+    "private_read_identities": ".private/colleague-intake-20261026/read-identities.json",
+    "read_identities_sha256": "3ca22a8367787f2945479c710f343a664a15ee7726222a4a3d4e8876b8adf47f"
+  },
+  "validation": {
+    "documents": 140,
+    "local_links": 697,
+    "skill_markdown": 57,
+    "skill_links": 356,
+    "skill_warnings": [],
+    "modified_skill_frontmatter_passed": 5,
+    "generated_private_skill_preview": "synchronized_and_check_passed",
+    "full_behavior_tests": "not_repeated_documentation_only",
+    "validator_dependency": "PyYAML 6.0.3 in private ephemeral uv environment only; project/runtime dependencies unchanged"
+  },
+  "file_identities": [
+    {
+      "path": "plugin/skills/grea-evidence/references/研发交接资料核验.md",
+      "sha256": "9e505207bbc9d28452ef96bb8170d835ef8f95497dff5a8b55fcac461674d3cb"
+    },
+    {
+      "path": "plugin/skills/grea/SKILL.md",
+      "sha256": "0e38c3c6334b8c8279a843b73bf76564b07e281ffec9bb1d2b01025c90d06a59"
+    },
+    {
+      "path": "plugin/skills/grea-evidence/SKILL.md",
+      "sha256": "794c7c8ff039094467e54f2ed85ac6cbbb92bca878f5de171f4d9fbd04fe0629"
+    },
+    {
+      "path": "plugin/skills/grea-unity-recovery/SKILL.md",
+      "sha256": "4f0779beee12a8771ed19efcba825255c205874c45042c09eb12de73fa2e2be5"
+    },
+    {
+      "path": "plugin/skills/grea-delivery/SKILL.md",
+      "sha256": "3a76955a246b515f22fb83ef97dc387a913bf379073177707247ca2ecbb15857"
+    },
+    {
+      "path": "plugin/skills/grea-server-go/SKILL.md",
+      "sha256": "cae54682a977e763a9c25e1f1fd3d17070b4c87b0ffe8423ef6fc327ade7cab0"
+    },
+    {
+      "path": "plugin/skills/grea/references/测试与结果交付.md",
+      "sha256": "34ea623043f72964f0ced0b6904b56c8a918f1bae50fcb8c5dbdd85def50a675"
+    }
+  ]
+}

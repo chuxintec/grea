@@ -12,6 +12,7 @@ from jsonschema import Draft202012Validator
 from grea.common import package_root
 from grea.cocos_contracts import documents
 from grea.tools.cocos_assets import error_report, ParseError
+from module_support import with_modules
 
 PLAIN=[1,[],[],[['cc.Node',['_name'],2]],[[0,0,2]],[[0,'root']],[],[],[],[],[]]
 class DispatchTests(unittest.IsolatedAsyncioTestCase):
@@ -42,6 +43,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
         for error in [ParseError('INDEX_OUT_OF_RANGE','$[5]','invalid'),ParseError('UNSUPPORTED_VERSION','$[0]','unknown'),OSError('missing')]:
             Draft202012Validator(documents()['cocos-evidence.schema.json']).validate(error_report('cocos_assets','cocos-2.4-compiled-v1',error))
 
+    @with_modules
     async def test_authoring_tools_use_same_cli_and_mcp_contract(self):
         root=package_root()
         with tempfile.TemporaryDirectory() as t:
@@ -49,7 +51,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
             schema.write_text(json.dumps(dict(schema_version=1,namespace='Own.Typed',name='Hint',key='Id',fields=[dict(name='Id',type='int'),dict(name='Text',type='string',nullable=True)])))
             rows.write_text('[{"Id":1,"Text":null},{"Id":2,"Text":""}]')
             recipe.write_text(json.dumps(dict(schema_version=1,sprites=[],targets=[dict(path='Widget',scale=[2,3,1])],clips=[dict(name='Move',duration=1,loop=True,curves=[dict(target='Widget',property='m_LocalPosition.x',keys=[[0,0],[1,4]])],events=[])])))
-            async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp']),read_timeout_seconds=30) as client:
+            async with Client(StdioServerParameters(command=sys.executable,args=[str(root/'launch.py'),'mcp'],env=dict(__import__("os").environ)),read_timeout_seconds=30) as client:
                 for name,arguments,readback in [('unity_config_candidate',['--schema',str(schema),'--input',str(rows)],'source-rows.json'),('unity_native_assets',['prepare','--recipe',str(recipe)],'native-request.json')]:
                     hashes=[]
                     for transport in ('cli','mcp'):
