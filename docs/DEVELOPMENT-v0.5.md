@@ -33,3 +33,5 @@
 快照源文件及 meta 必须保持相同哈希；正式写入前继续核 batch 依赖和并发保护。Variant/nested Prefab 沿既有事务的保存边界，不 Unpack、不修改未列入计划的基 Prefab。保存和重载证明序列化状态，不证明实际画面、物理点击或业务验收。
 
 统一诊断的 `unknown`、候选差异及未运行阶段原样保留；CLI 对未知执行或执行后外层拒收返回 partial，完整信息留在 diagnosticReport。`beaver tool <id>` 保持旧 toolkit 原始输出与退出码，不使用 beaver-result 信封；toolkit 可选依赖由显式 extra 或既有 GREA 运行时提供。
+
+实际采集的肯定验证与边界见[本地验证索引](VALIDATION-v0.5.json)。原生Runtime Collect的按钮中心射线只是一次采样；输入的classification区分failure、rule_difference、observation，未知信息不会转成通过。

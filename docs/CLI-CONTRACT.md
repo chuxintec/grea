@@ -114,6 +114,6 @@ Variant允许可保存的属性、事件、组件与新增child override；继�
 
 原生Editor进程通过ASCII base64传递UTF8 job路径，由companion严格解码；保留PlaySession中的原路径。子进程继承必要路径/用户/locale、代理证书及已有许可路径，排除PWD/OLDPWD和任意agent环境；不改父进程或全局设置。无效必需环境值在写入前拒绝，诊断仅标变量名。该内部传输变更要求新的固定producer与计划，不用新包恢复旧事务。
 
-## v0.4 UI 工程能力
+## v0.5 UI 工程能力（含原v0.4范围）
 
 新制品0.5.0系列保留旧固定0.4.0 toolkit与0.3事务。公开入口 `ui inspect/analyze/repair-plan`、`wiring plan`、`diagnostics summarize` 见[完整输入和执行边界](DEVELOPMENT-v0.5.md)、[采集合同](UI-INSPECTION.md)、[诊断合同](DIAGNOSTICS.md)。接线和修正仅生成已有batch计划，apply/recover合同不变。`binding.reference`/`binding.event`原生操作在写入时核编译类型/精确身份/当前空值或显式替换；不支持的情况拒绝，不推测fileID或创建空方法。

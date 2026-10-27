@@ -20,7 +20,7 @@ def capabilities():
     capabilities = [
         dict(id='workspace.plan/apply/inspect/rebind',state='implemented',effects='explicit-project-local-binding',verification='content-pinned tool/engine/authority, reviewed writes and relocation'),
         dict(id='toolkit.grea',state='implemented',effects='explicit-output-write',tools=list(__import__('beaver.toolkit',fromlist=['TOOLS']).TOOLS),verification='fixed toolkit from commit 6791ddf; original outputs and exit codes retained'),
-        dict(id='ui.inspect/analyze',state='requires_provider',provider='Unity 6000.6.2f1 uGUI/TMP for collection',effects='read-temporary-helper-and-report',verification='native geometry/compiled fields; static, runtime and caller-supplied provenance separated'),
+        dict(id='ui.inspect/analyze/repair-plan',state='requires_provider',provider='Unity 6000.6.2f1 uGUI/TMP for collection',effects='read-temporary-helper-and-report',verification='native geometry/compiled fields; static, runtime and caller-supplied provenance separated'),
         dict(id='wiring.plan',state='implemented',effects='plan-output',verification='compiled types and exact identities; ambiguous targets blocked; existing batch apply required'),
         dict(id='diagnostics.summarize',state='implemented',effects='read-and-report',verification='bounded evidence and explicit execution state; never replays writes'),
         dict(id='production.plan/apply/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit project profile',effects='declared-resource-config-code-writes',verification='schema3; native apply/reopen/recover verified on private fixtures; formal consumer evidence is project-specific'),
@@ -373,6 +373,7 @@ def main(argv=None):
         a = parser().parse_args(argv)
         data = dispatch(a)
         status = data.get("status") if data.get("status") in ("blocked","partial","failed","not_run") else "ok"
+        if a.command=='ui' and data.get('status')=='issues':status='partial'
         if data.get('status') in ('identity_unknown','starting','stopping','not_available'):status='partial'
         if data.get('status')=='needs_action':status='blocked'
         if data.get('status') in ('stale_plan','migration_order_blocked','blocked_existing_output','partial_or_untracked_database'):status='blocked'

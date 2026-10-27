@@ -4,9 +4,9 @@
 
 | 实例 | 独占完整模块 | 目标/观测 | 状态 |
 |---|---|---|---|
-| /root/ui_inspection | ui_inspection.py、BeaverUIInspection.cs、test_ui_inspection.py、UI-INSPECTION.md、.private/v04/ui-inspection | GPT-6-Luna High；原生spawn参数已确认，底层模型无独立回读 | 开发中 |
-| /root/diagnostics | diagnostics.py、test_diagnostics.py、DIAGNOSTICS.md、.private/v04/diagnostics | GPT-6-Luna High；原生spawn参数已确认，底层模型无独立回读 | 开发中 |
-| root | wiring/共享CLI/batch入口/原生接线/集成/版本与必要Engine验证 | 主模型保持 | 开发中 |
+| /root/ui_inspection | ui_inspection.py、BeaverUIInspection.cs、test_ui_inspection.py、UI-INSPECTION.md、.private/v04/ui-inspection | GPT-6-Luna High；原生spawn参数已确认，底层模型无独立回读 | 已交root集成 |
+| /root/diagnostics | diagnostics.py、test_diagnostics.py、DIAGNOSTICS.md、.private/v04/diagnostics | GPT-6-Luna High；原生spawn参数已确认，底层模型无独立回读 | 已交root集成 |
+| root | wiring/共享CLI/batch入口/原生接线/集成/版本与必要Engine验证 | 主模型保持 | 已交root集成 |
 
 无新增Go任务，不启动旧模块或服务；只检查真实受影响路径。最新用户要求所有有效成果整合本地main，制品0.5.0；模块开发已交root集成，禁止并发共享写入。
 

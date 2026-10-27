@@ -52,7 +52,7 @@ class UIInspectionTests(unittest.TestCase):
         self.snapshot['assets'][0]['nodes'][0]['rect']=[0,0,0,0]
         self.snapshot['assets'][0]['nodes'][0]['activeInHierarchy']=False
         self.snapshot['assets'][0]['overflow']=[{'nodePath':'Confirm','observed':'overflow'}]
-        self.snapshot['assets'][0]['missingGlyphs']=[{'nodePath':'Confirm','characters':'1F600'}]
+        self.snapshot['assets'][0]['missingGlyphs']=[{'nodePath':'Confirm','characters':'0378','glyphLookupStatus':'missing'}]
         result=analyze(self.snapshot,{'schemaVersion':1,'mode':'static-prefab','assets':self.spec['assets']})
         self.assertEqual(result['issues'],[])
 
@@ -100,5 +100,51 @@ class UIInspectionTests(unittest.TestCase):
         self.snapshot['assets'][0]['events']=[{'nodePath':'Confirm','componentType':'UnityEngine.UI.Button','field':'onClick','persistentCalls':[{}],'invalidCalls':['Confirm:target/method missing']}]
         result=analyze(self.snapshot,{'schemaVersion':1,'mode':'static-prefab','assets':self.spec['assets']})
         self.assertIn('BUTTON_INVALID_PERSISTENT_CALL',{row['code'] for row in result['issues']})
+
+
+    def test_runtime_blocked_center_hit_is_observation_candidate_only(self):
+        spec={'schemaVersion':1,'mode':'runtime','assets':['Assets/UI/Panel.prefab']}
+        hit={'stage':'button-center','state':'blocked_hit','buttonPath':'Confirm','screenPosition':[120.0,80.0],
+             'topHitPath':'Overlay/Capture','topHitType':'UnityEngine.UI.Image','topHitCanvasPath':'OverlayCanvas',
+             'topHitCamera':'UICamera','raycastCamera':'UICamera','canvasRenderMode':'ScreenSpaceCamera','cameraState':'available','buttonIsAncestor':False,'raycastObserved':True,
+             'source':'live EventSystem.RaycastAll at active Button RectTransform center'}
+        snap=dict(self.snapshot,mode='runtime',runtimeObserved=True)
+        snap['assets'][0]['hitTests']=[hit]
+        report=analyze(snap,spec)
+        issue=next(row for row in report['issues'] if row['code']=='RUNTIME_BUTTON_BLOCKED_HIT_CANDIDATE')
+        self.assertEqual(issue['observed']['topHitPath'],'Overlay/Capture')
+        self.assertEqual(issue['expectationSource'],'live EventSystem.RaycastAll sample')
+        self.assertEqual(report['interactionAcceptance'],'not-established')
+
+    def test_unknown_runtime_hit_does_not_create_blocked_candidate(self):
+        spec={'schemaVersion':1,'mode':'runtime','assets':['Assets/UI/Panel.prefab']}
+        snap=dict(self.snapshot,mode='runtime',runtimeObserved=True)
+        snap['assets'][0]['hitTests']=[{'state':'unknown','raycastObserved':False,'buttonPath':'Confirm'}]
+        report=analyze(snap,spec)
+        self.assertNotIn('RUNTIME_BUTTON_BLOCKED_HIT_CANDIDATE',{row['code'] for row in report['issues']})
+
+
+    def test_vector_expectation_uses_serialized_numeric_components(self):
+        spec={'schemaVersion':1,'mode':'static-prefab','assets':['Assets/UI/Panel.prefab'],
+              'expectations':[{'asset':'Assets/UI/Panel.prefab','nodePath':'Confirm','componentType':'UnityEngine.RectTransform',
+                               'field':'m_AnchorMin','equals':[0.5,0.5],'source':'approved anchor spec'}]}
+        self.snapshot['assets'][0]['components'].append({'nodePath':'Confirm','type':'UnityEngine.RectTransform',
+            'fields':[{'name':'m_AnchorMin','propertyPath':'m_AnchorMin','value':'(0.5, 0.5)','valueType':'Vector2','numbers':[0.5,0.5]}]})
+        self.assertEqual(analyze(self.snapshot,spec)['status'],'clear')
+
+    def test_tmp_unknown_glyph_api_is_reported_as_unknown_not_missing(self):
+        self.snapshot['assets'][0]['missingGlyphs']=[{'nodePath':'Confirm','componentType':'TMPro.TextMeshProUGUI',
+            'glyphLookupStatus':'unknown','glyphLookupError':'unsupported overload'}]
+        report=analyze(self.snapshot,{'schemaVersion':1,'mode':'static-prefab','assets':self.spec['assets']})
+        self.assertIn('GLYPH_LOOKUP_UNKNOWN',{row['code'] for row in report['issues']})
+        self.assertNotIn('MISSING_GLYPH',{row['code'] for row in report['issues']})
+
+
+    def test_unicode_missing_glyph_is_reported_only_for_confirmed_miss(self):
+        self.snapshot['assets'][0]['missingGlyphs']=[{'nodePath':'Confirm','componentType':'TMPro.TextMeshProUGUI',
+            'characters':'0378','glyphLookupStatus':'missing'}]
+        result=analyze(self.snapshot,{'schemaVersion':1,'mode':'static-prefab','assets':self.spec['assets']})
+        issue=next(row for row in result['issues'] if row['code']=='MISSING_GLYPH')
+        self.assertEqual(issue['observed'],'0378')
 
 if __name__=='__main__':unittest.main()

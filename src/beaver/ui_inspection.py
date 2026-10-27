@@ -5,7 +5,7 @@ from pathlib import Path
 from .adoption import native_lock
 from .transaction_fs import lock
 from .native_environment import editor_environment
-from .errors import fail
+from .errors import fail, BeaverError
 from .io import safe, inside, load, write_json, sha
 from .unity import editor_path
 
@@ -37,7 +37,8 @@ def _validate_spec(spec):
 
 def _issue(code, asset, node, component, field, observed, expected, source, certainty, next_step):
     stable=json.dumps([code,asset,node,component,field],ensure_ascii=False,separators=(',',':'))
-    return {'id':'ui-'+hashlib.sha256(stable.encode()).hexdigest()[:16], 'code':code,'asset':asset,'nodePath':node,
+    classification='failure' if code in ('MISSING_SCRIPT','MISSING_REFERENCE','MISSING_GLYPH','BUTTON_INVALID_PERSISTENT_CALL') else 'rule_difference' if code=='EXPECTATION_MISMATCH' else 'observation'
+    return {'classification':classification,'severity':'error' if classification=='failure' else 'warning','id':'ui-'+hashlib.sha256(stable.encode()).hexdigest()[:16], 'code':code,'asset':asset,'nodePath':node,
             'componentType':component,'field':field,'observed':observed,'expected':expected,
             'expectationSource':source,'certainty':certainty,'nextStep':next_step}
 
@@ -48,6 +49,8 @@ def _typed_value(field):
         if kind=='Boolean': return value=='true' if isinstance(value,str) else value
         if kind=='Integer': return int(value)
         if kind=='Float': return float(value)
+        if kind in ('Vector2','Vector3','Color'):
+            return field.get('numbers')
     except (TypeError,ValueError): return {'invalidTypedValue':value,'valueType':kind}
     return value
 
@@ -73,7 +76,10 @@ def analyze(snapshot, spec):
         if row.get('missingGlyphs',[]):
             for item in row['missingGlyphs']:
                 if not next((n.get('activeInHierarchy',True) for n in nodes if n.get('path')==item.get('nodePath')),True): continue
-                issues.append(_issue('MISSING_GLYPH',asset,item.get('nodePath',''),item.get('componentType',''),'text',item.get('characters'),'all glyphs available','native font asset lookup','high','补齐字体字形并在目标运行时复核'))
+                if item.get('glyphLookupStatus')=='unknown':
+                    issues.append(_issue('GLYPH_LOOKUP_UNKNOWN',asset,item.get('nodePath',''),item.get('componentType',''),'font',item.get('glyphLookupError'),'successful fallback-aware glyph query','native TMP font API','low','检查TMP Font Asset与当前Unity版本的HasCharacter接口'))
+                elif item.get('glyphLookupStatus')=='missing' or item.get('characters'):
+                    issues.append(_issue('MISSING_GLYPH',asset,item.get('nodePath',''),item.get('componentType',''),'text',item.get('characters'),'all glyphs available','native font asset lookup','high','补齐字体字形并在目标运行时复核'))
         for exp in spec.get('expectations',[]):
             if exp['asset']!=asset: continue
             hit=[c for c in components if c.get('nodePath')==exp['nodePath'] and c.get('type')==exp['componentType']]
@@ -90,8 +96,6 @@ def analyze(snapshot, spec):
         if spec['mode']=='static-scene' and any(t.endswith('.Canvas') for t in types):
             if not any(t.endswith('.GraphicRaycaster') for t in types):
                 issues.append(_issue('CANVAS_NO_RAYCASTER',asset,'','UnityEngine.Canvas','GraphicRaycaster',False,True,'native component inventory','high','确认该Canvas是否需要接收uGUI输入'))
-        if spec['mode']=='static-scene' and any(t.endswith('.Button') for t in types) and not any(t.endswith('.EventSystem') for t in types):
-            issues.append(_issue('SCENE_NO_EVENT_SYSTEM',asset,'','UnityEngine.EventSystems.EventSystem','scene',False,True,'native component inventory','medium','确认运行时是否由其他场景或代码提供EventSystem'))
         by_node={}
         for c in components: by_node.setdefault(c.get('nodePath',''),[]).append(c)
         for node_path,node_components in by_node.items():
@@ -117,6 +121,11 @@ def analyze(snapshot, spec):
                     issues.append(_issue('UNRESOLVED_REFERENCE',asset,c.get('nodePath',''),c.get('type',''),f,v,'persistent asset reference','native serialized field','high','在 Inspector 中确认并重新绑定引用'))
         for e in row.get('events',[]):
             for bad in e.get('invalidCalls',[]): issues.append(_issue('BUTTON_INVALID_PERSISTENT_CALL',asset,e.get('nodePath',''),e.get('componentType',''),'onClick',bad,'valid persistent target and method','native UnityEvent metadata','high','检查事件目标组件和公共方法是否仍存在'))
+        if spec['mode']=='runtime' and snapshot.get('runtimeObserved') is True:
+            for hit in row.get('hitTests',[]):
+                if hit.get('raycastObserved') is True and hit.get('state')=='blocked_hit':
+                    observed={k:hit.get(k) for k in ('stage','state','buttonPath','screenPosition','topHitPath','topHitType','topHitCanvasPath','topHitCamera','raycastCamera','canvasRenderMode','cameraState','buttonIsAncestor','source')}
+                    issues.append(_issue('RUNTIME_BUTTON_BLOCKED_HIT_CANDIDATE',asset,hit.get('buttonPath',''),'UnityEngine.UI.Button','hitTests',observed,'Button or descendant is top EventSystem raycast result','live EventSystem.RaycastAll sample','medium','核对overlay是否为预期遮挡，并在业务现场判断按钮是否需接收指针'))
         for n in nodes:
             rect=n.get('rect') or {}; size=rect.get('rect') if isinstance(rect,dict) else rect
             if not (isinstance(size,list) and len(size)==4): size=rect.get('sizeDelta') if isinstance(rect,dict) else n.get('sizeDelta')
@@ -170,7 +179,7 @@ def inspect(project, spec_path, output, editor, timeout=600):
             write_json(output/'ui-snapshot.json',snap)
             report=analyze(snap,spec);report['snapshotPath']=str(output/'ui-snapshot.json');report['editorExitCode']=result.returncode
         except BaseException as error:
-            primary_error=error
+            primary_error=BeaverError("UI_EDITOR_TIMEOUT",str(stage),"Owned collector exceeded the explicit budget; inspect the retained provider log") if isinstance(error,subprocess.TimeoutExpired) else error
         finally:
             cleanup_ok=batch_cleanup(project,helper,owned) if helper.exists() else False
             after_state=state(project,tracked)
@@ -182,6 +191,9 @@ def inspect(project, spec_path, output, editor, timeout=600):
         report['projectModifiedPaths']=changed
         report['unplannedProjectChanges']=unexpected
         report['sourceUnchanged']=not changed
-        if changed or unexpected: fail('UI_PROJECT_MODIFIED',str(project),'Read-only inspection changed selected inputs or other project paths: '+str(changed+unexpected))
-        report_path=output/'ui-report.json';write_json(report_path,report)
+        report_path=output/'ui-report.json'
+        if changed or unexpected:
+            report['status']='failed';write_json(report_path,report)
+            fail('UI_PROJECT_MODIFIED',str(report_path),'Read-only inspection changed selected inputs or other project paths: '+str(changed+unexpected))
+        write_json(report_path,report)
         return dict(report,report=str(report_path),nativeReadback="read_only_native_snapshot")
