@@ -14,3 +14,7 @@ v0.1基线b67a164及候选保持。v0.2在codex/beaver-v0.2分支开发，整版
 v0.3范围：从fae3845在codex/beaver-v0.3开发0.3.0.dev1；批准Unity工程实用化及必选Golang工具能力，Cocos延后。已原生核验human01a1777a-7ce5-7ac3-9e19-0877542ac459、01a1777e-b891-74a3-a66b-4ceda5690034及01a17787-d5ff-7462-9d31-7dab8c73bc9d。计划Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md。复用v0.2冻结副本；正式工程仅其主开发采用固定候选，本聊天不跨写。整个版本及消费者证据未闭合不得报告完整交付。
 
 v0.3 Go细则BEAVER-V03-GO.md允许自有.private与独立具名Docker项目/网络/数据卷、回环端口和测试库开发验证；复用已有工具/镜像，先核占用。仅主开发执行栈生命周期，不碰肥鹅QA05/共享库卷/其他容器或global prune。覆写上文笼统服务禁令仅限该自有隔离范围；正式/生产/公网/支付边界不变。
+
+当前 v0.4：已原生核验 human01a17d12-53e3-7482-92b3-501e250ac5fe，按 Manager/decisions/20261027-beaver-v04/PLAN.md 开发 UI 批量检查、自动接线和统一诊断；Go/增量按实际依赖。分支 codex/beaver-v0.4，保留0.3固定包与事务；仅本地开发提交/隔离安装。正式肥鹅由开发者 (2) 单写，三方必要任务/接口交接获本轮人类授权；不唤醒旧消费者。
+
+最新 v0.5 整合授权：human01a17d1e-f4b5-74f0-8080-ae46e1b8f7ba 与 human01a17d20-43ad-71a3-b7d7-cdeafcf6ebe7 已原生核验，覆盖上一制品版本裁定；将本仓有效产品成果与当前UI/接线/诊断整合到本地main，固定源码构建0.5.0。按 Manager/decisions/20261027-beaver-v05/PLAN.md执行。允许本地main合并，仍无远端push/tag/Release/全局安装/正式服务或存档写入权限。

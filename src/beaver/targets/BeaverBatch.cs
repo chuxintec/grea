@@ -158,7 +158,8 @@ public static class BeaverBatch {
                 var nearest=PrefabUtility.GetNearestPrefabInstanceRoot(t.gameObject);
                 if(inherited&&(kind==PrefabAssetType.Variant||nearest!=null&&nearest!=root)&&(a.kind=="node.remove"||a.kind=="node.reparent"||a.kind=="node.order"||a.kind=="component.remove"))
                     throw new Exception("VARIANT_INHERITED_STRUCTURE: use a separate explicitly planned base edit, or add a new child override in this Variant; base is never modified or unpacked");
-                if(BeaverBatchUI.Handles(a.kind))BeaverBatchUI.Apply(root,a);
+                if(a.kind=="binding.reference"||a.kind=="binding.event")BeaverWiring.Apply(root,a);
+                else if(BeaverBatchUI.Handles(a.kind))BeaverBatchUI.Apply(root,a);
                 else if(a.kind=="property.set")Property(root,a);
                 else if(a.kind=="node.add") {
                     if(String.IsNullOrEmpty(a.name)||a.name.Contains('/')||a.name.Contains('\\')||a.name=="."||a.name=="..")throw new Exception("Simple child name required");

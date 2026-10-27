@@ -1,3 +1,17 @@
+# beaver v0.5 模块协作
+
+基线1f62450；codex/beaver-v0.5；主开发单写CLI/合同/事务/原生接线/版本/Editor/桌面，正式工程由肥鹅开发者 (2) 单写。旧实例当前不在运行清单，按有效授权新建两个独立模块，均禁止递归派生。
+
+| 实例 | 独占完整模块 | 目标/观测 | 状态 |
+|---|---|---|---|
+| /root/ui_inspection | ui_inspection.py、BeaverUIInspection.cs、test_ui_inspection.py、UI-INSPECTION.md、.private/v04/ui-inspection | GPT-6-Luna High；原生spawn参数已确认，底层模型无独立回读 | 开发中 |
+| /root/diagnostics | diagnostics.py、test_diagnostics.py、DIAGNOSTICS.md、.private/v04/diagnostics | GPT-6-Luna High；原生spawn参数已确认，底层模型无独立回读 | 开发中 |
+| root | wiring/共享CLI/batch入口/原生接线/集成/版本与必要Engine验证 | 主模型保持 | 开发中 |
+
+无新增Go任务，不启动旧模块或服务；只检查真实受影响路径。最新用户要求所有有效成果整合本地main，制品0.5.0；模块开发已交root集成，禁止并发共享写入。
+
+## v0.3 模块历史
+
 # beaver v0.3 模块协作
 
 基线fae3845，codex/beaver-v0.3，0.3.0本地交付（未发布）。人类授权三条已原生核验（.private/v03/authorization.json）。执行Manager通用MODULE-DEVELOPERS。主开发单写CLI/公共Schema/proto组合/事务/Editor/桌面与隔离Compose应用，正式项目由其主开发采用。

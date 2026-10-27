@@ -19,6 +19,10 @@ def implementation_identity():
 def capabilities():
     capabilities = [
         dict(id='workspace.plan/apply/inspect/rebind',state='implemented',effects='explicit-project-local-binding',verification='content-pinned tool/engine/authority, reviewed writes and relocation'),
+        dict(id='toolkit.grea',state='implemented',effects='explicit-output-write',tools=list(__import__('beaver.toolkit',fromlist=['TOOLS']).TOOLS),verification='fixed toolkit from commit 6791ddf; original outputs and exit codes retained'),
+        dict(id='ui.inspect/analyze',state='requires_provider',provider='Unity 6000.6.2f1 uGUI/TMP for collection',effects='read-temporary-helper-and-report',verification='native geometry/compiled fields; static, runtime and caller-supplied provenance separated'),
+        dict(id='wiring.plan',state='implemented',effects='plan-output',verification='compiled types and exact identities; ambiguous targets blocked; existing batch apply required'),
+        dict(id='diagnostics.summarize',state='implemented',effects='read-and-report',verification='bounded evidence and explicit execution state; never replays writes'),
         dict(id='production.plan/apply/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit project profile',effects='declared-resource-config-code-writes',verification='schema3; native apply/reopen/recover verified on private fixtures; formal consumer evidence is project-specific'),
         dict(id='config3.validate/generate/compare',state='implemented',effects='read-and-create-only-generated-code',verification='strict shared schema; actual C# and Go JSON readers; caller must run generated consumer'),
         dict(id='csharp.inspect/rename/rename-sequence',state='requires_provider',provider='matching Unity Bee context + .NET Roslyn SDK',effects='read-and-create-only-source-candidates',verification='ordered semantic rename, analyzers/generators, exact final fileEdits; dynamic unknowns block'),
@@ -203,10 +207,43 @@ def parser():
     payload_apply.add_argument('--plan',required=True)
     payload_apply.add_argument('--expected-plan',required=True)
     payload_apply.add_argument('--out',required=True)
+    ui = sub.add_parser('ui').add_subparsers(dest='action',required=True)
+    uinspect = ui.add_parser('inspect')
+    for flag in ('project','spec','out','editor-path'):uinspect.add_argument('--'+flag,required=True)
+    uinspect.add_argument('--timeout',type=int,default=600)
+    urepair = ui.add_parser('repair-plan')
+    for flag in ('project','snapshot','spec','out'):urepair.add_argument('--'+flag,required=True)
+    uanalyze = ui.add_parser('analyze')
+    for flag in ('snapshot','spec','out'):uanalyze.add_argument('--'+flag,required=True)
+    wiring = sub.add_parser('wiring').add_subparsers(dest='action',required=True).add_parser('plan')
+    for flag in ('project','snapshot','spec','out'):wiring.add_argument('--'+flag,required=True)
+    diagnostic = sub.add_parser('diagnostics').add_subparsers(dest='action',required=True).add_parser('summarize')
+    diagnostic.add_argument('--input',action='append',required=True)
+    diagnostic.add_argument('--out',required=True)
+    diagnostic.add_argument('--limit',type=int,default=100)
     return p
 
 
 def dispatch(a):
+    if a.command=='ui':
+        if a.action=='repair-plan':
+            from .ui_repairs import plan
+            return plan(a.project,a.snapshot,a.spec,a.out)
+        from .ui_inspection import inspect,analyze
+        if a.action=='inspect':return inspect(a.project,a.spec,a.out,a.editor_path,a.timeout)
+        from .io import read,load,new_output,write_json
+        data=analyze(load(read(a.snapshot)),load(read(a.spec)))
+        data['provenance']='caller-supplied snapshot; collection origin not authenticated'
+        stage=new_output(a.out,[a.snapshot,a.spec]);write_json(stage/'ui-report.json',data)
+        return dict(data,report=str(stage/'ui-report.json'))
+    if a.command=='wiring':
+        from .wiring import plan
+        return plan(a.project,a.snapshot,a.spec,a.out)
+    if a.command=='diagnostics':
+        from .diagnostics import summarize
+        result=summarize(a.input,a.out,a.limit)
+        report=result.get('report',result)
+        return dict(status='partial' if report.get('status') in ('unknown','execution_unknown','postexecution_outer_schema_rejection') else report.get('status'),diagnosticReport=report,report=result.get('path'))
     if a.command == "version":
         return dict(version=__version__)
     if a.command == "capabilities":
@@ -324,6 +361,9 @@ def main(argv=None):
     argv=list(sys.argv[1:] if argv is None else argv)
     if argv==['--version']:
         argv=['version']
+    if argv[:1]==["tool"]:
+        from .toolkit.runner import main as run_tool
+        return run_tool(argv[1:])
     run_id = uuid.uuid4().hex
     base = dict(schemaVersion=1, contract="beaver-result/1", operationId=run_id,
                 producer=dict(name="beaver", version=__version__, implementationSha256=implementation_identity()),

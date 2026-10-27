@@ -14,7 +14,7 @@ from .adoption import native_lock
 
 HELPER_ROOT = 'Assets/BeaverBatchTools'
 KINDS = {'node.add','node.remove','node.reparent','node.order','node.active','component.add','component.remove',
-         'property.set','ui.rect','ui.scroll','ui.grid','ui.mask','ui.text','ui.event','ui.list','ui.safeArea'}
+         'property.set','binding.reference','binding.event','ui.rect','ui.scroll','ui.grid','ui.mask','ui.text','ui.event','ui.list','ui.safeArea'}
 FIELDS = {'kind','path','parent','name','component','property','value','targetNode','targetComponent',
           'assetGuid','localId','method','eventName','mode','index','flag','numbers','items'}
 
@@ -229,7 +229,7 @@ def helper(project, production=False, sprites=False):
     root=inside(project,HELPER_ROOT)
     if root.exists() or inside(project,HELPER_ROOT+'.meta').exists():fail('BATCH_HELPER_CONFLICT',HELPER_ROOT,'Temporary helper root occupied')
     directory=root/'Editor';directory.mkdir(parents=True);owned={}
-    names=['BeaverBatch.cs','BeaverBatchUI.cs']
+    names=['BeaverBatch.cs','BeaverBatchUI.cs','BeaverWiring.cs']
     if production and (Path(__file__).parent/'targets/BeaverResourceProduction.cs').is_file():names.append('BeaverResourceProduction.cs')
     if sprites:names.append('BeaverResourceSprites.cs')
     for name in names:

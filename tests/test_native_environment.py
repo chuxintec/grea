@@ -17,7 +17,7 @@ class NativeEnvironmentTests(unittest.TestCase):
                   'HTTPS_PROXY': 'http://localhost:8000', 'LC_ALL': 'C.UTF-8'}
         with patch.dict(os.environ, parent, clear=True):
             before = dict(os.environ)
-            for control in ('BEAVER_BATCH_JOB', 'BEAVER_NATIVE_JOB', 'BEAVER_ADOPT_JOB'):
+            for control in ('BEAVER_BATCH_JOB', 'BEAVER_NATIVE_JOB', 'BEAVER_ADOPT_JOB', 'BEAVER_UI_JOB'):
                 env = editor_environment(control, job)
                 self.assertEqual(base64.b64decode(env[control + '_BASE64']).decode('utf-8'), str(job))
                 self.assertEqual(env['HTTPS_PROXY'], parent['HTTPS_PROXY'])

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "beaver-game-tools"
-version = "0.3.0"
+version = "0.5.0.dev1"
 description = "Controlled native game project adoption and development tools"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -13,6 +13,7 @@ dependencies = []
 
 [project.optional-dependencies]
 images = ["Pillow>=10,<13"]
+toolkit = ["Pillow>=10,<13", "jsonschema>=4.20,<5"]
 
 [project.scripts]
 beaver = "beaver.cli:main"

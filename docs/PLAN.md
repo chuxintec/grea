@@ -1,3 +1,34 @@
+# beaver v0.5.0：全量整合与 Unity 工程提效
+
+2026-10-27；codex/beaver-v0.5；0.5.0.dev1。已原生核验 human01a17d1e-f4b5-74f0-8080-ae46e1b8f7ba 与 human01a17d20-43ad-71a3-b7d7-cdeafcf6ebe7，按 [v0.5整合计划](/Users/wangmeng/Documents/Manager/decisions/20261027-beaver-v05/PLAN.md)整合并交付本地main。此前v0.4三项能力全部保留，最终编号覆盖为0.5.0。
+
+当前：已精确保全主工作树83个产品WIP文件；toolkit注册工作树b7e6718干净。全部有效分支有界盘点，0.1～0.3历史已被当前基线继承；从codex/beaver-v0.4安全承接到codex/beaver-v0.5。保全manifest位于.private/v05/pre-integration，不删除原件。
+
+UI采集/接线/统一诊断已实现并完成模块相关检查；10个C#companion使用既有Unity引用离线编译通过。原生隔离整组验证进行中；正式肥鹅下一项真实就绪任务仍由开发者(2)交接，不倒退其App11/App12已完成修复。工具合并不触碰正式工程/服务/存档。
+
+剩余：共同基线合并b7e6718有效toolkit/测试与当前实现，处理真实冲突；成组原生采集→计划→应用→保存重开/诊断、有限GREA适配与自然正式采用；本地main合并回读、固定main源码构建0.5.0和身份/限制交付。无远端push、tag/Release或全局安装。
+
+## 上一阶段记录（编号已被v0.5覆盖）
+
+# beaver v0.4：Unity 日常开发提效
+
+2026-10-27，codex/beaver-v0.4，0.4.1.dev1。基线 1f624503f7728b8670d63e09c12ac12acab0807d；0.3 固定包和原事务保留。已原生核验 human01a17d12-53e3-7482-92b3-501e250ac5fe，执行 [v0.4 权威计划](/Users/wangmeng/Documents/Manager/decisions/20261027-beaver-v04/PLAN.md)。
+
+当前：一次有限盘点后，贯通原生 UI 检查、明确接线计划、既有 batch 保存读回及统一诊断。正式肥鹅由当前开发者 (2) 单写，已交接下一项真实既有任务需求；App11 不倒退或等待。Go/增量仅按真实依赖补，不扩测试或启动新服务。
+
+| 模块 | 状态 | 唯一写者 |
+|---|---|---|
+| UI 原生采集与检查 | 开发中 | /root/ui_inspection |
+| 统一诊断 | 开发中 | /root/diagnostics |
+| 接线计划/受控执行/公开 CLI/集成 | 开发中 | root |
+| 肥鹅真实采用 | 待下一项就绪任务 | 肥鹅开发者 (2) |
+
+最终正式本地制品按总监裁定用0.4.1，避免已有toolkit 0.4.0身份冲突；该固定提交的58文件已按字节恢复兼容，新CLI保留原tool输出/退出码。
+
+三项完成后成组检查与一次本地交付；能力、静态、原生保存、运行状态、视觉/业务分别报告。无推送、Release、全局安装或正式服务/存档写入。
+
+## v0.3 冻结历史
+
 # beaver v0.3：Unity＋Golang联合开发与交付
 
 2026-10-26，0.3.0本地交付（未发布），codex/beaver-v0.3；基线fae3845，0.2全部制品与事务保持。完整范围沿Manager/decisions/20261026-grea-monkey-beaver/BEAVER-V03-UNITY-PRODUCTION.md；真实用户三条授权见.private/v03/authorization.json，含最新Golang必选补充。

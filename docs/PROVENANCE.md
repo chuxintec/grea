@@ -33,3 +33,7 @@ GREA 通用 Go 六服执行模板按固定交接清单 SHA `283f5fca66e95f1fa65a
 真实 FoodStreet 的 v0.3 资源、JSON、代码快照、改名候选、原始日志和 App 继续只在 `.private/v03`。自有 Go 示例配置可作为模板内容；Docker secrets、容器卷和测试账户不进入 Git/wheel。工具健康、私有试点和正式主开发采用分别记录。
 
 原生进程UTF8 job的ASCII base64封装及受限子环境为beaver独立实现，仅Python/C#标准库，无新增第三方二进制。正式采用的Mono环境枚举失败保留原始日志，根因以实际重试结果界定；未使用文件名编码猜测或改名。Mono编码语义参考 https://www.mono-project.com/docs/faq/technical/ 与 https://www.mono-project.com/docs/advanced/pinvoke/，文档不替代Unity原生验证。
+
+## v0.4 toolkit 兼容
+
+从本仓固定提交6791ddf98e31e411f7efe17d474f66251a1e9f76定向恢复src/beaver/toolkit与其测试，保留GREA MIT归属及原始工具ID/报告/退出码。该提交的父提交正是本轮基线1f62450；未导入旧版本号或覆盖在途CLI。恢复的58个文件字节身份见私有toolkit-compatibility回执；旧0.4.0轮包/producer不覆盖。新UI检查、接线和诊断由本项目实现，不包含肥鹅业务/素材。
