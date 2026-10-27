@@ -11,6 +11,6 @@ description: 为已获准的游戏定义自有后端边界并生成或开发Go�
 
 ## 执行工具与边界
 
-通用Go工程/模块生成、协议/配置类型、构建和Docker执行由 beaver 维护。GREA现对其固定0.3候选07及08/09提供有限的server候选/协议/迁移/Compose计划及toolchain路由，具体范围见[beaver接入](references/shared/beaver.md#固定03候选07和08的有限适配)；未接入的构建/数据库/Docker操作不自动透传。工具自有六服/Unity联调证据不等于正式项目采用。`server_go_project`旧ID和消费者继续使用原合同，替代验收前不删除模板或假转发。具体六服业务留项目，不调用 monkey 恢复未知服务端。完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](references/shared/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
+通用Go工程/模块生成、协议/配置类型、构建和Docker执行由 beaver 维护。GREA现对其固定0.3候选07及08/09提供有限的server候选/协议/迁移/Compose计划及toolchain路由，具体范围见[beaver接入](../grea/references/providers/beaver.md#固定03候选07和08的有限适配)；未接入的构建/数据库/Docker操作不自动透传。工具自有六服/Unity联调证据不等于正式项目采用。`server_go_project`旧ID和消费者继续使用原合同，替代验收前不删除模板或假转发。具体六服业务留项目，不调用 monkey 恢复未知服务端。完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](../grea/references/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
 
-从恢复交接接入后端前，按需读[原协议与本地消息](references/shared/研发交接资料核验.md#原协议与本地消息)。本地JSON DTO闭包不等于原服二进制协议；对方离线赠送/掉落政策不自动继承，不因收到宿主代码替换现有共享Go服务。
+从恢复交接接入后端前，按需读[原协议与本地消息](../grea-evidence/references/研发交接资料核验.md#原协议与本地消息)。本地JSON DTO闭包不等于原服二进制协议；对方离线赠送/掉落政策不自动继承，不因收到宿主代码替换现有共享Go服务。

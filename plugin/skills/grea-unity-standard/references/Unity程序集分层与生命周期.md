@@ -3,7 +3,7 @@
 > **何时读**：划分 Domain/Gameplay/Presentation/Services 等程序集、设计启动场景与作用域、处理异步取消、时间与随机、存档和输入事件契约时。
 > **读完产出**：asmdef 依赖图、场景与启动契约、作用域与对象生命周期表、数据种类与唯一写入者说明、存档版本与迁移策略。
 
-本篇属于 [工程标准 v1](Unity工程结构与开发规范.md)（`grea-unity-project` 1.0.0）。目录见 [工程目录与资产归类](Unity工程目录与资产归类.md)；跨引擎项目的技术选型以 [原生转换规范](shared/Unity原生转换规范.md#技术选型基线) 为准。
+本篇属于 [工程标准 v1](Unity工程结构与开发规范.md)（`grea-unity-project` 1.0.0）。目录见 [工程目录与资产归类](Unity工程目录与资产归类.md)；跨引擎项目的技术选型以 [原生转换规范](../../grea-native-port/references/Unity原生转换规范.md#技术选型基线) 为准。
 
 ## 开发框架与依赖方向
 
@@ -39,7 +39,7 @@ flowchart TD
 
 **ARC-02 编译隔离**：使用 asmdef 实施边界。Domain、Gameplay、Contracts 默认 noEngineReferences；Editor 仅在 Editor 平台编译；测试单独程序集且只在测试构建启用。只建立目录不算完成隔离；反射、预编译 DLL 与代码生成也要进入依赖审查。Unity 包的 Runtime/Editor/测试程序集应显式引用依赖，见 [官方程序集说明](https://docs.unity.com/en-us/engine/6000.0/manual/packages-list/cus-pkg-development/cus-asmdef)。
 
-**ARC-03 接入策略**：v1 默认显式构造函数/初始化参数装配，不强制额外 DI 容器、ECS、响应式库或消息总线。已有框架按获准范围适配；小修复不顺带替换。确需第三方框架时记录版本、许可证、AOT/IL2CPP 与目标平台验证，避免同一工程并存多套初始化和资源生命周期。跨引擎项目的默认插件见 [技术选型基线](shared/Unity原生转换规范.md#技术选型基线)，GREA 组件与这些插件的取舍见 [自研框架与主流插件的关系](Unity通用组件与Prefab.md#自研框架与主流插件的关系)，许可证登记见 [许可证与再分发](shared/许可证与再分发.md#3-第三方包)。
+**ARC-03 接入策略**：v1 默认显式构造函数/初始化参数装配，不强制额外 DI 容器、ECS、响应式库或消息总线。已有框架按获准范围适配；小修复不顺带替换。确需第三方框架时记录版本、许可证、AOT/IL2CPP 与目标平台验证，避免同一工程并存多套初始化和资源生命周期。跨引擎项目的默认插件见 [技术选型基线](../../grea-native-port/references/Unity原生转换规范.md#技术选型基线)，GREA 组件与这些插件的取舍见 [自研框架与主流插件的关系](Unity通用组件与Prefab.md#自研框架与主流插件的关系)，许可证登记见 [许可证与再分发](../../grea-delivery/references/许可证与再分发.md#3-第三方包)。
 
 ### 场景与启动契约
 

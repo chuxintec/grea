@@ -7,7 +7,7 @@ import check_docs
 
 class DocumentationTests(unittest.TestCase):
  def test_inventory_is_complete_and_immutable_reports_match(self):
-  inventory=json.loads((ROOT/'docs/design/windows-docs-inventory-20261017.json').read_text(encoding='utf-8'))
+  inventory=json.loads((ROOT/'proposals/design/windows-docs-inventory-20261017.json').read_text(encoding='utf-8'))
   self.assertEqual(len(inventory['entries']),77)
   for row in inventory['entries']:
    self.assertIn(row['status'],('executed','retained_with_reason'))
@@ -16,6 +16,9 @@ class DocumentationTests(unittest.TestCase):
    if row['status']=='retained_with_reason':self.assertTrue(row['execution_note'])
  def test_core_navigation_and_current_links(self):
   expected={'README.md','安装与平台.md','使用指南.md','接口与证据说明.md','Unity指南.md','维护与发布.md','故障排查.md'}
-  self.assertEqual({p.name for p in (ROOT/'docs').glob('*.md')},expected)
+  # Product guides live in the skill environment (grea's shared references); docs/ is gone.
+  expected=(expected-{'README.md'})|{'产品文档索引.md'}
+  self.assertTrue(expected<={p.name for p in (ROOT/'plugin/skills/grea/references').glob('*.md')})
+  self.assertFalse((ROOT/'docs').exists())
   self.assertTrue(check_docs.check(ROOT)['ok'])
   self.assertEqual(list((ROOT/'docs/history').glob('*.md')),[])

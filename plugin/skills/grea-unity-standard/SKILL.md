@@ -5,7 +5,7 @@ description: 恢复或转换工程的 Unity 工程标准与治理：目录与 as
 
 # GREA · 工程标准、治理与性能
 
-先读 [共同约束与执行入口](references/shared/共同约束与执行入口.md)。
+先读 [共同约束与执行入口](../grea/references/共同约束与执行入口.md)。
 
 | 任务 | 参考 |
 | --- | --- |
@@ -18,9 +18,9 @@ description: 恢复或转换工程的 Unity 工程标准与治理：目录与 as
 | 资产治理、命名、移动与旧框架退役 | [重构与资源迁移](references/Unity重构与资源迁移.md) |
 | 性能问题与优化验证 | [性能分析与优化验证](references/Unity性能分析与优化验证.md)；普通修复不自动跑多轮基准 |
 
-跨引擎项目的技术选型和禁止项以 [原生转换规范](references/shared/Unity原生转换规范.md) 为准；工程标准中的通用组件不与其选型基线并存为第二套同类机制。
+跨引擎项目的技术选型和禁止项以 [原生转换规范](../grea-native-port/references/Unity原生转换规范.md) 为准；工程标准中的通用组件不与其选型基线并存为第二套同类机制。
 
-验收时，标准符合性按 [工程标准验收](references/Unity工程标准验收.md) 的 A0–A5 记录；跨引擎项目另记 [原生可维护门](references/shared/测试与结果交付.md#原生可维护性跨引擎转换)，重构和资源迁移后守卫不新增违规。
+验收时，标准符合性按 [工程标准验收](references/Unity工程标准验收.md) 的 A0–A5 记录；跨引擎项目另记 [原生可维护门](../grea/references/测试与结果交付.md#原生可维护性跨引擎转换)，重构和资源迁移后守卫不新增违规。
 
 规范设计与可调用的实现分开核对。只制定计划时，不创建工程，也不执行迁移。
 
@@ -28,6 +28,6 @@ description: 恢复或转换工程的 Unity 工程标准与治理：目录与 as
 
 ## 执行工具与边界
 
-候选/现有工程治理由 beaver 执行；只在修复来源转换共因时回到 monkey。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](references/shared/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
+候选/现有工程治理由 beaver 执行；只在修复来源转换共因时回到 monkey。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](../grea/references/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
 
 接收首次或增量候选时读[候选交接与三方合并](references/候选交接与三方合并.md)；其他治理任务不强加候选采用流程。

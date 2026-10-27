@@ -22,7 +22,7 @@ def main(argv=None):
     if selected:request['tool_ids']=selected
     report=dispatch('doctor',request)
     if args.verify_frida_pair and report['result'] is not None:
-        readme=(ROOT/'docs/providers/Frida接入.md').read_text(encoding='utf-8')
+        readme=(ROOT/'plugin/skills/grea/references/providers/Frida接入.md').read_text(encoding='utf-8')
         version=re.search(r'with `frida` ([\d.]+)',readme)
         archive=ROOT/'.private/providers/frida'/f'frida-server-{version[1] if version else "missing"}-android-arm64.xz'
         client=next((x for x in report['result']['checks'] if x['tool_id']=='frida'),{})

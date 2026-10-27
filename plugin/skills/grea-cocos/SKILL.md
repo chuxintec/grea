@@ -10,7 +10,7 @@ description: 将已授权游戏恢复、移植或构建为Cocos Creator目标工
 Unity专属asmdef/uGUI/UPM规则不套给Creator；不改官方引擎，不默认安装Funplay。调研不等于开发授权；需要Go后端时见 `grea-server-go` 技能。
 
 
-完整初版导出与接续边界遵循[全量初版工程与协作](references/shared/全量初版工程与协作.md)。批量转换由固定monkey负责，GREA核交接并编排后续开发；lookup/静态候选不等于原生初版。已有工程的局部修复不无条件重导。
+完整初版导出与接续边界遵循[全量初版工程与协作](../grea/references/全量初版工程与协作.md)。批量转换由固定monkey负责，GREA核交接并编排后续开发；lookup/静态候选不等于原生初版。已有工程的局部修复不无条件重导。
 
 ## monkey 调用步骤（Cocos 目标恢复）
 
@@ -28,8 +28,8 @@ Unity专属asmdef/uGUI/UPM规则不套给Creator；不改官方引擎，不默�
 {"tool_id":"monkey_pipeline","arguments":["ensure","--install-if-missing","--output","/absolute/new-readiness"],"run_dir":"/absolute/new-invocation","timeout_seconds":900}
 ```
 
-安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见[monkey 接入](references/shared/monkey.md)。
+安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见[monkey 接入](../grea/references/providers/monkey.md)。
 
 ## 执行工具与边界
 
-源恢复调用 monkey；Creator 工程接续与验证调用 beaver 的已声明子集，未支持部分明确 needs_action。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](references/shared/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
+源恢复调用 monkey；Creator 工程接续与验证调用 beaver 的已声明子集，未支持部分明确 needs_action。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](../grea/references/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。

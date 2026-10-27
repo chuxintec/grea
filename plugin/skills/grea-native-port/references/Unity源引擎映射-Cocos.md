@@ -86,7 +86,7 @@
 | 物理（PhysicsManager、RigidBody、PhysicsCollider） | Rigidbody2D、Collider2D | 按 PTM_RATIO 换算单位；规则依赖的简单几何判定放在 Domain | 规则轨迹 |
 | CollisionManager（非物理碰撞） | Collider2D 触发器，或 Domain 中的几何判定 | — | 命中判定 |
 | wx.*、tt.* 平台 API | 平台端口 | 见原生转换规范的平台 SDK 一节 | 不可用时的提示与离线授权路径 |
-| JS 数值、排序、取整 | C# 明确类型 | 见 [规则与随机](shared/规则与随机一致性.md) | oracle 测试 |
+| JS 数值、排序、取整 | C# 明确类型 | 见 [规则与随机](../../grea-parity/references/规则与随机一致性.md) | oracle 测试 |
 
 ## Cocos Creator 3.x 差异
 

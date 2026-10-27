@@ -1,8 +1,8 @@
 # Unity · 原生转换规范
 
-工具推荐：Unity 官方插件技能（ui-ugui、manage-sprite-atlas、unity-package-management 等）与 Unity CLI/Pipeline 生成和回读原生资源；`recovery compare_events`、`recovery compare_traces` 做规则对照。入口和限制见 [工具清单](shared/工具选择与调用.md)。
+工具推荐：Unity 官方插件技能（ui-ugui、manage-sprite-atlas、unity-package-management 等）与 Unity CLI/Pipeline 生成和回读原生资源；`recovery compare_events`、`recovery compare_traces` 做规则对照。入口和限制见 [工具清单](../../grea/references/工具选择与调用.md)。
 
-适用于把 Cocos、Laya/FairyGUI、Egret、H5 等非 Unity 源游戏转换为 Unity 工程，以及审计、清理已有项目中的源引擎残留。源游戏本身是 Unity 时按 [Unity 工程重建](shared/Unity工程重建与恢复.md) 执行。
+适用于把 Cocos、Laya/FairyGUI、Egret、H5 等非 Unity 源游戏转换为 Unity 工程，以及审计、清理已有项目中的源引擎残留。源游戏本身是 Unity 时按 [Unity 工程重建](../../grea-unity-recovery/references/Unity工程重建与恢复.md) 执行。
 
 ## 目标形态
 
@@ -20,7 +20,7 @@
 
 | 类别 | 内容 | 实现与验证 |
 | --- | --- | --- |
-| 必须对齐：规则语义 | 数值公式与舍入、RNG 序列与消费顺序、结算/消耗/奖励顺序、任务与解锁条件、影响结果的玩法时序、存档键与兼容 | 在 Domain/Gameplay 用强类型 C# 实现；以原代码或原版轨迹为 oracle 做对照测试，见 [规则与随机](shared/规则与随机一致性.md) |
+| 必须对齐：规则语义 | 数值公式与舍入、RNG 序列与消费顺序、结算/消耗/奖励顺序、任务与解锁条件、影响结果的玩法时序、存档键与兼容 | 在 Domain/Gameplay 用强类型 C# 实现；以原代码或原版轨迹为 oracle 做对照测试，见 [规则与随机](../../grea-parity/references/规则与随机一致性.md) |
 | 必须对齐：可观察结果 | 布局结果、文字外观、动画曲线与节奏、按钮反馈、遮罩形状、声音时机 | 用 Unity 原生组件配置得到相同结果；以同状态截图、录像和关键帧对照，不复刻源算法 |
 | 不复刻：引擎语义 | 节点树与节点身份、组件生命周期与执行顺序、Widget/Layout/Label 度量算法、Mask 命中算法、director/Scheduler/Promise 微任务、Tween/Action 系统、资源 uuid/bundle 体系、场景切换与常驻节点、事件捕获/冒泡实现、源脚本类名 | 换成对应的 Unity 原生机制，见 [Cocos 映射](Unity源引擎映射-Cocos.md) |
 
@@ -51,7 +51,7 @@
 | 依赖装配 | 序列化引用加构造参数 | 组合根膨胀时用 VContainer |
 | 存档 | 存档端口 + JSON（com.unity.nuget.newtonsoft-json）文件存储 | 原版键与编码兼容由适配器负责 |
 
-主流插件能满足的需求直接使用主流插件。GREA 自有的通用框架包只作为薄胶水，每项能力在项目中只保留一种实现；各 GREA 组件对应的主流方案与选择规则见 [自研框架与主流插件的关系](shared/Unity通用组件与Prefab.md#自研框架与主流插件的关系)。新装包的许可证登记见 [许可证与再分发](shared/许可证与再分发.md#3-第三方包)。
+主流插件能满足的需求直接使用主流插件。GREA 自有的通用框架包只作为薄胶水，每项能力在项目中只保留一种实现；各 GREA 组件对应的主流方案与选择规则见 [自研框架与主流插件的关系](../../grea-unity-standard/references/Unity通用组件与Prefab.md#自研框架与主流插件的关系)。新装包的许可证登记见 [许可证与再分发](../../grea-delivery/references/许可证与再分发.md#3-第三方包)。
 
 ## 来源迁移器与日常制作流水线
 
@@ -71,7 +71,7 @@
 4. 为解释源引擎协议而自研的 director、帧循环参与者注册、调度器、微任务队列、Tween/Action 系统、Widget/Layout 布局算法、Label 度量算法，用来替代 Unity 已有能力。有限业务完成 FIFO 若不解释源节点、生命周期或帧阶段协议，且有明确线程、作用域退出、受限推进及重入边界，可按业务服务审查；不得仅按名称放行或封禁。核对实际结构与投递、推进、销毁消费者，移除线程/清空/退出边界或加入源调度协议的反例仍须拒绝。
 5. 将任意 `key + json` 行或完整源对象图塞入 ScriptableObject，并继续在 Player 中动态解释为生产规则。合法强类型 DTO 的 JSON 序列化、文本字段和第三方标准数据不在此列。
 6. 交付后仍有 Templates/Views 双层 UI 真源，或需要 Capture、回写流程。
-7. 源引擎运行时源码，或带源引擎许可证限制的文件（例如 Cocos Creator 的 easing 实现及其许可证文件头）。替代做法、原游戏素材范围与第三方包登记见 [许可证与再分发](shared/许可证与再分发.md)。
+7. 源引擎运行时源码，或带源引擎许可证限制的文件（例如 Cocos Creator 的 easing 实现及其许可证文件头）。替代做法、原游戏素材范围与第三方包登记见 [许可证与再分发](../../grea-delivery/references/许可证与再分发.md)。
 
 守卫做成 EditMode 测试或 Validator。构建前检查生产编译集合、实际根资产与引用；Editor 已加载的对照类型只作为待审候选，不能冒充实际 Player 类型阻断或放行。对本次交付支持的后端，构建后必须核对实际 Player 载荷与禁止项；缺少该层证据不能宣称最终退出通过。普通与 Development 构建可能走不同守卫、裁剪和宏分支，结论绑定实际构建配置。已有项目的过渡机制登记负责人、调用链、退出条件与阶段。`migration_no_regression` 检查没有新增或扩大依赖；它只允许继续迁移，不代表 `final_native_exit` 已通过。最终退出要求相关机制从实际 Player 编译集合、资产闭包与载荷中退出，不能靠白名单豁免。守卫扫描范围、白名单和结果记录在项目验收中。
 
@@ -85,7 +85,7 @@
 
 ## 流程
 
-1. **盘点**：确认源引擎与格式版本、可达功能清单和原版证据（见 [取证](shared/原版运行与内容取证.md)）。已有项目先统计源引擎残留，并加上守卫。
+1. **盘点**：确认源引擎与格式版本、可达功能清单和原版证据（见 [取证](../../grea-evidence/references/原版运行与内容取证.md)）。已有项目先统计源引擎残留，并加上守卫。
 2. **代表切片**：选一个同时包含图片、文字、遮罩、列表、按钮和动画的页面，加一条玩法流程，完整走一遍：转换、原生 Prefab、View 脚本、Presenter、Domain 规则、对照。通过后再批量推进。
 3. **按模块转换**：转换器生成原生资产，然后人工补 View 与绑定；规则移入 Domain 并补 oracle 测试；视觉按截图对照。
 4. **退役**：删除转换期的过渡组件和双层资产，收紧白名单。
@@ -96,7 +96,7 @@
 | 门 | 通过条件 |
 | --- | --- |
 | 守卫 | 最终 `final_native_exit` 无未退出的源引擎运行机制；过渡期 `migration_no_regression` 单列，不能替代最终门。源码扫描、Editor 回读和实际 Player 载荷分别核验 |
-| 原版对照 | 规则 oracle 测试通过；同状态截图、录像和关键帧对照通过；真实输入通过。分层记录方式见 [分层验收](shared/测试与结果交付.md) |
+| 原版对照 | 规则 oracle 测试通过；同状态截图、录像和关键帧对照通过；真实输入通过。分层记录方式见 [分层验收](../../grea/references/测试与结果交付.md) |
 | 原生可维护 | 人工维护的 UI/Scene/动画及选择 SO 制作的配置可直接编辑/Play；外部配置源走明确单向候选流程，不能重建源对象图；实际界面可编辑可见，移除转换器后仍编译/构建 |
 
 三道门分别报告；任何一道不通过都不能称为原生转换完成。构建成功、测试数量或旧解释器已移除，都不能替代原生可维护门。

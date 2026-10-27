@@ -5,12 +5,12 @@ description: 把 Cocos Creator、Laya/FairyGUI、Egret、H5 等非 Unity 游戏�
 
 # GREA · 跨引擎转换为原生 Unity
 
-先读 [共同约束与执行入口](references/shared/共同约束与执行入口.md)。
+先读 [共同约束与执行入口](../grea/references/共同约束与执行入口.md)。
 
 **目标形态**：Unity 开发者打开工程即可按常规方式维护。Prefab／Scene／SO管理原生对象与资源引用，正式数值以Player实际解析的JSON为唯一制作源；运行时只用 Unity 机制和官方或主流插件；源引擎只是行为和资源的来源。核心原则是**保留规则语义，不保留引擎语义**。
 
 
-完整初版导出与接续边界遵循[全量初版工程与协作](references/shared/全量初版工程与协作.md)。批量转换由固定monkey负责，GREA核交接并编排后续开发；lookup/静态候选不等于原生初版。已有工程的局部修复不无条件重导。
+完整初版导出与接续边界遵循[全量初版工程与协作](../grea/references/全量初版工程与协作.md)。批量转换由固定monkey负责，GREA核交接并编排后续开发；lookup/静态候选不等于原生初版。已有工程的局部修复不无条件重导。
 
 ## 读取顺序
 
@@ -55,8 +55,8 @@ description: 把 Cocos Creator、Laya/FairyGUI、Egret、H5 等非 Unity 游戏�
 {"tool_id":"monkey_pipeline","arguments":["ensure","--install-if-missing","--output","/absolute/new-readiness"],"run_dir":"/absolute/new-invocation","timeout_seconds":900}
 ```
 
-安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见[monkey 接入](references/shared/monkey.md)。
+安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见[monkey 接入](../grea/references/providers/monkey.md)。
 
 ## 执行工具与边界
 
-monkey 转换来源为原生候选，beaver 接续工程操作；不在 GREA 维护第二解析器。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](references/shared/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
+monkey 转换来源为原生候选，beaver 接续工程操作；不在 GREA 维护第二解析器。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](../grea/references/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。

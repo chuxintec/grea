@@ -24,9 +24,9 @@ class TargetTests(unittest.TestCase):
  def test_projection_excludes_process_history_and_rewrites_external_links(self):
   source={'README.md':(b'[report](validation/releases/report.json) [guide](docs/usage.md)',0o100644),
           'validation/releases/report.json':(b'{}',0o100644),'docs/usage.md':(b'Guide',0o100644),
-          'docs/design/plan.md':(b'Old process',0o100644),'tests/unity/reference-project/keep':(b'x',0o100644),'tests/test_old.py':(b'x',0o100644)}
+          'proposals/design/plan.md':(b'Old process',0o100644),'tests/unity/reference-project/keep':(b'x',0o100644),'tests/test_old.py':(b'x',0o100644)}
   files=product_projection.project(source,'a'*40)
-  self.assertNotIn('validation/releases/report.json',files);self.assertNotIn('docs/design/plan.md',files)
+  self.assertNotIn('validation/releases/report.json',files);self.assertNotIn('proposals/design/plan.md',files)
   self.assertIn('tests/unity/reference-project/keep',files);self.assertNotIn('tests/test_old.py',files)
   self.assertIn(b'https://github.com/chuxintec/grea/blob/'+b'a'*40,files['README.md'][0])
  def test_windows_unsafe_names_are_rejected(self):

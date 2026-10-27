@@ -1,8 +1,8 @@
 # Unity · 工程重建与恢复
 
-工具推荐：unity_dependency_audit、unity_asset_ledger、Unity CLI/Pipeline；包恢复先查grea/.private/backups/unity-packages。 入口和限制见 [工具清单](shared/工具选择与调用.md)。
+工具推荐：unity_dependency_audit、unity_asset_ledger、Unity CLI/Pipeline；包恢复先查grea/.private/backups/unity-packages。 入口和限制见 [工具清单](../../grea/references/工具选择与调用.md)。
 
-新增或获准标准化工程时，按 [工程标准 v1](shared/Unity工程结构与开发规范.md) 选择目录、依赖和生命周期契约；框架包与受限生成器已经提供，实际范围见 [生成与恢复](shared/Unity指南.md)；它们不能代替原版资源恢复。
+新增或获准标准化工程时，按 [工程标准 v1](../../grea-unity-standard/references/Unity工程结构与开发规范.md) 选择目录、依赖和生命周期契约；框架包与受限生成器已经提供，实际范围见 [生成与恢复](../../grea/references/Unity指南.md)；它们不能代替原版资源恢复。
 
 ## 工程路径与版本
 
@@ -41,11 +41,11 @@ Spine 先读取数据版本再选择运行时，不根据机器已有 Spine41 �
 
 Shader 同名不保证同实现：以实际资产路径、属性、渲染队列和关键字核验。TMP 字体为空时不要继续访问材质；先修字体引用。SpriteSkin、BoneFollower、遮罩和运行时资源替换是功能组件，不应因为场景暂时可见就忽略。
 
-具体缺图、Spine 页名/尺寸、排序、占位 Shader 的顺序见 [资源逆向恢复](shared/提取与引用恢复.md)。不要把特定游戏的动画名、骨骼偏移、奖励或费用写成通用默认值。
+具体缺图、Spine 页名/尺寸、排序、占位 Shader 的顺序见 [资源逆向恢复](../../grea-evidence/references/提取与引用恢复.md)。不要把特定游戏的动画名、骨骼偏移、奖励或费用写成通用默认值。
 
 ## 原包与可运行中间版本的区别
 
-已解压H5或前一版网页工程可能含登录屏蔽、平台桥接、自动测试入口或格式化修改。先对原包成员做逐字节哈希，必要时按模块正文比较并解释包装/换行差异；“文件数一致”不证明原逻辑未修改。保留原件、中间版本、目标实现三个层次的来源。源不是Unity时，用原数据重建Unity对象，不称为恢复出原作者Unity源码。具体网格/骨骼/坐标契约见 [跨引擎恢复](shared/Unity跨引擎移植与行为一致性.md)。
+已解压H5或前一版网页工程可能含登录屏蔽、平台桥接、自动测试入口或格式化修改。先对原包成员做逐字节哈希，必要时按模块正文比较并解释包装/换行差异；“文件数一致”不证明原逻辑未修改。保留原件、中间版本、目标实现三个层次的来源。源不是Unity时，用原数据重建Unity对象，不称为恢复出原作者Unity源码。具体网格/骨骼/坐标契约见 [跨引擎恢复](../../grea-native-port/references/Unity跨引擎移植与行为一致性.md)。
 
 ## 加密或热更新代码的定位边界
 

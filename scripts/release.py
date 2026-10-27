@@ -109,7 +109,7 @@ def prepare(tag, out, require_tag=False):
         '可选第三方供应方仍需独立安装及验证。\n\n'
         '解压对应平台插件，进入 grea 目录后运行 `codex plugin marketplace add .`、'
         '`codex plugin add grea@grea-local`，重启客户端后调用 session 核对安装路径。'
-        '完整用法见包内 docs/安装与平台.md；自有代码 MIT，第三方许可见 THIRD_PARTY.md。\n',encoding='utf-8')
+        '完整用法见包内 plugin/skills/grea/references/安装与平台.md；自有代码 MIT，第三方许可见 THIRD_PARTY.md。\n',encoding='utf-8')
     return manifest
 
 

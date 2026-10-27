@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "generator": "scripts/skill_closure.py",
-  "sources": {
-    "monkey与beaver调用.md": "plugin/skills/grea/references/monkey与beaver调用.md",
-    "research.md": "docs/providers/research.md",
-    "实际体验与画面对照.md": "plugin/skills/grea-parity/references/实际体验与画面对照.md"
-  }
-}

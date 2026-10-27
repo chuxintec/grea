@@ -11,7 +11,7 @@ GREA 维护方法、规范和工具选择。**monkey 恢复原游戏为独立工
 
 ## 按工作流阶段选技能
 
-GREA 的技能按实际工作流划分，每个技能自成一体：它需要的文档都在自己的 `references/` 中（跨阶段共用的文档以 `references/shared/` 生成副本提供，权威来源只有一处）。只加载当前阶段的技能和需要的 reference。
+GREA 的技能按实际工作流划分。阶段专属文档在各自技能的 `references/`；跨阶段共用文档（含原 `docs/` 的产品指南、provider 与工具说明、示例）只有一份，集中在本技能的 `references/`，其他技能直接链接这里。所有文档都在技能环境内，不依赖仓库其他目录。只加载当前阶段的技能和需要的 reference。
 
 | 阶段 | 用户任务 | 技能 | 执行模块 |
 | --- | --- | --- | --- |
@@ -27,17 +27,23 @@ GREA 的技能按实际工作流划分，每个技能自成一体：它需要的
 | 5 对照修复 | 原版局部差异修复、真实体验对照 | `grea-parity`：受影响原版证据 | beaver（轨迹/事件/表现对照） |
 | 6 构建交付 | 结果分层报告、构建、安装、预览、发布支持 | `grea-delivery`：同源制品及本次权限 | beaver |
 
-同一内容只归一个阶段：取证方法在 `grea-evidence`，候选采用与三方合并在 `grea-unity-standard`，生命周期与变更合同在 `grea-evolve`，真实体验对照在 `grea-parity`，测试与结果交付在 `grea-delivery`。混合任务按阶段顺序组合；已有工程正常开发无需重导原包，缺来源基线不假装能够三方合并。新恢复的总体交接见[全量初版工程与协作](references/全量初版工程与协作.md)，整体恢复流程见[游戏恢复开发](references/游戏恢复开发.md)。
+同一内容只有一个归属：取证方法在 `grea-evidence`，候选采用与三方合并在 `grea-unity-standard`，生命周期与变更合同在 `grea-evolve`；多数阶段都用的测试与结果交付、真实体验对照属于下文共享参考。混合任务按阶段顺序组合；已有工程正常开发无需重导原包，缺来源基线不假装能够三方合并。新恢复的总体交接见[全量初版工程与协作](references/全量初版工程与协作.md)，整体恢复流程见[游戏恢复开发](references/游戏恢复开发.md)。
 
 ## 跨阶段流程
 
 收到他人研发交接包时先转 `grea-evidence` 技能的研发交接资料核验；仅采用获准部分，不由接收资料自动批准游戏开发或政策变化。
 
-- 声明有界功能、存档或协议影响时读[生命周期与变更合同](references/shared/生命周期与变更合同.md)。
-- 判断本次结果时读[测试与结果交付](references/shared/测试与结果交付.md)，代码、原生、真实输入、视觉及产品业务分别报告。
+- 声明有界功能、存档或协议影响时读[生命周期与变更合同](../grea-evolve/references/生命周期与变更合同.md)。
+- 判断本次结果时读[测试与结果交付](references/测试与结果交付.md)，代码、原生、真实输入、视觉及产品业务分别报告。
 - 记录开发状态或协作范围时读[开发计划与进度管理](references/开发计划与进度管理.md)和[功能模块并行协作](references/功能模块并行协作.md)。是否并行仍服从用户授权。
 - 工具维护读[选择与调用](references/工具选择与调用.md)；项目脚本复制增多或想把能力交给 monkey/beaver 时读[项目脚本沉淀与工具晋升](references/项目脚本沉淀与工具晋升.md)；复盘读[开发复盘与规范更新](references/开发复盘与规范更新.md)。术语含义不清时读[术语表](references/术语表.md)；历史经验及失败处理由共同约束按需导航。
-- 本地运营数据分析见[数据与预览](references/shared/lifecycle-analysis.md)：过渡旧入口，不执行生产运营。
+- 本地运营数据分析见[数据与预览](references/providers/lifecycle-analysis.md)：过渡旧入口，不执行生产运营。
+
+## 共享参考
+
+- 产品使用：[使用指南](references/使用指南.md)、[安装与平台](references/安装与平台.md)、[Unity指南](references/Unity指南.md)、[接口与证据说明](references/接口与证据说明.md)、[故障排查](references/故障排查.md)、[维护与发布](references/维护与发布.md)；总索引见[产品文档索引](references/产品文档索引.md)。
+- 跨阶段结果与对照：[测试与结果交付](references/测试与结果交付.md)、[实际体验与画面对照](references/实际体验与画面对照.md)。
+- 外部工具与模块：[provider 说明](references/providers/README.md)（含 monkey、beaver、Go、换皮、研究等接入）、工具说明（[制品与资源检查](references/tools/制品与资源检查.md)、[规则与格式检查](references/tools/规则与格式检查.md)、[Shader 工具](references/tools/Shader工具.md)、[Memory Profiler 安装](references/tools/MemoryProfiler安装.md)），示例数据在 `references/examples/`。
 
 ## 模块与执行
 

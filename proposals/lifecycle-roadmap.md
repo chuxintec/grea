@@ -53,7 +53,7 @@ GREA覆盖游戏调研、取证恢复、美术换皮、功能开发、持续迭�
 
 源码基线48debf7（codex/research-cocos-go）。已有AGENTS本机修改保留，不清理、不混作本轮新成果；历史v2026.10.19及已安装副本与本轮源码分别记录。既有Creator实际导入/浏览器、真实客户端网络待验不因本路线通过自动关闭。
 
-配套：[系统架构与合同](../docs/design/lifecycle-architecture.md)、[开发任务与验证边界](../docs/design/lifecycle-implementation.md)。这些文档是批准设计，非已实现接口；代码/工具能力只有实现并验证后才登记可用。
+配套：[系统架构与合同](design/lifecycle-architecture.md)、[开发任务与验证边界](design/lifecycle-implementation.md)。这些文档是批准设计，非已实现接口；代码/工具能力只有实现并验证后才登记可用。
 
 ## 三个开发版本
 

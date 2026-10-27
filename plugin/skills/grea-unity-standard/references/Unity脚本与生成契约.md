@@ -25,7 +25,7 @@ partial 只用于明确的生成/人工接缝，同一类放同一职责范围�
 
 ## 自动生成契约
 
-本节包含静态规划已实现的只读入口与后续生成设计。**plan_unity_project / validate_unity_project 保持静态规划静态范围；工程生成新增 plan_unity_generation / generate_unity_project / recover_unity_generation，实际限制见 [工程生成](shared/Unity指南.md)。** 当前 validate 不接收 Editor/PlayMode/Player 层级参数；静态规划 plan 不执行或授权写入，实际范围见 [静态规划使用说明](shared/Unity指南.md)。后续实现必须按 [统一接口](shared/接口与证据说明.md) 更新 contracts.py、registry.json、schema 和 CLI/MCP 同源分发。
+本节包含静态规划已实现的只读入口与后续生成设计。**plan_unity_project / validate_unity_project 保持静态规划静态范围；工程生成新增 plan_unity_generation / generate_unity_project / recover_unity_generation，实际限制见 [工程生成](../../grea/references/Unity指南.md)。** 当前 validate 不接收 Editor/PlayMode/Player 层级参数；静态规划 plan 不执行或授权写入，实际范围见 [静态规划使用说明](../../grea/references/Unity指南.md)。后续实现必须按 [统一接口](../../grea/references/接口与证据说明.md) 更新 contracts.py、registry.json、schema 和 CLI/MCP 同源分发。
 
 ### 输入与操作边界
 
@@ -68,4 +68,4 @@ new 只允许空的新工程目标，不能覆盖已存在 Unity 工程；adopt 
 
 **GEN-05 执行失败分类**：至少区分 invalid_profile、unsupported_combination、missing_dependency、path_conflict、ownership_conflict、stale_plan、editor_unavailable、compile_failed、binding_failed、verification_failed、recovery_required。外层仍使用 GREA 现有 ok/partial/error 回执，具体错误码在实施时纳入正式契约；已有 API 不因本文自动变更。
 
-生成不内置支付/广告凭据，不读取项目外私人缓存，不自动下载未知来源包，不把本机 .private 库存作为公开模板必需内容。Editor 连接、安装/许可和依赖恢复遵循既有 [执行路线](shared/Unity编辑器连接与任务执行.md)。
+生成不内置支付/广告凭据，不读取项目外私人缓存，不自动下载未知来源包，不把本机 .private 库存作为公开模板必需内容。Editor 连接、安装/许可和依赖恢复遵循既有 [执行路线](../../grea-delivery/references/Unity编辑器连接与任务执行.md)。

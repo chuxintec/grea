@@ -36,7 +36,6 @@ jobs:
         run: |
           .venv/bin/python scripts/audit_public_tree.py
           .venv/bin/python scripts/generate_contracts.py --check
-          .venv/bin/python scripts/skill_closure.py --check
           .venv/bin/python scripts/check_docs.py
           .venv/bin/python scripts/check_semantic_docs.py
           ./bin/grea legacy check_grea_skill --workspace-root . --json

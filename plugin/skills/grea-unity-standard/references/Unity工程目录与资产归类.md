@@ -58,7 +58,7 @@
 
 ### 通用包的维护位置
 
-自有框架源码在 GREA 的 `tools/unity/framework/packages/`，基础框架已交付 foundation、ui.ugui 和 editor 三包（校验与受限生成）；`tools/unity/templates/counter-composition/` 保存有测试的分层装配示例，也是 `grea-minimal-2d/0.1.0` 的 seed-once 源码输入。只按实际内容建目录；工程生成的实际创建/恢复范围见 [生成器与 Prefab](shared/Unity指南.md)，不先拆大量微包。
+自有框架源码在 GREA 的 `tools/unity/framework/packages/`，基础框架已交付 foundation、ui.ugui 和 editor 三包（校验与受限生成）；`tools/unity/templates/counter-composition/` 保存有测试的分层装配示例，也是 `grea-minimal-2d/0.1.0` 的 seed-once 源码输入。只按实际内容建目录；工程生成的实际创建/恢复范围见 [生成器与 Prefab](../../grea/references/Unity指南.md)，不先拆大量微包。
 
 | 候选包 | 内容和依赖边界 |
 | --- | --- |
@@ -85,7 +85,7 @@
 
 使用 Unity 实际导入类型、主/子资源和依赖判断。无法加载的 .asset 先查源 MonoScript 和序列化字段，记录推断类型与未修复状态；不能统一放入 MonoBehaviour，也不能为了分类删掉缺脚本资产。
 
-活动工程按类型组织。来源身份、旧路径、GUID、原包/版本写在迁移清单；转换期确需区分来源和编辑副本时，可临时使用类型内的 `Source/Working` 或 `Templates/Views`；跨引擎项目交付前合并为单一原生 Prefab（见 [原生转换规范](shared/Unity原生转换规范.md)）。不恢复 `_Game/Falcon/GameTemplate/...` 的完整来源树。原始导出工程仍可完整保留在 Analysis，作为只读证据。
+活动工程按类型组织。来源身份、旧路径、GUID、原包/版本写在迁移清单；转换期确需区分来源和编辑副本时，可临时使用类型内的 `Source/Working` 或 `Templates/Views`；跨引擎项目交付前合并为单一原生 Prefab（见 [原生转换规范](../../grea-native-port/references/Unity原生转换规范.md)）。不恢复 `_Game/Falcon/GameTemplate/...` 的完整来源树。原始导出工程仍可完整保留在 Analysis，作为只读证据。
 
 脚本按已存在的职责归组；同一 partial 类放在同一职责目录。Runtime、Editor、Tests 的目录名不自动建立编译隔离，需核对 asmdef、条件编译、反射与构建入口。生成工具、校验、构建分别命名，旧重生成器在新布局中应明确停用或迁移调用方。
 

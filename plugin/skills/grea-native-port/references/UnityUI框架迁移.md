@@ -1,6 +1,6 @@
 # Unity · UI框架迁移
 
-工具推荐：unity_asset_ledger记录迁移，官方UI技能与Unity Editor API生成资源，RecoveryRuntimeAudit.cs（Editor C#）及真实输入回归。 入口和限制见 [工具清单](shared/工具选择与调用.md)。
+工具推荐：unity_asset_ledger记录迁移，官方UI技能与Unity Editor API生成资源，RecoveryRuntimeAudit.cs（Editor C#）及真实输入回归。 入口和限制见 [工具清单](../../grea/references/工具选择与调用.md)。
 
 在用户明确要求将已恢复界面迁移到uGUI等另一框架时使用。先确认迁移范围、编辑目标和行为基线，保留原资源与证据；不要把所有恢复任务默认变成框架替换，也不要求最终生产继续依赖旧框架。
 
@@ -35,7 +35,7 @@
 4. 在实际Player打开截图、查看动画关键帧和录像；真实OS输入与内部事件注入分别标注。测试先暴露旧效果差异，再修复，不改预期来迎合新实现。
 5. 与旧SDK行为仍有疑点时，在隔离工程建立最小原实现oracle，精确记录输入与对象值；不要仅凭截图猜尺寸，也不把旧SDK重新加回生产作为兜底。
 
-静态状态页通过仍可能遗漏 Loader 运行时 autoSize 与保持中心的行为；通过隔离原实现核对动态赋值。案例来源见 [历史记录（外部历史资料）](shared/维护与发布.md)。
+静态状态页通过仍可能遗漏 Loader 运行时 autoSize 与保持中心的行为；通过隔离原实现核对动态赋值。案例来源见 [历史记录（外部历史资料）](../../grea/references/维护与发布.md)。
 
 ## 可维护交付
 

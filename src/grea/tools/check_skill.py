@@ -158,12 +158,10 @@ def check(workspace, skill):
                 errors.append(dict(item, code='link_outside_workspace'))
                 continue
             real = actual(dest)
-            # Each plugin skill is standalone: its links may not leave its own directory.
-            if relative.parts[0] == 'skills' and len(relative.parts) > 2:
-                own = virtual_skill / 'skills' / relative.parts[1]
-                if not within(dest, own):
-                    errors.append(dict(item, code='link_outside_skill'))
-                    continue
+            # Skills are self-contained as a set: links stay inside plugin/skills (shared docs live in skills/grea/references).
+            if relative.parts[0] == 'skills' and not within(dest, virtual_skill / 'skills'):
+                errors.append(dict(item, code='link_outside_skills'))
+                continue
             allowed_root = skill if within(dest, virtual_skill) else workspace
             if not within(real.resolve(), allowed_root):
                 errors.append(dict(item, code='link_symlink_escape'))

@@ -5,7 +5,7 @@ description: 对已恢复且可维护的 Unity 工程做有界二次开发，先
 
 # GREA · 已恢复工程的有限二次开发
 
-先读 [生命周期与变更合同](references/生命周期与变更合同.md) 和 [共同约束](references/shared/共同约束与执行入口.md)，再读 [有限二次开发](references/有限二次开发.md)。
+先读 [生命周期与变更合同](references/生命周期与变更合同.md) 和 [共同约束](../grea/references/共同约束与执行入口.md)，再读 [有限二次开发](references/有限二次开发.md)。
 
 - 原工程冻结的规则与持久化不变量、批准新设计的UI/UE维度分别作比较基线；不把新设计当原版一致性。
 - 用户授权制作样板时可提出候选设计，按约定审阅；不虚报已批准，不给每页追加审批。
@@ -17,4 +17,4 @@ description: 对已恢复且可维护的 Unity 工程做有界二次开发，先
 
 ## 执行工具与边界
 
-beaver 执行开发工程操作，业务代码与产品决策留项目；复用来源基线，不重新跑恢复。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](references/shared/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
+beaver 执行开发工程操作，业务代码与产品决策留项目；复用来源基线，不重新跑恢复。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](../grea/references/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。

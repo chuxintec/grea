@@ -10,6 +10,6 @@
 
 Creator官方CLI用于实际可用的导入/构建：[官方命令](https://docs.cocos.com/creator/3.8/manual/en/editor/publish/publish-in-command-line.html)。指定实际Editor `--project PROJECT --build "platform=web-desktop;debug=true"`；成功后浏览器开真实构建，核对渲染/输入/资源与设计尺寸。CLI仍需要桌面环境；先协调窗口，不能抢产品Editor。Funplay仅可选探测，缺少时明确未连接，不自动安装。
 
-模板生成、序列化候选、Editor导入、浏览器输入和原版一致性分别记录。详见 [工具说明](shared/cocos-target.md)。
+模板生成、序列化候选、Editor导入、浏览器输入和原版一致性分别记录。详见 [工具说明](../../grea/references/providers/cocos-target.md)。
 
-强制遵守[实际体验与画面对照](shared/实际体验与画面对照.md)：核心循环、教学、培养截图和连续录像按当前范围覆盖；静态解析不能代替实玩，修前/修后在真实入口核验。
+强制遵守[实际体验与画面对照](../../grea/references/实际体验与画面对照.md)：核心循环、教学、培养截图和连续录像按当前范围覆盖；静态解析不能代替实玩，修前/修后在真实入口核验。

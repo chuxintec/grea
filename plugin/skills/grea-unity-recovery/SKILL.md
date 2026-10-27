@@ -5,10 +5,10 @@ description: 源游戏本身是 Unity（Mono 或 IL2CPP 包体）时，从 Asset
 
 # GREA · Unity 包体到 Unity 工程
 
-先读 [共同约束与执行入口](references/shared/共同约束与执行入口.md)；完整恢复的阶段顺序见 [恢复开发](references/shared/游戏恢复开发.md)。
+先读 [共同约束与执行入口](../grea/references/共同约束与执行入口.md)；完整恢复的阶段顺序见 [恢复开发](../grea/references/游戏恢复开发.md)。
 
 
-完整初版导出与接续边界遵循[全量初版工程与协作](references/shared/全量初版工程与协作.md)。批量转换由固定monkey负责，GREA核交接并编排后续开发；lookup/静态候选不等于原生初版。已有工程的局部修复不无条件重导。
+完整初版导出与接续边界遵循[全量初版工程与协作](../grea/references/全量初版工程与协作.md)。批量转换由固定monkey负责，GREA核交接并编排后续开发；lookup/静态候选不等于原生初版。已有工程的局部修复不无条件重导。
 
 ## 读取
 
@@ -20,7 +20,7 @@ description: 源游戏本身是 Unity（Mono 或 IL2CPP 包体）时，从 Asset
 - 原始导出只读；工作工程中的导入副本和修复副本分开。
 - 通过 AssetDatabase/PrefabUtility 导入和修复，不在外部手改场景或 Prefab 的 YAML。
 - 先核monkey全量初版的实际资源／代码交接；必要时用代表性原Prefab检查引用和显示，不能以逐个小样替代全量初版。
-- 验收按 [分层验收](references/shared/测试与结果交付.md) 记录。源游戏是 Unity 且工作工程实际使用原生Unity运行时/资产时，[原生可维护门](references/shared/测试与结果交付.md#原生可维护性跨引擎转换) 记为不适用并写明依据；工程中混入跨引擎来源的模块时，那些模块按原生门验收。若目标为原生可维护Unity，而实际入口仍靠WebView/WASM宿主运行，不能因来源是Unity就记为不适用。
+- 验收按 [分层验收](../grea/references/测试与结果交付.md) 记录。源游戏是 Unity 且工作工程实际使用原生Unity运行时/资产时，[原生可维护门](../grea/references/测试与结果交付.md#原生可维护性跨引擎转换) 记为不适用并写明依据；工程中混入跨引擎来源的模块时，那些模块按原生门验收。若目标为原生可维护Unity，而实际入口仍靠WebView/WASM宿主运行，不能因来源是Unity就记为不适用。
 - 反编译结果、IL2CPP 伪代码和 DummyDLL 空壳的可信度不同，分别标注，不当作已恢复的源代码。
 
 ## monkey 调用步骤（Unity 原包恢复）
@@ -39,10 +39,10 @@ description: 源游戏本身是 Unity（Mono 或 IL2CPP 包体）时，从 Asset
 {"tool_id":"monkey_pipeline","arguments":["ensure","--install-if-missing","--output","/absolute/new-readiness"],"run_dir":"/absolute/new-invocation","timeout_seconds":900}
 ```
 
-安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见[monkey 接入](references/shared/monkey.md)。
+安装只写独立用户数据目录，联网只用于官方 Release 及固定 Python 依赖；不自动升级已安装工具、引擎或客户端，不执行下载的安装脚本。接口、预算及原生门详见[monkey 接入](../grea/references/providers/monkey.md)。
 
 ## 执行工具与边界
 
-monkey 生成独立 Unity 恢复候选；采用进入工作工程和原生验证由 beaver 执行。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](references/shared/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
+monkey 生成独立 Unity 恢复候选；采用进入工作工程和原生验证由 beaver 执行。 完整执行链的必选依赖、固定绑定和过渡例外见[monkey与beaver调用](../grea/references/monkey与beaver调用.md)，仅在准备执行或依赖变化时加载。
 
-接收第三方工程时按需读[研发交接资料核验](references/shared/研发交接资料核验.md)：原始模块、适配模块、当前源码与已验Player分开；签名不当方法体，本地协议不当原服协议。
+接收第三方工程时按需读[研发交接资料核验](../grea-evidence/references/研发交接资料核验.md)：原始模块、适配模块、当前源码与已验Player分开；签名不当方法体，本地协议不当原服协议。
