@@ -420,7 +420,8 @@ def plan(project, spec, output):
             meta=inside(project,meta_path);guid=meta_guid(read(meta),meta_path)
             policy=declaration.get('identityPolicy','native-object')
             manifest=dict(path=path,role=declaration['role'],reason=declaration['reason'],sourceEvidence=declaration['sourceEvidence'],
-                          identityPolicy=policy,sha256=files[path]['sha256'],bytes=files[path]['bytes'],metaPath=meta_path,
+                          identityPolicy=policy,hasSourceIdentityEvidence=policy=='source-evidence-only',
+                          sha256=files[path]['sha256'],bytes=files[path]['bytes'],metaPath=meta_path,
                           metaSha256=files[meta_path]['sha256'],metaBytes=files[meta_path]['bytes'],guid=guid)
             if policy=='source-evidence-only':
                 evidence=source_only_evidence(project,spec,files,path,guid,declaration,source_evidence_cache)
@@ -559,8 +560,14 @@ def _remove_native_helper(project,helper,fingerprint):
 
 
 def validate_retire_source_evidence(item,location='retirement plan'):
-    if item.get('identityPolicy','native-object')!='source-evidence-only':
-        if 'sourceIdentityEvidence' in item:fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Native-object policy cannot carry source-only evidence')
+    policy=item.get('identityPolicy','native-object');has_evidence='sourceIdentityEvidence' in item
+    if policy not in ('native-object','source-evidence-only'):
+        fail('ASSET_RETIRE_IDENTITY_POLICY',location,'Unknown retirement identity policy in manifest')
+    if type(item.get('hasSourceIdentityEvidence')) is not bool or item['hasSourceIdentityEvidence']!=has_evidence:
+        fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Manifest evidence-presence flag must equal the bound evidence object')
+    if policy!='source-evidence-only':
+        if has_evidence or item['hasSourceIdentityEvidence']:
+            fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Native-object policy cannot carry source-only evidence')
         return
     evidence=item.get('sourceIdentityEvidence')
     expected_fields={'snapshotPath','snapshotSha256','assetPath','targetRecordSha256','targetRecord','targetInputs'}

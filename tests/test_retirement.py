@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from beaver.errors import BeaverError
 from beaver.io import encoded, load, read, sha, write_json
-from beaver.unity import apply, plan, recover, validate_retire_identity_rows, validate_retire_source_evidence
+from beaver.unity import apply, plan, recover, run, validate_retire_identity_rows, validate_retire_source_evidence
 from beaver.output_limits import digest_file
 from test_adoption import candidate
 
@@ -143,6 +143,7 @@ class RetirementTests(unittest.TestCase):
             planned=plan(project,spec,root/'preview');data=load(read(Path(planned['report'])))
             item=data['retireManifest'][0];evidence=item['sourceIdentityEvidence']
             self.assertEqual(item['identityPolicy'],'source-evidence-only')
+            self.assertIs(item['hasSourceIdentityEvidence'],True)
             self.assertEqual(evidence['assetPath'],item['path'])
             self.assertEqual(evidence['targetRecordSha256'],sha(encoded(evidence['targetRecord'])))
             self.assertEqual(evidence['targetInputs'][0]['sha256'],item['sha256'])
@@ -232,8 +233,40 @@ class RetirementTests(unittest.TestCase):
             with patch('beaver.unity.editor_path',return_value=root/'UnityEditor'),patch('beaver.unity.native_lock'),patch('beaver.unity.run',side_effect=native_run):
                 result=apply(planned['report'],root/'transaction',root/'UnityEditor',planned['planSha256'])
             self.assertEqual(result['status'],'verified')
+            self.assertIs(data['retireManifest'][0]['hasSourceIdentityEvidence'],True)
             self.assertFalse(selected.exists());self.assertFalse(Path(str(selected)+'.meta').exists())
             self.assertEqual({row['path'] for row in result['changes']},{'Assets/Game/Resources/Legacy.json','Assets/Game/Resources/Legacy.json.meta'})
+
+    def test_generated_native_job_carries_derived_evidence_presence_flag(self):
+        for source_only in (False,True):
+            with tempfile.TemporaryDirectory() as temp:
+                root=Path(temp).resolve();project,_,spec=fixture(root,source_only=source_only)
+                planned=plan(project,spec,root/'preview');data=load(read(Path(planned['report'])))
+                stage=root/'transaction';stage.mkdir()
+                import base64
+
+                def editor_environment(control,job_path):
+                    return {'BEAVER_NATIVE_JOB_BASE64':base64.b64encode(str(job_path).encode()).decode()}
+
+                def launch(args,cwd,env,stdout,stderr):
+                    job_path=Path(base64.b64decode(env['BEAVER_NATIVE_JOB_BASE64']).decode())
+                    job=load(read(job_path))
+                    report=dict(status='verified',planSha256=job['planSha256'])
+                    write_json(stage/'native-apply.json',report)
+
+                    class Process:
+                        pid=9876
+                        returncode=0
+                        def wait(self,timeout):return 0
+                    return Process()
+
+                with patch('beaver.unity.subprocess.Popen',side_effect=launch), \
+                     patch('beaver.native_environment.editor_environment',side_effect=editor_environment):
+                    run(root/'UnityEditor',project,stage,'apply',data,30)
+                job=load(read(stage/'job-apply.json'))
+                item=job['retireManifest'][0]
+                self.assertIs(item['hasSourceIdentityEvidence'],source_only)
+                self.assertEqual('sourceIdentityEvidence' in item,source_only)
 
     def test_recovery_restores_only_witnessed_deleted_before_images(self):
         with tempfile.TemporaryDirectory() as temp:

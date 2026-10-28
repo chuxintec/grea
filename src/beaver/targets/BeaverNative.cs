@@ -50,7 +50,7 @@ public static class BeaverNative {
     [Serializable] public class MoveRow { public string source,target,guid; public string[] localIds; }
     [Serializable] public class FolderMoveManifest { public string source,target; public long bytes; public MoveEntry[] entries; }
     [Serializable] public class MoveEntry { public string source,target,kind,sha256; public long bytes; }
-    [Serializable] public class RetireItem { public string path,role,reason,sourceEvidence,sha256,metaPath,metaSha256,guid,identityPolicy; public long bytes,metaBytes; public SourceIdentityEvidence sourceIdentityEvidence; }
+    [Serializable] public class RetireItem { public string path,role,reason,sourceEvidence,sha256,metaPath,metaSha256,guid,identityPolicy; public long bytes,metaBytes; public bool hasSourceIdentityEvidence; public SourceIdentityEvidence sourceIdentityEvidence; }
     [Serializable] public class SourceIdentityEvidence { public string snapshotPath,snapshotSha256,assetPath,targetRecordSha256; public CollectorAssetRecord targetRecord; public CollectorInputState[] targetInputs; }
     [Serializable] public class CollectorAssetRecord { public string path,guid,status,identityStatus,error; public int objectCount; public long[] localIds; public string[] types; }
     [Serializable] public class CollectorInputState { public string path,sha256; public long bytes; }
@@ -466,6 +466,7 @@ public static class BeaverNative {
     static string BackupFull(string relative) { return Path.Combine(job.stage,"before",relative); }
     static bool Hash(string value) { return !String.IsNullOrEmpty(value)&&Regex.IsMatch(value,"^[a-f0-9]{64}$"); }
     static void ValidateSourceIdentityEvidence(RetireItem item) {
+        if(!item.hasSourceIdentityEvidence)throw new Exception("Source-evidence-only policy requires an explicit evidence-presence flag: "+item.path);
         var evidence=item.sourceIdentityEvidence;var row=evidence==null?null:evidence.targetRecord;
         if(evidence==null||String.IsNullOrEmpty(evidence.snapshotPath)||!Hash(evidence.snapshotSha256)||evidence.assetPath!=item.path||!Hash(evidence.targetRecordSha256)||
            row==null||row.path!=item.path||!String.Equals(row.guid,item.guid,StringComparison.OrdinalIgnoreCase)||row.status!="unknown"||row.identityStatus!="no-persistent-object"||row.objectCount!=0||
@@ -498,7 +499,7 @@ public static class BeaverNative {
             ValidateSourceIdentityEvidence(item);
             AssetDatabase.ImportAsset(item.path,ImportAssetOptions.ForceSynchronousImport);
             ValidateRetirementBytes(item);
-        } else if(item.sourceIdentityEvidence!=null)throw new Exception("Collector evidence is forbidden by native-object policy: "+item.path);
+        } else if(item.hasSourceIdentityEvidence)throw new Exception("Collector evidence is forbidden by native-object policy: "+item.path);
         var guid=ExistingPathGuid(item.path);
         if(String.IsNullOrEmpty(guid)||guid!=item.guid)throw new Exception("Native retirement GUID missing or differs: "+item.path);
         var objects=PersistentObjects(item.path);var ids=Ids(objects);
@@ -572,7 +573,7 @@ public static class BeaverNative {
                row.sourceEvidenceSnapshotSha256!=evidence.snapshotSha256||row.sourceEvidenceTargetRecordSha256!=evidence.targetRecordSha256)
                 throw new Exception("Source-evidence-only checkpoint must preserve zero objects, empty IDs, and collector digests: "+item.path);
         } else if(item.identityPolicy=="native-object") {
-            if(item.sourceIdentityEvidence!=null||row.identityStatus!="verified"||row.nativeObjectCount<=0||row.localIds.Length==0||row.nativeObjectCount!=row.localIds.Length||
+            if(item.hasSourceIdentityEvidence||row.identityStatus!="verified"||row.nativeObjectCount<=0||row.localIds.Length==0||row.nativeObjectCount!=row.localIds.Length||
                !String.IsNullOrEmpty(row.sourceEvidenceSnapshotSha256)||!String.IsNullOrEmpty(row.sourceEvidenceTargetRecordSha256))
                 throw new Exception("Native-object checkpoint requires verified persistent IDs: "+item.path);
         } else throw new Exception("Unknown retirement identity policy: "+item.path);
