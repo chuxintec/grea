@@ -511,13 +511,26 @@ public static class BeaverNative {
                 localIds=new string[0],sourceEvidenceSnapshotSha256=proof.snapshotSha256,sourceEvidenceTargetRecordSha256=proof.targetRecordSha256};
         }
         if(objects.Length==0||ids.Length==0)throw new Exception("Native-object policy requires persistent local IDs: "+item.path);
-        return new RetireIdentity{path=item.path,guid=guid,identityPolicy=item.identityPolicy,identityStatus="verified",nativeObjectCount=objects.Length,localIds=ids};
+        return new RetireIdentity{path=item.path,guid=guid,identityPolicy=item.identityPolicy,identityStatus="verified",nativeObjectCount=objects.Length,
+            localIds=ids,sourceEvidenceSnapshotSha256="",sourceEvidenceTargetRecordSha256=""};
     }
-    static bool SameRetirementIdentity(RetireIdentity left,RetireIdentity right) {
-        return left!=null&&right!=null&&left.path==right.path&&left.guid==right.guid&&left.identityPolicy==right.identityPolicy&&
-            left.identityStatus==right.identityStatus&&left.nativeObjectCount==right.nativeObjectCount&&
-            left.sourceEvidenceSnapshotSha256==right.sourceEvidenceSnapshotSha256&&left.sourceEvidenceTargetRecordSha256==right.sourceEvidenceTargetRecordSha256&&
-            left.localIds.SequenceEqual(right.localIds);
+    static bool OptionalEvidenceEquals(string left,string right) {
+        if(String.IsNullOrEmpty(left)||String.IsNullOrEmpty(right))return String.IsNullOrEmpty(left)&&String.IsNullOrEmpty(right);
+        return left==right;
+    }
+    static string RetirementIdentityDifference(RetireIdentity left,RetireIdentity right) {
+        if(left==null||right==null)return "identityRow";
+        if(left.path!=right.path)return "path";
+        if(left.guid!=right.guid)return "guid";
+        if(left.identityPolicy!=right.identityPolicy)return "identityPolicy";
+        if(left.identityStatus!=right.identityStatus)return "identityStatus";
+        if(left.nativeObjectCount!=right.nativeObjectCount)return "nativeObjectCount";
+        if(left.identityPolicy=="source-evidence-only"&&(!Hash(left.sourceEvidenceSnapshotSha256)||!Hash(right.sourceEvidenceSnapshotSha256)))return "sourceEvidenceSnapshotSha256";
+        if(left.identityPolicy=="source-evidence-only"&&(!Hash(left.sourceEvidenceTargetRecordSha256)||!Hash(right.sourceEvidenceTargetRecordSha256)))return "sourceEvidenceTargetRecordSha256";
+        if(!OptionalEvidenceEquals(left.sourceEvidenceSnapshotSha256,right.sourceEvidenceSnapshotSha256))return "sourceEvidenceSnapshotSha256";
+        if(!OptionalEvidenceEquals(left.sourceEvidenceTargetRecordSha256,right.sourceEvidenceTargetRecordSha256))return "sourceEvidenceTargetRecordSha256";
+        if(left.localIds==null||right.localIds==null||!left.localIds.SequenceEqual(right.localIds))return "localIds";
+        return "";
     }
     static ProtectedIdentity ProtectedSnapshot(ProtectedItem item) {
         var file=Full(item.path);var meta=Full(item.metaPath);
@@ -649,13 +662,14 @@ public static class BeaverNative {
             if(!File.Exists(file)||!File.Exists(meta)||new FileInfo(file).Length!=item.bytes||HashFile(file)!=item.sha256||
                new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid)
                 throw new Exception("Restored before-image bytes or meta GUID differ: "+item.path);
-            var identity=RetirementIdentity(item);var witness=expected[item.path];
-            if(!SameRetirementIdentity(identity,witness))throw new Exception("Restored identity policy/GUID/localIDs differ from deletion checkpoint: "+item.path);
+            var identity=RetirementIdentity(item);report.retiredAssets.Add(identity);Save();
+            var witness=expected[item.path];var difference=RetirementIdentityDifference(identity,witness);
+            if(difference!="")throw new Exception("Restored identity differs from deletion checkpoint at "+difference+": "+item.path);
         }
         var protectedNow=ProtectedSnapshots();
         if(!SameProtected(prior.protectedRoots,protectedNow))throw new Exception("Protected roots differ during recovery");
         report.selectedPaths.AddRange(prior.selectedPaths);report.deletedPaths.AddRange(prior.deletedPaths);
-        report.recoveredPaths.AddRange(prior.deletedPaths);report.retiredAssets.AddRange(prior.retiredAssets);
+        report.recoveredPaths.AddRange(prior.deletedPaths);
         report.dependencyPaths.AddRange(prior.dependencyPaths);
         report.dependencyClosures.AddRange(prior.dependencyClosures??new List<DependencyClosure>());
         report.protectedRoots.AddRange(protectedNow);report.resources.AddRange(prior.resources??new List<ResourceRetirement>());

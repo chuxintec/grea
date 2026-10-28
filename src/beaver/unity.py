@@ -620,7 +620,10 @@ def validate_retire_identity_rows(manifest,rows,location='native',witnessed=None
         if witnessed is not None:
             prior=witnessed[index]
             for key in ('path','guid','identityPolicy','identityStatus','nativeObjectCount','localIds','sourceEvidenceSnapshotSha256','sourceEvidenceTargetRecordSha256'):
-                if row.get(key)!=prior.get(key):
+                current=row.get(key);previous=prior.get(key)
+                if key in ('sourceEvidenceSnapshotSha256','sourceEvidenceTargetRecordSha256') and policy=='native-object':
+                    current=current or '';previous=previous or ''
+                if current!=previous:
                     fail('ASSET_RETIRE_IDENTITY',location,'Post-restore identity differs from the witnessed pre-delete state')
 
 

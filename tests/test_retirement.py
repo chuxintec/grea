@@ -208,6 +208,8 @@ class RetirementTests(unittest.TestCase):
             with self.assertRaises(BeaverError):validate_retire_identity_rows(manifest,[forged])
             forged_hash=dict(row,sourceEvidenceTargetRecordSha256='0'*64)
             with self.assertRaises(BeaverError):validate_retire_identity_rows(manifest,[forged_hash])
+            forged_missing=dict(row,sourceEvidenceSnapshotSha256=None)
+            with self.assertRaises(BeaverError):validate_retire_identity_rows(manifest,[forged_missing])
             forged_manifest=dict(manifest[0]);forged_manifest['sourceIdentityEvidence']=dict(manifest[0]['sourceIdentityEvidence'],targetRecordSha256='0'*64)
             with self.assertRaises(BeaverError):validate_retire_source_evidence(forged_manifest)
         with tempfile.TemporaryDirectory() as temp:
@@ -215,6 +217,14 @@ class RetirementTests(unittest.TestCase):
             planned=plan(project,spec,root/'native-plan');data=load(read(Path(planned['report'])))
             forged=dict(native_report(data,project)['retiredAssets'][0],identityStatus='no-persistent-object',nativeObjectCount=0,localIds=[])
             with self.assertRaises(BeaverError):validate_retire_identity_rows(data['retireManifest'],[forged])
+
+    def test_native_object_recovery_identity_normalizes_jsonutility_empty_strings(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,_,spec=fixture(root)
+            planned=plan(project,spec,root/'native-plan');data=load(read(Path(planned['report'])))
+            witness=native_report(data,project)['retiredAssets'][0]
+            observed=dict(witness,sourceEvidenceSnapshotSha256=None,sourceEvidenceTargetRecordSha256=None)
+            validate_retire_identity_rows(data['retireManifest'],[observed],witnessed=[witness])
 
     def test_apply_uses_transaction_before_images_and_audits_only_selected_deletions(self):
         with tempfile.TemporaryDirectory() as temp:
