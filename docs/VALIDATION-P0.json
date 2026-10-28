@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "candidateVersion": "0.5.1.dev20261028+fix6",
-  "status": "local-candidate-in-final-verification",
+  "status": "local-candidate-verified",
   "syntheticChecks": {
-    "passed": null,
-    "scope": "new retirement/scene modules full affected regression pending final sealed candidate"
+    "passed": 166,
+    "scope": "all affected P0 plus shared adoption/batch/production/UI/wiring regressions; explicit native-job evidence markers included"
   },
   "native": {
     "editorVersion": "6000.6.2f1",
@@ -50,7 +50,7 @@
     "globalInstall": false,
     "gameProjectWrites": false,
     "productionAdoption": "consumer fix1 readback verified; later candidate production adoption pending",
-    "resourceIsolationExecution": "build filter stays blocked; separately reviewed native assets.retire transaction verified on private fixture",
+    "resourceIsolationExecution": "read-only filter remains blocked; explicit reviewed native-object or zero-object source-evidence-only retirement has bounded native verification",
     "visualParity": "not-established",
     "physicalInput": "not-run",
     "gameplay": "not-run"
@@ -116,9 +116,10 @@
     ],
     "existenceGuidQuery": "OnlyExistingAssets",
     "manualSameBytesMetadataRecoveryRefused": true,
-    "finalInstalledPackageExecuted": false,
+    "finalInstalledPackageExecuted": true,
     "negativeDependencyProof": "same native companion bytes; separately installed retire2 negative, zero deletion and full source unchanged",
-    "currentCandidateEvidence": "new policy code; final installed fixed6 verification pending"
+    "currentCandidateEvidence": "final installed fix6 normal-object and source-only delete/reopen/recover/reopen passed",
+    "nestedEvidencePresence": "explicit derived bool; no spec field"
   },
   "compactTransport": {
     "optionalFlag": "--summary",
@@ -194,13 +195,36 @@
     "nativeObjectCount": 0,
     "localIds": [],
     "identityStatus": "no-persistent-object",
-    "finalCandidateNativeVerification": "pending",
-    "runtimeIdentityAvailability": "not-established"
+    "finalCandidateNativeVerification": "verified; final pinned wheel",
+    "runtimeIdentityAvailability": "not-established",
+    "testedInstalledCandidate": "0.5.1.dev20261028+fix6",
+    "currentImportableObjectRefused": true,
+    "normalPolicyAlsoVerified": true,
+    "originalFullSourceMapRestored": true,
+    "hasSourceIdentityEvidence": "explicit derived runtime bool",
+    "optionalEvidenceDigests": "null/empty normalized only for optional native-object digests; source-only mandatory SHA exact"
   },
   "sceneDerivedSettings": {
     "companionCompiledWithSupportClasses": true,
     "sameGuidPathBoundBeforeAndAfter": true,
     "extraBytes": "blocked",
-    "finalNativeVerification": "pending"
-  }
+    "finalNativeVerification": "same batch.py and BeaverBatch.cs bytes as native-verified installed pre-seal package; separate scene proof retained",
+    "nativeApplyIndependentEditorStarts": 2,
+    "nativeRecoveryVerified": true,
+    "independentBeforeAfterRestoreReadbacks": 3,
+    "sceneMainAndCameraIdsEqual": true,
+    "onlyApprovedPathBytesChanged": true,
+    "disabledFlagPreserved": true,
+    "earlierSameProcessFlushFailureRetained": true,
+    "ordinaryNoSceneJobVerified": true,
+    "persistedSettingsAfterExitVerified": true
+  },
+  "implementationSha256": "8e5d595c15c63c222fcc7ece0013ddd97ef3360d8331d76eb4befc61a6fcafc6",
+  "retainedFailureEvidence": [
+    "initial retirement companion compile failure before deletion",
+    "recently deleted GUID lookup caused uncertain checkpoint, private fixture restoration separately recorded",
+    "same-process Scene settings hash preceded Editor exit flush; fresh reverse plan restored private Scene data without changing failed verdict",
+    "JsonUtility empty nested evidence object wrongly rejected default policy before deletion",
+    "default recovery optional digest null/empty comparison; original bytes restored but Native verdict withheld until fixed candidate passed"
+  ]
 }
