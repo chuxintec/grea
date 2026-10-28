@@ -448,7 +448,8 @@ def apply(plan_path,output,editor,expected,timeout=600):
             preconditions=[dict(path=p,exists=p in preinstalled or v is not None,sha256=sha(preinstalled[p]) if p in preinstalled else v['sha256'] if v else '') for p,v in data['before'].items() if p not in installed and (v is not None or p in data['writeSet'] and not p.endswith('.meta'))]
             job=_native_job(project,stage,'apply',expected,data['writeSet'],preconditions,spec=data['spec'],
                             scene_settings=data.get('sceneSettings'),installs=data['installs'],patches=patches,
-                            requiresReopen=any(s['kind']=='resource.project-settings' for s in data['spec']['steps']))
+                            requiresReopen=(bool(data.get('sceneSettings')) or
+                                            any(s['kind']=='resource.project-settings' for s in data['spec']['steps'])))
             if production:
                 import json
                 from .resources import validate_step

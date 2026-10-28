@@ -141,6 +141,47 @@ EditorBuildSettings:
                 with self.assertRaises(BeaverError) as error:apply(result['report'],root/'run',root/'Unity',result['planSha256'])
             self.assertEqual(error.exception.code,'BATCH_SOURCE_DRIFT');launch.assert_not_called()
 
+    def test_scene_apply_reopens_editor_and_verifies_saved_postimage(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,spec,settings,moves=self.scene_fixture(root)
+            source,target,guid=moves[0]
+            write_json(spec,dict(schemaVersion=2,operation='batch',steps=[dict(kind='asset.move',source=source,target='Assets/Product/Scenes/EntryMoved.unity')]))
+            result=plan(project,spec,root/'plan');data=json.loads(Path(result['report']).read_text())
+            source_path=project/source;target_path=project/'Assets/Product/Scenes/EntryMoved.unity'
+            expected_settings=settings.read_bytes().replace(('path: '+source).encode(),('path: '+target_path.relative_to(project).as_posix()).encode(),1)
+            calls=[]
+
+            def native_launch(editor,project_arg,stage,job,timeout):
+                calls.append(job)
+                if job['mode']=='apply':
+                    target_path.write_bytes(source_path.read_bytes());source_path.unlink()
+                    Path(str(target_path)+'.meta').write_bytes(Path(str(source_path)+'.meta').read_bytes())
+                    Path(str(source_path)+'.meta').unlink()
+                    settings.write_bytes(expected_settings)
+                    observed=state(project,data['writeSet'])
+                    rows=[dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '',bytes=v['bytes'] if v else 0) for p,v in observed.items()]
+                    return 0,dict(status='pending_editor_reopen',planSha256=result['planSha256'],files=rows)
+                self.assertEqual(job['mode'],'verify')
+                expected_preconditions={p:dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '')
+                    for p,v in {**{p:v for p,v in data['before'].items() if p not in data['writeSet']},**state(project,data['writeSet'])}.items()}
+                self.assertEqual({row['path']:row for row in job['preconditions']},expected_preconditions)
+                self.assertEqual(expected_preconditions[data['sceneSettings']['path']]['sha256'],data['sceneSettings']['expectedAfterSha256'])
+                observed=state(project,data['writeSet'])
+                rows=[dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '',bytes=v['bytes'] if v else 0) for p,v in observed.items()]
+                bound=data['sceneSettings'];expected=bound['expectedAfterSha256']
+                readback=dict(path=bound['path'],status='verified',expectedSha256=expected,observedSha256=sha(settings.read_bytes()),movesVerified=True,moves=bound['moves'])
+                return 0,dict(status='verified',planSha256=result['planSha256'],files=rows,sceneSettingsReadback=readback)
+
+            with patch('beaver.batch.editor_path',return_value=root/'Unity'),patch('beaver.batch.native_lock'),patch('beaver.batch.launch',side_effect=native_launch):
+                applied=apply(result['report'],root/'run',root/'Unity',result['planSha256'])
+            self.assertEqual(applied['status'],'verified')
+            self.assertEqual(len(calls),2)
+            self.assertTrue(calls[0]['hasSceneSettings']);self.assertTrue(calls[0]['requiresReopen'])
+            self.assertEqual(calls[1]['mode'],'verify')
+            self.assertEqual(applied['metrics']['editorStarts'],2)
+            journal=json.loads(Path(applied['report']).read_text())
+            self.assertTrue(journal['sceneSettingsGuardMatches'])
+
     def test_scene_postimage_and_recovery_guards_reject_extra_settings_changes(self):
         moves=[dict(source='Assets/Old/Start.unity',target='Assets/Game/Scenes/Start.unity',guid='a'*32)]
         expectation=dict(path='ProjectSettings/EditorBuildSettings.asset',beforeSha256='a'*64,
