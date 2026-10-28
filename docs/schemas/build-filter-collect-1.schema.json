@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "build-filter-collect-1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "platform",
+    "renderPipeline",
+    "assets",
+    "roots"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "platform": {
+      "type": "string",
+      "minLength": 1
+    },
+    "renderPipeline": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^Assets/",
+        "minLength": 8
+      },
+      "minItems": 0,
+      "maxItems": 256,
+      "uniqueItems": true
+    },
+    "roots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^Assets/",
+        "minLength": 8
+      },
+      "minItems": 0,
+      "maxItems": 256,
+      "uniqueItems": true
+    }
+  }
+}

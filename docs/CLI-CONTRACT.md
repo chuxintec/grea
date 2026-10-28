@@ -1,6 +1,6 @@
 # CLI contract v1
 
-当前版本 0.5.0，沿用 `beaver-result/1`。除保留原始输出和退出码的 `tool <id>` 子命令外，业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
+当前本地开发候选 0.5.1.dev20261028（正式基线 0.5.0），沿用 `beaver-result/1`。除保留原始输出和退出码的 `tool <id>` 子命令外，业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
 退出 0=ok；1=partial；3=blocked/not_run（包括无效参数与前置条件未满足）；2=failed（执行/读回失败）。帮助为 argparse 文本；没有任意 shell 透传。
 
 `actualChanges` 是数组，每项为**非空路径字符串或对象摘要**，消费者须保留类型、顺序及原值。`batch/production apply` 通常返回已变资源相对路径字符串，`unity apply` 沿用原生变化记录；工程绑定、迁移、采用/恢复和失败检查点可返回操作/数量/身份或待核写入对象。对象内部字段由操作定义，不能将整个数组限定为对象，也不能把字符串强转为对象后丢失原值；数字、布尔、null 和嵌套数组不是合法变更项。对应 JSON Schema 项合同为 `{"oneOf":[{"type":"string","minLength":1},{"type":"object"}]}`。这是既有固定 producer 的合同澄清，不改变其输出或身份。
@@ -117,3 +117,9 @@ Variant允许可保存的属性、事件、组件与新增child override；继�
 ## v0.5 UI 工程能力（含原v0.4范围）
 
 新制品0.5.0系列保留旧固定0.4.0 toolkit与0.3事务。公开入口 `ui inspect/analyze/repair-plan`、`wiring plan`、`diagnostics summarize` 见[完整输入和执行边界](DEVELOPMENT-v0.5.md)、[采集合同](UI-INSPECTION.md)、[诊断合同](DIAGNOSTICS.md)。接线和修正仅生成已有batch计划，apply/recover合同不变。`binding.reference`/`binding.event`原生操作在写入时核编译类型/精确身份/当前空值或显式替换；不支持的情况拒绝，不推测fileID或创建空方法。
+
+## Local P0 development commands
+
+Development candidate `0.5.1.dev20261028` adds `structure inspect/plan`, `build-filter collect/plan`, and `native readback`. This identifies a local candidate; published 0.5.0 artifacts and installations are unchanged. Detailed request and result contracts: [structure audit](STRUCTURE-AUDIT.md), [build filtering](BUILD-FILTER.md), [native readback/capture](NATIVE-READBACK.md). Structure plans use existing batch transactions; native collectors use the existing project/Editor locks and helper ownership cleanup. A blocked plan is not executable, dynamic consumers remain explicit, and preview pixels never imply gameplay or visual parity.
+
+Machine-readable request schemas are in `docs/schemas/`: native-readback-request-1, build-filter-collect-1, structure-mappings-1 and structure-exceptions-1. Cross-field path selection, total pixel/byte budgets, current content hashes and native identities are additionally enforced by the commands. Source provenance uses upstream `monkey-shader-handoff/1`; the independent structure exception file is not an automatic conversion of legacy project configuration exceptions. Folder moves extend the existing `unity plan/apply` route with explicit `directoryMoves`; see [folder transactions](FOLDER-MOVES.md).

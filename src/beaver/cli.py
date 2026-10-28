@@ -23,6 +23,9 @@ def capabilities():
         dict(id='ui.inspect/analyze/repair-plan',state='requires_provider',provider='Unity 6000.6.2f1 uGUI/TMP for collection',effects='read-temporary-helper-and-report',verification='native geometry/compiled fields; static, runtime and caller-supplied provenance separated'),
         dict(id='wiring.plan',state='implemented',effects='plan-output',verification='compiled types and exact identities; ambiguous targets blocked; existing batch apply required'),
         dict(id='diagnostics.summarize',state='implemented',effects='read-and-report',verification='bounded evidence and explicit execution state; never replays writes'),
+        dict(id='structure.inspect/plan',state='implemented',effects='read-and-plan-output',verification='static consumers plus exact native identity; migration uses existing batch transactions'),
+        dict(id='build-filter.collect/plan',state='requires_provider',provider='matching Unity Editor and active target/pipeline',effects='read-temporary-helper-and-report',verification='native dependency snapshot and hash-bound provenance; no automatic deletion or shader replacement'),
+        dict(id='native.readback',state='requires_provider',provider='matching Unity Editor; graphics for capture',effects='read-temporary-helper-and-report',verification='SerializedObject and persistent IDs; owned preview capture; no gameplay or visual acceptance'),
         dict(id='production.plan/apply/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit project profile',effects='declared-resource-config-code-writes',verification='schema3; native apply/reopen/recover verified on private fixtures; formal consumer evidence is project-specific'),
         dict(id='config3.validate/generate/compare',state='implemented',effects='read-and-create-only-generated-code',verification='strict shared schema; actual C# and Go JSON readers; caller must run generated consumer'),
         dict(id='csharp.inspect/rename/rename-sequence',state='requires_provider',provider='matching Unity Bee context + .NET Roslyn SDK',effects='read-and-create-only-source-candidates',verification='ordered semantic rename, analyzers/generators, exact final fileEdits; dynamic unknowns block'),
@@ -221,10 +224,51 @@ def parser():
     diagnostic.add_argument('--input',action='append',required=True)
     diagnostic.add_argument('--out',required=True)
     diagnostic.add_argument('--limit',type=int,default=100)
+    structure=sub.add_parser('structure').add_subparsers(dest='action',required=True)
+    si=structure.add_parser('inspect');si.add_argument('--project',required=True);si.add_argument('--snapshot');si.add_argument('--exceptions');si.add_argument('--out',required=True)
+    sp=structure.add_parser('plan')
+    for f in ('audit','mappings','out'):sp.add_argument('--'+f,required=True)
+    sp.add_argument('--snapshot')
+    native=sub.add_parser('native').add_subparsers(dest='action',required=True).add_parser('readback')
+    for f in ('project','spec','out','editor-path'):native.add_argument('--'+f,required=True)
+    native.add_argument('--timeout',type=int,default=600)
+    bf=sub.add_parser('build-filter').add_subparsers(dest='action',required=True)
+    bc=bf.add_parser('collect')
+    for f in ('project','spec','out','editor-path'):bc.add_argument('--'+f,required=True)
+    bc.add_argument('--timeout',type=int,default=600)
+    bp=bf.add_parser('plan')
+    for f in ('project','snapshot','sources','target','out'):bp.add_argument('--'+f,required=True)
     return p
 
 
 def dispatch(a):
+    if a.command in ('structure','build-filter','native'):
+        from .io import safe,read,load,new_output,write_json
+        if a.command=='native':
+            from .native_readback import inspect
+            return inspect(a.project,a.spec,a.out,a.editor_path,a.timeout)
+        if a.command=='build-filter' and a.action=='collect':
+            from .build_filter import collect
+            return collect(a.project,a.spec,a.out,a.editor_path,a.timeout)
+        if a.command=='structure':
+            from .structure_audit import inspect,build_plan
+            if a.action=='inspect':
+                inputs=[a.project]+[x for x in (a.snapshot,a.exceptions) if x]
+                data=inspect(a.project,load(read(a.snapshot)) if a.snapshot else None,load(read(a.exceptions)) if a.exceptions else None)
+            else:
+                inputs=[a.audit,a.mappings]+([a.snapshot] if a.snapshot else [])
+                data=build_plan(load(read(a.audit)),load(read(a.mappings)),load(read(a.snapshot)) if a.snapshot else None)
+            name='structure-'+a.action+'.json'
+        else:
+            from .build_filter import plan
+            inputs=[a.project,a.snapshot,a.sources,a.target]
+            data=plan(a.project,load(read(a.target)),load(read(a.snapshot)),load(read(a.sources)))
+            name='build-filter-plan.json'
+        stage=new_output(a.out,inputs);data['provenance']='caller-supplied snapshot; native collection origin not independently authenticated' if getattr(a,'snapshot',None) else 'filesystem inspection; no native snapshot'
+        if 'planSha256' in data:
+            data['planSha256']=sha(json.dumps({k:v for k,v in data.items() if k!='planSha256'},ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8'))
+        write_json(stage/name,data)
+        return dict(data,report=str(stage/name))
     if a.command=='ui':
         if a.action=='repair-plan':
             from .ui_repairs import plan
@@ -379,6 +423,7 @@ def main(argv=None):
         if data.get('status') in ('stale_plan','migration_order_blocked','blocked_existing_output','partial_or_untracked_database'):status='blocked'
         if data.get('status')=='failed_or_needs_action':status='failed'
         if data.get('status') in ('execution_unknown_or_failed','execution_unknown_or_partial'):status='partial'
+        if a.command=='build-filter' and a.action=='plan' and data.get('execution',{}).get('status')=='blocked':status='blocked'
         base.update(status=status, data=data)
         result_path = data.get("report")
         if result_path and Path(result_path).is_file():
@@ -412,6 +457,8 @@ def main(argv=None):
         base.update(status="blocked" if blocked else "failed",
                     diagnostics=[error.as_dict() if isinstance(error, BeaverError) else dict(code="IO_OR_INPUT", location="input", message=str(error))])
         if isinstance(error,BeaverError):
+            if error.code=='READBACK_PROJECT_MODIFIED':
+                base['actualChanges']=[dict(status='inspect_source_guard',guard=error.location,reason='Read-only guard failed; inspect witnessed paths and helper before retry')]
             location=Path(error.location)
             if location.is_dir() and (location/'journal.json').is_file():
                 base['artifacts'].append(dict(path=str(location/'journal.json'),sha256=sha((location/'journal.json').read_bytes())))

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "candidateVersion": "0.5.1.dev20261028",
+  "status": "local-candidate-verified",
+  "implementationSha256": "f9bc89c74cda41b173ed4d20fc4c3f9425950836f580a8b3f491be87fd8abfd3",
+  "syntheticChecks": {
+    "passed": 55,
+    "scope": "affected CLI, reference scanner, native plans, structure, filtering, readback and folder transactions"
+  },
+  "native": {
+    "editorVersion": "6000.6.2f1",
+    "independentSyntheticProjects": 2,
+    "persistentFields": [
+      "nested-empty-string",
+      "legal-null-reference",
+      "aliased-nested-property",
+      "Sprite-subasset-negative-localID",
+      "saved-scene-camera-field"
+    ],
+    "previewCaptureDimensions": [
+      [
+        750,
+        1334
+      ],
+      [
+        320,
+        480
+      ]
+    ],
+    "transparentNegative": {
+      "width": 64,
+      "height": 96,
+      "nonTransparentPixels": 0
+    },
+    "sourceGuardsPassed": true,
+    "buildDependencyCollection": true,
+    "folderForwardAndReviewedReverse": {
+      "folders": 2,
+      "assets": 6,
+      "independentReopen": true,
+      "identityMappingEqual": true,
+      "originalSourceAndMetaBytesRestored": true,
+      "componentSha256": {
+        "unity.py": "fece7b1e788bf922cc09b8b8fd30168505165a9f1e80f214b21b241d2aa703d6",
+        "targets/BeaverNative.cs": "01e19938250bb318a584b50c2784a7449613bec0f850801a99abbaa2db60a458"
+      }
+    }
+  },
+  "boundaries": {
+    "formalReleaseModified": false,
+    "globalInstall": false,
+    "gameProjectWrites": false,
+    "productionAdoption": "pending-consumer",
+    "resourceIsolationExecution": "blocked-plan-only",
+    "visualParity": "not-established",
+    "physicalInput": "not-run",
+    "gameplay": "not-run"
+  }
+}

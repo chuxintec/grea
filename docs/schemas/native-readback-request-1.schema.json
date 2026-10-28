@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "native-readback-request-1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "assets"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^Assets/",
+        "minLength": 8
+      },
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true
+    },
+    "queries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "asset",
+          "nodePath",
+          "componentType",
+          "propertyPath"
+        ],
+        "properties": {
+          "asset": {
+            "type": "string",
+            "pattern": "^Assets/",
+            "minLength": 8
+          },
+          "nodePath": {
+            "type": "string"
+          },
+          "componentType": {
+            "type": "string"
+          },
+          "propertyPath": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 1024
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "propertyPath"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "propertyPath": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 64
+    },
+    "capture": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "asset",
+            "width",
+            "height"
+          ],
+          "properties": {
+            "asset": {
+              "type": "string",
+              "pattern": "^Assets/",
+              "minLength": 8
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "cameraPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "camera": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "position",
+                "euler",
+                "orthographic",
+                "size",
+                "background"
+              ],
+              "properties": {
+                "position": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "euler": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "orthographic": {
+                  "type": "boolean"
+                },
+                "size": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "background": {
+                  "type": "array",
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "camera"
+              ],
+              "not": {
+                "required": [
+                  "cameraPath"
+                ]
+              }
+            },
+            {
+              "required": [
+                "cameraPath"
+              ],
+              "not": {
+                "required": [
+                  "camera"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

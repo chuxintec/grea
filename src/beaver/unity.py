@@ -6,9 +6,10 @@ import plistlib
 import signal
 import subprocess
 import time
+import unicodedata
 from .io import safe, inside, read, load, sha, encoded, write_json, new_output
 from .errors import fail,BeaverError
-from .output_limits import digest_file
+from .output_limits import digest_file,copy_verified
 from .adoption import project_files, native_lock
 from .transaction_fs import lock
 from .context import inspect
@@ -17,6 +18,8 @@ from .output_limits import BUILD_FILE_BYTES
 HELPER_ROOT = "Assets/BeaverTools"
 HELPER = HELPER_ROOT + "/Editor/BeaverNative.cs"
 VERSION = "6000.6.2f1"
+MOVE_MANIFEST_ENTRIES = 10000
+MOVE_MANIFEST_BYTES = 256 * 1024**2
 
 
 def identity():
@@ -27,8 +30,53 @@ def identity():
 def asset_path(value, suffix):
     if not isinstance(value, str) or not value.startswith("Assets/") or not value.endswith(suffix) or "\\" in value or any(p in ("", ".", "..") for p in value.split("/")):
         fail("UNITY_ASSET_PATH", str(value), "Expected canonical Assets path with " + suffix)
-    if value.startswith(HELPER_ROOT + "/"):
+    if value == HELPER_ROOT or value.startswith(HELPER_ROOT + "/"):
         fail("UNITY_RESERVED_PATH", value, "Reserved temporary Editor helper root")
+
+
+def asset_folder_path(value):
+    if not isinstance(value, str) or not value.startswith("Assets/") or "\\" in value or any(p in ("", ".", "..") for p in value.split("/")):
+        fail("UNITY_ASSET_PATH", str(value), "Expected canonical folder path below Assets")
+    if value == HELPER_ROOT or value.startswith(HELPER_ROOT + "/"):
+        fail("UNITY_RESERVED_PATH", value, "Reserved temporary Editor helper root")
+
+
+def folder_move_manifest(project, files, source, target):
+    """Bind a directory move to the complete imported subtree and its file hashes."""
+    root=inside(project,source)
+    if not root.is_dir():
+        fail('ASSET_MOVE_SOURCE',source,'Expected an imported Unity folder')
+    entries=[];total=0
+    directories=[root,*sorted(p for p in root.rglob('*') if p.is_dir())]
+    for directory in directories:
+        rel=directory.relative_to(project).as_posix()
+        meta=rel+'.meta'
+        if meta not in files:
+            fail('ASSET_MOVE_INCOMPLETE_META',meta,'Every moved folder must have its existing Unity meta file')
+        entries.append(dict(source=rel,target=target+rel[len(source):],kind='folder'))
+    prefix=source+'/'
+    paths=[p for p in files if p==source+'.meta' or p.startswith(prefix)]
+    if source+'.meta' not in files:
+        fail('ASSET_MOVE_INCOMPLETE_META',source+'.meta','Source folder meta is required')
+    for path in paths:
+        rel=path[len(source):]
+        if path.endswith('.meta'):
+            # Folder .meta files have a matching directory entry; retain them as
+            # ordinary manifest files so transaction audit sees exact bytes.
+            kind='meta'
+        else:
+            kind='asset'
+            if path+'.meta' not in files:
+                fail('ASSET_MOVE_INCOMPLETE_META',path+'.meta','Every moved asset must have its existing Unity meta file')
+        row=files[path]
+        total+=row['bytes']
+        entries.append(dict(source=path,target=target+rel,kind=kind,sha256=row['sha256'],bytes=row['bytes']))
+    # Directories are represented by their own paths and their meta file rows.
+    # Reject symlinks and anything that Unity has not imported with a .meta.
+    if len(entries)>MOVE_MANIFEST_ENTRIES or total>MOVE_MANIFEST_BYTES:
+        fail('ASSET_MOVE_BUDGET',source,'Folder manifest exceeds 10000 entries or 256 MiB; split into reviewed independent subtrees')
+    entries.sort(key=lambda row:(row['source'].casefold(),row['source']))
+    return dict(source=source,target=target,entries=entries,bytes=total)
 
 
 def validate_spec(doc):
@@ -123,11 +171,12 @@ def validate_spec(doc):
         if doc.get('maxSize') not in (32,64,128,256,512,1024,2048,4096,8192) or type(doc.get('alphaIsTransparency'))is not bool:
             fail('SPRITE_IMPORT','spec','Explicit maxSize and alphaIsTransparency required')
     elif operation == 'assets.move':
-        allowed |= {'moves'}
-        if not isinstance(doc.get('moves'),list) or not 1<=len(doc['moves'])<=10000:
-            fail('ASSET_MOVES','spec','Expected 1..10000 explicit asset moves')
+        allowed |= {'moves','directoryMoves'}
+        file_moves=doc.get('moves',[]);directory_moves=doc.get('directoryMoves',[])
+        if not isinstance(file_moves,list) or not isinstance(directory_moves,list) or not (file_moves or directory_moves) or len(file_moves)>10000 or len(directory_moves)>100:
+            fail('ASSET_MOVES','spec','Expected 1..10000 file moves and/or 1..100 directory moves')
         sources=set();targets=set()
-        for move in doc['moves']:
+        for move in file_moves:
             if set(move)!={'source','target'}:
                 fail('ASSET_MOVE','spec','Expected source and target only')
             for key in ('source','target'):
@@ -137,8 +186,20 @@ def validate_spec(doc):
             if move['source'] in sources or move['target'] in targets or Path(move['source']).suffix!=Path(move['target']).suffix:
                 fail('ASSET_MOVE_AMBIGUOUS','spec','Duplicate endpoints or extension change')
             sources.add(move['source']);targets.add(move['target'])
+        for move in directory_moves:
+            if set(move)!={'source','target'}:
+                fail('ASSET_MOVE','spec','Expected source and target only for each directory move')
+            for key in ('source','target'):asset_folder_path(move[key])
+            if move['source']==move['target'] or move['source'] in sources or move['target'] in targets:
+                fail('ASSET_MOVE_AMBIGUOUS','spec','Duplicate move endpoints')
+            sources.add(move['source']);targets.add(move['target'])
         if sources & targets:
             fail('ASSET_MOVE_CYCLE','spec','Overlapping move endpoints require separate reviewed batches')
+        endpoints=list(sources)+list(targets)
+        for i,left in enumerate(endpoints):
+            for right in endpoints[i+1:]:
+                if left.startswith(right+'/') or right.startswith(left+'/'):
+                    fail('ASSET_MOVE_OVERLAP','spec','Nested source/target paths require separate reviewed batches')
     else:
         fail("UNITY_OPERATION", str(operation), "Unsupported native operation")
     if set(doc) - allowed or doc.get("schemaVersion") != 1:
@@ -176,11 +237,51 @@ def plan(project, spec, output):
             if doc[k] in files or doc[k]+'.meta' in files:
                 fail('UNITY_OUTPUT_EXISTS',doc[k],'Create-only output already exists')
     elif doc['operation']=='assets.move':
-        for move in doc['moves']:
+        for move in doc.get('moves',[]):
             if move['source'] not in files or move['source']+'.meta' not in files:
-                fail('ASSET_MOVE_SOURCE',move['source'],'Expected imported file with meta; folder moves unsupported')
+                fail('ASSET_MOVE_SOURCE',move['source'],'Expected imported file with meta')
             if inside(project,move['target']).exists() or inside(project,move['target']+'.meta').exists():
                 fail('ASSET_MOVE_DESTINATION',move['target'],'Destination occupied')
+        move_manifest=[]
+        for move in doc.get('directoryMoves',[]):
+            manifest=folder_move_manifest(project,files,move['source'],move['target'])
+            if inside(project,move['target']).exists() or inside(project,move['target']+'.meta').exists():
+                fail('ASSET_MOVE_DESTINATION',move['target'],'Destination folder or meta is occupied')
+            move_manifest.append(manifest)
+        selected={path for move in doc.get('moves',[]) for path in (move['source'],move['source']+'.meta')}
+        selected.update(row['source'] for manifest in move_manifest for row in manifest['entries'] if 'sha256' in row)
+        manifest_entries=sum(len(manifest['entries']) for manifest in move_manifest)+2*len(doc.get('moves',[]))
+        selected_bytes=sum(files[path]['bytes'] for path in selected)
+        if manifest_entries>MOVE_MANIFEST_ENTRIES or selected_bytes>MOVE_MANIFEST_BYTES:
+            fail('ASSET_MOVE_BUDGET','spec','Complete move transaction exceeds 10000 manifest entries or 256 MiB; split into reviewed independent subtrees')
+        moved_file_paths={row['source'] for manifest in move_manifest for row in manifest['entries'] if 'sha256' in row}
+        moved_file_paths.update(path for move in doc.get('moves',[]) for path in (move['source'],move['source']+'.meta'))
+        target_paths={row['target'] for manifest in move_manifest for row in manifest['entries']}
+        target_paths.update(path for move in doc.get('moves',[]) for path in (move['target'],move['target']+'.meta'))
+        folded={}
+        fold=lambda path:unicodedata.normalize('NFC',path).casefold()
+        for path in files:folded.setdefault(fold(path),[]).append(path)
+        existing_dirs=[]
+        for path in inside(project,'Assets').rglob('*'):
+            if path.is_dir():existing_dirs.append(path.relative_to(project).as_posix())
+        moving_paths=set(moved_file_paths)
+        moving_paths.update(row['source'] for manifest in move_manifest for row in manifest['entries'])
+        source_paths={fold(path) for path in moving_paths}
+        target_folds=[]
+        for target in target_paths:
+            target_fold=fold(target)
+            if target_fold in target_folds:
+                fail('ASSET_MOVE_CASE_COLLISION',target,'Multiple destinations collide by case/Unicode fold')
+            target_folds.append(target_fold)
+            if target_fold in source_paths:
+                fail('ASSET_MOVE_CASE_COLLISION',target,'Destination collides with a moving source by case/Unicode fold')
+            collision=[path for path in folded.get(target_fold,[]) if path not in moved_file_paths]
+            if collision:
+                fail('ASSET_MOVE_CASE_COLLISION',target,'Destination collides with an existing path by case/Unicode fold')
+            prefixes={parent.as_posix() for parent in Path(target).parents if parent.as_posix() not in ('.','Assets')}
+            for prefix in prefixes:
+                if any(fold(existing)==fold(prefix) and existing!=prefix for existing in existing_dirs):
+                    fail('ASSET_MOVE_CASE_COLLISION',prefix,'Destination parent casing differs from an existing Unity folder')
     elif doc['operation']=='project.import':
         pass
     elif doc['operation']=='sprite.configure':
@@ -196,6 +297,7 @@ def plan(project, spec, output):
                 writableRoots=['Assets'] if doc['operation'] != 'build.macos' else [],
                 before=files,spec=doc,specSha256=sha(raw),
                 sourceSha256=sha(encoded(files)),native='not_run')
+    if doc['operation']=='assets.move':data['folderMoveManifest']=move_manifest
     data['editorInitializationFiles']=['ProjectSettings/SceneTemplateSettings.json'] if doc['operation']=='ui.create' and 'ProjectSettings/SceneTemplateSettings.json' not in files else []
     data['nativeInitializationPaths']=[]
     if doc['operation']=='project.import':
@@ -228,6 +330,7 @@ def run(editor, project, stage, mode, plan, timeout):
         fail('UNITY_TIMEOUT',str(timeout),'Expected 1..1200 seconds')
     job=dict(plan['spec'],targetRoot=str(project),stage=str(stage),mode=mode,
              planSha256=sha(encoded(plan)),sourceSha256=plan['sourceSha256'])
+    if plan['spec']['operation']=='assets.move':job['folderMoveManifest']=plan.get('folderMoveManifest',[])
     jobfile=stage/('job-'+mode+'.json')
     write_json(jobfile,job)
     args=[str(editor),'-batchmode','-nographics','-projectPath',str(project),'-executeMethod','BeaverNative.Run','-logFile',str(stage/(mode+'.log'))]
@@ -269,6 +372,20 @@ def apply(plan_path, output, editor, expected, timeout=600):
         native_lock(project)
         if source_files(project)!=data['before']:
             fail('UNITY_SOURCE_DRIFT',str(project),'Project changed after plan')
+        if data['spec']['operation']=='assets.move':
+            backup_paths={path for move in data['spec'].get('moves',[]) for path in (move['source'],move['source']+'.meta')}
+            backup_paths.update(row['source'] for manifest in data.get('folderMoveManifest',[]) for row in manifest['entries'] if 'sha256' in row)
+            images=[]
+            try:
+                for rel in sorted(backup_paths):
+                    row=data['before'][rel];source=inside(project,rel);destination=inside(stage/'before',rel)
+                    copy_verified(source,destination,row['sha256'],row['bytes'])
+                    images.append(dict(path=rel,sha256=row['sha256'],bytes=row['bytes']))
+            except BaseException as error:
+                journal.update(status='before-image-failed',beforeImages=images,diagnostic=str(error));write_json(stage/'journal.json',journal)
+                raise
+            journal.update(status='before-images-complete',beforeImages=images,checkpoint='source-bytes-verified')
+            write_json(stage/'journal.json',journal)
         helper=inside(project,HELPER)
         if inside(project,HELPER_ROOT).exists() or inside(project,HELPER_ROOT+'.meta').exists():
             fail('UNITY_HELPER_CONFLICT',HELPER_ROOT,'Reserved helper root occupied')
@@ -284,6 +401,8 @@ def apply(plan_path, output, editor, expected, timeout=600):
         fingerprint=digest_file(helper)
         try:
             applied=run(editor,project,stage,'apply',data,timeout)
+            journal.update(status='native-apply-complete-pending-reopen',nativeApplyReadback=applied)
+            write_json(stage/'journal.json',journal)
             reopened=run(editor,project,stage,'verify',data,timeout) if data['spec']['operation'] not in ('build.macos','validate.play') else applied
             journal.update(status='native-complete-pending-source-audit',nativeReadback=reopened)
         except BaseException:
@@ -336,14 +455,17 @@ def apply(plan_path, output, editor, expected, timeout=600):
             if any(row['path']!=data['spec']['assetPath']+'.meta' for row in changes):
                 audit_fail('UNITY_UNEXPECTED_CHANGE',str(project),'Sprite configuration changed other source')
         if data['spec']['operation']=='assets.move':
-            allowed={move[k]+suffix for move in data['spec']['moves'] for k in ('source','target') for suffix in ('','.meta')}
-            for move in data['spec']['moves']:
+            allowed={move[k]+suffix for move in data['spec'].get('moves',[]) for k in ('source','target') for suffix in ('','.meta')}
+            for manifest in data.get('folderMoveManifest',[]):
+                allowed.update(row['source'] for row in manifest['entries'])
+                allowed.update(row['target'] for row in manifest['entries'])
+            for move in [*data['spec'].get('moves',[]),*data['spec'].get('directoryMoves',[])]:
                 for parent in Path(move['target']).parents:
                     if parent.as_posix() not in ('.','Assets'):allowed.add(parent.as_posix()+'.meta')
             for row in changes:
                 if row['path'] not in allowed:
                     audit_fail('UNITY_UNEXPECTED_CHANGE',row['path'],'Move changed another source file')
-            if applied.get('moves')!=reopened.get('moves'):
+            if applied.get('moves')!=reopened.get('moves') or applied.get('moveIdentities',[])!=reopened.get('moveIdentities',[]):
                 audit_fail('UNITY_MOVE_READBACK',str(stage),'Move GUID/localIDs differ after reopen')
         if data['spec']['operation']=='build.macos':
             try:

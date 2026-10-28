@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -35,6 +36,7 @@ public static class BeaverNative {
         public Node[] nodes;
         public Edit[] edits;
         public Move[] moves;
+        public FolderMoveManifest[] folderMoveManifest;
         public string assetPath;
         public float pixelsPerUnit;
         public float[] pivot;
@@ -42,6 +44,8 @@ public static class BeaverNative {
     }
     [Serializable] public class Move { public string source,target; }
     [Serializable] public class MoveRow { public string source,target,guid; public string[] localIds; }
+    [Serializable] public class FolderMoveManifest { public string source,target; public long bytes; public MoveEntry[] entries; }
+    [Serializable] public class MoveEntry { public string source,target,kind,sha256; public long bytes; }
     [Serializable] public class Row {
         public string path,parent,guid;
         public long localId;
@@ -63,6 +67,7 @@ public static class BeaverNative {
         public ulong buildBytes;
         public int buildErrors;
         public List<MoveRow> moves=new List<MoveRow>();
+        public List<MoveRow> moveIdentities=new List<MoveRow>();
         public int playFrames,playErrors;
         public double playSeconds;
         public string spriteGuid;
@@ -115,6 +120,13 @@ public static class BeaverNative {
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe asset path");
         return Path.Combine(job.targetRoot,relative);
+    }
+    static string HashFile(string path) {
+        using(var stream=File.OpenRead(path)) using(var sha=SHA256.Create()) {
+            var bytes=sha.ComputeHash(stream);var result=new System.Text.StringBuilder(bytes.Length*2);
+            foreach(var value in bytes)result.Append(value.ToString("x2"));
+            return result.ToString();
+        }
     }
     static void Folder(string relative) {
         var parent=Path.GetDirectoryName(relative).Replace('\\','/');
@@ -339,17 +351,45 @@ public static class BeaverNative {
         report.spritePixelsPerUnit=sprite.pixelsPerUnit;report.spritePivot=sprite.pivot;report.spriteRect=sprite.rect;
     }
     static string[] Ids(string path) {
-        return AssetDatabase.LoadAllAssetsAtPath(path).Where(a=>a!=null).Select(a=>{
+        var main=AssetDatabase.LoadMainAssetAtPath(path);
+        return AssetDatabase.LoadAllAssetsAtPath(path).Concat(main==null?new UnityEngine.Object[0]:new[]{main}).Where(a=>a!=null).Distinct().Select(a=>{
             string guid;long id;if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(a,out guid,out id))throw new Exception("Missing asset identity");
             return guid+":"+id+":"+a.GetType().FullName;
         }).OrderBy(s=>s,StringComparer.Ordinal).ToArray();
     }
     static void Moves(bool write) {
-        foreach(var move in job.moves) {
+        var fileMoves=job.moves??new Move[0];var folderMoves=job.folderMoveManifest??new FolderMoveManifest[0];
+        // Validate every endpoint and complete manifest before the first move.
+        foreach(var move in fileMoves) {
+            bool verifying=job.mode=="verify";var expected=verifying?move.target:move.source;var other=verifying?move.source:move.target;
+            if(!File.Exists(Full(expected))||!File.Exists(Full(expected+".meta")))throw new Exception("Move source or meta missing: "+expected);
+            if(!verifying&&(File.Exists(Full(other))||File.Exists(Full(other+".meta"))||Directory.Exists(Full(other))||AssetDatabase.IsValidFolder(other)))throw new Exception("Move destination occupied: "+other);
+        }
+        foreach(var manifest in folderMoves) {
+            bool verifying=job.mode=="verify";
+            var expectedPath=verifying?manifest.target:manifest.source;var otherPath=verifying?manifest.source:manifest.target;
+            if(manifest.entries==null||!Directory.Exists(Full(expectedPath))||!File.Exists(Full(expectedPath+".meta")))throw new Exception("Folder source or manifest missing: "+expectedPath);
+            if(!verifying&&(Directory.Exists(Full(otherPath))||AssetDatabase.IsValidFolder(otherPath)||File.Exists(Full(otherPath))||File.Exists(Full(otherPath+".meta"))))throw new Exception("Folder destination occupied: "+otherPath);
+            foreach(var entry in manifest.entries) {
+                var expectedEntry=verifying?entry.target:entry.source;
+                if(entry.kind=="folder") {
+                    if(!Directory.Exists(Full(expectedEntry)))throw new Exception("Manifest folder missing: "+expectedEntry);
+                } else {
+                    var source=Full(expectedEntry);
+                    if(!File.Exists(source)||HashFile(source)!=entry.sha256||new FileInfo(source).Length!=entry.bytes)throw new Exception("Folder source bytes drifted: "+expectedEntry);
+                }
+            }
+        }
+        // Register/create all destination parents before AssetDatabase mutation.
+        if(write) {
+            foreach(var move in fileMoves)Folder(move.target);
+            foreach(var move in folderMoves)Folder(move.target);
+        }
+        foreach(var move in fileMoves) {
             var row=new MoveRow{source=move.source,target=move.target};
             if(write) {
                 row.guid=AssetDatabase.AssetPathToGUID(move.source);row.localIds=Ids(move.source);
-                if(String.IsNullOrEmpty(row.guid)||File.Exists(Full(move.target))||File.Exists(Full(move.target+".meta")))throw new Exception("Invalid move endpoints");
+                if(String.IsNullOrEmpty(row.guid))throw new Exception("Invalid move source identity");
                 report.moves.Add(row);Save();Folder(move.target);
                 var error=AssetDatabase.MoveAsset(move.source,move.target);if(error!="")throw new Exception(error);
                 if(AssetDatabase.AssetPathToGUID(move.target)!=row.guid||!row.localIds.SequenceEqual(Ids(move.target)))throw new Exception("Move changed GUID/localID");
@@ -359,7 +399,37 @@ public static class BeaverNative {
                 if(String.IsNullOrEmpty(row.guid)||File.Exists(Full(move.source)))throw new Exception("Move save/reopen mismatch");
             }
         }
+        foreach(var manifest in folderMoves) {
+            if(write) {
+                var before=FolderIdentities(manifest,false);report.moveIdentities.AddRange(before);Save();
+                var error=AssetDatabase.MoveAsset(manifest.source,manifest.target);if(error!="")throw new Exception(error);
+                var after=FolderIdentities(manifest,true);
+                if(!SameIdentities(before,after))throw new Exception("Folder move changed GUID/localID or path mapping: "+manifest.source);
+                Save();
+            } else {
+                var observed=FolderIdentities(manifest,true);report.moveIdentities.AddRange(observed);
+                if(Directory.Exists(Full(manifest.source))||File.Exists(Full(manifest.source+".meta")))throw new Exception("Folder source remained after reopen: "+manifest.source);
+            }
+        }
         AssetDatabase.SaveAssets();
+    }
+    static List<MoveRow> FolderIdentities(FolderMoveManifest manifest,bool target) {
+        var rows=new List<MoveRow>();
+        foreach(var entry in manifest.entries.Where(e=>e.kind=="folder"||e.kind=="asset").OrderBy(e=>e.source,StringComparer.Ordinal)) {
+            var path=target?entry.target:entry.source;var guid=AssetDatabase.AssetPathToGUID(path);
+            if(String.IsNullOrEmpty(guid))throw new Exception("Moved asset/folder GUID missing: "+path);
+            rows.Add(new MoveRow{source=entry.source,target=entry.target,guid=guid,localIds=entry.kind=="asset"?Ids(path):new string[0]});
+        }
+        foreach(var entry in manifest.entries.Where(e=>e.kind!="folder")) {
+            var path=target?entry.target:entry.source;
+            if(!File.Exists(Full(path))||HashFile(Full(path))!=entry.sha256||new FileInfo(Full(path)).Length!=entry.bytes)throw new Exception("Moved folder manifest differs: "+path);
+        }
+        return rows;
+    }
+    static bool SameIdentities(List<MoveRow> left,List<MoveRow> right) {
+        if(left.Count!=right.Count)return false;
+        for(int i=0;i<left.Count;i++)if(left[i].source!=right[i].source||left[i].target!=right[i].target||left[i].guid!=right[i].guid||!left[i].localIds.SequenceEqual(right[i].localIds))return false;
+        return true;
     }
     public static void Run() {
         int code=1;

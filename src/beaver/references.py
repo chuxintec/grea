@@ -7,10 +7,11 @@ import time
 
 from .errors import fail
 from .io import safe, read, encoded, write_json
+from .output_limits import WHOLE_FILES
 
 SCHEMA = "beaver-reference-cache/2"
 REPORT_SCHEMA = "beaver-reference-graph/2"
-MAX_FILES = 250_000
+MAX_FILES = WHOLE_FILES
 MAX_TEXT_BYTES = 16 * 1024 * 1024
 MAX_TOTAL_BYTES = 2 * 1024 * 1024 * 1024
 GUID_RE = re.compile(rb"\bguid:\s*([0-9a-fA-F]{32})\b")
