@@ -22,6 +22,7 @@ VERSION = "6000.6.2f1"
 MOVE_MANIFEST_ENTRIES = 10000
 MOVE_MANIFEST_BYTES = 256 * 1024**2
 META_GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$',re.M)
+SHA256_HEX = re.compile(r'^[a-f0-9]{64}$')
 
 
 def identity():
@@ -65,6 +66,47 @@ def resource_key(path):
         fail('ASSET_RETIRE_RESOURCE_PATH',path,'Nested Resources roots are ambiguous')
     relative=Path(*parts[roots[0]+1:])
     return relative.with_suffix('').as_posix()
+
+
+def source_only_evidence(project, spec_path, files, path, guid, declaration, cache):
+    """Bind one explicit no-persistent-object collector row to current bytes."""
+    from . import build_filter
+    raw_ref=declaration['sourceIdentityEvidence']
+    snapshot_path=Path(raw_ref['snapshotPath'])
+    if not snapshot_path.is_absolute():snapshot_path=Path(spec_path).parent/snapshot_path
+    snapshot_path=safe(snapshot_path)
+    expected_sha=raw_ref['snapshotSha256'];absolute=str(snapshot_path);cache_key=(absolute,expected_sha)
+    if any(cached_path==absolute and cached_sha!=expected_sha for cached_path,cached_sha in cache):
+        fail('ASSET_RETIRE_SOURCE_EVIDENCE_HASH',absolute,'One plan cannot bind different snapshot hashes for the same evidence path')
+    cached=cache.get(cache_key)
+    if cached is None:
+        snapshot_raw=read(snapshot_path,max_bytes=128*1024**2)
+        snapshot=load(snapshot_raw,max_nodes=8_000_000)
+        snapshot_sha=sha(snapshot_raw)
+        if snapshot_sha!=expected_sha:
+            fail('ASSET_RETIRE_SOURCE_EVIDENCE_HASH',absolute,'Collector snapshot digest differs from the explicit evidence reference')
+        if not isinstance(snapshot,dict) or not isinstance(snapshot.get('target'),str) or not isinstance(snapshot.get('pipeline'),str):
+            fail('ASSET_RETIRE_SOURCE_EVIDENCE_SCHEMA',absolute,'Collector snapshot needs explicit target and pipeline')
+        validated,_,_=build_filter._snapshot(snapshot,dict(platform=snapshot['target'],pipeline=snapshot['pipeline']),require_runner=True)
+        raw_rows={row['path']:row for row in snapshot['assets']}
+        cached=(snapshot_sha,snapshot,validated,raw_rows)
+        cache[cache_key]=cached
+    snapshot_sha,snapshot,validated,raw_rows=cached
+    target=validated.get(path)
+    if target is None or target.get('status')!='unknown' or target.get('identityStatus')!='no-persistent-object' or target.get('objectCount')!=0 or target.get('localIds')!=[] or target.get('types')!=[]:
+        fail('ASSET_RETIRE_SOURCE_EVIDENCE_STATE',path,'Collector must classify this exact asset as unknown with zero objects and no persistent IDs/types')
+    if not target.get('error') or target.get('guid','').lower()!=guid.lower():
+        fail('ASSET_RETIRE_SOURCE_EVIDENCE_GUID',path,'Collector row must retain the exact current native/meta GUID and a failure reason')
+    row=raw_rows.get(path)
+    if row is None:fail('ASSET_RETIRE_SOURCE_EVIDENCE_ROW',path,'Exact collector target row is missing')
+    target_inputs=[]
+    for relative in (path,path+'.meta'):
+        recorded=snapshot.get('inputState',{}).get(relative);current=files.get(relative)
+        if not isinstance(recorded,dict) or set(recorded)!={'sha256','bytes'} or current is None or recorded!=dict(sha256=current['sha256'],bytes=current['bytes']):
+            fail('ASSET_RETIRE_SOURCE_EVIDENCE_INPUT',relative,'Collector input hash/bytes do not match the current source and metadata')
+        target_inputs.append(dict(path=relative,sha256=recorded['sha256'],bytes=recorded['bytes']))
+    return dict(snapshotPath=str(snapshot_path),snapshotSha256=snapshot_sha,assetPath=path,
+                targetRecordSha256=sha(encoded(row)),targetRecord=row,targetInputs=target_inputs)
 
 
 def folder_move_manifest(project, files, source, target):
@@ -237,9 +279,24 @@ def validate_spec(doc):
             fail('ASSET_RETIRE_RESOURCES','spec','Expected an explicit bounded Resources key declaration list')
         selected=set()
         for item in items:
-            if not isinstance(item,dict) or set(item)!={'path','role','reason','sourceEvidence'}:
+            base_fields={'path','role','reason','sourceEvidence'}
+            allowed_item=base_fields|{'identityPolicy','sourceIdentityEvidence'}
+            if not isinstance(item,dict) or not base_fields<=set(item) or set(item)-allowed_item:
                 fail('ASSET_RETIRE_DECLARATION','spec','Each retirement requires path, role, reason and sourceEvidence')
             unity_asset_file_path(item.get('path'))
+            policy=item.get('identityPolicy','native-object')
+            if policy not in ('native-object','source-evidence-only'):
+                fail('ASSET_RETIRE_IDENTITY_POLICY',item['path'],'Expected native-object or explicit source-evidence-only identity policy')
+            if policy=='source-evidence-only':
+                evidence=item.get('sourceIdentityEvidence')
+                if 'identityPolicy' not in item or not isinstance(evidence,dict) or set(evidence)!={'snapshotPath','snapshotSha256','assetPath'}:
+                    fail('ASSET_RETIRE_SOURCE_EVIDENCE',item['path'],'source-evidence-only requires identityPolicy and exactly snapshotPath, snapshotSha256, assetPath')
+                if not isinstance(evidence.get('snapshotPath'),str) or not evidence['snapshotPath'].strip() or \
+                   not isinstance(evidence.get('snapshotSha256'),str) or not SHA256_HEX.fullmatch(evidence['snapshotSha256']) or \
+                   evidence.get('assetPath')!=item['path']:
+                    fail('ASSET_RETIRE_SOURCE_EVIDENCE',item['path'],'Collector evidence reference must bind a SHA-256 snapshot and the exact selected path')
+            elif 'sourceIdentityEvidence' in item:
+                fail('ASSET_RETIRE_SOURCE_EVIDENCE',item['path'],'Collector source-only evidence is not accepted by native-object policy')
             if item['path'] in selected:fail('ASSET_RETIRE_DUPLICATE',item['path'],'Duplicate retirement path')
             selected.add(item['path'])
             for key in ('role','reason','sourceEvidence'):
@@ -297,6 +354,7 @@ def plan(project, spec, output):
     doc = load(raw)
     validate_spec(doc)
     files = source_files(project)
+    extra_inputs=[];source_evidence_cache={}
     if doc['operation'] == 'ui.create':
         if doc['sourceFontPath'] not in files:
             fail('UI_FONT_MISSING',doc['sourceFontPath'],'Import an authorized font into the project first')
@@ -359,9 +417,15 @@ def plan(project, spec, output):
             if path not in files or meta_path not in files or not asset.is_file():
                 fail('ASSET_RETIRE_SOURCE',path,'Expected an imported file with its .meta; directory retirement is unsupported')
             meta=inside(project,meta_path);guid=meta_guid(read(meta),meta_path)
-            retire_manifest.append(dict(path=path,role=declaration['role'],reason=declaration['reason'],sourceEvidence=declaration['sourceEvidence'],
-                                        sha256=files[path]['sha256'],bytes=files[path]['bytes'],metaPath=meta_path,
-                                        metaSha256=files[meta_path]['sha256'],metaBytes=files[meta_path]['bytes'],guid=guid))
+            policy=declaration.get('identityPolicy','native-object')
+            manifest=dict(path=path,role=declaration['role'],reason=declaration['reason'],sourceEvidence=declaration['sourceEvidence'],
+                          identityPolicy=policy,sha256=files[path]['sha256'],bytes=files[path]['bytes'],metaPath=meta_path,
+                          metaSha256=files[meta_path]['sha256'],metaBytes=files[meta_path]['bytes'],guid=guid)
+            if policy=='source-evidence-only':
+                evidence=source_only_evidence(project,spec,files,path,guid,declaration,source_evidence_cache)
+                manifest['sourceIdentityEvidence']=evidence
+                extra_inputs.append(safe(evidence['snapshotPath']))
+            retire_manifest.append(manifest)
             selected_paths.add(path)
         for path in doc['protectedRoots']:
             asset=inside(project,path);meta_path=path+'.meta'
@@ -380,8 +444,8 @@ def plan(project, spec, output):
             if key is not None:
                 if declaration is None or declaration['key']!=key or declaration['guid']!=item['guid']:
                     fail('ASSET_RETIRE_RESOURCE_DECLARATION',item['path'],'Each Resources asset needs its exact key/path/GUID retirement declaration')
-                if key in resource_keys:fail('ASSET_RETIRE_RESOURCE_AMBIGUOUS',key,'Multiple selected files map to one Resources key')
-                resource_keys.add(key)
+                if key.casefold() in resource_keys:fail('ASSET_RETIRE_RESOURCE_AMBIGUOUS',key,'Multiple selected files map to one case-insensitive Resources key')
+                resource_keys.add(key.casefold())
         if set(declarations)!=set(item['path'] for item in retire_manifest if resource_key(item['path']) is not None):
             fail('ASSET_RETIRE_RESOURCE_DECLARATION','spec','Resources declarations must match selected Resources assets exactly')
         if resource_keys:
@@ -389,7 +453,7 @@ def plan(project, spec, output):
                 if path.endswith('.meta'):continue
                 try:key=resource_key(path)
                 except BeaverError:continue
-                if key in resource_keys and path not in selected_paths:
+                if key is not None and key.casefold() in resource_keys and path not in selected_paths:
                     fail('ASSET_RETIRE_RESOURCE_AMBIGUOUS',key,'Another asset still maps to the explicitly retired Resources key: '+path)
         backup_bytes=sum(row['bytes']+row['metaBytes'] for row in retire_manifest)
         if len(retire_manifest)*2>MOVE_MANIFEST_ENTRIES or backup_bytes>MOVE_MANIFEST_BYTES:
@@ -403,7 +467,7 @@ def plan(project, spec, output):
         for rel in (doc.get('scenes') or [doc.get('prefabPath') or doc['scenePath']]):
             if rel not in files:
                 fail('UNITY_INPUT_MISSING',rel,'Native source asset is missing')
-    out = new_output(output,[project,safe(spec)])
+    out = new_output(output,[project,safe(spec),*extra_inputs])
     data = dict(contract='beaver-unity/1',schemaVersion=1,implementationSha256=identity(),
                 projectRoot=str(project),engine='unity',editorVersion=VERSION,
                 writableRoots=['Assets'] if doc['operation'] != 'build.macos' else [],
@@ -493,6 +557,65 @@ def _remove_native_helper(project,helper,fingerprint):
     return True
 
 
+def validate_retire_source_evidence(item,location='retirement plan'):
+    if item.get('identityPolicy','native-object')!='source-evidence-only':
+        if 'sourceIdentityEvidence' in item:fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Native-object policy cannot carry source-only evidence')
+        return
+    evidence=item.get('sourceIdentityEvidence')
+    expected_fields={'snapshotPath','snapshotSha256','assetPath','targetRecordSha256','targetRecord','targetInputs'}
+    if not isinstance(evidence,dict) or set(evidence)!=expected_fields or evidence.get('assetPath')!=item.get('path') or \
+       not isinstance(evidence.get('snapshotPath'),str) or not evidence['snapshotPath'] or \
+       not isinstance(evidence.get('snapshotSha256'),str) or not SHA256_HEX.fullmatch(evidence['snapshotSha256']):
+        fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Immutable collector evidence manifest is incomplete')
+    record=evidence.get('targetRecord')
+    record_fields={'path','guid','localIds','types','status','identityStatus','objectCount','error'}
+    if not isinstance(record,dict) or set(record)!=record_fields or record.get('path')!=item.get('path') or \
+       str(record.get('guid','')).lower()!=str(item.get('guid','')).lower() or record.get('status')!='unknown' or \
+       record.get('identityStatus')!='no-persistent-object' or record.get('objectCount')!=0 or \
+       record.get('localIds')!=[] or record.get('types')!=[] or not isinstance(record.get('error'),str) or not record['error'].strip() or \
+       evidence.get('targetRecordSha256')!=sha(encoded(record)):
+        fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Collector target record/hash is invalid or does not prove zero persistent objects')
+    inputs=evidence.get('targetInputs')
+    expected={item['path']:dict(sha256=item['sha256'],bytes=item['bytes']),
+              item['metaPath']:dict(sha256=item['metaSha256'],bytes=item['metaBytes'])}
+    if not isinstance(inputs,list) or len(inputs)!=2 or any(not isinstance(row,dict) or set(row)!={'path','sha256','bytes'} for row in inputs) or \
+       {row['path']:dict(sha256=row['sha256'],bytes=row['bytes']) for row in inputs}!=expected:
+        fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Collector target file/meta hashes and byte counts differ from the retirement plan')
+
+
+def validate_retire_identity_rows(manifest,rows,location='native',witnessed=None):
+    if not isinstance(rows,list) or len(rows)!=len(manifest):
+        fail('ASSET_RETIRE_IDENTITY',location,'Native retirement identity list differs from selected manifest')
+    if witnessed is not None and (not isinstance(witnessed,list) or len(witnessed)!=len(manifest)):
+        fail('ASSET_RETIRE_IDENTITY',location,'Witnessed retirement identity list is incomplete')
+    for index,item in enumerate(manifest):
+        row=rows[index];policy=item.get('identityPolicy','native-object')
+        validate_retire_source_evidence(item,location)
+        if not isinstance(row,dict) or row.get('path')!=item['path'] or row.get('guid')!=item['guid'] or row.get('identityPolicy')!=policy or not isinstance(row.get('localIds'),list):
+            fail('ASSET_RETIRE_IDENTITY',location,'Native identity row does not match selected path, GUID, and policy')
+        if policy=='source-evidence-only':
+            evidence=item['sourceIdentityEvidence']
+            if row.get('identityStatus')!='no-persistent-object' or row.get('nativeObjectCount')!=0 or row['localIds']!=[] or \
+               row.get('sourceEvidenceSnapshotSha256')!=evidence['snapshotSha256'] or row.get('sourceEvidenceTargetRecordSha256')!=evidence['targetRecordSha256']:
+                fail('ASSET_RETIRE_IDENTITY',location,'Source-evidence-only identity must report zero native objects, empty IDs, and matching collector hashes')
+        else:
+            if row.get('identityStatus')!='verified' or type(row.get('nativeObjectCount')) is not int or row['nativeObjectCount']<=0 or \
+               not row['localIds'] or row['nativeObjectCount']!=len(row['localIds']) or \
+               row.get('sourceEvidenceSnapshotSha256') not in (None,'') or row.get('sourceEvidenceTargetRecordSha256') not in (None,''):
+                fail('ASSET_RETIRE_IDENTITY',location,'Native-object policy requires verified persistent IDs for every object')
+            for identity in row['localIds']:
+                fields=identity.split(':',2) if isinstance(identity,str) else []
+                try:local_id=int(fields[1]) if len(fields)==3 else 0
+                except ValueError:local_id=0
+                if len(fields)!=3 or fields[0].lower()!=item['guid'].lower() or local_id==0 or not fields[2]:
+                    fail('ASSET_RETIRE_IDENTITY',location,'Native localID checkpoint is malformed or belongs to another GUID')
+        if witnessed is not None:
+            prior=witnessed[index]
+            for key in ('path','guid','identityPolicy','identityStatus','nativeObjectCount','localIds','sourceEvidenceSnapshotSha256','sourceEvidenceTargetRecordSha256'):
+                if row.get(key)!=prior.get(key):
+                    fail('ASSET_RETIRE_IDENTITY',location,'Post-restore identity differs from the witnessed pre-delete state')
+
+
 def apply(plan_path, output, editor, expected, timeout=600):
     path=safe(plan_path)
     raw=read(path,max_bytes=128*1024**2)
@@ -502,6 +625,8 @@ def apply(plan_path, output, editor, expected, timeout=600):
     if data.get('contract')!='beaver-unity/1' or data.get('implementationSha256')!=identity():
         fail('UNITY_PLAN_IMPLEMENTATION',str(path),'Generate plan with the current implementation')
     validate_spec(data['spec'])
+    if data['spec']['operation']=='assets.retire':
+        for item in data.get('retireManifest',[]):validate_retire_source_evidence(item,str(path))
     project=safe(data['projectRoot']); editor=editor_path(editor)
     stage=new_output(output,[project,path.parent])
     write_json(stage/'unity-plan.json',data)
@@ -606,6 +731,8 @@ def apply(plan_path, output, editor, expected, timeout=600):
                 audit_fail('ASSET_RETIRE_SOURCE_AUDIT',str(stage),'Retirement did not delete every selected asset and meta exactly once')
             if applied.get('deletedPaths')!=selected or reopened.get('deletedPaths')!=selected or applied.get('deleteInProgress') or reopened.get('deleteInProgress'):
                 audit_fail('ASSET_RETIRE_CHECKPOINT',str(stage),'Native deletion checkpoint is incomplete or uncertain')
+            validate_retire_identity_rows(data['retireManifest'],applied.get('retiredAssets'),str(stage))
+            validate_retire_identity_rows(data['retireManifest'],reopened.get('retiredAssets'),str(stage),witnessed=applied.get('retiredAssets'))
             if applied.get('retiredAssets')!=reopened.get('retiredAssets') or applied.get('protectedRoots')!=reopened.get('protectedRoots') or \
                applied.get('dependencyPaths')!=reopened.get('dependencyPaths') or applied.get('dependencyClosures')!=reopened.get('dependencyClosures') or \
                (applied.get('resources') or [])!=(reopened.get('resources') or []) or \
@@ -640,6 +767,7 @@ def recover(transaction, editor, expected, timeout=600):
     if data.get('spec',{}).get('operation')!='assets.retire':
         fail('UNITY_RECOVERY_OPERATION','transaction','Only assets.retire transactions can be recovered here')
     validate_spec(data['spec'])
+    for item in data.get('retireManifest',[]):validate_retire_source_evidence(item,str(plan_path))
     journal_path=inside(stage,'journal.json');journal=load(read(journal_path))
     if journal.get('planSha256')!=expected or journal.get('operation')!='assets.retire' or journal.get('status') not in ('complete','recovery-required'):
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(stage),'Transaction state is complete, mismatched or not a retirement recovery case')
@@ -657,11 +785,7 @@ def recover(transaction, editor, expected, timeout=600):
     if native.get('deleteInProgress'):
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Deletion was in progress without a conclusive post-delete checkpoint')
     identities=native.get('retiredAssets')
-    if not isinstance(identities,list) or [row.get('path') for row in identities]!=selected:
-        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Complete selected GUID/localID before-delete checkpoint is missing')
-    for item,row in zip(data['retireManifest'],identities):
-        if row.get('guid')!=item['guid'] or not isinstance(row.get('localIds'),list) or not row['localIds']:
-            fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Selected GUID/localID checkpoint differs from the plan')
+    validate_retire_identity_rows(data['retireManifest'],identities,str(report_path))
     protected=native.get('protectedRoots')
     if not isinstance(protected,list) or [row.get('path') for row in protected]!=[row['path'] for row in data['protectedManifest']]:
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Protected-root identity checkpoint is incomplete')
@@ -732,6 +856,8 @@ def recover(transaction, editor, expected, timeout=600):
                 reopened=run(editor,project,stage,'recover-verify',data,timeout)
             finally:
                 _remove_native_helper(project,helper,fingerprint)
+            validate_retire_identity_rows(data['retireManifest'],recovered.get('retiredAssets'),str(stage),witnessed=identities)
+            validate_retire_identity_rows(data['retireManifest'],reopened.get('retiredAssets'),str(stage),witnessed=identities)
             if recovered.get('recoveredPaths')!=deleted or reopened.get('recoveredPaths')!=deleted or \
                recovered.get('retiredAssets')!=reopened.get('retiredAssets') or recovered.get('protectedRoots')!=reopened.get('protectedRoots') or \
                recovered.get('dependencyPaths')!=reopened.get('dependencyPaths') or recovered.get('dependencyClosures')!=reopened.get('dependencyClosures') or \

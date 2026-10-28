@@ -102,3 +102,13 @@ blocked rather than guessed. This is a selected-file recovery path, not an
 automatic whole-project rollback.
 
 Use `--summary` on plan/apply/recover for bounded transport; the full SHA-bound plan or transaction journal retains all selected changes and native object identities.
+
+## Explicit source-evidence-only archive
+
+The default `identityPolicy` is `native-object` and continues to require actual persistent localIDs. An optional `source-evidence-only` policy is restricted to a previously observed asset with **zero Unity objects**, not an asset whose objects exist but whose IDs failed inspection. Each such retirement row must include `sourceIdentityEvidence` with exactly `snapshotPath`, `snapshotSha256` and `assetPath`, referencing a hash-bound guarded build-filter snapshot. The selected row must be `unknown` / `no-persistent-object`, with objectCount 0 and empty localIds/types; its source/meta hashes, byte counts and real GUID must match the retirement plan.
+
+Planning freezes the snapshot digest and selected evidence record. Native apply independently checks current file/meta bytes and the existing GUID, synchronously imports, and confirms there are still exactly zero objects. Inspection errors or any imported object block this mode. Reports keep the real native GUID, empty localIDs and explicit source-only state; no runtime identity is fabricated. Protected-root static dependencies and exact Resources retirement declarations remain mandatory.
+
+Recovery restores create-only verified before-images and independently reopens Unity. Source-only recovery verifies the same bytes/meta/native GUID and the same zero-object observation. If objects appear or inspection is uncertain, restored bytes may remain while the transaction stays recovery-required. The report never claims that such source evidence is usable runtime content. Keep the immutable transaction and its before-images for as long as the archived source evidence is needed; do not treat a disposable temporary output directory as permanent storage.
+
+`snapshotSha256` is the SHA-256 of the snapshot file's exact raw bytes, matching the CLI artifact hash. The target-row digest inside the immutable plan is canonical JSON. Within one plan, shared snapshot artifacts are parsed and runner-validated once while every target is checked separately; caches do not cross plans. Resources key collision guards are case-insensitive.

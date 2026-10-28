@@ -50,10 +50,13 @@ public static class BeaverNative {
     [Serializable] public class MoveRow { public string source,target,guid; public string[] localIds; }
     [Serializable] public class FolderMoveManifest { public string source,target; public long bytes; public MoveEntry[] entries; }
     [Serializable] public class MoveEntry { public string source,target,kind,sha256; public long bytes; }
-    [Serializable] public class RetireItem { public string path,role,reason,sourceEvidence,sha256,metaPath,metaSha256,guid; public long bytes,metaBytes; }
+    [Serializable] public class RetireItem { public string path,role,reason,sourceEvidence,sha256,metaPath,metaSha256,guid,identityPolicy; public long bytes,metaBytes; public SourceIdentityEvidence sourceIdentityEvidence; }
+    [Serializable] public class SourceIdentityEvidence { public string snapshotPath,snapshotSha256,assetPath,targetRecordSha256; public CollectorAssetRecord targetRecord; public CollectorInputState[] targetInputs; }
+    [Serializable] public class CollectorAssetRecord { public string path,guid,status,identityStatus,error; public int objectCount; public long[] localIds; public string[] types; }
+    [Serializable] public class CollectorInputState { public string path,sha256; public long bytes; }
     [Serializable] public class ProtectedItem { public string path,sha256,metaPath,metaSha256,guid; public long bytes,metaBytes; }
     [Serializable] public class ResourceRetirement { public string key,path,guid,reason,sourceEvidence; }
-    [Serializable] public class RetireIdentity { public string path,guid; public string[] localIds; }
+    [Serializable] public class RetireIdentity { public string path,guid,identityPolicy,identityStatus,sourceEvidenceSnapshotSha256,sourceEvidenceTargetRecordSha256; public int nativeObjectCount; public string[] localIds; }
     [Serializable] public class ProtectedIdentity { public string path,guid,sha256,metaSha256; public string[] localIds; }
     [Serializable] public class DependencyClosure { public string root; public string[] paths; }
     [Serializable] public class Row {
@@ -370,9 +373,13 @@ public static class BeaverNative {
         if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sprite,out report.spriteGuid,out report.spriteLocalId))throw new Exception("Sprite local identity missing");
         report.spritePixelsPerUnit=sprite.pixelsPerUnit;report.spritePivot=sprite.pivot;report.spriteRect=sprite.rect;
     }
-    static string[] Ids(string path) {
+    static UnityEngine.Object[] PersistentObjects(string path) {
         var main=AssetDatabase.LoadMainAssetAtPath(path);
-        return AssetDatabase.LoadAllAssetsAtPath(path).Concat(main==null?new UnityEngine.Object[0]:new[]{main}).Where(a=>a!=null).Distinct().Select(a=>{
+        return AssetDatabase.LoadAllAssetsAtPath(path).Concat(main==null?new UnityEngine.Object[0]:new[]{main}).Where(a=>a!=null).Distinct().ToArray();
+    }
+    static string[] Ids(string path) { return Ids(PersistentObjects(path)); }
+    static string[] Ids(UnityEngine.Object[] objects) {
+        return objects.Select(a=>{
             string guid;long id;if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(a,out guid,out id))throw new Exception("Missing asset identity");
             return guid+":"+id+":"+a.GetType().FullName;
         }).OrderBy(s=>s,StringComparer.Ordinal).ToArray();
@@ -457,10 +464,59 @@ public static class BeaverNative {
         return matches[0].Groups[1].Value;
     }
     static string BackupFull(string relative) { return Path.Combine(job.stage,"before",relative); }
-    static RetireIdentity RetirementIdentity(string path,string expectedGuid) {
-        var guid=AssetDatabase.AssetPathToGUID(path, AssetPathToGUIDOptions.OnlyExistingAssets);var ids=Ids(path);
-        if(String.IsNullOrEmpty(guid)||guid!=expectedGuid||ids.Length==0)throw new Exception("Native retirement identity missing or differs: "+path);
-        return new RetireIdentity{path=path,guid=guid,localIds=ids};
+    static bool Hash(string value) { return !String.IsNullOrEmpty(value)&&Regex.IsMatch(value,"^[a-f0-9]{64}$"); }
+    static void ValidateSourceIdentityEvidence(RetireItem item) {
+        var evidence=item.sourceIdentityEvidence;var row=evidence==null?null:evidence.targetRecord;
+        if(evidence==null||String.IsNullOrEmpty(evidence.snapshotPath)||!Hash(evidence.snapshotSha256)||evidence.assetPath!=item.path||!Hash(evidence.targetRecordSha256)||
+           row==null||row.path!=item.path||!String.Equals(row.guid,item.guid,StringComparison.OrdinalIgnoreCase)||row.status!="unknown"||row.identityStatus!="no-persistent-object"||row.objectCount!=0||
+           row.localIds==null||row.localIds.Length!=0||row.types==null||row.types.Length!=0||String.IsNullOrEmpty(row.error)||
+           evidence.targetInputs==null||evidence.targetInputs.Length!=2)
+            throw new Exception("Source-evidence-only collector record is incomplete or inconsistent: "+item.path);
+        var asset=evidence.targetInputs.FirstOrDefault(x=>x!=null&&x.path==item.path);
+        var meta=evidence.targetInputs.FirstOrDefault(x=>x!=null&&x.path==item.metaPath);
+        if(asset==null||asset.sha256!=item.sha256||asset.bytes!=item.bytes||meta==null||meta.sha256!=item.metaSha256||meta.bytes!=item.metaBytes)
+            throw new Exception("Collector source/meta hashes or byte counts differ: "+item.path);
+    }
+    static void ValidateRetirementBytes(RetireItem item) {
+        var asset=Full(item.path);var meta=Full(item.metaPath);
+        if(!File.Exists(asset)||!File.Exists(meta)||new FileInfo(asset).Length!=item.bytes||HashFile(asset)!=item.sha256||
+           new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid)
+            throw new Exception("Retirement source/hash/static meta GUID precondition failed: "+item.path);
+    }
+    static string ExistingPathGuid(string path) {
+        var guid=AssetDatabase.AssetPathToGUID(path,AssetPathToGUIDOptions.OnlyExistingAssets);
+        if(String.IsNullOrEmpty(guid))throw new Exception("No existing Unity asset GUID: "+path);
+        return guid;
+    }
+    static void ValidateGuidPathRoundTrip(string path,string guid) {
+        var mapped=AssetDatabase.GUIDToAssetPath(guid);
+        if(mapped!=path)throw new Exception("GUID does not map back to the exact source-evidence path: "+path+" -> "+mapped);
+    }
+    static RetireIdentity RetirementIdentity(RetireItem item) {
+        if(item.identityPolicy!="native-object"&&item.identityPolicy!="source-evidence-only")throw new Exception("Unknown retirement identity policy: "+item.path);
+        if(item.identityPolicy=="source-evidence-only") {
+            ValidateSourceIdentityEvidence(item);
+            AssetDatabase.ImportAsset(item.path,ImportAssetOptions.ForceSynchronousImport);
+            ValidateRetirementBytes(item);
+        } else if(item.sourceIdentityEvidence!=null)throw new Exception("Collector evidence is forbidden by native-object policy: "+item.path);
+        var guid=ExistingPathGuid(item.path);
+        if(String.IsNullOrEmpty(guid)||guid!=item.guid)throw new Exception("Native retirement GUID missing or differs: "+item.path);
+        var objects=PersistentObjects(item.path);var ids=Ids(objects);
+        if(item.identityPolicy=="source-evidence-only") {
+            ValidateGuidPathRoundTrip(item.path,guid);
+            if(objects.Length!=0||ids.Length!=0)throw new Exception("Source-only identity policy requires exactly zero persistent native objects: "+item.path);
+            var proof=item.sourceIdentityEvidence;
+            return new RetireIdentity{path=item.path,guid=guid,identityPolicy=item.identityPolicy,identityStatus="no-persistent-object",nativeObjectCount=0,
+                localIds=new string[0],sourceEvidenceSnapshotSha256=proof.snapshotSha256,sourceEvidenceTargetRecordSha256=proof.targetRecordSha256};
+        }
+        if(objects.Length==0||ids.Length==0)throw new Exception("Native-object policy requires persistent local IDs: "+item.path);
+        return new RetireIdentity{path=item.path,guid=guid,identityPolicy=item.identityPolicy,identityStatus="verified",nativeObjectCount=objects.Length,localIds=ids};
+    }
+    static bool SameRetirementIdentity(RetireIdentity left,RetireIdentity right) {
+        return left!=null&&right!=null&&left.path==right.path&&left.guid==right.guid&&left.identityPolicy==right.identityPolicy&&
+            left.identityStatus==right.identityStatus&&left.nativeObjectCount==right.nativeObjectCount&&
+            left.sourceEvidenceSnapshotSha256==right.sourceEvidenceSnapshotSha256&&left.sourceEvidenceTargetRecordSha256==right.sourceEvidenceTargetRecordSha256&&
+            left.localIds.SequenceEqual(right.localIds);
     }
     static ProtectedIdentity ProtectedSnapshot(ProtectedItem item) {
         var file=Full(item.path);var meta=Full(item.metaPath);
@@ -502,22 +558,34 @@ public static class BeaverNative {
         var plannedResources=job.resources??new ResourceRetirement[0];var witnessedResources=prior.resources??new List<ResourceRetirement>();
         if(witnessedResources.Count!=plannedResources.Length)throw new Exception("Resources declaration checkpoint differs");
         for(int i=0;i<plannedResources.Length;i++)if(witnessedResources[i].key!=plannedResources[i].key||witnessedResources[i].path!=plannedResources[i].path||witnessedResources[i].guid!=plannedResources[i].guid||witnessedResources[i].reason!=plannedResources[i].reason||witnessedResources[i].sourceEvidence!=plannedResources[i].sourceEvidence)throw new Exception("Resources declaration checkpoint differs");
-        foreach(var path in prior.deletedPaths)if(!prior.retiredAssets.Any(x=>x.path==path&&x.guid!=""&&x.localIds!=null&&x.localIds.Length>0))throw new Exception("Deleted asset lacks a witnessed GUID/localID checkpoint: "+path);
+        foreach(var path in prior.deletedPaths)if(!prior.retiredAssets.Any(x=>x.path==path&&!String.IsNullOrEmpty(x.guid)&&x.localIds!=null))throw new Exception("Deleted asset lacks a witnessed GUID/identity-policy checkpoint: "+path);
         foreach(var item in job.protectedManifest)if(!prior.protectedRoots.Any(x=>x.path==item.path&&x.guid==item.guid&&x.sha256==item.sha256&&x.metaSha256==item.metaSha256&&x.localIds!=null&&x.localIds.Length>0))throw new Exception("Protected-root checkpoint differs: "+item.path);
+        for(int i=0;i<job.retireManifest.Length;i++)ValidateRetireIdentityWitness(job.retireManifest[i],prior.retiredAssets[i]);
         if(requireComplete&&(prior.status!="verified"||!prior.deletedPaths.SequenceEqual(planned)))throw new Exception("Complete retirement checkpoint required");
+    }
+    static void ValidateRetireIdentityWitness(RetireItem item,RetireIdentity row) {
+        if(row==null||row.path!=item.path||row.guid!=item.guid||row.identityPolicy!=item.identityPolicy||row.localIds==null)
+            throw new Exception("Retirement identity policy/GUID checkpoint differs: "+item.path);
+        if(item.identityPolicy=="source-evidence-only") {
+            ValidateSourceIdentityEvidence(item);var evidence=item.sourceIdentityEvidence;
+            if(row.identityStatus!="no-persistent-object"||row.nativeObjectCount!=0||row.localIds.Length!=0||
+               row.sourceEvidenceSnapshotSha256!=evidence.snapshotSha256||row.sourceEvidenceTargetRecordSha256!=evidence.targetRecordSha256)
+                throw new Exception("Source-evidence-only checkpoint must preserve zero objects, empty IDs, and collector digests: "+item.path);
+        } else if(item.identityPolicy=="native-object") {
+            if(item.sourceIdentityEvidence!=null||row.identityStatus!="verified"||row.nativeObjectCount<=0||row.localIds.Length==0||row.nativeObjectCount!=row.localIds.Length||
+               !String.IsNullOrEmpty(row.sourceEvidenceSnapshotSha256)||!String.IsNullOrEmpty(row.sourceEvidenceTargetRecordSha256))
+                throw new Exception("Native-object checkpoint requires verified persistent IDs: "+item.path);
+        } else throw new Exception("Unknown retirement identity policy: "+item.path);
     }
     static void ValidateRetirementInputs() {
         var items=job.retireManifest??new RetireItem[0];var selected=new HashSet<string>(items.Select(x=>x.path),StringComparer.Ordinal);
         if(items.Length==0||selected.Count!=items.Length)throw new Exception("Explicit unique retirement file manifest required");
         foreach(var item in items) {
-            var asset=Full(item.path);var meta=Full(item.metaPath);var backup=BackupFull(item.path);var backupMeta=BackupFull(item.metaPath);
-            if(!File.Exists(asset)||!File.Exists(meta)||new FileInfo(asset).Length!=item.bytes||HashFile(asset)!=item.sha256||
-               new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid||AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets)!=item.guid)
-                throw new Exception("Retirement source/hash/GUID precondition failed: "+item.path);
+            ValidateRetirementBytes(item);
+            var backup=BackupFull(item.path);var backupMeta=BackupFull(item.metaPath);
             if(!File.Exists(backup)||new FileInfo(backup).Length!=item.bytes||HashFile(backup)!=item.sha256||
                !File.Exists(backupMeta)||new FileInfo(backupMeta).Length!=item.metaBytes||HashFile(backupMeta)!=item.metaSha256)
                 throw new Exception("Verified before-image is incomplete: "+item.path);
-            if(Ids(item.path).Length==0)throw new Exception("Retirement local identity missing: "+item.path);
         }
         var protectedNow=ProtectedSnapshots();
         foreach(var root in job.protectedManifest) {
@@ -531,7 +599,7 @@ public static class BeaverNative {
         }
         report.dependencyPaths=report.dependencyPaths.OrderBy(x=>x,StringComparer.Ordinal).ToList();
         report.selectedPaths.AddRange(items.Select(x=>x.path));
-        report.retiredAssets.AddRange(items.Select(x=>RetirementIdentity(x.path,x.guid)));
+        report.retiredAssets.AddRange(items.Select(RetirementIdentity));
         report.protectedRoots.AddRange(protectedNow);
         report.resources.AddRange(job.resources??new ResourceRetirement[0]);
         // Resources.Load and reflection-based keys cannot be proven unused by
@@ -580,8 +648,8 @@ public static class BeaverNative {
             if(!File.Exists(file)||!File.Exists(meta)||new FileInfo(file).Length!=item.bytes||HashFile(file)!=item.sha256||
                new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid)
                 throw new Exception("Restored before-image bytes or meta GUID differ: "+item.path);
-            var identity=RetirementIdentity(item.path,item.guid);var witness=expected[item.path];
-            if(!identity.localIds.SequenceEqual(witness.localIds))throw new Exception("Restored local IDs differ from deletion checkpoint: "+item.path);
+            var identity=RetirementIdentity(item);var witness=expected[item.path];
+            if(!SameRetirementIdentity(identity,witness))throw new Exception("Restored identity policy/GUID/localIDs differ from deletion checkpoint: "+item.path);
         }
         var protectedNow=ProtectedSnapshots();
         if(!SameProtected(prior.protectedRoots,protectedNow))throw new Exception("Protected roots differ during recovery");

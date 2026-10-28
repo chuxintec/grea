@@ -2,6 +2,7 @@
 from pathlib import Path
 from datetime import datetime, timezone
 import os
+import re
 import subprocess
 import time
 from .io import safe, inside, read, load, sha, encoded, write_json, new_output
@@ -13,6 +14,7 @@ from .unity import VERSION, identity, asset_path, editor_path
 from .adoption import native_lock
 
 HELPER_ROOT = 'Assets/BeaverBatchTools'
+SCENE_BUILD_SETTINGS = 'ProjectSettings/EditorBuildSettings.asset'
 KINDS = {'node.add','node.remove','node.reparent','node.order','node.active','component.add','component.remove',
          'property.set','binding.reference','binding.event','ui.rect','ui.scroll','ui.grid','ui.mask','ui.text','ui.event','ui.list','ui.safeArea'}
 FIELDS = {'kind','path','parent','name','component','property','value','targetNode','targetComponent',
@@ -40,6 +42,111 @@ def state(root, paths):
         if p.exists() and not p.is_file():fail('BATCH_FILE_REQUIRED',rel,'Expected file or unoccupied file destination')
         out[rel]=dict(sha256=digest_file(p),bytes=p.stat().st_size) if p.exists() else None
     return out
+
+
+def _scene_guid(project, source):
+    meta=inside(project,source+'.meta')
+    rows=re.findall(rb'(?m)^guid:\s*([0-9a-fA-F]{32})\s*$',read(meta,max_bytes=8*1024**2))
+    if len(rows)!=1:fail('BATCH_SCENE_META_GUID',source,'Scene .meta must contain exactly one GUID')
+    return rows[0].decode('ascii').lower()
+
+
+def _scene_setting_rows(raw):
+    """Parse the native m_Scenes YAML list without rewriting or normalizing bytes."""
+    lines=raw.splitlines(keepends=True);offsets=[];offset=0
+    for line in lines:offsets.append(offset);offset+=len(line)
+    section=None;base_indent=None
+    for i,line in enumerate(lines):
+        match=re.match(rb'^([ \t]*)m_Scenes:[ \t]*(?:\r?\n)?$',line)
+        if match:
+            if section is not None:fail('BATCH_SCENE_SETTINGS_PARSE',SCENE_BUILD_SETTINGS,'Multiple m_Scenes sections')
+            section=i;base_indent=len(match.group(1))
+    if section is None:return []
+    end=len(lines)
+    for i in range(section+1,len(lines)):
+        stripped=lines[i].strip()
+        if not stripped or stripped.startswith(b'#'):continue
+        indent=len(lines[i])-len(lines[i].lstrip(b' \t'))
+        if indent<=base_indent and not stripped.startswith(b'- '):end=i;break
+    starts=[]
+    for i in range(section+1,end):
+        stripped=lines[i].lstrip(b' \t')
+        indent=len(lines[i])-len(stripped)
+        if indent>=base_indent and stripped.startswith(b'- '):starts.append(i)
+    rows=[]
+    for n,start in enumerate(starts):
+        stop=starts[n+1] if n+1<len(starts) else end
+        path_fields=[];guid_fields=[]
+        for i in range(start,stop):
+            line=lines[i].rstrip(b'\r\n')
+            for field,rows_out in ((b'path',path_fields),(b'guid',guid_fields)):
+                match=re.match(rb'^[ \t]*'+field+rb':[ \t]*(.*)$',line)
+                if match:
+                    value=match.group(1)
+                    comment=value.find(b' #')
+                    if comment>=0:value=value[:comment]
+                    value=value.rstrip(b' \t')
+                    value_start=offsets[i]+match.start(1)
+                    value_end=value_start+len(value)
+                    try:decoded=value.decode('utf-8')
+                    except UnicodeDecodeError:fail('BATCH_SCENE_SETTINGS_PARSE',SCENE_BUILD_SETTINGS,'Scene path/GUID is not UTF-8')
+                    rows_out.append((decoded,(value_start,value_end)))
+        if len(path_fields)>1 or len(guid_fields)>1:fail('BATCH_SCENE_SETTINGS_PARSE',SCENE_BUILD_SETTINGS,'Scene entry has duplicate path or GUID fields')
+        if path_fields or guid_fields:
+            if len(path_fields)!=1 or len(guid_fields)!=1:fail('BATCH_SCENE_SETTINGS_PARSE',SCENE_BUILD_SETTINGS,'Scene entry requires one path and one GUID')
+            rows.append({'path':path_fields[0][0],'pathSpan':path_fields[0][1],'guid':guid_fields[0][0].lower()})
+    return rows
+
+
+def _scene_settings_projection(project, listing, moves):
+    scene_moves=[row for row in moves if row['source'].lower().endswith('.unity')]
+    if not scene_moves:return None
+    if (len({row['source'] for row in scene_moves})!=len(scene_moves)
+            or len({row['target'] for row in scene_moves})!=len(scene_moves)):
+        fail('BATCH_SCENE_SETTINGS_MOVE_DUPLICATE',SCENE_BUILD_SETTINGS,'Scene move sources and targets must be unique')
+    if SCENE_BUILD_SETTINGS not in listing:return None
+    path=inside(project,SCENE_BUILD_SETTINGS)
+    raw=read(path,max_bytes=32*1024**2);rows=_scene_setting_rows(raw);replacements=[];bound=[]
+    for move in scene_moves:
+        guid=_scene_guid(project,move['source'])
+        source_rows=[row for row in rows if row['path']==move['source']]
+        if len(source_rows)>1:fail('BATCH_SCENE_SETTINGS_AMBIGUOUS',move['source'],'Source occurs more than once in m_Scenes')
+        guid_rows=[row for row in rows if row['guid']==guid]
+        if not source_rows and not guid_rows:continue
+        if len(guid_rows)!=1 or len(source_rows)!=1 or guid_rows[0] is not source_rows[0]:
+            fail('BATCH_SCENE_SETTINGS_GUID',move['source'],'Scene GUID and source path must identify exactly one m_Scenes row')
+        row=source_rows[0]
+        if row['guid']!=guid:fail('BATCH_SCENE_SETTINGS_GUID',move['source'],'m_Scenes GUID differs from source .meta')
+        if any(other['path']==move['target'] for other in rows):fail('BATCH_SCENE_SETTINGS_TARGET',move['target'],'Target already occurs in m_Scenes')
+        replacements.append((row['pathSpan'][0],row['pathSpan'][1],move['target'].encode('utf-8')))
+        bound.append(dict(source=move['source'],target=move['target'],guid=guid))
+    if not bound:return None
+    expected=raw
+    for start,end,value in sorted(replacements,reverse=True):expected=expected[:start]+value+expected[end:]
+    return dict(path=SCENE_BUILD_SETTINGS,beforeSha256=sha(raw),beforeBytes=len(raw),
+                expectedAfterSha256=sha(expected),expectedAfterBytes=len(expected),moves=bound)
+
+
+def _native_job(project_root, stage, mode, plan_sha, writes, preconditions, *, spec=None,
+                scene_settings=None, **fields):
+    """Build apply/recover payloads with an explicit scene-settings presence bit."""
+    job=dict(spec or {})
+    job.update(projectRoot=str(project_root),stage=str(stage),mode=mode,planSha256=plan_sha,
+               writes=writes,preconditions=preconditions,hasSceneSettings=scene_settings is not None)
+    job.update(fields)
+    if scene_settings is not None:job['sceneSettings']=scene_settings
+    return job
+
+
+def _scene_settings_guard(expectation, native_report, observed_state, phase):
+    if expectation is None:return True
+    expected=expectation['beforeSha256'] if phase=='before' else expectation['expectedAfterSha256']
+    row=native_report.get('sceneSettingsReadback') if isinstance(native_report,dict) else None
+    disk=observed_state.get(expectation['path']) if isinstance(observed_state,dict) else None
+    return (isinstance(disk,dict) and disk.get('sha256')==expected and isinstance(row,dict)
+            and row.get('status')=='verified' and row.get('path')==expectation['path']
+            and row.get('expectedSha256')==expected and row.get('observedSha256')==expected
+            and row.get('movesVerified') is True and row.get('moves')==expectation.get('moves'))
 
 
 def validate(spec):
@@ -144,7 +251,7 @@ def dependencies(project, roots, explicit_guids=()):
 def plan(project,spec_path,output):
     started=time.monotonic();project=safe(project);context=inspect(project)
     if (context['engine'],context['editorVersion'])!=('unity',VERSION):fail('UNITY_VERSION',str(project),'Only existing Unity '+VERSION)
-    spec=load(read(spec_path));validate(spec);listing=inventory(project);writes=set();roots=set(spec.get('readPaths',[]));explicit_guids=set()
+    spec=load(read(spec_path));validate(spec);listing=inventory(project);writes=set();roots=set(spec.get('readPaths',[]));explicit_guids=set();scene_moves=[]
     production=spec.get('schemaVersion')==3
     if production:
         from .production import paths,binding,verify_sources
@@ -160,8 +267,12 @@ def plan(project,spec_path,output):
         if kind=='asset.move':
             if step['source'] not in listing or step['source']+'.meta' not in listing:fail('BATCH_MOVE_SOURCE',step['source'],'Imported file required')
             if step['target'] in listing or step['target']+'.meta' in listing:fail('BATCH_MOVE_TARGET',step['target'],'Destination occupied')
+            if step['source'].lower().endswith('.unity'):scene_moves.append(dict(source=step['source'],target=step['target']))
         elif any(p not in listing for p in paths):fail('BATCH_INPUT','spec','Existing native consumer/input required')
         if kind=='reference.replace':roots.add(step['assetPath'])
+    scene_settings=_scene_settings_projection(project,listing,scene_moves)
+    if scene_settings:
+        roots.add(scene_settings['path']);writes.add(scene_settings['path'])
     installs=[]
     if spec.get('runtimeRoot'):
         for name in ('BeaverListView.cs','BeaverSafeArea.cs'):
@@ -188,6 +299,7 @@ def plan(project,spec_path,output):
                 limitations=['Selected GUID closure and compilation inputs are hashed; unrelated asset bytes are not scanned',
                              'Native dependency preflight rejects unlisted consumers before replacement','Dynamic loading keys require explicit consumer patches; no completeness claim'])
     if profile:result['projectBinding']=profile
+    if scene_settings:result['sceneSettings']=scene_settings
     write_json(out/'batch-plan.json',result);digest=sha(encoded(result));write_json(out/'plan-identity.json',dict(sha256=digest))
     return dict(status='planned',report=str(out/'batch-plan.json'),planSha256=digest,metrics=result['metrics'])
 
@@ -195,7 +307,31 @@ def plan(project,spec_path,output):
 def check_plan(path,expected):
     raw=read(path,max_bytes=128*1024**2);data=load(raw,max_nodes=8_000_000)
     if sha(raw)!=expected or data.get('contract') not in ('beaver-batch/2','beaver-production/3') or data.get('implementationSha256')!=identity():fail('BATCH_PLAN_CHANGED',str(path),'Regenerate with current implementation; bind exact plan SHA256')
-    validate(data['spec']);return data
+    validate(data['spec'])
+    scene_settings=data.get('sceneSettings')
+    if scene_settings is not None:
+        required={'path','beforeSha256','beforeBytes','expectedAfterSha256','expectedAfterBytes','moves'}
+        if not isinstance(scene_settings,dict) or set(scene_settings)!=required or scene_settings.get('path')!=SCENE_BUILD_SETTINGS:
+            fail('BATCH_SCENE_SETTINGS_PLAN',str(path),'Malformed scene-derived settings postimage')
+        for key in ('beforeSha256','expectedAfterSha256'):
+            if not isinstance(scene_settings[key],str) or not re.fullmatch(r'[0-9a-f]{64}',scene_settings[key]):fail('BATCH_SCENE_SETTINGS_PLAN',key,'Expected SHA256')
+        if (type(scene_settings['beforeBytes']) is not int or type(scene_settings['expectedAfterBytes']) is not int
+                or not isinstance(scene_settings['moves'],list) or not scene_settings['moves']):
+            fail('BATCH_SCENE_SETTINGS_PLAN',str(path),'Expected exact byte counts and nonempty scene moves')
+        before=data.get('before',{}).get(SCENE_BUILD_SETTINGS)
+        if (SCENE_BUILD_SETTINGS not in data.get('writeSet',[]) or not isinstance(before,dict)
+                or before.get('sha256')!=scene_settings['beforeSha256'] or before.get('bytes')!=scene_settings['beforeBytes']):
+            fail('BATCH_SCENE_SETTINGS_PLAN',str(path),'Build settings preimage must be in the native write set')
+        declared={(s['source'],s['target']) for s in data['spec']['steps'] if s['kind']=='asset.move' and s['source'].lower().endswith('.unity')}
+        seen=set()
+        for move in scene_settings['moves']:
+            if (not isinstance(move,dict) or set(move)!={'source','target','guid'}
+                    or not all(isinstance(move[k],str) for k in ('source','target','guid'))
+                    or (move['source'],move['target']) not in declared or not re.fullmatch(r'[0-9a-f]{32}',move['guid'])):
+                fail('BATCH_SCENE_SETTINGS_PLAN',str(path),'Postimage move must bind one scene step and source GUID')
+            if (move['source'],move['target']) in seen:fail('BATCH_SCENE_SETTINGS_PLAN',str(path),'Duplicate scene settings move')
+            seen.add((move['source'],move['target']))
+    return data
 
 
 def launch(editor,project,stage,job,timeout):
@@ -310,9 +446,9 @@ def apply(plan_path,output,editor,expected,timeout=600):
                 dest=inside(project,rel);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(raw)
             installed={i['path']+s for i in data['installs'] for s in ('','.meta')}
             preconditions=[dict(path=p,exists=p in preinstalled or v is not None,sha256=sha(preinstalled[p]) if p in preinstalled else v['sha256'] if v else '') for p,v in data['before'].items() if p not in installed and (v is not None or p in data['writeSet'] and not p.endswith('.meta'))]
-            job=dict(data['spec'],projectRoot=str(project),stage=str(stage),mode='apply',planSha256=expected,
-                     writes=data['writeSet'],installs=data['installs'],patches=patches,preconditions=preconditions)
-            job['requiresReopen']=any(s['kind']=='resource.project-settings' for s in data['spec']['steps'])
+            job=_native_job(project,stage,'apply',expected,data['writeSet'],preconditions,spec=data['spec'],
+                            scene_settings=data.get('sceneSettings'),installs=data['installs'],patches=patches,
+                            requiresReopen=any(s['kind']=='resource.project-settings' for s in data['spec']['steps']))
             if production:
                 import json
                 from .resources import validate_step
@@ -342,6 +478,7 @@ def apply(plan_path,output,editor,expected,timeout=600):
             observed=inventory(project);changed={p for p in set(listing)|set(observed) if listing.get(p)!=observed.get(p)}
             journal['after']=state(project,data['writeSet']);journal['changedPaths']=sorted(changed)
             journal['unplannedPaths']=sorted(changed-set(data['writeSet']))
+            journal['sceneSettingsGuardMatches']=_scene_settings_guard(data.get('sceneSettings'),journal.get('native',{}),journal['after'],'after')
             journal['metrics']=dict(statFilesPerInventory=len(observed),inventoryPasses=2,
                                     pythonHashReadOperations=sum(v is not None for v in data['before'].values())+sum(v is not None for v in journal['after'].values()),
                                     nativeHashReadOperations=journal.get('native',{}).get('hashReadOperations','not_recorded_by_executor'),
@@ -349,9 +486,9 @@ def apply(plan_path,output,editor,expected,timeout=600):
             write_json(stage/'journal.json',journal)
         witness={row['path']:None if not row['exists'] else dict(sha256=row['sha256'],bytes=row['bytes']) for row in report.get('files',[])}
         journal['recoveryWitnessMatches']=witness==journal['after']
-        if code!=0 or report.get('status')!='verified' or report.get('planSha256')!=expected or not journal['recoveryWitnessMatches'] or journal['unplannedPaths']:
+        if code!=0 or report.get('status')!='verified' or report.get('planSha256')!=expected or not journal['recoveryWitnessMatches'] or journal['unplannedPaths'] or not journal['sceneSettingsGuardMatches']:
             journal['status']='recovery-required';write_json(stage/'journal.json',journal)
-            cause=(report.get('error') or journal.get('nativeBeforeReopen',{}).get('error') or 'No verified native report or unexpected source mutation').splitlines()[0][:1000]
+            cause=(report.get('error') or ('Scene BuildSettings postimage/readback mismatch' if not journal['sceneSettingsGuardMatches'] else '') or journal.get('nativeBeforeReopen',{}).get('error') or 'No verified native report or unexpected source mutation').splitlines()[0][:1000]
             if production and 'RESOURCE_NEEDS_ACTION' in report.get('error',''):
                 fail('PRODUCTION_PROVIDER_BLOCKED',str(stage),cause+'; prior steps may have writes; inspect checkpoint before recovery',status='blocked')
             fail('BATCH_NATIVE_FAILED',str(stage),cause+'; inspect journal/native checkpoint; recover only exact witnessed state')
@@ -377,12 +514,14 @@ def recover(transaction,output,editor,timeout=600):
         if state(project,journal['writeSet'])!=journal['after']:fail('BATCH_LATER_EDIT',str(transaction),'Later manual changes detected; recovery refuses all writes')
         root,owned=helper(project,'ProjectSettings/EditorSettings.asset' in journal['before'])
         try:
-            job=dict(projectRoot=str(project),stage=str(stage),mode='recover',planSha256=journal['planSha256'],writes=journal['writeSet'],steps=data['spec']['steps'],
-                     preconditions=[dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '') for p,v in journal['after'].items()],
+            job=_native_job(project,stage,'recover',journal['planSha256'],journal['writeSet'],
+                     [dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '') for p,v in journal['after'].items()],
+                     spec=data['spec'],scene_settings=data.get('sceneSettings'),
                      restores=[dict(path=p,source=str(transaction/'before'/p),exists=v is not None,sha256=v['sha256'] if v else '') for p,v in journal['before'].items()])
             code,report=launch(editor,project,stage,job,timeout)
         finally:cleanup(project,root,owned)
-        if code!=0 or report.get('status')!='verified' or state(project,journal['writeSet'])!=journal['before']:
+        restored=state(project,journal['writeSet'])
+        if code!=0 or report.get('status')!='verified' or restored!=journal['before'] or not _scene_settings_guard(data.get('sceneSettings'),report,restored,'before'):
             write_json(stage/'recovery.json',dict(status='failed',native=report));fail('BATCH_RECOVERY_FAILED',str(stage),'Restore did not return exact original native files')
         journal['status']='recovered';journal['recoveryReport']=str(stage/'recovery.json');write_json(transaction/'journal.json',journal)
         result=dict(status='verified',nativeReadback='restored_exact_bytes_and_imported',restored=len(journal['writeSet']),report=str(stage/'recovery.json'),editorStarts=1)

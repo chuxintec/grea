@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261028+fix5",
-  "status": "local-candidate-verified",
+  "candidateVersion": "0.5.1.dev20261028+fix6",
+  "status": "local-candidate-in-final-verification",
   "syntheticChecks": {
-    "passed": 149,
-    "scope": "fixed committed export: affected P0, consumer declaration/transport, plus shared transaction/UI regressions"
+    "passed": null,
+    "scope": "new retirement/scene modules full affected regression pending final sealed candidate"
   },
   "native": {
     "editorVersion": "6000.6.2f1",
@@ -118,7 +118,7 @@
     "manualSameBytesMetadataRecoveryRefused": true,
     "finalInstalledPackageExecuted": false,
     "negativeDependencyProof": "same native companion bytes; separately installed retire2 negative, zero deletion and full source unchanged",
-    "currentCandidateEvidence": "fix4 evidence reuse only; unity.py and BeaverNative.cs unchanged in committed fix5 export"
+    "currentCandidateEvidence": "new policy code; final installed fixed6 verification pending"
   },
   "compactTransport": {
     "optionalFlag": "--summary",
@@ -183,10 +183,24 @@
     "lookupContextAndStaleDeclarations": "rejected",
     "realConsumerSourceParserReadOnly": "verified; no full game plan/native claim"
   },
-  "notInThisCandidate": [
-    "source-evidence-only retirement execution",
-    "scene-derived BuildSettings transaction changes"
-  ],
-  "implementationSha256": "bd4c0bbd6c9fe3d10b36aff103a8020cc65adf54ff22dc339d43c20977abc743",
-  "installedComparisonCliContract": "passed from independent installed fixed wheel, no PYTHONPATH"
+  "notInThisCandidate": [],
+  "installedComparisonCliContract": "passed from independent installed fixed wheel, no PYTHONPATH",
+  "nativeSourceEvidenceOnly": {
+    "testedTrial": "0.5.1.dev20261028+sourceonlytrial1",
+    "deleteIndependentReopen": true,
+    "restoreIndependentReopen": true,
+    "originalSourceRowsRestored": 250,
+    "realGuidPreserved": true,
+    "nativeObjectCount": 0,
+    "localIds": [],
+    "identityStatus": "no-persistent-object",
+    "finalCandidateNativeVerification": "pending",
+    "runtimeIdentityAvailability": "not-established"
+  },
+  "sceneDerivedSettings": {
+    "companionCompiledWithSupportClasses": true,
+    "sameGuidPathBoundBeforeAndAfter": true,
+    "extraBytes": "blocked",
+    "finalNativeVerification": "pending"
+  }
 }

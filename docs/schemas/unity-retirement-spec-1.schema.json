@@ -33,6 +33,36 @@
           "sourceEvidence": {
             "type": "string",
             "minLength": 1
+          },
+          "identityPolicy": {
+            "enum": [
+              "native-object",
+              "source-evidence-only"
+            ],
+            "default": "native-object"
+          },
+          "sourceIdentityEvidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "snapshotPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "snapshotSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "assetPath": {
+                "type": "string",
+                "pattern": "^Assets/"
+              }
+            },
+            "required": [
+              "snapshotPath",
+              "snapshotSha256",
+              "assetPath"
+            ]
           }
         },
         "required": [
@@ -40,6 +70,32 @@
           "role",
           "reason",
           "sourceEvidence"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "identityPolicy"
+              ],
+              "properties": {
+                "identityPolicy": {
+                  "const": "source-evidence-only"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "sourceIdentityEvidence"
+              ]
+            },
+            "else": {
+              "not": {
+                "required": [
+                  "sourceIdentityEvidence"
+                ]
+              }
+            }
+          }
         ]
       }
     },

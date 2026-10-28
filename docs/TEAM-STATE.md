@@ -13,4 +13,4 @@ Current approved local P0 modules (shared source baseline e0c7e0c):
 
 The primary is the only Editor/desktop/shared-contract writer. Modules do not recursively delegate. Formal package installation and released artifacts are unchanged. Production-project adoption is separately recorded. Module policy and necessary peer communication follow the workspace's current governing standards.
 
-Next-candidate execution modules are still in progress: source-evidence-only retirement (folder contributor) and exact scene BuildSettings transaction handling (structure contributor). They are excluded from the fixed fix5 committed export until independently verified.
+Fix6 execution modules are integrated: explicit source-evidence-only retirement (folder contributor) and exact scene BuildSettings handling (structure contributor). The parent owns final isolated Editor validation and package sealing; immutable fix5 excludes these modules.

@@ -131,3 +131,5 @@ P0 report commands accept optional `--summary`: full inventory, consumers, hashe
 `unity plan/apply/recover` also accept optional `--summary`. For apply/recover the compact envelope retains native status/plan identity and an actual-change count, pointing to the SHA-bound full transaction journal for every change and identity. The default response is unchanged.
 
 `structure plan` accepts optional `--consumer-resolutions <JSON>`, with the strict `structure-consumer-resolutions-1` schema. Exact file SHA/token span/decoded literal and reviewed evidence can resolve only supported source-identity comparisons; native/runtime lookup and unknown dynamic blockers remain separate. See [consumer declarations](STRUCTURE-CONSUMERS.md).
+
+Scene asset moves in `batch` may bind one exact `ProjectSettings/EditorBuildSettings.asset` postimage. The derived file joins the transaction's read/write/restore sets; this is not a general settings-write exemption. See [scene moves](SCENE-MOVES.md). Native retirement also supports the separately reviewed `source-evidence-only` policy described in RETIREMENT.md; the default still requires persistent native object identities.

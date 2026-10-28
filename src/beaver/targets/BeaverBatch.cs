@@ -26,10 +26,14 @@ public static class BeaverBatch {
         public long oldLocalId,newLocalId;public string[] consumers;public Action[] actions;
     }
     [Serializable] public class FileRow {public string path,source,sha256;public bool exists;public long bytes;}
+    [Serializable] public class SceneMoveIdentity {public string source,target,guid;}
+    [Serializable] public class SceneSettingsExpectation {public string path,beforeSha256,expectedAfterSha256;public long beforeBytes,expectedAfterBytes;public SceneMoveIdentity[] moves;}
+    [Serializable] public class SceneSettingsReadback {public string path,status,expectedSha256,observedSha256;public bool movesVerified;public SceneMoveIdentity[] moves;}
     [Serializable] public class Job {
         public string projectRoot,stage,mode,planSha256;public string[] writes;
-        public bool requiresReopen;
+        public bool requiresReopen,hasSceneSettings;
         public Step[] steps;public FileRow[] patches,restores,installs,preconditions;
+        public SceneSettingsExpectation sceneSettings;
     }
     [Serializable] public class NodeRow {public string path;public long localId;public string[] components;}
     [Serializable] public class DependencyRow {public string path;public string[] consumers;}
@@ -43,11 +47,12 @@ public static class BeaverBatch {
         public List<string> resourceReadbacks=new List<string>();
         public List<string> diagnostics=new List<string>();
         public List<DependencyRow> nativeConsumers=new List<DependencyRow>();
+        public SceneSettingsReadback sceneSettingsReadback;
     }
     static Job job;static Report report;
     static string Hash(string path) {if(report!=null)report.hashReadOperations++;using(var hash=SHA256.Create())using(var stream=File.OpenRead(path))return BitConverter.ToString(hash.ComputeHash(stream)).Replace("-","").ToLowerInvariant();}
     static string Full(string relative) {
-        if(String.IsNullOrEmpty(relative)||!(relative.StartsWith("Assets/",StringComparison.Ordinal)||relative=="ProjectSettings/EditorSettings.asset")||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe asset path: "+relative);
+        if(String.IsNullOrEmpty(relative)||!(relative.StartsWith("Assets/",StringComparison.Ordinal)||relative=="ProjectSettings/EditorSettings.asset"||(job.hasSceneSettings&&job.sceneSettings!=null&&relative==job.sceneSettings.path&&relative=="ProjectSettings/EditorBuildSettings.asset"))||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe asset path: "+relative);
         return Path.Combine(job.projectRoot,relative);
     }
     static void Save() {
@@ -235,10 +240,28 @@ public static class BeaverBatch {
             .Where(p=>AssetDatabase.GetDependencies(p,false).Contains(oldPath)).OrderBy(p=>p,StringComparer.Ordinal).ToArray();
     }
     static string[] AssetIds(string path) {
-        return AssetDatabase.LoadAllAssetsAtPath(path).Where(o=>o!=null).Select(o=>{
+        var objects=new List<UnityEngine.Object>();var main=AssetDatabase.LoadMainAssetAtPath(path);if(main!=null)objects.Add(main);
+        objects.AddRange(AssetDatabase.LoadAllAssetsAtPath(path).Where(o=>o!=null));
+        return objects.Where(o=>o!=null).Select(o=>{
             string guid;long id;if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(o,out guid,out id))throw new Exception("Asset localID unavailable");
+            if(String.IsNullOrEmpty(guid)||id==0)throw new Exception("Asset GUID/localID identity is empty");
             return guid+":"+id+":"+o.GetType().FullName;
-        }).OrderBy(s=>s,StringComparer.Ordinal).ToArray();
+        }).Distinct(StringComparer.Ordinal).OrderBy(s=>s,StringComparer.Ordinal).ToArray();
+    }
+    static void VerifySceneSettings() {
+        if(!job.hasSceneSettings)return;
+        if(job.sceneSettings==null)throw new Exception("Scene settings expectation missing while hasSceneSettings is true");
+        if(job.sceneSettings.path!="ProjectSettings/EditorBuildSettings.asset"||job.sceneSettings.moves==null||job.sceneSettings.moves.Length==0)throw new Exception("Invalid bound scene settings expectation");
+        bool before=job.mode=="recover";string expected=before?job.sceneSettings.beforeSha256:job.sceneSettings.expectedAfterSha256;
+        string observed=Hash(FullRead(job.sceneSettings.path));bool movesVerified=true;
+        var entries=EditorBuildSettings.scenes??new EditorBuildSettingsScene[0];
+        foreach(var move in job.sceneSettings.moves) {
+            string wanted=before?move.source:move.target;string obsolete=before?move.target:move.source;
+            var matches=entries.Where(e=>e!=null&&e.path==wanted).ToArray();
+            if(matches.Length!=1||entries.Any(e=>e!=null&&e.path==obsolete)||AssetDatabase.AssetPathToGUID(wanted)!=move.guid)movesVerified=false;
+        }
+        report.sceneSettingsReadback=new SceneSettingsReadback{path=job.sceneSettings.path,status=observed==expected&&movesVerified?"verified":"failed",expectedSha256=expected,observedSha256=observed,movesVerified=movesVerified,moves=job.sceneSettings.moves};
+        if(observed!=expected||!movesVerified)throw new Exception("SCENE_BUILD_SETTINGS_POSTIMAGE_MISMATCH: expected bytes/GUID paths did not match the bound scene move postimage");
     }
     static void Preflight() {
         foreach(var row in job.preconditions)if(row.exists?(!File.Exists(FullRead(row.path))||Hash(FullRead(row.path))!=row.sha256):File.Exists(FullRead(row.path)))throw new Exception("BATCH_IMPORT_SOURCE_DRIFT: "+row.path);
@@ -324,7 +347,9 @@ public static class BeaverBatch {
                     if(step.kind=="prefab.patch")Patch(step);
                     else if(step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
                     else if(step.kind=="asset.move") {
-                        Folder(step.target);var guid=AssetDatabase.AssetPathToGUID(step.source);var ids=AssetIds(step.source);var error=AssetDatabase.MoveAsset(step.source,step.target);
+                        Folder(step.target);var guid=AssetDatabase.AssetPathToGUID(step.source);var ids=AssetIds(step.source);
+                        if(step.source.EndsWith(".unity",StringComparison.OrdinalIgnoreCase)&&(String.IsNullOrEmpty(guid)||ids.Length==0))throw new Exception("SCENE_MOVE_IDENTITY_EMPTY: refusing empty SceneAsset GUID/localID identity set");
+                        var error=AssetDatabase.MoveAsset(step.source,step.target);
                         if(!String.IsNullOrEmpty(error)||AssetDatabase.AssetPathToGUID(step.target)!=guid||!ids.SequenceEqual(AssetIds(step.target)))throw new Exception("Move/GUID/localID check failed: "+error);
                     } else if(step.kind=="reference.replace")Replace(step);
                     else if(step.kind=="text.key"||step.kind=="script.key") {
@@ -367,6 +392,7 @@ public static class BeaverBatch {
                     report.completedSteps++;
                 }
             } else throw new Exception("Unknown mode");
+            if(job.mode!="checkpoint"&&!(job.requiresReopen&&job.mode=="apply"))VerifySceneSettings();
             report.status=job.mode=="checkpoint"?"checkpoint_verified":job.requiresReopen&&job.mode=="apply"?"pending_editor_reopen":"verified";Save();EditorApplication.Exit(0);
         } catch(Exception error) {
             if(report!=null){report.status="failed";report.error=error.ToString();Save();}

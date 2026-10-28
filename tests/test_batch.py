@@ -5,7 +5,7 @@ from unittest.mock import patch
 import contextlib
 import io
 import json
-from beaver.batch import plan,apply,recover,state,text_changes
+from beaver.batch import plan,apply,recover,state,text_changes,_scene_settings_guard,_native_job
 from beaver.cli import main
 from beaver.io import write_json,encoded,sha
 from beaver.errors import BeaverError
@@ -46,12 +46,113 @@ class BatchTests(unittest.TestCase):
             root=Path(temp).resolve();project,spec=self.fixture(root);result=plan(project,spec,root/'plan')
             data=json.loads(Path(result['report']).read_text())
             self.assertNotIn('Assets/Unrelated.png',data['before'])
+            self.assertNotIn('sceneSettings',data)
             self.assertEqual(data['before']['Assets/Window.prefab']['sha256'],sha((project/'Assets/Window.prefab').read_bytes()))
             self.assertEqual(result['metrics']['editorStarts'],0)
             (project/'Assets/Window.prefab').write_text('later manual')
             with patch('beaver.batch.editor_path',return_value=root/'Unity'),patch('beaver.batch.native_lock'):
                 with self.assertRaises(BeaverError) as e:apply(result['report'],root/'run',root/'Unity',result['planSha256'])
             self.assertEqual(e.exception.code,'BATCH_SOURCE_DRIFT')
+
+    def scene_fixture(self,root,wrong_guid=False):
+        project=candidate(root/'project')
+        moves=[('Assets/Product/Scenes/Entry.unity','Assets/Game/Scenes/Entry.unity','a'*32),
+               ('Assets/SourceRecovery/Practice/Bootstrap.unity','Assets/Game/Scenes/Bootstrap.unity','b'*32)]
+        rows=[]
+        for source,target,guid in moves:
+            asset=project/source;asset.parent.mkdir(parents=True,exist_ok=True);asset.write_bytes(b'%YAML 1.1\nScene: {}\n')
+            Path(str(asset)+'.meta').write_text('fileFormatVersion: 2\nguid: '+guid+'\n')
+            rows.append((source,target,guid))
+        settings=project/'ProjectSettings/EditorBuildSettings.asset'
+        settings.write_text(f'''%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: {rows[0][0]}
+    guid: {'f'*32 if wrong_guid else rows[0][2]}
+  - enabled: 1
+    path: {rows[1][0]}
+    guid: {rows[1][2]}
+  - enabled: 0
+    path: Assets/Scenes/Disabled.unity
+    guid: {'c'*32}
+  m_configObjects: {{}}
+''')
+        spec=root/'scene-spec.json';write_json(spec,dict(schemaVersion=2,operation='batch',steps=[dict(kind='asset.move',source=s,target=t) for s,t,_ in rows]))
+        return project,spec,settings,rows
+
+    def test_scene_moves_bind_derived_buildsettings_postimage_and_write_set(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,spec,settings,moves=self.scene_fixture(root)
+            before=settings.read_bytes();result=plan(project,spec,root/'plan');data=json.loads(Path(result['report']).read_text())
+            self.assertIn('ProjectSettings/EditorBuildSettings.asset',data['writeSet'])
+            self.assertEqual(data['before']['ProjectSettings/EditorBuildSettings.asset']['sha256'],sha(before))
+            bound=data['sceneSettings'];self.assertEqual(bound['beforeSha256'],sha(before))
+            expected=before
+            for source,target,_ in moves:expected=expected.replace(('path: '+source).encode(),('path: '+target).encode())
+            self.assertEqual(bound['expectedAfterSha256'],sha(expected))
+            self.assertEqual(bound['expectedAfterBytes'],len(expected))
+            self.assertEqual([(x['source'],x['target'],x['guid']) for x in bound['moves']],moves)
+
+    def test_scene_buildsettings_guid_mismatch_refuses_plan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,spec,settings,moves=self.scene_fixture(root,wrong_guid=True)
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'plan')
+            self.assertEqual(error.exception.code,'BATCH_SCENE_SETTINGS_GUID')
+
+    def test_scene_buildsettings_guid_at_wrong_path_refuses_plan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,spec,settings,moves=self.scene_fixture(root)
+            raw=settings.read_text().replace(moves[0][0], 'Assets/Old/Entry.unity', 1)
+            settings.write_text(raw)
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'plan')
+            self.assertEqual(error.exception.code,'BATCH_SCENE_SETTINGS_GUID')
+
+    def test_duplicate_scene_guid_at_another_path_refuses_plan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,spec,settings,moves=self.scene_fixture(root)
+            raw=settings.read_text().replace('  m_configObjects:',f'''  - enabled: 0
+    path: Assets/Scenes/Another.unity
+    guid: {moves[0][2]}
+  m_configObjects:''')
+            settings.write_text(raw)
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'plan')
+            self.assertEqual(error.exception.code,'BATCH_SCENE_SETTINGS_GUID')
+
+    def test_native_job_explicitly_maps_scene_settings_presence_for_apply_and_recover(self):
+        common=dict(project_root='/project',stage='/stage',plan_sha='a'*64,writes=[],preconditions=[])
+        ordinary=_native_job(**common,mode='apply',spec={'steps':[]})
+        self.assertIs(ordinary['hasSceneSettings'],False)
+        self.assertNotIn('sceneSettings',ordinary)
+        expectation=dict(path='ProjectSettings/EditorBuildSettings.asset',moves=[dict(source='a',target='b',guid='c'*32)])
+        scene=_native_job(**common,mode='recover',scene_settings=expectation,spec={'steps':[]})
+        self.assertIs(scene['hasSceneSettings'],True)
+        self.assertEqual(scene['sceneSettings'],expectation)
+
+    def test_scene_settings_preimage_change_blocks_apply_before_editor(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,spec,settings,moves=self.scene_fixture(root)
+            result=plan(project,spec,root/'plan');settings.write_bytes(settings.read_bytes()+b'# later edit\n')
+            with patch('beaver.batch.editor_path',return_value=root/'Unity'),patch('beaver.batch.native_lock'),patch('beaver.batch.launch') as launch:
+                with self.assertRaises(BeaverError) as error:apply(result['report'],root/'run',root/'Unity',result['planSha256'])
+            self.assertEqual(error.exception.code,'BATCH_SOURCE_DRIFT');launch.assert_not_called()
+
+    def test_scene_postimage_and_recovery_guards_reject_extra_settings_changes(self):
+        moves=[dict(source='Assets/Old/Start.unity',target='Assets/Game/Scenes/Start.unity',guid='a'*32)]
+        expectation=dict(path='ProjectSettings/EditorBuildSettings.asset',beforeSha256='a'*64,
+                         expectedAfterSha256='b'*64,moves=moves)
+        native_after=dict(sceneSettingsReadback=dict(path=expectation['path'],status='verified',
+                           expectedSha256='b'*64,observedSha256='b'*64,movesVerified=True,moves=moves))
+        self.assertTrue(_scene_settings_guard(expectation,native_after,{expectation['path']:{'sha256':'b'*64}},'after'))
+        self.assertFalse(_scene_settings_guard(expectation,native_after,{expectation['path']:{'sha256':'c'*64}},'after'))
+        native_before=dict(sceneSettingsReadback=dict(path=expectation['path'],status='verified',
+                            expectedSha256='a'*64,observedSha256='a'*64,movesVerified=True,moves=moves))
+        self.assertTrue(_scene_settings_guard(expectation,native_before,{expectation['path']:{'sha256':'a'*64}},'before'))
+        self.assertFalse(_scene_settings_guard(expectation,native_before,{expectation['path']:{'sha256':'d'*64}},'before'))
 
     def test_recovery_rejects_later_edit_before_any_editor_launch(self):
         with tempfile.TemporaryDirectory() as temp:

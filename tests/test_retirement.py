@@ -1,11 +1,13 @@
 from pathlib import Path
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from beaver.errors import BeaverError
 from beaver.io import encoded, load, read, sha, write_json
-from beaver.unity import apply, plan, recover
+from beaver.unity import apply, plan, recover, validate_retire_identity_rows, validate_retire_source_evidence
+from beaver.output_limits import digest_file
 from test_adoption import candidate
 
 
@@ -20,14 +22,32 @@ def add_asset(project,path,content,guid):
     return asset
 
 
-def fixture(root,resource=True):
+def fixture(root,resource=True,source_only=False):
     project=candidate(root/'Unity')
     selected=add_asset(project,Path('Assets/Game/Resources/Legacy.json'),b'{"old":true}',SELECTED_GUID)
     scene=add_asset(project,Path('Assets/Game/Scenes/Main.unity'),b'%YAML synthetic scene',SCENE_GUID)
     code=add_asset(project,Path('Assets/Game/Editor/Writer.cs'),b'// protected writer',CODE_GUID)
+    evidence=None
+    if source_only:
+        snapshot=dict(schemaVersion=1,target='StandaloneOSX',pipeline='URP',buildScenes=[],explicitRoots=[],implicitRoots=[],
+            coverage=dict(complete=True,blockers=[]),
+            assets=[dict(path='Assets/Game/Resources/Legacy.json',guid=SELECTED_GUID,localIds=[],types=[],status='unknown',
+                         identityStatus='no-persistent-object',objectCount=0,error='No persistent Unity objects were returned.')],
+            dependencies=[],unresolvedDependencies=[],
+            inputState={
+                'Assets/Game/Resources/Legacy.json':dict(sha256=digest_file(selected),bytes=selected.stat().st_size),
+                'Assets/Game/Resources/Legacy.json.meta':dict(sha256=digest_file(Path(str(selected)+'.meta')),bytes=Path(str(selected)+'.meta').stat().st_size),
+            },
+            editorExitCode=0,nativeReadback=dict(status='verified'),sourceUnchanged=True,unplannedProjectChanges=[],
+            helperCleaned=True,visualAcceptance='not_run',gameplayAcceptance='not_run')
+        snapshot_path=root/'collector-snapshot.json';write_json(snapshot_path,snapshot)
+        evidence=dict(snapshotPath=str(snapshot_path),snapshotSha256=sha(read(snapshot_path)),assetPath='Assets/Game/Resources/Legacy.json')
+    retire_item=dict(path='Assets/Game/Resources/Legacy.json',role='obsolete-runtime-config',reason='Superseded by the approved JSON config.',sourceEvidence='Consumer review 2026-10-28: no longer an active runtime key.')
+    if source_only:
+        retire_item.update(identityPolicy='source-evidence-only',sourceIdentityEvidence=evidence)
     spec={
         'schemaVersion':1,'operation':'assets.retire',
-        'retire':[dict(path='Assets/Game/Resources/Legacy.json',role='obsolete-runtime-config',reason='Superseded by the approved JSON config.',sourceEvidence='Consumer review 2026-10-28: no longer an active runtime key.')],
+        'retire':[retire_item],
         'protectedRoots':[str(scene.relative_to(project).as_posix()),str(code.relative_to(project).as_posix())],
         'resources':[dict(key='Legacy',path='Assets/Game/Resources/Legacy.json',guid=SELECTED_GUID,reason='Retire this implicit Resources key.',sourceEvidence='Consumer review explicitly identifies key Legacy.') ] if resource else [],
     }
@@ -35,15 +55,42 @@ def fixture(root,resource=True):
     return project,selected,spec_path
 
 
+def two_source_fixture(root):
+    project,first,spec_path=fixture(root,source_only=True)
+    second=add_asset(project,Path('Assets/Game/Resources/Legacy2.json'),b'{"old":2}',
+                     '66666666666666666666666666666666')
+    spec=load(read(spec_path));snapshot_path=Path(spec['retire'][0]['sourceIdentityEvidence']['snapshotPath'])
+    snapshot=load(read(snapshot_path));second_path='Assets/Game/Resources/Legacy2.json'
+    second_meta=Path(str(second)+'.meta')
+    snapshot['assets'].append(dict(path=second_path,guid='66666666666666666666666666666666',localIds=[],types=[],status='unknown',
+        identityStatus='no-persistent-object',objectCount=0,error='AssetDatabase returned zero objects from main asset and subassets.'))
+    snapshot['inputState'][second_path]=dict(sha256=digest_file(second),bytes=second.stat().st_size)
+    snapshot['inputState'][second_path+'.meta']=dict(sha256=digest_file(second_meta),bytes=second_meta.stat().st_size)
+    write_json(snapshot_path,snapshot);snapshot_sha=sha(read(snapshot_path))
+    spec['retire'][0]['sourceIdentityEvidence']['snapshotSha256']=snapshot_sha
+    spec['retire'].append(dict(path=second_path,role='obsolete-runtime-config',reason='Superseded.',
+        sourceEvidence='Two-source collector snapshot fixture.',identityPolicy='source-evidence-only',
+        sourceIdentityEvidence=dict(snapshotPath=str(snapshot_path),snapshotSha256=snapshot_sha,assetPath=second_path)))
+    spec['resources'].append(dict(key='Legacy2',path=second_path,guid='66666666666666666666666666666666',
+        reason='Retire explicit key Legacy2.',sourceEvidence='Two-source collector snapshot fixture.'))
+    write_json(spec_path,spec)
+    return project,first,second,snapshot_path,spec_path
+
+
 def native_report(plan_data,project):
     item=plan_data['retireManifest'][0]
+    source_only=item.get('identityPolicy')=='source-evidence-only'
     protected=[]
     for row in plan_data['protectedManifest']:
         protected.append(dict(path=row['path'],guid=row['guid'],sha256=row['sha256'],metaSha256=row['metaSha256'],
                               localIds=[row['guid']+':-100:UnityEngine.Object']))
     return dict(status='verified',operation='assets.retire',planSha256=sha(encoded(plan_data)),
                 deleteInProgress='',selectedPaths=[item['path']],deletedPaths=[item['path']],
-                retiredAssets=[dict(path=item['path'],guid=item['guid'],localIds=[item['guid']+':-200:UnityEngine.Object'])],
+                retiredAssets=[dict(path=item['path'],guid=item['guid'],identityPolicy=item.get('identityPolicy','native-object'),
+                    identityStatus='no-persistent-object' if source_only else 'verified',nativeObjectCount=0 if source_only else 1,
+                    localIds=[] if source_only else [item['guid']+':-200:UnityEngine.Object'],
+                    sourceEvidenceSnapshotSha256=item['sourceIdentityEvidence']['snapshotSha256'] if source_only else '',
+                    sourceEvidenceTargetRecordSha256=item['sourceIdentityEvidence']['targetRecordSha256'] if source_only else '')],
                 protectedRoots=protected,dependencyPaths=[row['path'] for row in plan_data['protectedManifest']],
                 dependencyClosures=[dict(root=row['path'],paths=[row['path']]) for row in plan_data['protectedManifest']],
                 resources=plan_data['spec']['resources'],resourcesDynamicUseNotProvable=True,
@@ -51,9 +98,18 @@ def native_report(plan_data,project):
 
 
 class RetirementTests(unittest.TestCase):
-    def test_plan_binds_file_meta_guid_role_evidence_roots_and_resources_key(self):
+    def test_case_insensitive_remaining_resources_collision_blocks_retirement(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp).resolve();project,selected,spec=fixture(root)
+            add_asset(project,Path('Assets/Other/Resources/legacy.asset'),b'synthetic remaining evidence','66666666666666666666666666666666')
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'blocked')
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_RESOURCE_AMBIGUOUS')
+            self.assertTrue(selected.exists())
+
+
+    def test_plan_binds_file_meta_guid_role_evidence_roots_and_resources_key(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
             planned=plan(project,spec,root/'preview');data=load(read(Path(planned['report'])))
             self.assertEqual(data['retireManifest'][0]['guid'],SELECTED_GUID)
             self.assertEqual(data['retireManifest'][0]['metaSha256'],data['before']['Assets/Game/Resources/Legacy.json.meta']['sha256'])
@@ -70,9 +126,87 @@ class RetirementTests(unittest.TestCase):
             write_json(spec,spec_data)
             with self.assertRaises(BeaverError):plan(project,spec,root/'directory')
 
+    def test_source_only_evidence_binds_snapshot_and_current_target_input_hashes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
+            planned=plan(project,spec,root/'preview');data=load(read(Path(planned['report'])))
+            item=data['retireManifest'][0];evidence=item['sourceIdentityEvidence']
+            self.assertEqual(item['identityPolicy'],'source-evidence-only')
+            self.assertEqual(evidence['assetPath'],item['path'])
+            self.assertEqual(evidence['targetRecordSha256'],sha(encoded(evidence['targetRecord'])))
+            self.assertEqual(evidence['targetInputs'][0]['sha256'],item['sha256'])
+            self.assertEqual(evidence['targetInputs'][1]['sha256'],item['metaSha256'])
+            snapshot_path=Path(evidence['snapshotPath']);snapshot=load(read(snapshot_path))
+            snapshot_path.write_text(json.dumps(snapshot,sort_keys=True,separators=(',',':')),encoding='utf-8')
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'reformatted-artifact')
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_SOURCE_EVIDENCE_HASH')
+            write_json(snapshot_path,snapshot)
+            snapshot['assets'][0]['identityStatus']='persistent-identity-unavailable';snapshot['assets'][0]['objectCount']=1
+            write_json(snapshot_path,snapshot)
+            spec_data=load(read(spec));spec_data['retire'][0]['sourceIdentityEvidence']['snapshotSha256']=sha(read(snapshot_path))
+            write_json(spec,spec_data)
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'unsupported-identity-state')
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_SOURCE_EVIDENCE_STATE')
+            snapshot=load(read(snapshot_path));snapshot['assets'][0]['identityStatus']='no-persistent-object';snapshot['assets'][0]['objectCount']=0
+            snapshot['inputState'][item['path']]['sha256']='0'*64
+            write_json(snapshot_path,snapshot)
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'bad-artifact')
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_SOURCE_EVIDENCE_HASH')
+            spec_data=load(read(spec));spec_data['retire'][0]['sourceIdentityEvidence']['snapshotSha256']=sha(read(snapshot_path))
+            write_json(spec,spec_data)
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'bad-target-input')
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_SOURCE_EVIDENCE_INPUT')
+
+    def test_shared_source_only_snapshot_is_read_and_validated_once_per_plan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,first,second,snapshot_path,spec=two_source_fixture(root)
+            from beaver import build_filter
+            with patch('beaver.unity.read',wraps=read) as read_spy,patch('beaver.build_filter._snapshot',wraps=build_filter._snapshot) as snapshot_spy:
+                result=plan(project,spec,root/'shared-plan')
+            self.assertEqual(sum(Path(call.args[0]).resolve()==snapshot_path.resolve() for call in read_spy.call_args_list),1)
+            self.assertEqual(snapshot_spy.call_count,1)
+            data=load(read(Path(result['report'])));rows=data['retireManifest']
+            self.assertEqual([row['sourceIdentityEvidence']['targetRecord']['path'] for row in rows],
+                             ['Assets/Game/Resources/Legacy.json','Assets/Game/Resources/Legacy2.json'])
+            self.assertTrue(all(row['sourceIdentityEvidence']['targetRecordSha256']==sha(encoded(row['sourceIdentityEvidence']['targetRecord'])) for row in rows))
+
+    def test_shared_snapshot_cache_still_rejects_second_target_hash_mismatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,first,second,snapshot_path,spec=two_source_fixture(root)
+            snapshot=load(read(snapshot_path));second_path='Assets/Game/Resources/Legacy2.json'
+            snapshot['inputState'][second_path]['sha256']='0'*64
+            write_json(snapshot_path,snapshot);snapshot_sha=sha(read(snapshot_path))
+            spec_data=load(read(spec))
+            for item in spec_data['retire']:item['sourceIdentityEvidence']['snapshotSha256']=snapshot_sha
+            write_json(spec,spec_data)
+            from beaver import build_filter
+            with patch('beaver.unity.read',wraps=read) as read_spy,patch('beaver.build_filter._snapshot',wraps=build_filter._snapshot) as snapshot_spy:
+                with self.assertRaises(BeaverError) as error:plan(project,spec,root/'stale-second-target')
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_SOURCE_EVIDENCE_INPUT')
+            self.assertEqual(sum(Path(call.args[0]).resolve()==snapshot_path.resolve() for call in read_spy.call_args_list),1)
+            self.assertEqual(snapshot_spy.call_count,1)
+
+    def test_native_identity_policy_rejects_forged_empty_or_nonempty_id_states(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,_,spec=fixture(root,source_only=True)
+            planned=plan(project,spec,root/'source-only-plan');data=load(read(Path(planned['report'])))
+            manifest=data['retireManifest'];row=native_report(data,project)['retiredAssets'][0]
+            validate_retire_identity_rows(manifest,[row])
+            forged=dict(row,localIds=['fake:0:Object'],nativeObjectCount=1)
+            with self.assertRaises(BeaverError):validate_retire_identity_rows(manifest,[forged])
+            forged_hash=dict(row,sourceEvidenceTargetRecordSha256='0'*64)
+            with self.assertRaises(BeaverError):validate_retire_identity_rows(manifest,[forged_hash])
+            forged_manifest=dict(manifest[0]);forged_manifest['sourceIdentityEvidence']=dict(manifest[0]['sourceIdentityEvidence'],targetRecordSha256='0'*64)
+            with self.assertRaises(BeaverError):validate_retire_source_evidence(forged_manifest)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,_,spec=fixture(root)
+            planned=plan(project,spec,root/'native-plan');data=load(read(Path(planned['report'])))
+            forged=dict(native_report(data,project)['retiredAssets'][0],identityStatus='no-persistent-object',nativeObjectCount=0,localIds=[])
+            with self.assertRaises(BeaverError):validate_retire_identity_rows(data['retireManifest'],[forged])
+
     def test_apply_uses_transaction_before_images_and_audits_only_selected_deletions(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp).resolve();project,selected,spec=fixture(root)
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
             planned=plan(project,spec,root/'preview');data=load(read(Path(planned['report'])))
 
             def native_run(editor,target,stage,mode,native_plan,timeout):
@@ -92,7 +226,7 @@ class RetirementTests(unittest.TestCase):
 
     def test_recovery_restores_only_witnessed_deleted_before_images(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp).resolve();project,selected,spec=fixture(root)
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
             planned=plan(project,spec,root/'preview');plan_data=load(read(Path(planned['report'])))
             stage=root/'transaction';stage.mkdir();write_json(stage/'unity-plan.json',plan_data)
             checkpoint=native_report(plan_data,project)
@@ -127,7 +261,7 @@ class RetirementTests(unittest.TestCase):
 
     def test_recovery_refuses_to_overwrite_changed_asset_or_unwitnessed_deletion(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp).resolve();project,selected,spec=fixture(root)
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
             planned=plan(project,spec,root/'preview');data=load(read(Path(planned['report'])))
             stage=root/'transaction';stage.mkdir();write_json(stage/'unity-plan.json',data)
             (stage/'before').mkdir()
@@ -156,6 +290,35 @@ class RetirementTests(unittest.TestCase):
             with patch('beaver.unity.editor_path',return_value=root/'UnityEditor'):
                 with self.assertRaises(BeaverError) as error:recover(stage,root/'UnityEditor',planned['planSha256'])
             self.assertEqual(error.exception.code,'ASSET_RETIRE_RECOVERY_BLOCKED')
+
+    def test_source_only_recovery_stays_required_if_import_restores_native_objects(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
+            planned=plan(project,spec,root/'preview');data=load(read(Path(planned['report'])))
+            stage=root/'transaction';stage.mkdir();write_json(stage/'unity-plan.json',data)
+            checkpoint=native_report(data,project);(stage/'before').mkdir()
+            for item in data['retireManifest']:
+                for path in (item['path'],item['metaPath']):
+                    source=project/path;target=stage/'before'/path;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(source.read_bytes())
+            write_json(stage/'journal.json',dict(status='complete',operation='assets.retire',planSha256=planned['planSha256']))
+            write_json(stage/'native-apply.json',checkpoint)
+            selected.unlink();Path(str(selected)+'.meta').unlink()
+
+            def native_run(editor,target,transaction,mode,native_plan,timeout):
+                self.assertTrue((target/'Assets/BeaverTools/Editor/BeaverNative.cs').is_file())
+                report=native_report(native_plan,target)
+                changed=dict(report['retiredAssets'][0],identityStatus='verified',nativeObjectCount=1,localIds=['new-native-id'])
+                report['retiredAssets']=[changed]
+                report['recoveredPaths']=checkpoint['deletedPaths']
+                return report
+
+            with patch('beaver.unity.editor_path',return_value=root/'UnityEditor'),patch('beaver.unity.native_lock'),patch('beaver.unity.run',side_effect=native_run):
+                with self.assertRaises(BeaverError) as error:recover(stage,root/'UnityEditor',planned['planSha256'])
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_IDENTITY')
+            self.assertEqual(load(read(stage/'journal.json'))['status'],'recovery-required')
+            self.assertEqual(selected.read_bytes(),b'{"old":true}')
+            self.assertTrue(Path(str(selected)+'.meta').is_file())
+            self.assertFalse((project/'Assets/BeaverTools').exists())
 
 
 if __name__=='__main__':unittest.main()
