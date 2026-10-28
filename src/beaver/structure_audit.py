@@ -13,10 +13,11 @@ import json
 import os
 import re
 import tempfile
+import unicodedata
 
 from .errors import fail
-from .io import safe
-from .references import inspect_graph
+from .io import safe, inside
+from .references import inspect_graph, _csharp_tokens, _decode_csharp_string
 from .output_limits import WHOLE_FILES
 
 SCHEMA = "beaver-structure-audit/1"
@@ -102,7 +103,7 @@ def _category_rule(category):
 def _case_collisions(paths):
     buckets = defaultdict(list)
     for value in paths:
-        buckets[value.casefold()].append(value)
+        buckets[unicodedata.normalize('NFC',value).casefold()].append(value)
     return [sorted(values) for values in buckets.values() if len(values) > 1]
 
 
@@ -225,7 +226,7 @@ def inspect(project, native_snapshot=None, exceptions=None):
                         break
                     if candidate.is_file() and scan_root.name.casefold() == "assets" and not name.endswith(".meta"):
                         paths.append(_rel(root, candidate))
-                    elif candidate.is_file() and scan_root.name.casefold() != "assets" and candidate.suffix.lower() in REFERENCE_SOURCE_SUFFIXES:
+                    elif candidate.is_file():
                         external_sources.append(_rel(root, candidate))
             if scan_truncated:
                 break
@@ -335,8 +336,8 @@ def inspect(project, native_snapshot=None, exceptions=None):
         if isinstance(value, str) and ("Assets/" in value or "Resources/" in value):
             issues.append({"code": "JSON_ASSET_PATH_UNRESOLVED", "severity": "warning", **row})
 
-    # Inventory static source strings that point at paths under retired roots;
-    # these are consumers to review, not proof that all dynamic uses were found.
+    # Reuse the existing C# tokenizer: every Assets path can be a consumer,
+    # including generators under already-standard roots. Comments are excluded.
     path_consumers = []
     for rel in sorted(p for p in paths + external_sources if p.endswith(".cs")):
         try:
@@ -345,11 +346,15 @@ def inspect(project, native_snapshot=None, exceptions=None):
             text = (root / rel).read_text(encoding="utf-8-sig")
         except (UnicodeError, OSError):
             continue
-        for match in PATH_LITERAL_RE.finditer(text):
-            value = match.group(1)
-            if any(value.startswith("Assets/" + old + "/") or value == "Assets/" + old for old in RETIRED_ROOTS):
-                path_consumers.append({"file": rel, "value": value, "offset": match.start(1)})
+        for kind,token,start,end in _csharp_tokens(text):
+            value = _decode_csharp_string(token) if kind=='string' else token[2:-1].replace('""','"') if token.startswith('@"') and token.endswith('"') else None
+            if isinstance(value,str) and value.replace('\\','/').lower().startswith('assets/'):
+                value=value.replace('\\','/')
+                path_consumers.append({"file": rel, "value": value, "offset": start, "span":[start,end]})
                 issues.append({"code": "OLD_PATH_CONSUMER", "severity": "warning", "file": rel, "value": value})
+            elif kind=='opaque' and 'Assets/' in token:
+                prefix=token[token.index('Assets/'):].split('{',1)[0].split('"',1)[0]
+                issues.append({'code':'DYNAMIC_ASSET_PATH_UNRESOLVED','severity':'warning','file':rel,'prefix':prefix,'span':[start,end]})
 
     scene_paths = sorted(p for p in paths if p.endswith(".unity"))
     for scene in scene_paths:
@@ -378,7 +383,7 @@ def inspect(project, native_snapshot=None, exceptions=None):
     return {"schema": SCHEMA, "projectRoot": str(root), "roots": sorted(roots),
             "scanStatus": "partial_budget" if scan_truncated else "blocked_symlink" if symlinks else "complete",
             "rootCaseCollisions": root_collisions, "inventory": inventory,
-            "sourceHashes": source_hashes, "issues": issues,
+            "sourceHashes": source_hashes, "scannedInputPaths": sorted(paths+external_sources), "issues": issues,
             "resourceLoads": graph["literalLoads"], "dynamicLoads": graph["unknownDynamicLoads"],
             "pathConsumers": path_consumers, "guidToPath": graph["guidToPath"],
             "dependencies": graph["dependencies"], "reverseDependencies": graph["reverseDependencies"],
@@ -438,7 +443,7 @@ def build_plan(audit, mappings, native_snapshot=None):
     no consumer key is silently rewritten.  The returned batch spec is ready
     for the existing batch planner after the caller adds any consumer edits.
     """
-    if not isinstance(audit, dict) or audit.get("schema") != SCHEMA:
+    if not isinstance(audit, dict) or audit.get("schema") != SCHEMA or not isinstance(audit.get('projectRoot'),str):
         fail("STRUCTURE_AUDIT", "audit", "Expected beaver-structure-audit/1 result")
     if not isinstance(mappings, list) or not 1 <= len(mappings) <= 256:
         fail("STRUCTURE_MAPPING", "mappings", "Expected 1..256 explicit mapping rows, matching batch limits")
@@ -453,10 +458,21 @@ def build_plan(audit, mappings, native_snapshot=None):
     for guid, paths in audit.get("duplicateGuids", {}).items():
         global_blockers.append({"code": "DUPLICATE_GUID", "guid": guid, "paths": paths})
     blockers = list(global_blockers)
+    root=safe(audit['projectRoot']);current_inputs=[];current_directories=[]
+    for scope in ('Assets','Packages','ProjectSettings'):
+        for base,dirs,files in os.walk(inside(root,scope),followlinks=False):
+            for name in dirs+files:
+                p=Path(base)/name
+                if p.is_symlink():fail('STRUCTURE_AUDIT_STALE',str(p),'A source symlink was added after inspection; re-audit without following it')
+            current_directories.extend((Path(base)/d).relative_to(root).as_posix() for d in dirs)
+            current_inputs.extend((Path(base)/f).relative_to(root).as_posix() for f in files)
+            if len(current_inputs)+len(current_directories)>MAX_AUDIT_FILES:fail('STRUCTURE_FILE_BUDGET',str(root),'Current input scope exceeds bounded audit policy')
+    if sorted(current_inputs)!=audit.get('scannedInputPaths'):
+        blockers.append({'code':'AUDIT_INPUT_SET_STALE','reason':'Source, metadata, package or settings paths changed; repeat inspect before planning'})
     # The graph and old-path findings are only current if every inspected
     # source file is unchanged since inspect(). Re-hash the bounded audit set.
     for rel, expected in audit.get("sourceHashes", {}).items():
-        current = Path(audit["projectRoot"]) / rel
+        current = inside(root,_valid_rel(rel,'sourceHashes'))
         if not current.is_file() or _sha(current) != expected:
             blockers.append({"code": "AUDIT_CONSUMER_STALE", "path": rel})
     for i, item in enumerate(mappings):
@@ -478,7 +494,7 @@ def build_plan(audit, mappings, native_snapshot=None):
         if not _standard_target(target):
             plan_issues.append({"code": "TARGET_NOT_STANDARD", "ruleId": "STR-05", "path": target, "severity": "warning"})
             blockers.append({"code": "TARGET_NOT_STANDARD", "ruleId": "STR-05", "path": target})
-        source_path = Path(audit["projectRoot"]) / source
+        source_path = inside(root,source)
         meta = Path(str(source_path) + ".meta")
         meta_hash = _sha(meta) if meta.is_file() and meta.stat().st_size <= MAX_HASH_FILE_BYTES else None
         native_row = native["byPath"].get(source) if native else None
@@ -549,10 +565,17 @@ def build_plan(audit, mappings, native_snapshot=None):
             if issue.get("code") == "DYNAMIC_LOAD_UNRESOLVED" and "/Resources/" in source:
                 blockers.append({"code": "DYNAMIC_RESOURCE_KEY_UNRESOLVED", "source": source, "consumer": issue.get("file"), "span": issue.get("span")})
             if issue.get("code") == "OLD_PATH_CONSUMER":
-                value = issue.get("value", "").rstrip("/")
-                no_ext = str(PurePosixPath(source).with_suffix(""))
-                if value in {source, no_ext} or source.startswith(value + "/"):
+                value = issue.get("value", "").rstrip("/").casefold()
+                no_ext = str(PurePosixPath(source).with_suffix("")).casefold()
+                if value in {source.casefold(), no_ext} or source.casefold().startswith(value + "/"):
                     blockers.append({"code": "OLD_PATH_CONSUMER_UNHANDLED", "source": source, "consumer": issue.get("file"), "value": issue.get("value")})
+            if issue.get('code')=='DYNAMIC_ASSET_PATH_UNRESOLVED':
+                prefix=issue.get('prefix','Assets/').casefold()
+                if source.casefold().startswith(prefix):blockers.append({'code':'DYNAMIC_ASSET_PATH_UNRESOLVED','source':source,'consumer':issue.get('file'),'span':issue.get('span')})
+            if issue.get('code')=='JSON_ASSET_PATH_UNRESOLVED':
+                value=issue.get('value','').replace('\\','/').rstrip('/')
+                if value.casefold() in {source.casefold(),str(PurePosixPath(source).with_suffix('')).casefold()} or source.casefold().startswith(value.casefold()+'/'):
+                    blockers.append({'code':'JSON_ASSET_PATH_CONSUMER_UNHANDLED','source':source,'consumer':issue.get('file'),'value':value})
         if resource_key and resource_key["old"] != resource_key["new"]:
             for load in audit.get("resourceLoads", []):
                 if load.get("key") == resource_key["old"] and source in load.get("candidateAssets", []):
@@ -560,15 +583,27 @@ def build_plan(audit, mappings, native_snapshot=None):
                                      "consumer": load.get("file"), "key": resource_key["old"],
                                      "targetKey": resource_key["new"], "span": load.get("span")})
     # Case-insensitive target collisions are refused, including unmapped files.
-    existing_folded = {p.casefold(): p for p in inventory}
+    folded=lambda p:unicodedata.normalize('NFC',p).casefold()
+    existing_folded = {folded(p): p for p in current_inputs+current_directories}
+    proposed_paths=set()
     for row in rows:
-        collision = existing_folded.get(row["target"].casefold())
+        proposed_paths.add(row['target']);proposed_paths.update(p.as_posix() for p in PurePosixPath(row['target']).parents if p.as_posix()!='.')
+    for collision in _case_collisions(sorted(proposed_paths)):
+        blockers.append({'code':'TARGET_CASE_COLLISION','paths':collision})
+    for row in rows:
+        inside(root,row['target'])
+        collision = existing_folded.get(folded(row["target"]))
         if collision:
             blockers.append({"code": "TARGET_OCCUPIED", "path": row["target"], "existing": collision})
         if Path(audit["projectRoot"], row["target"]).exists():
             blockers.append({"code": "TARGET_OCCUPIED", "path": row["target"]})
-        if Path(audit["projectRoot"], row["target"] + ".meta").exists() or row["target"] + ".meta" in existing_folded:
+        if inside(root,row["target"] + ".meta").exists() or folded(row["target"] + ".meta") in existing_folded:
             blockers.append({"code": "TARGET_META_OCCUPIED", "path": row["target"] + ".meta"})
+        for parent in PurePosixPath(row['target']).parents:
+            parent=parent.as_posix()
+            actual=existing_folded.get(folded(parent))
+            if actual and (actual!=parent or actual in current_inputs):blockers.append({'code':'TARGET_PARENT_CONFLICT','path':parent,'existing':actual})
+            if any(other['target']==parent for other in rows):blockers.append({'code':'TARGET_HIERARCHY_COLLISION','path':row['target'],'parent':parent})
     complete = not blockers and all(r["status"] == "observed" for r in rows)
     steps = [{"kind": "asset.move", "source": r["source"], "target": r["target"]} for r in rows]
     status = "declaration_only" if complete else "blocked"

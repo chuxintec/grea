@@ -6,7 +6,7 @@ Current approved local P0 modules (shared source baseline e0c7e0c):
 
 | Module | Agent | Requested model | Observed configuration | Owned files | State |
 | --- | --- | --- | --- | --- | --- |
-| Structure audit and move plan | /root/structure_audit | gpt-6-luna / high | spawn accepted; runtime identity not independently probed | structure_audit.py, test_structure_audit.py, STRUCTURE-AUDIT.md | integrated; 16 targeted checks |
+| Structure audit and move plan | /root/structure_audit | gpt-6-luna / high | spawn accepted; runtime identity not independently probed | structure_audit.py, test_structure_audit.py, STRUCTURE-AUDIT.md | integrated; 22 targeted checks |
 | Build resource filter | /root/build_filter | gpt-6-luna / high | spawn accepted; runtime identity not independently probed | build_filter.py, BeaverBuildFilter.cs, test_build_filter.py, BUILD-FILTER.md | integrated; 10 targeted checks and actual native collection |
 | Guarded folder moves | /root/folder_moves | gpt-6-luna / high | spawn accepted; runtime identity not independently probed | unity.py, BeaverNative.cs, test_folder_moves.py, FOLDER-MOVES.md | integrated; native forward/reverse and reopen verified |
 | Readback/capture and shared integration | /root | existing primary configuration | unchanged | CLI, native runner/companion, shared docs/plan/package | integrated; native readback/capture verified |

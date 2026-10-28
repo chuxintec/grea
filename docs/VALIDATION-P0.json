@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261028+fix1",
+  "candidateVersion": "0.5.1.dev20261028+fix2",
   "status": "local-candidate-verified",
-  "implementationSha256": "d683fbc09e168b423dbf62f11a90269b3238f3c00b3de14229fae2bc29fafc56",
+  "implementationSha256": "8fa8f6700df4d805792d3decb6f9832f10d62598dc713ab788b7181a89b1e4ad",
   "syntheticChecks": {
-    "passed": 57,
+    "passed": 61,
     "scope": "affected CLI, reference scanner, native plans, structure, filtering, readback and folder transactions"
   },
   "native": {
@@ -58,7 +58,7 @@
   },
   "nativeEvidenceReuse": {
     "originalCandidate": "0.5.1.dev20261028",
-    "reason": "fix1 only changes structure-plan blocking and version identity; all executed native runner/CLI/companion bytes unchanged",
+    "reason": "Final changes only strengthen structure-plan consumers/input-set/collision guards and version identity; executed native runner/CLI/companions are byte-identical",
     "unchangedComponentSha256": {
       "cli.py": "26566f4467a51559fe81184d3a03ed3cabfd147124a5eeb731f39b74170e37cf",
       "unity.py": "fece7b1e788bf922cc09b8b8fd30168505165a9f1e80f214b21b241d2aa703d6",
@@ -67,5 +67,12 @@
       "targets/BeaverReadback.cs": "4525f39848d557a70f5d4d01330a30c49d99f428a5981163c6d11cc6f9a7d675",
       "targets/BeaverBuildFilter.cs": "b8dde56aa4fbd6ad91f0ca3ebf547b1453aba18ce5eba13c636ad62a124fd905"
     }
+  },
+  "installedFinalChecks": {
+    "contractOnlySyntheticPositive": "declaration_only; native not_run",
+    "actualNativeFixtureGeneratorConsumer": "blocked; no batchSpec",
+    "buildIsolation": "blocked-plan-only",
+    "sourceSetAndMetaStaleness": "tested",
+    "proposedCaseAndParentCollisions": "tested"
   }
 }

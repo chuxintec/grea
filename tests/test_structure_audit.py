@@ -250,6 +250,44 @@ class StructureAuditTests(unittest.TestCase):
         self.assertEqual(plan['status'],'declaration_only')
         self.assertEqual(plan['remainingStructureIssues'],[])
 
+    def test_generator_paths_in_any_root_and_json_consumers_block(self):
+        asset='Assets/Legacy/Coin.png';put(self.root,asset,b'image')
+        native=native_readback(self.root,asset)
+        put(self.root,'Assets/Game/Editor/Generate.cs','class G { string p=@"Assets/Legacy/Coin.png"; }')
+        put(self.root,'Assets/Game/Index.json','{"asset":"Assets/Legacy/Coin.png"}')
+        plan=build_plan(inspect(self.root,native),[{'source':asset,'target':'Assets/Game/Content/Images/Coin.png'}])
+        codes={x['code'] for x in plan['blockers']}
+        self.assertIn('OLD_PATH_CONSUMER_UNHANDLED',codes)
+        self.assertIn('JSON_ASSET_PATH_CONSUMER_UNHANDLED',codes)
+        self.assertIsNone(plan['batchSpec'])
+
+    def test_comments_do_not_become_generator_consumers(self):
+        asset='Assets/Legacy/Coin.png';put(self.root,asset,b'image');native=native_readback(self.root,asset)
+        put(self.root,'Assets/Game/Comment.cs','// old source "Assets/Legacy/Coin.png"\nclass C {}')
+        plan=build_plan(inspect(self.root,native),[{'source':asset,'target':'Assets/Game/Content/Images/Coin.png'}])
+        self.assertEqual(plan['status'],'declaration_only')
+
+    def test_new_consumer_or_metadata_after_audit_invalidates_scope(self):
+        asset='Assets/Legacy/Coin.png';put(self.root,asset,b'image');native=native_readback(self.root,asset)
+        audit=inspect(self.root,native)
+        put(self.root,'Assets/Game/Late.cs','class L { string p="Assets/Legacy/Coin.png"; }')
+        plan=build_plan(audit,[{'source':asset,'target':'Assets/Game/Content/Images/Coin.png'}])
+        self.assertIn('AUDIT_INPUT_SET_STALE',{x['code'] for x in plan['blockers']})
+        (self.root/'Assets/Game/Late.cs').unlink()
+        Path(str(self.root/asset)+'.meta').write_text('guid: '+'b'*32+'\n')
+        plan=build_plan(audit,[{'source':asset,'target':'Assets/Game/Content/Images/Coin.png'}])
+        self.assertIn('AUDIT_CONSUMER_STALE',{x['code'] for x in plan['blockers']})
+
+    def test_proposed_targets_and_parent_case_collisions_block(self):
+        a='Assets/Legacy/A.png';b='Assets/Legacy/B.png';put(self.root,a,b'a');put(self.root,b,b'b')
+        native=native_readback(self.root,a);other=native_readback(self.root,b,guid='b'*32)
+        native['assets']+=other['assets'];native['inputState'].update(other['inputState'])
+        audit=inspect(self.root,native)
+        for target in ['Assets/Game/Content/Images/a.png','Assets/Game/Content/images/B.png']:
+            plan=build_plan(audit,[{'source':a,'target':'Assets/Game/Content/Images/A.png'},{'source':b,'target':target}])
+            self.assertIn('TARGET_CASE_COLLISION',{x['code'] for x in plan['blockers']})
+            self.assertIsNone(plan['batchSpec'])
+
     def test_symlink_is_reported_as_scan_blocker(self):
         target = put(self.root, "Outside/Hidden.asset", b"hidden")
         (self.root / "Assets" / "Linked.asset").symlink_to(target)
