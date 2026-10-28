@@ -328,7 +328,7 @@ def _source_comparison_context(tokens, index):
 
 def _inside_asset_lookup_call(tokens, index):
     asset_database_methods = {"LoadAssetAtPath", "LoadMainAssetAtPath", "LoadAssetAtGUID", "LoadAssetAtPathFromGUID"}
-    for method in range(max(0, index - 64), index):
+    for method in range(index):
         if tokens[method][0] != "id":
             continue
         name = tokens[method][1]

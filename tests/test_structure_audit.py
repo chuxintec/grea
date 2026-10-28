@@ -508,6 +508,15 @@ class StructureAuditTests(unittest.TestCase):
         with self.assertRaises(BeaverError):
             build_plan(audit,mapping,consumer_resolutions={'schemaVersion':1,'resolutions':[resolution,resolution]})
 
+    def test_deeply_nested_lookup_comparison_remains_unsupported(self):
+        from beaver.references import _csharp_tokens
+        from beaver.structure_audit import _source_comparison_context
+        # The enclosing lookup remains relevant even beyond a short token window.
+        source='var result=AssetDatabase.LoadAssetAtPath<GameObject>(Select('+','.join('arg'+str(i) for i in range(80))+', name=="Assets/Original.prefab" ? name : ""));'
+        tokens=_csharp_tokens(source)
+        index=next(i for i,t in enumerate(tokens) if t[0]=='string' and t[1]=='"Assets/Original.prefab"')
+        self.assertFalse(_source_comparison_context(tokens,index))
+
     def test_consumer_resolution_cannot_silence_a_direct_resource_lookup(self):
         source='Assets/Resources/level/map/start.prefab';literal='Assets/Resources/level/map/start.prefab'
         put(self.root,source,b'prefab');native=native_readback(self.root,source,'UnityEngine.GameObject',1)
