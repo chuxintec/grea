@@ -79,6 +79,18 @@ class PipelineTests(unittest.TestCase):
                     d=json.loads(m.read_text());d['files'][0]['path']='../escape';m.write_text(json.dumps(d))
                 with self.assertRaises((ValueError,GreaError)):audit(r,'0.4.0')
 
+    def test_linked_files_and_directories_refused_even_with_matching_bytes(self):
+        for directory in (False, True):
+            with self.subTest(directory=directory), tempfile.TemporaryDirectory() as t:
+                r=Path(t).resolve();p,_=self.fixture(r)
+                linked=p/'Assets/Game' if directory else p/'Assets/Game/content.txt'
+                outside=r/'outside'
+                linked.rename(outside)
+                try:linked.symlink_to(outside,target_is_directory=directory)
+                except (OSError,NotImplementedError):self.skipTest('Symbolic links unavailable on this host')
+                with self.assertRaisesRegex(ValueError,'Linked candidate output'):
+                    audit(r,'0.4.0')
+
     def test_stale_plan_prevents_provider_execution(self):
         with tempfile.TemporaryDirectory() as t:
             r=Path(t).resolve();s=r/'source';s.mkdir();(s/'a').write_text('old');q=r/'request.json';q.write_text(json.dumps(self.request(s)));lock=r/'lock.json';lock.write_text('{}')

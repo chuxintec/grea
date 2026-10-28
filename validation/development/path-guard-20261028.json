@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "scope": "Local unpublished path-guard repair and read-only consumer audit; sanitized summary, raw receipts retained privately.",
+  "base_revision": "5a45a798f6622eb48e95770709d2c5849cccd343",
+  "implementation": {
+    "version": "2026.10.27",
+    "core_sha256": "55915f40c46e5b12970d3bc7cef3419add0b18c97c5e1d422d8bf39bfe331d0f",
+    "files": 72
+  },
+  "safe_paths_sha256": "e10e54dfd320df0c444fc0bf9ac555e7d39174d02c322df55f4342badd556075",
+  "change": "Replace pairwise descendant-prefix scans with the existing normalized full/ancestor spelling index; expected linear scaling in path count at fixed path depth/length.",
+  "preserved": [
+    "duplicate file rejection",
+    "NFC and casefold identity",
+    "parent-file/child-path conflicts in both input orders",
+    "shared-directory spelling aliases",
+    "lazy iterable consumption and exception order",
+    "candidate symlink and file-hash rejection"
+  ],
+  "validation": {
+    "affected_tests": 18,
+    "bounded_differential_cases": 1441,
+    "differential_maximum_paths_per_case": 5,
+    "exact_exception_and_return_equivalence": true,
+    "real_manifest_paths": 164630,
+    "unique_paths_profile_calls": 1,
+    "unique_paths_profile_seconds": 27.475679125000003,
+    "full_audit_profile_seconds": 137.00935016899987,
+    "verified_bytes": 3259422738,
+    "native_graph_files": 508,
+    "new_audit_equals_original": true,
+    "candidate_and_original_receipt_unchanged": true
+  },
+  "candidate_status": {
+    "status": "needs_action",
+    "handoff_ready": false,
+    "native_validation": "not_run",
+    "business_validation": "not_run"
+  },
+  "limits": [
+    "Timings include cProfile overhead; no comparable old slow run was repeated, so no measured speedup ratio is asserted.",
+    "The cProfile driver catches SystemExit; exit 0 from that driver is not an audit pass. The actual semantic receipt remains needs_action.",
+    "No conversion, parsing, AssetRipper, Editor, Player, game change or full tool suite run.",
+    "Published plugin/cache and global bindings are unchanged; consumers must explicitly select the isolated repair for future runs.",
+    "Pre-existing three Skill documentation changes are preserved; no commit, push or release in this task."
+  ]
+}

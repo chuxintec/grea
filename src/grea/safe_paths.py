@@ -68,7 +68,10 @@ def unique_paths(paths):
         key = collision_key(path)
         if key in keys or any(parent in keys for parent in [collision_key(p) for p in path.parents if str(p) != '.']):
             raise ValueError('Duplicate or overlapping output path: ' + str(path))
-        if any(other.startswith(key + '/') for other in keys):
+        # spellings indexes every previous file and ancestor directory. Exact
+        # files were rejected above, so membership here means an existing
+        # directory; no scan over all previous files is needed.
+        if key in spellings:
             raise ValueError('File/directory output conflict: ' + str(path))
         for part in (path, *path.parents):
             if str(part) == '.':
