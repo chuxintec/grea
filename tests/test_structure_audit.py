@@ -470,8 +470,8 @@ class StructureAuditTests(unittest.TestCase):
         self.assertIn('DYNAMIC_RESOURCE_KEY_UNRESOLVED',{x['code'] for x in plan['blockers']})
 
     def test_source_identity_consumer_resolution_is_narrow_and_reported_as_review_only(self):
-        source='Assets/Resources/level/map/level_ZDCJ_1004.prefab'
-        literal='assets/resources/level/map/level_zdcj_1004.prefab'
+        source='Assets/Resources/level/map/sample_World.prefab'
+        literal='assets/resources/level/map/sample_world.prefab'
         put(self.root,source,b'prefab')
         native=native_readback(self.root,source,'UnityEngine.GameObject',1)
         consumer='Assets/Game/Policy/Reader.cs'
@@ -482,7 +482,7 @@ class StructureAuditTests(unittest.TestCase):
                     'span':issue['span'],'literal':literal,'kind':'source-identity-comparison',
                     'reason':'Retained package identity is compared as evidence only.',
                     'evidence':'Policy reader compares containerPath to the immutable source identity.'}
-        mapping=[{'source':source,'target':'Assets/Game/Content/Prefabs/World/level_ZDCJ_1004.prefab'}]
+        mapping=[{'source':source,'target':'Assets/Game/Content/Prefabs/World/sample_World.prefab'}]
         unresolved=build_plan(audit,mapping)
         self.assertIn('OLD_PATH_CONSUMER_UNHANDLED',{x['code'] for x in unresolved['blockers']})
         plan=build_plan(audit,mapping,consumer_resolutions={'schemaVersion':1,'resolutions':[resolution]})
