@@ -7,13 +7,20 @@
 ```python
 from beaver.structure_audit import inspect, build_plan
 
-audit = inspect(project_path, native_snapshot=None, exceptions=None)
+audit = inspect(project_path, native_snapshot=None, exceptions=None,
+                product_root=None, profile_path=None)
 plan = build_plan(audit, [{"source": "Assets/Old/Item.png",
                            "target": "Assets/Game/Content/Images/UI/Item.png"}],
                   native_snapshot=native_snapshot)
 ```
 
-`inspect(project, native_snapshot=None, exceptions=None)` returns `beaver-structure-audit/1`. It lists canonical roots and case collisions, hashes assets within a fixed budget, and reports nonstandard/retired roots, missing standard config/docs, static path consumers, GUID dependencies, Resources keys, scene inventory/build entries, and unresolved dynamic loads. Existing `references.inspect_graph` supplies supported GUID and exact C# literal-load evidence. Static scans do not prove reflection, generated strings, package source, Addressables catalog state, or runtime behavior.
+`inspect(project, native_snapshot=None, exceptions=None, product_root=None, profile_path=None)` returns `beaver-structure-audit/1`. It lists canonical roots and case collisions, hashes assets within a fixed budget, and reports nonstandard/retired roots, missing standard config/docs, static path consumers, GUID dependencies, Resources keys, scene inventory/build entries, and unresolved dynamic loads. Existing `references.inspect_graph` supplies supported GUID and exact C# literal-load evidence. Static scans do not prove reflection, generated strings, package source, Addressables catalog state, or runtime behavior.
+
+`product_root` and `profile_path` are optional paired arguments. When supplied, both are required; the profile must be inside the product root, and its relative `paths.unityProject` must resolve exactly to `project`. Profile symlinks, path escape, malformed minimum binding fields, and a mismatch fail closed. The reader checks `schemaVersion: 1` and `paths.unityProject` only; it does not claim to validate the full upstream GREA schema.
+
+When both are omitted, discovery checks only `<Unity root>/grea-project.json` and its immediate parent’s `grea-project.json`. Each candidate is accepted only when its `paths.unityProject` binds back to the selected Unity root. It never searches farther upward. No valid match yields explicit `PRODUCT_ROOT_UNLOCATED`, `PROFILE_MISSING`, and unlocated structure-doc findings; plans without a binding are blocked.
+
+The report includes `productRoot`, `profileIdentity` (`path`, SHA256, `unityProject`, and schema version), and `structureDocumentationIdentity` for the bound product root’s `Docs/PROJECT-STRUCTURE.md`. That document is read in place; it is not copied into the Unity project. `governanceFiles` records presence and SHA256 for the selected profile, structure document, and checked default profile candidates. `build_plan` rechecks these records, so profile/document edits, additions, or deletions make the plan stale. Unity asset `scannedInputPaths` remain relative to the Unity root and do not include product-root governance paths.
 
 ## Native readback input
 
@@ -58,4 +65,4 @@ The audit hashes at most 64 MiB per file and 2 GiB total. Traversal and the reus
 
 A legacy build scene outside Game/Scenes remains an explicit audit issue and a remainingStructureIssues entry when not included in the mapping. It does not block an unrelated safe incremental move or its own correctly targeted migration. projectConformance always remains not-established; declaration_only never signs off the full project structure.
 
-The final planner binds scannedInputPaths and hashes across Assets (including metadata), Packages and ProjectSettings. Added/deleted inputs invalidate the audit; newly introduced symlinks are rejected before any content read. Existing hashes alone cannot establish closure. The reused C# tokenizer finds ordinary/verbatim Assets path literals in any root and excludes comments; matching generator/JSON consumers and unresolved interpolated Assets prefixes block affected mappings. Proposed targets and their parents use NFC/casefold collision checks, including existing directory spelling and file-as-parent conflicts. Old snapshots without the complete input path set require a new inspect.
+The final planner binds `scannedInputPaths` and hashes across Assets (including metadata), Packages and ProjectSettings. Added/deleted inputs invalidate the audit; newly introduced symlinks are rejected before any content read. Governance files are tracked separately under product-root-relative identities. Existing hashes alone cannot establish closure. The reused C# tokenizer finds ordinary/verbatim Assets path literals in any root and excludes comments; matching generator/JSON consumers and unresolved interpolated Assets prefixes block affected mappings. Proposed targets and their parents use NFC/casefold collision checks, including existing directory spelling and file-as-parent conflicts. Old snapshots without the complete input path set require a new inspect.

@@ -16,6 +16,13 @@ def implementation_identity():
     return identity()
 
 
+def _p0_report(path):
+    """Read our bounded large reports without changing ordinary spec limits."""
+    from .io import read,load
+    from .output_limits import MANIFEST_BYTES,MANIFEST_NODES
+    return load(read(path,max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
+
+
 def capabilities():
     capabilities = [
         dict(id='workspace.plan/apply/inspect/rebind',state='implemented',effects='explicit-project-local-binding',verification='content-pinned tool/engine/authority, reviewed writes and relocation'),
@@ -225,7 +232,7 @@ def parser():
     diagnostic.add_argument('--out',required=True)
     diagnostic.add_argument('--limit',type=int,default=100)
     structure=sub.add_parser('structure').add_subparsers(dest='action',required=True)
-    si=structure.add_parser('inspect');si.add_argument('--project',required=True);si.add_argument('--snapshot');si.add_argument('--exceptions');si.add_argument('--out',required=True)
+    si=structure.add_parser('inspect');si.add_argument('--project',required=True);si.add_argument('--snapshot');si.add_argument('--exceptions');si.add_argument('--out',required=True);si.add_argument('--product-root');si.add_argument('--profile')
     sp=structure.add_parser('plan')
     for f in ('audit','mappings','out'):sp.add_argument('--'+f,required=True)
     sp.add_argument('--snapshot')
@@ -254,15 +261,17 @@ def dispatch(a):
             from .structure_audit import inspect,build_plan
             if a.action=='inspect':
                 inputs=[a.project]+[x for x in (a.snapshot,a.exceptions) if x]
-                data=inspect(a.project,load(read(a.snapshot)) if a.snapshot else None,load(read(a.exceptions)) if a.exceptions else None)
+                data=inspect(a.project,_p0_report(a.snapshot) if a.snapshot else None,load(read(a.exceptions)) if a.exceptions else None,a.product_root,a.profile)
+                if data.get('productRoot') and data.get('profileIdentity'):
+                    inputs.append(str(Path(data['productRoot'])/data['profileIdentity']['path']))
             else:
                 inputs=[a.audit,a.mappings]+([a.snapshot] if a.snapshot else [])
-                data=build_plan(load(read(a.audit)),load(read(a.mappings)),load(read(a.snapshot)) if a.snapshot else None)
+                data=build_plan(_p0_report(a.audit),load(read(a.mappings)),_p0_report(a.snapshot) if a.snapshot else None)
             name='structure-'+a.action+'.json'
         else:
             from .build_filter import plan
             inputs=[a.project,a.snapshot,a.sources,a.target]
-            data=plan(a.project,load(read(a.target)),load(read(a.snapshot)),load(read(a.sources)))
+            data=plan(a.project,load(read(a.target)),_p0_report(a.snapshot),load(read(a.sources)))
             name='build-filter-plan.json'
         stage=new_output(a.out,inputs);data['provenance']='caller-supplied snapshot; native collection origin not independently authenticated' if getattr(a,'snapshot',None) else 'filesystem inspection; no native snapshot'
         if 'planSha256' in data:

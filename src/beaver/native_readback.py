@@ -2,7 +2,7 @@
 from pathlib import Path
 import shutil
 import subprocess
-from .io import safe, inside, load, write_json, sha
+from .io import safe, inside, load, write_json, sha, read
 from .errors import fail, BeaverError
 from .native_environment import editor_environment
 from .adoption import native_lock
@@ -119,7 +119,7 @@ def run_collector(project, request, output, editor, companion, entry, report_nam
 
 
 def inspect(project, spec_path, output, editor, timeout=600):
-    spec = validate(load(safe(spec_path).read_bytes()))
+    spec = validate(load(read(spec_path)))
     report = run_collector(project, spec, output, editor, 'BeaverReadback.cs', 'BeaverReadback.Run', 'readback.json', timeout, graphics='capture' in spec)
     if report.get('contract') != 'beaver-native-readback/1' or report.get('schemaVersion') != 1 or report.get('errors') or {r.get('path') for r in report.get('assets',[])} != set(spec['assets']):
         fail('READBACK_RESULT', str(safe(output)/'readback.json'), 'Native collector result or selected asset identity is incomplete')

@@ -17,7 +17,7 @@ public static class BeaverReadback {
     [Serializable] public class Job { public int schemaVersion; public bool hasCapture; public string projectRoot,stage; public string[] assets; public Alias[] aliases; public Query[] queries; public CaptureSpec capture; }
     [Serializable] public class Identity { public string path,guid,type,name,state; public long localId; }
     [Serializable] public class AssetRow { public string path,importedType; public Identity[] objects; }
-    [Serializable] public class Field { public string asset,nodePath,componentType,requestedPath,propertyPath,status,valueType,value,referenceState,error; public Identity owner,reference; }
+    [Serializable] public class Field { public string asset,nodePath,componentType,requestedPath,propertyPath,status,valueType,value,referenceState,error; public bool hasIntegerValue; public long integerValue; public Identity owner,reference; }
     [Serializable] public class Frame { public string status,file,cameraPath,mode,alphaDiagnostic,colorDiagnostic; public int width,height,nonTransparentPixels; public bool cameraBoundToPreviewScene,gameplayObserved=false; }
     [Serializable] public class Report { public int schemaVersion=1; public string contract="beaver-native-readback/1",editorVersion,status; public AssetRow[] assets; public Field[] fields; public Frame capture; public string[] errors; }
     static Job job;static Scene queryScene;
@@ -46,6 +46,7 @@ public static class BeaverReadback {
             case SerializedPropertyType.String:return p.stringValue;
             case SerializedPropertyType.Boolean:return p.boolValue?"true":"false";
             case SerializedPropertyType.Integer:return p.longValue.ToString(culture);
+            case SerializedPropertyType.ArraySize:return p.intValue.ToString(culture);
             case SerializedPropertyType.Float:return p.doubleValue.ToString("R",culture);
             case SerializedPropertyType.Enum:return p.enumValueIndex.ToString(culture);
             case SerializedPropertyType.ObjectReference:return p.objectReferenceValue?p.objectReferenceValue.name:"null";
@@ -77,6 +78,7 @@ public static class BeaverReadback {
             f.owner=Id(owners[0]);var so=new SerializedObject(owners[0]);so.Update();var p=so.FindProperty(prop);
             if(p==null){f.error="SerializedProperty not found";return f;}
             f.status="observed";f.valueType=p.propertyType.ToString();f.value=Value(p);
+            if(p.propertyType==SerializedPropertyType.Integer||p.propertyType==SerializedPropertyType.ArraySize){f.hasIntegerValue=true;f.integerValue=p.propertyType==SerializedPropertyType.ArraySize?p.intValue:p.longValue;}
             if(p.propertyType==SerializedPropertyType.ObjectReference){f.reference=Id(p.objectReferenceValue);f.referenceState=p.objectReferenceValue?f.reference.state=="persistent"?"bound":"nonpersistent":Missing(p)?"missing":"null";}
         }catch(Exception e){f.error=e.GetType().Name+": "+e.Message;}
         finally{if(queryScene.IsValid()){EditorSceneManager.ClosePreviewScene(queryScene);queryScene=default(Scene);}}

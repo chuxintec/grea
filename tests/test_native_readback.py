@@ -48,6 +48,8 @@ class ReadbackTests(unittest.TestCase):
         self.assertEqual(args.action,'readback')
         args=parser().parse_args(['structure','plan','--audit','a','--mappings','m','--out','o'])
         self.assertEqual(args.action,'plan')
+        args=parser().parse_args(['structure','inspect','--project','Product/Unity','--product-root','Product','--profile','Product/grea-project.json','--out','Product/Analysis/audit'])
+        self.assertEqual(args.product_root,'Product')
 
     def test_read_only_guard_detects_provider_mutation_and_preserves_receipt(self):
         with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:

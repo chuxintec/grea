@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 import hashlib
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -41,6 +42,9 @@ class StructureAuditTests(unittest.TestCase):
         (self.root / "Assets").mkdir()
         (self.root / "Packages").mkdir()
         (self.root / "ProjectSettings").mkdir()
+        self.product = self.root.parent
+        put(self.product, "grea-project.json", json.dumps({"schemaVersion": 1, "paths": {"unityProject": "Project"}}))
+        put(self.product, "Docs/PROJECT-STRUCTURE.md", "Synthetic public fixture structure contract.\n")
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -55,6 +59,58 @@ class StructureAuditTests(unittest.TestCase):
         self.assertTrue(any(x["code"] == "DYNAMIC_LOAD_UNRESOLVED" for x in report["issues"]))
         self.assertTrue(any(x["code"] == "RETIRED_ROOT" for x in report["issues"]))
         self.assertEqual(len(report["sourceHashes"]["Assets/Product/Resources/Icons/Coin.png"]), 64)
+
+    def test_unity_subroot_uses_parent_product_profile_and_bound_docs(self):
+        report = inspect(self.root)
+        self.assertEqual(report["productRoot"], str(self.product))
+        self.assertEqual(report["profileIdentity"]["path"], "grea-project.json")
+        self.assertEqual(report["profileIdentity"]["unityProject"], "Project")
+        self.assertEqual(report["structureDocumentationIdentity"]["path"], "Docs/PROJECT-STRUCTURE.md")
+        self.assertTrue(report["structureDocumentationIdentity"]["present"])
+        self.assertTrue(all(not p.startswith("Project/") for p in report["scannedInputPaths"]))
+        explicit = inspect(self.root, product_root=self.product, profile_path="grea-project.json")
+        self.assertEqual(explicit["profileIdentity"], report["profileIdentity"])
+
+    def test_explicit_profile_wrong_binding_or_escape_fails_closed(self):
+        wrong_root = self.product / "Wrong"
+        wrong_root.mkdir()
+        put(wrong_root, "grea-project.json", json.dumps({"schemaVersion": 1, "paths": {"unityProject": "Project"}}))
+        with self.assertRaises(BeaverError):
+            inspect(self.root, product_root=wrong_root, profile_path="grea-project.json")
+        profile = self.product / "grea-project.json"
+        profile.write_text(json.dumps({"schemaVersion": 1, "paths": {"unityProject": "../outside"}}), encoding="utf-8")
+        with self.assertRaises(BeaverError):
+            inspect(self.root, product_root=self.product, profile_path="grea-project.json")
+
+    def test_profile_change_invalidates_plan_governance_precondition(self):
+        put(self.root, "Assets/Game/A.asset", b"asset")
+        native = native_readback(self.root, "Assets/Game/A.asset", "ScriptableObject", 77)
+        audit = inspect(self.root)
+        (self.product / "grea-project.json").write_text(
+            json.dumps({"schemaVersion": 1, "paths": {"unityProject": "Other"}}), encoding="utf-8")
+        plan = build_plan(audit, [{"source": "Assets/Game/A.asset", "target": "Assets/Game/Domain/A.asset"}], native)
+        self.assertEqual(plan["status"], "blocked")
+        self.assertIn("GOVERNANCE_INPUT_STALE", {x["code"] for x in plan["blockers"]})
+
+    def test_structure_document_deletion_invalidates_plan(self):
+        put(self.root, "Assets/Game/A.asset", b"asset")
+        native = native_readback(self.root, "Assets/Game/A.asset", "ScriptableObject", 77)
+        audit = inspect(self.root)
+        (self.product / "Docs/PROJECT-STRUCTURE.md").unlink()
+        plan = build_plan(audit, [{"source": "Assets/Game/A.asset", "target": "Assets/Game/Domain/A.asset"}], native)
+        self.assertEqual(plan["status"], "blocked")
+        self.assertIn("GOVERNANCE_INPUT_STALE", {x["code"] for x in plan["blockers"]})
+
+    def test_missing_profile_is_explicit_and_blocks_planning(self):
+        (self.product / "grea-project.json").unlink()
+        put(self.root, "Assets/Game/A.asset", b"asset")
+        report = inspect(self.root)
+        codes = {x["code"] for x in report["issues"]}
+        self.assertIn("PRODUCT_ROOT_UNLOCATED", codes)
+        self.assertIn("PROFILE_MISSING", codes)
+        plan = build_plan(report, [{"source": "Assets/Game/A.asset", "target": "Assets/Game/Domain/A.asset"}])
+        self.assertEqual(plan["status"], "blocked")
+        self.assertIn("PROFILE_BINDING_MISSING", {x["code"] for x in plan["blockers"]})
 
     def test_plan_requires_native_identity_and_preserves_subasset_ids(self):
         source = put(self.root, "Assets/Product/Resources/Icons/Coin.png", b"image")

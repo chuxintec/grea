@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261028+fix2",
+  "candidateVersion": "0.5.1.dev20261028+fix3",
   "status": "local-candidate-verified",
-  "implementationSha256": "8fa8f6700df4d805792d3decb6f9832f10d62598dc713ab788b7181a89b1e4ad",
+  "implementationSha256": "978da3ca18b348b5bd2c5534f8c1b4570d2d6bfa8fb066f5a007507c59becf67",
   "syntheticChecks": {
-    "passed": 61,
+    "passed": 68,
     "scope": "affected CLI, reference scanner, native plans, structure, filtering, readback and folder transactions"
   },
   "native": {
@@ -50,7 +50,7 @@
     "formalReleaseModified": false,
     "globalInstall": false,
     "gameProjectWrites": false,
-    "productionAdoption": "pending-consumer",
+    "productionAdoption": "preliminary consumer native-readback verified; final fix3 gate pending",
     "resourceIsolationExecution": "blocked-plan-only",
     "visualParity": "not-established",
     "physicalInput": "not-run",
@@ -58,13 +58,10 @@
   },
   "nativeEvidenceReuse": {
     "originalCandidate": "0.5.1.dev20261028",
-    "reason": "Final changes only strengthen structure-plan consumers/input-set/collision guards and version identity; executed native runner/CLI/companions are byte-identical",
+    "reason": "Directory transaction and build collector components unchanged; final readback companion is separately rerun from the installed fix3 wheel",
     "unchangedComponentSha256": {
-      "cli.py": "26566f4467a51559fe81184d3a03ed3cabfd147124a5eeb731f39b74170e37cf",
       "unity.py": "fece7b1e788bf922cc09b8b8fd30168505165a9f1e80f214b21b241d2aa703d6",
-      "native_readback.py": "bf429fff62c3f334014a4c9663b136495ce9b14c0934ec7fcf90ea94461b3188",
       "targets/BeaverNative.cs": "01e19938250bb318a584b50c2784a7449613bec0f850801a99abbaa2db60a458",
-      "targets/BeaverReadback.cs": "4525f39848d557a70f5d4d01330a30c49d99f428a5981163c6d11cc6f9a7d675",
       "targets/BeaverBuildFilter.cs": "b8dde56aa4fbd6ad91f0ca3ebf547b1453aba18ce5eba13c636ad62a124fd905"
     }
   },
@@ -74,5 +71,31 @@
     "buildIsolation": "blocked-plan-only",
     "sourceSetAndMetaStaleness": "tested",
     "proposedCaseAndParentCollisions": "tested"
+  },
+  "finalNativeScalar": {
+    "propertyType": "ArraySize",
+    "integerValue": 1,
+    "hasIntegerValue": true,
+    "sourceUnchanged": true,
+    "helperCleaned": true,
+    "executedFromInstalledCandidate": true
+  },
+  "productRootBinding": {
+    "defaultDiscovery": "Unity root plus one parent, exact profile unityProject binding",
+    "explicitFlags": [
+      "--product-root",
+      "--profile"
+    ],
+    "profileValidation": "path-binding-only; no duplicate profile or Docs creation",
+    "realProjectProfileReadOnlyBinding": "verified"
+  },
+  "dedicatedReportBudget": {
+    "maxBytes": 134217728,
+    "maxNodes": 8000000,
+    "ordinarySpecsUnchanged": true,
+    "realGeneratedReportBytes": 63733167,
+    "realGeneratedReportAssets": 65661,
+    "overDefaultReportCliPlanning": "verified on synthetic real-shaped metadata",
+    "overDedicatedBudget": "rejected"
   }
 }

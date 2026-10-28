@@ -15,8 +15,8 @@ import re
 import tempfile
 import unicodedata
 
-from .errors import fail
-from .io import safe, inside
+from .errors import fail, BeaverError
+from .io import safe, inside, read, load
 from .references import inspect_graph, _csharp_tokens, _decode_csharp_string
 from .output_limits import WHOLE_FILES
 
@@ -34,6 +34,7 @@ PATH_LITERAL_RE = re.compile(r"[\"']((?:Assets|assets)/[^\"']+)[\"']")
 MAX_AUDIT_FILES = WHOLE_FILES
 MAX_HASH_FILE_BYTES = 64 * 1024 * 1024
 MAX_HASH_TOTAL_BYTES = 2 * 1024 * 1024 * 1024
+MAX_GOVERNANCE_BYTES = 32 * 1024 * 1024
 REFERENCE_SOURCE_SUFFIXES = {".cs", ".asmdef", ".asmref", ".rsp", ".asset", ".unity", ".prefab", ".json",
                             ".mat", ".controller", ".overridecontroller", ".anim", ".mask", ".rendertexture", ".meta"}
 
@@ -180,7 +181,87 @@ def _type_path_mismatch(path, imported_type):
     return True, sorted(expected)
 
 
-def inspect(project, native_snapshot=None, exceptions=None):
+def _governance_file(path, product_root=None):
+    path = Path(path).absolute()
+    try:
+        resolved = safe(path)
+    except BeaverError:
+        return {"path": str(path), "productRelativePath": None,
+                "present": path.exists() or path.is_symlink(), "sha256": None, "blocked": True}
+    product_relative = None
+    if product_root is not None and resolved.is_relative_to(product_root):
+        product_relative = resolved.relative_to(product_root).as_posix()
+    exists = resolved.is_file()
+    if exists and resolved.stat().st_size > MAX_GOVERNANCE_BYTES:
+        fail("STRUCTURE_GOVERNANCE_BUDGET", str(resolved), "Governance file exceeds 32 MiB")
+    return {"path": str(resolved), "productRelativePath": product_relative,
+            "present": exists, "sha256": hashlib.sha256(read(resolved, MAX_GOVERNANCE_BYTES)).hexdigest() if exists else None}
+
+
+def _resolve_profile(project, product_root, profile_path):
+    product = safe(product_root)
+    if not product.is_dir():
+        fail("STRUCTURE_PROFILE_ROOT", str(product), "Product root must be an existing directory")
+    if isinstance(profile_path, Path):
+        profile_path = str(profile_path)
+    if not isinstance(profile_path, str) or not profile_path:
+        fail("STRUCTURE_PROFILE_PATH", "profilePath", "Explicit profile path required")
+    profile = safe(Path(profile_path) if Path(profile_path).is_absolute() else inside(product, profile_path))
+    if not profile.is_relative_to(product) or not profile.is_file():
+        fail("STRUCTURE_PROFILE_PATH", str(profile), "Profile must be an existing file inside the product root")
+    relative = profile.relative_to(product).as_posix()
+    raw_profile = read(profile)
+    doc = load(raw_profile)
+    if not isinstance(doc, dict) or doc.get("schemaVersion") != 1 or not isinstance(doc.get("paths"), dict):
+        fail("STRUCTURE_PROFILE_SCHEMA", relative, "Expected schemaVersion 1 and paths object; full upstream schema is not validated")
+    unity_rel = doc["paths"].get("unityProject")
+    if not isinstance(unity_rel, str) or not unity_rel:
+        fail("STRUCTURE_PROFILE_BINDING", relative, "paths.unityProject must be an explicit relative path")
+    if unity_rel != ".":
+        _valid_rel(unity_rel, relative + ".paths.unityProject")
+    bound_project = inside(product, unity_rel)
+    if bound_project != project:
+        fail("STRUCTURE_PROFILE_BINDING", relative, "paths.unityProject does not resolve to the selected Unity project")
+    digest = hashlib.sha256(raw_profile).hexdigest()
+    identity = {"path": relative, "sha256": digest, "unityProject": unity_rel,
+                "schemaVersion": doc["schemaVersion"]}
+    return product, identity, profile
+
+
+def _bind_product(project, product_root=None, profile_path=None):
+    explicit = product_root is not None or profile_path is not None
+    if explicit and (product_root is None or profile_path is None):
+        fail("STRUCTURE_PROFILE_BINDING", "profile", "product_root and profile_path must be supplied together")
+    if explicit:
+        product, identity, profile = _resolve_profile(project, product_root, profile_path)
+        docs = inside(product, "Docs/PROJECT-STRUCTURE.md")
+        governance = [_governance_file(profile, product), _governance_file(docs, product)]
+        return product, identity, governance, []
+
+    candidates = [project / "grea-project.json", project.parent / "grea-project.json"]
+    governance = [_governance_file(path) for path in candidates]
+    invalid = []
+    for candidate in candidates:
+        if not candidate.is_file():
+            continue
+        try:
+            product, identity, profile = _resolve_profile(project, candidate.parent, candidate.name)
+        except (BeaverError, ValueError, UnicodeError, OSError) as error:
+            invalid.append({"code": "PROFILE_BINDING_INVALID", "path": str(candidate), "detail": getattr(error, "message", str(error)),
+                            "severity": "warning"})
+            continue
+        docs = inside(product, "Docs/PROJECT-STRUCTURE.md")
+        governance.append(_governance_file(docs, product))
+        return product, identity, governance, invalid
+    invalid.extend([
+        {"code": "PRODUCT_ROOT_UNLOCATED", "severity": "warning"},
+        {"code": "PROFILE_MISSING", "candidates": [str(p) for p in candidates], "severity": "warning"},
+        {"code": "STRUCTURE_DOCUMENTATION_UNLOCATED", "severity": "info"},
+    ])
+    return None, None, governance, invalid
+
+
+def inspect(project, native_snapshot=None, exceptions=None, product_root=None, profile_path=None):
     """Inspect project paths and static references without writing to the project.
 
     ``native_snapshot`` is an optional JSON object captured by Unity.  It maps
@@ -190,6 +271,7 @@ def inspect(project, native_snapshot=None, exceptions=None):
     root = safe(project)
     if not root.is_dir():
         fail("PROJECT_PATH", str(root), "Project must be an existing directory")
+    bound_product_root, profile_identity, governance_files, profile_issues = _bind_product(root, product_root, profile_path)
     approved_exceptions = _exception_map(exceptions)
     native = _validate_native_snapshot(native_snapshot) if native_snapshot is not None else None
     top_entries = list(root.iterdir())
@@ -247,10 +329,13 @@ def inspect(project, native_snapshot=None, exceptions=None):
     for name in expected_missing:
         issues.append({"code": "STANDARD_ROOT_MISSING", "path": name, "severity": "info"})
     all_asset_paths = [p for p in paths if p.split("/", 1)[0].casefold() == "assets"]
-    for required, issue_code in (("grea-project.json", "PROJECT_CONFIG_MISSING"),
-                                 ("Docs/PROJECT-STRUCTURE.md", "STRUCTURE_DOCUMENTATION_MISSING")):
-        if not (root / required).is_file():
-            issues.append({"code": issue_code, "path": required, "severity": "info"})
+    issues.extend(profile_issues)
+    structure_doc = None
+    if bound_product_root is not None:
+        structure_doc_path = inside(bound_product_root, "Docs/PROJECT-STRUCTURE.md")
+        structure_doc = next((item for item in governance_files if item["path"] == str(structure_doc_path)), None)
+        if not structure_doc or not structure_doc["present"]:
+            issues.append({"code": "STRUCTURE_DOCUMENTATION_MISSING", "path": "Docs/PROJECT-STRUCTURE.md", "severity": "info"})
     for collision in _case_collisions(all_asset_paths):
         issues.append({"code": "PATH_CASE_COLLISION", "paths": collision, "severity": "error"})
     inventory = []
@@ -380,7 +465,10 @@ def inspect(project, native_snapshot=None, exceptions=None):
         if not build_entries:
             issues.append({"code": "BUILD_SCENES_EMPTY_OR_UNRESOLVED", "path": "ProjectSettings/EditorBuildSettings.asset", "severity": "warning"})
 
-    return {"schema": SCHEMA, "projectRoot": str(root), "roots": sorted(roots),
+    return {"schema": SCHEMA, "projectRoot": str(root), "productRoot": str(bound_product_root) if bound_product_root else None,
+            "profileIdentity": profile_identity,
+            "structureDocumentationIdentity": ({"path": "Docs/PROJECT-STRUCTURE.md", "present": structure_doc["present"], "sha256": structure_doc["sha256"]} if structure_doc else None),
+            "governanceFiles": governance_files, "roots": sorted(roots),
             "scanStatus": "partial_budget" if scan_truncated else "blocked_symlink" if symlinks else "complete",
             "rootCaseCollisions": root_collisions, "inventory": inventory,
             "sourceHashes": source_hashes, "scannedInputPaths": sorted(paths+external_sources), "issues": issues,
@@ -459,6 +547,33 @@ def build_plan(audit, mappings, native_snapshot=None):
         global_blockers.append({"code": "DUPLICATE_GUID", "guid": guid, "paths": paths})
     blockers = list(global_blockers)
     root=safe(audit['projectRoot']);current_inputs=[];current_directories=[]
+    product_root_value = audit.get("productRoot")
+    profile_identity = audit.get("profileIdentity")
+    if not isinstance(product_root_value, str) or not isinstance(profile_identity, dict):
+        blockers.append({"code": "PROFILE_BINDING_MISSING", "reason": "No verified product-root/profile binding was available during inspect"})
+    else:
+        try:
+            product = safe(product_root_value)
+            selected_profile = profile_identity.get("path")
+            if not isinstance(selected_profile, str):
+                raise BeaverError("STRUCTURE_PROFILE_BINDING", "profileIdentity.path", "Profile identity path is missing")
+            _, current_identity, _ = _resolve_profile(root, product, selected_profile)
+            if current_identity != profile_identity:
+                blockers.append({"code": "GOVERNANCE_INPUT_STALE", "path": selected_profile})
+        except BeaverError as error:
+            blockers.append({"code": "GOVERNANCE_INPUT_STALE", "path": error.location, "detail": error.message})
+    for record in audit.get("governanceFiles", []):
+        try:
+            path = safe(record["path"])
+            current_present = path.is_file()
+            if current_present and path.stat().st_size > MAX_GOVERNANCE_BYTES:
+                raise BeaverError("STRUCTURE_GOVERNANCE_BUDGET", str(path), "Governance file exceeds 32 MiB")
+            current_sha = hashlib.sha256(read(path, MAX_GOVERNANCE_BYTES)).hexdigest() if current_present else None
+            if current_present != record.get("present") or current_sha != record.get("sha256"):
+                blockers.append({"code": "GOVERNANCE_INPUT_STALE", "path": record.get("productRelativePath") or record.get("path")})
+        except (BeaverError, KeyError, TypeError) as error:
+            blockers.append({"code": "GOVERNANCE_INPUT_STALE", "path": record.get("path") if isinstance(record, dict) else None,
+                             "detail": str(error)})
     for scope in ('Assets','Packages','ProjectSettings'):
         for base,dirs,files in os.walk(inside(root,scope),followlinks=False):
             for name in dirs+files:
