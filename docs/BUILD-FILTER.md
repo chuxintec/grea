@@ -55,19 +55,18 @@ Each asset row contains its normalized `path`, source and `.meta` hashes, GUID/l
 
 The current output always has `mode: "plan-only"` and an `execution.status: "blocked"` result. Incomplete native dependency coverage uses `BUILD_FILTER_DEPENDENCY_COVERAGE_INCOMPLETE`; otherwise isolation uses `BUILD_FILTER_NATIVE_ISOLATION_UNSUPPORTED`. The existing resource/transaction APIs do not provide a safe native build-source quarantine operation that checks preconditions, moves both asset and `.meta` through `AssetDatabase`, verifies GUID/localIDs and all dependency changes, and restores them on failure. The plan is therefore review evidence, not an executable transaction. Never apply its moves with filesystem operations or delete an asset based solely on the plan.
 
-## Suggested CLI contract
-
-The shared CLI owner may expose this module using the native collection contract:
+## CLI contract
 
 ```text
-beaver build-filter collect --project <Unity project> --target <BuildTarget> \
-  --pipeline <active pipeline identity> --build-scene <Assets/...unity>... \
-  [--root <Assets/...>]... --output <new snapshot directory>
-beaver build-filter plan --project <Unity project> --snapshot <snapshot.json> \
-  --handoff <monkey-shader-handoff.json> --output <new plan.json>
+beaver build-filter collect --project <Unity-project> --spec <collect-request.json> \
+  --out <fresh-snapshot-directory> --editor-path <Unity-executable> [--timeout 600]
+beaver build-filter plan --project <Unity-project> --snapshot <build-snapshot.json> \
+  --sources <monkey-shader-handoff.json> --target <target.json> --out <fresh-plan-directory>
 ```
 
-The runner request fields are `schemaVersion`, `platform`, `renderPipeline`, `assets` (enabled build scenes), and `roots` (additional explicit roots). The native job also carries `projectRoot`, `stage`, and `reportName`. The native entry is `BeaverBuildFilter.Run`; it decodes the standard `BEAVER_NATIVE_JOB_BASE64`, writes the report name inside the owned stage, and exits nonzero on collection failure. The main developer owns CLI registration and integration with the shared `run_collector`.
+`--target` is a JSON file path, for example `{"platform":"StandaloneOSX","pipeline":"BuiltIn"}`. Collection uses the explicit request file described above; platform, pipeline, scene and root flags are not separate CLI options. `--out` is always a fresh directory, not an existing JSON filename.
+
+The runner request fields are `schemaVersion`, `platform`, `renderPipeline`, `assets` (enabled build scenes), and `roots` (additional explicit roots). The native job also carries `projectRoot`, `stage`, and `reportName`. The native entry is `BeaverBuildFilter.Run`; it decodes the standard `BEAVER_NATIVE_JOB_BASE64`, writes the report name inside the owned stage, and exits nonzero on collection failure. The command is registered through the shared `run_collector`.
 
 ## Fixture coverage
 

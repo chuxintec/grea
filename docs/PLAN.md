@@ -8,7 +8,7 @@ Verified: 57 affected synthetic checks; two independent Unity 6000.6.2f1 project
 
 Current limitation: resource isolation is a precise plan only, with execution blocked until runtime-use proof and a safe native isolation transaction exist. It never deletes assets or substitutes shaders. Folder moves are bounded to 10,000 manifest entries/256 MiB and retain verified before-images; recovery uses inspection and a fresh reviewed reverse plan, not automatic overwrite. Dynamic consumer correctness, production-project adoption, physical input, visual parity and gameplay remain consumer-owned acceptance.
 
-Delivered the fixed isolated candidate, CLI schemas and producer to the active consumer and upstream adapter maintainer. External acceptance remains pending actual adoption/adapter results. A final installed-CLI regression identified legacy build-scene placement as an overbroad global blocker; fix1 retains that follow-up issue while allowing correctly guarded incremental migration declarations. No additional P1 scope is started.
+Delivered the fixed isolated candidate, CLI schemas and producer to the active consumer and upstream adapter maintainer. External acceptance remains pending actual project adoption and the final fix1 adapter gate. The preliminary candidate has a separately verified 39-check limited adapter result; it did not run an Editor or establish project adoption. A final installed-CLI regression identified legacy build-scene placement as an overbroad global blocker; fix1 retains that follow-up issue while allowing correctly guarded incremental migration declarations. No additional P1 scope is started.
 
 ## Released baseline: 0.5.0
 

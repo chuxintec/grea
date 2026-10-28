@@ -1,6 +1,6 @@
 # Unity structure audit and move-plan contract
 
-`beaver.structure_audit` provides read-only path inspection and explicit move declarations for the existing native asset-move batch. It does not move, rename, delete, rewrite consumers, or create project files. The CLI owner can bind these functions without adding a second transaction executor.
+`beaver.structure_audit` provides read-only path inspection and explicit move declarations for the existing native asset-move batch. It does not move, rename, delete, rewrite consumers, or create project files. The registered structure inspect/plan commands bind these functions without a second transaction executor.
 
 ## Python interface
 
@@ -9,7 +9,7 @@ from beaver.structure_audit import inspect, build_plan
 
 audit = inspect(project_path, native_snapshot=None, exceptions=None)
 plan = build_plan(audit, [{"source": "Assets/Old/Item.png",
-                           "target": "Assets/Game/Content/Textures/UI/Item.png"}],
+                           "target": "Assets/Game/Content/Images/UI/Item.png"}],
                   native_snapshot=native_snapshot)
 ```
 
