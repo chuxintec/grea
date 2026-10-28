@@ -27,8 +27,11 @@ def _p0_summary(data):
     """Project transport metadata only; the complete report remains hashed on disk."""
     result={k:data[k] for k in ('status','report','mode','projectRoot','productRoot','profileIdentity','structureDocumentationIdentity','sourceUnchanged','helperCleaned','editorExitCode','projectConformance','batchReadiness','planSha256','counts','transaction','sourceSha256','restoredFiles') if k in data}
     if isinstance(data.get('nativeReadback'),str):result['nativeReadback']=data['nativeReadback']
-    for field in ('inventory','assets','fields','issues','blockers','remainingStructureIssues','deletedPaths','changes'):
+    for field in ('inventory','assets','fields','issues','blockers','remainingStructureIssues','deletedPaths','changes','unresolvedDependencies'):
         if isinstance(data.get(field),list):result[field+'Count']=len(data[field])
+    if isinstance(data.get('coverage'),dict):
+        coverage=data['coverage'];result['coverage']={k:coverage[k] for k in ('complete',) if k in coverage}
+        if isinstance(coverage.get('blockers'),list):result['coverage']['blockerCount']=len(coverage['blockers'])
     if isinstance(data.get('execution'),dict):
         e=data['execution'];result['execution']={k:e[k] for k in ('status','code','reason') if k in e}
         if isinstance(e.get('blockers'),list):result['execution']['blockerCount']=len(e['blockers'])
@@ -255,6 +258,7 @@ def parser():
     sp=structure.add_parser('plan')
     for f in ('audit','mappings','out'):sp.add_argument('--'+f,required=True)
     sp.add_argument('--snapshot')
+    sp.add_argument('--consumer-resolutions')
     sp.add_argument('--summary',action='store_true')
     native=sub.add_parser('native').add_subparsers(dest='action',required=True).add_parser('readback')
     for f in ('project','spec','out','editor-path'):native.add_argument('--'+f,required=True)
@@ -288,8 +292,8 @@ def dispatch(a):
                 if data.get('productRoot') and data.get('profileIdentity'):
                     inputs.append(str(Path(data['productRoot'])/data['profileIdentity']['path']))
             else:
-                inputs=[a.audit,a.mappings]+([a.snapshot] if a.snapshot else [])
-                data=build_plan(_p0_report(a.audit),load(read(a.mappings)),_p0_report(a.snapshot) if a.snapshot else None)
+                inputs=[a.audit,a.mappings]+([a.snapshot] if a.snapshot else [])+([a.consumer_resolutions] if a.consumer_resolutions else [])
+                data=build_plan(_p0_report(a.audit),load(read(a.mappings)),_p0_report(a.snapshot) if a.snapshot else None,load(read(a.consumer_resolutions)) if a.consumer_resolutions else None)
             name='structure-'+a.action+'.json'
         else:
             from .build_filter import plan

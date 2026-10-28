@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261028+fix4",
-  "status": "local-candidate-verified",
+  "candidateVersion": "0.5.1.dev20261028+fix5",
+  "status": "local-candidate-in-final-verification",
   "syntheticChecks": {
-    "passed": 128,
-    "scope": "affected CLI/reference scanner/native plans/structure/filter/readback/folder/retirement plus shared adoption/batch/production/UI/wiring regression checks"
+    "passed": null,
+    "scope": "committed fix5 export pending full affected regression; previous fix4 has 128 checks"
   },
   "native": {
     "editorVersion": "6000.6.2f1",
@@ -93,7 +93,8 @@
     "realGeneratedReportBytes": 63733167,
     "realGeneratedReportAssets": 65661,
     "overDefaultReportCliPlanning": "verified on synthetic real-shaped metadata",
-    "overDedicatedBudget": "rejected"
+    "overDedicatedBudget": "rejected",
+    "nativeCollectorReports": "same dedicated 128 MiB/8M nodes; ordinary spec limits unchanged"
   },
   "nativeRetirement": {
     "testedIsolatedCandidate": "0.5.1.dev20261028+fix4",
@@ -114,8 +115,9 @@
     ],
     "existenceGuidQuery": "OnlyExistingAssets",
     "manualSameBytesMetadataRecoveryRefused": true,
-    "finalInstalledPackageExecuted": true,
-    "negativeDependencyProof": "same native companion bytes; separately installed retire2 negative, zero deletion and full source unchanged"
+    "finalInstalledPackageExecuted": false,
+    "negativeDependencyProof": "same native companion bytes; separately installed retire2 negative, zero deletion and full source unchanged",
+    "currentCandidateEvidence": "fix4 evidence reuse only; unity.py and BeaverNative.cs unchanged in committed fix5 export"
   },
   "compactTransport": {
     "optionalFlag": "--summary",
@@ -149,12 +151,35 @@
     "editorExecutedByAdapter": false,
     "globalBindingChanged": false
   },
-  "implementationSha256": "d1c2dac8ee01d25e83b966b95f2e448948b64397bf131b84621cbc225a40c6fc",
   "structureConsumerRegression": {
     "substringAssetsLengthNotLookup": true,
     "ordinaryRootLookupAndOpaqueDynamicRootStillBlocked": true,
     "sameResourcesKeyAndUniqueCandidate": "declaration allowed; dynamic coverage retained",
     "changedResourcesKeyAndDuplicateCandidate": "blocked",
     "projectConformance": "not-established"
-  }
+  },
+  "nativePartialCatalog": {
+    "testedTrial": "0.5.1.dev20261028+filtertrial1",
+    "catalogAssets": 91,
+    "validDependencies": 31,
+    "zeroObjectUnknownAssets": 1,
+    "coverageComplete": false,
+    "sourceUnchanged": true,
+    "helperCleaned": true,
+    "oldNativeFailureReproduced": true,
+    "finalCandidateTransportVerification": "pending; earlier trial transport status omission is separately retained"
+  },
+  "structureNamespaceAndComparison": {
+    "ResourcesCaseInsensitive": true,
+    "directLeadingPrefixOnly": true,
+    "bothOldAndNewKeysChecked": true,
+    "conditionalOrUnknownExpression": "conservative-block",
+    "explicitComparisonDeclaration": "fileSha256/span/decoded literal/kind/reason/evidence; caller-reviewed-not-native-proof",
+    "lookupContextAndStaleDeclarations": "rejected",
+    "realConsumerSourceParserReadOnly": "verified; no full game plan/native claim"
+  },
+  "notInThisCandidate": [
+    "source-evidence-only retirement execution",
+    "scene-derived BuildSettings transaction changes"
+  ]
 }

@@ -37,13 +37,18 @@ def _sha(path):
     return digest.hexdigest()
 
 
+def _meta_guid(path):
+    match = re.search(rb"(?m)^guid:\s*([0-9a-fA-F]{32})\s*$", path.read_bytes())
+    return match.group(1).decode("ascii").lower() if match else None
+
+
 def _closed(obj, keys, where):
     if not isinstance(obj, dict) or set(obj) != set(keys):
         fail("BUILD_FILTER_SCHEMA", where, f"Expected exactly fields {sorted(keys)}")
 
 
 def _snapshot(snapshot, target, require_runner=False):
-    required = {"schemaVersion", "target", "pipeline", "buildScenes", "explicitRoots", "implicitRoots", "coverage", "assets", "dependencies"}
+    required = {"schemaVersion", "target", "pipeline", "buildScenes", "explicitRoots", "implicitRoots", "coverage", "assets", "dependencies", "unresolvedDependencies"}
     runner_fields = {"editorExitCode", "inputState", "nativeReadback", "sourceUnchanged", "unplannedProjectChanges",
                      "helperCleaned", "visualAcceptance", "gameplayAcceptance"}
     if not isinstance(snapshot, dict) or not required <= set(snapshot) or set(snapshot) - required - runner_fields:
@@ -76,20 +81,50 @@ def _snapshot(snapshot, target, require_runner=False):
         fail("BUILD_FILTER_INPUT_STATE", "snapshot.inputState", "Expected path-to-content-hash preconditions")
     assets = {}
     for i, row in enumerate(snapshot["assets"]):
-        _closed(row, {"path", "guid", "localIds", "types"}, f"snapshot.assets[{i}]")
+        legacy_fields = {"path", "guid", "localIds", "types"}
+        prior_fields = legacy_fields | {"status", "error"}
+        current_fields = prior_fields | {"identityStatus", "objectCount"}
+        if not isinstance(row, dict) or set(row) not in (legacy_fields, prior_fields, current_fields):
+            fail("BUILD_FILTER_SCHEMA", f"snapshot.assets[{i}]", "Expected persistent asset identity or explicit unknown identity row")
         path = _path(row["path"], f"snapshot.assets[{i}].path")
-        if path in assets or not isinstance(row["guid"], str) or not _GUID.fullmatch(row["guid"]):
-            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Duplicate path or invalid Unity GUID")
+        status = row.get("status", "observed")
+        error = row.get("error", "")
+        guid = row["guid"]
+        identity_status = row.get("identityStatus", "verified" if status == "observed" else "inspection-failed")
+        object_count = row.get("objectCount", max(1, len(row["localIds"])) if status == "observed" else -1)
+        valid_guid = isinstance(guid, str) and bool(_GUID.fullmatch(guid))
+        if path in assets or status not in ("observed", "unknown"):
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Duplicate path or unsupported native asset status")
+        if status == "observed" and not valid_guid:
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Observed assets require an exact Unity GUID")
+        if status == "unknown" and (guid not in ("", None) and not valid_guid):
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Unknown rows may retain a valid native GUID or leave it explicitly empty")
         if not isinstance(row["localIds"], list) or any(type(value) is not int or value == 0 for value in row["localIds"]):
-            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Expected persistent nonzero local file IDs")
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Known local IDs must be persistent nonzero integers")
         if not isinstance(row["types"], list) or any(not isinstance(value, str) or not value for value in row["types"]):
-            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Expected Unity asset type names")
-        assets[path] = row
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Known Unity types must be nonempty strings")
+        if identity_status not in ("verified", "no-persistent-object", "persistent-identity-unavailable", "inspection-failed"):
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Unknown identity status is unsupported")
+        if type(object_count) is not int or object_count < -1:
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Expected objectCount >= 0 or -1 when inspection failed")
+        if status == "observed" and (identity_status != "verified" or object_count <= 0 or not row["localIds"] or not row["types"] or error):
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Observed rows require persistent identities/types and no error")
+        if status == "unknown" and (not isinstance(error, str) or not error.strip()):
+            fail("BUILD_FILTER_ASSET_IDENTITY", path, "Unknown identity requires a specific native failure reason")
+        if status == "unknown":
+            consistent_status = ((identity_status == "no-persistent-object" and object_count == 0 and not row["localIds"] and not row["types"])
+                                 or (identity_status == "persistent-identity-unavailable" and object_count > 0)
+                                 or (identity_status == "inspection-failed" and object_count == -1))
+            if not consistent_status:
+                fail("BUILD_FILTER_ASSET_IDENTITY", path, "Unknown status, objectCount and available identities disagree")
+        assets[path] = dict(row, status=status, identityStatus=identity_status, objectCount=object_count,
+                            error=error, guid=guid or "")
     dependencies = {}
     for i, row in enumerate(snapshot["dependencies"]):
         _closed(row, {"path", "guid", "localId", "type", "roots"}, f"snapshot.dependencies[{i}]")
         path = _path(row["path"], f"snapshot.dependencies[{i}].path")
-        if path not in assets or not isinstance(row["guid"], str) or not _GUID.fullmatch(row["guid"]) or row["guid"].lower() != assets[path]["guid"].lower():
+        if (path not in assets or not isinstance(row["guid"], str) or not _GUID.fullmatch(row["guid"])
+                or not _GUID.fullmatch(assets[path]["guid"]) or row["guid"].lower() != assets[path]["guid"].lower()):
             fail("BUILD_FILTER_DEPENDENCY_IDENTITY", path, "Dependency does not resolve to the active asset catalog identity")
         if (type(row["localId"]) is not int or row["localId"] == 0 or not isinstance(row["type"], str)
                 or not row["type"] or row["localId"] not in assets[path]["localIds"] or row["type"] not in assets[path]["types"]):
@@ -101,7 +136,32 @@ def _snapshot(snapshot, target, require_runner=False):
         if key in dependencies:
             fail("BUILD_FILTER_DEPENDENCY_DUPLICATE", path, "Duplicate dependency identity")
         dependencies[key] = row
-    return assets, dependencies
+    unresolved = {}
+    allowed_roots = snapshot["buildScenes"] + snapshot["explicitRoots"] + snapshot["implicitRoots"]
+    if not isinstance(snapshot["unresolvedDependencies"], list):
+        fail("BUILD_FILTER_SCHEMA", "snapshot.unresolvedDependencies", "Expected array of explicit path-only dependency failures")
+    for i, row in enumerate(snapshot["unresolvedDependencies"]):
+        _closed(row, {"path", "guid", "roots", "error"}, f"snapshot.unresolvedDependencies[{i}]")
+        path = _path(row["path"], f"snapshot.unresolvedDependencies[{i}].path")
+        guid = row["guid"]
+        if guid not in ("", None) and (not isinstance(guid, str) or not _GUID.fullmatch(guid)):
+            fail("BUILD_FILTER_DEPENDENCY_IDENTITY", path, "Unresolved dependency may retain only an exact native GUID or empty value")
+        if path in assets and assets[path]["status"] != "unknown":
+            fail("BUILD_FILTER_DEPENDENCY_IDENTITY", path, "Unresolved dependency must map to an explicitly unknown catalog row")
+        if not isinstance(row["roots"], list) or not row["roots"] or any(root not in allowed_roots for root in row["roots"]):
+            fail("BUILD_FILTER_DEPENDENCY_ROOT", path, "Unresolved dependency roots must be explicit build or implicit roots")
+        if not isinstance(row["error"], str) or not row["error"].strip() or path in unresolved:
+            fail("BUILD_FILTER_DEPENDENCY_IDENTITY", path, "Unresolved dependency requires one unique path and a failure reason")
+        unresolved[path] = dict(row, guid=guid or "")
+    return assets, dependencies, unresolved
+
+
+def _native_identity_blockers(snapshot):
+    blockers = [f"Native asset identity unavailable: {row['path']} — {row['error']}"
+                for row in snapshot["assets"] if row.get("status") == "unknown"]
+    blockers.extend(f"Native dependency identity unavailable: {row['path']} — {row['error']}"
+                    for row in snapshot["unresolvedDependencies"])
+    return blockers
 
 
 def _project_source_files(root):
@@ -135,7 +195,11 @@ def _verify_input_state(project, snapshot):
     if not all(isinstance(path, str) and (path.startswith("Assets/") or path.startswith("Packages/") or path.startswith("ProjectSettings/"))
                for path in state):
         fail("BUILD_FILTER_INPUT_STATE", "snapshot.inputState", "Only project-relative Assets, Packages, and ProjectSettings inputs are accepted")
-    required_assets = {path for asset in snapshot["assets"] for path in (asset["path"], asset["path"] + ".meta")}
+    catalog_paths = {asset["path"] for asset in snapshot["assets"]}
+    explicitly_selected = set(snapshot["buildScenes"] + snapshot["explicitRoots"])
+    unresolved_paths = {row["path"] for row in snapshot["unresolvedDependencies"]}
+    required_asset_paths = catalog_paths | explicitly_selected | unresolved_paths
+    required_assets = {path for asset_path in required_asset_paths for path in (asset_path, asset_path + ".meta")}
     required = set(required_assets)
     missing = sorted(required - set(state))
     if missing:
@@ -160,13 +224,14 @@ def _verify_input_state(project, snapshot):
     current_files = _project_source_files(root)
     recorded_assets = {path for path in state if path.startswith("Assets/")}
     if recorded_assets != required_assets:
-        fail("BUILD_FILTER_INPUT_STATE_INCOMPLETE", "snapshot.inputState", "Assets preconditions must contain exactly each snapshot asset and adjacent .meta")
+        fail("BUILD_FILTER_INPUT_STATE_INCOMPLETE", "snapshot.inputState", "Assets preconditions must contain each catalog/selected path and adjacent .meta")
     current_assets = {path for path in current_files if path.startswith("Assets/")}
     missing_assets = sorted(required_assets - current_assets)
     if missing_assets:
         fail("BUILD_FILTER_STALE_SNAPSHOT", "snapshot.inputState", "A catalog asset or .meta was removed: " + ", ".join(missing_assets[:8]))
     # Unimported filesystem items cannot be safely classified from this closure.
     uncovered = sorted(current_assets - required_assets)
+    unimported_selected = sorted((explicitly_selected | unresolved_paths) - catalog_paths)
     recorded_non_assets = {path for path in state if (path.startswith("Packages/") or path.startswith("ProjectSettings/")) and path not in optional_missing}
     current_non_assets = current_files - current_assets
     if recorded_non_assets != current_non_assets:
@@ -174,6 +239,7 @@ def _verify_input_state(project, snapshot):
         removed = sorted(recorded_non_assets - current_non_assets)
         fail("BUILD_FILTER_STALE_SNAPSHOT", "snapshot.inputState", f"Packages/ProjectSettings changed after collection; added={added[:8]} removed={removed[:8]}")
     blockers = ["Unimported Assets filesystem entries are outside the native AssetDatabase catalog: " + path for path in uncovered]
+    blockers.extend("Selected root has no imported AssetDatabase catalog identity: " + path for path in unimported_selected)
     for path in ("ProjectSettings/EditorBuildSettings.asset", "ProjectSettings/GraphicsSettings.asset", "ProjectSettings/QualitySettings.asset"):
         if path not in state or path in optional_missing:
             blockers.append("Required build settings were not captured: " + path)
@@ -208,7 +274,12 @@ def validate_collect_spec(project, spec):
 
 
 def collect(project, spec_path, output, editor, timeout=600):
-    """Run the shared guarded native collector, then validate its read-only receipt."""
+    """Run a guarded collector and return a CLI summary outside the saved snapshot.
+
+    The UTF-8 build-snapshot.json remains schemaVersion=1 and contains coverage,
+    not a top-level status field. The returned summary adds `status` and `report`
+    for CLI presentation; its coverage content matches the persisted snapshot.
+    """
     spec = validate_collect_spec(project, load(read(safe(spec_path))))
     from .native_readback import run_collector
     report = run_collector(project, spec, output, editor, "BeaverBuildFilter.cs", "BeaverBuildFilter.Run",
@@ -217,10 +288,15 @@ def collect(project, spec_path, output, editor, timeout=600):
         fail("BUILD_FILTER_SNAPSHOT_IDENTITY", "snapshot", "Native scene/root set differs from request")
     _snapshot(report, {"platform": spec["platform"], "pipeline": spec["renderPipeline"]}, require_runner=True)
     blockers = _verify_input_state(project, report)
+    blockers.extend(_native_identity_blockers(report))
     if blockers:
         report["coverage"] = {"complete": False, "blockers": sorted(set(report["coverage"]["blockers"] + blockers))}
         write_json(safe(output) / "build-snapshot.json", report)
-    return dict(report, report=str(safe(output) / 'build-snapshot.json'))
+    report_path = str(safe(output) / "build-snapshot.json")
+    partial = (report["coverage"]["complete"] is not True or bool(report["coverage"]["blockers"])
+               or any(row.get("status") == "unknown" for row in report["assets"])
+               or bool(report["unresolvedDependencies"]))
+    return dict(report, status="partial" if partial else "observed", report=report_path)
 
 
 def _plan_root(value, where):
@@ -243,7 +319,7 @@ def plan(project, target, snapshot, source_manifest, backup_root=".beaver/build-
         fail("BUILD_FILTER_TARGET", "target", "Explicit Unity BuildTarget name and render pipeline identity required")
     if not isinstance(snapshot, dict) or snapshot.get("pipeline") != target["pipeline"]:
         fail("BUILD_FILTER_PIPELINE_MISMATCH", "snapshot.pipeline", "Native snapshot pipeline must exactly match target")
-    assets, dependencies = _snapshot(snapshot, target)
+    assets, dependencies, unresolved_dependencies = _snapshot(snapshot, target)
     if isinstance(source_manifest, dict):
         if set(source_manifest) != {"schema", "items"} or source_manifest["schema"] != "monkey-shader-handoff/1" or not isinstance(source_manifest["items"], list):
             fail("BUILD_FILTER_SOURCE_MANIFEST", "sourceManifest", "Expected monkey-shader-handoff/1 with an items array")
@@ -296,28 +372,44 @@ def plan(project, target, snapshot, source_manifest, backup_root=".beaver/build-
     backup_root = _plan_root(backup_root, "backupRoot")
     quarantine_root = _plan_root(quarantine_root, "quarantineRoot")
     rows = []
-    dep_paths = {path for path, _ in dependencies}
+    dep_paths = {path for path, _ in dependencies} | set(unresolved_dependencies)
+    identity_blockers = _native_identity_blockers(snapshot)
     for path, asset in sorted(assets.items()):
         source_path = inside(root, path)
         meta_path = inside(root, path + ".meta")
         if source_path.is_symlink() or meta_path.is_symlink() or not source_path.is_file() or not meta_path.is_file():
             fail("BUILD_FILTER_ASSET_MISSING", path, "Catalog asset and adjacent .meta must be regular files")
         file_hash, meta_hash = _sha(source_path), _sha(meta_path)
+        meta_guid = _meta_guid(meta_path)
+        native_guid = asset["guid"].lower() if _GUID.fullmatch(asset["guid"]) else None
+        can_review_empty_source = asset["identityStatus"] == "no-persistent-object" and asset["objectCount"] == 0
+        if native_guid and meta_guid and native_guid != meta_guid:
+            fail("BUILD_FILTER_NATIVE_META_GUID_MISMATCH", path, "AssetDatabase native GUID differs from the current .meta GUID")
         report = evidence.get(path)
         mapped_identity = bool(report and not report["requiresTargetIdentity"])
         if report and report.get("target") is not None:
             target_identity = report["target"]
-            mapped_identity = (isinstance(target_identity, dict) and set(target_identity) == {"guid", "localFileID"}
-                               and type(target_identity["localFileID"]) is int and target_identity["localFileID"] != 0
-                               and str(target_identity["guid"]).lower() == asset["guid"].lower()
-                               and target_identity["localFileID"] in asset["localIds"])
-        matched = bool(report and report["sourceSha256"] == file_hash
+            if isinstance(target_identity, dict) and set(target_identity) == {"guid", "localFileID"}:
+                guid_match = isinstance(target_identity["guid"], str) and target_identity["guid"].lower() == asset["guid"].lower()
+                id_match = (type(target_identity["localFileID"]) is int and target_identity["localFileID"] != 0
+                            and target_identity["localFileID"] in asset["localIds"])
+                empty_identity_match = (target_identity["localFileID"] is None
+                                        and can_review_empty_source and not asset["localIds"])
+                mapped_identity = guid_match and (id_match or empty_identity_match)
+        elif can_review_empty_source and report and not report["requiresTargetIdentity"]:
+            mapped_identity = native_guid is not None and meta_guid == native_guid
+        matched = bool(report and (asset["status"] == "observed" or can_review_empty_source) and report["sourceSha256"] == file_hash
                        and (report["bytes"] is None or report["bytes"] == source_path.stat().st_size)
                        and (report["metaSha256"] is None or report["metaSha256"] == meta_hash) and mapped_identity)
         classification = report["classification"] if matched else "unknown"
         refs = [dict(guid=dep["guid"].lower(), localId=dep["localId"], type=dep["type"], roots=sorted(dep["roots"]))
                 for (dep_path, _), dep in sorted(dependencies.items()) if dep_path == path]
-        if path in dep_paths:
+        unresolved_refs = [item for item in unresolved_dependencies.values() if item["path"] == path]
+        if unresolved_refs:
+            state = "runtime-reference-unresolved"
+            eligibility = "retain-unknown"
+            reason = "Unity reports this path in a dependency closure but could not provide persistent object identity."
+        elif path in dep_paths:
             explicit_reference=any(any(not root.startswith('implicit:') for root in ref['roots']) for ref in refs)
             state = "runtime-referenced" if explicit_reference else 'implicit-build-included'
             eligibility = "retain-referenced" if explicit_reference else 'requires-explicit-retirement-scope'
@@ -333,19 +425,26 @@ def plan(project, target, snapshot, source_manifest, backup_root=".beaver/build-
             state = "unknown"
             eligibility = "retain-unknown"
             reason = "No matching source provenance or static evidence is insufficient; preserve the asset."
-        backup_base = f"{backup_root}/{asset['guid'].lower()}/{path.removeprefix('Assets/')}"
+        if asset["status"] == "observed" and not meta_guid:
+            identity_blockers.append(f"Native asset metadata has no valid GUID: {path}")
+        backup_identity = native_guid or "unknown-" + hashlib.sha256(path.encode("utf-8")).hexdigest()
+        backup_base = f"{backup_root}/{backup_identity}/{path.removeprefix('Assets/')}"
         quarantine_base = f"{quarantine_root}/{path.removeprefix('Assets/')}"
-        rows.append({"path": path, "guid": asset["guid"].lower(), "localIds": sorted(set(asset["localIds"])),
+        rows.append({"path": path, "guid": native_guid, "nativeStatus": asset["status"],
+                     "identityStatus": asset["identityStatus"], "objectCount": asset["objectCount"],
+                     "nativeError": asset["error"] or None,
+                     "metaGuid": meta_guid, "localIds": sorted(set(asset["localIds"])),
                      "types": sorted(set(asset["types"])), "sourceSha256": file_hash, "metaSha256": meta_hash,
                      "sourceClassification": classification,
                      "handoffClassification": report.get("handoffClassification") if matched else None,
                      "sourceEvidenceId": report["evidenceId"] if matched else None,
-                     "buildState": state, "references": refs, "quarantineEligibility": eligibility, "reason": reason,
+                     "buildState": state, "references": refs, "unresolvedReferences": unresolved_refs,
+                     "quarantineEligibility": eligibility, "reason": reason,
                      "backup": {"source": path, "meta": path + ".meta", "copySourceTo": backup_base,
                                 "copyMetaTo": backup_base + ".meta",
                                 "sourceSha256": file_hash, "metaSha256": meta_hash},
                      "isolation": {"moveSourceTo": quarantine_base, "moveMetaTo": quarantine_base + ".meta",
-                                   "preserveGuid": asset["guid"].lower(), "preserveLocalIds": sorted(set(asset["localIds"]))},
+                                   "preserveGuid": native_guid, "preserveLocalIds": sorted(set(asset["localIds"]))},
                      "rollback": {"restoreSourceFrom": quarantine_base, "restoreMetaFrom": quarantine_base + ".meta",
                                   "restoreSourceTo": path, "restoreMetaTo": path + ".meta",
                                   "expectedPostIsolation": {"sourceAbsent": True, "metaAbsent": True}}})
@@ -355,9 +454,9 @@ def plan(project, target, snapshot, source_manifest, backup_root=".beaver/build-
               "assets": rows, "counts": {"runtimeReferenced": sum(r["buildState"] == "runtime-referenced" for r in rows),
                                            "implicitBuildIncluded": sum(r['buildState']=='implicit-build-included' for r in rows),
                                            "sourceEvidenceOnly": sum(r["buildState"] == "source-evidence-only" for r in rows),
-                                           "unknown": sum(r["buildState"] == "unknown" for r in rows),
+                                           "unknown": sum(r["buildState"] in ("unknown", "runtime-reference-unresolved") for r in rows),
                                            "quarantineEligible": sum(r["quarantineEligibility"] == "eligible" for r in rows)}}
-    coverage_blockers = sorted(set(snapshot["coverage"]["blockers"] + input_blockers))
+    coverage_blockers = sorted(set(snapshot["coverage"]["blockers"] + input_blockers + identity_blockers))
     if not snapshot["coverage"]["complete"] or coverage_blockers:
         result["execution"] = {"status": "blocked", "code": "BUILD_FILTER_DEPENDENCY_COVERAGE_INCOMPLETE",
                                 "reason": "Native snapshot reports uncollected implicit build dependencies; no isolation is supportable.",

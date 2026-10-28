@@ -227,6 +227,139 @@ def _resource_key(path):
     return path.split("/Resources/", 1)[1].rsplit(".", 1)[0]
 
 
+def _resource_keys_equal(left, right):
+    if left is None or right is None:
+        return left is right
+    return left.casefold() == right.casefold()
+
+
+def _csharp_string_value(token):
+    if token[0] == "string":
+        return _decode_csharp_string(token[1])
+    raw = token[1]
+    if raw.startswith('@"') and raw.endswith('"'):
+        return raw[2:-1].replace('""', '"')
+    return None
+
+
+def _strip_outer_parens(tokens):
+    tokens = list(tokens)
+    while len(tokens) >= 2 and tokens[0][1] == "(" and tokens[-1][1] == ")":
+        depth = 0
+        closes_only_at_end = True
+        for index, token in enumerate(tokens):
+            if token[1] == "(":
+                depth += 1
+            elif token[1] == ")":
+                depth -= 1
+                if depth == 0 and index != len(tokens) - 1:
+                    closes_only_at_end = False
+                    break
+        if not closes_only_at_end or depth != 0:
+            break
+        tokens = tokens[1:-1]
+    return tokens
+
+
+def _dynamic_resource_prefix(expression):
+    """Prove only a leading string literal concatenated with an identifier chain."""
+    if not isinstance(expression, str):
+        return None
+    tokens = _strip_outer_parens(_csharp_tokens(expression))
+    if len(tokens) < 3 or tokens[0][0] not in {"string", "opaque"} or tokens[1][1] != "+":
+        return None
+    prefix = _csharp_string_value(tokens[0])
+    if not isinstance(prefix, str) or not prefix.endswith("/") or not prefix or "\\" in prefix:
+        return None
+    prefix_parts = prefix[:-1].split("/")
+    if any(part in ("", ".", "..") for part in prefix_parts):
+        return None
+    tail = tokens[2:]
+    if not tail or tail[0][0] != "id" or len(tail) % 2 == 0:
+        return None
+    if any(tail[i][1] != "." or tail[i + 1][0] != "id" for i in range(1, len(tail), 2)):
+        return None
+    return prefix
+
+
+def _resource_key_matches_prefix(key, prefix):
+    if (not isinstance(key, str) or not isinstance(prefix, str) or not prefix.endswith("/")
+            or "\\" in key or "\\" in prefix):
+        return False
+    parts = key.split("/")
+    prefix_parts = prefix[:-1].split("/")
+    if any(part in ("", ".", "..") for part in parts) or any(part in ("", ".", "..") for part in prefix_parts):
+        return False
+    return key.casefold().startswith(prefix.casefold())
+
+
+def _source_identity_exact(value, source):
+    normalized = _specific_asset_path_prefix(value)
+    if normalized is None:
+        return False
+    folded = normalized.casefold()
+    return folded in {source.casefold(), str(PurePosixPath(source).with_suffix("")).casefold()}
+
+
+def _source_comparison_context(tokens, index):
+    if _inside_asset_lookup_call(tokens, index):
+        return False
+    def op_pair(pair):
+        return pair in (("=", "="), ("!", "="))
+    if index >= 2 and op_pair((tokens[index - 2][1], tokens[index - 1][1])):
+        return True
+    if index + 2 < len(tokens) and op_pair((tokens[index + 1][1], tokens[index + 2][1])):
+        return True
+    # Minimal method form: obj.Equals(literal) or String.Equals(value,literal,...).
+    for call in range(max(0, index - 24), index - 1):
+        if not (call > 0 and tokens[call][0] == "id" and tokens[call][1] == "Equals"
+                and tokens[call - 1][1] == "." and tokens[call + 1][1] == "("):
+            continue
+        depth = 0
+        for cursor in range(call + 1, index + 1):
+            if tokens[cursor][1] == "(":
+                depth += 1
+            elif tokens[cursor][1] == ")":
+                depth -= 1
+        if depth == 1 and index > 0 and tokens[index - 1][1] in {"(", ","}:
+            return True
+    return False
+
+
+def _inside_asset_lookup_call(tokens, index):
+    asset_database_methods = {"LoadAssetAtPath", "LoadMainAssetAtPath", "LoadAssetAtGUID", "LoadAssetAtPathFromGUID"}
+    for method in range(max(0, index - 64), index):
+        if tokens[method][0] != "id":
+            continue
+        name = tokens[method][1]
+        owner = tokens[method - 2][1] if method >= 2 and tokens[method - 1][1] == "." else None
+        lookup = ((owner == "Resources" and name in {"Load", "LoadAll"})
+                  or (owner == "Addressables" and name == "LoadAssetAsync")
+                  or name in asset_database_methods)
+        if not lookup:
+            continue
+        call_open = None
+        for cursor in range(method + 1, min(len(tokens), method + 24)):
+            if tokens[cursor][1] == "(":
+                call_open = cursor
+                break
+            if tokens[cursor][1] in {";", "{", "}"}:
+                break
+        if call_open is None or call_open > index:
+            continue
+        depth = 0
+        for cursor in range(call_open, len(tokens)):
+            if tokens[cursor][1] == "(":
+                depth += 1
+            elif tokens[cursor][1] == ")":
+                depth -= 1
+                if depth == 0:
+                    if cursor >= index:
+                        return True
+                    break
+    return False
+
+
 def _governance_file(path, product_root=None):
     path = Path(path).absolute()
     try:
@@ -445,10 +578,11 @@ def inspect(project, native_snapshot=None, exceptions=None, product_root=None, p
         with tempfile.TemporaryDirectory(prefix="beaver-structure-") as scratch:
             graph = inspect_graph(root, Path(scratch).resolve() / "graph.json")
     for row in graph["unknownDynamicLoads"]:
+        row["staticPrefix"] = _dynamic_resource_prefix(row.get("key"))
         issues.append({"code": "DYNAMIC_LOAD_UNRESOLVED", "severity": "warning", **row})
     for row in graph["literalLoads"]:
         candidates = sorted(p for p in all_asset_paths if "/Resources/" in p and
-                            p.split("/Resources/", 1)[1].rsplit(".", 1)[0] == row["key"])
+                            p.split("/Resources/", 1)[1].rsplit(".", 1)[0].casefold() == row["key"].casefold())
         row["candidateAssets"] = candidates
         row["importedTypes"] = [native["byPath"][p]["importedType"] for p in candidates
                                 if native and p in native["byPath"]]
@@ -486,7 +620,8 @@ def inspect(project, native_snapshot=None, exceptions=None, product_root=None, p
             if _is_assets_root(value) or specific_prefix is not None:
                 value="Assets/" if _is_assets_root(value) else specific_prefix
                 path_consumers.append({"file": rel, "value": value, "offset": start, "span":[start,end]})
-                issues.append({"code": "OLD_PATH_CONSUMER", "severity": "warning", "file": rel, "value": value})
+                issues.append({"code": "OLD_PATH_CONSUMER", "severity": "warning", "file": rel,
+                               "value": value, "span": [start, end]})
             elif kind=='opaque' and 'Assets/' in token:
                 prefix=token[token.index('Assets/'):].split('{',1)[0].split('"',1)[0]
                 issues.append({'code':'DYNAMIC_ASSET_PATH_UNRESOLVED','severity':'warning','file':rel,'prefix':prefix,'span':[start,end]})
@@ -574,7 +709,65 @@ def _validate_native_snapshot(snapshot):
     return {"document": dict(snapshot), "byPath": out}
 
 
-def build_plan(audit, mappings, native_snapshot=None):
+def _validate_consumer_resolutions(audit, root, supplied):
+    document = {"schemaVersion": 1, "resolutions": []} if supplied is None else supplied
+    if (not isinstance(document, dict) or set(document) != {"schemaVersion", "resolutions"}
+            or type(document.get("schemaVersion")) is not int or document.get("schemaVersion") != 1 or not isinstance(document.get("resolutions"), list)
+            or len(document["resolutions"]) > 256):
+        fail("CONSUMER_RESOLUTION_SCHEMA", "consumerResolutions", "Expected schemaVersion 1 and at most 256 strict resolutions")
+    source_hashes = audit.get("sourceHashes", {})
+    issues = audit.get("issues", [])
+    result, seen = {}, set()
+    required = {"file", "fileSha256", "span", "literal", "kind", "reason", "evidence"}
+    for index, row in enumerate(document["resolutions"]):
+        location = "consumerResolutions.resolutions[" + str(index) + "]"
+        if not isinstance(row, dict) or set(row) != required:
+            fail("CONSUMER_RESOLUTION_SCHEMA", location, "Resolution fields must be file,fileSha256,span,literal,kind,reason,evidence")
+        file = _valid_rel(row["file"], location + ".file")
+        if (not isinstance(row["fileSha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", row["fileSha256"])
+                or not isinstance(row["span"], list) or len(row["span"]) != 2
+                or any(type(value) is not int for value in row["span"])
+                or row["span"][0] < 0 or row["span"][1] <= row["span"][0]
+                or not isinstance(row["literal"], str) or not row["literal"]
+                or row["kind"] != "source-identity-comparison"
+                or any(not isinstance(row[key], str) or not row[key].strip() for key in ("reason", "evidence"))):
+            fail("CONSUMER_RESOLUTION_SCHEMA", location, "Invalid hash, span, literal, kind, reason, or evidence")
+        key = (file, row["span"][0], row["span"][1])
+        if key in seen:
+            fail("CONSUMER_RESOLUTION_DUPLICATE", location, "Repeated file/span declaration")
+        seen.add(key)
+        if source_hashes.get(file) != row["fileSha256"]:
+            fail("CONSUMER_RESOLUTION_SOURCE_STALE", location, "fileSha256 must equal the inspected source hash")
+        path = inside(root, file)
+        if not path.is_file() or _sha(path) != row["fileSha256"]:
+            fail("CONSUMER_RESOLUTION_SOURCE_STALE", location, "Consumer source changed after inspect")
+        try:
+            source = path.read_text(encoding="utf-8-sig")
+        except (UnicodeError, OSError) as error:
+            fail("CONSUMER_RESOLUTION_SOURCE", location, "Consumer source is unreadable: " + str(error))
+        start, end = row["span"]
+        if end > len(source):
+            fail("CONSUMER_RESOLUTION_SPAN", location, "Span is outside the current source")
+        tokens = _csharp_tokens(source)
+        matches = [(i, token) for i, token in enumerate(tokens) if token[2] == start and token[3] == end]
+        if len(matches) != 1:
+            fail("CONSUMER_RESOLUTION_SPAN", location, "Span must identify exactly one current C# token")
+        token_index, token = matches[0]
+        if _csharp_string_value(token) != row["literal"]:
+            fail("CONSUMER_RESOLUTION_LITERAL", location, "Declared literal does not match the current source token")
+        if not _source_comparison_context(tokens, token_index):
+            fail("CONSUMER_RESOLUTION_NOT_COMPARISON", location, "Literal is not in a supported ==, !=, or Equals comparison context")
+        issue_match = any(issue.get("code") == "OLD_PATH_CONSUMER" and issue.get("file") == file
+                          and issue.get("span") == row["span"] and issue.get("value") == row["literal"]
+                          for issue in issues)
+        if not issue_match:
+            fail("CONSUMER_RESOLUTION_NOT_AUDITED", location, "Declaration must match an exact OLD_PATH_CONSUMER audit row")
+        result[key] = dict(row)
+    encoded = json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return result, document, hashlib.sha256(encoded).hexdigest()
+
+
+def build_plan(audit, mappings, native_snapshot=None, consumer_resolutions=None):
     """Build immutable move declarations for existing ``asset.move`` steps.
 
     ``mappings`` is an explicit list of {source,target}.  No file is moved and
@@ -597,6 +790,8 @@ def build_plan(audit, mappings, native_snapshot=None):
         global_blockers.append({"code": "DUPLICATE_GUID", "guid": guid, "paths": paths})
     blockers = list(global_blockers)
     root=safe(audit['projectRoot']);current_inputs=[];current_directories=[]
+    resolution_map, resolution_document, resolution_sha = _validate_consumer_resolutions(audit, root, consumer_resolutions)
+    used_resolutions, accepted_resolutions = set(), []
     product_root_value = audit.get("productRoot")
     profile_identity = audit.get("profileIdentity")
     if not isinstance(product_root_value, str) or not isinstance(profile_identity, dict):
@@ -640,6 +835,24 @@ def build_plan(audit, mappings, native_snapshot=None):
         current = inside(root,_valid_rel(rel,'sourceHashes'))
         if not current.is_file() or _sha(current) != expected:
             blockers.append({"code": "AUDIT_CONSUMER_STALE", "path": rel})
+    dynamic_prefixes = {}
+    dynamic_coverage = []
+    for row in audit.get("dynamicLoads", []):
+        prefix = None
+        file, span = row.get("file"), row.get("span")
+        if isinstance(file, str) and isinstance(span, list) and len(span) == 2 and all(type(v) is int for v in span):
+            path = inside(root, _valid_rel(file, "dynamicLoads.file"))
+            try:
+                text = path.read_text(encoding="utf-8-sig")
+            except (UnicodeError, OSError):
+                text = ""
+            if 0 <= span[0] < span[1] <= len(text):
+                expression = text[span[0]:span[1]].strip()
+                if expression == row.get("key"):
+                    prefix = _dynamic_resource_prefix(expression)
+        dynamic_prefixes[(file, tuple(span) if isinstance(span, list) else None)] = prefix
+        dynamic_coverage.append({**row, "staticPrefix": prefix,
+                                 "prefixStatus": "lexical-prefix-proven" if prefix else "unresolved-expression"})
     for i, item in enumerate(mappings):
         loc = "mappings[" + str(i) + "]"
         if not isinstance(item, dict) or set(item) != {"source", "target"}:
@@ -707,10 +920,11 @@ def build_plan(audit, mappings, native_snapshot=None):
         old_key = _resource_key(source)
         if old_key is not None:
             new_key = _resource_key(target)
-            candidates = sorted(path for path in inventory if _resource_key(path) == old_key)
+            candidates = sorted(path for path in inventory if _resource_key(path) is not None
+                                and _resource_key(path).casefold() == old_key.casefold())
             resource_key_unique = candidates == [source]
             resource_key = {"old": old_key, "new": new_key,
-                            "consumerPatchesRequired": old_key != new_key,
+                            "consumerPatchesRequired": not _resource_keys_equal(old_key, new_key),
                             "candidateAssets": candidates}
             if not resource_key_unique:
                 blockers.append({"code": "RESOURCE_KEY_CANDIDATE_AMBIGUOUS", "source": source,
@@ -731,12 +945,24 @@ def build_plan(audit, mappings, native_snapshot=None):
                 not native or p not in native["byPath"] for p in candidate_assets)
             if (issue.get("code") in {"RESOURCE_KEY_AMBIGUOUS", "RESOURCE_TYPE_AMBIGUOUS"} or unresolved_type) and source in candidate_assets:
                 blockers.append({"code": "RESOURCE_RESOLUTION_AMBIGUOUS", "path": source, "resourceKey": issue.get("key")})
-            if (issue.get("code") == "DYNAMIC_LOAD_UNRESOLVED" and resource_key
-                    and (resource_key["old"] != resource_key["new"] or not resource_key_unique)):
-                blockers.append({"code": "DYNAMIC_RESOURCE_KEY_UNRESOLVED", "source": source, "consumer": issue.get("file"), "span": issue.get("span")})
+            if issue.get("code") == "DYNAMIC_LOAD_UNRESOLVED" and resource_key:
+                prefix = dynamic_prefixes.get((issue.get("file"), tuple(issue.get("span", []))))
+                old_key, new_key = resource_key["old"], resource_key["new"]
+                relevant = (prefix is None or _resource_key_matches_prefix(old_key, prefix)
+                            or _resource_key_matches_prefix(new_key, prefix))
+                if relevant and (not _resource_keys_equal(old_key, new_key) or not resource_key_unique):
+                    blockers.append({"code": "DYNAMIC_RESOURCE_KEY_UNRESOLVED", "source": source,
+                                     "consumer": issue.get("file"), "span": issue.get("span"),
+                                     "staticPrefix": prefix})
             if issue.get("code") == "OLD_PATH_CONSUMER":
                 value = issue.get("value", "")
-                if _is_assets_root(value) or _asset_literal_matches_source(value, source):
+                resolution_key = (issue.get("file"), *issue.get("span", [])) if isinstance(issue.get("span"), list) else None
+                resolution = resolution_map.get(resolution_key) if resolution_key else None
+                if resolution and resolution.get("literal") == value and _source_identity_exact(value, source):
+                    used_resolutions.add(resolution_key)
+                    if resolution_key not in {tuple((x["file"], *x["span"])) for x in accepted_resolutions}:
+                        accepted_resolutions.append({**resolution, "state": "caller-reviewed-not-native-proof"})
+                elif _is_assets_root(value) or _asset_literal_matches_source(value, source):
                     blockers.append({"code": "OLD_PATH_CONSUMER_UNHANDLED", "source": source, "consumer": issue.get("file"), "value": issue.get("value")})
             if issue.get('code')=='DYNAMIC_ASSET_PATH_UNRESOLVED':
                 prefix=issue.get('prefix','Assets/').replace('\\','/').casefold()
@@ -745,12 +971,15 @@ def build_plan(audit, mappings, native_snapshot=None):
                 value=issue.get('value','')
                 if _asset_literal_matches_source(value, source):
                     blockers.append({'code':'JSON_ASSET_PATH_CONSUMER_UNHANDLED','source':source,'consumer':issue.get('file'),'value':value})
-        if resource_key and resource_key["old"] != resource_key["new"]:
+        if resource_key and not _resource_keys_equal(resource_key["old"], resource_key["new"]):
             for load in audit.get("resourceLoads", []):
-                if load.get("key") == resource_key["old"] and source in load.get("candidateAssets", []):
+                if isinstance(load.get("key"), str) and load["key"].casefold() == resource_key["old"].casefold() and source in load.get("candidateAssets", []):
                     blockers.append({"code": "RESOURCE_KEY_CONSUMER_UNHANDLED", "source": source,
                                      "consumer": load.get("file"), "key": resource_key["old"],
                                      "targetKey": resource_key["new"], "span": load.get("span")})
+    unused_resolutions = set(resolution_map) - used_resolutions
+    if unused_resolutions:
+        fail("CONSUMER_RESOLUTION_UNUSED", "consumerResolutions", "Every declaration must match an affected mapped OLD_PATH_CONSUMER")
     # Case-insensitive target collisions are refused, including unmapped files.
     folded=lambda p:unicodedata.normalize('NFC',p).casefold()
     existing_folded = {folded(p): p for p in current_inputs+current_directories}
@@ -784,7 +1013,10 @@ def build_plan(audit, mappings, native_snapshot=None):
             "proposedSteps": steps, "issues": plan_issues,
             "batchSpec": {"schemaVersion": 2, "operation": "batch", "steps": steps} if complete else None,
             "nativeEvidence": native["document"] if native else None,
-            "dynamicLoadCoverage": audit.get("dynamicLoads", []),
+            "dynamicLoadCoverage": dynamic_coverage,
+            "consumerResolutions": resolution_document,
+            "consumerResolutionsSha256": resolution_sha,
+            "acceptedConsumerResolutions": accepted_resolutions,
             "nativeSnapshotSha256": hashlib.sha256(json.dumps(native["document"], sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest() if native else None,
             "preconditions": {r["source"]: {"sha256": r["sourceSha256"], "metaSha256": r["metaSha256"],
                                                "guid": r["guid"]} for r in rows},

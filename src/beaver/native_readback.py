@@ -92,7 +92,8 @@ def run_collector(project, request, output, editor, companion, entry, report_nam
             job_path = stage / 'job.json'; write_json(job_path, job)
             args = [str(editor), '-batchmode'] + ([] if graphics else ['-nographics']) + ['-projectPath', str(project), '-executeMethod', entry, '-logFile', str(stage / 'editor.log')]
             process = subprocess.run(args, env=editor_environment('BEAVER_NATIVE_JOB', job_path), capture_output=True, timeout=timeout)
-            result = load((stage / report_name).read_bytes()) if (stage / report_name).is_file() else None
+            from .output_limits import MANIFEST_BYTES, MANIFEST_NODES
+            result = load(read(stage / report_name, max_bytes=MANIFEST_BYTES), max_nodes=MANIFEST_NODES) if (stage / report_name).is_file() else None
             if process.returncode != 0 or result is None: fail('READBACK_EDITOR_FAILED', str(stage / 'editor.log'), 'Collector failed, exit=' + str(process.returncode))
             result['editorExitCode'] = process.returncode
         except BaseException as exc:

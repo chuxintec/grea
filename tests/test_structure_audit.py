@@ -361,7 +361,8 @@ class StructureAuditTests(unittest.TestCase):
         self.assertFalse(any(x['code']=='DYNAMIC_RESOURCE_KEY_UNRESOLVED' for x in plan['blockers']))
         row=plan['mappings'][0]
         self.assertEqual(row['resourceKeyMapping']['old'],row['resourceKeyMapping']['new'])
-        self.assertEqual(plan['dynamicLoadCoverage'],audit['dynamicLoads'])
+        self.assertEqual(len(plan['dynamicLoadCoverage']),len(audit['dynamicLoads']))
+        self.assertIsNone(plan['dynamicLoadCoverage'][0]['staticPrefix'])
 
     def test_changed_resources_key_still_blocks_unresolved_dynamic_call(self):
         asset='Assets/Product/Resources/Configuration/AiTasks.json'
@@ -383,6 +384,153 @@ class StructureAuditTests(unittest.TestCase):
         plan=build_plan(inspect(self.root,native),[
             {'source':asset,'target':'Assets/Game/Content/Config/Resources/Configuration/AiTasks.json'}])
         self.assertIn('RESOURCE_KEY_CANDIDATE_AMBIGUOUS',{x['code'] for x in plan['blockers']})
+
+    def test_resources_prefix_and_candidate_matching_are_case_insensitive(self):
+        asset='Assets/Product/Resources/configuration/AiTasks.json'
+        put(self.root,asset,b'{"task":1}')
+        native=native_readback(self.root,asset,'TextAsset',1)
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string path) { Resources.Load<TextAsset>("CONFIGURATION/AITASKS"); return Resources.Load<TextAsset>("Configuration/"+path); } }')
+        audit=inspect(self.root,native)
+        self.assertEqual(next(x for x in audit['resourceLoads'] if x['key']=='CONFIGURATION/AITASKS')['candidateAssets'],[asset])
+        plan=build_plan(audit,[
+            {'source':asset,'target':'Assets/Game/Content/Config/Resources/CONFIGURATION/aitasks.json'}])
+        self.assertEqual(plan['status'],'declaration_only')
+        self.assertFalse(plan['mappings'][0]['resourceKeyMapping']['consumerPatchesRequired'])
+        self.assertEqual(plan['mappings'][0]['resourceKeyMapping']['candidateAssets'],[asset])
+
+    def test_case_only_duplicate_key_across_resources_folders_still_blocks(self):
+        asset='Assets/One/Resources/Configuration/AiTasks.json'
+        put(self.root,asset,b'{"task":1}')
+        put(self.root,'Assets/Two/Resources/configuration/aitasks.asset',b'duplicate')
+        native=native_readback(self.root,asset,'TextAsset',1)
+        plan=build_plan(inspect(self.root,native),[
+            {'source':asset,'target':'Assets/Game/Content/Config/Resources/Configuration/AiTasks.json'}])
+        self.assertIn('RESOURCE_KEY_CANDIDATE_AMBIGUOUS',{x['code'] for x in plan['blockers']})
+
+    def test_dynamic_literal_prefix_only_blocks_related_old_or_new_keys(self):
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string path) { return Resources.Load<TextAsset>("Configuration/"+path); } }')
+        cases=(
+            ('Assets/Product/Resources/Configuration/BattleCore/monsters.json',
+             'Assets/Game/Content/Prefabs/monsters.json',True),
+            ('Assets/Product/Resources/model/monster.prefab',
+             'Assets/Game/Content/Prefabs/monster.prefab',False),
+            ('Assets/Product/Resources/ConfigurationX/monster.prefab',
+             'Assets/Game/Content/Prefabs/monster.prefab',False),
+        )
+        for source,target,should_block in cases:
+            put(self.root,source,b'asset')
+            native=native_readback(self.root,source,'TextAsset' if source.endswith('.json') else 'UnityEngine.GameObject',1)
+            plan=build_plan(inspect(self.root,native),[{'source':source,'target':target}])
+            codes={x['code'] for x in plan['blockers']}
+            self.assertEqual('DYNAMIC_RESOURCE_KEY_UNRESOLVED' in codes,should_block,source)
+            self.assertEqual(plan['dynamicLoadCoverage'][0]['staticPrefix'],'Configuration/')
+
+    def test_dynamic_literal_prefix_also_blocks_new_keys_entering_namespace(self):
+        source='Assets/Product/Resources/model/monster.prefab'
+        put(self.root,source,b'asset')
+        native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string path) { return Resources.Load<TextAsset>("Configuration/"+path); } }')
+        plan=build_plan(inspect(self.root,native),[{'source':source,
+            'target':'Assets/Game/Content/Config/Resources/Configuration/monster.prefab'}])
+        self.assertIn('DYNAMIC_RESOURCE_KEY_UNRESOLVED',{x['code'] for x in plan['blockers']})
+
+    def test_unknown_conditional_resources_expression_remains_strict(self):
+        source='Assets/Product/Resources/model/monster.prefab'
+        put(self.root,source,b'asset')
+        native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string path) { return Resources.Load<GameObject>(("Configuration/"+path)=="x" ? "model/foo" : "mat/bar"); } }')
+        plan=build_plan(inspect(self.root,native),[{'source':source,
+            'target':'Assets/Game/Content/Prefabs/monster.prefab'}])
+        self.assertIn('DYNAMIC_RESOURCE_KEY_UNRESOLVED',{x['code'] for x in plan['blockers']})
+        self.assertIsNone(plan['dynamicLoadCoverage'][0]['staticPrefix'])
+
+    def test_transformed_dynamic_tail_is_not_claimed_as_proven_prefix(self):
+        source='Assets/Product/Resources/model/monster.prefab'
+        put(self.root,source,b'asset');native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string path) { return Resources.Load<GameObject>("Configuration/"+path.Replace("../","")); } }')
+        plan=build_plan(inspect(self.root,native),[{'source':source,'target':'Assets/Game/Content/Prefabs/monster.prefab'}])
+        self.assertIsNone(plan['dynamicLoadCoverage'][0]['staticPrefix'])
+        self.assertIn('DYNAMIC_RESOURCE_KEY_UNRESOLVED',{x['code'] for x in plan['blockers']})
+
+    def test_noncanonical_dynamic_prefix_segments_are_not_proven(self):
+        source='Assets/Product/Resources/model/monster.prefab'
+        put(self.root,source,b'asset');native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        expressions=('"Configuration\\\\"+path','"Configuration/../"+path','"Configuration//"+path')
+        for index,expression in enumerate(expressions):
+            consumer='Assets/Game/Services/Configuration/Loader'+str(index)+'.cs'
+            put(self.root,consumer,'class Loader { object Load(string path) { return Resources.Load<GameObject>('+expression+'); } }')
+        audit=inspect(self.root,native)
+        self.assertEqual([x['staticPrefix'] for x in audit['dynamicLoads']],[None,None,None])
+        plan=build_plan(audit,[{'source':source,'target':'Assets/Game/Content/Prefabs/monster.prefab'}])
+        self.assertIn('DYNAMIC_RESOURCE_KEY_UNRESOLVED',{x['code'] for x in plan['blockers']})
+
+    def test_source_identity_consumer_resolution_is_narrow_and_reported_as_review_only(self):
+        source='Assets/Resources/level/map/level_ZDCJ_1004.prefab'
+        literal='assets/resources/level/map/level_zdcj_1004.prefab'
+        put(self.root,source,b'prefab')
+        native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        consumer='Assets/Game/Policy/Reader.cs'
+        put(self.root,consumer,'if(d.sourceMapPrefab.containerPath!="'+literal+'") throw new InvalidDataException();')
+        audit=inspect(self.root,native)
+        issue=next(x for x in audit['issues'] if x['code']=='OLD_PATH_CONSUMER' and x['file']==consumer)
+        resolution={'file':consumer,'fileSha256':audit['sourceHashes'][consumer],
+                    'span':issue['span'],'literal':literal,'kind':'source-identity-comparison',
+                    'reason':'Retained package identity is compared as evidence only.',
+                    'evidence':'Policy reader compares containerPath to the immutable source identity.'}
+        mapping=[{'source':source,'target':'Assets/Game/Content/Prefabs/World/level_ZDCJ_1004.prefab'}]
+        unresolved=build_plan(audit,mapping)
+        self.assertIn('OLD_PATH_CONSUMER_UNHANDLED',{x['code'] for x in unresolved['blockers']})
+        plan=build_plan(audit,mapping,consumer_resolutions={'schemaVersion':1,'resolutions':[resolution]})
+        self.assertEqual(plan['status'],'declaration_only')
+        self.assertEqual(plan['acceptedConsumerResolutions'][0]['state'],'caller-reviewed-not-native-proof')
+        self.assertEqual(plan['consumerResolutionsSha256'],hashlib.sha256(
+            json.dumps({'schemaVersion':1,'resolutions':[resolution]},ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest())
+
+    def test_consumer_resolution_rejects_stale_or_duplicate_declarations(self):
+        source='Assets/Resources/level/map/start.prefab';literal='Assets/Resources/level/map/start.prefab'
+        put(self.root,source,b'prefab');native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        consumer='Assets/Game/Policy/Reader.cs';put(self.root,consumer,'if(path!="'+literal+'") throw new Exception();')
+        audit=inspect(self.root,native);issue=next(x for x in audit['issues'] if x['code']=='OLD_PATH_CONSUMER' and x['file']==consumer)
+        resolution={'file':consumer,'fileSha256':audit['sourceHashes'][consumer],'span':issue['span'],
+                    'literal':literal,'kind':'source-identity-comparison','reason':'identity check','evidence':'policy assertion'}
+        mapping=[{'source':source,'target':'Assets/Game/Content/Prefabs/start.prefab'}]
+        variants=[dict(resolution,fileSha256='0'*64),dict(resolution,literal='Assets/Other.prefab'),
+                  dict(resolution,span=[issue['span'][0]+1,issue['span'][1]])]
+        for invalid in variants:
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(BeaverError):
+                    build_plan(audit,mapping,consumer_resolutions={'schemaVersion':1,'resolutions':[invalid]})
+        with self.assertRaises(BeaverError):
+            build_plan(audit,mapping,consumer_resolutions={'schemaVersion':1,'resolutions':[resolution,resolution]})
+
+    def test_consumer_resolution_cannot_silence_a_direct_resource_lookup(self):
+        source='Assets/Resources/level/map/start.prefab';literal='Assets/Resources/level/map/start.prefab'
+        put(self.root,source,b'prefab');native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        consumer='Assets/Game/Policy/Lookup.cs'
+        put(self.root,consumer,'var x=AssetDatabase.LoadAssetAtPath<GameObject>(name=="'+literal+'" ? name : "");')
+        audit=inspect(self.root,native);issue=next(x for x in audit['issues'] if x['code']=='OLD_PATH_CONSUMER' and x['file']==consumer)
+        resolution={'file':consumer,'fileSha256':audit['sourceHashes'][consumer],'span':issue['span'],
+                    'literal':literal,'kind':'source-identity-comparison','reason':'claimed identity check','evidence':'not supported'}
+        with self.assertRaises(BeaverError):
+            build_plan(audit,[{'source':source,'target':'Assets/Game/Content/Prefabs/start.prefab'}],
+                       consumer_resolutions={'schemaVersion':1,'resolutions':[resolution]})
+
+    def test_consumer_resolution_supports_narrow_string_equals_comparison(self):
+        source='Assets/Resources/level/map/start.prefab';literal='Assets/Resources/level/map/start.prefab'
+        put(self.root,source,b'prefab');native=native_readback(self.root,source,'UnityEngine.GameObject',1)
+        consumer='Assets/Game/Policy/Reader.cs'
+        put(self.root,consumer,'if(!String.Equals(sourcePath,"'+literal+'",StringComparison.Ordinal)) throw new Exception();')
+        audit=inspect(self.root,native);issue=next(x for x in audit['issues'] if x['code']=='OLD_PATH_CONSUMER' and x['file']==consumer)
+        resolution={'file':consumer,'fileSha256':audit['sourceHashes'][consumer],'span':issue['span'],
+                    'literal':literal,'kind':'source-identity-comparison','reason':'identity check','evidence':'ordinal comparison'}
+        plan=build_plan(audit,[{'source':source,'target':'Assets/Game/Content/Prefabs/start.prefab'}],
+                        consumer_resolutions={'schemaVersion':1,'resolutions':[resolution]})
+        self.assertEqual(plan['status'],'declaration_only')
 
     def test_new_consumer_or_metadata_after_audit_invalidates_scope(self):
         asset='Assets/Legacy/Coin.png';put(self.root,asset,b'image');native=native_readback(self.root,asset)

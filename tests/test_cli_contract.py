@@ -117,5 +117,25 @@ class UnityCompactTransportTests(unittest.TestCase):
             self.assertGreater(len(invoke([]).encode()),4*1024*1024)
 
 
+class PartialCatalogCompactContractTests(unittest.TestCase):
+    def test_partial_catalog_keeps_coverage_and_full_report_without_large_stdout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report=Path(tmp)/'build-snapshot.json'
+            full=dict(coverage=dict(complete=False,blockers=['Unknown synthetic asset '+str(i) for i in range(50000)]),
+                      assets=[dict(path='Assets/Original.asset',status='unknown')],unresolvedDependencies=[])
+            raw=json.dumps(full).encode();report.write_bytes(raw)
+            data=dict(full,status='partial',report=str(report),nativeReadback='read_only_native_snapshot')
+            output=io.StringIO()
+            args=['build-filter','collect','--project','/project','--spec','/spec','--out','/output','--editor-path','/editor','--summary']
+            with patch('beaver.cli.dispatch',return_value=data),contextlib.redirect_stdout(output):code=main(args)
+            result=json.loads(output.getvalue())
+            self.assertEqual(code,1);self.assertEqual(result['status'],'partial')
+            self.assertEqual(result['data']['coverage'],dict(complete=False,blockerCount=50000))
+            self.assertEqual(result['data']['assetsCount'],1)
+            self.assertLess(len(output.getvalue().encode()),16*1024)
+            self.assertEqual(hashlib.sha256(report.read_bytes()).hexdigest(),result['artifacts'][0]['sha256'])
+            self.assertEqual(report.read_bytes(),raw)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -12,6 +12,12 @@ Resource filtering remains read-only and produces a blocked classification plan.
 
 Approved UI-quality support: reuse existing UI inspect/readback and the consumer's own capture chain. A neutral native prefab confirms that a missing Image produces an explicit expectation mismatch without source changes. Exact Sprite GUID/localID proof remains separate from name matching. Generic extraction waits for the consumer to validate three representative pages, unique generation/layout/style ownership, repeated generation, retirement and save/reload. No new UI framework, duplicate capture or game styling is introduced.
 
+## Current consumer follow-up: fixed fix5 in verification
+
+Fix4 real adoption removed the reported slicing-marker and unchanged-key false positives. Fix5 narrows directly provable dynamic Resources namespaces, adds exact caller-reviewed source-identity comparison declarations, and preserves per-asset unknown/unimportable observations during full native catalog collection. Unknown or conditional expressions remain conservative; source provenance is not rewritten. These stable changes are exported from a committed snapshot for isolated validation; in-progress execution modules are excluded.
+
+Next candidate work, not in fix5: explicit source-evidence-only retirement with prior guarded collector evidence and independent native zero-object checks, plus exact scene-derived BuildSettings postimages and complete SceneAsset identity readback. Missing persistent identities are not ordinary retirement candidates. Game-owner writes remain separate; representative-page UI extraction remains conditional on project validation.
+
 ## Released baseline: 0.5.0
 
 The release combines the reusable execution toolkit with native UI inspection, guarded wiring, explicit UI field repairs and unified diagnostics. It retains the existing batch/production transaction and recovery contracts.

@@ -73,3 +73,12 @@ The runner request fields are `schemaVersion`, `platform`, `renderPipeline`, `as
 `tests/test_build_filter.py` uses synthetic Unity-style metadata only. It covers a build dependency, hash-matched source evidence, an unknown asset, a false/modified source claim, pipeline and identity mismatch, path traversal, and duplicate native dependencies. It contains no game material or real project identifiers.
 
 `implicit-build-included` distinguishes Unity Resources/StreamingAssets/preloaded inclusion from explicit scene/root references. It does not establish current business dynamic use. Counts expose implicitBuildIncluded separately; implicit assets remain retained until explicit scoped retirement is reviewed and native guards pass.
+
+
+## Partial native catalogs
+
+An asset that cannot produce a persistent Unity object no longer aborts the rest of the catalog. New native rows add `status`, `identityStatus`, `objectCount` and `error` to path/GUID/localIds/types. Status is `observed` or `unknown`; identity status is `verified`, `no-persistent-object`, `persistent-identity-unavailable` or `inspection-failed`. Object count is the actual non-null Unity object count, with -1 for an inspection exception. A zero-object row has empty localIds/types; an object whose ID lookup fails is a different unknown state. No type or localID is invented.
+
+Unresolved dependency paths are retained in `unresolvedDependencies` with their GUID/root scope/error while valid dependency observations continue. Unknown rows, unresolved dependencies and incomplete coverage cause returned collection status `partial`; the CLI exits nonzero while retaining the full schema-1 snapshot and read-only guard. The saved snapshot deliberately has no transport-only top-level status field. Compact output retains coverage completeness and blocker count; full errors and per-asset observations stay in the SHA-bound file. Classification plans remain blocked. Source/meta hashes and native/meta GUID consistency are still checked for unknown rows. Enabled scene and target/pipeline mismatches remain hard failures.
+
+A separately developed source-evidence-only archive may later consume a hash-bound zero-object record. This candidate retains the existing strict native-object retirement contract, so unknown rows remain blocked for retirement. They are never automatically deleted or promoted to usable runtime content.

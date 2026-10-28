@@ -73,4 +73,44 @@ class ReadbackTests(unittest.TestCase):
             self.assertEqual(asset.read_bytes(),b'unexpected mutation')
 
 
+    def test_collector_report_budget_is_separate_from_ordinary_input_budget(self):
+        from beaver.io import read
+        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+            root=Path(temp).resolve();project=root/'Project'
+            for name in ('Assets','Packages','ProjectSettings'):(project/name).mkdir(parents=True)
+            asset=project/'Assets/Input.asset';asset.write_bytes(b'original');Path(str(asset)+'.meta').write_bytes(b'meta')
+            editor=root/'Unity';editor.write_text('fake editor');editor.chmod(0o755)
+            output=root/'Evidence'
+            def provider(*args,**kwargs):
+                jobpath=Path(base64.b64decode(kwargs['env']['BEAVER_NATIVE_JOB_BASE64']).decode())
+                job=json.loads(jobpath.read_text());report=Path(job['stage'],'readback.json')
+                report.write_text(json.dumps({'assets':[],'diagnostic':'x'*(33*1024*1024)}))
+                return SimpleNamespace(returncode=0)
+            with patch('beaver.native_readback.subprocess.run',side_effect=provider):
+                result=run_collector(project,{'assets':['Assets/Input.asset']},output,editor,'BeaverReadback.cs','BeaverReadback.Run','readback.json')
+            self.assertTrue(result['sourceUnchanged']);self.assertTrue(result['helperCleaned'])
+            self.assertEqual(len(result['diagnostic']),33*1024*1024)
+            with self.assertRaises(BeaverError):read(output/'native/readback.json')
+
+    def test_oversized_native_report_is_retained_but_rejected_after_helper_cleanup(self):
+        from beaver.output_limits import MANIFEST_BYTES
+        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+            root=Path(temp).resolve();project=root/'Project'
+            for name in ('Assets','Packages','ProjectSettings'):(project/name).mkdir(parents=True)
+            editor=root/'Unity';editor.write_text('fake editor');editor.chmod(0o755)
+            output=root/'Evidence'
+            def provider(*args,**kwargs):
+                jobpath=Path(base64.b64decode(kwargs['env']['BEAVER_NATIVE_JOB_BASE64']).decode())
+                job=json.loads(jobpath.read_text())
+                with Path(job['stage'],'readback.json').open('wb') as stream:stream.truncate(MANIFEST_BYTES+1)
+                return SimpleNamespace(returncode=0)
+            with patch('beaver.native_readback.subprocess.run',side_effect=provider):
+                with self.assertRaises(BeaverError) as error:
+                    run_collector(project,{'assets':[]},output,editor,'BeaverReadback.cs','BeaverReadback.Run','readback.json')
+            self.assertEqual(error.exception.code,'BYTE_BUDGET')
+            self.assertTrue((output/'native/readback.json').exists())
+            guard=json.loads((output/'read-only-guard.json').read_text())
+            self.assertTrue(guard['sourceUnchanged']);self.assertTrue(guard['helperCleaned'])
+
+
 if __name__=='__main__':unittest.main()

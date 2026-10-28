@@ -18,6 +18,10 @@ public static class BeaverBuildFilter
         public string guid;
         public long[] localIds;
         public string[] types;
+        public string status;
+        public string identityStatus;
+        public int objectCount;
+        public string error;
     }
 
     [Serializable]
@@ -28,6 +32,15 @@ public static class BeaverBuildFilter
         public long localId;
         public string type;
         public string[] roots;
+    }
+
+    [Serializable]
+    public sealed class UnresolvedDependencyRecord
+    {
+        public string path;
+        public string guid;
+        public string[] roots;
+        public string error;
     }
 
     [Serializable]
@@ -42,6 +55,7 @@ public static class BeaverBuildFilter
         public Coverage coverage;
         public AssetRecord[] assets;
         public DependencyRecord[] dependencies;
+        public UnresolvedDependencyRecord[] unresolvedDependencies;
     }
 
     [Serializable]
@@ -84,6 +98,19 @@ public static class BeaverBuildFilter
             .Where(item => item != null).Distinct().ToArray();
     }
 
+    private static void AddUnresolved(Dictionary<string, UnresolvedDependencyRecord> unresolved, string path, string guid, string root, string error)
+    {
+        UnresolvedDependencyRecord record;
+        if (!unresolved.TryGetValue(path, out record))
+        {
+            record = new UnresolvedDependencyRecord { path = path, guid = guid ?? "", roots = Array.Empty<string>(), error = error };
+            unresolved.Add(path, record);
+        }
+        if (String.IsNullOrEmpty(record.guid) && !String.IsNullOrEmpty(guid)) record.guid = guid;
+        if (!record.roots.Contains(root)) record.roots = record.roots.Concat(new[] { root }).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        if (String.IsNullOrEmpty(record.error)) record.error = error;
+    }
+
     public static Snapshot Collect(string target, string pipeline, string[] buildScenes, string[] explicitRoots)
     {
         if (String.IsNullOrWhiteSpace(target) || String.IsNullOrWhiteSpace(pipeline))
@@ -101,13 +128,16 @@ public static class BeaverBuildFilter
         var roots = buildScenes.Concat(explicitRoots).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToArray();
         if (roots.Length == 0) throw new ArgumentException("At least one build scene or explicit root is required.");
 
-        foreach (var root in roots)
+        foreach (var scene in buildScenes)
         {
-            if (String.IsNullOrWhiteSpace(root) || !root.StartsWith("Assets/", StringComparison.Ordinal) || root.Contains("\\") || root.Split('/').Any(x => x == ".." || x == "." || x == ""))
-                throw new ArgumentException("Roots must be normalized project-relative Assets paths: " + root);
-            if (AssetDatabase.LoadMainAssetAtPath(root) == null)
-                throw new InvalidOperationException("Build dependency root is missing or not an asset: " + root);
+            if (String.IsNullOrWhiteSpace(scene) || !scene.StartsWith("Assets/", StringComparison.Ordinal) || scene.Contains("\\") || scene.Split('/').Any(x => x == ".." || x == "." || x == ""))
+                throw new ArgumentException("Build scenes must be normalized project-relative Assets paths: " + scene);
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scene) == null)
+                throw new InvalidOperationException("Enabled build scene is missing or not imported as SceneAsset: " + scene);
         }
+        foreach (var root in explicitRoots)
+            if (String.IsNullOrWhiteSpace(root) || !root.StartsWith("Assets/", StringComparison.Ordinal) || root.Contains("\\") || root.Split('/').Any(x => x == ".." || x == "." || x == ""))
+                throw new ArgumentException("Explicit roots must be normalized project-relative Assets paths: " + root);
 
         var allPaths = AssetDatabase.GetAllAssetPaths()
             .Where(p => p.StartsWith("Assets/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)
@@ -115,22 +145,51 @@ public static class BeaverBuildFilter
                 && !p.StartsWith("Assets/BeaverReadbackTools/", StringComparison.Ordinal))
             .Distinct().OrderBy(p => p, StringComparer.Ordinal).ToArray();
         var assets = new List<AssetRecord>();
+        var blockers = new List<string>();
         foreach (var path in allPaths)
         {
-            var objects = PersistentObjects(path);
+            UnityEngine.Object[] objects = Array.Empty<UnityEngine.Object>();
             var ids = new SortedSet<long>();
             var types = new SortedSet<string>(StringComparer.Ordinal);
+            var errors = new List<string>();
+            var guid = AssetDatabase.AssetPathToGUID(path);
+            if (String.IsNullOrEmpty(guid)) errors.Add("AssetDatabase path GUID is unavailable.");
+            var objectCount = -1;
+            var identityStatus = "inspection-failed";
+            try
+            {
+                objects = PersistentObjects(path);
+                objectCount = objects.Length;
+                identityStatus = objectCount == 0 ? "no-persistent-object" : "verified";
+            }
+            catch (Exception error) { errors.Add("AssetDatabase object inspection failed: " + error.Message); }
+            if (objectCount == 0) errors.Add("AssetDatabase returned zero objects from main asset and subassets.");
+            if (String.IsNullOrEmpty(guid)) errors.Add("AssetDatabase path GUID is unavailable.");
             foreach (var obj in objects)
             {
+                types.Add(obj.GetType().FullName);
                 string objectGuid; long localId;
                 if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out objectGuid, out localId) || String.IsNullOrEmpty(objectGuid) || localId == 0)
-                    throw new InvalidOperationException("Persistent GUID/localID unavailable: " + path + " / " + obj.GetType().FullName);
-                ids.Add(localId); types.Add(obj.GetType().FullName);
+                {
+                    errors.Add("Persistent GUID/localID unavailable for " + obj.GetType().FullName + ".");
+                    identityStatus = "persistent-identity-unavailable";
+                    continue;
+                }
+                if (!String.IsNullOrEmpty(guid) && !String.Equals(objectGuid, guid, StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add("Object GUID differs from AssetDatabase path GUID for " + obj.GetType().FullName + ".");
+                    identityStatus = "persistent-identity-unavailable";
+                    continue;
+                }
+                ids.Add(localId);
             }
-            var guid = AssetDatabase.AssetPathToGUID(path);
-            if (String.IsNullOrEmpty(guid) || ids.Count == 0)
-                throw new InvalidOperationException("Asset has no persistent identity: " + path);
-            assets.Add(new AssetRecord { path = path, guid = guid.ToLowerInvariant(), localIds = ids.ToArray(), types = types.ToArray() });
+            if (objectCount > 0 && (String.IsNullOrEmpty(guid) || ids.Count == 0 || errors.Count > 0))
+                identityStatus = "persistent-identity-unavailable";
+            var status = identityStatus == "verified" && ids.Count > 0 ? "observed" : "unknown";
+            if (status == "unknown") blockers.Add("Asset identity incomplete: " + path + " — " + String.Join(" ", errors));
+            assets.Add(new AssetRecord { path = path, guid = guid == null ? "" : guid.ToLowerInvariant(), localIds = ids.ToArray(),
+                types = types.ToArray(), status = status, identityStatus = identityStatus, objectCount = objectCount,
+                error = errors.Count == 0 ? "" : String.Join(" ", errors) });
         }
 
         var implicitAssets = new List<KeyValuePair<string, string>>();
@@ -142,7 +201,6 @@ public static class BeaverBuildFilter
             if (parts.Length >= 3 && parts[1] == "StreamingAssets")
                 implicitAssets.Add(new KeyValuePair<string, string>(path, "implicit:StreamingAssets"));
         }
-        var blockers = new List<string>();
         foreach (var preloaded in PlayerSettings.GetPreloadedAssets().Where(o => o != null))
         {
             var path = AssetDatabase.GetAssetPath(preloaded);
@@ -157,17 +215,74 @@ public static class BeaverBuildFilter
         var dependencyRoots = roots.Select(x => new KeyValuePair<string, string>(x, x)).Concat(implicitAssets)
             .OrderBy(x => x.Value, StringComparer.Ordinal).ThenBy(x => x.Key, StringComparer.Ordinal).ToArray();
         var records = new Dictionary<string, DependencyRecord>(StringComparer.Ordinal);
+        var unresolvedRecords = new Dictionary<string, UnresolvedDependencyRecord>(StringComparer.Ordinal);
         foreach (var rootInfo in dependencyRoots)
         {
             var root = rootInfo.Key; var rootLabel = rootInfo.Value;
-            foreach (var path in AssetDatabase.GetDependencies(root, true).Distinct().OrderBy(p => p, StringComparer.Ordinal))
+            var rootImported = true;
+            if (!String.IsNullOrEmpty(rootLabel) && !rootLabel.StartsWith("implicit:", StringComparison.Ordinal))
+            {
+                try { rootImported = allPaths.Contains(root, StringComparer.Ordinal) && AssetDatabase.LoadMainAssetAtPath(root) != null; }
+                catch (Exception error)
+                {
+                    var reason = "AssetDatabase could not inspect explicit root: " + error.Message;
+                    blockers.Add("Explicit root unresolved: " + root + " — " + reason);
+                    AddUnresolved(unresolvedRecords, root, AssetDatabase.AssetPathToGUID(root), rootLabel, reason);
+                    continue;
+                }
+            }
+            if (!rootImported)
+            {
+                var reason = "Explicit root is absent from the imported asset catalog or has no main imported object.";
+                blockers.Add("Explicit root unresolved: " + root + " — " + reason);
+                AddUnresolved(unresolvedRecords, root, AssetDatabase.AssetPathToGUID(root), rootLabel, reason);
+                continue;
+            }
+            string[] dependencyPaths;
+            try { dependencyPaths = AssetDatabase.GetDependencies(root, true).Distinct().OrderBy(p => p, StringComparer.Ordinal).ToArray(); }
+            catch (Exception error)
+            {
+                var reason = "AssetDatabase dependency scan failed: " + error.Message;
+                blockers.Add("Dependency root unresolved: " + root + " — " + reason);
+                AddUnresolved(unresolvedRecords, root, AssetDatabase.AssetPathToGUID(root), rootLabel, reason);
+                continue;
+            }
+            foreach (var path in dependencyPaths)
             {
                 if (!path.StartsWith("Assets/", StringComparison.Ordinal) || AssetDatabase.IsValidFolder(path)) continue;
-                foreach (var obj in PersistentObjects(path))
+                if (!allPaths.Contains(path, StringComparer.Ordinal))
+                {
+                    var reason = "Dependency path is missing from the active AssetDatabase catalog.";
+                    blockers.Add("Dependency asset unresolved: " + path + " — " + reason);
+                    AddUnresolved(unresolvedRecords, path, AssetDatabase.AssetPathToGUID(path), rootLabel, reason);
+                    continue;
+                }
+                UnityEngine.Object[] objects;
+                try { objects = PersistentObjects(path); }
+                catch (Exception error)
+                {
+                    var reason = "Dependency object inspection failed: " + error.Message;
+                    blockers.Add("Dependency identity unresolved: " + path + " — " + reason);
+                    AddUnresolved(unresolvedRecords, path, AssetDatabase.AssetPathToGUID(path), rootLabel, reason);
+                    continue;
+                }
+                if (objects.Length == 0)
+                {
+                    var reason = "Dependency has no persistent main asset or subasset object.";
+                    blockers.Add("Dependency identity unresolved: " + path + " — " + reason);
+                    AddUnresolved(unresolvedRecords, path, AssetDatabase.AssetPathToGUID(path), rootLabel, reason);
+                    continue;
+                }
+                foreach (var obj in objects)
                 {
                     string guid; long localId;
                     if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out guid, out localId) || String.IsNullOrEmpty(guid) || localId == 0)
-                        throw new InvalidOperationException("Dependency lacks persistent identity: " + path + " / " + obj.GetType().FullName);
+                    {
+                        var reason = "Dependency persistent GUID/localID unavailable for " + obj.GetType().FullName + ".";
+                        blockers.Add("Dependency identity unresolved: " + path + " — " + reason);
+                        AddUnresolved(unresolvedRecords, path, AssetDatabase.AssetPathToGUID(path), rootLabel, reason);
+                        continue;
+                    }
                     var key = path + "\n" + localId.ToString(System.Globalization.CultureInfo.InvariantCulture);
                     DependencyRecord record;
                     if (!records.TryGetValue(key, out record))
@@ -183,7 +298,8 @@ public static class BeaverBuildFilter
 
         return new Snapshot { target = target, pipeline = pipeline, buildScenes = buildScenes, explicitRoots = explicitRoots,
             implicitRoots = implicitRoots, coverage = new Coverage { complete = blockers.Count == 0, blockers = blockers.OrderBy(x => x, StringComparer.Ordinal).ToArray() },
-            assets = assets.ToArray(), dependencies = records.Values.OrderBy(x => x.path, StringComparer.Ordinal).ThenBy(x => x.localId).ToArray() };
+            assets = assets.ToArray(), dependencies = records.Values.OrderBy(x => x.path, StringComparer.Ordinal).ThenBy(x => x.localId).ToArray(),
+            unresolvedDependencies = unresolvedRecords.Values.OrderBy(x => x.path, StringComparer.Ordinal).ToArray() };
     }
 
     public static void Run()
