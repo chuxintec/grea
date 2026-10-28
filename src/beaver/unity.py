@@ -95,7 +95,8 @@ def source_only_evidence(project, spec_path, files, path, guid, declaration, cac
     target=validated.get(path)
     if target is None or target.get('status')!='unknown' or target.get('identityStatus')!='no-persistent-object' or target.get('objectCount')!=0 or target.get('localIds')!=[] or target.get('types')!=[]:
         fail('ASSET_RETIRE_SOURCE_EVIDENCE_STATE',path,'Collector must classify this exact asset as unknown with zero objects and no persistent IDs/types')
-    if not target.get('error') or target.get('guid','').lower()!=guid.lower():
+    target_guid=target.get('guid')
+    if not target.get('error') or not isinstance(target_guid,str) or target_guid.lower()!=guid.lower():
         fail('ASSET_RETIRE_SOURCE_EVIDENCE_GUID',path,'Collector row must retain the exact current native/meta GUID and a failure reason')
     row=raw_rows.get(path)
     if row is None:fail('ASSET_RETIRE_SOURCE_EVIDENCE_ROW',path,'Exact collector target row is missing')

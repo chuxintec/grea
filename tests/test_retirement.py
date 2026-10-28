@@ -98,6 +98,17 @@ def native_report(plan_data,project):
 
 
 class RetirementTests(unittest.TestCase):
+    def test_source_only_snapshot_without_native_guid_is_not_archive_evidence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
+            doc=load(read(spec));snapshot_path=Path(doc['retire'][0]['sourceIdentityEvidence']['snapshotPath'])
+            snapshot=load(read(snapshot_path));snapshot['assets'][0]['guid']=None;write_json(snapshot_path,snapshot)
+            doc['retire'][0]['sourceIdentityEvidence']['snapshotSha256']=sha(read(snapshot_path));write_json(spec,doc)
+            with self.assertRaises(BeaverError) as error:plan(project,spec,root/'blocked')
+            self.assertEqual(error.exception.code,'ASSET_RETIRE_SOURCE_EVIDENCE_GUID')
+            self.assertTrue(selected.exists())
+
+
     def test_case_insensitive_remaining_resources_collision_blocks_retirement(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp).resolve();project,selected,spec=fixture(root)
