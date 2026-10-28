@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 import os
 import plistlib
+import re
 import signal
 import subprocess
 import time
@@ -20,6 +21,7 @@ HELPER = HELPER_ROOT + "/Editor/BeaverNative.cs"
 VERSION = "6000.6.2f1"
 MOVE_MANIFEST_ENTRIES = 10000
 MOVE_MANIFEST_BYTES = 256 * 1024**2
+META_GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$',re.M)
 
 
 def identity():
@@ -39,6 +41,30 @@ def asset_folder_path(value):
         fail("UNITY_ASSET_PATH", str(value), "Expected canonical folder path below Assets")
     if value == HELPER_ROOT or value.startswith(HELPER_ROOT + "/"):
         fail("UNITY_RESERVED_PATH", value, "Reserved temporary Editor helper root")
+
+
+def unity_asset_file_path(value):
+    if not isinstance(value,str) or not value.startswith('Assets/') or value.endswith('.meta') or '\\' in value or any(p in ('','.','..') for p in value.split('/')):
+        fail('UNITY_ASSET_PATH',str(value),'Expected canonical imported file path below Assets')
+    if value==HELPER_ROOT or value.startswith(HELPER_ROOT+'/'):
+        fail('UNITY_RESERVED_PATH',value,'Reserved temporary Editor helper root')
+
+
+def meta_guid(raw,path):
+    found=META_GUID.findall(raw)
+    if len(found)!=1:
+        fail('ASSET_RETIRE_META_GUID',path,'Expected one static 32-character Unity GUID in metadata')
+    return found[0].decode('ascii')
+
+
+def resource_key(path):
+    parts=Path(path).parts
+    roots=[index for index,part in enumerate(parts[:-1]) if part=='Resources']
+    if not roots:return None
+    if len(roots)!=1:
+        fail('ASSET_RETIRE_RESOURCE_PATH',path,'Nested Resources roots are ambiguous')
+    relative=Path(*parts[roots[0]+1:])
+    return relative.with_suffix('').as_posix()
 
 
 def folder_move_manifest(project, files, source, target):
@@ -200,6 +226,50 @@ def validate_spec(doc):
             for right in endpoints[i+1:]:
                 if left.startswith(right+'/') or right.startswith(left+'/'):
                     fail('ASSET_MOVE_OVERLAP','spec','Nested source/target paths require separate reviewed batches')
+    elif operation == 'assets.retire':
+        allowed |= {'retire','protectedRoots','resources'}
+        items=doc.get('retire');roots=doc.get('protectedRoots');resources=doc.get('resources',[])
+        if not isinstance(items,list) or not 1<=len(items)<=MOVE_MANIFEST_ENTRIES:
+            fail('ASSET_RETIRE_ITEMS','spec','Expected 1..10000 explicit file retirement declarations')
+        if not isinstance(roots,list) or not roots or len(roots)>1000:
+            fail('ASSET_RETIRE_PROTECTED_ROOTS','spec','At least one explicit scene/config/code protected root is required')
+        if not isinstance(resources,list) or len(resources)>MOVE_MANIFEST_ENTRIES:
+            fail('ASSET_RETIRE_RESOURCES','spec','Expected an explicit bounded Resources key declaration list')
+        selected=set()
+        for item in items:
+            if not isinstance(item,dict) or set(item)!={'path','role','reason','sourceEvidence'}:
+                fail('ASSET_RETIRE_DECLARATION','spec','Each retirement requires path, role, reason and sourceEvidence')
+            unity_asset_file_path(item.get('path'))
+            if item['path'] in selected:fail('ASSET_RETIRE_DUPLICATE',item['path'],'Duplicate retirement path')
+            selected.add(item['path'])
+            for key in ('role','reason','sourceEvidence'):
+                value=item.get(key)
+                if not isinstance(value,str) or not value.strip() or len(value)>4096:
+                    fail('ASSET_RETIRE_DECLARATION',item['path'],'Explicit nonempty role, reason and source evidence are required')
+        seen_roots=set()
+        for path in roots:
+            unity_asset_file_path(path)
+            if path in seen_roots:fail('ASSET_RETIRE_PROTECTED_ROOTS',path,'Duplicate protected root')
+            seen_roots.add(path)
+        if selected & seen_roots:
+            fail('ASSET_RETIRE_PROTECTED_ROOTS','spec','A protected root cannot also be selected for retirement')
+        seen_resources=set()
+        for row in resources:
+            if not isinstance(row,dict) or set(row)!={'key','path','guid','reason','sourceEvidence'}:
+                fail('ASSET_RETIRE_RESOURCE_DECLARATION','spec','Each Resources retirement requires key, path, GUID, reason and sourceEvidence')
+            if not isinstance(row.get('key'),str) or not row['key'] or row['key'].startswith('/') or '\\' in row['key'] or any(part in ('','.','..') for part in row['key'].split('/')):
+                fail('ASSET_RETIRE_RESOURCE_DECLARATION','spec','Resources key must be a canonical extensionless key')
+            unity_asset_file_path(row.get('path'))
+            import re
+            if not isinstance(row.get('guid'),str) or not re.fullmatch('[a-f0-9]{32}',row['guid']):
+                fail('ASSET_RETIRE_RESOURCE_DECLARATION','spec','Resources retirement requires a lowercase GUID')
+            identity=(row['key'],row['path'],row['guid'])
+            if identity in seen_resources:fail('ASSET_RETIRE_RESOURCE_DECLARATION',row['path'],'Duplicate Resources key/path/GUID declaration')
+            seen_resources.add(identity)
+            for key in ('reason','sourceEvidence'):
+                value=row.get(key)
+                if not isinstance(value,str) or not value.strip() or len(value)>4096:
+                    fail('ASSET_RETIRE_RESOURCE_DECLARATION',row['path'],'Explicit nonempty reason and source evidence are required')
     else:
         fail("UNITY_OPERATION", str(operation), "Unsupported native operation")
     if set(doc) - allowed or doc.get("schemaVersion") != 1:
@@ -282,6 +352,48 @@ def plan(project, spec, output):
             for prefix in prefixes:
                 if any(fold(existing)==fold(prefix) and existing!=prefix for existing in existing_dirs):
                     fail('ASSET_MOVE_CASE_COLLISION',prefix,'Destination parent casing differs from an existing Unity folder')
+    elif doc['operation']=='assets.retire':
+        retire_manifest=[];protected_manifest=[];selected_paths=set()
+        for declaration in doc['retire']:
+            path=declaration['path'];asset=inside(project,path);meta_path=path+'.meta'
+            if path not in files or meta_path not in files or not asset.is_file():
+                fail('ASSET_RETIRE_SOURCE',path,'Expected an imported file with its .meta; directory retirement is unsupported')
+            meta=inside(project,meta_path);guid=meta_guid(read(meta),meta_path)
+            retire_manifest.append(dict(path=path,role=declaration['role'],reason=declaration['reason'],sourceEvidence=declaration['sourceEvidence'],
+                                        sha256=files[path]['sha256'],bytes=files[path]['bytes'],metaPath=meta_path,
+                                        metaSha256=files[meta_path]['sha256'],metaBytes=files[meta_path]['bytes'],guid=guid))
+            selected_paths.add(path)
+        for path in doc['protectedRoots']:
+            asset=inside(project,path);meta_path=path+'.meta'
+            if path not in files or meta_path not in files or not asset.is_file():
+                fail('ASSET_RETIRE_PROTECTED_ROOT',path,'Protected root must be an imported file with its .meta')
+            if path in selected_paths:fail('ASSET_RETIRE_PROTECTED_ROOT',path,'Protected root cannot be selected for retirement')
+            meta=inside(project,meta_path);guid=meta_guid(read(meta),meta_path)
+            protected_manifest.append(dict(path=path,sha256=files[path]['sha256'],bytes=files[path]['bytes'],metaPath=meta_path,
+                                           metaSha256=files[meta_path]['sha256'],metaBytes=files[meta_path]['bytes'],guid=guid))
+        declarations={row['path']:row for row in doc.get('resources',[])}
+        resource_keys=set()
+        for item in retire_manifest:
+            key=resource_key(item['path']);declaration=declarations.get(item['path'])
+            if key is None and declaration is not None:
+                fail('ASSET_RETIRE_RESOURCE_DECLARATION',item['path'],'Resources declaration does not refer to a Resources asset')
+            if key is not None:
+                if declaration is None or declaration['key']!=key or declaration['guid']!=item['guid']:
+                    fail('ASSET_RETIRE_RESOURCE_DECLARATION',item['path'],'Each Resources asset needs its exact key/path/GUID retirement declaration')
+                if key in resource_keys:fail('ASSET_RETIRE_RESOURCE_AMBIGUOUS',key,'Multiple selected files map to one Resources key')
+                resource_keys.add(key)
+        if set(declarations)!=set(item['path'] for item in retire_manifest if resource_key(item['path']) is not None):
+            fail('ASSET_RETIRE_RESOURCE_DECLARATION','spec','Resources declarations must match selected Resources assets exactly')
+        if resource_keys:
+            for path in files:
+                if path.endswith('.meta'):continue
+                try:key=resource_key(path)
+                except BeaverError:continue
+                if key in resource_keys and path not in selected_paths:
+                    fail('ASSET_RETIRE_RESOURCE_AMBIGUOUS',key,'Another asset still maps to the explicitly retired Resources key: '+path)
+        backup_bytes=sum(row['bytes']+row['metaBytes'] for row in retire_manifest)
+        if len(retire_manifest)*2>MOVE_MANIFEST_ENTRIES or backup_bytes>MOVE_MANIFEST_BYTES:
+            fail('ASSET_RETIRE_BUDGET','spec','Retirement exceeds 10000 file/meta entries or 256 MiB; split into reviewed groups')
     elif doc['operation']=='project.import':
         pass
     elif doc['operation']=='sprite.configure':
@@ -298,6 +410,8 @@ def plan(project, spec, output):
                 before=files,spec=doc,specSha256=sha(raw),
                 sourceSha256=sha(encoded(files)),native='not_run')
     if doc['operation']=='assets.move':data['folderMoveManifest']=move_manifest
+    if doc['operation']=='assets.retire':
+        data['retireManifest']=retire_manifest;data['protectedManifest']=protected_manifest
     data['editorInitializationFiles']=['ProjectSettings/SceneTemplateSettings.json'] if doc['operation']=='ui.create' and 'ProjectSettings/SceneTemplateSettings.json' not in files else []
     data['nativeInitializationPaths']=[]
     if doc['operation']=='project.import':
@@ -331,6 +445,8 @@ def run(editor, project, stage, mode, plan, timeout):
     job=dict(plan['spec'],targetRoot=str(project),stage=str(stage),mode=mode,
              planSha256=sha(encoded(plan)),sourceSha256=plan['sourceSha256'])
     if plan['spec']['operation']=='assets.move':job['folderMoveManifest']=plan.get('folderMoveManifest',[])
+    if plan['spec']['operation']=='assets.retire':
+        job['retireManifest']=plan.get('retireManifest',[]);job['protectedManifest']=plan.get('protectedManifest',[])
     jobfile=stage/('job-'+mode+'.json')
     write_json(jobfile,job)
     args=[str(editor),'-batchmode','-nographics','-projectPath',str(project),'-executeMethod','BeaverNative.Run','-logFile',str(stage/(mode+'.log'))]
@@ -354,6 +470,29 @@ def run(editor, project, stage, mode, plan, timeout):
     return report
 
 
+def _install_native_helper(project):
+    helper=inside(project,HELPER)
+    if inside(project,HELPER_ROOT).exists() or inside(project,HELPER_ROOT+'.meta').exists():
+        fail('UNITY_HELPER_CONFLICT',HELPER_ROOT,'Reserved temporary helper root occupied')
+    source=Path(__file__).parent/'targets/BeaverNative.cs'
+    helper.parent.mkdir(parents=True);helper.write_bytes(source.read_bytes())
+    return helper,digest_file(helper)
+
+
+def _remove_native_helper(project,helper,fingerprint):
+    if not helper.exists() or digest_file(helper)!=fingerprint:return False
+    directory=helper.parent.parent
+    allowed={HELPER,HELPER+'.meta',HELPER_ROOT+'/Editor.meta'}
+    owned=all(not p.is_symlink() and (not p.is_file() or p.relative_to(project).as_posix() in allowed) for p in directory.rglob('*'))
+    if not owned:return False
+    for p in sorted(directory.rglob('*'),key=lambda p:len(p.parts),reverse=True):
+        p.unlink() if p.is_file() else p.rmdir()
+    directory.rmdir()
+    meta=inside(project,HELPER_ROOT+'.meta')
+    if meta.exists():meta.unlink()
+    return True
+
+
 def apply(plan_path, output, editor, expected, timeout=600):
     path=safe(plan_path)
     raw=read(path,max_bytes=128*1024**2)
@@ -372,9 +511,10 @@ def apply(plan_path, output, editor, expected, timeout=600):
         native_lock(project)
         if source_files(project)!=data['before']:
             fail('UNITY_SOURCE_DRIFT',str(project),'Project changed after plan')
-        if data['spec']['operation']=='assets.move':
+        if data['spec']['operation'] in ('assets.move','assets.retire'):
             backup_paths={path for move in data['spec'].get('moves',[]) for path in (move['source'],move['source']+'.meta')}
             backup_paths.update(row['source'] for manifest in data.get('folderMoveManifest',[]) for row in manifest['entries'] if 'sha256' in row)
+            backup_paths.update(path for item in data.get('retireManifest',[]) for path in (item['path'],item['metaPath']))
             images=[]
             try:
                 for rel in sorted(backup_paths):
@@ -396,9 +536,7 @@ def apply(plan_path, output, editor, expected, timeout=600):
                     source=inside(project,rel+suffix)
                     if source.exists():
                         dest=stage/'before'/(rel+suffix);dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(read(source,max_bytes=512*1024**2))
-        source=Path(__file__).parent/'targets/BeaverNative.cs'
-        helper.parent.mkdir(parents=True);helper.write_bytes(source.read_bytes())
-        fingerprint=digest_file(helper)
+        helper,fingerprint=_install_native_helper(project)
         try:
             applied=run(editor,project,stage,'apply',data,timeout)
             journal.update(status='native-apply-complete-pending-reopen',nativeApplyReadback=applied)
@@ -409,16 +547,7 @@ def apply(plan_path, output, editor, expected, timeout=600):
             journal['status']='recovery-required'
             raise
         finally:
-            if helper.exists() and digest_file(helper)==fingerprint:
-                directory=helper.parent.parent
-                allowed={HELPER,HELPER+'.meta',HELPER_ROOT+'/Editor.meta'}
-                owned=all(not p.is_symlink() and (not p.is_file() or p.relative_to(project).as_posix() in allowed) for p in directory.rglob('*'))
-                if owned:
-                    for p in sorted(directory.rglob('*'),key=lambda p:len(p.parts),reverse=True):
-                        p.unlink() if p.is_file() else p.rmdir()
-                    directory.rmdir()
-                    meta=inside(project,HELPER_ROOT+'.meta')
-                    if meta.exists():meta.unlink()
+            _remove_native_helper(project,helper,fingerprint)
             write_json(stage/'journal.json',journal)
         after=source_files(project)
         changes=[dict(path=p,before=data['before'].get(p),after=after.get(p)) for p in sorted(set(data['before'])|set(after)) if data['before'].get(p)!=after.get(p)]
@@ -467,6 +596,21 @@ def apply(plan_path, output, editor, expected, timeout=600):
                     audit_fail('UNITY_UNEXPECTED_CHANGE',row['path'],'Move changed another source file')
             if applied.get('moves')!=reopened.get('moves') or applied.get('moveIdentities',[])!=reopened.get('moveIdentities',[]):
                 audit_fail('UNITY_MOVE_READBACK',str(stage),'Move GUID/localIDs differ after reopen')
+        if data['spec']['operation']=='assets.retire':
+            selected=[item['path'] for item in data['retireManifest']]
+            allowed={path for item in data['retireManifest'] for path in (item['path'],item['metaPath'])}
+            for row in changes:
+                if row['path'] not in allowed or row['after'] is not None:
+                    audit_fail('ASSET_RETIRE_SOURCE_AUDIT',row['path'],'Retirement may only delete its exact planned asset and meta paths')
+            if {row['path'] for row in changes}!=allowed:
+                audit_fail('ASSET_RETIRE_SOURCE_AUDIT',str(stage),'Retirement did not delete every selected asset and meta exactly once')
+            if applied.get('deletedPaths')!=selected or reopened.get('deletedPaths')!=selected or applied.get('deleteInProgress') or reopened.get('deleteInProgress'):
+                audit_fail('ASSET_RETIRE_CHECKPOINT',str(stage),'Native deletion checkpoint is incomplete or uncertain')
+            if applied.get('retiredAssets')!=reopened.get('retiredAssets') or applied.get('protectedRoots')!=reopened.get('protectedRoots') or \
+               applied.get('dependencyPaths')!=reopened.get('dependencyPaths') or applied.get('dependencyClosures')!=reopened.get('dependencyClosures') or \
+               (applied.get('resources') or [])!=(reopened.get('resources') or []) or \
+               applied.get('resourcesDynamicUseNotProvable') is not True or reopened.get('resourcesDynamicUseNotProvable') is not True:
+                audit_fail('ASSET_RETIRE_READBACK',str(stage),'Retirement or protected-root identity readback differs after reopen')
         if data['spec']['operation']=='build.macos':
             try:
                 artifacts=[]
@@ -485,3 +629,123 @@ def apply(plan_path, output, editor, expected, timeout=600):
         write_json(stage/'journal.json',journal)
     return dict(status='verified',report=str(stage/'journal.json'),transaction=str(stage),changes=changes,
                 nativeReadback=journal['nativeReadback'],sourceSha256=data['sourceSha256'])
+
+
+def recover(transaction, editor, expected, timeout=600):
+    """Restore witnessed assets.retire deletions from verified transaction images."""
+    stage=safe(transaction)
+    plan_path=inside(stage,'unity-plan.json');raw=read(plan_path,max_bytes=128*1024**2);data=load(raw,max_nodes=8_000_000)
+    if sha(encoded(data))!=expected or data.get('contract')!='beaver-unity/1' or data.get('implementationSha256')!=identity():
+        fail('UNITY_RECOVERY_PLAN','transaction','Expected current immutable retirement transaction plan')
+    if data.get('spec',{}).get('operation')!='assets.retire':
+        fail('UNITY_RECOVERY_OPERATION','transaction','Only assets.retire transactions can be recovered here')
+    validate_spec(data['spec'])
+    journal_path=inside(stage,'journal.json');journal=load(read(journal_path))
+    if journal.get('planSha256')!=expected or journal.get('operation')!='assets.retire' or journal.get('status') not in ('complete','recovery-required'):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(stage),'Transaction state is complete, mismatched or not a retirement recovery case')
+    project=safe(data['projectRoot']);editor=editor_path(editor)
+    report_path=inside(stage,'native-apply.json')
+    if not report_path.is_file():fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(stage),'No native deletion checkpoint; do not infer which assets were deleted')
+    native=load(read(report_path));selected=[row['path'] for row in data.get('retireManifest',[])]
+    deleted=native.get('deletedPaths')
+    if native.get('operation')!='assets.retire' or native.get('planSha256')!=sha(encoded(data)):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Native checkpoint belongs to another operation or plan')
+    if not isinstance(deleted,list) or not deleted or len(deleted)!=len(set(deleted)) or any(path not in selected for path in deleted):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'No valid witnessed deletion checkpoint')
+    if journal.get('status')=='complete' and (native.get('status')!='verified' or deleted!=selected):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Completed journal lacks a complete verified native deletion checkpoint')
+    if native.get('deleteInProgress'):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Deletion was in progress without a conclusive post-delete checkpoint')
+    identities=native.get('retiredAssets')
+    if not isinstance(identities,list) or [row.get('path') for row in identities]!=selected:
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Complete selected GUID/localID before-delete checkpoint is missing')
+    for item,row in zip(data['retireManifest'],identities):
+        if row.get('guid')!=item['guid'] or not isinstance(row.get('localIds'),list) or not row['localIds']:
+            fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Selected GUID/localID checkpoint differs from the plan')
+    protected=native.get('protectedRoots')
+    if not isinstance(protected,list) or [row.get('path') for row in protected]!=[row['path'] for row in data['protectedManifest']]:
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Protected-root identity checkpoint is incomplete')
+    for row,expected_root in zip(protected,data['protectedManifest']):
+        if row.get('guid')!=expected_root['guid'] or row.get('sha256')!=expected_root['sha256'] or row.get('metaSha256')!=expected_root['metaSha256'] or not row.get('localIds'):
+            fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Protected-root bytes/GUID/localID checkpoint differs')
+    if native.get('resourcesDynamicUseNotProvable') is not True:
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Resources dynamic-use boundary is absent from native checkpoint')
+    if not isinstance(native.get('dependencyPaths'),list):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Protected static dependency closure checkpoint is missing')
+    if not isinstance(native.get('dependencyClosures'),list) or [row.get('root') for row in native['dependencyClosures']]!=[row['path'] for row in data['protectedManifest']]:
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Per-root static dependency checkpoint is incomplete')
+    if (native.get('resources') or [])!=data['spec'].get('resources',[]):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Resources retirement declarations differ from the plan')
+    before_root=inside(stage,'before')
+    for item in data['retireManifest']:
+        for path,digest,size in ((item['path'],item['sha256'],item['bytes']),
+                                 (item['metaPath'],item['metaSha256'],item['metaBytes'])):
+            image=inside(before_root,path)
+            if not image.is_file() or image.stat().st_size!=size or digest_file(image)!=digest:
+                fail('ASSET_RETIRE_RECOVERY_BLOCKED',path,'Before-image missing or differs from its planned hash')
+    expected_by_path=data['before'];deleted_set=set(deleted)
+    backup_paths={path for item in data['retireManifest'] for path in (item['path'],item['metaPath'])}
+    restored_checkpoint=journal.get('recoveryRestoredPaths',[])
+    if not isinstance(restored_checkpoint,list) or any(path not in backup_paths for path in restored_checkpoint):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(stage),'Recovery copy checkpoint is invalid')
+    restored_checkpoint=set(restored_checkpoint)
+    with lock(project):
+        native_lock(project)
+        current=source_files(project);expected_current=dict(expected_by_path)
+        for item in data['retireManifest']:
+            pair=(item['path'],item['metaPath'])
+            if item['path'] not in deleted_set:
+                for path in pair:
+                    if current.get(path)!=expected_by_path.get(path):
+                        fail('ASSET_RETIRE_RECOVERY_BLOCKED',path,'An uncheckpointed asset changed or is absent')
+                continue
+            for path in pair:
+                found=current.get(path);original=expected_by_path.get(path)
+                if found is not None and found!=original:
+                    fail('ASSET_RETIRE_RECOVERY_BLOCKED',path,'Existing bytes differ; refusing to overwrite a later edit or manual meta')
+                if found is not None and path not in restored_checkpoint:
+                    fail('ASSET_RETIRE_RECOVERY_BLOCKED',path,'A checkpointed deletion was recreated outside this recovery transaction')
+                if found is None:expected_current.pop(path,None)
+        if current!=expected_current:
+            fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(project),'Full project source guard differs outside witnessed deletions')
+        # The full before-image set is preflighted before the first filesystem restore.
+        todo=[]
+        for item in data['retireManifest']:
+            if item['path'] not in deleted_set:continue
+            for path in (item['path'],item['metaPath']):
+                if path not in current:
+                    original=expected_by_path[path];todo.append((path,original))
+        journal.update(status='restoring-before-images',recoveryCheckpoint='all-targets-preflighted',recoveryDeletedPaths=deleted)
+        write_json(journal_path,journal)
+        helper=None;fingerprint=None
+        try:
+            restored=list(restored_checkpoint)
+            for path,row in todo:
+                image=inside(before_root,path);target=inside(project,path)
+                copy_verified(image,target,row['sha256'],row['bytes'],atomic=False)
+                restored.append(path);journal.update(recoveryRestoredPaths=restored,recoveryCheckpoint='before-image-copied')
+                write_json(journal_path,journal)
+            # Separate Editor invocations refresh and verify persisted Unity IDs.
+            helper,fingerprint=_install_native_helper(project)
+            try:
+                recovered=run(editor,project,stage,'recover',data,timeout)
+                reopened=run(editor,project,stage,'recover-verify',data,timeout)
+            finally:
+                _remove_native_helper(project,helper,fingerprint)
+            if recovered.get('recoveredPaths')!=deleted or reopened.get('recoveredPaths')!=deleted or \
+               recovered.get('retiredAssets')!=reopened.get('retiredAssets') or recovered.get('protectedRoots')!=reopened.get('protectedRoots') or \
+               recovered.get('dependencyPaths')!=reopened.get('dependencyPaths') or recovered.get('dependencyClosures')!=reopened.get('dependencyClosures') or \
+               (recovered.get('resources') or [])!=(reopened.get('resources') or []):
+                fail('ASSET_RETIRE_RECOVERY_READBACK',str(stage),'Native restore GUID/localID readback differs after reopen')
+            if source_files(project)!=data['before']:
+                fail('ASSET_RETIRE_RECOVERY_SOURCE_AUDIT',str(project),'Restored source tree differs from the original full-root snapshot')
+            journal.update(status='recovered',recoveryCheckpoint='native-reopen-source-audit-complete',recoveryNativeReadback=reopened,
+                           recoveredAt=datetime.now(timezone.utc).isoformat())
+            write_json(journal_path,journal)
+        except BaseException as error:
+            if helper is not None and fingerprint is not None:_remove_native_helper(project,helper,fingerprint)
+            journal.update(status='recovery-required',recoveryError=str(error),recoveryCheckpoint=journal.get('recoveryCheckpoint','preflight-failed'))
+            write_json(journal_path,journal)
+            raise
+    return dict(status='recovered',report=str(journal_path),transaction=str(stage),restoredFiles=len(todo),
+                deletedPaths=deleted,nativeReadback=journal['recoveryNativeReadback'])

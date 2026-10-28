@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -37,6 +38,9 @@ public static class BeaverNative {
         public Edit[] edits;
         public Move[] moves;
         public FolderMoveManifest[] folderMoveManifest;
+        public RetireItem[] retireManifest;
+        public ProtectedItem[] protectedManifest;
+        public ResourceRetirement[] resources;
         public string assetPath;
         public float pixelsPerUnit;
         public float[] pivot;
@@ -46,6 +50,12 @@ public static class BeaverNative {
     [Serializable] public class MoveRow { public string source,target,guid; public string[] localIds; }
     [Serializable] public class FolderMoveManifest { public string source,target; public long bytes; public MoveEntry[] entries; }
     [Serializable] public class MoveEntry { public string source,target,kind,sha256; public long bytes; }
+    [Serializable] public class RetireItem { public string path,role,reason,sourceEvidence,sha256,metaPath,metaSha256,guid; public long bytes,metaBytes; }
+    [Serializable] public class ProtectedItem { public string path,sha256,metaPath,metaSha256,guid; public long bytes,metaBytes; }
+    [Serializable] public class ResourceRetirement { public string key,path,guid,reason,sourceEvidence; }
+    [Serializable] public class RetireIdentity { public string path,guid; public string[] localIds; }
+    [Serializable] public class ProtectedIdentity { public string path,guid,sha256,metaSha256; public string[] localIds; }
+    [Serializable] public class DependencyClosure { public string root; public string[] paths; }
     [Serializable] public class Row {
         public string path,parent,guid;
         public long localId;
@@ -68,6 +78,16 @@ public static class BeaverNative {
         public int buildErrors;
         public List<MoveRow> moves=new List<MoveRow>();
         public List<MoveRow> moveIdentities=new List<MoveRow>();
+        public string deleteInProgress;
+        public bool resourcesDynamicUseNotProvable;
+        public List<string> selectedPaths=new List<string>();
+        public List<string> deletedPaths=new List<string>();
+        public List<string> recoveredPaths=new List<string>();
+        public List<string> dependencyPaths=new List<string>();
+        public List<DependencyClosure> dependencyClosures=new List<DependencyClosure>();
+        public List<RetireIdentity> retiredAssets=new List<RetireIdentity>();
+        public List<ProtectedIdentity> protectedRoots=new List<ProtectedIdentity>();
+        public List<ResourceRetirement> resources=new List<ResourceRetirement>();
         public int playFrames,playErrors;
         public double playSeconds;
         public string spriteGuid;
@@ -431,6 +451,148 @@ public static class BeaverNative {
         for(int i=0;i<left.Count;i++)if(left[i].source!=right[i].source||left[i].target!=right[i].target||left[i].guid!=right[i].guid||!left[i].localIds.SequenceEqual(right[i].localIds))return false;
         return true;
     }
+    static string MetaGuid(string path) {
+        var matches=Regex.Matches(File.ReadAllText(Full(path)),@"(?m)^guid:\s*([a-f0-9]{32})\s*$");
+        if(matches.Count!=1)throw new Exception("Expected one static Unity GUID in metadata: "+path);
+        return matches[0].Groups[1].Value;
+    }
+    static string BackupFull(string relative) { return Path.Combine(job.stage,"before",relative); }
+    static RetireIdentity RetirementIdentity(string path,string expectedGuid) {
+        var guid=AssetDatabase.AssetPathToGUID(path, AssetPathToGUIDOptions.OnlyExistingAssets);var ids=Ids(path);
+        if(String.IsNullOrEmpty(guid)||guid!=expectedGuid||ids.Length==0)throw new Exception("Native retirement identity missing or differs: "+path);
+        return new RetireIdentity{path=path,guid=guid,localIds=ids};
+    }
+    static ProtectedIdentity ProtectedSnapshot(ProtectedItem item) {
+        var file=Full(item.path);var meta=Full(item.metaPath);
+        var guid=AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets);
+        if(!File.Exists(file)||!File.Exists(meta)||new FileInfo(file).Length!=item.bytes||HashFile(file)!=item.sha256||
+           new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid||guid!=item.guid)
+            throw new Exception("Protected root bytes or GUID changed: "+item.path);
+        var ids=Ids(item.path);if(ids.Length==0)throw new Exception("Protected root local identity missing: "+item.path);
+        return new ProtectedIdentity{path=item.path,guid=guid,sha256=item.sha256,metaSha256=item.metaSha256,localIds=ids};
+    }
+    static List<ProtectedIdentity> ProtectedSnapshots() {
+        if(job.protectedManifest==null||job.protectedManifest.Length==0)throw new Exception("Explicit protected roots required");
+        return job.protectedManifest.Select(ProtectedSnapshot).ToList();
+    }
+    static bool SameProtected(List<ProtectedIdentity> left,List<ProtectedIdentity> right) {
+        if(left.Count!=right.Count)return false;
+        for(int i=0;i<left.Count;i++)if(left[i].path!=right[i].path||left[i].guid!=right[i].guid||left[i].sha256!=right[i].sha256||left[i].metaSha256!=right[i].metaSha256||!left[i].localIds.SequenceEqual(right[i].localIds))return false;
+        return true;
+    }
+    static Report PriorRetirement(string name) {
+        var path=Path.Combine(job.stage,name);
+        if(!File.Exists(path))throw new Exception("Retirement checkpoint missing: "+name);
+        var prior=JsonUtility.FromJson<Report>(File.ReadAllText(path));
+        if(prior==null||prior.operation!="assets.retire"||prior.planSha256!=job.planSha256)throw new Exception("Retirement checkpoint identity differs");
+        return prior;
+    }
+    static void ValidateRetirementCheckpoint(Report prior,bool requireComplete) {
+        var planned=(job.retireManifest??new RetireItem[0]).Select(x=>x.path).ToArray();
+        if(prior.selectedPaths==null||!prior.selectedPaths.SequenceEqual(planned)||prior.retiredAssets==null||
+           !prior.retiredAssets.Select(x=>x.path).SequenceEqual(planned)||prior.protectedRoots==null||
+           !prior.protectedRoots.Select(x=>x.path).SequenceEqual((job.protectedManifest??new ProtectedItem[0]).Select(x=>x.path)))
+            throw new Exception("Retirement identity checkpoint is incomplete");
+        if(!String.IsNullOrEmpty(prior.deleteInProgress))throw new Exception("Uncertain DeleteAsset checkpoint blocks recovery");
+        if(prior.deletedPaths==null||prior.deletedPaths.Distinct().Count()!=prior.deletedPaths.Count||prior.deletedPaths.Any(x=>!planned.Contains(x)))
+            throw new Exception("Retirement deleted-path checkpoint is invalid");
+        if(!prior.resourcesDynamicUseNotProvable||prior.dependencyPaths==null||prior.dependencyClosures==null||
+           !prior.dependencyClosures.Select(x=>x.root).SequenceEqual((job.protectedManifest??new ProtectedItem[0]).Select(x=>x.path)))
+            throw new Exception("Resources/dependency scope checkpoint is incomplete");
+        var plannedResources=job.resources??new ResourceRetirement[0];var witnessedResources=prior.resources??new List<ResourceRetirement>();
+        if(witnessedResources.Count!=plannedResources.Length)throw new Exception("Resources declaration checkpoint differs");
+        for(int i=0;i<plannedResources.Length;i++)if(witnessedResources[i].key!=plannedResources[i].key||witnessedResources[i].path!=plannedResources[i].path||witnessedResources[i].guid!=plannedResources[i].guid||witnessedResources[i].reason!=plannedResources[i].reason||witnessedResources[i].sourceEvidence!=plannedResources[i].sourceEvidence)throw new Exception("Resources declaration checkpoint differs");
+        foreach(var path in prior.deletedPaths)if(!prior.retiredAssets.Any(x=>x.path==path&&x.guid!=""&&x.localIds!=null&&x.localIds.Length>0))throw new Exception("Deleted asset lacks a witnessed GUID/localID checkpoint: "+path);
+        foreach(var item in job.protectedManifest)if(!prior.protectedRoots.Any(x=>x.path==item.path&&x.guid==item.guid&&x.sha256==item.sha256&&x.metaSha256==item.metaSha256&&x.localIds!=null&&x.localIds.Length>0))throw new Exception("Protected-root checkpoint differs: "+item.path);
+        if(requireComplete&&(prior.status!="verified"||!prior.deletedPaths.SequenceEqual(planned)))throw new Exception("Complete retirement checkpoint required");
+    }
+    static void ValidateRetirementInputs() {
+        var items=job.retireManifest??new RetireItem[0];var selected=new HashSet<string>(items.Select(x=>x.path),StringComparer.Ordinal);
+        if(items.Length==0||selected.Count!=items.Length)throw new Exception("Explicit unique retirement file manifest required");
+        foreach(var item in items) {
+            var asset=Full(item.path);var meta=Full(item.metaPath);var backup=BackupFull(item.path);var backupMeta=BackupFull(item.metaPath);
+            if(!File.Exists(asset)||!File.Exists(meta)||new FileInfo(asset).Length!=item.bytes||HashFile(asset)!=item.sha256||
+               new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid||AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets)!=item.guid)
+                throw new Exception("Retirement source/hash/GUID precondition failed: "+item.path);
+            if(!File.Exists(backup)||new FileInfo(backup).Length!=item.bytes||HashFile(backup)!=item.sha256||
+               !File.Exists(backupMeta)||new FileInfo(backupMeta).Length!=item.metaBytes||HashFile(backupMeta)!=item.metaSha256)
+                throw new Exception("Verified before-image is incomplete: "+item.path);
+            if(Ids(item.path).Length==0)throw new Exception("Retirement local identity missing: "+item.path);
+        }
+        var protectedNow=ProtectedSnapshots();
+        foreach(var root in job.protectedManifest) {
+            if(selected.Contains(root.path))throw new Exception("Protected root selected for retirement: "+root.path);
+            var closure=AssetDatabase.GetDependencies(root.path,true).Distinct().OrderBy(x=>x,StringComparer.Ordinal).ToArray();
+            report.dependencyClosures.Add(new DependencyClosure{root=root.path,paths=closure});
+            foreach(var dependency in closure) {
+                if(!report.dependencyPaths.Contains(dependency))report.dependencyPaths.Add(dependency);
+                if(selected.Contains(dependency))throw new Exception("Protected root still depends on selected asset: "+root.path+" -> "+dependency);
+            }
+        }
+        report.dependencyPaths=report.dependencyPaths.OrderBy(x=>x,StringComparer.Ordinal).ToList();
+        report.selectedPaths.AddRange(items.Select(x=>x.path));
+        report.retiredAssets.AddRange(items.Select(x=>RetirementIdentity(x.path,x.guid)));
+        report.protectedRoots.AddRange(protectedNow);
+        report.resources.AddRange(job.resources??new ResourceRetirement[0]);
+        // Resources.Load and reflection-based keys cannot be proven unused by
+        // AssetDatabase.GetDependencies; the explicit declarations record the
+        // user's source-backed decision without claiming static closure.
+        report.resourcesDynamicUseNotProvable=true;
+        Save();
+    }
+    static void Retire(bool write) {
+        if(write) {
+            ValidateRetirementInputs();
+            foreach(var item in job.retireManifest) {
+                report.deleteInProgress=item.path;Save();
+                if(!AssetDatabase.DeleteAsset(item.path))throw new Exception("AssetDatabase.DeleteAsset returned false: "+item.path);
+                if(File.Exists(Full(item.path))||File.Exists(Full(item.metaPath))||!String.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets)))
+                    throw new Exception("DeleteAsset did not remove the exact asset and metadata: "+item.path);
+                report.deletedPaths.Add(item.path);report.deleteInProgress="";Save();
+            }
+            AssetDatabase.SaveAssets();AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            foreach(var item in job.retireManifest)
+                if(File.Exists(Full(item.path))||File.Exists(Full(item.metaPath))||!String.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets)))throw new Exception("Retired asset reappeared: "+item.path);
+            var protectedAfter=ProtectedSnapshots();
+            if(!SameProtected(report.protectedRoots,protectedAfter))throw new Exception("Protected root identity changed during retirement");
+        } else {
+            var prior=PriorRetirement("native-apply.json");ValidateRetirementCheckpoint(prior,true);
+            foreach(var item in job.retireManifest)
+                if(File.Exists(Full(item.path))||File.Exists(Full(item.metaPath))||!String.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets)))throw new Exception("Retired asset is present after reopen: "+item.path);
+            var protectedNow=ProtectedSnapshots();
+            if(!SameProtected(prior.protectedRoots,protectedNow))throw new Exception("Protected roots differ after reopen");
+            report.selectedPaths.AddRange(prior.selectedPaths);report.deletedPaths.AddRange(prior.deletedPaths);
+            report.retiredAssets.AddRange(prior.retiredAssets);report.protectedRoots.AddRange(protectedNow);
+            report.dependencyPaths.AddRange(prior.dependencyPaths);
+            report.dependencyClosures.AddRange(prior.dependencyClosures??new List<DependencyClosure>());
+            report.resources.AddRange(prior.resources??new List<ResourceRetirement>());report.resourcesDynamicUseNotProvable=prior.resourcesDynamicUseNotProvable;
+        }
+        AssetDatabase.SaveAssets();
+    }
+    static void RecoverRetiredAssets(bool verification) {
+        var prior=PriorRetirement(verification?"native-recover.json":"native-apply.json");
+        ValidateRetirementCheckpoint(prior,false);
+        if(prior.deletedPaths.Count==0)throw new Exception("No witnessed deletion checkpoint; recovery is blocked");
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        var expected=prior.retiredAssets.ToDictionary(x=>x.path,StringComparer.Ordinal);
+        foreach(var item in job.retireManifest) {
+            var file=Full(item.path);var meta=Full(item.metaPath);
+            if(!File.Exists(file)||!File.Exists(meta)||new FileInfo(file).Length!=item.bytes||HashFile(file)!=item.sha256||
+               new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid)
+                throw new Exception("Restored before-image bytes or meta GUID differ: "+item.path);
+            var identity=RetirementIdentity(item.path,item.guid);var witness=expected[item.path];
+            if(!identity.localIds.SequenceEqual(witness.localIds))throw new Exception("Restored local IDs differ from deletion checkpoint: "+item.path);
+        }
+        var protectedNow=ProtectedSnapshots();
+        if(!SameProtected(prior.protectedRoots,protectedNow))throw new Exception("Protected roots differ during recovery");
+        report.selectedPaths.AddRange(prior.selectedPaths);report.deletedPaths.AddRange(prior.deletedPaths);
+        report.recoveredPaths.AddRange(prior.deletedPaths);report.retiredAssets.AddRange(prior.retiredAssets);
+        report.dependencyPaths.AddRange(prior.dependencyPaths);
+        report.dependencyClosures.AddRange(prior.dependencyClosures??new List<DependencyClosure>());
+        report.protectedRoots.AddRange(protectedNow);report.resources.AddRange(prior.resources??new List<ResourceRetirement>());
+        report.resourcesDynamicUseNotProvable=prior.resourcesDynamicUseNotProvable;
+        AssetDatabase.SaveAssets();
+    }
     public static void Run() {
         int code=1;
         try {
@@ -444,11 +606,17 @@ public static class BeaverNative {
                 else if(job.operation=="prefab.edit")EditPrefab();
                 else if(job.operation=="build.macos")Build();
                 else if(job.operation=="assets.move")Moves(true);
+                else if(job.operation=="assets.retire")Retire(true);
                 else if(job.operation=="sprite.configure")SpriteImport(true);
                 else if(job.operation=="project.import") {AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);AssetDatabase.SaveAssets();}
                 else if(job.operation!="prefab.inspect")throw new Exception("Unknown operation");
-            } else if(job.mode!="verify")throw new Exception("Unknown native mode");
+            } else if(job.mode!="verify"&&job.mode!="recover"&&job.mode!="recover-verify")throw new Exception("Unknown native mode");
             if(job.operation=="assets.move") {if(job.mode=="verify")Moves(false);}
+            else if(job.operation=="assets.retire") {
+                if(job.mode=="verify")Retire(false);
+                else if(job.mode=="recover")RecoverRetiredAssets(false);
+                else if(job.mode=="recover-verify")RecoverRetiredAssets(true);
+            }
             else if(job.operation=="sprite.configure") {if(job.mode=="verify")SpriteImport(false);}
             else if(job.operation=="project.import") { }
             else if(job.operation!="build.macos")InspectPrefab();

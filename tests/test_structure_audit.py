@@ -128,7 +128,8 @@ class StructureAuditTests(unittest.TestCase):
         self.assertEqual(declared["mappings"][0]["objects"][0]["localId"], 2800000)
         self.assertEqual(declared["mappings"][0]["nativeProvenance"], {"collector": "synthetic-test"})
         self.assertEqual(declared["mappings"][0]["resourceKeyMapping"],
-                         {"old": "Icons/Coin", "new": None, "consumerPatchesRequired": True})
+                         {"old": "Icons/Coin", "new": None, "consumerPatchesRequired": True,
+                          "candidateAssets": [mapping[0]["source"]]})
         self.assertEqual(declared["batchSpec"]["steps"], [{"kind": "asset.move", **mapping[0]}])
         self.assertTrue(source.exists(), "Planning must not move or edit source files")
 
@@ -322,6 +323,66 @@ class StructureAuditTests(unittest.TestCase):
         put(self.root,'Assets/Game/Comment.cs','// old source "Assets/Legacy/Coin.png"\nclass C {}')
         plan=build_plan(inspect(self.root,native),[{'source':asset,'target':'Assets/Game/Content/Images/Coin.png'}])
         self.assertEqual(plan['status'],'declaration_only')
+
+    def test_substring_assets_length_marker_is_ignored_but_exact_old_path_still_blocks(self):
+        asset='Assets/Product/Coin.png';put(self.root,asset,b'image');native=native_readback(self.root,asset)
+        put(self.root,'Assets/Game/Editor/Diagnostic.cs',
+            'class D { string key=CandidatePrefab.Substring("Assets/".Length); string actual="Assets/Product/Coin.png"; }')
+        audit=inspect(self.root,native)
+        self.assertEqual([x['value'] for x in audit['pathConsumers']],['Assets/Product/Coin.png'])
+        plan=build_plan(audit,[{'source':asset,'target':'Assets/Game/Content/Images/Coin.png'}])
+        matches=[x for x in plan['blockers'] if x['code']=='OLD_PATH_CONSUMER_UNHANDLED']
+        self.assertEqual(len(matches),1)
+        self.assertEqual(matches[0]['value'],'Assets/Product/Coin.png')
+
+    def test_assets_root_lookup_and_dynamic_opaque_root_remain_conservatively_blocked(self):
+        asset='Assets/Product/Coin.png';put(self.root,asset,b'image');native=native_readback(self.root,asset)
+        put(self.root,'Assets/Game/Editor/Diagnostic.cs',
+            'class D { object a=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/" + key); string b=$"Assets/{folder}/Coin.png"; }')
+        audit=inspect(self.root,native)
+        self.assertTrue(any(x['code']=='OLD_PATH_CONSUMER' and x['value']=='Assets/' for x in audit['issues']))
+        self.assertTrue(any(x['code']=='DYNAMIC_ASSET_PATH_UNRESOLVED' and x['prefix']=='Assets/' for x in audit['issues']))
+        plan=build_plan(audit,[{'source':asset,'target':'Assets/Game/Content/Images/Coin.png'}])
+        codes={x['code'] for x in plan['blockers']}
+        self.assertIn('OLD_PATH_CONSUMER_UNHANDLED',codes)
+        self.assertIn('DYNAMIC_ASSET_PATH_UNRESOLVED',codes)
+        self.assertIn('DYNAMIC_ASSET_PATH_UNRESOLVED',{x['code'] for x in plan['blockers']})
+
+    def test_same_resources_key_keeps_dynamic_coverage_without_blocking_move(self):
+        asset='Assets/Product/Resources/Configuration/AiTasks.json'
+        put(self.root,asset,b'{"task":1}')
+        native=native_readback(self.root,asset,'TextAsset',1)
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string key) { return Resources.Load(key); } }')
+        audit=inspect(self.root,native)
+        self.assertTrue(audit['dynamicLoads'])
+        plan=build_plan(audit,[{'source':asset,'target':'Assets/Game/Content/Config/Resources/Configuration/AiTasks.json'}])
+        self.assertEqual(plan['status'],'declaration_only')
+        self.assertFalse(any(x['code']=='DYNAMIC_RESOURCE_KEY_UNRESOLVED' for x in plan['blockers']))
+        row=plan['mappings'][0]
+        self.assertEqual(row['resourceKeyMapping']['old'],row['resourceKeyMapping']['new'])
+        self.assertEqual(plan['dynamicLoadCoverage'],audit['dynamicLoads'])
+
+    def test_changed_resources_key_still_blocks_unresolved_dynamic_call(self):
+        asset='Assets/Product/Resources/Configuration/AiTasks.json'
+        put(self.root,asset,b'{"task":1}')
+        native=native_readback(self.root,asset,'TextAsset',1)
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string key) { return Resources.Load(key); } }')
+        plan=build_plan(inspect(self.root,native),[
+            {'source':asset,'target':'Assets/Game/Content/Config/Resources/NewConfiguration/AiTasks.json'}])
+        self.assertIn('DYNAMIC_RESOURCE_KEY_UNRESOLVED',{x['code'] for x in plan['blockers']})
+
+    def test_same_key_with_duplicate_resources_candidate_still_blocks(self):
+        asset='Assets/Product/Resources/Configuration/AiTasks.json'
+        put(self.root,asset,b'{"task":1}')
+        put(self.root,'Assets/Other/Resources/Configuration/AiTasks.asset',b'duplicate')
+        native=native_readback(self.root,asset,'TextAsset',1)
+        put(self.root,'Assets/Game/Services/Configuration/Loader.cs',
+            'class Loader { object Load(string key) { return Resources.Load(key); } }')
+        plan=build_plan(inspect(self.root,native),[
+            {'source':asset,'target':'Assets/Game/Content/Config/Resources/Configuration/AiTasks.json'}])
+        self.assertIn('RESOURCE_KEY_CANDIDATE_AMBIGUOUS',{x['code'] for x in plan['blockers']})
 
     def test_new_consumer_or_metadata_after_audit_invalidates_scope(self):
         asset='Assets/Legacy/Coin.png';put(self.root,asset,b'image');native=native_readback(self.root,asset)

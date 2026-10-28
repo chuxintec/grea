@@ -181,6 +181,52 @@ def _type_path_mismatch(path, imported_type):
     return True, sorted(expected)
 
 
+def _specific_asset_path_prefix(value):
+    """Normalize a concrete Assets path/prefix, excluding generic Assets/ root."""
+    if not isinstance(value, str):
+        return None
+    value = unicodedata.normalize("NFC", value.replace("\\", "/")).rstrip("/")
+    parts = value.split("/")
+    if len(parts) < 2 or parts[0].casefold() != "assets" or any(p in ("", ".", "..") for p in parts):
+        return None
+    return value
+
+
+def _is_assets_root(value):
+    return isinstance(value, str) and unicodedata.normalize("NFC", value.replace("\\", "/")).casefold() == "assets/"
+
+
+def _is_substring_length_marker(tokens, index):
+    """Narrowly recognize Substring("Assets/".Length) path slicing syntax."""
+    if not 0 <= index < len(tokens):
+        return False
+    token = tokens[index]
+    if token[0] != "string" or _decode_csharp_string(token[1]) != "Assets/":
+        return False
+    before = tokens[max(0, index - 3):index]
+    after = tokens[index + 1:index + 4]
+    return (len(before) == 3 and before[0][1] == "." and before[1][1] == "Substring" and before[2][1] == "(" and
+            len(after) == 3 and after[0][1] == "." and after[1][1] == "Length" and after[2][1] == ")")
+
+
+def _asset_literal_matches_source(value, source):
+    """Match a concrete Assets path/prefix, not the generic Assets root token."""
+    value = _specific_asset_path_prefix(value)
+    if value is None:
+        return False
+    source = unicodedata.normalize("NFC", source.replace("\\", "/"))
+    folded = value.casefold()
+    source_folded = source.casefold()
+    source_without_extension = str(PurePosixPath(source).with_suffix("")).casefold()
+    return folded in {source_folded, source_without_extension} or source_folded.startswith(folded + "/")
+
+
+def _resource_key(path):
+    if "/Resources/" not in path:
+        return None
+    return path.split("/Resources/", 1)[1].rsplit(".", 1)[0]
+
+
 def _governance_file(path, product_root=None):
     path = Path(path).absolute()
     try:
@@ -431,10 +477,14 @@ def inspect(project, native_snapshot=None, exceptions=None, product_root=None, p
             text = (root / rel).read_text(encoding="utf-8-sig")
         except (UnicodeError, OSError):
             continue
-        for kind,token,start,end in _csharp_tokens(text):
+        tokens=_csharp_tokens(text)
+        for token_index,(kind,token,start,end) in enumerate(tokens):
             value = _decode_csharp_string(token) if kind=='string' else token[2:-1].replace('""','"') if token.startswith('@"') and token.endswith('"') else None
-            if isinstance(value,str) and value.replace('\\','/').lower().startswith('assets/'):
-                value=value.replace('\\','/')
+            if _is_substring_length_marker(tokens,token_index):
+                continue
+            specific_prefix=_specific_asset_path_prefix(value)
+            if _is_assets_root(value) or specific_prefix is not None:
+                value="Assets/" if _is_assets_root(value) else specific_prefix
                 path_consumers.append({"file": rel, "value": value, "offset": start, "span":[start,end]})
                 issues.append({"code": "OLD_PATH_CONSUMER", "severity": "warning", "file": rel, "value": value})
             elif kind=='opaque' and 'Assets/' in token:
@@ -653,14 +703,18 @@ def build_plan(audit, mappings, native_snapshot=None):
                     blockers.append({"code": "TARGET_TYPE_DIRECTORY_MISMATCH", "ruleId": "STR-05", "path": target,
                                      "importedType": native_row["importedType"], "expectedKinds": expected_kinds})
         resource_key = None
-        if "/Resources/" in source:
-            old_key = source.split("/Resources/", 1)[1].rsplit(".", 1)[0]
-            if "/Resources/" in target:
-                new_key = target.split("/Resources/", 1)[1].rsplit(".", 1)[0]
-            else:
-                new_key = None
+        resource_key_unique = False
+        old_key = _resource_key(source)
+        if old_key is not None:
+            new_key = _resource_key(target)
+            candidates = sorted(path for path in inventory if _resource_key(path) == old_key)
+            resource_key_unique = candidates == [source]
             resource_key = {"old": old_key, "new": new_key,
-                            "consumerPatchesRequired": old_key != new_key}
+                            "consumerPatchesRequired": old_key != new_key,
+                            "candidateAssets": candidates}
+            if not resource_key_unique:
+                blockers.append({"code": "RESOURCE_KEY_CANDIDATE_AMBIGUOUS", "source": source,
+                                 "key": old_key, "candidateAssets": candidates})
         rows.append({"source": source, "target": target, "guid": native_row["guid"] if native_row else None,
                      "importedType": native_row["importedType"] if native_row else None,
                      "objects": native_row["objects"] if native_row else None,
@@ -677,19 +731,19 @@ def build_plan(audit, mappings, native_snapshot=None):
                 not native or p not in native["byPath"] for p in candidate_assets)
             if (issue.get("code") in {"RESOURCE_KEY_AMBIGUOUS", "RESOURCE_TYPE_AMBIGUOUS"} or unresolved_type) and source in candidate_assets:
                 blockers.append({"code": "RESOURCE_RESOLUTION_AMBIGUOUS", "path": source, "resourceKey": issue.get("key")})
-            if issue.get("code") == "DYNAMIC_LOAD_UNRESOLVED" and "/Resources/" in source:
+            if (issue.get("code") == "DYNAMIC_LOAD_UNRESOLVED" and resource_key
+                    and (resource_key["old"] != resource_key["new"] or not resource_key_unique)):
                 blockers.append({"code": "DYNAMIC_RESOURCE_KEY_UNRESOLVED", "source": source, "consumer": issue.get("file"), "span": issue.get("span")})
             if issue.get("code") == "OLD_PATH_CONSUMER":
-                value = issue.get("value", "").rstrip("/").casefold()
-                no_ext = str(PurePosixPath(source).with_suffix("")).casefold()
-                if value in {source.casefold(), no_ext} or source.casefold().startswith(value + "/"):
+                value = issue.get("value", "")
+                if _is_assets_root(value) or _asset_literal_matches_source(value, source):
                     blockers.append({"code": "OLD_PATH_CONSUMER_UNHANDLED", "source": source, "consumer": issue.get("file"), "value": issue.get("value")})
             if issue.get('code')=='DYNAMIC_ASSET_PATH_UNRESOLVED':
-                prefix=issue.get('prefix','Assets/').casefold()
-                if source.casefold().startswith(prefix):blockers.append({'code':'DYNAMIC_ASSET_PATH_UNRESOLVED','source':source,'consumer':issue.get('file'),'span':issue.get('span')})
+                prefix=issue.get('prefix','Assets/').replace('\\','/').casefold()
+                if source.replace('\\','/').casefold().startswith(prefix):blockers.append({'code':'DYNAMIC_ASSET_PATH_UNRESOLVED','source':source,'consumer':issue.get('file'),'span':issue.get('span')})
             if issue.get('code')=='JSON_ASSET_PATH_UNRESOLVED':
-                value=issue.get('value','').replace('\\','/').rstrip('/')
-                if value.casefold() in {source.casefold(),str(PurePosixPath(source).with_suffix('')).casefold()} or source.casefold().startswith(value.casefold()+'/'):
+                value=issue.get('value','')
+                if _asset_literal_matches_source(value, source):
                     blockers.append({'code':'JSON_ASSET_PATH_CONSUMER_UNHANDLED','source':source,'consumer':issue.get('file'),'value':value})
         if resource_key and resource_key["old"] != resource_key["new"]:
             for load in audit.get("resourceLoads", []):
@@ -730,6 +784,7 @@ def build_plan(audit, mappings, native_snapshot=None):
             "proposedSteps": steps, "issues": plan_issues,
             "batchSpec": {"schemaVersion": 2, "operation": "batch", "steps": steps} if complete else None,
             "nativeEvidence": native["document"] if native else None,
+            "dynamicLoadCoverage": audit.get("dynamicLoads", []),
             "nativeSnapshotSha256": hashlib.sha256(json.dumps(native["document"], sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest() if native else None,
             "preconditions": {r["source"]: {"sha256": r["sourceSha256"], "metaSha256": r["metaSha256"],
                                                "guid": r["guid"]} for r in rows},

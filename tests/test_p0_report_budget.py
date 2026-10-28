@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
+import hashlib
 from beaver.cli import main, _p0_report
 from beaver.errors import BeaverError
 from beaver.io import read, write_json
@@ -39,6 +41,18 @@ class P0ReportBudgetTests(unittest.TestCase):
             self.assertEqual(result['data']['status'],'declaration_only')
             self.assertEqual(result['verification']['native'],'not_run')
             self.assertEqual(result['data']['projectConformance'],'not-established')
+            # A compact transport envelope must retain the entire file and its
+            # exact artifact hash, rather than trim inventory or consumers.
+            digest=hashlib.sha256(audit_path.read_bytes()).hexdigest()
+            with patch('beaver.cli.dispatch',return_value=dict(audit,report=str(audit_path))):
+                stdout=io.StringIO()
+                with redirect_stdout(stdout):code=main(['structure','inspect','--project',str(project),'--out',str(product/'unused'),'--summary'])
+            self.assertEqual(code,0)
+            compact=json.loads(stdout.getvalue())
+            self.assertLess(len(stdout.getvalue().encode()),16*1024)
+            self.assertEqual(compact['data']['issuesCount'],len(audit['issues']))
+            self.assertEqual(compact['artifacts'][0]['sha256'],digest)
+            self.assertEqual(hashlib.sha256(audit_path.read_bytes()).hexdigest(),digest)
 
     def test_report_reader_still_rejects_over_dedicated_budget(self):
         with tempfile.TemporaryDirectory(dir='/private/tmp') as tmp:

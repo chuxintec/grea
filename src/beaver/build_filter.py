@@ -318,9 +318,10 @@ def plan(project, target, snapshot, source_manifest, backup_root=".beaver/build-
         refs = [dict(guid=dep["guid"].lower(), localId=dep["localId"], type=dep["type"], roots=sorted(dep["roots"]))
                 for (dep_path, _), dep in sorted(dependencies.items()) if dep_path == path]
         if path in dep_paths:
-            state = "runtime-referenced"
-            eligibility = "retain-referenced"
-            reason = "Present in native build dependency snapshot; referenced assets cannot be isolated."
+            explicit_reference=any(any(not root.startswith('implicit:') for root in ref['roots']) for ref in refs)
+            state = "runtime-referenced" if explicit_reference else 'implicit-build-included'
+            eligibility = "retain-referenced" if explicit_reference else 'requires-explicit-retirement-scope'
+            reason = "Present in the native closure of an explicit scene/root; retain until references are resolved." if explicit_reference else 'Included by a Unity implicit build root; this does not prove current business dynamic use. Retirement needs explicit protected roots and per-key declarations.'
         elif classification in ("source", "binary") and matched:
             state = "source-evidence-only"
             # Static build references are absent, but dynamic/reflection loading
@@ -349,9 +350,10 @@ def plan(project, target, snapshot, source_manifest, backup_root=".beaver/build-
                                   "restoreSourceTo": path, "restoreMetaTo": path + ".meta",
                                   "expectedPostIsolation": {"sourceAbsent": True, "metaAbsent": True}}})
     result = {"schemaVersion": 1, "target": dict(target), "snapshotIdentity": _snapshot_digest(snapshot),
-              "mode": "plan-only", "execution": {"status": "blocked", "code": "BUILD_FILTER_NATIVE_ISOLATION_UNSUPPORTED",
-                           "reason": "No existing safe native transaction currently supports path-specific build-source isolation with .meta/GUID/localID verification and rollback."},
+              "mode": "plan-only", "execution": {"status": "blocked", "code": "BUILD_FILTER_RETIREMENT_SCOPE_REQUIRED",
+                           "reason": "Classification alone does not authorize retirement. Use a separately reviewed unity assets.retire plan with protected roots, source roles and explicit Resources retirement declarations; native dependency guards still apply."},
               "assets": rows, "counts": {"runtimeReferenced": sum(r["buildState"] == "runtime-referenced" for r in rows),
+                                           "implicitBuildIncluded": sum(r['buildState']=='implicit-build-included' for r in rows),
                                            "sourceEvidenceOnly": sum(r["buildState"] == "source-evidence-only" for r in rows),
                                            "unknown": sum(r["buildState"] == "unknown" for r in rows),
                                            "quarantineEligible": sum(r["quarantineEligibility"] == "eligible" for r in rows)}}

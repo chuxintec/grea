@@ -166,6 +166,17 @@ class BuildFilterTests(unittest.TestCase):
             self.assertEqual(result["execution"]["code"], "BUILD_FILTER_DEPENDENCY_COVERAGE_INCOMPLETE")
             self.assertEqual(result["execution"]["blockers"], ["unmapped preloaded asset"])
 
+    def test_implicit_resource_inclusion_is_not_business_usage(self):
+        with tempfile.TemporaryDirectory(dir='/private/tmp') as directory:
+            root=Path(directory);snapshot,handoff=fixture(root)
+            snapshot['implicitRoots']=['implicit:Resources']
+            snapshot['dependencies'][0]['roots']=['implicit:Resources']
+            result=plan(root,{'platform':snapshot['target'],'pipeline':snapshot['pipeline']},snapshot,handoff)
+            row=next(r for r in result['assets'] if r['path']==snapshot['dependencies'][0]['path'])
+            self.assertEqual(row['buildState'],'implicit-build-included')
+            self.assertEqual(row['quarantineEligibility'],'requires-explicit-retirement-scope')
+            self.assertEqual(result['execution']['status'],'blocked')
+
     def test_collection_spec_is_bounded_and_native_receipt_requires_all_guards(self):
         with tempfile.TemporaryDirectory(dir="/private/tmp") as directory:
             root = Path(directory)

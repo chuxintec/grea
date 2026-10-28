@@ -23,6 +23,19 @@ def _p0_report(path):
     return load(read(path,max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
 
 
+def _p0_summary(data):
+    """Project transport metadata only; the complete report remains hashed on disk."""
+    result={k:data[k] for k in ('status','report','mode','projectRoot','productRoot','profileIdentity','structureDocumentationIdentity','sourceUnchanged','helperCleaned','editorExitCode','projectConformance','batchReadiness','planSha256','counts','transaction','sourceSha256','restoredFiles') if k in data}
+    if isinstance(data.get('nativeReadback'),str):result['nativeReadback']=data['nativeReadback']
+    for field in ('inventory','assets','fields','issues','blockers','remainingStructureIssues','deletedPaths','changes'):
+        if isinstance(data.get(field),list):result[field+'Count']=len(data[field])
+    if isinstance(data.get('execution'),dict):
+        e=data['execution'];result['execution']={k:e[k] for k in ('status','code','reason') if k in e}
+        if isinstance(e.get('blockers'),list):result['execution']['blockerCount']=len(e['blockers'])
+    result['detailStorage']='complete-report-file; summary is not a replacement for inspection'
+    return result
+
+
 def capabilities():
     capabilities = [
         dict(id='workspace.plan/apply/inspect/rebind',state='implemented',effects='explicit-project-local-binding',verification='content-pinned tool/engine/authority, reviewed writes and relocation'),
@@ -60,6 +73,7 @@ def capabilities():
         dict(id="unity.prefab.inspect", state="requires_provider", provider="Unity 6000.6.2f1", effects="temporary-editor-helper", verification="native hierarchy/localID/component/importer readback"),
         dict(id="unity.prefab.edit", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native text/component/Sprite binding save/reopen"),
         dict(id="unity.assets.move", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native GUID/localID and save/reopen"),
+        dict(id='unity.assets.retire/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit protected roots and retirement declarations',effects='verified-archive-and-active-asset-retirement-or-guarded-restoration',verification='existing Unity transaction; native dependency protection, exact before-images and deletion checkpoint'),
         dict(id="unity.project.import", state="requires_provider", provider="Unity 6000.6.2f1", effects="declared-meta-initialization", verification="native generated C# compile and import"),
         dict(id="unity.sprite.configure", state="requires_provider", provider="Unity 6000.6.2f1", effects="selected-importer-meta", verification="native importer/GUID/localID and save/reopen"),
         dict(id="unity.validate.play", state="requires_provider", provider="Unity 6000.6.2f1", effects="bounded-playmode", verification="3-second isolated scene; zero runtime errors"),
@@ -144,6 +158,10 @@ def parser():
     unity_apply.add_argument("--out", required=True)
     unity_apply.add_argument("--editor-path", required=True)
     unity_apply.add_argument("--timeout", type=int, default=600)
+    unity_recover=unity.add_parser('recover')
+    for flag in ('transaction','expected-plan','editor-path'):unity_recover.add_argument('--'+flag,required=True)
+    unity_recover.add_argument('--timeout',type=int,default=600)
+    for entry in (unity_plan,unity_apply,unity_recover):entry.add_argument('--summary',action='store_true')
     batch = sub.add_parser('batch').add_subparsers(dest='action',required=True)
     bp=batch.add_parser('plan');bp.add_argument('--project',required=True);bp.add_argument('--spec',required=True);bp.add_argument('--out',required=True)
     ba=batch.add_parser('apply');ba.add_argument('--plan',required=True);ba.add_argument('--expected-plan',required=True);ba.add_argument('--out',required=True);ba.add_argument('--editor-path',required=True);ba.add_argument('--timeout',type=int,default=600)
@@ -233,18 +251,23 @@ def parser():
     diagnostic.add_argument('--limit',type=int,default=100)
     structure=sub.add_parser('structure').add_subparsers(dest='action',required=True)
     si=structure.add_parser('inspect');si.add_argument('--project',required=True);si.add_argument('--snapshot');si.add_argument('--exceptions');si.add_argument('--out',required=True);si.add_argument('--product-root');si.add_argument('--profile')
+    si.add_argument('--summary',action='store_true')
     sp=structure.add_parser('plan')
     for f in ('audit','mappings','out'):sp.add_argument('--'+f,required=True)
     sp.add_argument('--snapshot')
+    sp.add_argument('--summary',action='store_true')
     native=sub.add_parser('native').add_subparsers(dest='action',required=True).add_parser('readback')
     for f in ('project','spec','out','editor-path'):native.add_argument('--'+f,required=True)
     native.add_argument('--timeout',type=int,default=600)
+    native.add_argument('--summary',action='store_true')
     bf=sub.add_parser('build-filter').add_subparsers(dest='action',required=True)
     bc=bf.add_parser('collect')
     for f in ('project','spec','out','editor-path'):bc.add_argument('--'+f,required=True)
     bc.add_argument('--timeout',type=int,default=600)
+    bc.add_argument('--summary',action='store_true')
     bp=bf.add_parser('plan')
     for f in ('project','snapshot','sources','target','out'):bp.add_argument('--'+f,required=True)
+    bp.add_argument('--summary',action='store_true')
     return p
 
 
@@ -327,7 +350,8 @@ def dispatch(a):
         from .configuration import validate, generate
         return validate(a.schema, a.input) if a.action == "validate" else generate(a.schema, a.out)
     if a.command == "unity":
-        from .unity import plan, apply
+        from .unity import plan, apply, recover
+        if a.action=='recover':return recover(a.transaction,a.editor_path,a.expected_plan,a.timeout)
         return plan(a.project,a.spec,a.out) if a.action == "plan" else apply(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
     if a.command=='batch':
         from .batch import plan,apply,recover
@@ -443,6 +467,8 @@ def main(argv=None):
             base["actualChanges"] = [dict(operation='adoption.apply',transaction=data['transaction'],counts=data.get('counts',{}))]
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
+        if a.command=='unity' and a.action=='recover':
+            base['actualChanges']=[dict(operation='assets.retire.recover',transaction=data['transaction'],restoredFiles=data.get('restoredFiles'),deletedPaths=data.get('deletedPaths'))]
         if a.command in ('batch','production') and a.action in ('apply','recover'):
             base['actualChanges']=data.get('changes',[dict(operation=a.command+'.recover',restored=data.get('restored'))])
         if a.command=='workspace' and a.action=='apply':
@@ -459,6 +485,14 @@ def main(argv=None):
             base['verification']['player']='launched_and_exited' if not data.get('stoppedByBudget') else 'launched_and_stopped_by_budget'
         if a.command=='payload' and a.action=='apply':
             base['actualChanges']=[dict(operation='payload.materialize',targetRoot=data['targetRoot'],files=data['files'],overrides=len(data['overrides']))]
+        if getattr(a,'summary',False):
+            base['data']=_p0_summary(data)
+            if isinstance(base['verification']['native'],dict):
+                native=base['verification']['native']
+                base['verification']['native']={k:native[k] for k in ('status','operation','mode','planSha256','sourceSha256') if k in native}
+                base['verification']['native']['detailReport']=result_path
+            if a.command=='unity' and a.action in ('apply','recover'):
+                base['actualChanges']=[dict(operation='unity.'+a.action,transaction=data.get('transaction'),changeRecords=len(data.get('changes',[])),restoredFiles=data.get('restoredFiles'),detailReport=result_path)]
         print(json.dumps(base, ensure_ascii=False, allow_nan=False))
         return {'blocked':3,'partial':1,'failed':2,'not_run':3}.get(status,0)
     except (BeaverError, OSError, ValueError, TypeError, KeyError, ImportError, OverflowError) as error:

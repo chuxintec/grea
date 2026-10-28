@@ -1,11 +1,10 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261028+fix3",
+  "candidateVersion": "0.5.1.dev20261028+fix4",
   "status": "local-candidate-verified",
-  "implementationSha256": "978da3ca18b348b5bd2c5534f8c1b4570d2d6bfa8fb066f5a007507c59becf67",
   "syntheticChecks": {
-    "passed": 68,
-    "scope": "affected CLI, reference scanner, native plans, structure, filtering, readback and folder transactions"
+    "passed": 128,
+    "scope": "affected CLI/reference scanner/native plans/structure/filter/readback/folder/retirement plus shared adoption/batch/production/UI/wiring regression checks"
   },
   "native": {
     "editorVersion": "6000.6.2f1",
@@ -50,25 +49,23 @@
     "formalReleaseModified": false,
     "globalInstall": false,
     "gameProjectWrites": false,
-    "productionAdoption": "preliminary consumer native-readback verified; final fix3 gate pending",
-    "resourceIsolationExecution": "blocked-plan-only",
+    "productionAdoption": "consumer fix1 readback verified; later candidate production adoption pending",
+    "resourceIsolationExecution": "build filter stays blocked; separately reviewed native assets.retire transaction verified on private fixture",
     "visualParity": "not-established",
     "physicalInput": "not-run",
     "gameplay": "not-run"
   },
   "nativeEvidenceReuse": {
     "originalCandidate": "0.5.1.dev20261028",
-    "reason": "Directory transaction and build collector components unchanged; final readback companion is separately rerun from the installed fix3 wheel",
+    "reason": "Earlier folder-move evidence remains a historical checkpoint; unity transaction and companion changed for retirement and have new targeted regression/native evidence. Readback and build collector components retain their separately identified earlier proofs.",
     "unchangedComponentSha256": {
-      "unity.py": "fece7b1e788bf922cc09b8b8fd30168505165a9f1e80f214b21b241d2aa703d6",
-      "targets/BeaverNative.cs": "01e19938250bb318a584b50c2784a7449613bec0f850801a99abbaa2db60a458",
       "targets/BeaverBuildFilter.cs": "b8dde56aa4fbd6ad91f0ca3ebf547b1453aba18ce5eba13c636ad62a124fd905"
     }
   },
   "installedFinalChecks": {
     "contractOnlySyntheticPositive": "declaration_only; native not_run",
     "actualNativeFixtureGeneratorConsumer": "blocked; no batchSpec",
-    "buildIsolation": "blocked-plan-only",
+    "buildIsolation": "classification remains blocked; exact native retirement is a separate reviewed operation",
     "sourceSetAndMetaStaleness": "tested",
     "proposedCaseAndParentCollisions": "tested"
   },
@@ -97,5 +94,67 @@
     "realGeneratedReportAssets": 65661,
     "overDefaultReportCliPlanning": "verified on synthetic real-shaped metadata",
     "overDedicatedBudget": "rejected"
+  },
+  "nativeRetirement": {
+    "testedIsolatedCandidate": "0.5.1.dev20261028+fix4",
+    "selectedFiles": 2,
+    "beforeImageFiles": 4,
+    "nativeDeletionIndependentReopen": true,
+    "recoveryIndependentReopen": true,
+    "sourceFileAndMetaBytesRestored": true,
+    "fullSourceRowsRestored": 248,
+    "selectedGuidLocalIdsEqual": true,
+    "protectedBytesGuidLocalIdsEqual": true,
+    "referencedAssetRefusedBeforeDeletion": true,
+    "helperCleaned": true,
+    "dynamicResourcesUse": "not-proved-absent; explicit key/path/GUID retirement declaration required",
+    "failedTrialsRetained": [
+      "native companion compilation before deletion",
+      "default GUID query returned recently-deleted cache; private fixture manually restored without changing checkpoint"
+    ],
+    "existenceGuidQuery": "OnlyExistingAssets",
+    "manualSameBytesMetadataRecoveryRefused": true,
+    "finalInstalledPackageExecuted": true,
+    "negativeDependencyProof": "same native companion bytes; separately installed retire2 negative, zero deletion and full source unchanged"
+  },
+  "compactTransport": {
+    "optionalFlag": "--summary",
+    "commands": [
+      "structure inspect/plan",
+      "native readback",
+      "build-filter collect/plan",
+      "unity plan/apply/recover"
+    ],
+    "fullReportPreserved": true,
+    "defaultOutputUnchanged": true,
+    "largeSyntheticJournalBytes": "over 4 MiB",
+    "compactEnvelopeBytes": "under 16 KiB",
+    "installedStructureEnvelopeBytes": 1123,
+    "installedFullStructureReportBytes": 125655,
+    "transportAdapterAdoption": "pending",
+    "installedRetirementApplyEnvelopeBytes": 1753,
+    "installedRetirementRecoverEnvelopeBytes": 1702
+  },
+  "existingUiCoverage": {
+    "missingImageExpectation": "actual native EXPECTATION_MISMATCH on neutral prefab",
+    "sourceUnchanged": true,
+    "runtimeObserved": false,
+    "spriteNameIsExactIdentityProof": false,
+    "gameEditorOrNewCaptureTool": false,
+    "genericExtraction": "pending consumer representative-page validation"
+  },
+  "upstreamFix3Adapter": {
+    "incrementalChecks": 7,
+    "actualInstalledLargeReportReader": true,
+    "editorExecutedByAdapter": false,
+    "globalBindingChanged": false
+  },
+  "implementationSha256": "d1c2dac8ee01d25e83b966b95f2e448948b64397bf131b84621cbc225a40c6fc",
+  "structureConsumerRegression": {
+    "substringAssetsLengthNotLookup": true,
+    "ordinaryRootLookupAndOpaqueDynamicRootStillBlocked": true,
+    "sameResourcesKeyAndUniqueCandidate": "declaration allowed; dynamic coverage retained",
+    "changedResourcesKeyAndDuplicateCandidate": "blocked",
+    "projectConformance": "not-established"
   }
 }

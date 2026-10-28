@@ -2,6 +2,9 @@ import contextlib
 import io
 import json
 import unittest
+import tempfile
+import hashlib
+from pathlib import Path
 from unittest.mock import patch
 
 from beaver.cli import main
@@ -85,6 +88,33 @@ class NativeChangesContractTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(result['actualChanges'], [dict(operation='production.recover', restored=4)])
         self.assertNotIn('changes', result['data'])
+
+
+class UnityCompactTransportTests(unittest.TestCase):
+    def test_full_retirement_journal_survives_compact_change_and_native_envelope(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            journal=Path(tmp)/'journal.json'
+            native=dict(status='verified',operation='assets.retire',mode='verify',planSha256='1'*64,
+                        retiredAssets=[{'path':'Assets/Game/Resources/Legacy.prefab','localIds':['a'*200]*30000}])
+            changes=[dict(path='Assets/Game/Resources/Legacy%d.prefab'%i,before={'sha256':'2'*64},after=None) for i in range(5000)]
+            full=dict(status='complete',nativeReadback=native,changes=changes)
+            raw=json.dumps(full).encode();journal.write_bytes(raw)
+            self.assertGreater(len(raw),4*1024*1024)
+            data=dict(status='verified',report=str(journal),transaction=tmp,changes=changes,nativeReadback=native)
+            args=['unity','apply','--plan','/plan','--expected-plan','1'*64,'--out','/out','--editor-path','/editor']
+            def invoke(flags):
+                stream=io.StringIO()
+                with patch('beaver.cli.dispatch',return_value=data),contextlib.redirect_stdout(stream):
+                    self.assertEqual(main(args+flags),0)
+                return stream.getvalue()
+            compact=invoke(['--summary']);result=json.loads(compact)
+            self.assertLess(len(compact.encode()),16*1024)
+            self.assertEqual(result['data']['changesCount'],5000)
+            self.assertEqual(result['actualChanges'][0]['changeRecords'],5000)
+            self.assertEqual(result['verification']['native']['status'],'verified')
+            self.assertEqual(result['artifacts'][0]['sha256'],hashlib.sha256(raw).hexdigest())
+            self.assertEqual(journal.read_bytes(),raw)
+            self.assertGreater(len(invoke([]).encode()),4*1024*1024)
 
 
 if __name__ == '__main__':

@@ -53,7 +53,7 @@ Assets appearing in the native dependency snapshot are `runtime-referenced`; the
 
 Each asset row contains its normalized `path`, source and `.meta` hashes, GUID/localIDs/types, source classification, exact dependency roots and objects, and a `reason`. `backup.copySourceTo` / `copyMetaTo` and `isolation.moveSourceTo` / `moveMetaTo` are exact project-relative destinations outside `Assets/`; the backup identity hashes and source GUID/local IDs are included. `rollback` names the exact quarantine source and `.meta` paths to restore and the original destinations. Paths preserve the original relative layout; GUID folders prevent backup collisions across assets.
 
-The current output always has `mode: "plan-only"` and an `execution.status: "blocked"` result. Incomplete native dependency coverage uses `BUILD_FILTER_DEPENDENCY_COVERAGE_INCOMPLETE`; otherwise isolation uses `BUILD_FILTER_NATIVE_ISOLATION_UNSUPPORTED`. The existing resource/transaction APIs do not provide a safe native build-source quarantine operation that checks preconditions, moves both asset and `.meta` through `AssetDatabase`, verifies GUID/localIDs and all dependency changes, and restores them on failure. The plan is therefore review evidence, not an executable transaction. Never apply its moves with filesystem operations or delete an asset based solely on the plan.
+The output remains `mode: "plan-only"` and `execution.status: "blocked"`. Incomplete coverage uses `BUILD_FILTER_DEPENDENCY_COVERAGE_INCOMPLETE`; otherwise `BUILD_FILTER_RETIREMENT_SCOPE_REQUIRED` requires a separately reviewed `unity plan` with operation `assets.retire`. That existing transaction now supports verified outside-Assets before-images, explicit protected roots and per-key retirement declarations, native dependency refusal, saved/reopened deletion checkpoints and guarded recovery. Classification alone grants no retirement authority; never execute the descriptive isolation paths with filesystem moves. See [retirement](RETIREMENT.md).
 
 ## CLI contract
 
@@ -71,3 +71,5 @@ The runner request fields are `schemaVersion`, `platform`, `renderPipeline`, `as
 ## Fixture coverage
 
 `tests/test_build_filter.py` uses synthetic Unity-style metadata only. It covers a build dependency, hash-matched source evidence, an unknown asset, a false/modified source claim, pipeline and identity mismatch, path traversal, and duplicate native dependencies. It contains no game material or real project identifiers.
+
+`implicit-build-included` distinguishes Unity Resources/StreamingAssets/preloaded inclusion from explicit scene/root references. It does not establish current business dynamic use. Counts expose implicitBuildIncluded separately; implicit assets remain retained until explicit scoped retirement is reviewed and native guards pass.
