@@ -229,6 +229,27 @@ class StructureAuditTests(unittest.TestCase):
         self.assertEqual(plan["status"], "blocked")
         self.assertIsNone(plan["batchSpec"])
 
+
+    def test_legacy_scene_does_not_deadlock_incremental_remediation(self):
+        scene='Assets/Legacy/Start.unity';item='Assets/Legacy/Item.prefab'
+        put(self.root,scene,b'scene');put(self.root,scene+'.meta','guid: '+'d'*32+'\n')
+        put(self.root,'ProjectSettings/EditorBuildSettings.asset','%YAML 1.1\nEditorBuildSettings:\n  m_Scenes:\n  - enabled: 1\n    path: '+scene+'\n    guid: '+'d'*32+'\n')
+        put(self.root,item,b'prefab');native=native_readback(self.root,item,'UnityEngine.GameObject',1)
+        audit=inspect(self.root,native)
+        plan=build_plan(audit,[{'source':item,'target':'Assets/Game/Content/Prefabs/Item.prefab'}])
+        self.assertEqual(plan['status'],'declaration_only')
+        self.assertEqual(plan['projectConformance'],'not-established')
+        self.assertTrue(any(x.get('path')==scene for x in plan['remainingStructureIssues']))
+        self.assertIsNotNone(plan['batchSpec'])
+
+    def test_legacy_scene_itself_can_be_planned_into_standard_location(self):
+        scene='Assets/Legacy/Start.unity';put(self.root,scene,b'scene')
+        native=native_readback(self.root,scene,'UnityEditor.SceneAsset',102900000,'d'*32)
+        put(self.root,'ProjectSettings/EditorBuildSettings.asset','%YAML 1.1\nEditorBuildSettings:\n  m_Scenes:\n  - enabled: 1\n    path: '+scene+'\n    guid: '+'d'*32+'\n')
+        plan=build_plan(inspect(self.root,native),[{'source':scene,'target':'Assets/Game/Scenes/Start.unity'}])
+        self.assertEqual(plan['status'],'declaration_only')
+        self.assertEqual(plan['remainingStructureIssues'],[])
+
     def test_symlink_is_reported_as_scan_blocker(self):
         target = put(self.root, "Outside/Hidden.asset", b"hidden")
         (self.root / "Assets" / "Linked.asset").symlink_to(target)

@@ -449,7 +449,7 @@ def build_plan(audit, mappings, native_snapshot=None):
     seen_sources, seen_targets, rows, plan_issues = set(), set(), [], []
     global_blockers = [{"code": issue["code"], "paths": issue.get("paths", [issue.get("path")]), "ruleId": issue.get("ruleId")}
                        for issue in audit.get("issues", [])
-                       if issue.get("severity") != "exception" and issue.get("code") in {"SYMLINK_SCAN_BLOCKED", "ROOT_CASE_COLLISION", "ROOT_CASE_MISMATCH", "PATH_CASE_COLLISION", "SOURCE_HASH_BUDGET_EXCEEDED", "STRUCTURE_SCAN_BUDGET_EXCEEDED", "BUILD_SCENE_NONSTANDARD_PATH"}]
+                       if issue.get("severity") != "exception" and issue.get("code") in {"SYMLINK_SCAN_BLOCKED", "ROOT_CASE_COLLISION", "ROOT_CASE_MISMATCH", "PATH_CASE_COLLISION", "SOURCE_HASH_BUDGET_EXCEEDED", "STRUCTURE_SCAN_BUDGET_EXCEEDED"}]
     for guid, paths in audit.get("duplicateGuids", {}).items():
         global_blockers.append({"code": "DUPLICATE_GUID", "guid": guid, "paths": paths})
     blockers = list(global_blockers)
@@ -574,6 +574,8 @@ def build_plan(audit, mappings, native_snapshot=None):
     status = "declaration_only" if complete else "blocked"
     return {"schema": PLAN_SCHEMA, "status": status,
             "batchReadiness": "not_evaluated",
+            "projectConformance": "not-established",
+            "remainingStructureIssues": [issue for issue in audit.get('issues',[]) if issue.get('code')=='BUILD_SCENE_NONSTANDARD_PATH' and issue.get('path') not in seen_sources],
             "projectRoot": audit["projectRoot"], "mappings": rows, "blockers": blockers,
             "proposedSteps": steps, "issues": plan_issues,
             "batchSpec": {"schemaVersion": 2, "operation": "batch", "steps": steps} if complete else None,

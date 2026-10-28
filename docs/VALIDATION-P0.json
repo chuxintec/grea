@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261028",
+  "candidateVersion": "0.5.1.dev20261028+fix1",
   "status": "local-candidate-verified",
-  "implementationSha256": "f9bc89c74cda41b173ed4d20fc4c3f9425950836f580a8b3f491be87fd8abfd3",
+  "implementationSha256": "d683fbc09e168b423dbf62f11a90269b3238f3c00b3de14229fae2bc29fafc56",
   "syntheticChecks": {
-    "passed": 55,
+    "passed": 57,
     "scope": "affected CLI, reference scanner, native plans, structure, filtering, readback and folder transactions"
   },
   "native": {
@@ -55,5 +55,17 @@
     "visualParity": "not-established",
     "physicalInput": "not-run",
     "gameplay": "not-run"
+  },
+  "nativeEvidenceReuse": {
+    "originalCandidate": "0.5.1.dev20261028",
+    "reason": "fix1 only changes structure-plan blocking and version identity; all executed native runner/CLI/companion bytes unchanged",
+    "unchangedComponentSha256": {
+      "cli.py": "26566f4467a51559fe81184d3a03ed3cabfd147124a5eeb731f39b74170e37cf",
+      "unity.py": "fece7b1e788bf922cc09b8b8fd30168505165a9f1e80f214b21b241d2aa703d6",
+      "native_readback.py": "bf429fff62c3f334014a4c9663b136495ce9b14c0934ec7fcf90ea94461b3188",
+      "targets/BeaverNative.cs": "01e19938250bb318a584b50c2784a7449613bec0f850801a99abbaa2db60a458",
+      "targets/BeaverReadback.cs": "4525f39848d557a70f5d4d01330a30c49d99f428a5981163c6d11cc6f9a7d675",
+      "targets/BeaverBuildFilter.cs": "b8dde56aa4fbd6ad91f0ca3ebf547b1453aba18ce5eba13c636ad62a124fd905"
+    }
   }
 }
