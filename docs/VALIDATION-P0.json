@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "candidateVersion": "0.5.1.dev20261028+fix5",
-  "status": "local-candidate-in-final-verification",
+  "status": "local-candidate-verified",
   "syntheticChecks": {
-    "passed": null,
-    "scope": "committed fix5 export pending full affected regression; previous fix4 has 128 checks"
+    "passed": 149,
+    "scope": "fixed committed export: affected P0, consumer declaration/transport, plus shared transaction/UI regressions"
   },
   "native": {
     "editorVersion": "6000.6.2f1",
@@ -94,7 +94,8 @@
     "realGeneratedReportAssets": 65661,
     "overDefaultReportCliPlanning": "verified on synthetic real-shaped metadata",
     "overDedicatedBudget": "rejected",
-    "nativeCollectorReports": "same dedicated 128 MiB/8M nodes; ordinary spec limits unchanged"
+    "nativeCollectorReports": "same dedicated 128 MiB/8M nodes; ordinary spec limits unchanged",
+    "realGeneratedReportRead": "fixed fix5 installed reader verified again"
   },
   "nativeRetirement": {
     "testedIsolatedCandidate": "0.5.1.dev20261028+fix4",
@@ -159,15 +160,19 @@
     "projectConformance": "not-established"
   },
   "nativePartialCatalog": {
-    "testedTrial": "0.5.1.dev20261028+filtertrial1",
+    "testedCandidate": "0.5.1.dev20261028+fix5",
     "catalogAssets": 91,
     "validDependencies": 31,
     "zeroObjectUnknownAssets": 1,
     "coverageComplete": false,
     "sourceUnchanged": true,
     "helperCleaned": true,
+    "cliStatus": "partial",
+    "expectedCliExitCode": 1,
+    "compactEnvelopeBytes": 1163,
     "oldNativeFailureReproduced": true,
-    "finalCandidateTransportVerification": "pending; earlier trial transport status omission is separately retained"
+    "trialTransportOmissionCorrectedAndRetained": true,
+    "gameBuildOrRuntimeAcceptance": "not-established"
   },
   "structureNamespaceAndComparison": {
     "ResourcesCaseInsensitive": true,
@@ -181,5 +186,7 @@
   "notInThisCandidate": [
     "source-evidence-only retirement execution",
     "scene-derived BuildSettings transaction changes"
-  ]
+  ],
+  "implementationSha256": "bd4c0bbd6c9fe3d10b36aff103a8020cc65adf54ff22dc339d43c20977abc743",
+  "installedComparisonCliContract": "passed from independent installed fixed wheel, no PYTHONPATH"
 }
