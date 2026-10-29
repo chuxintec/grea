@@ -39,6 +39,8 @@ public static class BeaverNative {
         public Move[] moves;
         public FolderMoveManifest[] folderMoveManifest;
         public RetireItem[] retireManifest;
+        public RetireFolder[] folderRetireManifest;
+        public string[] sourceDirectoryPaths;
         public ProtectedItem[] protectedManifest;
         public ResourceRetirement[] resources;
         public string assetPath;
@@ -51,12 +53,16 @@ public static class BeaverNative {
     [Serializable] public class FolderMoveManifest { public string source,target; public long bytes; public MoveEntry[] entries; }
     [Serializable] public class MoveEntry { public string source,target,kind,sha256; public long bytes; }
     [Serializable] public class RetireItem { public string path,role,reason,sourceEvidence,sha256,metaPath,metaSha256,guid,identityPolicy; public long bytes,metaBytes; public bool hasSourceIdentityEvidence; public SourceIdentityEvidence sourceIdentityEvidence; }
+    [Serializable] public class RetireFolder { public string path,role,reason,sourceEvidence,metaPath,metaSha256,guid,directorySetSha256; public long metaBytes; public CallerReview callerReview; }
+    [Serializable] public class CallerReview { public string reference,sourceSha256,directorySetSha256; public DynamicPathReview dynamicPathReview; }
+    [Serializable] public class DynamicPathReview { public string status,reason,evidence; }
     [Serializable] public class SourceIdentityEvidence { public string snapshotPath,snapshotSha256,assetPath,targetRecordSha256; public CollectorAssetRecord targetRecord; public CollectorInputState[] targetInputs; }
     [Serializable] public class CollectorAssetRecord { public string path,guid,status,identityStatus,error; public int objectCount; public long[] localIds; public string[] types; }
     [Serializable] public class CollectorInputState { public string path,sha256; public long bytes; }
     [Serializable] public class ProtectedItem { public string path,sha256,metaPath,metaSha256,guid; public long bytes,metaBytes; }
     [Serializable] public class ResourceRetirement { public string key,path,guid,reason,sourceEvidence; }
     [Serializable] public class RetireIdentity { public string path,guid,identityPolicy,identityStatus,sourceEvidenceSnapshotSha256,sourceEvidenceTargetRecordSha256; public int nativeObjectCount; public string[] localIds; }
+    [Serializable] public class RetiredFolderIdentity { public string path,guid,identityStatus; public long localId; }
     [Serializable] public class ProtectedIdentity { public string path,guid,sha256,metaSha256; public string[] localIds; }
     [Serializable] public class DependencyClosure { public string root; public string[] paths; }
     [Serializable] public class Row {
@@ -83,12 +89,17 @@ public static class BeaverNative {
         public List<MoveRow> moveIdentities=new List<MoveRow>();
         public string deleteInProgress;
         public bool resourcesDynamicUseNotProvable;
+        public bool folderDynamicPathUseNotProvable;
         public List<string> selectedPaths=new List<string>();
         public List<string> deletedPaths=new List<string>();
         public List<string> recoveredPaths=new List<string>();
+        public string folderDeleteInProgress;
+        public List<string> deletedFolders=new List<string>();
+        public List<string> recoveredFolders=new List<string>();
         public List<string> dependencyPaths=new List<string>();
         public List<DependencyClosure> dependencyClosures=new List<DependencyClosure>();
         public List<RetireIdentity> retiredAssets=new List<RetireIdentity>();
+        public List<RetiredFolderIdentity> retiredFolders=new List<RetiredFolderIdentity>();
         public List<ProtectedIdentity> protectedRoots=new List<ProtectedIdentity>();
         public List<ResourceRetirement> resources=new List<ResourceRetirement>();
         public int playFrames,playErrors;
@@ -484,6 +495,50 @@ public static class BeaverNative {
            new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid)
             throw new Exception("Retirement source/hash/static meta GUID precondition failed: "+item.path);
     }
+    static string[] CurrentAssetDirectories() {
+        var root=Path.Combine(job.targetRoot,"Assets");
+        return new[]{root}.Concat(Directory.GetDirectories(root,"*",SearchOption.AllDirectories))
+            .Select(x=>x.Substring(Path.GetFullPath(job.targetRoot).Length+1).Replace('\\','/'))
+            .Where(x=>x!="Assets/BeaverTools"&&!x.StartsWith("Assets/BeaverTools/",StringComparison.Ordinal))
+            .OrderBy(x=>x,StringComparer.Ordinal).ToArray();
+    }
+    static void ValidateDirectorySet(IEnumerable<string> expected) {
+        var actual=CurrentAssetDirectories();var wanted=(expected??new string[0]).OrderBy(x=>x,StringComparer.Ordinal).ToArray();
+        if(!actual.SequenceEqual(wanted))throw new Exception("Assets directory-set guard differs from the planned state");
+    }
+    static RetiredFolderIdentity FolderIdentity(RetireFolder item) {
+        if(item==null||String.IsNullOrEmpty(item.path)||String.IsNullOrEmpty(item.guid)||String.IsNullOrEmpty(item.metaPath))throw new Exception("Explicit empty-folder identity required");
+        var directory=Full(item.path);var meta=Full(item.metaPath);
+        if(!AssetDatabase.IsValidFolder(item.path)||!Directory.Exists(directory)||Directory.GetFileSystemEntries(directory).Length!=0||
+           !File.Exists(meta)||new FileInfo(meta).Length!=item.metaBytes||HashFile(meta)!=item.metaSha256||MetaGuid(item.metaPath)!=item.guid)
+            throw new Exception("Empty folder/meta precondition failed: "+item.path);
+        var asset=AssetDatabase.LoadMainAssetAtPath(item.path);
+        if(asset==null||!(asset is DefaultAsset))throw new Exception("Folder main asset is not a native DefaultAsset: "+item.path);
+        if(AssetDatabase.AssetPathToGUID(item.path,AssetPathToGUIDOptions.OnlyExistingAssets)!=item.guid||AssetDatabase.GUIDToAssetPath(item.guid)!=item.path)
+            throw new Exception("Folder AssetDatabase GUID/path round trip differs from its metadata: "+item.path);
+        string guid;long localId;
+        if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(asset,out guid,out localId)||guid!=item.guid||localId==0)
+            throw new Exception("Native DefaultAsset GUID/localID unavailable or differs: "+item.path);
+        return new RetiredFolderIdentity{path=item.path,guid=guid,localId=localId,identityStatus="verified"};
+    }
+    static void ValidateFolderReview(RetireFolder item) {
+        var review=item.callerReview;
+        if(review==null||String.IsNullOrWhiteSpace(review.reference)||review.sourceSha256!=job.sourceSha256||
+           review.directorySetSha256!=item.directorySetSha256||String.IsNullOrEmpty(item.directorySetSha256)||
+           review.dynamicPathReview==null||review.dynamicPathReview.status!="reviewed-no-use"||
+           String.IsNullOrWhiteSpace(review.dynamicPathReview.reason)||String.IsNullOrWhiteSpace(review.dynamicPathReview.evidence))
+            throw new Exception("Source-bound caller/dynamic-path review is incomplete: "+item.path);
+    }
+    static void ValidateNoFolderReferences(IEnumerable<RetireFolder> folders) {
+        var selected=new HashSet<string>((folders??new RetireFolder[0]).Select(x=>x.path),StringComparer.Ordinal);
+        if(selected.Count==0)return;
+        foreach(var source in AssetDatabase.GetAllAssetPaths().Where(x=>(x.StartsWith("Assets/",StringComparison.Ordinal)||x.StartsWith("Packages/",StringComparison.Ordinal))&&!selected.Contains(x)).OrderBy(x=>x,StringComparer.Ordinal)) {
+            string[] dependencies;
+            try { dependencies=AssetDatabase.GetDependencies(source,false); }
+            catch(Exception error) { throw new Exception("Cannot establish native static dependency state for "+source,error); }
+            if(dependencies.Any(selected.Contains))throw new Exception("Imported source has a static dependency on a selected empty folder: "+source);
+        }
+    }
     static string ExistingPathGuid(string path) {
         var guid=AssetDatabase.AssetPathToGUID(path,AssetPathToGUIDOptions.OnlyExistingAssets);
         if(String.IsNullOrEmpty(guid))throw new Exception("No existing Unity asset GUID: "+path);
@@ -591,15 +646,41 @@ public static class BeaverNative {
                 throw new Exception("Native-object checkpoint requires verified persistent IDs: "+item.path);
         } else throw new Exception("Unknown retirement identity policy: "+item.path);
     }
+    static void ValidateFolderCheckpoint(Report prior,bool requireComplete) {
+        var folders=job.folderRetireManifest??new RetireFolder[0];var paths=folders.Select(x=>x.path).ToArray();
+        if(folders.Length==0)return;
+        if(prior.retiredFolders==null||!prior.retiredFolders.Select(x=>x.path).SequenceEqual(paths)||
+           prior.deletedFolders==null||prior.deletedFolders.Distinct().Count()!=prior.deletedFolders.Count||prior.deletedFolders.Any(x=>!paths.Contains(x))||
+           !String.IsNullOrEmpty(prior.folderDeleteInProgress)||!prior.folderDynamicPathUseNotProvable)throw new Exception("Empty-folder identity/deletion checkpoint is incomplete");
+        for(int i=0;i<folders.Length;i++) {
+            var item=folders[i];var row=prior.retiredFolders[i];ValidateFolderReview(item);
+            if(row==null||row.path!=item.path||row.guid!=item.guid||row.identityStatus!="verified"||row.localId==0)throw new Exception("Empty-folder GUID/localID witness differs: "+item.path);
+        }
+        if(requireComplete&&(prior.status!="verified"||!prior.deletedFolders.SequenceEqual(paths)))throw new Exception("Complete empty-folder deletion checkpoint required");
+        var expected=(job.sourceDirectoryPaths??new string[0]).Where(x=>!prior.deletedFolders.Contains(x)).ToArray();ValidateDirectorySet(expected);
+        foreach(var item in folders) {
+            var deleted=prior.deletedFolders.Contains(item.path);
+            if(deleted&&(Directory.Exists(Full(item.path))||File.Exists(Full(item.metaPath))||AssetDatabase.IsValidFolder(item.path)))throw new Exception("Retired folder is present after deletion: "+item.path);
+            if(!deleted&&(!AssetDatabase.IsValidFolder(item.path)||Directory.GetFileSystemEntries(Full(item.path)).Length!=0))throw new Exception("Undeleted folder no longer matches empty precondition: "+item.path);
+        }
+    }
     static void ValidateRetirementInputs() {
         var items=job.retireManifest??new RetireItem[0];var selected=new HashSet<string>(items.Select(x=>x.path),StringComparer.Ordinal);
-        if(items.Length==0||selected.Count!=items.Length)throw new Exception("Explicit unique retirement file manifest required");
+        var folders=job.folderRetireManifest??new RetireFolder[0];
+        if(items.Length+folders.Length==0||selected.Count!=items.Length||folders.Select(x=>x.path).Distinct().Count()!=folders.Length||selected.Overlaps(folders.Select(x=>x.path)))throw new Exception("Explicit unique retirement file/folder manifest required");
+        if(folders.Length>0){ValidateDirectorySet(job.sourceDirectoryPaths);ValidateNoFolderReferences(folders);}
         foreach(var item in items) {
             ValidateRetirementBytes(item);
             var backup=BackupFull(item.path);var backupMeta=BackupFull(item.metaPath);
             if(!File.Exists(backup)||new FileInfo(backup).Length!=item.bytes||HashFile(backup)!=item.sha256||
                !File.Exists(backupMeta)||new FileInfo(backupMeta).Length!=item.metaBytes||HashFile(backupMeta)!=item.metaSha256)
                 throw new Exception("Verified before-image is incomplete: "+item.path);
+        }
+        foreach(var folder in folders) {
+            ValidateFolderReview(folder);FolderIdentity(folder);
+            var backup=BackupFull(folder.metaPath);
+            if(!File.Exists(backup)||new FileInfo(backup).Length!=folder.metaBytes||HashFile(backup)!=folder.metaSha256)
+                throw new Exception("Verified folder metadata before-image is incomplete: "+folder.path);
         }
         var protectedNow=ProtectedSnapshots();
         foreach(var root in job.protectedManifest) {
@@ -614,6 +695,8 @@ public static class BeaverNative {
         report.dependencyPaths=report.dependencyPaths.OrderBy(x=>x,StringComparer.Ordinal).ToList();
         report.selectedPaths.AddRange(items.Select(x=>x.path));
         report.retiredAssets.AddRange(items.Select(RetirementIdentity));
+        report.retiredFolders.AddRange(folders.Select(FolderIdentity));
+        report.folderDynamicPathUseNotProvable=folders.Length>0;
         report.protectedRoots.AddRange(protectedNow);
         report.resources.AddRange(job.resources??new ResourceRetirement[0]);
         // Resources.Load and reflection-based keys cannot be proven unused by
@@ -625,6 +708,12 @@ public static class BeaverNative {
     static void Retire(bool write) {
         if(write) {
             ValidateRetirementInputs();
+            foreach(var item in job.folderRetireManifest??new RetireFolder[0]) {
+                report.folderDeleteInProgress=item.path;Save();
+                if(!AssetDatabase.DeleteAsset(item.path))throw new Exception("AssetDatabase.DeleteAsset returned false for empty folder: "+item.path);
+                if(Directory.Exists(Full(item.path))||File.Exists(Full(item.metaPath))||AssetDatabase.IsValidFolder(item.path))throw new Exception("DeleteAsset did not remove the exact empty folder and metadata: "+item.path);
+                report.deletedFolders.Add(item.path);report.folderDeleteInProgress="";Save();
+            }
             foreach(var item in job.retireManifest) {
                 report.deleteInProgress=item.path;Save();
                 if(!AssetDatabase.DeleteAsset(item.path))throw new Exception("AssetDatabase.DeleteAsset returned false: "+item.path);
@@ -635,16 +724,20 @@ public static class BeaverNative {
             AssetDatabase.SaveAssets();AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             foreach(var item in job.retireManifest)
                 if(File.Exists(Full(item.path))||File.Exists(Full(item.metaPath))||!String.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets)))throw new Exception("Retired asset reappeared: "+item.path);
+            if((job.folderRetireManifest??new RetireFolder[0]).Length>0)ValidateDirectorySet((job.sourceDirectoryPaths??new string[0]).Except((job.folderRetireManifest??new RetireFolder[0]).Select(x=>x.path)));
             var protectedAfter=ProtectedSnapshots();
             if(!SameProtected(report.protectedRoots,protectedAfter))throw new Exception("Protected root identity changed during retirement");
         } else {
             var prior=PriorRetirement("native-apply.json");ValidateRetirementCheckpoint(prior,true);
+            if((job.folderRetireManifest??new RetireFolder[0]).Length>0)ValidateFolderCheckpoint(prior,true);
             foreach(var item in job.retireManifest)
                 if(File.Exists(Full(item.path))||File.Exists(Full(item.metaPath))||!String.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(item.path, AssetPathToGUIDOptions.OnlyExistingAssets)))throw new Exception("Retired asset is present after reopen: "+item.path);
             var protectedNow=ProtectedSnapshots();
             if(!SameProtected(prior.protectedRoots,protectedNow))throw new Exception("Protected roots differ after reopen");
             report.selectedPaths.AddRange(prior.selectedPaths);report.deletedPaths.AddRange(prior.deletedPaths);
             report.retiredAssets.AddRange(prior.retiredAssets);report.protectedRoots.AddRange(protectedNow);
+            report.retiredFolders.AddRange(prior.retiredFolders);report.deletedFolders.AddRange(prior.deletedFolders);
+            report.folderDynamicPathUseNotProvable=prior.folderDynamicPathUseNotProvable;
             report.dependencyPaths.AddRange(prior.dependencyPaths);
             report.dependencyClosures.AddRange(prior.dependencyClosures??new List<DependencyClosure>());
             report.resources.AddRange(prior.resources??new List<ResourceRetirement>());report.resourcesDynamicUseNotProvable=prior.resourcesDynamicUseNotProvable;
@@ -654,7 +747,12 @@ public static class BeaverNative {
     static void RecoverRetiredAssets(bool verification) {
         var prior=PriorRetirement(verification?"native-recover.json":"native-apply.json");
         ValidateRetirementCheckpoint(prior,false);
-        if(prior.deletedPaths.Count==0)throw new Exception("No witnessed deletion checkpoint; recovery is blocked");
+        if(prior.deletedPaths.Count==0&&(prior.deletedFolders==null||prior.deletedFolders.Count==0))throw new Exception("No witnessed deletion checkpoint; recovery is blocked");
+        var folders=job.folderRetireManifest??new RetireFolder[0];var folderPaths=folders.Select(x=>x.path).ToArray();
+        if(prior.retiredFolders==null||!prior.retiredFolders.Select(x=>x.path).SequenceEqual(folderPaths)||prior.deletedFolders==null||
+           prior.deletedFolders.Distinct().Count()!=prior.deletedFolders.Count||prior.deletedFolders.Any(x=>!folderPaths.Contains(x))||!String.IsNullOrEmpty(prior.folderDeleteInProgress))
+            throw new Exception("Empty-folder deletion checkpoint is absent or uncertain");
+        if(prior.folderDynamicPathUseNotProvable!=(folders.Length>0))throw new Exception("Dynamic folder path-use boundary is missing from the deletion checkpoint");
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         var expected=prior.retiredAssets.ToDictionary(x=>x.path,StringComparer.Ordinal);
         foreach(var item in job.retireManifest) {
@@ -666,14 +764,25 @@ public static class BeaverNative {
             var witness=expected[item.path];var difference=RetirementIdentityDifference(identity,witness);
             if(difference!="")throw new Exception("Restored identity differs from deletion checkpoint at "+difference+": "+item.path);
         }
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        foreach(var item in folders) {
+            if(!prior.deletedFolders.Contains(item.path))continue;
+            var identity=FolderIdentity(item);var witness=prior.retiredFolders.First(x=>x.path==item.path);
+            if(identity.guid!=witness.guid||identity.localId!=witness.localId)throw new Exception("Restored empty-folder GUID/localID differs from deletion witness: "+item.path);
+            report.retiredFolders.Add(identity);report.recoveredFolders.Add(item.path);Save();
+        }
+        if(folders.Length>0)ValidateDirectorySet(job.sourceDirectoryPaths);
         var protectedNow=ProtectedSnapshots();
         if(!SameProtected(prior.protectedRoots,protectedNow))throw new Exception("Protected roots differ during recovery");
         report.selectedPaths.AddRange(prior.selectedPaths);report.deletedPaths.AddRange(prior.deletedPaths);
+        if(report.retiredFolders.Count==0)report.retiredFolders.AddRange(prior.retiredFolders);
+        report.deletedFolders.AddRange(prior.deletedFolders);report.recoveredFolders=prior.deletedFolders.ToList();
         report.recoveredPaths.AddRange(prior.deletedPaths);
         report.dependencyPaths.AddRange(prior.dependencyPaths);
         report.dependencyClosures.AddRange(prior.dependencyClosures??new List<DependencyClosure>());
         report.protectedRoots.AddRange(protectedNow);report.resources.AddRange(prior.resources??new List<ResourceRetirement>());
         report.resourcesDynamicUseNotProvable=prior.resourcesDynamicUseNotProvable;
+        report.folderDynamicPathUseNotProvable=prior.folderDynamicPathUseNotProvable;
         AssetDatabase.SaveAssets();
     }
     public static void Run() {

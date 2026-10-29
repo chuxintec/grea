@@ -15,6 +15,7 @@ from .adoption import project_files, native_lock
 from .transaction_fs import lock
 from .context import inspect
 from .output_limits import BUILD_FILE_BYTES
+from .asset_names import validate_destination
 
 HELPER_ROOT = "Assets/BeaverTools"
 HELPER = HELPER_ROOT + "/Editor/BeaverNative.cs"
@@ -66,6 +67,42 @@ def resource_key(path):
         fail('ASSET_RETIRE_RESOURCE_PATH',path,'Nested Resources roots are ambiguous')
     relative=Path(*parts[roots[0]+1:])
     return relative.with_suffix('').as_posix()
+
+
+def source_directories(project):
+    """Return the exact Assets directory set, including empty/hidden folders."""
+    root=inside(project,'Assets')
+    if not root.is_dir() or root.is_symlink():
+        fail('ASSET_RETIRE_DIRECTORY_GUARD','Assets','Expected a real Assets directory')
+    paths=[]
+    for path in [root,*root.rglob('*')]:
+        if path.is_symlink():
+            fail('SYMLINK_PATH',str(path),'Assets directory guard contains a symbolic link')
+        if path.is_dir():paths.append(path.relative_to(project).as_posix())
+    return sorted(paths)
+
+
+def directory_guard(project):
+    paths=source_directories(project)
+    return dict(paths=paths,sha256=sha(encoded(paths)))
+
+
+def validate_empty_folder_source(project,files,path):
+    asset=inside(project,path)
+    meta_path=path+'.meta'
+    if path not in source_directories(project):
+        fail('ASSET_RETIRE_FOLDER_SOURCE',path,'Expected an existing Assets directory')
+    if asset.is_symlink() or not asset.is_dir():
+        fail('ASSET_RETIRE_FOLDER_SOURCE',path,'Expected an existing non-symlink directory')
+    try:children=list(asset.iterdir())
+    except OSError as error:fail('ASSET_RETIRE_FOLDER_SOURCE',path,'Cannot enumerate target directory: '+str(error))
+    if children:
+        fail('ASSET_RETIRE_FOLDER_NOT_EMPTY',path,'Only an exactly empty leaf folder may be retired')
+    if meta_path not in files:
+        fail('ASSET_RETIRE_FOLDER_META',meta_path,'Imported folder metadata is required')
+    guid=meta_guid(read(inside(project,meta_path)),meta_path)
+    return dict(path=path,metaPath=meta_path,metaSha256=files[meta_path]['sha256'],
+                metaBytes=files[meta_path]['bytes'],guid=guid)
 
 
 def source_only_evidence(project, spec_path, files, path, guid, declaration, cache):
@@ -248,6 +285,7 @@ def validate_spec(doc):
         for move in file_moves:
             if set(move)!={'source','target'}:
                 fail('ASSET_MOVE','spec','Expected source and target only')
+            validate_destination(move['target'])
             for key in ('source','target'):
                 asset_path(move[key],Path(move[key]).suffix)
                 if move[key].endswith('.meta'):
@@ -258,6 +296,7 @@ def validate_spec(doc):
         for move in directory_moves:
             if set(move)!={'source','target'}:
                 fail('ASSET_MOVE','spec','Expected source and target only for each directory move')
+            validate_destination(move['target'])
             for key in ('source','target'):asset_folder_path(move[key])
             if move['source']==move['target'] or move['source'] in sources or move['target'] in targets:
                 fail('ASSET_MOVE_AMBIGUOUS','spec','Duplicate move endpoints')
@@ -273,21 +312,41 @@ def validate_spec(doc):
         allowed |= {'retire','protectedRoots','resources'}
         items=doc.get('retire');roots=doc.get('protectedRoots');resources=doc.get('resources',[])
         if not isinstance(items,list) or not 1<=len(items)<=MOVE_MANIFEST_ENTRIES:
-            fail('ASSET_RETIRE_ITEMS','spec','Expected 1..10000 explicit file retirement declarations')
+            fail('ASSET_RETIRE_ITEMS','spec','Expected 1..10000 explicit file or empty-folder retirement declarations')
         if not isinstance(roots,list) or not roots or len(roots)>1000:
             fail('ASSET_RETIRE_PROTECTED_ROOTS','spec','At least one explicit scene/config/code protected root is required')
         if not isinstance(resources,list) or len(resources)>MOVE_MANIFEST_ENTRIES:
             fail('ASSET_RETIRE_RESOURCES','spec','Expected an explicit bounded Resources key declaration list')
         selected=set()
+        policies=set()
         for item in items:
             base_fields={'path','role','reason','sourceEvidence'}
-            allowed_item=base_fields|{'identityPolicy','sourceIdentityEvidence'}
+            allowed_item=base_fields|{'identityPolicy','sourceIdentityEvidence','callerReview'}
             if not isinstance(item,dict) or not base_fields<=set(item) or set(item)-allowed_item:
                 fail('ASSET_RETIRE_DECLARATION','spec','Each retirement requires path, role, reason and sourceEvidence')
-            unity_asset_file_path(item.get('path'))
             policy=item.get('identityPolicy','native-object')
-            if policy not in ('native-object','source-evidence-only'):
-                fail('ASSET_RETIRE_IDENTITY_POLICY',item['path'],'Expected native-object or explicit source-evidence-only identity policy')
+            if policy not in ('native-object','source-evidence-only','empty-folder'):
+                fail('ASSET_RETIRE_IDENTITY_POLICY',item['path'],'Expected native-object, source-evidence-only, or explicit empty-folder identity policy')
+            if policy=='empty-folder':
+                policies.add('empty-folder')
+                asset_folder_path(item.get('path'))
+                review=item.get('callerReview')
+                dynamic=review.get('dynamicPathReview') if isinstance(review,dict) else None
+                if 'identityPolicy' not in item or not isinstance(review,dict) or set(review)!={'reference','sourceSha256','directorySetSha256','dynamicPathReview'} or \
+                   not isinstance(review.get('reference'),str) or not review['reference'].strip() or len(review['reference'])>4096 or \
+                   not isinstance(review.get('sourceSha256'),str) or not SHA256_HEX.fullmatch(review['sourceSha256']) or \
+                   not isinstance(review.get('directorySetSha256'),str) or not SHA256_HEX.fullmatch(review['directorySetSha256']) or \
+                   not isinstance(dynamic,dict) or set(dynamic)!={'status','reason','evidence'} or dynamic.get('status')!='reviewed-no-use' or \
+                   not isinstance(dynamic.get('reason'),str) or not dynamic['reason'].strip() or len(dynamic['reason'])>4096 or \
+                   not isinstance(dynamic.get('evidence'),str) or not dynamic['evidence'].strip() or len(dynamic['evidence'])>4096:
+                    fail('ASSET_RETIRE_CALLER_REVIEW',item['path'],'Empty-folder retirement requires source-bound caller review and explicit dynamic-path review evidence')
+                if 'sourceIdentityEvidence' in item:
+                    fail('ASSET_RETIRE_SOURCE_EVIDENCE',item['path'],'Empty-folder identity does not use source-only asset evidence')
+            else:
+                policies.add('file')
+                unity_asset_file_path(item.get('path'))
+                if 'callerReview' in item:
+                    fail('ASSET_RETIRE_CALLER_REVIEW',item['path'],'Caller review applies only to empty-folder retirement')
             if policy=='source-evidence-only':
                 evidence=item.get('sourceIdentityEvidence')
                 if 'identityPolicy' not in item or not isinstance(evidence,dict) or set(evidence)!={'snapshotPath','snapshotSha256','assetPath'}:
@@ -304,6 +363,8 @@ def validate_spec(doc):
                 value=item.get(key)
                 if not isinstance(value,str) or not value.strip() or len(value)>4096:
                     fail('ASSET_RETIRE_DECLARATION',item['path'],'Explicit nonempty role, reason and source evidence are required')
+        if len(policies)>1:
+            fail('ASSET_RETIRE_MIXED','spec','File and empty-folder retirement require separate transactions')
         seen_roots=set()
         for path in roots:
             unity_asset_file_path(path)
@@ -412,13 +473,31 @@ def plan(project, spec, output):
                 if any(fold(existing)==fold(prefix) and existing!=prefix for existing in existing_dirs):
                     fail('ASSET_MOVE_CASE_COLLISION',prefix,'Destination parent casing differs from an existing Unity folder')
     elif doc['operation']=='assets.retire':
-        retire_manifest=[];protected_manifest=[];selected_paths=set()
+        retire_manifest=[];folder_manifest=[];protected_manifest=[];selected_paths=set();folder_paths=set()
+        source_directory_guard=directory_guard(project)
         for declaration in doc['retire']:
             path=declaration['path'];asset=inside(project,path);meta_path=path+'.meta'
+            policy=declaration.get('identityPolicy','native-object')
+            if policy=='empty-folder':
+                folder=validate_empty_folder_source(project,files,path)
+                review=declaration['callerReview']
+                if review['sourceSha256']!=sha(encoded(files)) or review['directorySetSha256']!=source_directory_guard['sha256']:
+                    fail('ASSET_RETIRE_CALLER_REVIEW',path,'Caller review must bind the exact current source and Assets directory-set hashes')
+                # Reject literal GUID/path references in any other imported source. Dynamic references remain explicitly unprovable.
+                guid_bytes=folder['guid'].encode('ascii');path_bytes=path.encode('utf-8')
+                for source_path in files:
+                    if source_path==meta_path:continue
+                    raw_source=read(inside(project,source_path),max_bytes=512*1024**2)
+                    if guid_bytes in raw_source.lower() or path_bytes in raw_source:
+                        fail('ASSET_RETIRE_FOLDER_REFERENCED',source_path,'Static source contains the selected folder GUID or path')
+                folder_manifest.append(dict(**folder,role=declaration['role'],reason=declaration['reason'],
+                    sourceEvidence=declaration['sourceEvidence'],callerReview=dict(review),
+                    directorySetSha256=source_directory_guard['sha256']))
+                folder_paths.add(path);selected_paths.add(path)
+                continue
             if path not in files or meta_path not in files or not asset.is_file():
                 fail('ASSET_RETIRE_SOURCE',path,'Expected an imported file with its .meta; directory retirement is unsupported')
             meta=inside(project,meta_path);guid=meta_guid(read(meta),meta_path)
-            policy=declaration.get('identityPolicy','native-object')
             manifest=dict(path=path,role=declaration['role'],reason=declaration['reason'],sourceEvidence=declaration['sourceEvidence'],
                           identityPolicy=policy,hasSourceIdentityEvidence=policy=='source-evidence-only',
                           sha256=files[path]['sha256'],bytes=files[path]['bytes'],metaPath=meta_path,
@@ -429,6 +508,11 @@ def plan(project, spec, output):
                 extra_inputs.append(safe(evidence['snapshotPath']))
             retire_manifest.append(manifest)
             selected_paths.add(path)
+        all_targets=list(selected_paths)
+        for i,left in enumerate(all_targets):
+            for right in all_targets[i+1:]:
+                if left.startswith(right+'/') or right.startswith(left+'/'):
+                    fail('ASSET_RETIRE_OVERLAP',left,'Nested retirement targets require separate reviewed batches')
         for path in doc['protectedRoots']:
             asset=inside(project,path);meta_path=path+'.meta'
             if path not in files or meta_path not in files or not asset.is_file():
@@ -457,8 +541,8 @@ def plan(project, spec, output):
                 except BeaverError:continue
                 if key is not None and key.casefold() in resource_keys and path not in selected_paths:
                     fail('ASSET_RETIRE_RESOURCE_AMBIGUOUS',key,'Another asset still maps to the explicitly retired Resources key: '+path)
-        backup_bytes=sum(row['bytes']+row['metaBytes'] for row in retire_manifest)
-        if len(retire_manifest)*2>MOVE_MANIFEST_ENTRIES or backup_bytes>MOVE_MANIFEST_BYTES:
+        backup_bytes=sum(row['bytes']+row['metaBytes'] for row in retire_manifest)+sum(row['metaBytes'] for row in folder_manifest)
+        if len(retire_manifest)*2+len(folder_manifest)*2>MOVE_MANIFEST_ENTRIES or backup_bytes>MOVE_MANIFEST_BYTES:
             fail('ASSET_RETIRE_BUDGET','spec','Retirement exceeds 10000 file/meta entries or 256 MiB; split into reviewed groups')
     elif doc['operation']=='project.import':
         pass
@@ -477,7 +561,8 @@ def plan(project, spec, output):
                 sourceSha256=sha(encoded(files)),native='not_run')
     if doc['operation']=='assets.move':data['folderMoveManifest']=move_manifest
     if doc['operation']=='assets.retire':
-        data['retireManifest']=retire_manifest;data['protectedManifest']=protected_manifest
+        data['retireManifest']=retire_manifest;data['folderRetireManifest']=folder_manifest;data['protectedManifest']=protected_manifest
+        if folder_manifest:data['sourceDirectoryGuard']=source_directory_guard
     data['editorInitializationFiles']=['ProjectSettings/SceneTemplateSettings.json'] if doc['operation']=='ui.create' and 'ProjectSettings/SceneTemplateSettings.json' not in files else []
     data['nativeInitializationPaths']=[]
     if doc['operation']=='project.import':
@@ -513,6 +598,8 @@ def run(editor, project, stage, mode, plan, timeout):
     if plan['spec']['operation']=='assets.move':job['folderMoveManifest']=plan.get('folderMoveManifest',[])
     if plan['spec']['operation']=='assets.retire':
         job['retireManifest']=plan.get('retireManifest',[]);job['protectedManifest']=plan.get('protectedManifest',[])
+        job['folderRetireManifest']=plan.get('folderRetireManifest',[])
+        job['sourceDirectoryPaths']=(plan.get('sourceDirectoryGuard') or {}).get('paths',[])
     jobfile=stage/('job-'+mode+'.json')
     write_json(jobfile,job)
     args=[str(editor),'-batchmode','-nographics','-projectPath',str(project),'-executeMethod','BeaverNative.Run','-logFile',str(stage/(mode+'.log'))]
@@ -627,6 +714,22 @@ def validate_retire_identity_rows(manifest,rows,location='native',witnessed=None
                     fail('ASSET_RETIRE_IDENTITY',location,'Post-restore identity differs from the witnessed pre-delete state')
 
 
+def validate_retired_folder_rows(manifest,rows,location='native',witnessed=None):
+    if not manifest and rows is None:return
+    if not isinstance(rows,list) or len(rows)!=len(manifest):
+        fail('ASSET_RETIRE_FOLDER_IDENTITY',location,'Native empty-folder identity list differs from selected manifest')
+    if witnessed is not None and (not isinstance(witnessed,list) or len(witnessed)!=len(manifest)):
+        fail('ASSET_RETIRE_FOLDER_IDENTITY',location,'Witnessed empty-folder identity list is incomplete')
+    for index,item in enumerate(manifest):
+        row=rows[index]
+        if not isinstance(row,dict) or row.get('path')!=item['path'] or row.get('guid')!=item['guid'] or row.get('identityStatus')!='verified' or type(row.get('localId')) is not int or row['localId']==0:
+            fail('ASSET_RETIRE_FOLDER_IDENTITY',location,'Native DefaultAsset GUID/localID is absent or differs from the manifest')
+        if witnessed is not None:
+            prior=witnessed[index]
+            if not isinstance(prior,dict) or any(row.get(key)!=prior.get(key) for key in ('path','guid','localId','identityStatus')):
+                fail('ASSET_RETIRE_FOLDER_IDENTITY',location,'Restored empty-folder GUID/localID differs from deletion witness')
+
+
 def apply(plan_path, output, editor, expected, timeout=600):
     path=safe(plan_path)
     raw=read(path,max_bytes=128*1024**2)
@@ -647,10 +750,13 @@ def apply(plan_path, output, editor, expected, timeout=600):
         native_lock(project)
         if source_files(project)!=data['before']:
             fail('UNITY_SOURCE_DRIFT',str(project),'Project changed after plan')
+        if data['spec']['operation']=='assets.retire' and data.get('sourceDirectoryGuard') and directory_guard(project)!=data['sourceDirectoryGuard']:
+            fail('ASSET_RETIRE_DIRECTORY_GUARD',str(project),'Assets directory set changed after retirement plan, including an untracked empty directory')
         if data['spec']['operation'] in ('assets.move','assets.retire'):
             backup_paths={path for move in data['spec'].get('moves',[]) for path in (move['source'],move['source']+'.meta')}
             backup_paths.update(row['source'] for manifest in data.get('folderMoveManifest',[]) for row in manifest['entries'] if 'sha256' in row)
             backup_paths.update(path for item in data.get('retireManifest',[]) for path in (item['path'],item['metaPath']))
+            backup_paths.update(item['metaPath'] for item in data.get('folderRetireManifest',[]))
             images=[]
             try:
                 for rel in sorted(backup_paths):
@@ -735,20 +841,35 @@ def apply(plan_path, output, editor, expected, timeout=600):
         if data['spec']['operation']=='assets.retire':
             selected=[item['path'] for item in data['retireManifest']]
             allowed={path for item in data['retireManifest'] for path in (item['path'],item['metaPath'])}
+            folder_selected=[item['path'] for item in data.get('folderRetireManifest',[])]
+            allowed.update(item['metaPath'] for item in data.get('folderRetireManifest',[]))
             for row in changes:
                 if row['path'] not in allowed or row['after'] is not None:
                     audit_fail('ASSET_RETIRE_SOURCE_AUDIT',row['path'],'Retirement may only delete its exact planned asset and meta paths')
             if {row['path'] for row in changes}!=allowed:
                 audit_fail('ASSET_RETIRE_SOURCE_AUDIT',str(stage),'Retirement did not delete every selected asset and meta exactly once')
-            if applied.get('deletedPaths')!=selected or reopened.get('deletedPaths')!=selected or applied.get('deleteInProgress') or reopened.get('deleteInProgress'):
+            if applied.get('deletedPaths')!=selected or reopened.get('deletedPaths')!=selected or applied.get('deleteInProgress') or reopened.get('deleteInProgress') or \
+               (applied.get('deletedFolders') or [])!=folder_selected or (reopened.get('deletedFolders') or [])!=folder_selected or applied.get('folderDeleteInProgress') or reopened.get('folderDeleteInProgress'):
                 audit_fail('ASSET_RETIRE_CHECKPOINT',str(stage),'Native deletion checkpoint is incomplete or uncertain')
             validate_retire_identity_rows(data['retireManifest'],applied.get('retiredAssets'),str(stage))
             validate_retire_identity_rows(data['retireManifest'],reopened.get('retiredAssets'),str(stage),witnessed=applied.get('retiredAssets'))
+            applied_folder_rows=applied.get('retiredFolders') or []
+            reopened_folder_rows=reopened.get('retiredFolders') or []
+            validate_retired_folder_rows(data.get('folderRetireManifest',[]),applied_folder_rows,str(stage))
+            validate_retired_folder_rows(data.get('folderRetireManifest',[]),reopened_folder_rows,str(stage),witnessed=applied_folder_rows)
             if applied.get('retiredAssets')!=reopened.get('retiredAssets') or applied.get('protectedRoots')!=reopened.get('protectedRoots') or \
                applied.get('dependencyPaths')!=reopened.get('dependencyPaths') or applied.get('dependencyClosures')!=reopened.get('dependencyClosures') or \
                (applied.get('resources') or [])!=(reopened.get('resources') or []) or \
                applied.get('resourcesDynamicUseNotProvable') is not True or reopened.get('resourcesDynamicUseNotProvable') is not True:
                 audit_fail('ASSET_RETIRE_READBACK',str(stage),'Retirement or protected-root identity readback differs after reopen')
+            if folder_selected and (applied.get('folderDynamicPathUseNotProvable') is not True or reopened.get('folderDynamicPathUseNotProvable') is not True):
+                audit_fail('ASSET_RETIRE_FOLDER_READBACK',str(stage),'Caller-reviewed dynamic folder-path boundary is absent')
+            if applied_folder_rows!=reopened_folder_rows:
+                audit_fail('ASSET_RETIRE_FOLDER_READBACK',str(stage),'Empty-folder GUID/localID differs after independent Editor reopen')
+            if data.get('sourceDirectoryGuard'):
+                planned_directories=set(data['sourceDirectoryGuard']['paths']);planned_directories.difference_update(folder_selected)
+                if set(directory_guard(project)['paths'])!=planned_directories:
+                    audit_fail('ASSET_RETIRE_DIRECTORY_AUDIT',str(project),'Retirement changed an unplanned Assets directory or failed to remove a selected folder')
         if data['spec']['operation']=='build.macos':
             try:
                 artifacts=[]
@@ -789,14 +910,20 @@ def recover(transaction, editor, expected, timeout=600):
     deleted=native.get('deletedPaths')
     if native.get('operation')!='assets.retire' or native.get('planSha256')!=sha(encoded(data)):
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Native checkpoint belongs to another operation or plan')
-    if not isinstance(deleted,list) or not deleted or len(deleted)!=len(set(deleted)) or any(path not in selected for path in deleted):
+    selected_folders=[row['path'] for row in data.get('folderRetireManifest',[])]
+    deleted_folders=native.get('deletedFolders',[])
+    if not isinstance(deleted,list) or len(deleted)!=len(set(deleted)) or any(path not in selected for path in deleted) or \
+       not isinstance(deleted_folders,list) or len(deleted_folders)!=len(set(deleted_folders)) or any(path not in selected_folders for path in deleted_folders) or not (deleted or deleted_folders):
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'No valid witnessed deletion checkpoint')
-    if journal.get('status')=='complete' and (native.get('status')!='verified' or deleted!=selected):
+    if journal.get('status')=='complete' and (native.get('status')!='verified' or deleted!=selected or deleted_folders!=selected_folders):
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Completed journal lacks a complete verified native deletion checkpoint')
-    if native.get('deleteInProgress'):
+    if native.get('deleteInProgress') or native.get('folderDeleteInProgress'):
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Deletion was in progress without a conclusive post-delete checkpoint')
     identities=native.get('retiredAssets')
     validate_retire_identity_rows(data['retireManifest'],identities,str(report_path))
+    validate_retired_folder_rows(data.get('folderRetireManifest',[]),native.get('retiredFolders'),str(report_path))
+    if selected_folders and native.get('folderDynamicPathUseNotProvable') is not True:
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Dynamic folder-path boundary is absent from native checkpoint')
     protected=native.get('protectedRoots')
     if not isinstance(protected,list) or [row.get('path') for row in protected]!=[row['path'] for row in data['protectedManifest']]:
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(report_path),'Protected-root identity checkpoint is incomplete')
@@ -818,12 +945,20 @@ def recover(transaction, editor, expected, timeout=600):
             image=inside(before_root,path)
             if not image.is_file() or image.stat().st_size!=size or digest_file(image)!=digest:
                 fail('ASSET_RETIRE_RECOVERY_BLOCKED',path,'Before-image missing or differs from its planned hash')
+    for item in data.get('folderRetireManifest',[]):
+        image=inside(before_root,item['metaPath'])
+        if not image.is_file() or image.stat().st_size!=item['metaBytes'] or digest_file(image)!=item['metaSha256']:
+            fail('ASSET_RETIRE_RECOVERY_BLOCKED',item['metaPath'],'Empty-folder metadata before-image missing or differs from its planned hash')
     expected_by_path=data['before'];deleted_set=set(deleted)
     backup_paths={path for item in data['retireManifest'] for path in (item['path'],item['metaPath'])}
+    backup_paths.update(item['metaPath'] for item in data.get('folderRetireManifest',[]))
     restored_checkpoint=journal.get('recoveryRestoredPaths',[])
     if not isinstance(restored_checkpoint,list) or any(path not in backup_paths for path in restored_checkpoint):
         fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(stage),'Recovery copy checkpoint is invalid')
     restored_checkpoint=set(restored_checkpoint)
+    restored_folder_checkpoint=journal.get('recoveryRestoredFolders',[])
+    if not isinstance(restored_folder_checkpoint,list) or any(path not in deleted_folders for path in restored_folder_checkpoint) or len(restored_folder_checkpoint)!=len(set(restored_folder_checkpoint)):
+        fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(stage),'Empty-folder recovery checkpoint is invalid')
     with lock(project):
         native_lock(project)
         current=source_files(project);expected_current=dict(expected_by_path)
@@ -841,8 +976,32 @@ def recover(transaction, editor, expected, timeout=600):
                 if found is not None and path not in restored_checkpoint:
                     fail('ASSET_RETIRE_RECOVERY_BLOCKED',path,'A checkpointed deletion was recreated outside this recovery transaction')
                 if found is None:expected_current.pop(path,None)
+        for item in data.get('folderRetireManifest',[]):
+            folder_exists=inside(project,item['path']).exists()
+            meta_exists=inside(project,item['metaPath']).exists()
+            if item['path'] not in deleted_folders:
+                if not folder_exists or any(inside(project,item['path']).iterdir()) or not meta_exists or current.get(item['metaPath'])!=expected_by_path.get(item['metaPath']):
+                    fail('ASSET_RETIRE_RECOVERY_BLOCKED',item['path'],'Uncheckpointed empty-folder state changed')
+                continue
+            if item['path'] in restored_folder_checkpoint:
+                if not folder_exists or any(inside(project,item['path']).iterdir()):
+                    fail('ASSET_RETIRE_RECOVERY_BLOCKED',item['path'],'Checkpointed restored folder is no longer empty')
+            elif folder_exists:
+                fail('ASSET_RETIRE_RECOVERY_BLOCKED',item['path'],'Folder appeared without a recovery checkpoint')
+            if item['metaPath'] in restored_checkpoint and not meta_exists:
+                fail('ASSET_RETIRE_RECOVERY_BLOCKED',item['metaPath'],'Checkpointed restored folder metadata is now missing')
+            found=current.get(item['metaPath']);original=expected_by_path.get(item['metaPath'])
+            if found is not None and found!=original:
+                fail('ASSET_RETIRE_RECOVERY_BLOCKED',item['metaPath'],'Existing folder metadata differs; refusing to overwrite')
+            if found is not None and item['metaPath'] not in restored_checkpoint:
+                fail('ASSET_RETIRE_RECOVERY_BLOCKED',item['metaPath'],'Folder metadata appeared outside this recovery transaction')
+            if found is None:expected_current.pop(item['metaPath'],None)
         if current!=expected_current:
             fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(project),'Full project source guard differs outside witnessed deletions')
+        expected_dirs=set((data.get('sourceDirectoryGuard') or {}).get('paths',[]))-set(deleted_folders)
+        expected_dirs.update(restored_folder_checkpoint)
+        if data.get('sourceDirectoryGuard') and set(directory_guard(project)['paths'])!=expected_dirs:
+            fail('ASSET_RETIRE_RECOVERY_BLOCKED',str(project),'Assets directory-set guard differs outside witnessed folder deletions')
         # The full before-image set is preflighted before the first filesystem restore.
         todo=[]
         for item in data['retireManifest']:
@@ -850,7 +1009,9 @@ def recover(transaction, editor, expected, timeout=600):
             for path in (item['path'],item['metaPath']):
                 if path not in current:
                     original=expected_by_path[path];todo.append((path,original))
-        journal.update(status='restoring-before-images',recoveryCheckpoint='all-targets-preflighted',recoveryDeletedPaths=deleted)
+        folder_todo=[item for item in data.get('folderRetireManifest',[]) if item['path'] in deleted_folders and
+                     (item['path'] not in restored_folder_checkpoint or item['metaPath'] not in restored_checkpoint)]
+        journal.update(status='restoring-before-images',recoveryCheckpoint='all-targets-preflighted',recoveryDeletedPaths=deleted,recoveryDeletedFolders=deleted_folders)
         write_json(journal_path,journal)
         helper=None;fingerprint=None
         try:
@@ -860,6 +1021,19 @@ def recover(transaction, editor, expected, timeout=600):
                 copy_verified(image,target,row['sha256'],row['bytes'],atomic=False)
                 restored.append(path);journal.update(recoveryRestoredPaths=restored,recoveryCheckpoint='before-image-copied')
                 write_json(journal_path,journal)
+            restored_folders=list(restored_folder_checkpoint)
+            for item in folder_todo:
+                target=inside(project,item['path'])
+                if item['path'] not in restored_folders:
+                    target.mkdir()
+                    restored_folders.append(item['path']);journal.update(recoveryRestoredFolders=restored_folders,recoveryCheckpoint='empty-folder-created')
+                    write_json(journal_path,journal)
+                path=item['metaPath']
+                if path not in restored:
+                    row=expected_by_path[path];image=inside(before_root,path)
+                    copy_verified(image,inside(project,path),row['sha256'],row['bytes'],atomic=False)
+                    restored.append(path);journal.update(recoveryRestoredPaths=restored,recoveryCheckpoint='folder-meta-copied')
+                    write_json(journal_path,journal)
             # Separate Editor invocations refresh and verify persisted Unity IDs.
             helper,fingerprint=_install_native_helper(project)
             try:
@@ -869,13 +1043,19 @@ def recover(transaction, editor, expected, timeout=600):
                 _remove_native_helper(project,helper,fingerprint)
             validate_retire_identity_rows(data['retireManifest'],recovered.get('retiredAssets'),str(stage),witnessed=identities)
             validate_retire_identity_rows(data['retireManifest'],reopened.get('retiredAssets'),str(stage),witnessed=identities)
+            validate_retired_folder_rows(data.get('folderRetireManifest',[]),recovered.get('retiredFolders'),str(stage),witnessed=native.get('retiredFolders'))
+            validate_retired_folder_rows(data.get('folderRetireManifest',[]),reopened.get('retiredFolders'),str(stage),witnessed=native.get('retiredFolders'))
             if recovered.get('recoveredPaths')!=deleted or reopened.get('recoveredPaths')!=deleted or \
+               (recovered.get('recoveredFolders') or [])!=deleted_folders or (reopened.get('recoveredFolders') or [])!=deleted_folders or \
                recovered.get('retiredAssets')!=reopened.get('retiredAssets') or recovered.get('protectedRoots')!=reopened.get('protectedRoots') or \
+               (recovered.get('retiredFolders') or [])!=(reopened.get('retiredFolders') or []) or \
                recovered.get('dependencyPaths')!=reopened.get('dependencyPaths') or recovered.get('dependencyClosures')!=reopened.get('dependencyClosures') or \
                (recovered.get('resources') or [])!=(reopened.get('resources') or []):
                 fail('ASSET_RETIRE_RECOVERY_READBACK',str(stage),'Native restore GUID/localID readback differs after reopen')
             if source_files(project)!=data['before']:
                 fail('ASSET_RETIRE_RECOVERY_SOURCE_AUDIT',str(project),'Restored source tree differs from the original full-root snapshot')
+            if data.get('sourceDirectoryGuard') and directory_guard(project)!=data['sourceDirectoryGuard']:
+                fail('ASSET_RETIRE_RECOVERY_SOURCE_AUDIT',str(project),'Restored Assets directory set differs from the original snapshot')
             journal.update(status='recovered',recoveryCheckpoint='native-reopen-source-audit-complete',recoveryNativeReadback=reopened,
                            recoveredAt=datetime.now(timezone.utc).isoformat())
             write_json(journal_path,journal)
@@ -884,5 +1064,5 @@ def recover(transaction, editor, expected, timeout=600):
             journal.update(status='recovery-required',recoveryError=str(error),recoveryCheckpoint=journal.get('recoveryCheckpoint','preflight-failed'))
             write_json(journal_path,journal)
             raise
-    return dict(status='recovered',report=str(journal_path),transaction=str(stage),restoredFiles=len(todo),
-                deletedPaths=deleted,nativeReadback=journal['recoveryNativeReadback'])
+    return dict(status='recovered',report=str(journal_path),transaction=str(stage),restoredFiles=len(todo)+sum(item['metaPath'] not in current for item in folder_todo),
+                deletedPaths=deleted,deletedFolders=deleted_folders,nativeReadback=journal['recoveryNativeReadback'])

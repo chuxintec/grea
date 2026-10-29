@@ -12,6 +12,7 @@ from .transaction_fs import lock
 from .context import inspect
 from .unity import VERSION, identity, asset_path, editor_path
 from .adoption import native_lock
+from .asset_names import validate_destination
 
 HELPER_ROOT = 'Assets/BeaverBatchTools'
 SCENE_BUILD_SETTINGS = 'ProjectSettings/EditorBuildSettings.asset'
@@ -183,6 +184,7 @@ def validate(spec):
                 if action['kind'] in ('ui.list','ui.safeArea') and not spec.get('runtimeRoot'):fail('BATCH_RUNTIME_ROOT',action['kind'],'Explicit product runtimeRoot required for persistent generic component')
         elif kind=='asset.move':
             if set(step)!={'kind','source','target'}:fail('BATCH_MOVE','spec','Expected source and target')
+            validate_destination(step['target'])
             for k in ('source','target'):asset_path(step[k],Path(step[k]).suffix)
             if step['source'].endswith('.meta') or Path(step['source']).suffix!=Path(step['target']).suffix:fail('BATCH_MOVE_KIND','spec','Move imported file, same extension, not meta')
         elif kind=='reference.replace':

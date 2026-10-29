@@ -1,8 +1,9 @@
 # Controlled Unity asset retirement
 
 `assets.retire` uses the existing immutable `unity plan` / `unity apply`
-transaction. It accepts imported files only; directory requests are rejected
-and must be divided into separately reviewed file groups. The full Assets,
+transaction. The default and source-only policies accept imported files only. Directory requests
+require the separate explicit `empty-folder` policy in [EMPTY-FOLDERS.md](EMPTY-FOLDERS.md);
+nonempty directory trees are never retired recursively. The full Assets,
 Packages and ProjectSettings source inventory is hashed at plan time and must
 still match before execution.
 

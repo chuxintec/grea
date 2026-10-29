@@ -37,7 +37,8 @@
           "identityPolicy": {
             "enum": [
               "native-object",
-              "source-evidence-only"
+              "source-evidence-only",
+              "empty-folder"
             ],
             "default": "native-object"
           },
@@ -63,6 +64,26 @@
               "snapshotSha256",
               "assetPath"
             ]
+          },
+          "callerReview": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reference": { "type": "string", "minLength": 1, "maxLength": 4096 },
+              "sourceSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "directorySetSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "dynamicPathReview": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": { "const": "reviewed-no-use" },
+                  "reason": { "type": "string", "minLength": 1, "maxLength": 4096 },
+                  "evidence": { "type": "string", "minLength": 1, "maxLength": 4096 }
+                },
+                "required": ["status", "reason", "evidence"]
+              }
+            },
+            "required": ["reference", "sourceSha256", "directorySetSha256", "dynamicPathReview"]
           }
         },
         "required": [
@@ -95,6 +116,14 @@
                 ]
               }
             }
+          },
+          {
+            "if": {
+              "required": ["identityPolicy"],
+              "properties": { "identityPolicy": { "const": "empty-folder" } }
+            },
+            "then": { "required": ["callerReview"] },
+            "else": { "not": { "required": ["callerReview"] } }
           }
         ]
       }

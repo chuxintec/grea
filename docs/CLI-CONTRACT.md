@@ -133,3 +133,9 @@ P0 report commands accept optional `--summary`: full inventory, consumers, hashe
 `structure plan` accepts optional `--consumer-resolutions <JSON>`, with the strict `structure-consumer-resolutions-1` schema. Exact file SHA/token span/decoded literal and reviewed evidence can resolve only supported source-identity comparisons; native/runtime lookup and unknown dynamic blockers remain separate. See [consumer declarations](STRUCTURE-CONSUMERS.md).
 
 Scene asset moves in `batch` may bind one exact `ProjectSettings/EditorBuildSettings.asset` postimage. The derived file joins the transaction's read/write/restore sets; this is not a general settings-write exemption. See [scene moves](SCENE-MOVES.md). Native retirement also supports the separately reviewed `source-evidence-only` policy described in RETIREMENT.md; the default still requires persistent native object identities.
+
+## Explicit empty-folder retirement
+
+The existing `unity plan/apply/recover` entry accepts an explicit `empty-folder` retirement policy; see [EMPTY-FOLDERS.md](EMPTY-FOLDERS.md) for its closed spec, source/directory guards and recovery limits. This is a distinct native folder identity path, not recursive file retirement. Previously fixed packages remain immutable and cannot replay new plans.
+
+Move destinations in both `batch asset.move` and `unity assets.move` are preflighted component by component against portable file/directory names (forbidden characters, controls, trailing dots/spaces and reserved Windows device names). Invalid targets fail before output or native writes, with the exact path; existing imported source names are not silently rewritten. See [Microsoft file naming rules](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file). A valid explicit rename remains a new caller-reviewed plan and can change native object names; consumer review remains required.

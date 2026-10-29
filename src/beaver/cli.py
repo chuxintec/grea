@@ -27,7 +27,7 @@ def _p0_summary(data):
     """Project transport metadata only; the complete report remains hashed on disk."""
     result={k:data[k] for k in ('status','report','mode','projectRoot','productRoot','profileIdentity','structureDocumentationIdentity','sourceUnchanged','helperCleaned','editorExitCode','projectConformance','batchReadiness','planSha256','counts','transaction','sourceSha256','restoredFiles') if k in data}
     if isinstance(data.get('nativeReadback'),str):result['nativeReadback']=data['nativeReadback']
-    for field in ('inventory','assets','fields','issues','blockers','remainingStructureIssues','deletedPaths','changes','unresolvedDependencies'):
+    for field in ('inventory','assets','fields','issues','blockers','remainingStructureIssues','deletedPaths','deletedFolders','changes','unresolvedDependencies'):
         if isinstance(data.get(field),list):result[field+'Count']=len(data[field])
     if isinstance(data.get('coverage'),dict):
         coverage=data['coverage'];result['coverage']={k:coverage[k] for k in ('complete',) if k in coverage}
@@ -76,7 +76,7 @@ def capabilities():
         dict(id="unity.prefab.inspect", state="requires_provider", provider="Unity 6000.6.2f1", effects="temporary-editor-helper", verification="native hierarchy/localID/component/importer readback"),
         dict(id="unity.prefab.edit", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native text/component/Sprite binding save/reopen"),
         dict(id="unity.assets.move", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native GUID/localID and save/reopen"),
-        dict(id='unity.assets.retire/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit protected roots and retirement declarations',effects='verified-archive-and-active-asset-retirement-or-guarded-restoration',verification='existing Unity transaction; native dependency protection, exact before-images and deletion checkpoint'),
+        dict(id='unity.assets.retire/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit protected roots and retirement declarations',effects='verified-archive-and-active-asset-retirement-or-guarded-restoration',verification='existing Unity transaction; native dependency protection, exact before-images and deletion checkpoint; explicit empty leaf folders require real DefaultAsset identity and guarded directory restoration'),
         dict(id="unity.project.import", state="requires_provider", provider="Unity 6000.6.2f1", effects="declared-meta-initialization", verification="native generated C# compile and import"),
         dict(id="unity.sprite.configure", state="requires_provider", provider="Unity 6000.6.2f1", effects="selected-importer-meta", verification="native importer/GUID/localID and save/reopen"),
         dict(id="unity.validate.play", state="requires_provider", provider="Unity 6000.6.2f1", effects="bounded-playmode", verification="3-second isolated scene; zero runtime errors"),
@@ -472,7 +472,7 @@ def main(argv=None):
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
         if a.command=='unity' and a.action=='recover':
-            base['actualChanges']=[dict(operation='assets.retire.recover',transaction=data['transaction'],restoredFiles=data.get('restoredFiles'),deletedPaths=data.get('deletedPaths'))]
+            base['actualChanges']=[dict(operation='assets.retire.recover',transaction=data['transaction'],restoredFiles=data.get('restoredFiles'),deletedPaths=data.get('deletedPaths'),deletedFolders=data.get('deletedFolders',[]))]
         if a.command in ('batch','production') and a.action in ('apply','recover'):
             base['actualChanges']=data.get('changes',[dict(operation=a.command+'.recover',restored=data.get('restored'))])
         if a.command=='workspace' and a.action=='apply':

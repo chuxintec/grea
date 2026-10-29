@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261028+fix6",
+  "candidateVersion": "0.5.1.dev20261029+fix7",
   "status": "local-candidate-verified",
   "syntheticChecks": {
-    "passed": 166,
+    "passed": 177,
     "scope": "all affected P0 plus shared adoption/batch/production/UI/wiring regressions; explicit native-job evidence markers included"
   },
   "native": {
@@ -219,12 +219,48 @@
     "ordinaryNoSceneJobVerified": true,
     "persistedSettingsAfterExitVerified": true
   },
-  "implementationSha256": "8e5d595c15c63c222fcc7ece0013ddd97ef3360d8331d76eb4befc61a6fcafc6",
+  "implementationSha256": "b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c",
   "retainedFailureEvidence": [
     "initial retirement companion compile failure before deletion",
     "recently deleted GUID lookup caused uncertain checkpoint, private fixture restoration separately recorded",
     "same-process Scene settings hash preceded Editor exit flush; fresh reverse plan restored private Scene data without changing failed verdict",
     "JsonUtility empty nested evidence object wrongly rejected default policy before deletion",
     "default recovery optional digest null/empty comparison; original bytes restored but Native verdict withheld until fixed candidate passed"
-  ]
+  ],
+  "priorNativeEvidenceBoundary": "Existing captures, folder moves, build collection and Scene settings retain their original fixed-candidate evidence. Fix7 reran the affected retirement modes and new empty-folder native path; it does not claim all historical native flows reran with this producer.",
+  "emptyFolderRetirement": {
+    "testedInstalledCandidate": "0.5.1.dev20261029+fix7",
+    "producer": "b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c",
+    "selectedLeafFolders": 2,
+    "realDefaultAssetGuidAndLocalId": true,
+    "deleteIndependentReopen": true,
+    "restoreIndependentReopen": true,
+    "fullSourceAndDirectorySetRestored": true,
+    "metadataBeforeImagesVerified": true,
+    "binaryImportedReferenceRefusedBeforeDeletion": true,
+    "nativeReferenceScan": "Assets and Packages imported dependencies",
+    "nonemptyAndChildFolderRefused": true,
+    "untrackedEmptyDirectoryBlocksApply": true,
+    "laterDirectoryBlocksRecovery": true,
+    "dynamicPathUse": "caller-reviewed-no-use; not statically proved absent",
+    "mixedFileFolderBatches": "rejected",
+    "gameWrites": false
+  },
+  "fix7FileRetirementCompatibility": {
+    "finalInstalledProducer": "b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c",
+    "normalNativeObjectRetirementAndRecovery": true,
+    "sourceOnlyRetirementAndRecovery": true,
+    "independentReopens": true,
+    "staleZeroObjectEvidenceForCurrentObject": "refused",
+    "fullSourceMapRestored": true
+  },
+  "portableMoveDestinationPreflight": {
+    "batchAndUnityFileFolderMoves": true,
+    "illegalLaterTargetBlocksBeforeOutputOrNative": true,
+    "installedCliReproduction": true,
+    "existingSourceNamesNotRewritten": true,
+    "rules": "portable forbidden characters/controls/trailing dot-space/reserved Windows device names",
+    "source": "https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file"
+  },
+  "largeBatchPerformance": "Known full-retirement-report rewrite and batch whole-writeSet checkpoint hashing costs remain; fixed-input consumer results do not establish arbitrary-scale support. No optimization or timeout increase is included in fix7."
 }
