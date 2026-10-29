@@ -30,7 +30,7 @@ public static class BeaverBatch {
     [Serializable] public class SceneSettingsExpectation {public string path,beforeSha256,expectedAfterSha256;public long beforeBytes,expectedAfterBytes;public SceneMoveIdentity[] moves;}
     [Serializable] public class SceneSettingsReadback {public string path,status,expectedSha256,observedSha256;public bool movesVerified;public SceneMoveIdentity[] moves;}
     [Serializable] public class Job {
-        public string projectRoot,stage,mode,planSha256;public string[] writes;
+        public string projectRoot,stage,mode,planSha256,checkpointPolicy;public string[] writes;
         public bool requiresReopen,hasSceneSettings;
         public Step[] steps;public FileRow[] patches,restores,installs,preconditions;
         public SceneSettingsExpectation sceneSettings;
@@ -42,26 +42,66 @@ public static class BeaverBatch {
         public string path,guid,kind,basePath,contentSha256,serializedTreeSha256;public int missingScripts;public NodeRow[] nodes;
     }
     [Serializable] public class Report {
-        public string status,planSha256,error,mode,editorVersion;public int completedSteps,hashReadOperations;
+        public string status,planSha256,error,mode,editorVersion,checkpointPolicy,checkpointState;public int completedSteps,hashReadOperations,checkpointCount;public bool checkpointComplete;
+        public List<string> checkpointPaths=new List<string>();
         public List<FileRow> files=new List<FileRow>();public List<PrefabRow> prefabs=new List<PrefabRow>();
         public List<string> resourceReadbacks=new List<string>();
         public List<string> diagnostics=new List<string>();
         public List<DependencyRow> nativeConsumers=new List<DependencyRow>();
         public SceneSettingsReadback sceneSettingsReadback;
     }
-    static Job job;static Report report;
+    static Job job;static Report report;static Dictionary<string,FileRow> checkpointCache;
     static string Hash(string path) {if(report!=null)report.hashReadOperations++;using(var hash=SHA256.Create())using(var stream=File.OpenRead(path))return BitConverter.ToString(hash.ComputeHash(stream)).Replace("-","").ToLowerInvariant();}
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!(relative.StartsWith("Assets/",StringComparison.Ordinal)||relative=="ProjectSettings/EditorSettings.asset"||(job.hasSceneSettings&&job.sceneSettings!=null&&relative==job.sceneSettings.path&&relative=="ProjectSettings/EditorBuildSettings.asset"))||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe asset path: "+relative);
         return Path.Combine(job.projectRoot,relative);
     }
-    static void Save() {
-        report.files.Clear();foreach(var rel in job.writes) {
-            var full=Full(rel);var exists=File.Exists(full);
-            report.files.Add(new FileRow{path=rel,exists=exists,sha256=exists?Hash(full):"",bytes=exists?new FileInfo(full).Length:0});
-        }
+    static void WriteReport() {
         var path=Path.Combine(job.stage,"native-result.json");var temp=path+".tmp";
         File.WriteAllText(temp,JsonUtility.ToJson(report,true));if(File.Exists(path))File.Delete(path);File.Move(temp,path);
+    }
+    static void SaveFull(string checkpointState) {
+        report.files.Clear();checkpointCache=new Dictionary<string,FileRow>(StringComparer.Ordinal);
+        foreach(var rel in job.writes) {
+            var full=Full(rel);var exists=File.Exists(full);
+            var row=new FileRow{path=rel,exists=exists,sha256=exists?Hash(full):"",bytes=exists?new FileInfo(full).Length:0};
+            checkpointCache[rel]=row;report.files.Add(row);
+        }
+        report.files=report.files.OrderBy(x=>x.path,StringComparer.Ordinal).ToList();
+        report.checkpointPolicy=job.checkpointPolicy;report.checkpointState=checkpointState;report.checkpointComplete=true;
+        report.checkpointPaths=job.writes.OrderBy(x=>x,StringComparer.Ordinal).ToList();report.checkpointCount++;
+        WriteReport();
+    }
+    static void SaveDelta(IEnumerable<string> touchedPaths) {
+        var writes=new HashSet<string>(job.writes??new string[0],StringComparer.Ordinal);
+        var touched=(touchedPaths??new string[0]).Distinct(StringComparer.Ordinal).OrderBy(x=>x,StringComparer.Ordinal).ToArray();
+        foreach(var rel in touched) {
+            if(!writes.Contains(rel))throw new Exception("Delta checkpoint touched a path outside the immutable write set: "+rel);
+            var full=Full(rel);var exists=File.Exists(full);
+            checkpointCache[rel]=new FileRow{path=rel,exists=exists,sha256=exists?Hash(full):"",bytes=exists?new FileInfo(full).Length:0};
+        }
+        report.files=checkpointCache.Values.OrderBy(x=>x.path,StringComparer.Ordinal).ToList();
+        report.checkpointPolicy=job.checkpointPolicy;report.checkpointState="delta";report.checkpointComplete=false;
+        report.checkpointPaths=touched.ToList();report.checkpointCount++;WriteReport();
+    }
+    static void Save() {
+        if(job!=null&&job.checkpointPolicy=="move-delta-v1")
+            SaveFull(checkpointCache==null?"full-initial":"full-final");
+        else {
+            report.files.Clear();foreach(var rel in job.writes) {
+                var full=Full(rel);var exists=File.Exists(full);
+                report.files.Add(new FileRow{path=rel,exists=exists,sha256=exists?Hash(full):"",bytes=exists?new FileInfo(full).Length:0});
+            }
+            WriteReport();
+        }
+    }
+    static string[] NewDestinationParentMetaPaths(string target) {
+        var result=new List<string>();var parent=Path.GetDirectoryName(target).Replace('\\','/');
+        while(parent!="Assets") {
+            var meta=parent+".meta";if(!File.Exists(Full(meta)))result.Add(meta);
+            parent=Path.GetDirectoryName(parent).Replace('\\','/');
+        }
+        return result.ToArray();
     }
     static Transform Find(GameObject root,string path) {
         var t=String.IsNullOrEmpty(path)?root.transform:root.transform.Find(path);
@@ -339,18 +379,25 @@ public static class BeaverBatch {
             job=JsonUtility.FromJson<Job>(File.ReadAllText(file));report=new Report{status="running",planSha256=job.planSha256,mode=job.mode,editorVersion=Application.unityVersion};
             if(Application.unityVersion!="6000.6.2f1")throw new Exception("Unexpected native Editor version");
             if(Path.GetFullPath(job.projectRoot)!=Path.GetFullPath(Directory.GetCurrentDirectory()))throw new Exception("Target project identity mismatch");
+            if(!String.IsNullOrEmpty(job.checkpointPolicy)) {
+                if(job.checkpointPolicy!="move-delta-v1"||job.steps==null||job.steps.Length==0||job.steps.Any(s=>s==null||s.kind!="asset.move"||String.IsNullOrEmpty(s.source)||String.IsNullOrEmpty(s.target)||s.source.EndsWith(".unity",StringComparison.OrdinalIgnoreCase)||s.target.EndsWith(".unity",StringComparison.OrdinalIgnoreCase))||
+                   job.requiresReopen||job.hasSceneSettings||(job.installs!=null&&job.installs.Length>0))throw new Exception("move-delta-v1 requires pure non-Scene asset.move with no installs or reopen side effects");
+            }
             Save();
             if(job.mode=="recover")Recover();
             else if(job.mode=="apply") {
                 Preflight();
                 foreach(var step in job.steps) {
+                    var moveCheckpointPaths=new List<string>();
                     if(step.kind=="prefab.patch")Patch(step);
                     else if(step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
                     else if(step.kind=="asset.move") {
+                        if(job.checkpointPolicy=="move-delta-v1")moveCheckpointPaths.AddRange(NewDestinationParentMetaPaths(step.target));
                         Folder(step.target);var guid=AssetDatabase.AssetPathToGUID(step.source);var ids=AssetIds(step.source);
                         if(step.source.EndsWith(".unity",StringComparison.OrdinalIgnoreCase)&&(String.IsNullOrEmpty(guid)||ids.Length==0))throw new Exception("SCENE_MOVE_IDENTITY_EMPTY: refusing empty SceneAsset GUID/localID identity set");
                         var error=AssetDatabase.MoveAsset(step.source,step.target);
                         if(!String.IsNullOrEmpty(error)||AssetDatabase.AssetPathToGUID(step.target)!=guid||!ids.SequenceEqual(AssetIds(step.target)))throw new Exception("Move/GUID/localID check failed: "+error);
+                        if(job.checkpointPolicy=="move-delta-v1")moveCheckpointPaths.AddRange(new[]{step.source,step.source+".meta",step.target,step.target+".meta"});
                     } else if(step.kind=="reference.replace")Replace(step);
                     else if(step.kind=="text.key"||step.kind=="script.key") {
                         var patch=job.patches.Single(p=>p.path==step.assetPath);
@@ -371,7 +418,9 @@ public static class BeaverBatch {
                             if(state.status=="failed"||state.status=="blocked")throw new Exception("Resource verification rejected: "+step.kind+": "+state.status);
                         } catch(System.Reflection.TargetInvocationException error) {throw error.InnerException??error;}
                     } else throw new Exception("Unknown batch step");
-                    report.completedSteps++;Save();
+                    report.completedSteps++;
+                    if(job.checkpointPolicy=="move-delta-v1"&&step.kind=="asset.move")SaveDelta(moveCheckpointPaths);
+                    else Save();
                 }
             } else if(job.mode=="checkpoint") {
                 // Recovery evidence only. Never a resource/business verdict.
@@ -395,7 +444,8 @@ public static class BeaverBatch {
             if(job.mode!="checkpoint"&&!(job.requiresReopen&&job.mode=="apply"))VerifySceneSettings();
             report.status=job.mode=="checkpoint"?"checkpoint_verified":job.requiresReopen&&job.mode=="apply"?"pending_editor_reopen":"verified";Save();EditorApplication.Exit(0);
         } catch(Exception error) {
-            if(report!=null){report.status="failed";report.error=error.ToString();Save();}
+            if(report!=null){report.status="failed";report.error=error.ToString();
+                try {Save();} catch(Exception checkpointError) {Debug.LogException(checkpointError);}}
             Debug.LogException(error);EditorApplication.Exit(1);
         }
     }

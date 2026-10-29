@@ -664,7 +664,7 @@ def validate_retire_source_evidence(item,location='retirement plan'):
         fail('ASSET_RETIRE_SOURCE_EVIDENCE',location,'Immutable collector evidence manifest is incomplete')
     record=evidence.get('targetRecord')
     record_fields={'path','guid','localIds','types','status','identityStatus','objectCount','error'}
-    if not isinstance(record,dict) or set(record)!=record_fields or record.get('path')!=item.get('path') or \
+    if not isinstance(record,dict) or set(record) not in (record_fields,record_fields|{'objects'}) or ('objects' in record and record['objects']!=[]) or record.get('path')!=item.get('path') or \
        str(record.get('guid','')).lower()!=str(item.get('guid','')).lower() or record.get('status')!='unknown' or \
        record.get('identityStatus')!='no-persistent-object' or record.get('objectCount')!=0 or \
        record.get('localIds')!=[] or record.get('types')!=[] or not isinstance(record.get('error'),str) or not record['error'].strip() or \

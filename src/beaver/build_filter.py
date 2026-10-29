@@ -80,12 +80,20 @@ def _snapshot(snapshot, target, require_runner=False):
     if not isinstance(snapshot["inputState"], dict):
         fail("BUILD_FILTER_INPUT_STATE", "snapshot.inputState", "Expected path-to-content-hash preconditions")
     assets = {}
+    object_identity_mode = None
     for i, row in enumerate(snapshot["assets"]):
         legacy_fields = {"path", "guid", "localIds", "types"}
         prior_fields = legacy_fields | {"status", "error"}
         current_fields = prior_fields | {"identityStatus", "objectCount"}
-        if not isinstance(row, dict) or set(row) not in (legacy_fields, prior_fields, current_fields):
+        object_fields = current_fields | {"objects"}
+        if not isinstance(row, dict) or set(row) not in (legacy_fields, prior_fields, current_fields,
+                                                         legacy_fields | {"objects"}, prior_fields | {"objects"}, object_fields):
             fail("BUILD_FILTER_SCHEMA", f"snapshot.assets[{i}]", "Expected persistent asset identity or explicit unknown identity row")
+        has_objects = "objects" in row
+        if object_identity_mode is None:
+            object_identity_mode = has_objects
+        elif object_identity_mode != has_objects:
+            fail("BUILD_FILTER_ASSET_IDENTITY", f"snapshot.assets[{i}]", "Object identity records must be present consistently for the full native catalog")
         path = _path(row["path"], f"snapshot.assets[{i}].path")
         status = row.get("status", "observed")
         error = row.get("error", "")
@@ -117,6 +125,36 @@ def _snapshot(snapshot, target, require_runner=False):
                                  or (identity_status == "inspection-failed" and object_count == -1))
             if not consistent_status:
                 fail("BUILD_FILTER_ASSET_IDENTITY", path, "Unknown status, objectCount and available identities disagree")
+        if has_objects:
+            objects = row["objects"]
+            if not isinstance(objects, list):
+                fail("BUILD_FILTER_ASSET_IDENTITY", path, "objects must be an array when requested")
+            object_keys = set()
+            object_ids = set()
+            object_types = set()
+            for index, obj in enumerate(objects):
+                _closed(obj, {"guid", "localId", "type", "name", "state"}, f"snapshot.assets[{i}].objects[{index}]")
+                if (not isinstance(obj["guid"], str) or not _GUID.fullmatch(obj["guid"])
+                        or type(obj["localId"]) is not int or obj["localId"] == 0
+                        or not isinstance(obj["type"], str) or not obj["type"]
+                        or not isinstance(obj["name"], str) or obj["state"] != "persistent"):
+                    fail("BUILD_FILTER_ASSET_IDENTITY", path, "Objects require an actual persistent GUID/localID/type/name pair")
+                if valid_guid and obj["guid"].lower() != guid.lower():
+                    fail("BUILD_FILTER_ASSET_IDENTITY", path, "Object GUID differs from its AssetDatabase catalog GUID")
+                key = (obj["guid"].lower(), obj["localId"])
+                if key in object_keys:
+                    fail("BUILD_FILTER_ASSET_IDENTITY", path, "Duplicate persistent object identity")
+                object_keys.add(key)
+                object_ids.add(obj["localId"])
+                object_types.add(obj["type"])
+            if not object_ids <= set(row["localIds"]) or not object_types <= set(row["types"]):
+                fail("BUILD_FILTER_ASSET_IDENTITY", path, "Objects must be represented in the legacy localIds and types unions")
+            if status == "observed" and (object_ids != set(row["localIds"]) or object_types != set(row["types"])):
+                fail("BUILD_FILTER_ASSET_IDENTITY", path, "Fully observed objects must exactly match the legacy localIds and types unions")
+            if object_count == 0 and objects:
+                fail("BUILD_FILTER_ASSET_IDENTITY", path, "Zero-object assets must have an empty objects array")
+            if status == "observed" and len(objects) > object_count:
+                fail("BUILD_FILTER_ASSET_IDENTITY", path, "Persistent object pairs cannot exceed objectCount")
         assets[path] = dict(row, status=status, identityStatus=identity_status, objectCount=object_count,
                             error=error, guid=guid or "")
     dependencies = {}
@@ -247,7 +285,11 @@ def _verify_input_state(project, snapshot):
 
 
 def validate_collect_spec(project, spec):
-    _closed(spec, {"schemaVersion", "platform", "renderPipeline", "assets", "roots"}, "spec")
+    required = {"schemaVersion", "platform", "renderPipeline", "assets", "roots"}
+    if not isinstance(spec, dict) or not required <= set(spec) or set(spec) - required - {"includeObjectIdentities"}:
+        fail("BUILD_FILTER_SCHEMA", "spec", "Missing required collection fields or unknown optional fields")
+    if "includeObjectIdentities" in spec and type(spec["includeObjectIdentities"]) is not bool:
+        fail("BUILD_FILTER_SPEC", "includeObjectIdentities", "Expected an explicit boolean when provided")
     if type(spec["schemaVersion"]) is not int or spec["schemaVersion"] != 1 or not isinstance(spec["platform"], str) or not _TARGET.fullmatch(spec["platform"]):
         fail("BUILD_FILTER_SPEC", "spec", "Expected schemaVersion 1 and explicit Unity BuildTarget name")
     if not isinstance(spec["renderPipeline"], str) or not spec["renderPipeline"]:
@@ -286,6 +328,9 @@ def collect(project, spec_path, output, editor, timeout=600):
                            "build-snapshot.json", timeout)
     if sorted(report["buildScenes"]) != sorted(spec["assets"]) or sorted(report["explicitRoots"]) != sorted(spec["roots"]):
         fail("BUILD_FILTER_SNAPSHOT_IDENTITY", "snapshot", "Native scene/root set differs from request")
+    requested_object_identities = spec.get("includeObjectIdentities", False)
+    if any(("objects" in row) != requested_object_identities for row in report.get("assets", []) if isinstance(row, dict)):
+        fail("BUILD_FILTER_SNAPSHOT_IDENTITY", "snapshot.assets", "Native object identity payload differs from collection request")
     _snapshot(report, {"platform": spec["platform"], "pipeline": spec["renderPipeline"]}, require_runner=True)
     blockers = _verify_input_state(project, report)
     blockers.extend(_native_identity_blockers(report))
@@ -296,7 +341,13 @@ def collect(project, spec_path, output, editor, timeout=600):
     partial = (report["coverage"]["complete"] is not True or bool(report["coverage"]["blockers"])
                or any(row.get("status") == "unknown" for row in report["assets"])
                or bool(report["unresolvedDependencies"]))
-    return dict(report, status="partial" if partial else "observed", report=report_path)
+    summary = dict(report, status="partial" if partial else "observed", report=report_path)
+    if requested_object_identities:
+        # Keep the full pair list in the saved, guarded snapshot; CLI output stays compact.
+        summary["assets"] = [{key: value for key, value in row.items() if key != "objects"}
+                             for row in report["assets"]]
+        summary["objectIdentityCount"] = sum(len(row.get("objects", [])) for row in report["assets"])
+    return summary
 
 
 def _plan_root(value, where):

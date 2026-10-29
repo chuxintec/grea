@@ -115,3 +115,5 @@ Recovery restores create-only verified before-images and independently reopens U
 `snapshotSha256` is the SHA-256 of the snapshot file's exact raw bytes, matching the CLI artifact hash. The target-row digest inside the immutable plan is canonical JSON. Within one plan, shared snapshot artifacts are parsed and runner-validated once while every target is checked separately; caches do not cross plans. Resources key collision guards are case-insensitive.
 
 The derived manifest/runtime job explicitly carries `hasSourceIdentityEvidence` for both policies. Callers do not set this flag in the spec. This prevents JsonUtility's default empty nested objects from being mistaken for supplied evidence, while source-only jobs still require the complete bound record.
+
+Opt-in bulk collector evidence may carry an additional empty `objects` array on the zero-object target row. Its exact raw row digest remains bound; source-only retirement rejects nonempty or unknown object pairs and preserves the real GUID plus empty localIDs.

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,10 +19,21 @@ public static class BeaverBuildFilter
         public string guid;
         public long[] localIds;
         public string[] types;
+        public ObjectIdentity[] objects;
         public string status;
         public string identityStatus;
         public int objectCount;
         public string error;
+    }
+
+    [Serializable]
+    public sealed class ObjectIdentity
+    {
+        public string guid;
+        public long localId;
+        public string type;
+        public string name;
+        public string state;
     }
 
     [Serializable]
@@ -71,6 +83,7 @@ public static class BeaverBuildFilter
         // complete current Assets catalog directly from AssetDatabase.
         public string[] assets;
         public string[] roots;
+        public bool includeObjectIdentities;
         public string platform;
         public string renderPipeline;
         public string reportName;
@@ -111,7 +124,8 @@ public static class BeaverBuildFilter
         if (String.IsNullOrEmpty(record.error)) record.error = error;
     }
 
-    public static Snapshot Collect(string target, string pipeline, string[] buildScenes, string[] explicitRoots)
+    public static Snapshot Collect(string target, string pipeline, string[] buildScenes, string[] explicitRoots,
+        bool includeObjectIdentities = false)
     {
         if (String.IsNullOrWhiteSpace(target) || String.IsNullOrWhiteSpace(pipeline))
             throw new ArgumentException("Exact build target and render pipeline identity are required.");
@@ -151,6 +165,7 @@ public static class BeaverBuildFilter
             UnityEngine.Object[] objects = Array.Empty<UnityEngine.Object>();
             var ids = new SortedSet<long>();
             var types = new SortedSet<string>(StringComparer.Ordinal);
+            var objectIdentities = new Dictionary<string, ObjectIdentity>(StringComparer.Ordinal);
             var errors = new List<string>();
             var guid = AssetDatabase.AssetPathToGUID(path);
             if (String.IsNullOrEmpty(guid)) errors.Add("AssetDatabase path GUID is unavailable.");
@@ -168,6 +183,12 @@ public static class BeaverBuildFilter
             foreach (var obj in objects)
             {
                 types.Add(obj.GetType().FullName);
+                if (includeObjectIdentities && !EditorUtility.IsPersistent(obj))
+                {
+                    errors.Add("Object is not persistent on disk: " + obj.GetType().FullName + ".");
+                    identityStatus = "persistent-identity-unavailable";
+                    continue;
+                }
                 string objectGuid; long localId;
                 if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out objectGuid, out localId) || String.IsNullOrEmpty(objectGuid) || localId == 0)
                 {
@@ -182,13 +203,35 @@ public static class BeaverBuildFilter
                     continue;
                 }
                 ids.Add(localId);
+                if (includeObjectIdentities)
+                {
+                    string objectName;
+                    try
+                    {
+                        objectName = obj.name;
+                        if (objectName == null) throw new InvalidOperationException("Unity object name is null.");
+                    }
+                    catch (Exception error)
+                    {
+                        errors.Add("Persistent object name unavailable for " + obj.GetType().FullName + ": " + error.Message);
+                        identityStatus = "persistent-identity-unavailable";
+                        continue;
+                    }
+                    var identityGuid = objectGuid.ToLowerInvariant();
+                    var key = identityGuid + ":" + localId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    if (!objectIdentities.ContainsKey(key))
+                        objectIdentities.Add(key, new ObjectIdentity { guid = identityGuid, localId = localId,
+                            type = obj.GetType().FullName, name = objectName, state = "persistent" });
+                }
             }
             if (objectCount > 0 && (String.IsNullOrEmpty(guid) || ids.Count == 0 || errors.Count > 0))
                 identityStatus = "persistent-identity-unavailable";
             var status = identityStatus == "verified" && ids.Count > 0 ? "observed" : "unknown";
             if (status == "unknown") blockers.Add("Asset identity incomplete: " + path + " — " + String.Join(" ", errors));
             assets.Add(new AssetRecord { path = path, guid = guid == null ? "" : guid.ToLowerInvariant(), localIds = ids.ToArray(),
-                types = types.ToArray(), status = status, identityStatus = identityStatus, objectCount = objectCount,
+                types = types.ToArray(), objects = includeObjectIdentities ? objectIdentities.Values
+                    .OrderBy(x => x.guid, StringComparer.Ordinal).ThenBy(x => x.localId).ToArray() : null,
+                status = status, identityStatus = identityStatus, objectCount = objectCount,
                 error = errors.Count == 0 ? "" : String.Join(" ", errors) });
         }
 
@@ -323,8 +366,8 @@ public static class BeaverBuildFilter
                 throw new InvalidOperationException("Build filter job targets a different project root.");
             reportPath = Path.Combine(Path.GetFullPath(job.stage), job.reportName);
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
-            var snapshot = Collect(job.platform, job.renderPipeline, job.assets, job.roots);
-            File.WriteAllText(reportPath, JsonUtility.ToJson(snapshot, true), new UTF8Encoding(false));
+            var snapshot = Collect(job.platform, job.renderPipeline, job.assets, job.roots, job.includeObjectIdentities);
+            File.WriteAllText(reportPath, SerializeSnapshot(snapshot, job.includeObjectIdentities), new UTF8Encoding(false));
             EditorApplication.Exit(0);
         }
         catch (Exception error)
@@ -342,5 +385,14 @@ public static class BeaverBuildFilter
             UnityEngine.Debug.LogException(error);
             EditorApplication.Exit(1);
         }
+    }
+
+    private static string SerializeSnapshot(Snapshot snapshot, bool includeObjectIdentities)
+    {
+        var json = JsonUtility.ToJson(snapshot, true);
+        if (includeObjectIdentities) return json;
+        // Unity's JsonUtility emits null public array fields. Keep the historical
+        // schema byte shape by removing only this new opt-in field when disabled.
+        return Regex.Replace(json, @"(?m)^\s*""objects"": (?:null|\[\]),\r?\n", String.Empty);
     }
 }

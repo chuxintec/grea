@@ -25,7 +25,7 @@ def _p0_report(path):
 
 def _p0_summary(data):
     """Project transport metadata only; the complete report remains hashed on disk."""
-    result={k:data[k] for k in ('status','report','mode','projectRoot','productRoot','profileIdentity','structureDocumentationIdentity','sourceUnchanged','helperCleaned','editorExitCode','projectConformance','batchReadiness','planSha256','counts','transaction','sourceSha256','restoredFiles') if k in data}
+    result={k:data[k] for k in ('status','report','mode','projectRoot','productRoot','profileIdentity','structureDocumentationIdentity','sourceUnchanged','helperCleaned','editorExitCode','projectConformance','batchReadiness','planSha256','counts','transaction','sourceSha256','restoredFiles','objectIdentityCount') if k in data}
     if isinstance(data.get('nativeReadback'),str):result['nativeReadback']=data['nativeReadback']
     for field in ('inventory','assets','fields','issues','blockers','remainingStructureIssues','deletedPaths','deletedFolders','changes','unresolvedDependencies'):
         if isinstance(data.get(field),list):result[field+'Count']=len(data[field])
@@ -47,7 +47,7 @@ def capabilities():
         dict(id='wiring.plan',state='implemented',effects='plan-output',verification='compiled types and exact identities; ambiguous targets blocked; existing batch apply required'),
         dict(id='diagnostics.summarize',state='implemented',effects='read-and-report',verification='bounded evidence and explicit execution state; never replays writes'),
         dict(id='structure.inspect/plan',state='implemented',effects='read-and-plan-output',verification='static consumers plus exact native identity; migration uses existing batch transactions'),
-        dict(id='build-filter.collect/plan',state='requires_provider',provider='matching Unity Editor and active target/pipeline',effects='read-temporary-helper-and-report',verification='native dependency snapshot and hash-bound provenance; no automatic deletion or shader replacement'),
+        dict(id='build-filter.collect/plan',state='requires_provider',provider='matching Unity Editor and active target/pipeline',effects='read-temporary-helper-and-report',verification='native dependency snapshot and hash-bound provenance; optional persistent GUID/localID/type/name pairs; no automatic deletion or shader replacement'),
         dict(id='native.readback',state='requires_provider',provider='matching Unity Editor; graphics for capture',effects='read-temporary-helper-and-report',verification='SerializedObject and persistent IDs; owned preview capture; no gameplay or visual acceptance'),
         dict(id='production.plan/apply/recover',state='requires_provider',provider='Unity 6000.6.2f1 + explicit project profile',effects='declared-resource-config-code-writes',verification='schema3; native apply/reopen/recover verified on private fixtures; formal consumer evidence is project-specific'),
         dict(id='config3.validate/generate/compare',state='implemented',effects='read-and-create-only-generated-code',verification='strict shared schema; actual C# and Go JSON readers; caller must run generated consumer'),

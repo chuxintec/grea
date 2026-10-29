@@ -43,6 +43,11 @@
       "minItems": 0,
       "maxItems": 256,
       "uniqueItems": true
+    },
+    "includeObjectIdentities": {
+      "type": "boolean",
+      "default": false,
+      "description": "Include native persistent GUID/localID/type/name object pairs on each asset catalog row."
     }
   }
 }

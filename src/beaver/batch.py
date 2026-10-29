@@ -16,6 +16,7 @@ from .asset_names import validate_destination
 
 HELPER_ROOT = 'Assets/BeaverBatchTools'
 SCENE_BUILD_SETTINGS = 'ProjectSettings/EditorBuildSettings.asset'
+MOVE_DELTA_POLICY = 'move-delta-v1'
 KINDS = {'node.add','node.remove','node.reparent','node.order','node.active','component.add','component.remove',
          'property.set','binding.reference','binding.event','ui.rect','ui.scroll','ui.grid','ui.mask','ui.text','ui.event','ui.list','ui.safeArea'}
 FIELDS = {'kind','path','parent','name','component','property','value','targetNode','targetComponent',
@@ -34,6 +35,24 @@ def inventory(root):
                 p=Path(base)/name;s=p.stat()
                 result[p.relative_to(root).as_posix()]=[s.st_size,s.st_mtime_ns,s.st_ctime_ns,s.st_ino]
     return result
+
+
+def directory_inventory(root):
+    """Exact Assets directory paths for the opt-in move checkpoint final guard."""
+    base=inside(root,'Assets')
+    if not base.is_dir() or base.is_symlink():fail('BATCH_DIRECTORY_GUARD','Assets','Expected real Assets root')
+    result=[]
+    for path in [base,*base.rglob('*')]:
+        if path.is_symlink():fail('BATCH_SYMLINK',str(path),'Source symlinks unsupported')
+        if path.is_dir():result.append(path.relative_to(root).as_posix())
+    return sorted(result)
+
+
+def unplanned_move_directories(before,created,after,complete=False):
+    old=set(before);allowed=set(created);current=set(after)
+    removed=old-current;added=(current-old)-allowed
+    missing_on_success=(allowed-current) if complete else set()
+    return sorted(removed|added|missing_on_success)
 
 
 def state(root, paths):
@@ -154,7 +173,7 @@ def validate(spec):
     if isinstance(spec,dict) and spec.get('schemaVersion')==3:
         from .production import validate as production_validate
         return production_validate(spec)
-    if not isinstance(spec,dict) or set(spec)-{'schemaVersion','operation','steps','readPaths','runtimeRoot'} or spec.get('schemaVersion')!=2 or spec.get('operation')!='batch':
+    if not isinstance(spec,dict) or set(spec)-{'schemaVersion','operation','steps','readPaths','runtimeRoot','checkpointPolicy'} or spec.get('schemaVersion')!=2 or spec.get('operation')!='batch':
         fail('BATCH_SPEC','spec','Expected schemaVersion 2, operation batch and explicit steps')
     steps=spec.get('steps')
     if not isinstance(steps,list) or not 1<=len(steps)<=256:fail('BATCH_STEPS','spec','Expected 1..256 ordered steps')
@@ -211,6 +230,33 @@ def validate(spec):
         asset_path(spec['runtimeRoot']+'/BeaverListView.cs','.cs')
         if 'Editor' in spec['runtimeRoot'].split('/'):fail('BATCH_RUNTIME_EDITOR','runtimeRoot','Runtime components cannot be installed in Editor directory')
     for p in spec.get('readPaths',[]):asset_path(p,Path(p).suffix)
+    if 'checkpointPolicy' in spec:
+        if spec['checkpointPolicy']!=MOVE_DELTA_POLICY:
+            fail('BATCH_CHECKPOINT_POLICY','spec','Unknown explicit checkpoint policy')
+        if (not steps or any(s.get('kind')!='asset.move' for s in steps)
+                or any(s['source'].lower().endswith('.unity') or s['target'].lower().endswith('.unity') for s in steps)
+                or spec.get('runtimeRoot') or spec.get('readPaths')):
+            fail('BATCH_CHECKPOINT_POLICY','spec','move-delta-v1 is limited to pure non-Scene asset.move batches without runtime installs or extra read paths')
+
+
+def validate_native_checkpoint(report,write_set,policy):
+    """Validate full-final native witness; delta cache rows never certify a source state."""
+    if policy is None:return True
+    if not isinstance(report,dict):return False
+    files=report.get('files')
+    rows={row.get('path'):row for row in files if isinstance(row,dict)} if isinstance(files,list) else {}
+    expected=set(write_set)
+    count=report.get('checkpointCount') if isinstance(report,dict) else None
+    rows_valid=(isinstance(files,list) and len(rows)==len(files)==len(expected) and set(rows)==expected and
+                all(isinstance(row.get('path'),str) and type(row.get('exists')) is bool and type(row.get('bytes')) is int and row['bytes']>=0 and isinstance(row.get('sha256',''),str) and
+                    (re.fullmatch(r'[0-9a-f]{64}',row.get('sha256','')) if row['exists'] else row.get('sha256','')=='' and row['bytes']==0)
+                    for row in files))
+    checkpoint_paths=report.get('checkpointPaths')
+    complete_paths=(isinstance(checkpoint_paths,list) and all(isinstance(p,str) for p in checkpoint_paths)
+                    and len(checkpoint_paths)==len(expected) and set(checkpoint_paths)==expected)
+    return (report.get('checkpointPolicy')==policy and report.get('checkpointState')=='full-final'
+            and report.get('checkpointComplete') is True and type(count) is int and count>=2
+            and rows_valid and complete_paths)
 
 
 def dependencies(project, roots, explicit_guids=()):
@@ -293,6 +339,12 @@ def plan(project,spec_path,output):
                 else:roots.add(meta)
     profile=binding(project,spec,writes=writes) if production else None
     reads,metrics=dependencies(project,roots,explicit_guids);before=state(project,reads|writes)
+    move_directory_guard=None
+    if spec.get('checkpointPolicy')==MOVE_DELTA_POLICY:
+        initial_dirs=directory_inventory(project)
+        created_dirs=sorted({parent.as_posix() for step in spec['steps'] for parent in Path(step['target']).parents
+                             if parent.as_posix() not in ('.','Assets') and parent.as_posix() not in initial_dirs})
+        move_directory_guard=dict(before=initial_dirs,created=created_dirs)
     if any(p==HELPER_ROOT or p.startswith(HELPER_ROOT+'/') or p==HELPER_ROOT+'.meta' for p in before):fail('BATCH_RESERVED_PATH',HELPER_ROOT,'Temporary helper root reserved')
     out=new_output(output,[project,safe(spec_path)])
     result=dict(contract='beaver-production/3' if production else 'beaver-batch/2',schemaVersion=3 if production else 2,implementationSha256=identity(),projectRoot=str(project),
@@ -300,6 +352,8 @@ def plan(project,spec_path,output):
                 metrics=dict(metrics,statFiles=len(listing),hashedFiles=sum(v is not None for v in before.values()),hashedBytes=sum(v['bytes'] for v in before.values() if v),editorStarts=0,seconds=time.monotonic()-started),
                 limitations=['Selected GUID closure and compilation inputs are hashed; unrelated asset bytes are not scanned',
                              'Native dependency preflight rejects unlisted consumers before replacement','Dynamic loading keys require explicit consumer patches; no completeness claim'])
+    if spec.get('checkpointPolicy') is not None:result['checkpointPolicy']=spec['checkpointPolicy']
+    if move_directory_guard is not None:result['moveDirectoryGuard']=move_directory_guard
     if profile:result['projectBinding']=profile
     if scene_settings:result['sceneSettings']=scene_settings
     write_json(out/'batch-plan.json',result);digest=sha(encoded(result));write_json(out/'plan-identity.json',dict(sha256=digest))
@@ -310,6 +364,15 @@ def check_plan(path,expected):
     raw=read(path,max_bytes=128*1024**2);data=load(raw,max_nodes=8_000_000)
     if sha(raw)!=expected or data.get('contract') not in ('beaver-batch/2','beaver-production/3') or data.get('implementationSha256')!=identity():fail('BATCH_PLAN_CHANGED',str(path),'Regenerate with current implementation; bind exact plan SHA256')
     validate(data['spec'])
+    if data['spec'].get('checkpointPolicy')!=data.get('checkpointPolicy'):
+        fail('BATCH_CHECKPOINT_PLAN',str(path),'Plan checkpoint policy must equal its immutable spec')
+    if data.get('checkpointPolicy')==MOVE_DELTA_POLICY:
+        guard=data.get('moveDirectoryGuard')
+        if (not isinstance(guard,dict) or set(guard)!={'before','created'}
+                or not isinstance(guard.get('before'),list) or not isinstance(guard.get('created'),list)
+                or any(not isinstance(p,str) or not (p=='Assets' or p.startswith('Assets/')) for p in guard['before']+guard['created'])
+                or len(guard['before'])!=len(set(guard['before'])) or len(guard['created'])!=len(set(guard['created']))):
+            fail('BATCH_CHECKPOINT_PLAN',str(path),'Exact source and planned directory sets are required for move-delta-v1')
     scene_settings=data.get('sceneSettings')
     if scene_settings is not None:
         required={'path','beforeSha256','beforeBytes','expectedAfterSha256','expectedAfterBytes','moves'}
@@ -426,6 +489,8 @@ def apply(plan_path,output,editor,expected,timeout=600):
             if binding(project,data['spec'],data['writeSet'])!=data['projectBinding']:fail('PRODUCTION_BINDING_DRIFT',str(project),'Project profile changed before write lock')
             verify_sources(project,data['spec'])
         if state(project,data['before'])!=data['before']:fail('BATCH_SOURCE_DRIFT',str(project),'Read/write content changed since plan')
+        if data.get('checkpointPolicy')==MOVE_DELTA_POLICY and directory_inventory(project)!=data['moveDirectoryGuard']['before']:
+            fail('BATCH_SOURCE_DRIFT',str(project),'Assets directory set changed since the move-delta plan')
         transforms=text_changes(project,data['spec']);listing=inventory(project)
         file_edits={edit['path']:read(edit['source'],max_bytes=512*1024**2) for edit in data['spec'].get('fileEdits',[])}
         for edit in data['spec'].get('fileEdits',[]):
@@ -452,6 +517,7 @@ def apply(plan_path,output,editor,expected,timeout=600):
                             scene_settings=data.get('sceneSettings'),installs=data['installs'],patches=patches,
                             requiresReopen=(bool(data.get('sceneSettings')) or
                                             any(s['kind']=='resource.project-settings' for s in data['spec']['steps'])))
+            if data.get('checkpointPolicy') is not None:job['checkpointPolicy']=data['checkpointPolicy']
             if production:
                 import json
                 from .resources import validate_step
@@ -481,15 +547,25 @@ def apply(plan_path,output,editor,expected,timeout=600):
             observed=inventory(project);changed={p for p in set(listing)|set(observed) if listing.get(p)!=observed.get(p)}
             journal['after']=state(project,data['writeSet']);journal['changedPaths']=sorted(changed)
             journal['unplannedPaths']=sorted(changed-set(data['writeSet']))
+            if data.get('checkpointPolicy')==MOVE_DELTA_POLICY:
+                directory_after=directory_inventory(project)
+                journal['directorySetAfter']=directory_after
+                journal['unplannedDirectories']=unplanned_move_directories(data['moveDirectoryGuard']['before'],data['moveDirectoryGuard']['created'],directory_after,
+                    complete=code==0 and report.get('status')=='verified')
             journal['sceneSettingsGuardMatches']=_scene_settings_guard(data.get('sceneSettings'),journal.get('native',{}),journal['after'],'after')
             journal['metrics']=dict(statFilesPerInventory=len(observed),inventoryPasses=2,
                                     pythonHashReadOperations=sum(v is not None for v in data['before'].values())+sum(v is not None for v in journal['after'].values()),
                                     nativeHashReadOperations=journal.get('native',{}).get('hashReadOperations','not_recorded_by_executor'),
                                     writeSetPaths=len(data['writeSet']),editorStarts=journal['editorStarts'],seconds=time.monotonic()-started)
             write_json(stage/'journal.json',journal)
-        witness={row['path']:None if not row['exists'] else dict(sha256=row['sha256'],bytes=row['bytes']) for row in report.get('files',[])}
-        journal['recoveryWitnessMatches']=witness==journal['after']
-        if code!=0 or report.get('status')!='verified' or report.get('planSha256')!=expected or not journal['recoveryWitnessMatches'] or journal['unplannedPaths'] or not journal['sceneSettingsGuardMatches']:
+        report_files=report.get('files',[]) if isinstance(report,dict) else []
+        witness={row['path']:None if not row['exists'] else dict(sha256=row['sha256'],bytes=row['bytes'])
+                 for row in report_files if isinstance(row,dict) and isinstance(row.get('path'),str)
+                 and type(row.get('exists')) is bool and type(row.get('bytes')) is int and isinstance(row.get('sha256',''),str)} if isinstance(report_files,list) else {}
+        native_checkpoint_ok=validate_native_checkpoint(report,data['writeSet'],data.get('checkpointPolicy'))
+        journal['nativeCheckpointFullFinal']=native_checkpoint_ok
+        journal['recoveryWitnessMatches']=witness==journal['after'] and native_checkpoint_ok
+        if code!=0 or report.get('status')!='verified' or report.get('planSha256')!=expected or not journal['recoveryWitnessMatches'] or journal['unplannedPaths'] or journal.get('unplannedDirectories') or not journal['sceneSettingsGuardMatches']:
             journal['status']='recovery-required';write_json(stage/'journal.json',journal)
             cause=(report.get('error') or ('Scene BuildSettings postimage/readback mismatch' if not journal['sceneSettingsGuardMatches'] else '') or journal.get('nativeBeforeReopen',{}).get('error') or 'No verified native report or unexpected source mutation').splitlines()[0][:1000]
             if production and 'RESOURCE_NEEDS_ACTION' in report.get('error',''):
@@ -506,8 +582,15 @@ def recover(transaction,output,editor,timeout=600):
     project=safe(journal['projectRoot']);editor=editor_path(editor)
     if data['projectRoot']!=str(project) or sha(encoded(data))!=journal['planSha256']:fail('BATCH_RECOVERY_PLAN',str(transaction),'Pinned transaction plan changed')
     report=journal.get('native') or (load(read(transaction/'native-result.json')) if (transaction/'native-result.json').exists() else {})
-    witness={r['path']:None if not r['exists'] else dict(sha256=r['sha256'],bytes=r['bytes']) for r in report.get('files',[])}
-    if report.get('planSha256')!=journal['planSha256'] or witness!=journal.get('after') or journal.get('unplannedPaths'):
+    report_files=report.get('files',[]) if isinstance(report,dict) else []
+    witness={r['path']:None if not r['exists'] else dict(sha256=r['sha256'],bytes=r['bytes'])
+             for r in report_files if isinstance(r,dict) and isinstance(r.get('path'),str)
+             and type(r.get('exists')) is bool and type(r.get('bytes')) is int and isinstance(r.get('sha256',''),str)} if isinstance(report_files,list) else {}
+    checkpoint_ok=validate_native_checkpoint(report,journal.get('writeSet',[]),data.get('checkpointPolicy'))
+    if (data.get('checkpointPolicy')==MOVE_DELTA_POLICY and (journal.get('unplannedDirectories') or
+            directory_inventory(project)!=journal.get('directorySetAfter'))):
+        fail('BATCH_RECOVERY_UNCERTAIN',str(transaction),'Assets directory set changed after the native checkpoint')
+    if report.get('planSha256')!=journal['planSha256'] or witness!=journal.get('after') or journal.get('unplannedPaths') or journal.get('unplannedDirectories') or not checkpoint_ok:
         fail('BATCH_RECOVERY_UNCERTAIN',str(transaction),'No complete native hash checkpoint or unexpected writes; inspect manually, no guessed overwrite')
     for rel,before in journal['before'].items():
         if before is not None and state(transaction/'before',[rel])[rel]!=before:fail('BATCH_BACKUP_DRIFT',rel,'Original before-image changed')
@@ -521,11 +604,21 @@ def recover(transaction,output,editor,timeout=600):
                      [dict(path=p,exists=v is not None,sha256=v['sha256'] if v else '') for p,v in journal['after'].items()],
                      spec=data['spec'],scene_settings=data.get('sceneSettings'),
                      restores=[dict(path=p,source=str(transaction/'before'/p),exists=v is not None,sha256=v['sha256'] if v else '') for p,v in journal['before'].items()])
+            if data.get('checkpointPolicy') is not None:job['checkpointPolicy']=data['checkpointPolicy']
             code,report=launch(editor,project,stage,job,timeout)
         finally:cleanup(project,root,owned)
         restored=state(project,journal['writeSet'])
-        if code!=0 or report.get('status')!='verified' or restored!=journal['before'] or not _scene_settings_guard(data.get('sceneSettings'),report,restored,'before'):
+        restored_files=report.get('files',[]) if isinstance(report,dict) else []
+        restored_native_rows={row['path']:None if not row['exists'] else dict(sha256=row['sha256'],bytes=row['bytes'])
+                              for row in restored_files if isinstance(row,dict) and isinstance(row.get('path'),str)
+                              and type(row.get('exists')) is bool and type(row.get('bytes')) is int and isinstance(row.get('sha256',''),str)} if isinstance(restored_files,list) else {}
+        restored_checkpoint_ok=validate_native_checkpoint(report,journal['writeSet'],data.get('checkpointPolicy'))
+        if code!=0 or report.get('status')!='verified' or restored!=journal['before'] or \
+           data.get('checkpointPolicy')==MOVE_DELTA_POLICY and (not restored_checkpoint_ok or restored_native_rows!=restored) or \
+           not _scene_settings_guard(data.get('sceneSettings'),report,restored,'before'):
             write_json(stage/'recovery.json',dict(status='failed',native=report));fail('BATCH_RECOVERY_FAILED',str(stage),'Restore did not return exact original native files')
+        if data.get('checkpointPolicy')==MOVE_DELTA_POLICY and directory_inventory(project)!=data['moveDirectoryGuard']['before']:
+            write_json(stage/'recovery.json',dict(status='failed',native=report));fail('BATCH_RECOVERY_FAILED',str(stage),'Restore did not return the original Assets directory set')
         journal['status']='recovered';journal['recoveryReport']=str(stage/'recovery.json');write_json(transaction/'journal.json',journal)
         result=dict(status='verified',nativeReadback='restored_exact_bytes_and_imported',restored=len(journal['writeSet']),report=str(stage/'recovery.json'),editorStarts=1)
         write_json(stage/'recovery.json',result)

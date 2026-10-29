@@ -98,6 +98,17 @@ def native_report(plan_data,project):
 
 
 class RetirementTests(unittest.TestCase):
+    def test_source_only_evidence_accepts_opt_in_empty_bulk_objects_without_fabricating_ids(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)
+            doc=load(read(spec));snapshot_path=Path(doc['retire'][0]['sourceIdentityEvidence']['snapshotPath'])
+            snapshot=load(read(snapshot_path));snapshot['assets'][0]['objects']=[];write_json(snapshot_path,snapshot)
+            doc['retire'][0]['sourceIdentityEvidence']['snapshotSha256']=sha(read(snapshot_path));write_json(spec,doc)
+            result=plan(project,spec,root/'plan');data=load(read(Path(result['report'])))
+            item=data['retireManifest'][0];validate_retire_source_evidence(item)
+            item['sourceIdentityEvidence']['targetRecord']['objects']=[{'fabricated':True}]
+            with self.assertRaises(BeaverError):validate_retire_source_evidence(item)
+
     def test_source_only_snapshot_without_native_guid_is_not_archive_evidence(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp).resolve();project,selected,spec=fixture(root,source_only=True)

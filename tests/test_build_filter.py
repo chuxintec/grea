@@ -193,6 +193,57 @@ class BuildFilterTests(unittest.TestCase):
             with self.assertRaisesRegex(BeaverError, "BUILD_FILTER_NATIVE_GUARD"):
                 _snapshot(snapshot, {"platform": snapshot["target"], "pipeline": snapshot["pipeline"]}, require_runner=True)
 
+    def test_optional_bulk_object_identity_pairs_are_strict_and_preserve_edge_values(self):
+        with tempfile.TemporaryDirectory(dir="/private/tmp") as directory:
+            root = Path(directory)
+            snapshot, _ = fixture(root)
+            scene = next(row for row in snapshot["assets"] if row["path"].endswith("Recovered.shader"))
+            scene["localIds"] = [-1002]
+            scene["objects"] = [{"guid": scene["guid"], "localId": -1002,
+                                 "type": scene["types"][0], "name": "", "state": "persistent"}]
+            for row in snapshot["assets"]:
+                if row is scene:
+                    continue
+                row["objects"] = [{"guid": row["guid"], "localId": row["localIds"][0],
+                                   "type": row["types"][0], "name": row["path"], "state": "persistent"}]
+            _snapshot(snapshot, {"platform": snapshot["target"], "pipeline": snapshot["pipeline"]})
+            scene["objects"][0]["localId"] = 9999
+            with self.assertRaisesRegex(BeaverError, "BUILD_FILTER_ASSET_IDENTITY"):
+                _snapshot(snapshot, {"platform": snapshot["target"], "pipeline": snapshot["pipeline"]})
+
+    def test_bulk_pairs_keep_zero_and_partial_identity_rows_unknown(self):
+        with tempfile.TemporaryDirectory(dir="/private/tmp") as directory:
+            root = Path(directory)
+            snapshot, _ = fixture(root)
+            for row in snapshot["assets"]:
+                row["objects"] = [{"guid": row["guid"], "localId": row["localIds"][0],
+                                   "type": row["types"][0], "name": "", "state": "persistent"}]
+            empty = next(row for row in snapshot["assets"] if row["path"].endswith("mystery.asset"))
+            empty.update(status="unknown", identityStatus="no-persistent-object", objectCount=0,
+                         localIds=[], types=[], objects=[], error="No persistent object returned.")
+            _snapshot(snapshot, {"platform": snapshot["target"], "pipeline": snapshot["pipeline"]})
+            empty.update(identityStatus="persistent-identity-unavailable", objectCount=2,
+                         localIds=[1003, 1011], types=["UnityEngine.Material", "UnityEngine.Texture2D"],
+                         objects=[{"guid": empty["guid"], "localId": 1003, "type": "UnityEngine.Material",
+                                   "name": "partial", "state": "persistent"}],
+                         error="Persistent object name unavailable for one object.")
+            _snapshot(snapshot, {"platform": snapshot["target"], "pipeline": snapshot["pipeline"]})
+            empty["objects"].append({"guid": empty["guid"], "localId": 9999, "type": "UnityEngine.Texture2D",
+                                     "name": "fabricated", "state": "persistent"})
+            with self.assertRaisesRegex(BeaverError, "BUILD_FILTER_ASSET_IDENTITY"):
+                _snapshot(snapshot, {"platform": snapshot["target"], "pipeline": snapshot["pipeline"]})
+
+    def test_collect_spec_accepts_only_explicit_optional_identity_boolean(self):
+        with tempfile.TemporaryDirectory(dir="/private/tmp") as directory:
+            root = Path(directory)
+            snapshot, _ = fixture(root)
+            spec = {"schemaVersion": 1, "platform": snapshot["target"], "renderPipeline": snapshot["pipeline"],
+                    "assets": snapshot["buildScenes"], "roots": [], "includeObjectIdentities": True}
+            self.assertIs(validate_collect_spec(root, spec), spec)
+            spec["includeObjectIdentities"] = 1
+            with self.assertRaisesRegex(BeaverError, "BUILD_FILTER_SPEC"):
+                validate_collect_spec(root, spec)
+
     def test_changed_assets_or_project_settings_invalidate_the_native_closure(self):
         with tempfile.TemporaryDirectory(dir="/private/tmp") as directory:
             root = Path(directory)
@@ -329,6 +380,33 @@ class BuildFilterTests(unittest.TestCase):
             self.assertEqual(summary["coverage"], saved["coverage"])
             planned = plan(root, {"platform": saved["target"], "pipeline": saved["pipeline"]}, saved, [])
             self.assertEqual(planned["execution"]["status"], "blocked")
+
+    def test_opt_in_collect_persists_pairs_but_keeps_summary_compact(self):
+        with tempfile.TemporaryDirectory(dir="/private/tmp") as directory:
+            root = Path(directory)
+            snapshot, _ = fixture(root)
+            for row in snapshot["assets"]:
+                row.update(status="observed", identityStatus="verified", objectCount=1, error="")
+                row["objects"] = [{"guid": row["guid"], "localId": row["localIds"][0],
+                                   "type": row["types"][0], "name": "asset", "state": "persistent"}]
+            snapshot.update(editorExitCode=0, sourceUnchanged=True, unplannedProjectChanges=[], helperCleaned=True,
+                            nativeReadback="read_only_native_snapshot", visualAcceptance="not-established",
+                            gameplayAcceptance="not-established")
+            spec_path = root / "collect-spec.json"
+            spec_path.write_text(json.dumps({"schemaVersion": 1, "platform": snapshot["target"],
+                "renderPipeline": snapshot["pipeline"], "assets": snapshot["buildScenes"], "roots": [],
+                "includeObjectIdentities": True}), encoding="utf-8")
+            output = root.parent / (root.name + "-collector-output")
+            def fake_collector(*args, **kwargs):
+                output.mkdir(parents=True, exist_ok=True)
+                (output / "build-snapshot.json").write_text(json.dumps(snapshot), encoding="utf-8")
+                return snapshot
+            with patch("beaver.native_readback.run_collector", side_effect=fake_collector):
+                summary = collect(root, spec_path, output, "/unused/editor")
+            self.assertGreater(summary["objectIdentityCount"], 0)
+            self.assertTrue(all("objects" not in row for row in summary["assets"]))
+            saved = json.loads((output / "build-snapshot.json").read_text(encoding="utf-8"))
+            self.assertTrue(all("objects" in row for row in saved["assets"]))
 
 
 if __name__ == "__main__":

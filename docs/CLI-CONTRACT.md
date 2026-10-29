@@ -139,3 +139,9 @@ Scene asset moves in `batch` may bind one exact `ProjectSettings/EditorBuildSett
 The existing `unity plan/apply/recover` entry accepts an explicit `empty-folder` retirement policy; see [EMPTY-FOLDERS.md](EMPTY-FOLDERS.md) for its closed spec, source/directory guards and recovery limits. This is a distinct native folder identity path, not recursive file retirement. Previously fixed packages remain immutable and cannot replay new plans.
 
 Move destinations in both `batch asset.move` and `unity assets.move` are preflighted component by component against portable file/directory names (forbidden characters, controls, trailing dots/spaces and reserved Windows device names). Invalid targets fail before output or native writes, with the exact path; existing imported source names are not silently rewritten. See [Microsoft file naming rules](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file). A valid explicit rename remains a new caller-reviewed plan and can change native object names; consumer review remains required.
+
+## Bulk identities and pure-move checkpoint policy
+
+Build-filter collection accepts optional `includeObjectIdentities: true`. The guarded disk snapshot then includes paired persistent `objects` (guid/localId/type/name/state); old fields and partial coverage remain. Exact usage is in [BUILD-FILTER.md](BUILD-FILTER.md). `--summary` carries objectIdentityCount without inlining object rows.
+
+Batch schema 2 may explicitly opt into `checkpointPolicy: "move-delta-v1"` for pure non-Scene asset.move steps. Default behavior is retained. Final full write-set hashes and exact Python post-state matching remain mandatory; a cached delta alone cannot certify success or recovery. Read [MOVE-CHECKPOINTS.md](MOVE-CHECKPOINTS.md) for restrictions and fault semantics. JSON report serialization remains proportional to the complete write set at each step.

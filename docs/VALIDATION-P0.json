@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261029+fix7",
+  "candidateVersion": "0.5.1.dev20261029+fix8",
   "status": "local-candidate-verified",
   "syntheticChecks": {
-    "passed": 177,
+    "passed": 188,
     "scope": "all affected P0 plus shared adoption/batch/production/UI/wiring regressions; explicit native-job evidence markers included"
   },
   "native": {
@@ -219,7 +219,7 @@
     "ordinaryNoSceneJobVerified": true,
     "persistedSettingsAfterExitVerified": true
   },
-  "implementationSha256": "b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c",
+  "implementationSha256": "6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3",
   "retainedFailureEvidence": [
     "initial retirement companion compile failure before deletion",
     "recently deleted GUID lookup caused uncertain checkpoint, private fixture restoration separately recorded",
@@ -227,7 +227,7 @@
     "JsonUtility empty nested evidence object wrongly rejected default policy before deletion",
     "default recovery optional digest null/empty comparison; original bytes restored but Native verdict withheld until fixed candidate passed"
   ],
-  "priorNativeEvidenceBoundary": "Existing captures, folder moves, build collection and Scene settings retain their original fixed-candidate evidence. Fix7 reran the affected retirement modes and new empty-folder native path; it does not claim all historical native flows reran with this producer.",
+  "priorNativeEvidenceBoundary": "Captures, folder moves, Scene settings and fix7 empty-folder acceptance retain their original fixed-candidate evidence. Fix8 reran bulk identity collection, opt-in/default non-Scene batches and recovery faults; it also verified source-only retirement with a new bulk zero-object snapshot. No complete game acceptance is inferred.",
   "emptyFolderRetirement": {
     "testedInstalledCandidate": "0.5.1.dev20261029+fix7",
     "producer": "b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c",
@@ -262,5 +262,47 @@
     "rules": "portable forbidden characters/controls/trailing dot-space/reserved Windows device names",
     "source": "https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file"
   },
-  "largeBatchPerformance": "Known full-retirement-report rewrite and batch whole-writeSet checkpoint hashing costs remain; fixed-input consumer results do not establish arbitrary-scale support. No optimization or timeout increase is included in fix7."
+  "largeBatchPerformance": "Move-only opt-in reduces per-step payload hashing, with complete full-final witnesses. Full report serialization still scales with steps times writeSet; retirement checkpoint serialization is unchanged. No arbitrary-scale support or global timeout increase is claimed.",
+  "bulkObjectIdentities": {
+    "testedInstalledCandidate": "0.5.1.dev20261029+fix8",
+    "producer": "6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3",
+    "wholeNativeCatalogAssets": 258,
+    "wholeNativeCatalogPersistentPairs": 603,
+    "independentlyComparedFixtureAssets": 161,
+    "independentlyComparedFixturePairs": 322,
+    "actualEmptyName": true,
+    "mainAndSubassetPairing": true,
+    "EditorUtilityIsPersistentRequired": true,
+    "oldFieldsMatchLegacyCollectionExactly": true,
+    "legacyModeOmitsObjects": true,
+    "boundedSummary": true,
+    "fullSourceGuardAndHelperCleanup": true,
+    "realPartialCoverageFalseAndCliExit1": true,
+    "realZeroObjectRowPreservesGuidEmptyIdsAndObjects": true,
+    "newSnapshotSourceOnlyNativeDeleteReopenRecoverReopen": true,
+    "missingScriptFixtureSetup": "immutable fix7 normal script retirement/recovery",
+    "reportBudget": "unchanged 128 MiB and 8 million nodes",
+    "gameProjectWrites": false
+  },
+  "moveDeltaCheckpoint": {
+    "testedInstalledCandidate": "0.5.1.dev20261029+fix8",
+    "producer": "6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3",
+    "policy": "opt-in move-delta-v1; pure non-Scene moves only",
+    "nativeSteps": 128,
+    "writeSetPaths": 514,
+    "defaultNativeHashReads": 33886,
+    "deltaNativeHashReads": 1120,
+    "defaultSeconds": 6.655678250011988,
+    "deltaSeconds": 4.33275787497405,
+    "timeBoundary": "small synthetic sprites; no general runtime or large-project throughput claim",
+    "fullFinalHashesAndIndependentBulkReadback": true,
+    "partialFailureAfterOneMoveAndPublicRecovery": true,
+    "plannedNotYetCreatedDirectoriesHandled": true,
+    "missingFullFinalCheckpointRefusesRecovery": true,
+    "laterManualEditRefusesRecovery": true,
+    "failedIoFixtureRestoration": "new reviewed reverse plan and explicit native empty-folder cleanup; original failed journal preserved",
+    "fullFixtureSourceAndDirectorySetRestored": true,
+    "jsonSerializationCost": "still full report per step",
+    "defaultPolicyAndSceneBehavior": "unchanged; Scene execution not rerun with fix8"
+  }
 }
