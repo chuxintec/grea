@@ -34,3 +34,5 @@ Fix9 parent implementation and final installed native validation complete: exact
 Build follow-up: /root/build_policy owns unity.py, BeaverNative.cs and necessary isolated build policy/tests/docs; parent shared version/CLI/PLAN, sole Editor/private fixture/sealing. Existing primary model inherited (full-context spawn); no recursive delegation, game writes or other-repository changes.
 
 Build module integrated by parent. Contributor supplied 11 module checks including public recovery guard negatives; parent 51 affected/shared checks and real native positive/failure/interruption recovery passed. Sole parent Editor; source/runtime ready for fixed candidate verification.
+
+Fix12 lifecycle module and explicit old-fix11 reviewed recovery integrated. Parent fixed native placeholder reproduction/build/exit verification and package sealing passed; 54 shared/affected checks, 125 runtime files, 20 frozen contracts. GREA public adapter and real FoodStreet 14-font/55,608-source/275-artifact build verified. Consumer build segment closed; runtime/visual acceptance remains consumer-owned.
