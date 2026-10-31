@@ -82,6 +82,9 @@ def capabilities():
         dict(id="unity.validate.play", state="requires_provider", provider="Unity 6000.6.2f1", effects="bounded-playmode", verification="3-second isolated scene; zero runtime errors"),
         dict(id="unity.build.macos", state="requires_provider", provider="Unity 6000.6.2f1 + Mac module", effects="create-only-artifact", verification="native BuildPipeline; unchanged source; artifact manifest"),
         dict(id="player.run", state="implemented", effects="bounded-owned-process", verification="hash-bound macOS artifact launch; application verdict remains separate"),
+        dict(id='qa.prepare',state='implemented',effects='verified-bundle-copy-and-owned-test-data',verification='explicit artifact and input hashes; stable named test profile; preparation does not launch Player'),
+        dict(id='qa.launch',state='requires_provider',provider='macOS GUI session and explicitly prepared runtime',effects='owned-player-and-controlled-test-data',verification='bounded owned GUI process; optional restrictive Documents denial; actual access and save-resume require consumer evidence'),
+        dict(id='qa.collect',state='implemented',effects='owned-run-evidence-report',verification='exact project/build/profile/run identities; process and artifact evidence; no inferred gameplay or TCC verdict'),
         dict(id="image.inspect", state="requires_provider", provider="Pillow", effects="read", verification="exact RGBA/alpha fixture"),
         dict(id="image.compress", state="requires_provider", provider="Pillow", effects="create-only", verification="lossless PNG stream and exact decoded RGBA"),
         dict(id="config.validate", state="implemented", effects="read", verification="strict scalar JSON; native runtime rejects missing/wrong-type fields"),
@@ -222,6 +225,15 @@ def parser():
     player_run.add_argument('--out',required=True)
     player_run.add_argument('--duration',type=int,default=10)
     player_run.add_argument('--expected-manifest',required=True)
+    qa=sub.add_parser('qa').add_subparsers(dest='action',required=True)
+    qp=qa.add_parser('prepare')
+    qp.add_argument('--spec',required=True);qp.add_argument('--expected-spec',required=True);qp.add_argument('--out')
+    for action in ('launch','collect'):
+        q=qa.add_parser(action)
+        for field in ('project','build','profile','expected-owner'):q.add_argument('--'+field,required=True)
+        q.add_argument('--run')
+        if action=='launch':q.add_argument('--duration',type=int,default=60)
+        else:q.add_argument('--out')
     payload=sub.add_parser('payload').add_subparsers(dest='action',required=True)
     payload_verify=payload.add_parser('verify')
     payload_verify.add_argument('--root',required=True)
@@ -436,6 +448,11 @@ def dispatch(a):
     if a.command == 'player':
         from .player import run
         return run(a.manifest,a.out,a.duration,a.expected_manifest)
+    if a.command=='qa':
+        from .qa_runtime import prepare,launch,collect
+        if a.action=='prepare':return prepare(a.spec,a.expected_spec,a.out)
+        if a.action=='launch':return launch(a.project,a.build,a.profile,a.expected_owner,a.duration,a.run)
+        return collect(a.project,a.build,a.profile,a.expected_owner,a.run,a.out)
     if a.command=='payload':
         from .payload import verify_manifest,plan,apply
         if a.action=='verify':return verify_manifest(a.root,a.manifest,a.scope,allow_unlisted=a.allow_unlisted,artifact=a.unity_artifact)
@@ -455,6 +472,7 @@ def main(argv=None):
                 producer=dict(name="beaver", version=__version__, implementationSha256=implementation_identity()),
                 actualChanges=[], artifacts=[], diagnostics=[], limitations=[],
                 verification=dict(native="not_run", player="not_run", visual="not_run", business="not_run"))
+    a=None
     try:
         a = parser().parse_args(argv)
         data = dispatch(a)
@@ -494,6 +512,13 @@ def main(argv=None):
             base['actualChanges']=[dict(operation='adoption.rollback',restored=data.get('restored'),report=data.get('report'))]
         if a.command=='player':
             base['verification']['player']='launched_and_exited' if not data.get('stoppedByBudget') else 'launched_and_stopped_by_budget'
+        if a.command=='qa':
+            if a.action=='prepare':
+                base['actualChanges']=[dict(operation='qa.prepare',project=data.get('projectId'),build=data.get('buildId'),profile=data.get('profileId'),receipt=data.get('receipt'))]
+            elif a.action=='launch':
+                base['actualChanges']=[dict(operation='qa.launch',runId=data.get('runId'),pid=data.get('pid'),processRecord=data.get('processRecord'))]
+                base['verification']['player']=data.get('status','unknown')
+                if data.get('stoppedByBudget'):base['status']='partial';status='partial'
         if a.command=='payload' and a.action=='apply':
             base['actualChanges']=[dict(operation='payload.materialize',targetRoot=data['targetRoot'],files=data['files'],overrides=len(data['overrides']))]
         if getattr(a,'summary',False):
@@ -510,7 +535,12 @@ def main(argv=None):
         blocked=isinstance(error,BeaverError) and error.status=='blocked'
         base.update(status="blocked" if blocked else "failed",
                     diagnostics=[error.as_dict() if isinstance(error, BeaverError) else dict(code="IO_OR_INPUT", location="input", message=str(error))])
-        if a.command=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
+        if getattr(a,'command',None)=='qa':
+            from .qa_runtime import failure_receipt
+            qa_receipt=failure_receipt(error)
+            if qa_receipt:
+                base['actualChanges']=[dict(status='inspect_qa_prepare_receipt',report=qa_receipt,reason='Preparation can fail after controlled Data writes; inspect the recorded transaction')]
+        if getattr(a,'command',None)=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
             base['actualChanges']=[dict(status='inspect_recovery_receipt',report=str(Path(a.out,'recovery-result.json')),reason='Recovery can fail after partial writes; inspect the separate receipt')]
         if isinstance(error,BeaverError):
             if error.code=='READBACK_PROJECT_MODIFIED':

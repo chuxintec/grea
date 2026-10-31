@@ -139,3 +139,25 @@ class PartialCatalogCompactContractTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class QaRuntimeCliContractTests(unittest.TestCase):
+    def test_missing_launch_identity_returns_structured_usage_error(self):
+        output=io.StringIO()
+        with contextlib.redirect_stdout(output):code=main(['qa','launch'])
+        result=json.loads(output.getvalue())
+        self.assertEqual(code,3);self.assertEqual(result['diagnostics'][0]['code'],'CLI_USAGE')
+        self.assertEqual(result['verification']['player'],'not_run')
+
+    def test_budget_stop_does_not_claim_normal_gui_exit(self):
+        output=io.StringIO();argv=['qa','launch','--project','p','--build','b','--profile','q','--expected-owner','0'*64]
+        with patch('beaver.cli.dispatch',return_value=dict(status='stopped_by_budget',runId='r',pid=123,stoppedByBudget=True)),contextlib.redirect_stdout(output):code=main(argv)
+        result=json.loads(output.getvalue())
+        self.assertEqual(code,1);self.assertEqual(result['verification']['player'],'stopped_by_budget')
+
+    def test_failed_prepare_retains_possible_data_writes(self):
+        from beaver.errors import BeaverError
+        output=io.StringIO();argv=['qa','prepare','--spec','/missing','--expected-spec','0'*64]
+        with patch('beaver.cli.dispatch',side_effect=BeaverError('QA_COPY_DRIFT','test','changed')),patch('beaver.qa_runtime.failure_receipt',return_value='/controlled/prepare.json'),contextlib.redirect_stdout(output):code=main(argv)
+        result=json.loads(output.getvalue())
+        self.assertNotEqual(code,0);self.assertEqual(result['actualChanges'][0]['report'],'/controlled/prepare.json')

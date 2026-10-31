@@ -36,3 +36,7 @@ Build follow-up: /root/build_policy owns unity.py, BeaverNative.cs and necessary
 Build module integrated by parent. Contributor supplied 11 module checks including public recovery guard negatives; parent 51 affected/shared checks and real native positive/failure/interruption recovery passed. Sole parent Editor; source/runtime ready for fixed candidate verification.
 
 Fix12 lifecycle module and explicit old-fix11 reviewed recovery integrated. Parent fixed native placeholder reproduction/build/exit verification and package sealing passed; 54 shared/affected checks, 125 runtime files, 20 frozen contracts. GREA public adapter and real FoodStreet 14-font/55,608-source/275-artifact build verified. Consumer build segment closed; runtime/visual acceptance remains consumer-owned.
+
+QA runtime module: /root/qa_runtime requested gpt-6-luna/high (spawn accepted; identity not independently probed), baselinefd6938c, owns qa_runtime.py/test_qa_runtime.py/QA-RUNTIME.md/runtime schema only. Parent owns CLI/version/shared plans and fixed package; consumer sole Player/desktop/actual Library data writer. No recursive delegation or game writes.
+
+QA module integrated after parent review and reused /root/adopt_dependencies read-only review. Three actual symlink/run binding defects fixed and rechecked. 30 affected/shared checks; real neutral signed Bundle preparation and OS sandbox file controls by parent, no Player. Parent owns final CLI/package; FoodStreet sole actual runtime/desktop/QA04 consumer.
