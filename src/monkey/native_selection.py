@@ -81,6 +81,14 @@ _CURRENT_TEMPLATE_DEPENDENCIES = {
     "NativeStaticSortTextSource.cs": (),
     "NativeInputBlocker.cs": ("NativeInputBlockerSurface.cs",),
     "NativeInputBlockerSurface.cs": (),
+    # These exact bundled sources depend only on framework/locked uGUI types.
+    # NativeChildLayoutGroup is declared in NativeLinearLayoutGroup.cs itself.
+    "NativeLinearLayoutGroup.cs": (),
+    "NativeTextLineBox.cs": (),
+    "NativeStaticLabelStyle.cs": (),
+    "NativeStaticAnimationBinding.cs": (),
+    "NativeRetainedMaterial.cs": (),
+    "NativeHorizontalProgressFill.cs": (),
 }
 
 
@@ -96,6 +104,69 @@ def _template_profile(path, digest):
     if not template.is_file() or sha(read(template, max_bytes=16 * 1024 * 1024)) != digest:
         return None
     return name, dependencies
+
+
+def _carrier_profiles(root, rows, manifest):
+    """Recognize generated carriers by exact regeneration from the owned plan.
+
+    This is a producer proof, not C# parsing or a filename-based exemption.
+    """
+    from .layout import standard
+    from .prefab_static_carriers import _unity_script
+    plan_path = standard.locate(manifest, "importPlan")
+    row = rows.get(plan_path)
+    if row is None:
+        return {}, None
+    digest, size, raw = _hash_file(root, plan_path)
+    if digest != row["sha256"] or size != row["bytes"]:
+        fail("IMPORT_PLAN_DRIFT", plan_path, "Carrier proof requires the original manifest-owned plan")
+    plan = load(raw, max_nodes=8_000_000)
+    profiles = {}
+    identifier = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+    def safe_identifier(value):
+        return isinstance(value, str) and identifier.fullmatch(value) is not None
+    for component in plan.get("components", []):
+        spec = component.get("staticFieldBinding") or {}
+        path = spec.get("scriptPath")
+        if path not in rows or spec.get("behavior") != "disabled" or spec.get("enabled") is not False:
+            continue
+        typename = spec.get("typeName", "")
+        if not isinstance(typename, str) or not all(safe_identifier(part) for part in typename.split(".")):
+            continue
+        namespace, _, name = typename.rpartition(".")
+        if not namespace or PurePosixPath(path).name != name + ".cs":
+            continue
+        fields = spec.get("fields")
+        if not isinstance(fields, list):
+            continue
+        valid = True
+        for field in fields:
+            if not isinstance(field, dict):
+                valid = False; break
+            record_schema = field.get("recordSchema") or []
+            if not isinstance(record_schema, list):
+                valid = False; break
+            for member in [field, *record_schema]:
+                if not isinstance(member, dict) or not safe_identifier(member.get("fieldName")):
+                    valid = False; break
+                record_name = member.get("recordTypeName")
+                if record_name is not None and not safe_identifier(record_name):
+                    valid = False; break
+                if member.get("storageType") == "Color" and any(
+                    type(member.get(key)) is not int or not 0 <= member[key] <= 255
+                    for key in ("colorR", "colorG", "colorB", "colorA")):
+                    valid = False; break
+        if not valid:
+            continue
+        try:
+            generated = _unity_script(namespace, name, fields).encode("utf-8")
+        except (ValueError, KeyError, TypeError):
+            continue
+        generated_sha = sha(generated)
+        if generated_sha == rows[path]["sha256"] == spec.get("scriptSha256"):
+            profiles[path] = (name + ".cs", ())
+    return profiles, dict(path=plan_path, sha256=digest, bytes=size,
+        profile="exact-generated-disabled-static-field-carrier", behaviorRecovered=False)
 
 
 def _read_json(path, max_bytes=128 * 1024 * 1024):
@@ -397,6 +468,9 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
     code_queue = sorted(p for p in included if p.endswith(".cs"))
     seen_code = set()
     diagnostics = []
+    code_analysis = []
+    carrier_profiles = None
+    carrier_evidence = None
     while code_queue:
         path = code_queue.pop()
         name = PurePosixPath(path).name
@@ -404,7 +478,14 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
             continue
         seen_code.add(name)
         digest, _, _ = _hash_file(root, path)
+        source_code_digest = digest
         profile = _template_profile(path, digest)
+        proof_kind = "exact-producer-template"
+        if profile is None and name.startswith("StaticFields_"):
+            if carrier_profiles is None:
+                carrier_profiles, carrier_evidence = _carrier_profiles(root, rows, manifest)
+            profile = carrier_profiles.get(path)
+            proof_kind = "exact-generated-disabled-static-field-carrier"
         if profile is None:
             diagnostics.append(dict(code="UNANALYZED_CSHARP_DEPENDENCIES", path=path,
                                     severity="warning", reason="No exact producer-template hash has a declared compile dependency graph"))
@@ -433,6 +514,9 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
             code_queue.append(dep_path)
         if deps:
             code_edges.append(dict(path=path, requires=sorted(set(deps)), kind="csharp-compile"))
+        code_analysis.append(dict(path=path, sha256=source_code_digest, profile=proof_kind,
+            requires=sorted(set(deps)), externalDependencies="System/UnityEngine/locked-uGUI",
+            scope="compile-only; no recovered business behavior claimed"))
 
     # Fixed Editor/package inputs needed to open this Unity project. Exact
     # package versions remain authoritative in manifest + lock files.
@@ -512,7 +596,9 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
         supplementalFileAuthorities=supplemental,
         normalizedNativeFiles=normalized_native_files,
         adoptionDependencies=dict(schemaVersion=1, coverage="producer-declared", edges=sorted(code_edges, key=lambda x:x["path"])),
-        coverageBoundary="Unity YAML GUID references are resolved. C# dependencies are producer-declared only for exact known static-sort/input template hashes; other generated scripts are explicitly listed as unanalyzed.",
+        codeDependencyAnalysis=dict(schemaVersion=1, coverage="exact-producer-proofs",
+            scripts=sorted(code_analysis, key=lambda x:x["path"]), carrierPlanEvidence=carrier_evidence),
+        coverageBoundary="Unity YAML GUID references are resolved. C# dependencies are producer-declared only for exact bundled templates or exact regenerated disabled carriers; other scripts remain explicitly unanalyzed.",
         diagnostics=sorted(diagnostics, key=lambda d:(d.get('path', ''), d.get('code', ''))),
         files=files,
     )
