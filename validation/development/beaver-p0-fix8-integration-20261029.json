@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "candidateVersion": "0.5.1.dev20261029+fix8",
+  "sourceCommit": "1b44c0b7fc3073f4ae0a8719e9c9fea4956f8b62",
+  "implementationSha256": "6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3",
+  "wheelSha256": "e9cacdd3ee54c06f960b089c34c8e153c6081438a69d18e0501aa066d0f4599f",
+  "runtimeFilesEqualCommitWheelAndInstall": 122,
+  "contractHashesVerified": 17,
+  "targetedTests": 20,
+  "actualBatchPlanResults": [
+    {
+      "case": "default",
+      "status": "ok",
+      "native": "not_run",
+      "diagnostics": []
+    },
+    {
+      "case": "delta",
+      "status": "ok",
+      "native": "not_run",
+      "diagnostics": []
+    },
+    {
+      "case": "scene-refused",
+      "status": "blocked",
+      "native": "not_run",
+      "diagnostics": [
+        {
+          "code": "BATCH_CHECKPOINT_POLICY",
+          "location": "spec",
+          "message": "move-delta-v1 is limited to pure non-Scene asset.move batches without runtime installs or extra read paths",
+          "status": "blocked",
+          "retry": "new_plan_after_resolving_precondition"
+        }
+      ]
+    },
+    {
+      "case": "extra-read-refused",
+      "status": "blocked",
+      "native": "not_run",
+      "diagnostics": [
+        {
+          "code": "BATCH_CHECKPOINT_POLICY",
+          "location": "spec",
+          "message": "move-delta-v1 is limited to pure non-Scene asset.move batches without runtime installs or extra read paths",
+          "status": "blocked",
+          "retry": "new_plan_after_resolving_precondition"
+        }
+      ]
+    }
+  ],
+  "sameDefaultAndDeltaWriteSet": true,
+  "recordedBulkReadback": {
+    "origin": "read-only upstream final producer native artifacts, not a GREA engine run",
+    "assets": 258,
+    "objectPairs": 603,
+    "emptyNamesPreserved": true,
+    "legacyRowsEqualWithoutObjects": true,
+    "summary": {
+      "objectIdentityCount": 603,
+      "objectsInSummary": false,
+      "specAccepted": true
+    },
+    "partialStatus": "partial",
+    "partialExit": 1,
+    "zeroObjectsRowPreserved": true
+  },
+  "limits": [
+    "GREA only ran synthetic readonly batch plans and fixed-library formatting/spec validation; no Editor/apply/recovery/game operation.",
+    "128-move native performance and failure/recovery evidence remains upstream; not rerun or extrapolated to large games.",
+    "Delta is inspection state; initial/final full hashes and full Python post-state/recovery guards remain mandatory.",
+    "Bulk pairs and objectIdentityCount are target persistent identities, not a source-component coverage or gameplay verdict.",
+    "Formal module lock, global install/binding, original reports and earlier fixed transactions unchanged."
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "candidateVersion": "0.5.1.dev20261028+fix1",
+  "sourceCommit": "8285fd9117a0ab59ed1ecd2abc4cd52bdaf94f07",
+  "implementationSha256": "d683fbc09e168b423dbf62f11a90269b3238f3c00b3de14229fae2bc29fafc56",
+  "wheelSha256": "3ca418342b8a168e490c9253d420d75277b540d0e5314a4d312f333c0a653c85",
+  "installedRuntimeFilesEqualWheel": 121,
+  "contractHashesVerified": 10,
+  "unchangedNativeComponentsVerified": 6,
+  "targetedChecks": 10,
+  "results": [
+    {
+      "operation": "structure.inspect",
+      "receipt": "inspect",
+      "status": "blocked",
+      "native": "not_run",
+      "gameplay": "not_run"
+    },
+    {
+      "operation": "structure.inspect",
+      "receipt": "inspect-complete",
+      "status": "ok",
+      "native": "not_run",
+      "gameplay": "not_run"
+    },
+    {
+      "operation": "structure.plan",
+      "receipt": "plan",
+      "status": "ok",
+      "native": "not_run",
+      "gameplay": "not_run"
+    }
+  ],
+  "legacyScenePlan": {
+    "status": "declaration_only",
+    "batchReadiness": "not_evaluated",
+    "remainingStructureIssues": [],
+    "artifactSha256Verified": "5a3c2fee0e7f928ca4642a071986dfe401fc0a4f140279f3c2e81f333c4882a6"
+  },
+  "limits": [
+    "Synthetic caller-supplied scene identity; no Editor executed and no native authentication asserted.",
+    "An incomplete synthetic snapshot was correctly blocked; full input submitted to a new output; original receipt preserved.",
+    "Artifact SHA verified against outer artifacts; no embedded planSha256 field is claimed.",
+    "Only a move declaration; existing batch preflight/execution, actual build-scene updates and project conformance still require separate validation.",
+    "Initial fixed candidate remains supported for in-flight receipts; no automatic transaction or binding upgrade.",
+    "Formal modules, global install, game originals and upstream native receipts unchanged."
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "monkey-shader-handoff/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "items"
+  ],
+  "properties": {
+    "schema": {
+      "const": "monkey-shader-handoff/1"
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256",
+        "classification",
+        "source",
+        "target",
+        "dialect",
+        "platformEvidence",
+        "nativeCompilation",
+        "runtimeDisposition",
+        "evidenceId"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^Assets/"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16777216
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "classification": {
+          "enum": [
+            "source-text",
+            "platform-compiled",
+            "recovered-binary",
+            "unknown",
+            "unsupported"
+          ]
+        },
+        "source": {
+          "type": "object"
+        },
+        "target": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "guid",
+                "localFileID"
+              ],
+              "properties": {
+                "guid": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                "localFileID": {
+                  "type": "integer",
+                  "minimum": -9223372036854775808,
+                  "maximum": 9223372036854775807,
+                  "not": {
+                    "const": 0
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "dialect": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "platformEvidence": {
+          "type": "array"
+        },
+        "nativeCompilation": {
+          "const": "not_run"
+        },
+        "runtimeDisposition": {
+          "enum": [
+            "source-review",
+            "evidence-only",
+            "blocked"
+          ]
+        },
+        "evidenceId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

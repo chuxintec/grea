@@ -10,12 +10,29 @@ from grea.safe_paths import disjoint
 V03_VERSION = '0.3.0.dev1'
 V03_IMPLEMENTATION = 'b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0'
 V05_VERSION = '0.5.0'
+P0_VERSION = '0.5.1.dev20261028'
+P0_FIX1_VERSION = '0.5.1.dev20261028+fix1'
+P0_FIX2_VERSION = '0.5.1.dev20261028+fix2'
+P0_FIX3_VERSION = '0.5.1.dev20261028+fix3'
+P0_FIX6_VERSION = '0.5.1.dev20261028+fix6'
+P0_FIX7_VERSION = '0.5.1.dev20261029+fix7'
+P0_FIX8_VERSION = '0.5.1.dev20261029+fix8'
+P0_RETIRE_VERSIONS = {P0_FIX6_VERSION, P0_FIX7_VERSION, P0_FIX8_VERSION}
+P0_VERSIONS = {P0_VERSION, P0_FIX1_VERSION, P0_FIX2_VERSION, P0_FIX3_VERSION, *P0_RETIRE_VERSIONS}
+P0_GROUPS = {'structure.inspect/plan', 'build-filter.collect/plan', 'native.readback'}
 # The historical name is retained; entries pin compatible lineage, never a version range.
 V03_CANDIDATES = {
     V03_VERSION:dict(candidate='07',implementation_sha256=V03_IMPLEMENTATION),
     '0.3.0':dict(candidate='08',implementation_sha256='e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882'),
     # 0.4.0 = 0.3.0 contracts plus the toolkit received from GREA; released as a GREA module.
     '0.4.0':dict(candidate='module-2026.10.27',implementation_sha256='06a710a70b8e9257e68e6e3b83a34db41e7e1f4e32b2810fe80367db518717f7'),
+    P0_FIX8_VERSION:dict(candidate='local-p0-fix8-1b44c0b',implementation_sha256='6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3'),
+    P0_FIX7_VERSION:dict(candidate='local-p0-fix7-5b765eb',implementation_sha256='b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c'),
+    P0_FIX6_VERSION:dict(candidate='local-p0-fix6-c1d80d9',implementation_sha256='8e5d595c15c63c222fcc7ece0013ddd97ef3360d8331d76eb4befc61a6fcafc6'),
+    P0_FIX3_VERSION:dict(candidate='local-p0-fix3-c62245e',implementation_sha256='978da3ca18b348b5bd2c5534f8c1b4570d2d6bfa8fb066f5a007507c59becf67'),
+    P0_FIX2_VERSION:dict(candidate='local-p0-fix2-34ce66e',implementation_sha256='8fa8f6700df4d805792d3decb6f9832f10d62598dc713ab788b7181a89b1e4ad'),
+    P0_FIX1_VERSION:dict(candidate='local-p0-fix1-8285fd9',implementation_sha256='d683fbc09e168b423dbf62f11a90269b3238f3c00b3de14229fae2bc29fafc56'),
+    P0_VERSION:dict(candidate='local-p0-914adff',implementation_sha256='f9bc89c74cda41b173ed4d20fc4c3f9425950836f580a8b3f491be87fd8abfd3'),
     V05_VERSION:dict(candidate='official-v0.5.0-e0c7e0c',implementation_sha256='bee1d06780155a50735d9e836041cd967a3da0bc2dbe368d1d55cb2cd8700e90'),
 }
 SUPPORTED_VERSIONS = ('0.1.0', '0.1.0.dev1', '0.2.0', *V03_CANDIDATES)
@@ -49,7 +66,9 @@ def validate_capabilities(cap):
             raise ValueError('Invalid beaver capability declaration')
         ids=[row['id'] for row in rows]
         required=V02_OPERATIONS | V03_GROUPS if version in V03_CANDIDATES else V02_OPERATIONS
-        if version == V05_VERSION: required = required | V05_GROUPS
+        if version in {V05_VERSION} | P0_VERSIONS: required = required | V05_GROUPS
+        if version in P0_VERSIONS: required = required | P0_GROUPS
+        if version in P0_RETIRE_VERSIONS: required = required | {'unity.assets.retire/recover'}
         if len(ids)!=len(set(ids)) or not required<=set(ids):
             raise ValueError('Missing or duplicated beaver capabilities')
         if version in V03_CANDIDATES and cap.get('producer_implementation_sha256')!=V03_CANDIDATES[version]['implementation_sha256']:

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "candidateVersion": "0.5.1.dev20261028+fix3",
+  "implementationSha256": "978da3ca18b348b5bd2c5534f8c1b4570d2d6bfa8fb066f5a007507c59becf67",
+  "wheelSha256": "6dc5672703d820a09b949319c3c1670bcefcf48d1736f457f075d5299a6c8c42",
+  "installedRuntimeFilesEqualWheel": 121,
+  "contractHashesVerified": 10,
+  "targetedTests": 7,
+  "results": [
+    {
+      "case": "explicit",
+      "status": "ok",
+      "fullProfileSchemaValidated": true,
+      "native": "not_run"
+    },
+    {
+      "case": "auto",
+      "status": "ok",
+      "fullProfileSchemaValidated": true,
+      "native": "not_run"
+    },
+    {
+      "case": "invalid-full-profile",
+      "status": "needs_action",
+      "executed": false
+    }
+  ],
+  "recordedNativeScalarEnvelope": {
+    "origin": "upstream fixed fix3 receipt; no rerun",
+    "schemaAcceptedWithoutCoercion": true,
+    "artifactSha256Verified": true,
+    "valueType": "ArraySize",
+    "value": "1",
+    "hasIntegerValue": true,
+    "integerValue": 1
+  },
+  "installedReportReader": {
+    "bytes": 63733167,
+    "inventoryRows": 65661,
+    "ordinaryReadBlocked": true,
+    "reportUnchanged": true
+  },
+  "limits": [
+    "No Editor/Player or physical input executed; scalar evidence is upstream recorded execution.",
+    "Large report read through fixed installed provider library only, not an engine or whole-game audit.",
+    "Full profile schema validated by GREA; provider binds product/profile paths.",
+    "Retirement operation not present in this core candidate and not claimed implemented.",
+    "Earlier fixed chains, formal module lock, global install, game originals and source reports preserved.",
+    "GREA outer provider stdout remains bounded at 4 MiB; the dedicated 128 MiB upstream report reader test is not a large-response CLI/MCP acceptance. Use the explicit fixed provider CLI for larger reports; compact transport is not implemented."
+  ]
+}

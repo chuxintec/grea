@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "candidateVersion": "0.5.1.dev20261028",
+  "implementationSha256": "f9bc89c74cda41b173ed4d20fc4c3f9425950836f580a8b3f491be87fd8abfd3",
+  "wheelSha256": "b7e38d3ec80c0b689ec8993e875b449acfdc6b117e6f706738b8d97810edf34e",
+  "contractHashesVerified": 10,
+  "targetedTests": 39,
+  "results": [
+    {
+      "operation": "structure.inspect",
+      "receipt": "structure-inspect",
+      "status": "ok",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": []
+    },
+    {
+      "operation": "structure.plan",
+      "receipt": "structure-plan",
+      "status": "blocked",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": []
+    },
+    {
+      "operation": "build-filter.collect",
+      "receipt": "build-filter-collect",
+      "status": "blocked",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": [
+        "BUILD_FILTER_SCHEMA"
+      ]
+    },
+    {
+      "operation": "build-filter.plan",
+      "receipt": "build-filter-plan",
+      "status": "failed",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": [
+        "IO_OR_INPUT"
+      ]
+    },
+    {
+      "operation": "build-filter.plan",
+      "receipt": "build-filter-plan-valid-fixture",
+      "status": "blocked",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": []
+    },
+    {
+      "operation": "native.readback",
+      "receipt": "native-readback",
+      "status": "blocked",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": [
+        "READBACK_SPEC"
+      ]
+    }
+  ],
+  "buildFilterStatesPreserved": [
+    "runtime-referenced",
+    "source-evidence-only",
+    "unknown"
+  ],
+  "limits": [
+    "Real GREA-to-installed CLI calls; synthetic caller-supplied snapshot is not native authentication.",
+    "One initial target option used a platform token rather than the required JSON path; failed receipt retained, adapter corrected.",
+    "Two harness assertions used narrower status/field expectations; actual provider results preserved and read back without replaying completed operations.",
+    "No new Editor, Player, physical input, visual or gameplay acceptance; upstream native evidence is not rerun or claimed as GREA execution.",
+    "Formal module locks, global bindings, plugin installation and game originals unchanged; local candidate only."
+  ],
+  "installedRuntimeFilesEqualWheel": 121
+}

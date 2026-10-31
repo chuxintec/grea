@@ -124,4 +124,30 @@ bin/grea legacy monkey_bridge --config /path/lock.json --workflow handoff --work
 - `query-tables --manifest FILE --expected-manifest-sha SHA --contains NAME --out NEW`：表变体清单查询；实际提取另需源/所选成员hash，清单通过不等于所有载荷已核。
 - `inspect-aliases --source FILE --expected-sha SHA --alias EXACT_URL --out NEW`：精确URL身份；不含content-source时不宣称内容已验。
 
-这些是外部monkey开发CLI参数，不是GREA新增命令。当前 `monkey_pipeline` 仍只适配稳定0.4批量合同；尚未接入三查询的GREA专用薄转发。需要查询时显式使用固定开发入口，或在任务中标此适配待接入；不退回执行交接包脚本。成员SHA只标识成员字节，不冒充多GB外层包已全部核验。缺少可选查询不改变既有批量恢复合同。
+这些是外部monkey开发CLI参数，不是GREA新增命令。当前 `monkey_pipeline` 保留固定0.4/0.6批量合同并按下节增加P0有界分类；尚未接入三查询的GREA专用薄转发。需要查询时显式使用固定开发入口，或在任务中标此适配待接入；不退回执行交接包脚本。成员SHA只标识成员字节，不冒充多GB外层包已全部核验。缺少可选查询不改变既有批量恢复合同。
+
+## 本地 P0 Shader 有界分类
+
+使用条件：已有冻结 Unity 候选，只需分类 Shader 证据；不重导、不使用全量 plan/run 的工程快照扫描。`monkey_pipeline classify-shaders` 是现有工具 ID 下的新增薄入口，CLI/MCP 共用执行层。源码支持本地候选不代表当前已装插件已更新。
+
+固定候选为提交 `57613e78f66a1c4685e748827983827c77922d36` 的 wheel SHA `5ea38374c018ad95bd08bb734b0a471b3f51b7720e3b11934278b19f35e58f7c`；版本仍显示0.6.0，不能只据版本接受。先核安装包及显式命令，复用 `monkey_pipeline pin` 创建独立锁，不覆盖全局绑定。转发同时核锁中完整运行文件、实际命令、固定包树与能力指纹；`unitySourceProfile.shaderHandoff` 必须是 `monkey-shader-handoff/1`。原始 capabilities stdout SHA `8192ca12…` 与 GREA 对解析对象规范编码的 SHA `9a8d4849…` 口径不同，不能直接互比；缺候选时报告缺口，不自动替换正式0.6锁。
+
+```text
+monkey_pipeline classify-shaders --config /absolute/p0-lock.json
+  --project /absolute/FrozenUnity --manifest /absolute/recovery-manifest.json
+  --expected-manifest <SHA256> --output /absolute/new-output
+  [--source-mapping /absolute/full-resource-handoff.json
+   --expected-source-mapping <SHA256>] [--timeout-seconds 30]
+```
+
+这是调用 `run_tool` 时所选 `monkey_pipeline` 的参数，不是独立 shell 命令；CLI 通过既有工具运行入口传入同一参数。source-mapping 与 expected-source-mapping 必须成对；out 由薄入口指定独立 provider-output，不能另传任意 argv。实际外部命令为 `classify-unity-shaders --project --manifest --expected-manifest [--source-mapping --expected-source-mapping] --out`。
+
+结果保留 provider 原回执、report.json 和 handoff.json；handoff 顶层仅 schema/items。逐项 source-text→source-review、platform-compiled/recovered-binary→evidence-only、unknown/unsupported→blocked，全部 nativeCompilation=not_run。target 是序列化声明或 null，source 关联的 unmapped/ambiguous 不猜补。GREA按生产者冻结 Schema 校验、复核 manifest/mapping 和分类文件字节，不重复实现内容分类或把目标声明当 Editor 身份。返回 classified 只代表分类完成，不代表候选恢复完成或运行资产可采用。
+
+分类后将原始 handoff 与当前工程的原生快照交给[beaver 构建筛选](beaver工程操作合同.md#固定本地-p0-候选)，由其核当前 hash、GUID/localID、目标平台/管线和依赖。未引用不能证明无动态使用；blocked 计划不执行隔离，不删被引用资产、不自动替换 Shader。完整来源对象关联恢复属于单独范围，不靠名称填补。
+
+## v0.7目标与接入状态
+
+monkey v0.7当前目标是Prefab完整恢复及逐样本原生/脚本/动态/视觉验收，优先于此前source-family扩张安排；这是一项开发目标，不代表能力已实现或GREA已支持0.7调用。源组件分母与纯候选口径见[独立恢复对照](../../grea-recover/references/全量初版工程与协作.md#prefab完整恢复的独立对照)，实际样本与版本完成条件由批准计划维护。
+
+monkey唯一实现源恢复，GREA只在固定开发版本/包SHA/producer、真实CLI/Schema及分层回执交付后作有限适配；不提前加入版本范围、猜0.7命令或改正式模块锁。旧0.6正式版及已固定P0包继续按原身份消费，不把游戏人工修补计为工具成果。双目标只限明确批准的工具隔离验证，不恢复暂停产品或新增引擎安装权限。

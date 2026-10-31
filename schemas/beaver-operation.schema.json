@@ -18,7 +18,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "project.inspect",
       "properties": {
@@ -67,7 +74,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "adoption.plan",
       "properties": {
@@ -127,7 +141,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "adoption.apply",
       "properties": {
@@ -189,7 +210,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "adoption.rollback",
       "properties": {
@@ -246,7 +274,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "unity.plan",
       "properties": {
@@ -271,6 +306,14 @@
             "spec": {
               "type": "string",
               "minLength": 1
+            },
+            "summary": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
             }
           }
         },
@@ -297,7 +340,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "unity.apply",
       "properties": {
@@ -329,6 +379,14 @@
               "type": "string",
               "minLength": 1
             },
+            "summary": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            },
             "timeout": {
               "type": "integer",
               "minimum": 1,
@@ -359,7 +417,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "player.run",
       "properties": {
@@ -416,7 +481,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "payload.verify",
       "properties": {
@@ -457,7 +529,14 @@
                 "0.3.0",
                 "0.3.0.dev1",
                 "0.4.0",
-                "0.5.0"
+                "0.5.0",
+                "0.5.1.dev20261028",
+                "0.5.1.dev20261028+fix1",
+                "0.5.1.dev20261028+fix2",
+                "0.5.1.dev20261028+fix3",
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
               ]
             }
           }
@@ -485,7 +564,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "payload.plan",
       "properties": {
@@ -549,7 +635,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "payload.apply",
       "properties": {
@@ -600,7 +693,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "image.inspect",
       "properties": {
@@ -646,7 +746,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "image.compress",
       "properties": {
@@ -718,7 +825,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "config.validate",
       "properties": {
@@ -769,7 +883,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "config.generate",
       "properties": {
@@ -815,7 +936,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "code.inspect",
       "properties": {
@@ -859,7 +987,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "batch.plan",
       "properties": {
@@ -908,7 +1043,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "batch.apply",
       "properties": {
@@ -968,7 +1110,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "batch.recover",
       "properties": {
@@ -1023,7 +1172,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "references",
       "properties": {
@@ -1071,7 +1227,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "debug.start",
       "properties": {
@@ -1144,7 +1307,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "debug.inspect",
       "properties": {
@@ -1188,7 +1358,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "debug.stop",
       "properties": {
@@ -1232,7 +1409,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "debug.tail",
       "properties": {
@@ -1281,7 +1465,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "debug.screenshot",
       "properties": {
@@ -1335,7 +1526,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "debug.target",
       "properties": {
@@ -1378,7 +1576,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1426,7 +1631,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1473,7 +1685,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1533,7 +1752,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "workspace.plan/apply/inspect/rebind",
       "properties": {
@@ -1581,7 +1807,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "production.plan/apply/recover",
       "properties": {
@@ -1629,7 +1862,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "production.plan/apply/recover",
       "properties": {
@@ -1688,7 +1928,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "production.plan/apply/recover",
       "properties": {
@@ -1742,7 +1989,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "config3.validate/generate/compare",
       "properties": {
@@ -1798,7 +2052,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "config3.validate/generate/compare",
       "properties": {
@@ -1841,7 +2102,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "config3.validate/generate/compare",
       "properties": {
@@ -1897,7 +2165,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
       "properties": {
@@ -1944,7 +2219,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
       "properties": {
@@ -1996,7 +2278,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "csharp.inspect/rename/rename-sequence",
       "properties": {
@@ -2048,7 +2337,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "csharp.module",
       "properties": {
@@ -2091,7 +2387,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
       "properties": {
@@ -2134,7 +2437,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
       "properties": {
@@ -2187,7 +2497,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "resource.image-inspect/image-produce/validate-step",
       "properties": {
@@ -2235,7 +2552,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2278,7 +2602,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2321,7 +2652,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2369,7 +2707,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2417,7 +2762,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "server.generate/module-generate/module-plan/protocol-diff/migration-plan",
       "properties": {
@@ -2460,7 +2812,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "server.compose-plan/migration-state/migration-apply/runtime-inspect",
       "properties": {
@@ -2503,7 +2862,14 @@
         "0.3.0",
         "0.3.0.dev1",
         "0.4.0",
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "server.toolchain/protocol-tools/check/build",
       "properties": {
@@ -2536,7 +2902,14 @@
         "timeout_seconds"
       ],
       "x-beaver-versions": [
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "ui.inspect/analyze/repair-plan",
       "properties": {
@@ -2592,7 +2965,14 @@
         "timeout_seconds"
       ],
       "x-beaver-versions": [
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "ui.inspect/analyze/repair-plan",
       "properties": {
@@ -2637,7 +3017,14 @@
         "timeout_seconds"
       ],
       "x-beaver-versions": [
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "ui.inspect/analyze/repair-plan",
       "properties": {
@@ -2687,7 +3074,14 @@
         "timeout_seconds"
       ],
       "x-beaver-versions": [
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "wiring.plan",
       "properties": {
@@ -2737,7 +3131,14 @@
         "timeout_seconds"
       ],
       "x-beaver-versions": [
-        "0.5.0"
+        "0.5.0",
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
       ],
       "x-beaver-capability": "diagnostics.summarize",
       "properties": {
@@ -2767,6 +3168,438 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 10000
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
+      ],
+      "x-beaver-capability": "structure.inspect/plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "structure.inspect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "exceptions": {
+              "type": "string",
+              "minLength": 1
+            },
+            "product-root": {
+              "type": "string",
+              "minLength": 1,
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix3",
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            },
+            "profile": {
+              "type": "string",
+              "minLength": 1,
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix3",
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "snapshot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "summary": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            }
+          },
+          "dependentRequired": {
+            "product-root": [
+              "profile"
+            ],
+            "profile": [
+              "product-root"
+            ]
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
+      ],
+      "x-beaver-capability": "structure.inspect/plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "structure.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "audit",
+            "mappings"
+          ],
+          "properties": {
+            "audit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "consumer-resolutions": {
+              "type": "string",
+              "minLength": 1,
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            },
+            "mappings": {
+              "type": "string",
+              "minLength": 1
+            },
+            "snapshot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "summary": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
+      ],
+      "x-beaver-capability": "build-filter.collect/plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "build-filter.collect"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "project",
+            "spec",
+            "timeout"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            },
+            "summary": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
+      ],
+      "x-beaver-capability": "build-filter.collect/plan",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "build-filter.plan"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "project",
+            "snapshot",
+            "sources",
+            "target"
+          ],
+          "properties": {
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "snapshot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sources": {
+              "type": "string",
+              "minLength": 1
+            },
+            "summary": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.1.dev20261028",
+        "0.5.1.dev20261028+fix1",
+        "0.5.1.dev20261028+fix2",
+        "0.5.1.dev20261028+fix3",
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
+      ],
+      "x-beaver-capability": "native.readback",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "native.readback"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "project",
+            "spec",
+            "timeout"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "spec": {
+              "type": "string",
+              "minLength": 1
+            },
+            "summary": {
+              "type": "boolean",
+              "x-beaver-versions": [
+                "0.5.1.dev20261028+fix6",
+                "0.5.1.dev20261029+fix7",
+                "0.5.1.dev20261029+fix8"
+              ]
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "operation",
+        "options",
+        "timeout_seconds"
+      ],
+      "x-beaver-versions": [
+        "0.5.1.dev20261028+fix6",
+        "0.5.1.dev20261029+fix7",
+        "0.5.1.dev20261029+fix8"
+      ],
+      "x-beaver-capability": "unity.assets.retire/recover",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "unity.recover"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "editor-path",
+            "expected-plan",
+            "timeout",
+            "transaction"
+          ],
+          "properties": {
+            "editor-path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expected-plan": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "summary": {
+              "type": "boolean"
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1700
+            },
+            "transaction": {
+              "type": "string",
+              "minLength": 1
             }
           }
         },

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "candidateVersion": "0.5.1.dev20261028+fix6",
+  "sourceCommit": "c1d80d96bab0ae0a33b2feea8eba7b63f3f7669d",
+  "implementationSha256": "8e5d595c15c63c222fcc7ece0013ddd97ef3360d8331d76eb4befc61a6fcafc6",
+  "wheelSha256": "18dfefff955573e5ea3c74ff65a11246f9db594d3f9b04654605ec3adc1f180d",
+  "installedRuntimeFilesEqualWheel": 121,
+  "contractHashesVerified": 15,
+  "targetedTests": 16,
+  "results": [
+    {
+      "case": "large-summary",
+      "operation": "structure.inspect",
+      "status": "ok",
+      "native": "not_run",
+      "artifactsVerified": 1
+    },
+    {
+      "case": "reviewed-comparison",
+      "operation": "structure.plan",
+      "status": "ok",
+      "native": "not_run",
+      "artifactsVerified": 1
+    },
+    {
+      "case": "retirement-plan",
+      "operation": "unity.plan",
+      "status": "ok",
+      "native": "not_run",
+      "artifactsVerified": 1
+    }
+  ],
+  "compactTransport": {
+    "fullReportBytes": 5250474,
+    "outerBudgetBytes": 4194304,
+    "fullArtifactHashVerified": true,
+    "fullInventoryNotInlined": true
+  },
+  "reviewedSourceComparison": "declaration_only; caller assertion not native proof",
+  "upstreamRetirementReceipt": {
+    "version": "0.5.1.dev20261028+fix6",
+    "producer": "8e5d595c15c63c222fcc7ece0013ddd97ef3360d8331d76eb4befc61a6fcafc6",
+    "status": "verified",
+    "emptyLocalIdsPreserved": true,
+    "origin": "read-only upstream execution evidence, not a new GREA native run"
+  },
+  "upstreamSceneReuse": {
+    "testedProducer": {
+      "name": "beaver",
+      "version": "0.5.1.dev20261028+fix6",
+      "implementationSha256": "c75f7040e9bf54f269c1178f0b1501f27004f5db2a5a564e64c1128427a08518"
+    },
+    "componentsEqualFinalPackage": true,
+    "nativeRerunOnFinalOverallProducer": false
+  },
+  "limits": [
+    "Synthetic CLI plans and caller-supplied native snapshot only; no Editor, apply/recover, game mutation or gameplay/input/visual acceptance.",
+    "Partial exit1 and exact evidence preservation tested through synthetic forwarding, not by rerunning the upstream native catalog.",
+    "Recovery route and source-evidence-only policy are fixed-contract support; native implementation proof remains attributed to upstream.",
+    "Formal module lock, global binding/install and earlier candidate chains unchanged."
+  ],
+  "sourceStdioMcp": {
+    "status": "ok",
+    "providerStatus": "ok",
+    "fullReportBytes": 5251124,
+    "artifactSha256Verified": true,
+    "native": "not_run",
+    "scope": "Source stdio subprocess only; installed Codex plugin/session unchanged."
+  }
+}

@@ -47,3 +47,5 @@ change-contract.schema.json以oneOf显式分开旧v1 ui_ux与有界变更v2；op
 其中actualChanges逐项为非空路径string或object摘要，不统一包装；数字/null/数组等不合法。外层校验失败可能发生在原生已写入之后，需结合executed、原stdout/退出码及事务见证判断，不能以Schema拒收推断零写入或回滚成功。
 
 供使用者编写输入的 research-input、change-contract、theme-map 和 art-ledger Schema 同时生成到相应 Skill 的 `assets/`。这些是同源生成的分发副本，不单独维护；`scripts/generate_contracts.py --check` 同时核对两处，单装整套 Skills 可直接读取字段与示例。
+
+`monkey-shader-handoff.schema.json` 是固定生产者 `monkey-shader-handoff/1` 证据交接 Schema 的同源导出（定义在 `src/grea/monkey_contracts.py`）：只校验分类、来源声明及 not_run 语义，不证明原生编译或可构建。它由有界分类薄入口使用，不修改既有恢复请求 Schema。

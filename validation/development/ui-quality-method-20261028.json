@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "scope": "UI production and acceptance method update in existing Skill references only; earlier P0 work preserved.",
+  "documents": [
+    {
+      "path": "plugin/skills/grea-develop/references/Unity脚本与生成契约.md",
+      "sha256": "1af81bfa26e87325b5d620e71681e10f8ef0695f82c006d89ac83951bc8ef4ca"
+    },
+    {
+      "path": "plugin/skills/grea-develop/references/Unity界面还原与输入交互.md",
+      "sha256": "632f4b7411941f274557c7f21db9cef5ecab317934b26146ec0a5e54866366bf"
+    },
+    {
+      "path": "plugin/skills/grea-develop/references/Unity通用组件与Prefab.md",
+      "sha256": "6a9e42ea59c112ac57f8011e002649cb958941625d53872c6b2cf4e3fcc745b9"
+    },
+    {
+      "path": "plugin/skills/grea/references/实际体验与画面对照.md",
+      "sha256": "a0d37ebc1db09d007e9c755712285a84300d6010bfebca814886704e8adc20e5"
+    },
+    {
+      "path": "plugin/skills/grea/references/测试与结果交付.md",
+      "sha256": "11ab93fb0518a6a1991517b42f3da6db6294b650581a216fbd4c63ab819e7321"
+    }
+  ],
+  "rules": [
+    "one authoritative generation source and verified old-entry retirement",
+    "one layout-property writer per phase with explicit handoff",
+    "project-owned visual styles and compound components",
+    "same page/state/viewport with separate source/media/candidate versions",
+    "separate functional, visual and target Player evidence",
+    "regenerate/reopen/refresh without unintended regression"
+  ],
+  "validation": {
+    "repositoryDocuments": 157,
+    "localLinks": 705,
+    "linkErrors": 0,
+    "isolatedSkills": 5,
+    "isolatedMarkdownFiles": 70,
+    "isolatedLocalLinks": 355,
+    "closureErrors": 0,
+    "stageRoutingTests": 4,
+    "generatedContractDrift": false
+  },
+  "pending": [
+    "Representative consumer pages and shared components must be verified by their project before recording concrete successful experience."
+  ],
+  "limits": [
+    "No gameplay, Editor, Player, physical input or visual acceptance performed in this documentation task.",
+    "No new tool or retirement executor implementation is claimed; use only exact verified provider capabilities.",
+    "No game-specific style/material/source media copied; no game, global plugin cache, module lock, push or release changed."
+  ]
+}

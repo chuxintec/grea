@@ -46,11 +46,11 @@
   Build/                           # 严格沿用构建规范
 ```
 
-单模块 Counter 示例省略层内 `<模块>` 子目录；多模块按上述层内目录划分。其生成专属 Prefab、URP 和 BootstrapConfig 位于 `Assets/GreaGenerated/`，项目业务 seed-once 代码位于 `Assets/Game/<Layer>/`。这是本标准认可的最小配方布局，不要求添加 Runtime 包裹层；既有工程不能为符合树形图自动搬迁。
+单模块 Counter 示例省略层内 `<模块>` 子目录；多模块按上述层内目录划分。其生成专属 Prefab、URP 和 BootstrapConfig 位于 `Assets/GreaGenerated/`，项目业务 seed-once 代码位于 `Assets/Game/<Layer>/`。这是本标准认可的最小配方布局，不要求添加 Runtime 包裹层；既有工程先审计再按获批范围受控迁移；不为符合树形图直接搬迁，也不以历史工程为由整体豁免。
 
 **STR-01 所有权**：Game 只保存该项目的运行与编辑必需内容。第三方代码、通用框架和项目业务分别维护；不能把原导出树换一个 Recovered/Original 名称后直接当成标准化结果。原始导出完整保留在 Analysis，只读证据不进入生成覆盖范围。
 
-**STR-02 职责唯一**：新内容统一用 Game/Editor，不另建第二个日常 Editor 入口。UI 代码归 Presentation 下实际模块；输入设备实现归 Services/Input，输入到业务命令的转换归 Presentation。配置数据归 Content/Config，解析/校验代码归消费它的模块；不再并列含义重叠的 Runtime/UI、Runtime/Config、Runtime/Levels。已有路径可登记例外，不能自动迁移。
+**STR-02 职责唯一**：新内容统一用 Game/Editor，不另建第二个日常 Editor 入口。UI 代码归 Presentation 下实际模块；输入设备实现归 Services/Input，输入到业务命令的转换归 Presentation。配置数据归 Content/Config，解析/校验代码归消费它的模块；不再并列含义重叠的 Runtime/UI、Runtime/Config、Runtime/Levels。已有路径先登记差额并规划迁移；只有具体兼容约束才可逐项登记例外，不能以“历史沿用”免除整改。
 
 **STR-03 身份与纳管**：Assets 中维护的文件及目录保留相应 .meta，Packages 的 manifest/lock 与 ProjectSettings 按项目 Git 规则纳管；Library、Temp、Logs、obj、UserSettings、构建制品、原始证据和运行存档不进入源码提交。具体证据托管按项目约定。代码移动、程序集改名和命名空间修改分别分析 MonoScript、反射与序列化影响，不因路径变化自动同时执行。
 
@@ -74,7 +74,8 @@
 | --- | --- |
 | Prefabs | GameObject Prefab；可按 UI、角色、方块、特效分子目录 |
 | Materials / Shaders | Material；Shader/HLSL/include 等实现，不能因名字含 Spine 就把 Shader 当骨骼数据 |
-| Images / Sprites | Texture2D 原图、贴图；独立序列化 Sprite。一个纹理内的 Sprite 子资源不拆成重复图片 |
+| Images | 导入主资产为纹理的文件（含 Texture2D、Sprite 模式纹理及其 Sprite 子资源）；统一目录名为 Images，Textures 是需受控迁移的旧路径，不是并列合法别名 |
+| Sprites | 独立序列化、主资产为 Sprite 的文件；纹理内的 Sprite 子资源随宿主 Images 文件保留，不能拆成重复图片 |
 | Models | Mesh、导入模型及必要模型组；动画子资源随宿主文件保留 |
 | Animations | AnimationClip、AnimatorController、Avatar；按类型或使用者分组 |
 | Spine | 按动画组聚合骨骼、Atlas、页纹理、材质和 SkeletonData；记录运行时版本 |
@@ -83,11 +84,43 @@
 | Config | 正式数值与资源引用分工见[DAT-01](Unity程序集分层与生命周期.md#生命周期与数据契约)；输入动作按其工具契约维护 |
 | Levels | 关卡数据及索引；保留文件号、显示关号、循环规则之间的映射 |
 
+**STR-05 唯一类型映射**：上表为类型目录唯一维护入口；正式场景统一 `Game/Scenes`，不使用 `Content/Scenes`。数值关卡初值属于 `Content/Config/<模块>` 的正式 JSON，`Levels` 只保存非重复数值表的关卡布局/索引资产。Spine、Fonts 是表内明确的复合资源组：其配套页纹理/材质随组保留且登记依赖，不能任意按用途发明新的混合类型目录。先判断受维护的复合组，再按主资产实际类型归类；未知类型列为 unknown 并查证，不按扩展名强行判定。
+
 使用 Unity 实际导入类型、主/子资源和依赖判断。无法加载的 .asset 先查源 MonoScript 和序列化字段，记录推断类型与未修复状态；不能统一放入 MonoBehaviour，也不能为了分类删掉缺脚本资产。
 
 活动工程按类型组织。来源身份、旧路径、GUID、原包/版本写在迁移清单；转换期确需区分来源和编辑副本时，可临时使用类型内的 `Source/Working` 或 `Templates/Views`；跨引擎项目交付前合并为单一原生 Prefab（见 [原生转换规范](../../grea-recover/references/Unity原生转换规范.md)）。不恢复 `_Game/Falcon/GameTemplate/...` 的完整来源树。原始导出工程仍可完整保留在 Analysis，作为只读证据。
 
 脚本按已存在的职责归组；同一 partial 类放在同一职责目录。Runtime、Editor、Tests 的目录名不自动建立编译隔离，需核对 asmdef、条件编译、反射与构建入口。生成工具、校验、构建分别命名，旧重生成器在新布局中应明确停用或迁移调用方。
+
+## 恢复脚本与严格目录例外
+
+Unity 来源脚本可保留 `Game/Scripts/<Assembly>/<Namespace>`，同时记录原程序集、完整类型名、MonoScript GUID及引用。新业务代码按 Bootstrap、Domain、Gameplay、Presentation、Services 归属，Diagnostics 只处理诊断；不能复制恢复类到业务层形成第二份类型，也不能为五层外观批量重命名原程序集/命名空间。路径迁移与编译身份变化分开计划、分别验证。
+
+Product、SourceRecovery、_Recovery 和编号修复副本不能作为长期正式业务/运行资产根。源包、恢复二进制、未知/不可编译 Shader 留活动 Assets 外的 Analysis/Evidence；迁移时记录来源映射与构建依赖，不能直接删除被引用资源。第三方和 Unity 固定入口按其实际约定保留。
+
+**STR-06 有界例外**：仅为真实引擎入口、第三方布局或已证明的序列化/反射兼容约束登记。记录具体规则、最小路径范围、原因、替代约束、验证证据、负责人和复审触发；“旧工程”“保留 Product 全树”不能作为理由。例外不等于验证通过，动态加载无法证明时保留 unknown。
+
+项目 `grea-project.json` 继续使用现行 `grea-unity-project/1.0.0` 配置合同：`paths.unityProject/evidenceRoot/buildRoot`、`toolchain`、`dependencyLock`、`scenes.bootstrap/entry` 等字段按现行 Schema 填写；设计尺寸、额外构建场景及结构映射写 `Docs/PROJECT-STRUCTURE.md`，不能向禁止额外属性的配置强塞字段。
+
+现行配置的 `exceptions[]` 字段仍是 `ruleId/scope/reason/alternative/verification/owner/reviewTrigger`，其中 scope 为原合同的范围说明字符串。beaver 新结构审计候选采用独立输入，不改写该接口；以下是双方对接的字段合同，CLI 及实际能力仍待固定候选验收：
+
+```json
+{
+  "schemaVersion": 1,
+  "exceptions": [{
+    "path": "Assets/Plugins/NativeBridge",
+    "scope": "subtree",
+    "ruleId": "STR-02",
+    "reason": "平台插件导入要求该目录",
+    "alternativeConstraint": "仅允许已登记供应方插件，不容纳业务代码",
+    "validation": "项目内插件清单、哈希及原生导入回执路径",
+    "owner": "项目维护者",
+    "reviewTrigger": "供应方版本或目标平台变化"
+  }]
+}
+```
+
+`path` 是相对 Unity 工程的可移植路径，不含绝对路径或 `..`；`scope` 仅为 `path` 或 `subtree`，路径唯一，其余字段非空。转换旧配置时必须人工核准具体 path 和 scope，`alternative→alternativeConstraint`、`verification→validation`；不能把自由文本 scope 猜成子树授权。尚无已验自动转换器，使用独立显式输入并与项目文档核对。例外匹配按规则和范围共同判断；规则不符不能豁免其他问题。
 
 ## 动态加载与路径
 

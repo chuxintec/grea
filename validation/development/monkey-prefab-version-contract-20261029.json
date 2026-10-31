@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "scope": "Record approved monkey v0.7 Prefab recovery goal and independent evidence method; no runtime implementation or candidate acceptance.",
+  "documents": [
+    {
+      "path": "plugin/skills/grea-recover/SKILL.md",
+      "sha256": "0c1b4520493e2505b33dbfc2cae4a805cc04d8e440fa1bd69f9e4598970c0ef0"
+    },
+    {
+      "path": "plugin/skills/grea-recover/references/全量初版工程与协作.md",
+      "sha256": "b5d0bac4c13601a558fe16de98aa85dfa30425ecb1c9968d1f4cc38e6fd69032"
+    },
+    {
+      "path": "plugin/skills/grea/references/monkey恢复工具合同.md",
+      "sha256": "42571a9d69984730d43a79af8a949beab1aca915f36fe83eb06cda876d443ee2"
+    }
+  ],
+  "versionGoal": {
+    "version": "monkey v0.7.0",
+    "priority": "Prefab completeness before source-family expansion",
+    "minimumDistinctCorePrefabs": 10,
+    "approvedLocatorSetSize": 13,
+    "targets": [
+      "Creator",
+      "Unity"
+    ],
+    "targetEvidenceSeparate": true,
+    "sourceIdentityFreezeVerifiedByGrea": false,
+    "actualPassedCount": null,
+    "greaCandidateAcceptance": "not_accepted_no_delivery"
+  },
+  "method": [
+    "source component denominator includes unknown/unsupported",
+    "source-to-IR and IR-to-target evidence separated",
+    "original/old-pure/new-pure/manually-repaired groups separated",
+    "native tree/resources/scripts/dynamic/visual/input/repeat-generation matrix",
+    "scope-specific version gate; no universal ten-sample minimum"
+  ],
+  "validation": {
+    "repositoryDocuments": 157,
+    "localLinks": 714,
+    "isolatedSkills": 5,
+    "isolatedMarkdownFiles": 70,
+    "isolatedLinks": 361,
+    "stageRoutingTests": 4,
+    "generatedContractDrift": false,
+    "monkeyRuntimeSupportAdded": false
+  },
+  "limits": [
+    "No original package/game/engine operation, model change, install, push or release.",
+    "Source identity, source-component counts and actual v0.7 implementation remain the producer delivery scope; locator paths are not frozen source truth.",
+    "Creator tool-isolation target does not resume a paused game product.",
+    "No lock/version-range changes, speculative CLI/Schema or completed-capability claims."
+  ]
+}

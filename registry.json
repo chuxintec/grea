@@ -5756,9 +5756,9 @@
         "--help"
       ],
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
-      "formats": "monkey 0.4.0: discover/check/ensure (explicit missing install from GitHub latest stable), pin/plan/run/audit; persistent local binding",
-      "side_effects": "discover is read-only; check writes a new receipt; ensure binds user state and --install-if-missing downloads verified GitHub wheel/dependencies into an isolated user environment. Never upgrades existing providers.",
-      "usage": "monkey 0.4.0: discover/check/ensure (explicit missing install from GitHub latest stable), pin/plan/run/audit; persistent local binding",
+      "formats": "Pinned monkey 0.4/0.6: discover/check/ensure, pin/plan/run/audit; classify-shaders only for the exact local P0 package/capabilities identity",
+      "side_effects": "discover is read-only; check writes a new receipt; ensure binds user state and --install-if-missing downloads verified GitHub wheel/dependencies into an isolated user environment. Never upgrades existing providers. classify-shaders requires an explicit P0 lock and writes a fresh bounded classification report; no conversion, installation or full-pool audit.",
+      "usage": "Pinned monkey 0.4/0.6: discover/check/ensure, pin/plan/run/audit; classify-shaders only for the exact local P0 package/capabilities identity",
       "output_schema": "Provider lock v2, execution plan v1, result.json and captured process receipts",
       "tested_samples": "See validation/development/monkey-toolchain-20261026.json; engine/game verification remains separate",
       "execution": {

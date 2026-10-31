@@ -47,6 +47,7 @@ def documents():
         properties.update({k:{'type':'boolean'}for k in spec.get('flags',())})
         options={'type':'object','additionalProperties':False,'required':sorted(spec['required']),'properties':dict(sorted(properties.items()))}
         if name=='image.compress':options['allOf']=[{'if':{'required':['apply'],'properties':{'apply':{'const':True}}},'then':{'required':['expected-source']}}]
+        if name=='structure.inspect':options['dependentRequired']={'product-root':['profile'],'profile':['product-root']}
         if name=='debug.start':options['dependentRequired']={'width':['height'],'height':['width']}
         for option,versions in spec.get('option_versions',{}).items():
             options['properties'][option]['x-beaver-versions']=sorted(versions)

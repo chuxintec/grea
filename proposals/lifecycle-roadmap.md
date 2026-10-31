@@ -4,6 +4,39 @@
 
 2026-10-26｜状态：固定beaver0.3候选07及0.3.0运行实现（08/09/final等价包）的有限GREA适配通过；已只读核验正式08中文路径原生收敛采用回执，旧0.1/0.2/07链保留。0.3整版G由beaver主开发汇总；项目App默认渲染和正向购买L3仍是独立边界。安装和发布分别保留范围。**本文件为本轮唯一产品进度入口。** 历史研究/Cocos/Go成果见docs/design/research-cocos-go.md，保留原状态，不重做或补造通过。
 
+## 2026-10-29 monkey v0.7 Prefab版本协调（目标已记录，能力待交付）
+
+已核验本轮用户将Prefab完整恢复作为monkey v0.7.0目标：优先于旧source-family扩张，以至少10个不同核心Prefab完成Creator/Unity双端分层验收。当前13项文件仅为定位线索，源UUID/RF/代码/资源闭包仍待monkey冻结；不能把修补版当真值或用重复窗口/多个状态凑数。Creator3.8.8与Unity6000.6.2f1以实际环境核定，仅工具隔离验证，不恢复暂停的Cocos产品，不改变现行游戏版本出口。
+
+GREA已在原恢复参考补源组件分母、源→IR/IR→目标独立检查、原包/旧纯候选/新纯候选/人工修补四组对照及树/资源/脚本/动态/视觉/再生矩阵。关键显示或本地行为受服务缺口影响仍记partial；至少10项双端适用项未通过时versionComplete=false。门槛属于本次monkey版本，不变成所有游戏通用固定数量。
+
+GREA方法验证：157份文档714条引用、隔离5技能70篇361条内部链接及4项阶段路由检查通过；契约生成无漂移，现行monkey版本支持未改。见[Prefab版本口径验证](../validation/development/monkey-prefab-version-contract-20261029.json)。
+
+monkey维护唯一恢复实现与版本进度；GREA等待真实0.7开发包身份、CLI/Schema、分母账本和回执再有限接入，当前SUPPORTED_VERSIONS/正式锁/全局插件未改。beaver已验原生工具按实际能力选用。规范已记录不代表Prefab能力或样本验收完成；游戏工程与当前P0成果保留。
+
+## 2026-10-28 UI生产与验收方法（方法已落实，项目实证待补）
+
+已核原生用户批准的项目/工具分工。本轮仅维护GREA：在原有生成契约、界面还原、组件/Prefab、画面对照和测试参考中补齐唯一生成源与旧入口退役、单属性/分阶段布局写者、项目样式组件、同页同状态同视口、功能/视觉/Player分层及重复生成不回退。工具只引用固定beaver已证实入口，未知专项检查不标实现，不复制游戏风格或另建规范。
+
+验证：157份文档705条引用、隔离5技能70篇参考355条内部链接及4项路由检查通过，生成契约无漂移；记录见[UI方法验收](../validation/development/ui-quality-method-20261028.json)。
+
+方法定义与试点代表页实际通过分开；等待项目在真实宿主/候选完成代表页证据后补经验，不据多入口风险推断每次返工根因，也不称UI整改或retirement工具执行完成。僵尸P0各固定合同、在途成果及本地未发布状态保持。此轮不改游戏、不推送/发布/全局安装。
+
+## 2026-10-28 严格目录与阶段交接（本地规范与薄适配完成）
+
+- 已核对用户批准的结构审计、构建资源筛选、原生回读与捕帧范围；只维护 GREA，游戏与 provider 各自单写。
+- 规范已统一 Images 为纹理文件目录、Sprites 为独立 Sprite 主资产；明确 Scenes、Config/Levels 与复合资源组判定。恢复程序集/类型身份保留与新业务五层分开；旧业务根不得整体豁免。
+- 已明确现行项目配置与 beaver 结构例外独立输入的字段差异；不破坏配置 Schema，不声称自动适配已实现。
+- 已收固定 beaver `0.5.1.dev20261028`（提交914adff、producer f9bc89c），完成五项有限路由与同源 Schema；39项定向测试通过。安装包/10份合同hash已核对，六次真实CLI调用覆盖五路由及一次保留的错误target参数回执，合成分类与blocked未升级。未运行Editor/Player，正式项目消费者采用仍待项目验收。记录见[本地适配验收](../validation/development/beaver-p0-integration-20261028.json)。monkey来源分类已按下项接入；已发布 modules.lock 不变。游戏的结构迁移、750×1334候选首关仍由项目验收，不由本页宣布通过。
+- beaver修订候选 `0.5.1.dev20261028+fix1` 固定producer d683fbc已纳入，初版门保留；增量10项检查、安装包121文件/10合同及6个原生组件hash通过，合成旧场景→Game/Scenes正向声明及制品SHA核验通过，未执行迁移或重跑原生。见[fix1验收](../validation/development/beaver-p0-fix1-integration-20261028.json)。
+- monkey提交57613e7固定wheel（5ea38374）已接入`monkey_pipeline classify-shaders`有界入口，不走全工程snapshot；230运行文件逐字节核验，原始/规范编码能力指纹分别验证，3项新增门禁＋既有恢复相关共17项测试通过。实际CLI合成四类分类、未改文件、not_run语义通过；未经修改handoff实际交给固定beaver fix1，binary/source-evidence-only匹配且隔离blocked。无原生重跑、全量重导或全池审计。见[monkey接入验收](../validation/development/monkey-shader-integration-20261028.json)。游戏结构/Player闭环及真正隔离执行不在GREA此次通过范围。
+- beaver最终本地fix2（34ce66e，producer8fa8f67）已加入精确门，旧固定链保留；121运行文件/10合同/6原生组件核验通过。5项增量测试及四次实际CLI验证新inspect→正向声明、旧audit缺闭包blocked、审计后新增文件blocked；报告制品SHA通过，未执行迁移或重跑Editor。见[fix2验收](../validation/development/beaver-p0-fix2-integration-20261028.json)。
+- beaver核心fix3（c62245e，producer978da3）已接固定门及成对product-root/profile路径；GREA调用前完整Schema校验、调用后profile哈希核对。121运行文件/10合同、7项针对检查通过，真实CLI合成显式/自动绑定ok、非法完整profile未启动主操作。上游ArraySize=1原生回执只读Schema/哈希通过；63.7MB/65661项原报告经固定installed专用reader只读通过，普通read仍拒绝。GREA外层4MiB预算不变，大响应CLI/MCP端到端未验，较大报告显式使用固定provider CLI；紧凑传输与retirement执行均不声称完成。见[fix3验收](../validation/development/beaver-p0-fix3-integration-20261028.json)。
+- 2026-10-29接入最终fix6（c1d80d9，producer8e5d595）：核wheel/121运行文件/15合同；新增summary、consumer-resolutions、unity.recover与退役能力门，完整profile校验沿用。16项定向检查、实际合成CLI审计/来源比较声明/退役规划及源码stdio MCP摘要通过，5.25MB完整报告不内联且SHA独立核验；partial/exit1通过有界转发测试保真。原生退役final producer回执只读核对，Scene preseal证据按两个相同组件SHA复用；未运行Editor、apply/recover或游戏。本地支持与项目采用分开；旧全局绑定/正式锁保持。见[fix6验收](../validation/development/beaver-p0-fix6-integration-20261029.json)。
+- 2026-10-29增补fix7（5b765eb，producerb889a59）精确门，fix6链保留；122运行文件/16合同核验通过。18项受影响检查及实际CLI空叶目录folder-only规划、非空拒绝、unity/batch非法目标路径预检通过；调用固定API生成审阅绑定，摘要目录计数/恢复文件数原值保留。原生空目录与普通/source-only兼容回执只读核到final producer，GREA未启动Editor/删除/恢复，不称Scene重跑或大批次优化。见[fix7验收](../validation/development/beaver-p0-fix7-integration-20261029.json)。
+- 2026-10-29增补fix8（1b44c0b，producer6e81b67）精确门；122文件逐字匹配提交/wheel/安装副本、17合同核验通过。20项受影响检查及实际CLI默认/增量相同writeSet规划、Scene/额外readPaths拒绝通过；两个新开关仅转发spec，不扩CLI。上游final原生258资产/603配对、合法空name、默认旧字段及partial/exit1只读核验，采集摘要objectIdentityCount保留；GREA未跑Editor或move/recover，不外推大工程耗时。旧链/全局绑定/正式锁保留。见[fix8验收](../validation/development/beaver-p0-fix8-integration-20261029.json)。
+- 本节之后的新标准改动尚未推送或发布；此前路径性能修复与协作规范已由用户直接批准提交 main `fb4db3e`，与本轮 P0 接入分开。
+
 ## 当前主线：三产品职责整改（2026-10-26）
 
 本节覆盖下方历史 LC 规划中“GREA 自行维护通用执行实现”的归属；历史已验/未验不重写。品牌 GREA，兼容 GREA ID。monkey 负责恢复候选，beaver 负责开发工程操作，GREA 以 Skill/方法与薄调用为主。详细架构见[三产品架构](monkey-grea-lifecycle-architecture.md)，交接见[执行工具交接](beaver-execution-handoff.md)。

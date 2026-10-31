@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "candidateVersion": "0.5.1.dev20261028+fix2",
+  "sourceCommit": "34ce66eccd12512978f3d25ea5654d3c65b17735",
+  "implementationSha256": "8fa8f6700df4d805792d3decb6f9832f10d62598dc713ab788b7181a89b1e4ad",
+  "wheelSha256": "413f569eae6a804e957ac6cb7dbc8ff6abdccf62d577fce93904acbf9ec17173",
+  "installedRuntimeFilesEqualWheel": 121,
+  "contractHashesVerified": 10,
+  "unchangedNativeComponentsVerified": 6,
+  "targetedTests": 5,
+  "results": [
+    {
+      "operation": "structure.inspect",
+      "case": "inspect",
+      "status": "ok",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": []
+    },
+    {
+      "operation": "structure.plan",
+      "case": "positive-plan",
+      "status": "ok",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": []
+    },
+    {
+      "operation": "structure.plan",
+      "case": "missing-closure",
+      "status": "blocked",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": []
+    },
+    {
+      "operation": "structure.plan",
+      "case": "changed-input-set",
+      "status": "blocked",
+      "native": "not_run",
+      "gameplay": "not_run",
+      "diagnosticCodes": []
+    }
+  ],
+  "positivePlanArtifactSha256Verified": "f1bdd136a8fd9aab82b578497a43adb3270cb5a47a3cbc508e242d76a9c32ec5",
+  "limits": [
+    "Synthetic fixtures and caller-supplied native identity; no Editor or Player executed.",
+    "Fresh inspect provides the input closure; old audit without closure and new input after audit are correctly blocked.",
+    "declaration_only remains batchReadiness=not_evaluated; no migration executed or project conformance inferred.",
+    "Earlier pinned identities/receipts, formal module lock, global install and game originals unchanged."
+  ]
+}

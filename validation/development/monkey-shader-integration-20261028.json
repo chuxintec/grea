@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "sourceCommit": "57613e78f66a1c4685e748827983827c77922d36",
+  "version": "0.6.0",
+  "wheelSha256": "5ea38374c018ad95bd08bb734b0a471b3f51b7720e3b11934278b19f35e58f7c",
+  "installedRuntimeFilesEqualWheel": 230,
+  "capabilitiesRawSha256": "8192ca12080977d2d00f385da55dae7342d11411448a7e6b6caae9ab0251b080",
+  "capabilitiesCanonicalSha256": "9a8d4849b93d7cd88ccc30d0c815d2c89f73d7419c3086205a0485f8b6cb181d",
+  "targetedTests": 17,
+  "realInvocation": "launch_tool.py monkey_pipeline classify-shaders with installed fixed candidate",
+  "status": "classified",
+  "counts": {
+    "platform-compiled": 1,
+    "source-text": 1,
+    "unknown": 1,
+    "unsupported": 1
+  },
+  "nativeCompilation": "not_run",
+  "fixtureUnchanged": true,
+  "providerScope": {
+    "assetHeadersRead": 3,
+    "classifiedFiles": 4,
+    "declaredFiles": 8,
+    "discovery": "declared shader extensions/directories and serialized Shader/variant headers; other untyped binaries not inferred",
+    "otherSerializedTypesExcluded": 0,
+    "shaderSubsetBytes": 503,
+    "shaderSubsetUnchanged": true,
+    "wholeProjectBytesReaudited": false
+  },
+  "limits": [
+    "Synthetic local fixture only; upstream 127-item frozen-candidate receipt is not rerun or claimed as new GREA validation.",
+    "Source target identities are serialized declarations; unmapped associations and target null preserved.",
+    "No full-pool snapshot, recovery conversion, Editor, compiler, asset isolation, Player or gameplay run.",
+    "Formal module locks, user installation/global binding, game originals and fixed source candidates unchanged."
+  ],
+  "beaverInteroperability": {
+    "version": "0.5.1.dev20261028+fix1",
+    "directUnmodifiedHandoff": true,
+    "sourceClassification": "binary",
+    "buildState": "source-evidence-only",
+    "outerStatus": "blocked",
+    "executionStatus": "blocked",
+    "snapshotOrigin": "synthetic caller-supplied, not native authentication"
+  }
+}

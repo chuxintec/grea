@@ -98,6 +98,36 @@ OPERATIONS.update({
 })
 
 
+# The fixed local P0 candidate retains the existing 0.5 surface. New routes
+# require that candidate's exact producer and capability declaration.
+for _spec in OPERATIONS.values():
+    if beaver.V05_VERSION in _spec.get('versions', set()):
+        _spec['versions'].update(beaver.P0_VERSIONS)
+OPERATIONS.update({
+    'structure.inspect':dict(command=['structure','inspect'],required={'project'},paths={'project','snapshot','exceptions'},output='out',versions=set(beaver.P0_VERSIONS),capability='structure.inspect/plan'),
+    'structure.plan':dict(command=['structure','plan'],required={'audit','mappings'},paths={'audit','mappings','snapshot'},output='out',versions=set(beaver.P0_VERSIONS),capability='structure.inspect/plan'),
+    'build-filter.collect':dict(command=['build-filter','collect'],required={'project','spec','editor-path','timeout'},paths={'project','spec','editor-path'},integers={'timeout':(1,1700)},output='out',versions=set(beaver.P0_VERSIONS),capability='build-filter.collect/plan'),
+    'build-filter.plan':dict(command=['build-filter','plan'],required={'project','snapshot','sources','target'},paths={'project','snapshot','sources','target'},output='out',versions=set(beaver.P0_VERSIONS),capability='build-filter.collect/plan'),
+    'native.readback':dict(command=['native','readback'],required={'project','spec','editor-path','timeout'},paths={'project','spec','editor-path'},integers={'timeout':(1,1700)},output='out',versions=set(beaver.P0_VERSIONS),capability='native.readback'),
+})
+
+
+OPERATIONS['structure.inspect']['paths'].update({'product-root','profile'})
+OPERATIONS['structure.inspect']['scope_roots']={'product-root'}
+OPERATIONS['structure.inspect']['option_versions']={k:{beaver.P0_FIX3_VERSION,*beaver.P0_RETIRE_VERSIONS} for k in ('product-root','profile')}
+
+
+# fix6 transports SHA-bound full reports via an explicit compact envelope.
+for _operation in ('structure.inspect','structure.plan','build-filter.collect','build-filter.plan','native.readback','unity.plan','unity.apply'):
+    OPERATIONS[_operation].setdefault('flags',set()).add('summary')
+    OPERATIONS[_operation].setdefault('option_versions',{})['summary']=set(beaver.P0_RETIRE_VERSIONS)
+OPERATIONS['structure.plan']['paths'].add('consumer-resolutions')
+OPERATIONS['structure.plan'].setdefault('option_versions',{})['consumer-resolutions']=set(beaver.P0_RETIRE_VERSIONS)
+OPERATIONS['unity.recover']=dict(command=['unity','recover'],required={'transaction','expected-plan','editor-path','timeout'},
+    paths={'transaction','editor-path'},hashes={'expected-plan'},integers={'timeout':(1,1700)},flags={'summary'},
+    versions=set(beaver.P0_RETIRE_VERSIONS),capability='unity.assets.retire/recover')
+
+
 def read_json(path, max_bytes=8*1024**2):
     path=canonical_path(path)
     if not path.is_file() or path.stat().st_size>max_bytes:raise ValueError('Missing or oversized request/plan JSON')
@@ -119,6 +149,8 @@ def validate(request):
     if spec is None or not isinstance(options,dict):raise ValueError('Unsupported named beaver operation')
     allowed=set().union(*(set(spec.get(k,()))for k in ('paths','path_lists','hashes','integers','text','flags')))
     if set(options)-allowed or not spec['required']<=options.keys():raise ValueError('Unknown or missing named options')
+    if request['operation']=='structure.inspect' and (('product-root' in options)!=('profile' in options)):
+        raise ValueError('product-root and profile must be supplied together')
     timeout=request['timeout_seconds']
     if type(timeout)is not int or not 1<=timeout<=1800:raise ValueError('timeout_seconds must be 1..1800')
     values={}
@@ -192,6 +224,7 @@ def required_capability(request):
     if plan.get('contract')!='beaver-unity/1':raise ValueError('Expected beaver-unity/1 plan')
     operation=plan.get('spec',{}).get('operation')
     if not isinstance(operation,str):raise ValueError('Unity plan has no declared operation')
+    if operation=='assets.retire':return 'unity.assets.retire/recover'
     return 'unity.'+operation
 
 
@@ -207,6 +240,50 @@ def bound_command(cfg, output):
         else:os.environ['GREA_PROVIDERS']=previous
 
 
+
+def structure_profile(values):
+    """Validate only the bound profile schema; do not scan the product tree."""
+    from jsonschema import Draft202012Validator
+    from grea.unity_project_contracts import PROFILE
+    from grea.safe_paths import relative_name
+    project=Path(values['project']);explicit='profile' in values
+    candidates=[(Path(values['product-root']),Path(values['profile']))] if explicit else [
+        (project,project/'grea-project.json'),(project.parent,project.parent/'grea-project.json')]
+    for product, path in candidates:
+        if not path.is_file():
+            if explicit:raise ValueError('Bound profile is missing')
+            continue
+        product=canonical_path(product);path=canonical_path(path)
+        if not path.is_relative_to(product):raise ValueError('Profile escapes product root')
+        before=hash_file(path,8*1024**2);data=read_json(path)
+        declared_paths=data.get('paths') if isinstance(data,dict) else None
+        unity=declared_paths.get('unityProject') if isinstance(declared_paths,dict) else None
+        if not isinstance(unity,str):raise ValueError('Profile has no Unity path binding')
+        bound=canonical_path(product if unity=='.' else product/relative_name(unity))
+        if bound!=project:
+            if explicit:raise ValueError('Profile does not bind selected Unity project')
+            continue
+        failure=next(Draft202012Validator(PROFILE).iter_errors(data),None)
+        if failure is not None:raise ValueError('Invalid full GREA project profile at '+failure.json_path)
+        if hash_file(path,8*1024**2)!=before:raise ValueError('Profile changed during validation')
+        return before
+    return None
+
+
+
+def verify_summary_artifacts(actual):
+    """Verify compact transport references without inlining their full reports."""
+    artifacts=actual.get('artifacts',[])
+    if actual.get('status') in ('ok','partial') and not artifacts:
+        raise ValueError('Compact evidence requires a complete report artifact')
+    verified=[];remaining=256*1024**2
+    for artifact in artifacts:
+        identity=hash_file(canonical_path(artifact['path']),min(remaining,128*1024**2))
+        if identity['sha256']!=artifact['sha256']:raise ValueError('Compact report artifact changed')
+        remaining-=identity['bytes'];verified.append(identity)
+    return verified
+
+
 def invoke(lock, request_file, output):
     from grea import runner
     from grea.integrations.monkey.local import readiness, state_root as monkey_state
@@ -215,7 +292,8 @@ def invoke(lock, request_file, output):
     request=read_json(request_file);spec,values=validate(request)
     if hash_file(request_file,8*1024**2)!=before:raise ValueError('Request changed while reading')
     lock=canonical_path(lock);lock_before=hash_file(lock,8*1024**2)
-    paths=[v for k,v in values.items()if k in spec.get('paths',())]
+    # A product root scopes profile discovery, not a frozen whole-tree input.
+    paths=[v for k,v in values.items()if k in spec.get('paths',()) and k not in spec.get('scope_roots',())]
     paths += [p for k,v in values.items() if k in spec.get('path_lists',{}) for p in v]
     out=disjoint(output,lock,request_file,beaver.state_root(),monkey_state(),*paths)
     if out.exists() or not out.parent.is_dir():raise ValueError('Use a fresh invocation directory')
@@ -233,6 +311,8 @@ def invoke(lock, request_file, output):
             cfg=read_json(lock)
             probe=read_json(out/'beaver-check/probe/run.json')['parsed_stdout']
             validate_provider_version(request,cfg['version'])
+            profile_identity=structure_profile(values) if request['operation']=='structure.inspect' and cfg['version'] in {beaver.P0_FIX3_VERSION,*beaver.P0_RETIRE_VERSIONS} else None
+            if profile_identity:result['profile_schema_validation']=profile_identity
             if cfg['version']!=probe['producer']['version']:raise ValueError('Probe version differs from lock')
             needed=required_capability(request)
             declarations=probe['data']['capabilities']
@@ -246,6 +326,8 @@ def invoke(lock, request_file, output):
                         timeout_seconds=request['timeout_seconds'],max_output_bytes=4*1024**2,max_inline_bytes=4*1024**2)
                 actual=invocation.get('parsed_stdout');result['executed']=True
                 if isinstance(actual,dict):result['provider_result']=actual
+                if profile_identity and hash_file(profile_identity['path'],8*1024**2)!=profile_identity:
+                    raise ValueError('Bound profile changed during invocation')
                 if beaver.package_identity(cfg['identity_root'])!=cfg['package_files'] or beaver.command_identity(cfg['command'])!=cfg['command_files']:
                     raise ValueError('Provider implementation changed during invocation')
                 if not invocation.get('capture_complete') or not isinstance(actual,dict) or actual.get('contract')!='beaver-result/1' or actual.get('producer',{}).get('name')!='beaver' or actual.get('producer',{}).get('version')!=cfg['version']:
@@ -255,6 +337,8 @@ def invoke(lock, request_file, output):
                     validate_result(actual)
                 if actual['producer'].get('implementationSha256')!=probe['producer'].get('implementationSha256'):
                     raise ValueError('Producer identity differs from capability probe')
+                if values.get('summary') and cfg['version'] in beaver.P0_RETIRE_VERSIONS:
+                    result['provider_artifacts_verified']=verify_summary_artifacts(actual)
                 status=actual.get('status');codes={'ok':0,'partial':1,'blocked':3,'failed':2,'not_run':3}
                 result['provider_result']=actual
                 if status not in codes or invocation.get('exit_code')!=codes[status]:raise ValueError('Provider status/exit contract mismatch')

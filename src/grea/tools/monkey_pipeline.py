@@ -17,8 +17,16 @@ def main(argv=None):
     for action in ('plan','run','audit'):
         p=commands.add_parser(action);p.add_argument('--config',help='Omit to use the checked persistent local binding');p.add_argument('--output',required=True)
         p.add_argument({'plan':'--request','run':'--plan','audit':'--workspace'}[action],required=True)
+    shader=commands.add_parser('classify-shaders',help='Bounded read-only classification with an explicit fixed local P0 lock')
+    for name in ('config','project','manifest','expected-manifest','output'):shader.add_argument('--'+name,required=True)
+    shader.add_argument('--source-mapping');shader.add_argument('--expected-source-mapping')
+    shader.add_argument('--timeout-seconds',type=int,default=30)
     args=parser.parse_args(argv)
     try:
+        if args.action=='classify-shaders':
+            from grea.integrations.monkey.shader import classify
+            result=classify(args.config,args.project,args.manifest,args.expected_manifest,args.output,args.source_mapping,args.expected_source_mapping,args.timeout_seconds)
+            print(json.dumps(result));return 0 if result['status']=='classified' else 1
         if args.action=='discover':
             from grea.integrations.monkey.local import discover
             print(json.dumps(discover()));return 0
