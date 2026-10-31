@@ -62,6 +62,7 @@ namespace Monkey.Targets.Spine
             public string atlasTextAssetPath;
             public string atlasSha256;
             public string nativeDataAssetGuid;
+            public float scale;
             public UnitySpineNativeFactory.DataAssetSpec factoryInput;
         }
 

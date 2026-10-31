@@ -365,7 +365,9 @@ public static partial class MonkeyImporter
             if (nodeId == null || !nodes.ContainsKey(nodeId))
                 throw new InvalidOperationException("SPINE_STAGE_SOURCE_NODE_NOT_IN_TARGET_PLAN:" + row.sourceComponentId);
         }
-        if (parsed.dataAssets.Any(row => row.factoryInput == null || row.factoryInput.scale != 1f ||
+        if (parsed.dataAssets.Any(row => row == null || row.factoryInput == null ||
+                                         float.IsNaN(row.scale) || float.IsInfinity(row.scale) || row.scale <= 0f ||
+                                         row.factoryInput.scale != row.scale ||
                                          row.factoryInput.sourceAssetId != row.sourceAssetId))
             throw new InvalidOperationException("SPINE_STAGE_DATA_ASSET_SCALE_OR_IDENTITY_MISMATCH");
 
@@ -711,8 +713,11 @@ public static partial class MonkeyImporter
         foreach (var pair in actualAssets)
         {
             var asset = pair.Value;
+            var expectedAsset = frozen.dataAssets.SingleOrDefault(row => row.sourceAssetId == pair.Key);
             if (!asset.nativeAssetIdentityVerified || !asset.savedSourceReferencesVerified || !asset.scaleVerified ||
-                !asset.sourceProfileMaterialsVerified || !asset.staticDataVerified || Mathf.Abs(asset.scale - 1f) > 0.000001f)
+                !asset.sourceProfileMaterialsVerified || !asset.staticDataVerified ||
+                expectedAsset == null || expectedAsset.factoryInput == null ||
+                Mathf.Abs(asset.scale - expectedAsset.factoryInput.scale) > 0.000001f)
                 failures.Add("saved_native_data_asset_identity_scale_or_material_profile_mismatch:" + pair.Key);
         }
         if (saved.gaps.Any(gap => gap.code.Contains("READBACK_FAILED") || gap.code.Contains("IDENTITY_MISMATCH")))
