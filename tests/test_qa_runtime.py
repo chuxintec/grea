@@ -172,9 +172,9 @@ class QaRuntimePrepareTests(unittest.TestCase):
             self.assertEqual(result["owner"]["artifactMaxTotalBytes"], qa_runtime.WHOLE_BYTES)
             self.assertEqual(result["owner"]["artifactMaxFiles"], qa_runtime.WHOLE_FILES)
             fake = unittest.mock.MagicMock(); fake.pid = 54321; fake.wait.return_value = 0
-            with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime.subprocess.Popen", return_value=fake):
+            with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime._pid_identity_snapshot", return_value={"status":"identity_unknown"}), patch("beaver.qa_runtime.subprocess.Popen", return_value=fake):
                 launched = launch("fixture-project", "large-build2", "profile-a", result["ownerSha256"], run_id="large-run")
-            self.assertEqual(launched["report"]["executableSha256"], digest_file(Path(launched["report"]["executablePath"]), max_bytes=qa_runtime.BUILD_FILE_BYTES))
+            self.assertEqual(launched["process"]["executableSha256"], digest_file(Path(launched["process"]["executablePath"]), max_bytes=qa_runtime.BUILD_FILE_BYTES))
 
     def test_bundle_hash_enforces_whole_artifact_byte_and_file_limits(self):
         tree = self.root / "budget-tree"; tree.mkdir()
@@ -186,7 +186,7 @@ class QaRuntimePrepareTests(unittest.TestCase):
     def test_mocked_gui_launch_and_collect_are_run_scoped_and_do_not_spawn_fixture(self):
         result = self.call_prepare(self.make_spec("launch-build"))
         fake = unittest.mock.MagicMock(); fake.pid = 43210; fake.wait.return_value = 0
-        with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime.subprocess.Popen", return_value=fake) as popen:
+        with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime._pid_identity_snapshot", return_value={"status":"identity_unknown"}), patch("beaver.qa_runtime.subprocess.Popen", return_value=fake) as popen:
             launched = launch("fixture-project", "launch-build", "profile-a", result["ownerSha256"], run_id="run-a")
             args, kwargs = popen.call_args
             self.assertEqual(args[0][0].endswith("/Fixture"), True)
@@ -200,7 +200,8 @@ class QaRuntimePrepareTests(unittest.TestCase):
         self.assertEqual(report["status"], "collected")
         self.assertEqual(len(report["logs"]), 2)
         self.assertEqual(report["logs"][0]["path"], launched["logPath"])
-        process_report = launched["report"]
+        self.assertIsInstance(launched["report"],str)
+        process_report = json.loads(Path(launched["report"]).read_text())
         self.assertEqual(process_report["expectedOwnerSha256"], result["ownerSha256"])
         self.assertEqual(process_report["executableSha256"], digest_file(Path(process_report["executablePath"])))
         self.assertTrue(process_report["cwd"].endswith("App.app"))
@@ -254,3 +255,27 @@ class QaRuntimePrepareTests(unittest.TestCase):
             with self.assertRaises(BeaverError) as raised:self.call_prepare(spec)
         self.assertEqual(raised.exception.code,'QA_PROFILE_SEED_DRIFT')
         self.assertFalse((self.mock_home/'Library/Application Support/beaver/unity-qa/fixture-project/data/profiles/profile-a').exists())
+
+    def test_public_launch_cli_exposes_report_path_after_owned_exit(self):
+        import contextlib,io
+        from beaver.cli import main
+        result=self.call_prepare(self.make_spec('cli-launch'))
+        fake=unittest.mock.MagicMock();fake.pid=54321;fake.wait.return_value=0
+        output=io.StringIO()
+        with patch('beaver.qa_runtime._home_root',return_value=self.mock_home/'Library/Application Support/beaver/unity-qa'),patch('beaver.qa_runtime.subprocess.Popen',return_value=fake),patch('beaver.qa_runtime._pid_identity_snapshot',return_value={'status':'identity_unknown'}),contextlib.redirect_stdout(output):
+            code=main(['qa','launch','--project','fixture-project','--build','cli-launch','--profile','profile-a','--expected-owner',result['ownerSha256'],'--run','cli-run'])
+        response=json.loads(output.getvalue())
+        self.assertEqual(code,0);self.assertEqual(response['status'],'ok')
+        self.assertIsInstance(response['data']['report'],str)
+        self.assertEqual(response['artifacts'][0]['path'],response['data']['processRecord'])
+        self.assertEqual(response['data']['process']['exitCode'],0)
+
+    def test_running_identity_accepts_same_file_but_not_other_file_start_or_log(self):
+        executable=self.root/'Executable';executable.write_bytes(b'owned')
+        alias=self.root/'Alias';os.link(executable,alias)
+        other=self.root/'Other';other.write_bytes(b'owned')
+        baseline=dict(status='verified',executablePath=str(alias),startTime='same-start',logArgumentMatched=True)
+        process=dict(pid=123,pidIdentity=baseline)
+        for current,expected in [(baseline,'verified-running'),(dict(baseline,executablePath=str(other)),'identity_unknown'),(dict(baseline,startTime='new-start'),'identity_unknown'),(dict(baseline,logArgumentMatched=False),'identity_unknown')]:
+            with patch('beaver.qa_runtime._pid_identity_snapshot',return_value=current):
+                self.assertEqual(qa_runtime._verify_running_process(process,executable,self.root/'run.log'),expected)

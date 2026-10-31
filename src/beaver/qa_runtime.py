@@ -620,7 +620,7 @@ def _launch_process(exe, args, app, env, log_path, duration, project_id, build_i
     sandbox_info.update(launchCompleted=True, enforcementIndependentlyVerified=False)
     process_record.update(status=("failed" if code != 0 else status), exitCode=code, exitedUtc=datetime.now(timezone.utc).isoformat(), stoppedByBudget=(status == "stopped_by_budget"), documentsSandbox=sandbox_info)
     _write_control_json(receipt_path, process_record)
-    return {"status": process_record["status"], "runId": run_id, "pid": process.pid, "exitCode": code, "stoppedByBudget": status == "stopped_by_budget", "logPath": str(log_path), "processRecord": str(receipt_path), "report": process_record, "runtimeFileAccessEvidence": "not measured; no syscall tracing performed"}
+    return {"status": process_record["status"], "runId": run_id, "pid": process.pid, "exitCode": code, "stoppedByBudget": status == "stopped_by_budget", "logPath": str(log_path), "processRecord": str(receipt_path), "report": str(receipt_path), "process": process_record, "runtimeFileAccessEvidence": "not measured; no syscall tracing performed"}
 
 
 def collect(project_id, build_id, profile_id, expected_owner_sha256, run_id=None, out=None):
@@ -667,6 +667,11 @@ def collect(project_id, build_id, profile_id, expected_owner_sha256, run_id=None
     return report
 
 
+def _same_executable(left,right):
+    try:return os.path.samefile(left,right)
+    except (OSError,TypeError,ValueError):return False
+
+
 def _verify_running_process(process, executable, log_path):
     pid = process.get("pid")
     if type(pid) is not int or pid <= 0: return "identity_unknown"
@@ -674,7 +679,8 @@ def _verify_running_process(process, executable, log_path):
     baseline = process.get("pidIdentity", {})
     current = _pid_identity_snapshot(pid, executable, log_path)
     if (current.get("status") == "verified" and baseline.get("status") == "verified"
-            and current.get("executablePath") == baseline.get("executablePath") == expected_exe
+            and _same_executable(current.get("executablePath"),expected_exe)
+            and _same_executable(baseline.get("executablePath"),expected_exe)
             and current.get("startTime") == baseline.get("startTime")
             and current.get("logArgumentMatched") and baseline.get("logArgumentMatched")):
         return "verified-running"
@@ -700,7 +706,7 @@ def _pid_identity_snapshot(pid, executable, log_path):
         log_argument = f"-logFile {log_path}"
         matched = log_argument in command.stdout.strip()
         result.update(executablePath=actual_executable, startTime=start_time, logArgumentMatched=matched)
-        if actual_executable == str(executable) and start_time and matched: result["status"] = "verified"
+        if _same_executable(actual_executable,executable) and start_time and matched: result["status"] = "verified"
         return result
     except (OSError, AttributeError, subprocess.TimeoutExpired):
         return result
