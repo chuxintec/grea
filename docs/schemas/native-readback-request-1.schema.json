@@ -48,6 +48,28 @@
           "propertyPath": {
             "type": "string",
             "minLength": 1
+          },
+          "ownerIdentity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "guid",
+              "localId"
+            ],
+            "properties": {
+              "guid": {
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{32}$"
+              },
+              "localId": {
+                "type": "integer",
+                "minimum": -9223372036854775808,
+                "maximum": 9223372036854775807,
+                "not": {
+                  "const": 0
+                }
+              }
+            }
           }
         }
       },

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "candidateVersion": "0.5.1.dev20261029+fix8",
+  "candidateVersion": "0.5.1.dev20261031+fix9",
   "status": "local-candidate-verified",
   "syntheticChecks": {
-    "passed": 188,
+    "passed": 193,
     "scope": "all affected P0 plus shared adoption/batch/production/UI/wiring regressions; explicit native-job evidence markers included"
   },
   "native": {
@@ -219,7 +219,7 @@
     "ordinaryNoSceneJobVerified": true,
     "persistedSettingsAfterExitVerified": true
   },
-  "implementationSha256": "6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3",
+  "implementationSha256": "554075acb4960db076c49c60e26b39c427c37c0029aac5f2f30dc6f49cbd13eb",
   "retainedFailureEvidence": [
     "initial retirement companion compile failure before deletion",
     "recently deleted GUID lookup caused uncertain checkpoint, private fixture restoration separately recorded",
@@ -227,7 +227,7 @@
     "JsonUtility empty nested evidence object wrongly rejected default policy before deletion",
     "default recovery optional digest null/empty comparison; original bytes restored but Native verdict withheld until fixed candidate passed"
   ],
-  "priorNativeEvidenceBoundary": "Captures, folder moves, Scene settings and fix7 empty-folder acceptance retain their original fixed-candidate evidence. Fix8 reran bulk identity collection, opt-in/default non-Scene batches and recovery faults; it also verified source-only retirement with a new bulk zero-object snapshot. No complete game acceptance is inferred.",
+  "priorNativeEvidenceBoundary": "Fix9 reran affected field readback with duplicate prefab/scene owners, aliases/empty/null, exact large and negative owner IDs. Fix8 bulk/checkpoint performance and prior capture/adoption evidence remain historical; no game or capture parity is inferred.",
   "emptyFolderRetirement": {
     "testedInstalledCandidate": "0.5.1.dev20261029+fix7",
     "producer": "b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c",
@@ -304,5 +304,31 @@
     "fullFixtureSourceAndDirectorySetRestored": true,
     "jsonSerializationCost": "still full report per step",
     "defaultPolicyAndSceneBehavior": "unchanged; Scene execution not rerun with fix8"
+  },
+  "persistentOwnerSelector": {
+    "testedInstalledCandidate": "0.5.1.dev20261031+fix9",
+    "producer": "554075acb4960db076c49c60e26b39c427c37c0029aac5f2f30dc6f49cbd13eb",
+    "request": "optional ownerIdentity:{guid,localId}; original asset/path/type/property remain required",
+    "scope": "selected file GUID plus actual component/object signed64 ID; no sibling-index selection or fallback",
+    "prefabAndSceneDuplicateNamePositive": true,
+    "largePrefabIdsBeyondFloatingPointPrecisionPreserved": true,
+    "actualNegativeMaterialSubassetIdObserved": true,
+    "twoIndependentMixedReadbacks": {
+      "queries": 14,
+      "observed": 7,
+      "intentionalUnknown": 7,
+      "fieldsEqualAcrossReopen": true
+    },
+    "positiveOnlyIndependentReadback": {
+      "queries": 7,
+      "cliStatus": "ok",
+      "exitCode": 0
+    },
+    "legacyAmbiguousPathForeignGuidStaleIdWrongPathTypeAndMissingProperty": "remain unknown with reasons",
+    "aliasEmptyStringNullReferenceCompatible": true,
+    "sourceAndDirectorySetUnchanged": true,
+    "runtimePresenceFlag": "derived; not accepted from caller spec",
+    "pythonPostcondition": "observed owner must equal requested GUID/localID/type and query",
+    "gameProjectWrites": false
   }
 }

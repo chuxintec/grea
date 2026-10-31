@@ -11,3 +11,15 @@ Output `readback.json` records editor version, asset types, persistent GUID/loca
 The same `run_collector` supports the build-filter companion and retains exact source/meta input hashes plus a read-only guard receipt. Previously collected or caller-provided snapshots are evidence data, not independent authentication. The formal released package is unchanged; these commands are local development additions until separately released.
 
 `Integer` and `ArraySize` properties expose `hasIntegerValue: true` and an exact JSON `integerValue`; their compatible `value` string also contains the integer. An array-length query such as `bindings.Array.size` reads the scalar itself, rather than reporting a structured marker as a value. Other property types must not interpret the default `integerValue` when `hasIntegerValue` is false.
+
+## Strict persistent owner selection
+
+A field query may add `ownerIdentity: {"guid":"<selected asset GUID>","localId":123}`. All original asset/nodePath/componentType/propertyPath fields remain required. The local ID is the component's actual persistent local ID when componentType is nonempty, or the GameObject/object ID for an object query. No ID is guessed from a node name or sibling order. Valid IDs are nonzero signed 64-bit integers, including negative values.
+
+The GUID must identify the selected file. The native reader first limits candidates by the declared asset, exact name path and concrete component type, then filters those candidates by the actual persistent GUID/localID. It requires exactly one match. A stale ID, foreign GUID, wrong path/type, unavailable identity or remaining ambiguity produces an unknown field with a reason. It never falls back to a same-named node. Nested/variant owners that cannot establish an identity belonging to the selected file remain unknown. Queries without ownerIdentity preserve the previous unique-path behavior. This selector does not add sibling-index traversal.
+
+The collector derives an explicit runtime hasOwnerIdentity boolean; callers must not supply it. This avoids JsonUtility default nested objects being mistaken for requested selectors. An observed response is independently checked in Python against the exact requested owner identity; native unknown rows remain partial evidence.
+
+Preserve localId as an exact 64-bit JSON integer when writing request files; a floating-point or JavaScript Number round-trip can lose large prefab IDs. A rounded/stale ID must remain unknown, not be repaired by name.
+
+The owner GUID identifies the selected serialized asset file, not the MonoScript GUID or an original-engine UUID. Component queries require the component local ID, not its GameObject local ID. Any unknown query keeps the report partial/CLI exit 1; a positive-only observed request returns exit 0.

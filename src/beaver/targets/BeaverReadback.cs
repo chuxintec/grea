@@ -11,7 +11,8 @@ using UnityEngine.SceneManagement;
 // Exact persistent identity and SerializedObject queries; never parses YAML or plays a scene.
 public static class BeaverReadback {
     [Serializable] public class Alias { public string name,propertyPath; }
-    [Serializable] public class Query { public string asset,nodePath,componentType,propertyPath; }
+    [Serializable] public class OwnerIdentity { public string guid; public long localId; }
+    [Serializable] public class Query { public string asset,nodePath,componentType,propertyPath; public bool hasOwnerIdentity; public OwnerIdentity ownerIdentity; }
     [Serializable] public class CameraSpec { public float[] position,euler,background; public bool orthographic; public float size; }
     [Serializable] public class CaptureSpec { public string asset,cameraPath; public int width,height; public bool temporaryCamera; public CameraSpec camera; }
     [Serializable] public class Job { public int schemaVersion; public bool hasCapture; public string projectRoot,stage; public string[] assets; public Alias[] aliases; public Query[] queries; public CaptureSpec capture; }
@@ -69,13 +70,25 @@ public static class BeaverReadback {
         if(!String.IsNullOrEmpty(q.nodePath))return new UnityEngine.Object[0];
         return AssetObjects(q.asset).Where(o=>String.IsNullOrEmpty(q.componentType)||o.GetType().FullName==q.componentType).ToArray();
     }
+    static UnityEngine.Object[] SelectedOwners(Query q) {
+        var owners=Owners(q);
+        if(!q.hasOwnerIdentity)return owners;
+        var selected=q.ownerIdentity;
+        if(selected==null||String.IsNullOrEmpty(selected.guid)||selected.localId==0)throw new InvalidOperationException("Explicit persistent owner GUID/localID required");
+        var assetGuid=AssetDatabase.AssetPathToGUID(q.asset,AssetPathToGUIDOptions.OnlyExistingAssets);
+        if(String.IsNullOrEmpty(assetGuid)||!String.Equals(assetGuid,selected.guid,StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Owner GUID does not identify the selected asset; no fallback is permitted");
+        return owners.Where(o=>{var identity=Id(o);return identity!=null&&identity.state=="persistent"&&identity.localId==selected.localId&&String.Equals(identity.guid,selected.guid,StringComparison.OrdinalIgnoreCase);}).ToArray();
+    }
     static Field Read(Query q) {
         string prop=q.propertyPath;var alias=(job.aliases??new Alias[0]).Where(a=>a.name==prop).ToArray();if(alias.Length==1)prop=alias[0].propertyPath;
         var f=new Field{asset=q.asset,nodePath=q.nodePath,componentType=q.componentType,requestedPath=q.propertyPath,propertyPath=prop,status="unknown"};
         try {
             if(q.asset.EndsWith(".unity",StringComparison.Ordinal))queryScene=EditorSceneManager.OpenPreviewScene(q.asset);
-            var owners=Owners(q);if(owners.Length!=1){f.error="Owner count="+owners.Length+"; exact unique selector required";return f;}
-            f.owner=Id(owners[0]);var so=new SerializedObject(owners[0]);so.Update();var p=so.FindProperty(prop);
+            var owners=SelectedOwners(q);if(owners.Length!=1){f.error="Owner count="+owners.Length+"; exact unique selector required";return f;}
+            f.owner=Id(owners[0]);
+            if(q.hasOwnerIdentity&&(f.owner==null||f.owner.state!="persistent"||f.owner.localId!=q.ownerIdentity.localId||!String.Equals(f.owner.guid,q.ownerIdentity.guid,StringComparison.OrdinalIgnoreCase)))throw new InvalidOperationException("Persistent owner identity changed during query; no fallback is permitted");
+            var so=new SerializedObject(owners[0]);so.Update();var p=so.FindProperty(prop);
             if(p==null){f.error="SerializedProperty not found";return f;}
             f.status="observed";f.valueType=p.propertyType.ToString();f.value=Value(p);
             if(p.propertyType==SerializedPropertyType.Integer||p.propertyType==SerializedPropertyType.ArraySize){f.hasIntegerValue=true;f.integerValue=p.propertyType==SerializedPropertyType.ArraySize?p.intValue:p.longValue;}

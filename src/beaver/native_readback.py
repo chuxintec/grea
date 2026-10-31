@@ -1,5 +1,6 @@
 """Scoped native serialization readback and offscreen capture; no gameplay claims."""
 from pathlib import Path
+import re
 import shutil
 import subprocess
 from .io import safe, inside, load, write_json, sha, read
@@ -32,10 +33,16 @@ def validate(spec):
         names.add(a['name'])
     queries = spec.get('queries', [])
     if not isinstance(queries, list) or len(queries) > 1024: fail('READBACK_QUERY', 'queries', 'At most 1024 field queries')
+    query_fields={'asset','nodePath','componentType','propertyPath'}
     for q in queries:
-        if not isinstance(q, dict) or set(q) != {'asset', 'nodePath', 'componentType', 'propertyPath'} or not all(isinstance(v, str) for v in q.values()) or q['asset'] not in assets or not q['propertyPath']:
+        if not isinstance(q, dict) or not query_fields<=set(q) or set(q)-query_fields-{'ownerIdentity'} or not all(isinstance(q[k],str) for k in query_fields) or q['asset'] not in assets or not q['propertyPath']:
             fail('READBACK_QUERY', 'queries', 'Explicit selected asset/nodePath/componentType/propertyPath required')
         if q['nodePath'] and any(p in ('', '.', '..') for p in q['nodePath'].split('/')): fail('READBACK_QUERY', 'nodePath', 'Canonical hierarchy path required')
+        if 'ownerIdentity' in q:
+            owner=q['ownerIdentity']
+            if (not isinstance(owner,dict) or set(owner)!={'guid','localId'} or not isinstance(owner.get('guid'),str) or not re.fullmatch(r'[a-fA-F0-9]{32}',owner['guid'])
+                    or type(owner.get('localId')) is not int or not -(2**63)<=owner['localId']<2**63 or owner['localId']==0):
+                fail('READBACK_OWNER_SELECTOR','ownerIdentity','Expected an actual selected-asset GUID and nonzero signed 64-bit owner localId')
     capture = spec.get('capture')
     if capture is not None:
         allowed = {'asset', 'width', 'height', 'cameraPath', 'camera'}
@@ -86,6 +93,7 @@ def run_collector(project, request, output, editor, companion, entry, report_nam
             shutil.copyfile(Path(__file__).parent / 'targets' / companion, dest); owned[dest] = sha(dest.read_bytes())
             job = dict(request, projectRoot=str(project), stage=str(stage), reportName=report_name)
             if companion == 'BeaverReadback.cs':
+                job['queries'] = [dict(q,hasOwnerIdentity='ownerIdentity' in q) for q in request.get('queries',[])]
                 job['hasCapture'] = 'capture' in request and request['capture'] is not None
                 if job['hasCapture']:
                     job['capture'] = dict(request['capture'], temporaryCamera='camera' in request['capture'])
@@ -126,6 +134,14 @@ def inspect(project, spec_path, output, editor, timeout=600):
         fail('READBACK_RESULT', str(safe(output)/'readback.json'), 'Native collector result or selected asset identity is incomplete')
     if len(report.get('fields',[])) != len(spec.get('queries',[])):
         fail('READBACK_RESULT', str(safe(output)/'readback.json'), 'Native field query result count differs from request')
+    for query,field in zip(spec.get('queries',[]),report.get('fields',[])):
+        if 'ownerIdentity' not in query or field.get('status')!='observed':continue
+        expected=query['ownerIdentity'];owner=field.get('owner')
+        if (not isinstance(owner,dict) or owner.get('state')!='persistent' or not isinstance(owner.get('guid'),str)
+                or owner['guid'].lower()!=expected['guid'].lower() or type(owner.get('localId')) is not int or owner['localId']!=expected['localId']
+                or field.get('asset')!=query['asset'] or field.get('nodePath')!=query['nodePath'] or field.get('componentType')!=query['componentType']
+                or field.get('requestedPath')!=query['propertyPath'] or (query['componentType'] and owner.get('type')!=query['componentType'])):
+            fail('READBACK_OWNER_IDENTITY',str(safe(output)/'readback.json'),'Observed field did not retain the exact requested persistent owner; no fallback is permitted')
     capture = report.get('capture')
     if spec.get('capture') is not None and (not isinstance(capture,dict) or capture.get('status') != 'captured' or not capture.get('file')):
         fail('READBACK_RESULT', str(safe(output)/'readback.json'), 'Requested capture did not produce a frame')
