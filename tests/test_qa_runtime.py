@@ -207,4 +207,3 @@ class QaRuntimePrepareTests(unittest.TestCase):
         with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime.subprocess.Popen") as popen:
             with self.assertRaises(BeaverError): launch("fixture-project", "owner-build", "profile-a", result["ownerSha256"])
         popen.assert_not_called()
-

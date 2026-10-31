@@ -666,4 +666,3 @@ def _pid_identity_snapshot(pid, executable, log_path):
         return result
     except (OSError, AttributeError, subprocess.TimeoutExpired):
         return result
-
