@@ -30,3 +30,7 @@ Fix8 modules integrated and frozen. Parent final installed native verification p
 Fix9 duplicate-name owner selector: parent sole writer for native_readback.py, BeaverReadback.cs, request schema, tests, shared docs/version and private Editor fixtures. No subagent needed for this single critical path. Fixed fix8 and in-flight transactions remain immutable.
 
 Fix9 parent implementation and final installed native validation complete: exact duplicate prefab/scene owner selection, large/negative signed64 IDs, no-fallback negatives, three independent request runs plus negative-subasset probe; 193 checks. Producer `554075acb4960db076c49c60e26b39c427c37c0029aac5f2f30dc6f49cbd13eb`. No adoption changes or game writes.
+
+Build follow-up: /root/build_policy owns unity.py, BeaverNative.cs and necessary isolated build policy/tests/docs; parent shared version/CLI/PLAN, sole Editor/private fixture/sealing. Existing primary model inherited (full-context spawn); no recursive delegation, game writes or other-repository changes.
+
+Build module integrated by parent. Contributor supplied 11 module checks including public recovery guard negatives; parent 51 affected/shared checks and real native positive/failure/interruption recovery passed. Sole parent Editor; source/runtime ready for fixed candidate verification.

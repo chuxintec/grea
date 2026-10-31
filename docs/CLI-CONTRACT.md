@@ -57,7 +57,7 @@
 | `project.import` | 无其他字段 | 编译并导入已写入的源文件；计划列明缺失meta路径，既有源改动拒绝；不加包 |
 | `sprite.configure` | assetPath、pixelsPerUnit、pivot、maxSize、alphaIsTransparency | PNG→单Sprite，固定无mipmap/Uncompressed，原生Importer参数/身份/像素几何读回；只允许该meta变化 |
 | `validate.play` | scenePath、durationSeconds | 显式场景1–30秒PlayMode，记录真实帧数和错误；不判业务或物理输入 |
-| `build.macos` | scenes、productName | BuildPipeline StandaloneOSX，整个Assets/Packages/ProjectSettings源身份保持，生成sourceSha256绑定的逐文件制品manifest |
+| `build.macos` | scenes、productName，可选 development、tmpFontPolicy | BuildPipeline StandaloneOSX，整个Assets/Packages/ProjectSettings源身份保持，生成sourceSha256绑定的逐文件制品manifest |
 
 `ui.create`可显式给tmpSettingsPath新建项目TMP设置，但不导入shader、不覆盖既有设置；通常应先由开发者完成官方TMP初始化。首次场景可能生成的SceneTemplateSettings.json会在计划中显式列出。字体只预装既有声明文本和ASCII，缺字拒绝；多语种、复杂动态布局/业务事件由开发Agent处理。按钮不会被注入空业务回调。
 
@@ -153,3 +153,5 @@ Build-filter collection accepts optional `includeObjectIdentities: true`. The gu
 Batch schema 2 may explicitly opt into `checkpointPolicy: "move-delta-v1"` for pure non-Scene asset.move steps. Default behavior is retained. Final full write-set hashes and exact Python post-state matching remain mandatory; a cached delta alone cannot certify success or recovery. Read [MOVE-CHECKPOINTS.md](MOVE-CHECKPOINTS.md) for restrictions and fault semantics. JSON report serialization remains proportional to the complete write set at each step.
 
 Native field queries may supply strict `ownerIdentity:{guid,localId}` while retaining the exact asset/nodePath/componentType/propertyPath. This selects one persistent owner in a duplicate name path and never falls back on mismatch. See [NATIVE-READBACK.md](NATIVE-READBACK.md) and its request schema; the runtime presence flag is derived, and JSON writers must preserve signed64 IDs exactly.
+
+Build policy follow-up: [explicit Development and TMP source protection](BUILD-POLICY.md) defines a closed optional font list, exact before-images, distinct source/build/restored hashes and guarded public recovery. Development is independent of player profile/connection configuration. No arbitrary project build hook is accepted.

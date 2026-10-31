@@ -34,6 +34,8 @@ public static class BeaverNative {
         public string operation, targetRoot, stage, mode, planSha256, sourceSha256;
         public string prefabPath, scenePath, fontAssetPath, sourceFontPath, tmpSettingsPath, productName;
         public string[] scenes;
+        public bool development;
+        public FontPolicy tmpFontPolicy;
         public Node[] nodes;
         public Edit[] edits;
         public Move[] moves;
@@ -85,6 +87,9 @@ public static class BeaverNative {
         public string buildResult,buildPath;
         public ulong buildBytes;
         public int buildErrors;
+        public bool developmentBuild;
+        public bool fontSourcesRestored;
+        public List<FontInput> fontInputs=new List<FontInput>();
         public List<MoveRow> moves=new List<MoveRow>();
         public List<MoveRow> moveIdentities=new List<MoveRow>();
         public string deleteInProgress;
@@ -359,12 +364,83 @@ public static class BeaverNative {
             if(report.eventSystems!=1||report.canvasRaycasters!=1)throw new Exception("Scene interaction prerequisites missing or duplicated");
         }
     }
+    [Serializable] public class FontPolicy { public int schemaVersion; public FontDeclaration[] fonts; }
+    [Serializable] public class FontDeclaration { public string path,guid,sourceSha256,metaSha256; public bool normalizeDynamicAtlas; }
+    [Serializable] public class FontInput { public string path,sourceSha256,metaSha256,buildSha256,observedSha256,observedMetaSha256,restoredSha256; }
+    [Serializable] public class FontCheckpoint { public string planSha256,mutationInProgress; public List<FontInput> fonts=new List<FontInput>(); }
+    static FontCheckpoint fontCheckpoint;
+    public static HashSet<string> ProtectedBuildFonts=new HashSet<string>(StringComparer.Ordinal);
+    static void SaveFonts() {
+        var path=Path.Combine(job.stage,"font-checkpoint.json");File.WriteAllText(path+".tmp",JsonUtility.ToJson(fontCheckpoint,true));
+        if(File.Exists(path))File.Replace(path+".tmp",path,null);else File.Move(path+".tmp",path);
+    }
+    static void ObserveFonts() { foreach(var row in fontCheckpoint.fonts){row.observedSha256=HashFile(Full(row.path));row.observedMetaSha256=HashFile(Full(row.path+".meta"));}SaveFonts(); }
+    static void RestoreBuildFonts() {
+        ProtectedBuildFonts.Clear();
+        foreach(var row in fontCheckpoint.fonts) {
+            var source=Path.Combine(job.stage,"before",row.path);var meta=source+".meta";
+            if(HashFile(source)!=row.sourceSha256||HashFile(meta)!=row.metaSha256)throw new Exception("Font before-image differs "+row.path);
+            if(HashFile(Full(row.path))!=row.sourceSha256&&HashFile(Full(row.path))!=row.observedSha256)throw new Exception("Font changed after checkpoint "+row.path);
+            if(HashFile(Full(row.path+".meta"))!=row.metaSha256&&HashFile(Full(row.path+".meta"))!=row.observedMetaSha256)throw new Exception("Font metadata changed after checkpoint "+row.path);
+        }
+        foreach(var row in fontCheckpoint.fonts) {
+            fontCheckpoint.mutationInProgress=row.path;SaveFonts();
+            File.Copy(Path.Combine(job.stage,"before",row.path),Full(row.path),true);File.Copy(Path.Combine(job.stage,"before",row.path+".meta"),Full(row.path+".meta"),true);
+            AssetDatabase.ImportAsset(row.path,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
+            row.restoredSha256=HashFile(Full(row.path));
+            if(row.restoredSha256!=row.sourceSha256||HashFile(Full(row.path+".meta"))!=row.metaSha256)throw new Exception("Font restore import changed bytes "+row.path);
+            fontCheckpoint.mutationInProgress=null;ObserveFonts();
+        }
+        report.fontInputs=fontCheckpoint.fonts;report.fontSourcesRestored=true;
+    }
+    static void RecoverBuildFonts() {
+        fontCheckpoint=JsonUtility.FromJson<FontCheckpoint>(File.ReadAllText(Path.Combine(job.stage,"font-checkpoint.json")));
+        if(fontCheckpoint.planSha256!=job.planSha256||!String.IsNullOrEmpty(fontCheckpoint.mutationInProgress))throw new Exception("Uncertain font checkpoint");
+        RestoreBuildFonts();
+    }
+    static void BuildWithFontPolicy() {
+        if(job.tmpFontPolicy==null||job.tmpFontPolicy.fonts==null||job.tmpFontPolicy.fonts.Length==0){Build();return;}
+        fontCheckpoint=new FontCheckpoint{planSha256=job.planSha256};
+        foreach(var d in job.tmpFontPolicy.fonts) {
+            if(HashFile(Full(d.path))!=d.sourceSha256||HashFile(Full(d.path+".meta"))!=d.metaSha256||AssetDatabase.AssetPathToGUID(d.path)!=d.guid)throw new Exception("Font source identity differs "+d.path);
+            if(HashFile(Path.Combine(job.stage,"before",d.path))!=d.sourceSha256||HashFile(Path.Combine(job.stage,"before",d.path+".meta"))!=d.metaSha256)throw new Exception("Font before-image differs "+d.path);
+            var selectedFont=AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(d.path);
+            if(selectedFont==null)throw new Exception("Selected asset is not a TMP font "+d.path);
+            if(d.normalizeDynamicAtlas && selectedFont.atlasTextures!=null && selectedFont.atlasTextures.Any(t=>t!=null&&AssetDatabase.GetAssetPath(t)!=d.path))throw new Exception("Normalization requires font-owned atlas subassets "+d.path);
+            if(!d.normalizeDynamicAtlas && (selectedFont.atlasTextures==null||selectedFont.atlasTextures.Any(t=>t==null)||selectedFont.atlasPopulationMode!=TMPro.AtlasPopulationMode.Static&&selectedFont.atlasTextures.Length!=1))throw new Exception("Unnormalized dynamic multi-atlas or invalid atlas is unsupported "+d.path);
+            fontCheckpoint.fonts.Add(new FontInput{path=d.path,sourceSha256=d.sourceSha256,metaSha256=d.metaSha256,observedSha256=d.sourceSha256,observedMetaSha256=d.metaSha256});
+        }
+        SaveFonts();
+        try {
+            foreach(var d in job.tmpFontPolicy.fonts.Where(f=>f.normalizeDynamicAtlas)) {
+                fontCheckpoint.mutationInProgress=d.path;SaveFonts();
+                var font=AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(d.path);
+                if(font.sourceFontFile==null||font.atlasPopulationMode==TMPro.AtlasPopulationMode.Static)throw new Exception("Dynamic source font required "+d.path);
+                font.ClearFontAssetData(true);EditorUtility.SetDirty(font);AssetDatabase.SaveAssetIfDirty(font);
+                if(font.atlasTextures.Length!=1||font.atlasTextures[0]==null)throw new Exception("Normalized atlas is invalid "+d.path);
+                fontCheckpoint.mutationInProgress=null;ObserveFonts();
+            }
+            foreach(var d in job.tmpFontPolicy.fonts)ProtectedBuildFonts.Add(d.path);
+            foreach(var row in fontCheckpoint.fonts)row.buildSha256=HashFile(Full(row.path));SaveFonts();
+            Build();
+            foreach(var d in job.tmpFontPolicy.fonts){var font=AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(d.path);if(font==null||font.atlasTextures==null||font.atlasTextures.Length==0||font.atlasTextures.Any(t=>t==null))throw new Exception("Build left invalid atlas slots "+d.path);}
+        } finally {
+            // The owned process can witness its current writes. After interruption,
+            // recovery instead requires the last conclusive durable checkpoint.
+            ProtectedBuildFonts.Clear();
+            if(!String.IsNullOrEmpty(fontCheckpoint.mutationInProgress))throw new Exception("Font mutation interrupted without a conclusive checkpoint; inspect before recovery");
+            RestoreBuildFonts();
+        }
+    }
+
     static void Build() {
         foreach(var scene in job.scenes)if(AssetDatabase.LoadAssetAtPath<SceneAsset>(scene)==null)throw new Exception("Build scene missing: "+scene);
         var directory=Path.Combine(job.stage,"player");Directory.CreateDirectory(directory);
         var path=Path.Combine(directory,job.productName+".app");
         if(Directory.Exists(path))throw new Exception("Build output exists");
-        var result=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=job.scenes,locationPathName=path,target=BuildTarget.StandaloneOSX,options=BuildOptions.None});
+        var result=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=job.scenes,locationPathName=path,target=BuildTarget.StandaloneOSX,options=job.development?BuildOptions.Development:BuildOptions.None});
+        report.developmentBuild=(result.summary.options&BuildOptions.Development)!=0;
+        if(report.developmentBuild!=job.development)throw new Exception("Actual build mode differs from requested policy");
         report.buildResult=result.summary.result.ToString();report.buildBytes=result.summary.totalSize;report.buildErrors=result.summary.totalErrors;report.buildPath=path;
         if(result.summary.result!=BuildResult.Succeeded)throw new Exception("Build failed: "+report.buildResult);
     }
@@ -796,7 +872,7 @@ public static class BeaverNative {
             if(job.mode=="apply") {
                 if(job.operation=="ui.create")CreateUI();
                 else if(job.operation=="prefab.edit")EditPrefab();
-                else if(job.operation=="build.macos")Build();
+                else if(job.operation=="build.macos")BuildWithFontPolicy();
                 else if(job.operation=="assets.move")Moves(true);
                 else if(job.operation=="assets.retire")Retire(true);
                 else if(job.operation=="sprite.configure")SpriteImport(true);
@@ -811,6 +887,7 @@ public static class BeaverNative {
             }
             else if(job.operation=="sprite.configure") {if(job.mode=="verify")SpriteImport(false);}
             else if(job.operation=="project.import") { }
+            else if(job.operation=="build.macos" && job.mode=="recover")RecoverBuildFonts();
             else if(job.operation!="build.macos")InspectPrefab();
             report.status="verified";Save();code=0;
         } catch(Exception error) {
@@ -819,5 +896,8 @@ public static class BeaverNative {
         }
         EditorApplication.Exit(code);
     }
+}
+sealed class BeaverBuildFontSaveGuard : AssetModificationProcessor {
+    static string[] OnWillSaveAssets(string[] paths) {return paths.Where(p=>!BeaverNative.ProtectedBuildFonts.Contains(p)).ToArray();}
 }
 #endif

@@ -249,7 +249,12 @@ def validate_spec(doc):
             if e.get('property','').split('.')[0] in ('m_Script','m_GameObject','m_Father','m_Children','m_CorrespondingSourceObject','m_PrefabInstance','m_PrefabAsset'):
                 fail('PREFAB_IDENTITY_FIELD',e.get('property'),'Identity and hierarchy fields are not editable in this subset')
     elif operation == "build.macos":
-        allowed |= {"scenes", "productName"}
+        allowed |= {"scenes", "productName", "development", "tmpFontPolicy"}
+        if "tmpFontPolicy" in doc:
+            from .build_policy import validate
+            validate(doc["tmpFontPolicy"])
+        if "development" in doc and type(doc["development"]) is not bool:
+            fail("BUILD_DEVELOPMENT", "spec", "development must be an explicit boolean")
         if not isinstance(doc.get("scenes"), list) or not doc["scenes"]:
             fail("BUILD_SCENES", "spec", "Explicit nonempty scene paths required")
         for p in doc["scenes"]:
@@ -553,6 +558,9 @@ def plan(project, spec, output):
         for rel in (doc.get('scenes') or [doc.get('prefabPath') or doc['scenePath']]):
             if rel not in files:
                 fail('UNITY_INPUT_MISSING',rel,'Native source asset is missing')
+    if doc["operation"]=="build.macos" and "tmpFontPolicy" in doc:
+        from .build_policy import check_sources
+        check_sources(project,doc["tmpFontPolicy"],files)
     out = new_output(output,[project,safe(spec),*extra_inputs])
     data = dict(contract='beaver-unity/1',schemaVersion=1,implementationSha256=identity(),
                 projectRoot=str(project),engine='unity',editorVersion=VERSION,
@@ -752,11 +760,12 @@ def apply(plan_path, output, editor, expected, timeout=600):
             fail('UNITY_SOURCE_DRIFT',str(project),'Project changed after plan')
         if data['spec']['operation']=='assets.retire' and data.get('sourceDirectoryGuard') and directory_guard(project)!=data['sourceDirectoryGuard']:
             fail('ASSET_RETIRE_DIRECTORY_GUARD',str(project),'Assets directory set changed after retirement plan, including an untracked empty directory')
-        if data['spec']['operation'] in ('assets.move','assets.retire'):
+        if data['spec']['operation'] in ('assets.move','assets.retire') or data['spec'].get('tmpFontPolicy'):
             backup_paths={path for move in data['spec'].get('moves',[]) for path in (move['source'],move['source']+'.meta')}
             backup_paths.update(row['source'] for manifest in data.get('folderMoveManifest',[]) for row in manifest['entries'] if 'sha256' in row)
             backup_paths.update(path for item in data.get('retireManifest',[]) for path in (item['path'],item['metaPath']))
             backup_paths.update(item['metaPath'] for item in data.get('folderRetireManifest',[]))
+            backup_paths.update(row['path']+suffix for row in data['spec'].get('tmpFontPolicy',{}).get('fonts',[]) for suffix in ('','.meta'))
             images=[]
             try:
                 for rel in sorted(backup_paths):
@@ -799,6 +808,11 @@ def apply(plan_path, output, editor, expected, timeout=600):
             journal.update(status='recovery-required',diagnostic=dict(code=code,location=location,message=message))
             write_json(stage/'journal.json',journal)
             fail(code,str(stage),message+' ('+location+')')
+        if data['spec']['operation']=='build.macos' and applied.get('developmentBuild') is not data['spec'].get('development',False):
+            audit_fail('BUILD_OPTIONS_READBACK',str(stage),'Native build mode differs from explicit policy')
+        if data['spec']['operation']=='build.macos' and data['spec'].get('tmpFontPolicy'):
+            from .build_policy import validate_readback
+            validate_readback(data['spec']['tmpFontPolicy'],applied)
         if data['spec']['operation']=='build.macos' and changes:
             audit_fail('BUILD_SOURCE_DRIFT',str(project),'Build changed source; artifact is not certified')
         if data['spec']['operation']=='ui.create':
@@ -877,7 +891,7 @@ def apply(plan_path, output, editor, expected, timeout=600):
                     if p.is_symlink():artifacts.append(dict(path=p.relative_to(stage).as_posix(),symlink=os.readlink(p)))
                     elif p.is_file():artifacts.append(dict(path=p.relative_to(stage).as_posix(),sha256=digest_file(p,max_bytes=BUILD_FILE_BYTES),bytes=p.stat().st_size))
                 if not artifacts:fail('BUILD_EMPTY',str(stage),'No actual build artifact')
-                write_json(stage/'artifact-manifest.json',dict(schemaVersion=1,artifactPolicy='beaver-unity-build/2',sourceSha256=data['sourceSha256'],planSha256=expected,files=artifacts))
+                write_json(stage/'artifact-manifest.json',dict(schemaVersion=1,artifactPolicy='beaver-unity-build/2',sourceSha256=data['sourceSha256'],planSha256=expected,development=data['spec'].get('development',False),fontInputs=applied.get('fontInputs',[]),fontSourcesRestored=applied.get('fontSourcesRestored',False),files=artifacts))
                 from .payload import verify_manifest
                 journal['artifactVerification']=verify_manifest(stage,stage/'artifact-manifest.json',scope='player',allow_links=True,artifact=True)
             except (BeaverError,OSError,ValueError) as error:
@@ -896,6 +910,9 @@ def recover(transaction, editor, expected, timeout=600):
     plan_path=inside(stage,'unity-plan.json');raw=read(plan_path,max_bytes=128*1024**2);data=load(raw,max_nodes=8_000_000)
     if sha(encoded(data))!=expected or data.get('contract')!='beaver-unity/1' or data.get('implementationSha256')!=identity():
         fail('UNITY_RECOVERY_PLAN','transaction','Expected current immutable retirement transaction plan')
+    if data.get('spec',{}).get('operation')=='build.macos' and data['spec'].get('tmpFontPolicy'):
+        from .build_policy import recover as recover_build
+        return recover_build(stage,data,editor,expected,timeout)
     if data.get('spec',{}).get('operation')!='assets.retire':
         fail('UNITY_RECOVERY_OPERATION','transaction','Only assets.retire transactions can be recovered here')
     validate_spec(data['spec'])
