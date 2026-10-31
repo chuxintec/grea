@@ -801,6 +801,28 @@ def _verify_component(stage_component: dict, actual: dict, visual: dict, data_as
     renderer_kind = actual.get('rendererKind')
     if renderer_kind not in _RENDERER_TYPES or actual.get('nativeComponentType') != _RENDERER_TYPES.get(renderer_kind):
         failures.append(f'{owner}: native Spine renderer type is unknown or mismatched {source_id}')
+    renderer_context = stage_component.get('rendererSelection')
+    if (not isinstance(renderer_context, dict) or
+            renderer_context.get('status') != 'declared_not_native_readback' or
+            renderer_context.get('nativeRendererReadback') != 'pending' or
+            renderer_context.get('sourceComponentId') != source_id or
+            renderer_context.get('rendererKind') not in _RENDERER_TYPES):
+        failures.append(f'{owner}: declared source Spine renderer context is missing or malformed {source_id}')
+    else:
+        expected_renderer = renderer_context['rendererKind']
+        expected_transform = 'RectTransform' if expected_renderer == 'SkeletonGraphic' else 'Transform'
+        if renderer_context.get('targetNodeTransform') != expected_transform:
+            failures.append(f'{owner}: declared renderer context transform differs from renderer kind {source_id}')
+        if renderer_kind != expected_renderer:
+            failures.append(f'{owner}: native Spine renderer kind differs from declared target context {source_id}')
+        if expected_renderer == 'SkeletonGraphic':
+            ppu = renderer_context.get('canvasReferencePixelsPerUnit')
+            if (not _finite_number(ppu) or float(ppu) <= 0 or
+                    not isinstance(renderer_context.get('canvasIdentity'), str) or
+                    not renderer_context.get('canvasIdentity')):
+                failures.append(f'{owner}: declared SkeletonGraphic context lacks positive finite Canvas PPU {source_id}')
+        elif renderer_context.get('canvasReferencePixelsPerUnit') is not None:
+            failures.append(f'{owner}: declared SkeletonAnimation context unexpectedly has Canvas PPU {source_id}')
     for key, expected in (
         ('componentTypeVerified', True), ('dataReferenceVerified', True), ('mappedStaticFieldsVerified', True),
         ('enabled', True), ('staticDataBound', has_data), ('sourceDataUnbound', not has_data),
@@ -1021,10 +1043,25 @@ def verify(plan, projectRoot, editorReadback):
         fail('Frozen Spine data-asset set differs from statically referenced component assets')
         return failures
     for row in stage_components:
+        renderer_context = row.get('rendererSelection')
+        context_valid = (isinstance(renderer_context, dict) and
+                         renderer_context.get('status') == 'declared_not_native_readback' and
+                         renderer_context.get('nativeRendererReadback') == 'pending' and
+                         renderer_context.get('sourceComponentId') == row.get('sourceComponentId') and
+                         renderer_context.get('rendererKind') in _RENDERER_TYPES and
+                         renderer_context.get('targetNodeTransform') ==
+                         ('RectTransform' if renderer_context.get('rendererKind') == 'SkeletonGraphic' else 'Transform'))
+        if context_valid and renderer_context['rendererKind'] == 'SkeletonGraphic':
+            context_valid = (_finite_number(renderer_context.get('canvasReferencePixelsPerUnit')) and
+                             float(renderer_context['canvasReferencePixelsPerUnit']) > 0 and
+                             isinstance(renderer_context.get('canvasIdentity'), str) and
+                             bool(renderer_context['canvasIdentity']))
+        if context_valid and renderer_context['rendererKind'] == 'SkeletonAnimation':
+            context_valid = renderer_context.get('canvasReferencePixelsPerUnit') is None
         if (row.get('persistentVisiblePose') is not True or row.get('sourceTimeScaleVerified') is not True or
                 not _finite_number(row.get('sourceTimeScale')) or
                 row.get('rendererKind') != 'derive_from_target_node_transform' or
-                not isinstance(row.get('sourceNodeId'), str) or not row.get('sourceNodeId')):
+                not isinstance(row.get('sourceNodeId'), str) or not row.get('sourceNodeId') or not context_valid):
             fail('Frozen Spine component is missing verified visible-pose/timeScale/node evidence', row.get('sourceComponentId'))
     if failures:
         return failures

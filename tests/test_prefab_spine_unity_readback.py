@@ -73,6 +73,11 @@ class UnitySpineReadbackTests(unittest.TestCase):
                         sourceHasStaticDataReference=has_data, sourceTimeScale=1.0,
                         sourceTimeScaleVerified=True, persistentVisiblePose=True,
                         rendererKind='derive_from_target_node_transform',
+                        rendererSelection=dict(status='declared_not_native_readback',
+                                               sourceComponentId=source_id, rendererKind='SkeletonGraphic',
+                                               targetNodeTransform='RectTransform', canvasIdentity='canvas:test',
+                                               canvasReferencePixelsPerUnit=100.0,
+                                               nativeRendererReadback='pending'),
                         targetFieldBindings=[dict(sourceProperty='skin', member='initialSkinName',
                                                   status='explicit', valueType='string', stringValue='default'),
                                              dict(sourceProperty='animation', member='startingAnimation',
@@ -209,6 +214,31 @@ class UnitySpineReadbackTests(unittest.TestCase):
         warnings = [row for row in diagnostics if row['code'] == 'SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE']
         self.assertEqual(errors, [])
         self.assertEqual(len(warnings), 2)
+
+    def test_rejects_native_renderer_kind_that_differs_from_declared_context(self):
+        temp, root, plan, editor_readback, _ = self.fixture()
+        self.addCleanup(temp.cleanup)
+        path = root / 'Analysis/Readback/Spine' / f'{"a" * 32}.json'
+        saved = json.loads(path.read_text())
+        saved['components'][0]['rendererKind'] = 'SkeletonAnimation'
+        saved['components'][0]['nativeComponentType'] = 'Spine.Unity.SkeletonAnimation'
+        path.write_text(json.dumps(saved), encoding='utf-8')
+        diagnostics = verify(plan, root, editor_readback)
+        self.assertTrue(any('renderer kind differs from declared target context' in d['message']
+                            for d in diagnostics if d['severity'] == 'error'))
+
+    def test_rejects_missing_declared_renderer_context(self):
+        temp, root, plan, editor_readback, _ = self.fixture()
+        self.addCleanup(temp.cleanup)
+        stage_path = root / plan['spineNativeStage']['nativeBindingPlanPath']
+        stage = json.loads(stage_path.read_text())
+        del stage['components'][0]['rendererSelection']
+        stage_bytes = (json.dumps(stage, sort_keys=True) + '\n').encode()
+        stage_path.write_bytes(stage_bytes)
+        plan['spineNativeStage']['nativeBindingPlanSha256'] = hashlib.sha256(stage_bytes).hexdigest()
+        diagnostics = verify(plan, root, editor_readback)
+        self.assertTrue(any('missing verified visible-pose/timeScale/node evidence' in d['message']
+                            for d in diagnostics if d['severity'] == 'error'))
 
     def test_rejects_source_pin_component_guid_pma_and_dynamic_overclaim(self):
         temp, root, plan, editor_readback, readback = self.fixture()

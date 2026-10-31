@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from pathlib import Path
 
 from .io import inside, read, sha, write_json
-from .prefab_spine_native import _verified_editor_variant
+from .prefab_spine_native import SOURCE_SCALE_EVIDENCE, _verified_editor_variant
 from .sources.compiled import fail
 
 
@@ -385,8 +386,15 @@ def prepare_unity_stage(target_plan: dict, native_plan_path: str | Path,
     data_assets = native_plan.get("dataAssets")
     if not isinstance(components, list) or not isinstance(data_assets, list):
         raise SpineNativeStageError("native Spine plan lacks component or data asset arrays")
+    scale_summary = native_plan.get("scaleEvidence")
+    scale_by_asset = scale_summary.get("resolvedSkeletonDataAssetScales") if isinstance(scale_summary, dict) else None
+    if (not isinstance(scale_summary, dict) or
+            scale_summary.get("status") != "verified_source_renderer_unit_mapping" or
+            not isinstance(scale_by_asset, dict)):
+        raise SpineNativeStageError("native Spine plan lacks verified renderer-aware scale evidence")
     target_component_ids = {row.get("sourceId") for row in target_plan.get("components", []) if isinstance(row, dict)}
     target_prefab_ids = {row.get("sourceId") for row in target_plan.get("sourcePrefabs", []) if isinstance(row, dict)}
+    renderer_context_by_component = {}
     for row in components:
         if not isinstance(row, dict) or row.get("sourceComponentId") not in target_component_ids:
             raise SpineNativeStageError("native Spine component is absent from the existing target plan")
@@ -394,9 +402,86 @@ def prepare_unity_stage(target_plan: dict, native_plan_path: str | Path,
             raise SpineNativeStageError("native Spine component source prefab is absent from the target plan")
         if row.get("behavior") != "disabled" or row.get("sourceCallbacksExecuted") is not False:
             raise SpineNativeStageError("Spine source behavior must remain disabled")
-    if any(row.get("scale") != 1.0 or row.get("scaleEvidence", {}).get("status") != "verified_source_scale_and_target_unit_mapping"
-           for row in data_assets):
-        raise SpineNativeStageError("all planned Spine assets need verified scale=1 evidence")
+        context = row.get("rendererSelection")
+        component_id = row.get("sourceComponentId")
+        if (not isinstance(context, dict) or context.get("sourceComponentId") != component_id or
+                context.get("status") != "declared_not_native_readback" or
+                context.get("nativeRendererReadback") != "pending" or
+                context.get("rendererKind") not in {"SkeletonGraphic", "SkeletonAnimation"}):
+            raise SpineNativeStageError("native Spine component lacks an exact declared renderer context")
+        expected_transform = "RectTransform" if context["rendererKind"] == "SkeletonGraphic" else "Transform"
+        if context.get("targetNodeTransform") != expected_transform:
+            raise SpineNativeStageError("native Spine renderer context transform differs from renderer kind")
+        if context["rendererKind"] == "SkeletonGraphic":
+            if (type(context.get("canvasReferencePixelsPerUnit")) not in (int, float) or
+                    not math.isfinite(float(context["canvasReferencePixelsPerUnit"])) or
+                    float(context["canvasReferencePixelsPerUnit"]) <= 0 or
+                    not isinstance(context.get("canvasIdentity"), str) or not context["canvasIdentity"]):
+                raise SpineNativeStageError("SkeletonGraphic renderer context lacks positive finite Canvas PPU")
+        elif context.get("canvasReferencePixelsPerUnit") is not None or context.get("canvasIdentity") not in (None, ""):
+            raise SpineNativeStageError("SkeletonAnimation renderer context unexpectedly declares Canvas PPU")
+        renderer_context_by_component[component_id] = context
+    source_evidence = scale_summary.get("source")
+    source_scale = source_evidence.get("sourceDefaultScale") if isinstance(source_evidence, dict) else None
+    target_evidence = scale_summary.get("target")
+    target_units = target_evidence.get("targetUnitsPerSourcePixel") if isinstance(target_evidence, dict) else None
+    world_scale = target_evidence.get("worldSpaceCanvasScale") if isinstance(target_evidence, dict) else None
+    pixels_conversion = target_evidence.get("pixelsPerUnitConversion") if isinstance(target_evidence, dict) else None
+    if (source_evidence != SOURCE_SCALE_EVIDENCE or
+            type(source_scale) not in (int, float) or not math.isfinite(float(source_scale)) or float(source_scale) <= 0 or
+            not isinstance(target_evidence, dict) or target_evidence.get("status") != "verified_unit_mapping" or
+            type(target_units) not in (int, float) or target_units != 1.0 or
+            type(world_scale) not in (int, float) or world_scale != 1.0 or
+            (pixels_conversion is not None and
+             (type(pixels_conversion) not in (int, float) or pixels_conversion != 1.0))):
+        raise SpineNativeStageError("native Spine source/target base unit evidence differs from the supported mapping")
+    referenced_components_by_asset = {}
+    for row in components:
+        if row.get("sourceHasStaticDataReference") is True and row.get("sourceDataAssetId"):
+            referenced_components_by_asset.setdefault(row["sourceDataAssetId"], []).append(row)
+    if set(scale_by_asset) != {row.get("sourceAssetId") for row in data_assets}:
+        raise SpineNativeStageError("native Spine scale evidence asset denominator differs")
+    for row in data_assets:
+        asset_id, scale, evidence = row.get("sourceAssetId"), row.get("scale"), row.get("scaleEvidence")
+        expected = scale_by_asset.get(asset_id)
+        if (type(scale) not in (int, float) or not math.isfinite(float(scale)) or float(scale) <= 0 or
+                type(expected) not in (int, float) or not math.isfinite(float(expected)) or float(expected) <= 0 or
+                scale != expected or not isinstance(evidence, dict) or
+                evidence.get("status") != "verified_source_renderer_unit_mapping" or
+                evidence.get("source") != SOURCE_SCALE_EVIDENCE or
+                evidence.get("resolvedSkeletonDataAssetScale") != expected):
+            raise SpineNativeStageError("native Spine asset scale differs from frozen renderer-aware scale evidence: " + str(asset_id))
+        factory_input = row.get("factoryInput")
+        factory_scale = factory_input.get("scale") if isinstance(factory_input, dict) else None
+        if (type(factory_scale) not in (int, float) or not math.isfinite(float(factory_scale)) or
+                float(factory_scale) <= 0 or factory_scale != expected):
+            raise SpineNativeStageError("native Spine factory scale differs from frozen renderer-aware scale evidence: " + str(asset_id))
+        used = referenced_components_by_asset.get(asset_id, [])
+        contexts = evidence.get("rendererContexts")
+        if (not used or not isinstance(contexts, list) or
+                {context.get("sourceComponentId") for context in contexts if isinstance(context, dict)} !=
+                {component.get("sourceComponentId") for component in used}):
+            raise SpineNativeStageError("native Spine asset renderer-context denominator differs: " + str(asset_id))
+        signatures = set()
+        for context in contexts:
+            if not isinstance(context, dict):
+                raise SpineNativeStageError("native Spine asset renderer context is malformed: " + str(asset_id))
+            kind = context.get("rendererKind")
+            ppu = context.get("canvasReferencePixelsPerUnit")
+            component_context = renderer_context_by_component.get(context.get("sourceComponentId"))
+            if (component_context is None or component_context.get("rendererKind") != kind or
+                    component_context.get("canvasReferencePixelsPerUnit") != ppu or
+                    context.get("targetNodeTransform") != component_context.get("targetNodeTransform") or
+                    context.get("canvasIdentity") != component_context.get("canvasIdentity")):
+                raise SpineNativeStageError("native Spine asset context differs from the exact component renderer context: " + str(asset_id))
+            signatures.add((kind, ppu))
+        if len(signatures) != 1:
+            raise SpineNativeStageError("shared native Spine asset has conflicting renderer/Canvas PPU contexts: " + str(asset_id))
+        kind, ppu = next(iter(signatures))
+        divisor = ppu if kind == "SkeletonGraphic" else 1.0
+        recomputed = float(source_scale) * float(target_units) / float(divisor)
+        if scale != recomputed:
+            raise SpineNativeStageError("native Spine asset scale does not match its renderer-context formula: " + str(asset_id))
     if len(data_assets) != native_plan.get("dataAssetCount") or len(components) != native_plan.get("componentCount"):
         raise SpineNativeStageError("native Spine plan counts do not match its rows")
     if (native_plan.get("persistentVisiblePose") is not True or
@@ -623,7 +708,9 @@ def prepare_unity_stage(target_plan: dict, native_plan_path: str | Path,
         "runtimeFilesVerified": len(required_runtime),
         "editorRuntimeVariant": editor_runtime_summary,
         "runtimeLicenseIncluded": True,
-        "resolvedSkeletonDataScale": 1.0,
+        "resolvedSkeletonDataScale": (next(iter({row["scale"] for row in data_assets}))
+                                       if len({row["scale"] for row in data_assets}) == 1 else None),
+        "resolvedSkeletonDataScales": dict(scale_by_asset),
         "persistentVisiblePose": True,
         "visualPolicy": native_plan["visualPolicy"],
         "persistentVisiblePoseEvidence": native_plan["persistentVisiblePoseEvidence"],

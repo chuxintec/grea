@@ -12,6 +12,7 @@ from monkey.prefab_spine_native_stage import (
     emit_unity_stage,
     prepare_unity_stage,
 )
+from monkey.prefab_spine_native import SOURCE_SCALE_EVIDENCE
 
 
 def digest(raw):
@@ -214,7 +215,11 @@ class SpineNativeStageTests(unittest.TestCase):
                 "resolvedSourceMaterialId": "bundle:source-material",
                 "creatorTargetMaterialUuid": "default-spine-material",
             },
-            "scaleEvidence": {"status": "verified_source_scale_and_target_unit_mapping"},
+            "scaleEvidence": {"status": "verified_source_renderer_unit_mapping",
+                              "source": dict(SOURCE_SCALE_EVIDENCE),
+                              "target": {"status": "verified_unit_mapping", "targetUnitsPerSourcePixel": 1.0,
+                                         "worldSpaceCanvasScale": 1.0, "pixelsPerUnitConversion": None},
+                              "resolvedSkeletonDataAssetScales": {"spine-data:test": 0.01}},
             "persistentVisiblePose": True,
             "visualPolicy": "native_renderer_enabled_timeScale_zero_source_timeScale_retained",
             "persistentVisiblePoseEvidence": {"status": "verified_pinned_spine_unity_3_8_runtime_source",
@@ -223,12 +228,23 @@ class SpineNativeStageTests(unittest.TestCase):
                 "targetPolicy": "keep_native_renderer_enabled_and_set_timeScale_zero; preserve verified sourceTimeScale in identity/readback; no recovered game behavior"},
             "componentCount": 1, "sourceStaticDataBoundCount": 1, "sourceStaticDataUnboundCount": 0,
             "components": [{"sourceComponentId": "asset:test#0/components/0", "sourcePrefabId": "asset:test", "sourceNodeId": "0",
+                            "sourceDataAssetId": "spine-data:test", "sourceHasStaticDataReference": True,
+                            "rendererSelection": {"status": "declared_not_native_readback",
+                                "sourceComponentId": "asset:test#0/components/0", "rendererKind": "SkeletonGraphic",
+                                "targetNodeTransform": "RectTransform", "canvasIdentity": "canvas:test",
+                                "canvasReferencePixelsPerUnit": 100.0, "nativeRendererReadback": "pending"},
                             "behavior": "disabled", "sourceCallbacksExecuted": False,
                             "persistentVisiblePose": True, "sourceTimeScale": 1.0, "sourceTimeScaleVerified": True}],
             "dataAssetCount": 1,
             "dataAssets": [{"sourceAssetId": "spine-data:test", "atlasTextAssetPath": "Assets/Game/Content/Spine/Test/test.atlas.txt",
-                             "premultipliedAlpha": False, "scale": 1.0,
-                             "scaleEvidence": {"status": "verified_source_scale_and_target_unit_mapping"},
+                             "premultipliedAlpha": False, "scale": 0.01,
+                             "factoryInput": {"scale": 0.01},
+                             "scaleEvidence": {"status": "verified_source_renderer_unit_mapping",
+                                "source": dict(SOURCE_SCALE_EVIDENCE),
+                                "resolvedSkeletonDataAssetScale": 0.01,
+                                "rendererContexts": [{"sourceComponentId": "asset:test#0/components/0",
+                                    "rendererKind": "SkeletonGraphic", "targetNodeTransform": "RectTransform",
+                                    "canvasIdentity": "canvas:test", "canvasReferencePixelsPerUnit": 100.0}]},
                              "pages": [{"sourceAtlasPage": "test.png", "sourceTextureSourceId": "texture:test",
                                         "textureAssetPath": "Assets/Game/Content/Spine/Test/test.png",
                                         "textureSha256": digest(page_texture.read_bytes())}]}],
@@ -266,7 +282,8 @@ class SpineNativeStageTests(unittest.TestCase):
             self.assertEqual(stage["sourceTemplateComponentCount"], 1)
             self.assertEqual(stage["expandedInstanceComponentCount"], 1)
             self.assertEqual(stage["dataAssetCount"], 1)
-            self.assertEqual(stage["resolvedSkeletonDataScale"], 1.0)
+            self.assertEqual(stage["resolvedSkeletonDataScale"], 0.01)
+            self.assertEqual(stage["resolvedSkeletonDataScales"], {"spine-data:test": 0.01})
             self.assertTrue(stage["runtimeLicenseIncluded"])
             self.assertTrue(any(row["target"].endswith("spine-native-binding-plan.json") for row in stage["copies"]))
             self.assertTrue(any(row["target"].endswith("spine-native-source-binding-plan.json") for row in stage["copies"]))
@@ -308,6 +325,43 @@ class SpineNativeStageTests(unittest.TestCase):
             self.assertTrue((unity / "Assets/Game/Editor/Conversion/spine-native-binding-plan.json").is_file())
             stage_plan = json.loads((unity / "Assets/Game/Editor/Conversion/spine-native-binding-plan.json").read_text())
             self.assertEqual(stage_plan["components"][0]["templateOrigin"]["sourceComponentId"], "asset:test#0/components/0")
+
+    def test_stage_rejects_scale_that_differs_from_frozen_context_formula(self):
+        for invalid_scale in (1.0, 0.0, -0.01, float('inf')):
+            with self.subTest(scale=invalid_scale), tempfile.TemporaryDirectory(dir="/private/tmp") as temp:
+                args = self.make_fixture(Path(temp))
+                target, native_path, emission, source_ir, closure, closure_freeze, runtime, stage_evidence, runtime_root, plan_root, native_doc = args
+                native_doc["dataAssets"][0]["scale"] = invalid_scale
+                native_doc["dataAssets"][0]["factoryInput"] = {"scale": invalid_scale}
+                write_json(native_path, native_doc)
+                with self.assertRaises(SpineNativeStageError):
+                    prepare_unity_stage(target, native_path, emission, source_ir, closure, closure_freeze,
+                                        runtime, stage_evidence, runtime_root, plan_root)
+
+    def test_stage_rejects_synchronized_source_scale_tampering_and_boolean_unit_values(self):
+        for mutation in ("synchronized_source_scale", "boolean_target_units", "boolean_world_scale",
+                         "boolean_pixels_conversion"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory(dir="/private/tmp") as temp:
+                args = self.make_fixture(Path(temp))
+                target, native_path, emission, source_ir, closure, closure_freeze, runtime, stage_evidence, runtime_root, plan_root, native_doc = args
+                if mutation == "synchronized_source_scale":
+                    native_doc["scaleEvidence"]["source"]["sourceDefaultScale"] = 2.0
+                    native_doc["scaleEvidence"]["resolvedSkeletonDataAssetScales"]["spine-data:test"] = 0.02
+                    asset_row = native_doc["dataAssets"][0]
+                    asset_row["scale"] = 0.02
+                    asset_row["factoryInput"]["scale"] = 0.02
+                    asset_row["scaleEvidence"]["source"]["sourceDefaultScale"] = 2.0
+                    asset_row["scaleEvidence"]["resolvedSkeletonDataAssetScale"] = 0.02
+                elif mutation == "boolean_target_units":
+                    native_doc["scaleEvidence"]["target"]["targetUnitsPerSourcePixel"] = True
+                elif mutation == "boolean_world_scale":
+                    native_doc["scaleEvidence"]["target"]["worldSpaceCanvasScale"] = True
+                else:
+                    native_doc["scaleEvidence"]["target"]["pixelsPerUnitConversion"] = True
+                write_json(native_path, native_doc)
+                with self.assertRaises(SpineNativeStageError):
+                    prepare_unity_stage(target, native_path, emission, source_ir, closure, closure_freeze,
+                                        runtime, stage_evidence, runtime_root, plan_root)
 
     def test_stage_expands_sync_instance_using_exact_component_and_node_origins(self):
         with tempfile.TemporaryDirectory(dir="/private/tmp") as temp:

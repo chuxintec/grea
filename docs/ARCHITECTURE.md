@@ -77,6 +77,12 @@ flowchart TD
 | Spine | 与数据版本匹配的spine-unity引用 | 与Creator/runtime匹配的SkeletonData |
 | 自定义脚本 | 源模块恢复＋C#结构/有限语义初稿，不生成假业务成功 | 源模块恢复＋TS声明/引用初稿，未知行为明确待恢复 |
 
+#### Unity Spine 数据缩放与渲染上下文
+
+SkeletonDataAsset 的 `scale` 必须按目标渲染组件上下文计算，不能默认使用 1。源的 `sourceDefaultScale` 与 `targetUnitsPerSourcePixel` 先完成单位映射；`SkeletonAnimation` 使用其乘积，`SkeletonGraphic` 再除以 Canvas `referencePixelsPerUnit`。Graphic PPU 必须为正有限值。节点自身的局部缩放继续保留在 Transform/RectTransform，不并入 SkeletonDataAsset。
+
+planner 只接受按精确源组件 ID 声明、带源 manifest/IR pin 的 `rendererContexts` 证据，并核验其 sidecar 和每个 evidence source 的 SHA-256。Planner 输出状态为 `declared_not_native_readback`，不能将声明当作 Unity 原生回读；导出/回读必须确认原生组件种类与声明一致，Canvas PPU 的实际值仍需目标验收证据。多个组件共用一个 Spine 数据资源时，渲染种类或 Graphic PPU 不一致会阻止确定单一 scale，必须保留未决诊断，不能静默选值或复制资源变体。
+
 物理、复杂材质/Shader、富文本、动态Layout、滤镜、粒子、skew及未知序列化编码不在首版默认自动转换范围。按具体切片缺口增加支持，不能强行“近似成功”。
 
 ## 输出安全与可维护性

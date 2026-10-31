@@ -1,5 +1,6 @@
 import copy
 import hashlib
+import json
 import shutil
 import subprocess
 import tempfile
@@ -7,6 +8,53 @@ import unittest
 from pathlib import Path
 
 from monkey.prefab_spine_native import SpineNativePlanError, build_unity_native_binding_plan
+
+
+_RENDERER_EVIDENCE_TMP = tempfile.TemporaryDirectory(dir="/private/tmp")
+_RENDERER_EVIDENCE_ROOT = Path(_RENDERER_EVIDENCE_TMP.name)
+
+
+def _default_context_rows(ids, ppu=100.0):
+    return [
+        {"sourceComponentId": ids[0], "sourceNodeId": "1",
+         "rendererKind": "SkeletonGraphic", "targetNodeTransform": "RectTransform",
+         "canvasIdentity": "Canvas/main", "canvasReferencePixelsPerUnit": ppu},
+        {"sourceComponentId": ids[1], "sourceNodeId": "2",
+         "rendererKind": "SkeletonAnimation", "targetNodeTransform": "Transform"},
+    ]
+
+
+def _write_renderer_contexts(source_sha, ir_sha, component_contexts):
+    contexts = []
+    for context in component_contexts:
+        row = copy.deepcopy(context)
+        transform_raw = json.dumps({"component": row["sourceComponentId"],
+                                    "node": row["sourceNodeId"],
+                                    "transform": row["targetNodeTransform"]}, sort_keys=True).encode()
+        transform_sha = hashlib.sha256(transform_raw).hexdigest()
+        transform_path = _RENDERER_EVIDENCE_ROOT / f"node-{transform_sha}.json"
+        transform_path.write_bytes(transform_raw)
+        sources = [{"role": "target-node-transform", "sourcePath": str(transform_path), "sha256": transform_sha}]
+        if row["rendererKind"] == "SkeletonGraphic":
+            canvas_raw = json.dumps({"canvas": row["canvasIdentity"],
+                                     "referencePixelsPerUnit": row["canvasReferencePixelsPerUnit"]},
+                                   sort_keys=True).encode()
+            canvas_sha = hashlib.sha256(canvas_raw).hexdigest()
+            canvas_path = _RENDERER_EVIDENCE_ROOT / f"canvas-{canvas_sha}.json"
+            canvas_path.write_bytes(canvas_raw)
+            sources.append({"role": "canvas-reference-pixels-per-unit",
+                            "sourcePath": str(canvas_path), "sha256": canvas_sha})
+        row["evidenceSources"] = sources
+        contexts.append(row)
+    document = {"schemaVersion": 1, "contract": "monkey-unity-spine-renderer-context/1",
+                "status": "declared", "nativeReadback": "not_run",
+                "sourceManifestSha256": source_sha, "normalizedIrSha256": ir_sha,
+                "contexts": contexts}
+    raw = (json.dumps(document, sort_keys=True, indent=2) + "\n").encode()
+    digest = hashlib.sha256(raw).hexdigest()
+    path = _RENDERER_EVIDENCE_ROOT / f"renderer-contexts-{digest}.json"
+    path.write_bytes(raw)
+    return {"sourcePath": str(path), "sha256": digest}
 
 
 def fixture():
@@ -82,7 +130,8 @@ def fixture():
                              for name, data in checks.items()}}
     target_unit_evidence = {"status": "verified_unit_mapping", "targetUnitsPerSourcePixel": 1.0,
                            "worldSpaceCanvasScale": 1.0, "pixelsPerUnitConversion": None,
-                           "evidenceSource": "neutral fixture"}
+                           "evidenceSource": "neutral fixture",
+                           "rendererContexts": _write_renderer_contexts(source_sha, ir_sha, _default_context_rows(ids))}
     return emission, material_contract, closure, runtime_evidence, stage, target_unit_evidence
 
 
@@ -96,9 +145,13 @@ class PrefabSpineNativePlanTests(unittest.TestCase):
         self.assertEqual(plan["components"][1]["staticDataState"], "source_uuid_absent_component_preserved_unbound")
         self.assertEqual(plan["components"][0]["creatorMaterialBinding"]["targetMaterialUuid"], "default-spine-material")
         self.assertEqual(plan["dataAssets"][0]["pages"][0]["nativeAtlasPage"], "renamed-page.png")
-        self.assertEqual(plan["dataAssets"][0]["scale"], 1.0)
-        self.assertEqual(plan["scaleEvidence"]["status"], "verified_source_scale_and_target_unit_mapping")
-        self.assertEqual(plan["dataAssets"][0]["factoryInput"]["scale"], 1.0)
+        self.assertEqual(plan["dataAssets"][0]["scale"], 0.01)
+        self.assertEqual(plan["scaleEvidence"]["status"], "verified_source_renderer_unit_mapping")
+        self.assertEqual(plan["dataAssets"][0]["factoryInput"]["scale"], 0.01)
+        self.assertEqual(plan["dataAssets"][0]["scaleEvidence"]["formula"],
+                         "sourceDefaultScale * targetUnitsPerSourcePixel / canvasReferencePixelsPerUnit")
+        self.assertEqual(plan["components"][0]["rendererSelection"]["rendererKind"], "SkeletonGraphic")
+        self.assertEqual(plan["components"][0]["rendererSelection"]["status"], "declared_not_native_readback")
         factory = plan["dataAssets"][0]["factoryInput"]
         self.assertEqual(factory["graphicShaderName"], "Monkey/SpineSourceGraphicProfile/Colored")
         self.assertTrue(factory["pages"][0]["graphicNormalMaterialAssetPath"].endswith("_normal_graphic.mat"))
@@ -204,6 +257,93 @@ class PrefabSpineNativePlanTests(unittest.TestCase):
         self.assertIsNone(plan["dataAssets"][0]["factoryInput"]["scale"])
         self.assertEqual(plan["scaleEvidence"]["status"], "target_unit_evidence_missing")
         self.assertIn("UNITY_SPINE_SCALE_EVIDENCE_MISSING", {row["code"] for row in plan["diagnostics"]})
+
+    def test_world_renderer_uses_source_to_target_units_without_canvas_divisor(self):
+        values = list(fixture())
+        values[5] = copy.deepcopy(values[5])
+        # Regenerate a properly pinned document with a world renderer context.
+        values[5]["rendererContexts"] = _write_renderer_contexts(
+            values[0]["pins"]["sourceManifestSha256"], values[0]["pins"]["normalizedIrSha256"], [
+                {"sourceComponentId": "gameAsset:prefab#1/components/0", "sourceNodeId": "1",
+                 "rendererKind": "SkeletonAnimation", "targetNodeTransform": "Transform"},
+                {"sourceComponentId": "gameAsset:prefab#2/components/0", "sourceNodeId": "2",
+                 "rendererKind": "SkeletonAnimation", "targetNodeTransform": "Transform"},
+            ])
+        plan = build_unity_native_binding_plan(*values)
+        self.assertEqual(plan["dataAssets"][0]["scale"], 1.0)
+        self.assertEqual(plan["dataAssets"][0]["scaleEvidence"]["formula"],
+                         "sourceDefaultScale * targetUnitsPerSourcePixel")
+
+    def test_missing_or_legacy_renderer_context_never_certifies_graphic_scale(self):
+        for mode in ("missing_component", "legacy_evidence"):
+            with self.subTest(mode=mode):
+                values = list(fixture())
+                values[5] = copy.deepcopy(values[5])
+                if mode == "missing_component":
+                    values[5]["rendererContexts"] = _write_renderer_contexts(
+                        values[0]["pins"]["sourceManifestSha256"], values[0]["pins"]["normalizedIrSha256"],
+                        _default_context_rows(["gameAsset:prefab#1/components/0",
+                                              "gameAsset:prefab#2/components/0"])[1:])
+                else:
+                    values[5].pop("rendererContexts")
+                plan = build_unity_native_binding_plan(*values)
+                self.assertIsNone(plan["dataAssets"][0]["scale"])
+                self.assertEqual(plan["dataAssets"][0]["factoryInput"]["scale"], None)
+                self.assertIn("UNITY_SPINE_RENDERER_UNIT_CONTEXT_MISSING",
+                              {row["code"] for row in plan["diagnostics"]})
+                self.assertNotEqual(plan["scaleEvidence"]["status"], "verified_source_renderer_unit_mapping")
+
+    def test_invalid_graphic_canvas_ppu_is_rejected_without_fallback(self):
+        values = list(fixture())
+        values[5] = copy.deepcopy(values[5])
+        values[5]["rendererContexts"] = _write_renderer_contexts(
+            values[0]["pins"]["sourceManifestSha256"], values[0]["pins"]["normalizedIrSha256"],
+            _default_context_rows(["gameAsset:prefab#1/components/0",
+                                   "gameAsset:prefab#2/components/0"], ppu=0.0))
+        with self.assertRaisesRegex(SpineNativePlanError, "Canvas PPU must be positive and finite"):
+            build_unity_native_binding_plan(*values)
+
+    def test_shared_source_data_with_different_renderer_or_canvas_ppu_is_explicitly_unresolved(self):
+        source_id = "spineAsset:data"
+        component_ids = ["gameAsset:prefab#1/components/0", "gameAsset:prefab#2/components/0"]
+        for contexts in (
+            [
+                {"sourceComponentId": component_ids[0], "sourceNodeId": "1", "rendererKind": "SkeletonGraphic",
+                 "targetNodeTransform": "RectTransform", "canvasIdentity": "Canvas/A", "canvasReferencePixelsPerUnit": 100.0},
+                {"sourceComponentId": component_ids[1], "sourceNodeId": "2", "rendererKind": "SkeletonAnimation",
+                 "targetNodeTransform": "Transform"},
+            ],
+            [
+                {"sourceComponentId": component_ids[0], "sourceNodeId": "1", "rendererKind": "SkeletonGraphic",
+                 "targetNodeTransform": "RectTransform", "canvasIdentity": "Canvas/A", "canvasReferencePixelsPerUnit": 100.0},
+                {"sourceComponentId": component_ids[1], "sourceNodeId": "2", "rendererKind": "SkeletonGraphic",
+                 "targetNodeTransform": "RectTransform", "canvasIdentity": "Canvas/B", "canvasReferencePixelsPerUnit": 200.0},
+            ],
+        ):
+            with self.subTest(contexts=contexts):
+                values = list(fixture())
+                values[0] = copy.deepcopy(values[0])
+                values[0]["components"][1]["sourceDataAssetId"] = source_id
+                values[1] = copy.deepcopy(values[1])
+                first = values[1]["spec"]["unity"]["perComponent"][0]
+                values[1]["spec"]["unity"]["perComponent"][1] = dict(first, sourceComponentId=component_ids[1])
+                values[5] = copy.deepcopy(values[5])
+                values[5]["rendererContexts"] = _write_renderer_contexts(
+                    values[0]["pins"]["sourceManifestSha256"], values[0]["pins"]["normalizedIrSha256"], contexts)
+                plan = build_unity_native_binding_plan(*values)
+                self.assertIsNone(plan["dataAssets"][0]["scale"])
+                self.assertIn("UNITY_SPINE_RENDERER_CONTEXT_CONFLICT",
+                              {row["code"] for row in plan["diagnostics"]})
+                self.assertNotEqual(plan["scaleEvidence"]["status"], "verified_source_renderer_unit_mapping")
+
+    def test_renderer_context_document_and_evidence_source_hashes_are_verified(self):
+        values = list(fixture())
+        pin = copy.deepcopy(values[5]["rendererContexts"])
+        context_path = Path(pin["sourcePath"])
+        context_path.write_text(context_path.read_text() + " ", encoding="utf-8")
+        values[5] = copy.deepcopy(values[5]); values[5]["rendererContexts"] = pin
+        with self.assertRaisesRegex(SpineNativePlanError, "renderer context source bytes differ"):
+            build_unity_native_binding_plan(*values)
 
     def test_persistent_visible_pose_is_pinned_to_actual_spine_38_renderer_lifecycle(self):
         workspace = Path(__file__).resolve().parents[3]

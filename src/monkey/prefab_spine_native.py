@@ -40,6 +40,12 @@ PERSISTENT_VISIBLE_POSE_EVIDENCE = {
     "targetPolicy": "keep_native_renderer_enabled_and_set_timeScale_zero; preserve verified sourceTimeScale in identity/readback; no recovered game behavior",
 }
 _SHA = re.compile(r"^[0-9a-f]{64}$")
+_RENDERER_CONTEXT_CONTRACT = "monkey-unity-spine-renderer-context/1"
+_RENDERER_KINDS = {"SkeletonGraphic", "SkeletonAnimation"}
+
+
+def _finite_positive(value: Any) -> bool:
+    return type(value) in (int, float) and math.isfinite(float(value)) and float(value) > 0
 
 
 class SpineNativePlanError(ValueError):
@@ -144,15 +150,110 @@ def _verified_editor_variant(runtime: dict, stage: dict) -> dict | None:
     }
 
 
+def _load_renderer_contexts(target_unit_evidence: dict | None, components: list[dict],
+                            source_manifest_sha256: str, normalized_ir_sha256: str):
+    """Load explicit target renderer/Canvas declarations with byte-verified evidence.
+
+    These rows are frozen planning inputs, not actual native Canvas readback. The
+    final Editor verifier must still compare the declared kind with the saved
+    renderer; Canvas PPU is verified by the integrating owner's native QA.
+    """
+    expected = {row.get("sourceComponentId"): row for row in components}
+    pin = target_unit_evidence.get("rendererContexts") if isinstance(target_unit_evidence, dict) else None
+    if not isinstance(pin, dict):
+        return {}, {"status": "missing", "nativeReadback": "not_run"}
+    source_value, expected_sha = pin.get("sourcePath"), pin.get("sha256")
+    if not isinstance(source_value, str) or not source_value:
+        raise SpineNativePlanError("renderer context pin requires sourcePath")
+    _hash(expected_sha, "rendererContexts.sha256")
+    source_path = Path(source_value).expanduser().resolve(strict=True)
+    raw = source_path.read_bytes()
+    if len(raw) > 8 * 1024 * 1024 or hashlib.sha256(raw).hexdigest() != expected_sha:
+        raise SpineNativePlanError("renderer context source bytes differ from its SHA-256 pin")
+    try:
+        document = json.loads(raw.decode("utf-8-sig"), parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+    except (UnicodeError, ValueError, json.JSONDecodeError) as error:
+        raise SpineNativePlanError("renderer context source is not strict UTF-8 JSON") from error
+    if (not isinstance(document, dict) or document.get("schemaVersion") != 1 or
+            document.get("contract") != _RENDERER_CONTEXT_CONTRACT or
+            document.get("status") != "declared" or document.get("nativeReadback") != "not_run" or
+            document.get("sourceManifestSha256") != source_manifest_sha256 or
+            document.get("normalizedIrSha256") != normalized_ir_sha256):
+        raise SpineNativePlanError("renderer context source contract/status/source pins differ")
+    context_rows = document.get("contexts")
+    if not isinstance(context_rows, list):
+        raise SpineNativePlanError("renderer context source requires a contexts array")
+    contexts: dict[str, dict] = {}
+    for row in context_rows:
+        if not isinstance(row, dict):
+            raise SpineNativePlanError("renderer context entry must be an object")
+        source_id = row.get("sourceComponentId")
+        if not isinstance(source_id, str) or source_id not in expected:
+            raise SpineNativePlanError("renderer context sourceComponentId is outside the exact plan denominator")
+        if source_id in contexts:
+            raise SpineNativePlanError("duplicate renderer context for source component: " + source_id)
+        if row.get("sourceNodeId") != expected[source_id].get("sourceNodeId"):
+            raise SpineNativePlanError("renderer context source node differs from its exact component: " + source_id)
+        renderer = row.get("rendererKind")
+        if renderer not in _RENDERER_KINDS:
+            raise SpineNativePlanError("renderer context kind is unsupported: " + source_id)
+        expected_transform = "RectTransform" if renderer == "SkeletonGraphic" else "Transform"
+        if row.get("targetNodeTransform") != expected_transform:
+            raise SpineNativePlanError("renderer context node type conflicts with renderer kind: " + source_id)
+
+        required_roles = {"target-node-transform"}
+        if renderer == "SkeletonGraphic":
+            if not _finite_positive(row.get("canvasReferencePixelsPerUnit")):
+                raise SpineNativePlanError("SkeletonGraphic Canvas PPU must be positive and finite: " + source_id)
+            if not isinstance(row.get("canvasIdentity"), str) or not row["canvasIdentity"]:
+                raise SpineNativePlanError("SkeletonGraphic context requires an exact canvasIdentity: " + source_id)
+            required_roles.add("canvas-reference-pixels-per-unit")
+        elif row.get("canvasReferencePixelsPerUnit") is not None or row.get("canvasIdentity") not in (None, ""):
+            raise SpineNativePlanError("SkeletonAnimation context cannot declare a Canvas PPU: " + source_id)
+
+        evidence_sources = row.get("evidenceSources")
+        if not isinstance(evidence_sources, list):
+            raise SpineNativePlanError("renderer context requires hash-pinned evidenceSources: " + source_id)
+        roles = set()
+        verified_sources = []
+        for source in evidence_sources:
+            if not isinstance(source, dict):
+                raise SpineNativePlanError("renderer context evidence source must be an object: " + source_id)
+            role, path_value, source_sha = source.get("role"), source.get("sourcePath"), source.get("sha256")
+            if role not in {"target-node-transform", "canvas-reference-pixels-per-unit"} or role in roles:
+                raise SpineNativePlanError("renderer context evidence role is missing, duplicated, or unsupported: " + source_id)
+            if not isinstance(path_value, str) or not path_value:
+                raise SpineNativePlanError("renderer context evidence sourcePath is required: " + source_id)
+            _hash(source_sha, "rendererContext.evidenceSources.sha256")
+            evidence_path = Path(path_value).expanduser()
+            if not evidence_path.is_absolute():
+                evidence_path = source_path.parent / evidence_path
+            evidence_path = evidence_path.resolve(strict=True)
+            evidence_raw = evidence_path.read_bytes()
+            if len(evidence_raw) > 128 * 1024 * 1024 or hashlib.sha256(evidence_raw).hexdigest() != source_sha:
+                raise SpineNativePlanError("renderer context evidence source bytes differ from SHA-256: " + role)
+            roles.add(role)
+            verified_sources.append({"role": role, "sourcePath": str(evidence_path), "sha256": source_sha})
+        if not required_roles.issubset(roles):
+            raise SpineNativePlanError("renderer context lacks exact transform/Canvas evidence: " + source_id)
+        contexts[source_id] = dict(row, evidenceSources=verified_sources)
+    receipt = {"status": "declared_not_native_readback", "contract": _RENDERER_CONTEXT_CONTRACT,
+               "sourcePath": str(source_path), "sha256": expected_sha,
+               "sourceManifestSha256": source_manifest_sha256, "normalizedIrSha256": normalized_ir_sha256,
+               "nativeReadback": "not_run", "contextCount": len(contexts)}
+    return contexts, receipt
+
+
 def build_unity_native_binding_plan(emission: dict, material_contract: dict,
                                     unity_closure: dict, runtime_evidence: dict,
                                     runtime_stage_evidence: dict,
                                     target_unit_evidence: dict | None = None) -> dict:
-    """Join frozen inputs without selecting a UI renderer or inventing scale.
+    """Join frozen inputs with hash-pinned renderer/unit context evidence.
 
-    `rendererKind` and `SkeletonDataAsset.scale` remain explicit caller inputs:
-    they depend on the actual target node and the established cross-engine
-    transform/unit contract, respectively.
+    Target renderer context remains a declared, exact-component input; it is
+    not native Unity readback. SkeletonDataAsset.scale is derived from that
+    context and the pinned source/target unit mapping, with conflicts left
+    unresolved instead of receiving an implicit scale.
     """
     if emission.get("contract") != "monkey-spine-emission/1":
         raise SpineNativePlanError("unsupported Spine emission contract")
@@ -223,18 +324,26 @@ def build_unity_native_binding_plan(emission: dict, material_contract: dict,
     if any(not row.get("path", "").startswith("Assets/") for row in unity_copies.values()):
         raise SpineNativePlanError("Unity Spine closure contains a non-Assets path")
 
-    scale = None
-    scale_evidence = {"source": SOURCE_SCALE_EVIDENCE, "target": target_unit_evidence,
-                      "status": "target_unit_evidence_missing"}
-    if isinstance(target_unit_evidence, dict) and target_unit_evidence.get("status") == "verified_unit_mapping":
-        if (target_unit_evidence.get("targetUnitsPerSourcePixel") == 1.0 and
-            target_unit_evidence.get("worldSpaceCanvasScale") == 1.0 and
-            target_unit_evidence.get("pixelsPerUnitConversion") in (None, 1.0)):
-            scale = SOURCE_SCALE_EVIDENCE["sourceDefaultScale"] * target_unit_evidence["targetUnitsPerSourcePixel"]
-            scale_evidence["status"] = "verified_source_scale_and_target_unit_mapping"
-            scale_evidence["resolvedSkeletonDataAssetScale"] = scale
-        else:
-            scale_evidence["status"] = "target_unit_mapping_differs_or_is_unverified"
+    renderer_contexts, renderer_context_receipt = _load_renderer_contexts(
+        target_unit_evidence, comp_rows, pins["sourceManifestSha256"], pins["normalizedIrSha256"])
+    target_units = target_unit_evidence.get("targetUnitsPerSourcePixel") if isinstance(target_unit_evidence, dict) else None
+    base_unit_mapping_verified = bool(
+        isinstance(target_unit_evidence, dict) and target_unit_evidence.get("status") == "verified_unit_mapping" and
+        target_units == 1.0 and target_unit_evidence.get("worldSpaceCanvasScale") == 1.0 and
+        target_unit_evidence.get("pixelsPerUnitConversion") in (None, 1.0))
+    scale_evidence = {
+        "source": SOURCE_SCALE_EVIDENCE,
+        "target": target_unit_evidence,
+        "rendererContextEvidence": renderer_context_receipt,
+        "status": "renderer_unit_mapping_pending",
+        "resolvedSkeletonDataAssetScales": {},
+    }
+    if len(data_by_id) == 1:
+        scale_evidence["resolvedSkeletonDataAssetScale"] = None
+    if not isinstance(target_unit_evidence, dict):
+        scale_evidence["status"] = "target_unit_evidence_missing"
+    elif not base_unit_mapping_verified:
+        scale_evidence["status"] = "target_unit_mapping_differs_or_is_unverified"
 
     # Verify the nonempty source _materials field is the exact known built-in
     # profile mapping, rather than rejecting all nonempty material references.
@@ -322,6 +431,19 @@ def build_unity_native_binding_plan(emission: dict, material_contract: dict,
                   (status == "no_equivalent_field" and row.get("sourceValue") not in (None, False, 0, ""))):
                 field_gaps.append({"sourceProperty": property_name, "status": status})
         source_has_data = bool(source_data_id)
+        context = renderer_contexts.get(sid)
+        renderer_selection = {
+            "status": "declared_not_native_readback" if context else "renderer_context_missing",
+            "sourceComponentId": sid,
+            "rendererKind": context.get("rendererKind") if context else None,
+            "targetNodeTransform": context.get("targetNodeTransform") if context else None,
+            "canvasIdentity": context.get("canvasIdentity") if context else None,
+            "canvasReferencePixelsPerUnit": context.get("canvasReferencePixelsPerUnit") if context else None,
+            "evidencePath": renderer_context_receipt.get("sourcePath"),
+            "evidenceSha256": renderer_context_receipt.get("sha256"),
+            "evidenceSources": context.get("evidenceSources", []) if context else [],
+            "nativeRendererReadback": "pending",
+        }
         components.append({
             "sourceComponentId": sid,
             "sourcePrefabId": component.get("sourcePrefabId"),
@@ -331,11 +453,7 @@ def build_unity_native_binding_plan(emission: dict, material_contract: dict,
             "sourceHasStaticDataReference": source_has_data,
             "sourceTimeScale": float(source_time_scale) if source_time_scale_verified else 0.0,
             "sourceTimeScaleVerified": source_time_scale_verified,
-            "rendererSelection": {
-                "status": "caller_must_supply_exact_target_node_kind",
-                "allowed": ["SkeletonGraphic", "SkeletonAnimation"],
-                "requirement": "SkeletonGraphic requires target RectTransform; SkeletonAnimation requires non-UI renderer context",
-            },
+            "rendererSelection": renderer_selection,
             "rendererKind": "derive_from_target_node_transform",
             "creatorMaterialBinding": creator,
             "unityMaterialProfile": unity_material,
@@ -354,6 +472,13 @@ def build_unity_native_binding_plan(emission: dict, material_contract: dict,
 
     data_assets = []
     diagnostics = []
+    if not base_unit_mapping_verified:
+        diagnostics.append({"code": "UNITY_SPINE_SCALE_EVIDENCE_MISSING",
+                            "source": SOURCE_SCALE_EVIDENCE, "target": target_unit_evidence})
+    for component in comp_rows:
+        if component.get("sourceComponentId") not in renderer_contexts:
+            diagnostics.append({"sourceId": component.get("sourceComponentId"),
+                                "code": "UNITY_SPINE_RENDERER_UNIT_CONTEXT_MISSING"})
     for source_id, asset in data_by_id.items():
         rows = data_components.get(source_id, [])
         closure = closure_by_id.get(source_id)
@@ -422,6 +547,61 @@ def build_unity_native_binding_plan(emission: dict, material_contract: dict,
         requested_skins = sorted({prop.get("sourceValue") for row in rows
                                   for prop in [row.get("unity", {}).get("fields", {}).get("skin", {})]
                                   if prop.get("status") in ("explicit", "resolved_source_engine_default") and prop.get("sourceValue")})
+        source_component_ids = [row["sourceComponentId"] for row in rows]
+        component_contexts = [renderer_contexts.get(component_id) for component_id in source_component_ids]
+        data_scale = None
+        asset_scale_evidence = {
+            "status": "renderer_unit_mapping_unverified",
+            "source": SOURCE_SCALE_EVIDENCE,
+            "targetUnitsPerSourcePixel": target_units,
+            "rendererContextEvidence": renderer_context_receipt,
+            "sourceDataAssetId": source_id,
+            "sourceComponentIds": source_component_ids,
+        }
+        if any(context is None for context in component_contexts):
+            diagnostics.append({"sourceId": source_id, "code": "UNITY_SPINE_RENDERER_UNIT_CONTEXT_MISSING",
+                                "componentIds": [component_id for component_id, context in zip(source_component_ids, component_contexts)
+                                                 if context is None]})
+        elif base_unit_mapping_verified:
+            signatures = {(context["rendererKind"], context.get("canvasReferencePixelsPerUnit"))
+                          for context in component_contexts}
+            if len(signatures) != 1:
+                diagnostics.append({"sourceId": source_id, "code": "UNITY_SPINE_RENDERER_CONTEXT_CONFLICT",
+                                    "componentIds": source_component_ids,
+                                    "contexts": [{"sourceComponentId": component_id,
+                                                  "rendererKind": context["rendererKind"],
+                                                  "canvasReferencePixelsPerUnit": context.get("canvasReferencePixelsPerUnit")}
+                                                 for component_id, context in zip(source_component_ids, component_contexts)]})
+            else:
+                renderer_kind, canvas_ppu = next(iter(signatures))
+                divisor = canvas_ppu if renderer_kind == "SkeletonGraphic" else 1.0
+                data_scale = SOURCE_SCALE_EVIDENCE["sourceDefaultScale"] * float(target_units) / float(divisor)
+                formula = ("sourceDefaultScale * targetUnitsPerSourcePixel / canvasReferencePixelsPerUnit"
+                           if renderer_kind == "SkeletonGraphic" else
+                           "sourceDefaultScale * targetUnitsPerSourcePixel")
+                asset_scale_evidence = {
+                    "status": "verified_source_renderer_unit_mapping",
+                    "formula": formula,
+                    "source": SOURCE_SCALE_EVIDENCE,
+                    "targetUnitsPerSourcePixel": target_units,
+                    "rendererKind": renderer_kind,
+                    "canvasReferencePixelsPerUnit": canvas_ppu,
+                    "rendererContexts": [
+                        {"sourceComponentId": component_id,
+                         "rendererKind": context["rendererKind"],
+                         "targetNodeTransform": context["targetNodeTransform"],
+                         "canvasIdentity": context.get("canvasIdentity"),
+                         "canvasReferencePixelsPerUnit": context.get("canvasReferencePixelsPerUnit"),
+                         "evidenceSources": context["evidenceSources"]}
+                        for component_id, context in zip(source_component_ids, component_contexts)],
+                    "rendererContextEvidence": renderer_context_receipt,
+                    "resolvedSkeletonDataAssetScale": data_scale,
+                }
+                scale_evidence["resolvedSkeletonDataAssetScales"][source_id] = data_scale
+        else:
+            asset_scale_evidence["status"] = "target_unit_mapping_differs_or_is_unverified"
+        if data_scale is None and source_id not in scale_evidence["resolvedSkeletonDataAssetScales"]:
+            scale_evidence["resolvedSkeletonDataAssetScales"][source_id] = None
         factory_input = {
             "sourceAssetId": source_id,
             "sourceSpineVersion": asset.get("sourceSpineVersion"),
@@ -435,17 +615,23 @@ def build_unity_native_binding_plan(emission: dict, material_contract: dict,
             "graphicShaderAssetPath": "Assets/Game/Content/Shaders/UnitySpineGraphicProfile.shader",
             "graphicShaderSha256": graphic_shader_sha,
             "premultipliedAlpha": profile.get("pmaVertexColors"),
-            "scale": scale,
+            "scale": data_scale,
             "expectedSpineVersion": asset.get("sourceSpineVersion"),
             "pages": page_specs, "requiredAnimations": requested_animations, "requiredSkins": requested_skins,
         }
         data_assets.append({**factory_input, "factoryInput": factory_input,
-                            "scaleEvidence": scale_evidence,
+                            "scaleEvidence": asset_scale_evidence,
                             "nativeDataAssetGuid": None, "nativeAssetReadback": "pending_unity_asset_database_import"})
 
-    if scale is None:
-        diagnostics.append({"code": "UNITY_SPINE_SCALE_EVIDENCE_MISSING", "source": SOURCE_SCALE_EVIDENCE,
-                            "target": target_unit_evidence})
+    resolved_scales = scale_evidence["resolvedSkeletonDataAssetScales"]
+    all_scales_verified = (len(resolved_scales) == len(data_by_id) and
+                           all(_finite_positive(value) for value in resolved_scales.values()))
+    if all_scales_verified:
+        scale_evidence["status"] = "verified_source_renderer_unit_mapping"
+    elif base_unit_mapping_verified:
+        scale_evidence["status"] = "renderer_unit_mapping_unverified"
+    if len(resolved_scales) == 1:
+        scale_evidence["resolvedSkeletonDataAssetScale"] = next(iter(resolved_scales.values()))
 
     if len(data_assets) != len(data_by_id):
         diagnostics.append({"code": "UNITY_SPINE_DATA_ASSET_COUNT_INCOMPLETE", "expected": len(data_by_id), "planned": len(data_assets)})
