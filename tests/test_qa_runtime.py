@@ -9,7 +9,8 @@ from unittest.mock import patch
 from beaver.errors import BeaverError
 from beaver.io import write_json
 from beaver.output_limits import digest_file
-from beaver.qa_runtime import prepare, launch, collect, failure_receipt, _guard_root
+from beaver.qa_runtime import prepare, launch, collect, failure_receipt, _guard_root, _hash_tree
+from beaver import payload, qa_runtime
 
 
 class QaRuntimePrepareTests(unittest.TestCase):
@@ -33,9 +34,12 @@ class QaRuntimePrepareTests(unittest.TestCase):
 
     def tearDown(self): self.temp.cleanup()
 
-    def make_spec(self, build="build-a", profile="profile-a", bad_binding=False, bad_link=False, bad_env=False, bad_args=False, documents_credential=False, with_seed=False, bundle_id=None, test_mode="normal"):
+    def make_spec(self, build="build-a", profile="profile-a", bad_binding=False, bad_link=False, bad_env=False, bad_args=False, documents_credential=False, with_seed=False, bundle_id=None, test_mode="normal", artifact_policy=None, large_bundle=False):
         if bundle_id:
             (self.bundle / "Contents" / "Info.plist").write_bytes(plistlib.dumps({"CFBundleExecutable": "Fixture", "CFBundleIdentifier": bundle_id}))
+        if large_bundle:
+            (self.bundle / "Contents" / "MacOS" / "Fixture").write_bytes(b"E" * 4096)
+            (self.bundle / "Contents" / "Resources" / "large.assets").write_bytes(b"R" * 8192)
         if bad_link:
             (self.bundle / "Contents" / "Resources" / "external").symlink_to(self.root / "outside", target_is_directory=True)
         files = []
@@ -45,7 +49,9 @@ class QaRuntimePrepareTests(unittest.TestCase):
                 rel = p.relative_to(self.source).as_posix()
                 if p.is_symlink(): files.append({"path": rel, "symlink": os.readlink(p)})
                 elif p.is_file(): files.append({"path": rel, "sha256": digest_file(p), "bytes": p.stat().st_size})
-        write_json(self.manifest, {"schemaVersion": 1, "sourceSha256": "a" * 64, "files": files})
+        manifest_doc = {"schemaVersion": 1, "sourceSha256": "a" * 64, "files": files}
+        if artifact_policy is not None: manifest_doc["artifactPolicy"] = artifact_policy
+        write_json(self.manifest, manifest_doc)
         seed_spec = None
         if with_seed:
             seed_root = self.root / "seed-tree"; seed_file = seed_root / "saves" / "slot.json"; seed_file.parent.mkdir(parents=True, exist_ok=True)
@@ -135,10 +141,14 @@ class QaRuntimePrepareTests(unittest.TestCase):
             with self.assertRaises(BeaverError) as raised: prepare(*spec)
         receipt_path = failure_receipt(raised.exception)
         self.assertTrue(receipt_path and Path(receipt_path).is_file())
-        self.assertEqual(json.loads(Path(receipt_path).read_text())["status"], "failed-or-recovery-required")
+        failure = json.loads(Path(receipt_path).read_text())
+        self.assertEqual(failure["status"], "failed-recovery-required")
+        self.assertTrue(failure["retainedPaths"])
+        self.assertTrue(all(Path(path).exists() for path in failure["retainedPaths"]))
         project = self.mock_home / "Library/Application Support/beaver/unity-qa/fixture-project"
         self.assertFalse((project / "data/profiles/profile-a").exists())
         self.assertFalse((project / "builds/drift-build").exists())
+        self.assertFalse((project / "data/configs/drift-build").exists())
 
     def test_project_owner_is_bound_to_bundle_identifier(self):
         self.call_prepare(self.make_spec("product-a"))
@@ -146,6 +156,32 @@ class QaRuntimePrepareTests(unittest.TestCase):
         with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime._signature", return_value={"status": "unsigned"}):
             with self.assertRaises(BeaverError) as error: prepare(*changed)
         self.assertEqual(error.exception.code, "QA_OWNER_DRIFT")
+
+    def test_large_bundle_uses_only_validated_build2_file_budget_through_copy_hash_and_executable(self):
+        with patch.object(qa_runtime, "FILE_BYTES", 1024), patch.object(payload, "FILE_BYTES", 1024):
+            with self.assertRaises(BeaverError): self.call_prepare(self.make_spec("large-default", large_bundle=True))
+            spec = self.make_spec("large-build2", artifact_policy="beaver-unity-build/2", large_bundle=True)
+            original_hash_tree = qa_runtime._hash_tree
+            with patch.object(qa_runtime, "_hash_tree", wraps=original_hash_tree) as hash_tree:
+                result = self.call_prepare(spec)
+            app_calls = [call for call in hash_tree.call_args_list if str(call.args[0]).endswith("App.app")]
+            self.assertTrue(app_calls)
+            self.assertEqual(app_calls[-1].kwargs["max_file_bytes"], qa_runtime.BUILD_FILE_BYTES)
+            self.assertEqual(result["owner"]["artifactPolicy"], "beaver-unity-build/2")
+            self.assertEqual(result["owner"]["artifactMaxFileBytes"], qa_runtime.BUILD_FILE_BYTES)
+            self.assertEqual(result["owner"]["artifactMaxTotalBytes"], qa_runtime.WHOLE_BYTES)
+            self.assertEqual(result["owner"]["artifactMaxFiles"], qa_runtime.WHOLE_FILES)
+            fake = unittest.mock.MagicMock(); fake.pid = 54321; fake.wait.return_value = 0
+            with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime.subprocess.Popen", return_value=fake):
+                launched = launch("fixture-project", "large-build2", "profile-a", result["ownerSha256"], run_id="large-run")
+            self.assertEqual(launched["report"]["executableSha256"], digest_file(Path(launched["report"]["executablePath"]), max_bytes=qa_runtime.BUILD_FILE_BYTES))
+
+    def test_bundle_hash_enforces_whole_artifact_byte_and_file_limits(self):
+        tree = self.root / "budget-tree"; tree.mkdir()
+        (tree / "a").write_bytes(b"123456")
+        (tree / "b").write_bytes(b"abcdef")
+        with self.assertRaises(BeaverError): _hash_tree(tree, max_file_bytes=8, max_total_bytes=10, max_files=10)
+        with self.assertRaises(BeaverError): _hash_tree(tree, max_file_bytes=8, max_total_bytes=20, max_files=1)
 
     def test_mocked_gui_launch_and_collect_are_run_scoped_and_do_not_spawn_fixture(self):
         result = self.call_prepare(self.make_spec("launch-build"))

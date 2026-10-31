@@ -12,7 +12,6 @@ import json
 import os
 import plistlib
 import re
-import shutil
 import stat
 import subprocess
 import uuid
@@ -21,7 +20,7 @@ from pathlib import Path
 
 from .errors import BeaverError, fail
 from .io import encoded, inside, load, read, safe, sha
-from .output_limits import digest_file
+from .output_limits import BUILD_FILE_BYTES, FILE_BYTES, WHOLE_BYTES, WHOLE_FILES, digest_file
 from .payload import RootReader, stream_identity, verify_manifest, manifest as payload_manifest, promote
 
 SCHEMA_VERSION = 1
@@ -214,7 +213,7 @@ def _signature(app):
     return {"status": "valid" if verified.returncode == 0 else "invalid", "identity": fields, "verifyReturnCode": verified.returncode}
 
 
-def _copy_app(root, rows, source_app, app_dest):
+def _copy_app(root, rows, source_app, app_dest, max_file_bytes):
     # Copy only the manifest-verified player subtree; use O_EXCL and never follow links.
     root = Path(root)
     app_dest.mkdir(parents=True, exist_ok=False)
@@ -238,7 +237,7 @@ def _copy_app(root, rows, source_app, app_dest):
                 continue
             dest.parent.mkdir(parents=True, exist_ok=True)
             with reader.open(rel) as src, dest.open("xb") as out:
-                digest, size, _ = stream_identity(src, rel, output=out)
+                digest, size, _ = stream_identity(src, rel, output=out, max_file_bytes=max_file_bytes)
             if (digest, size) != (row["sha256"], row["bytes"]): fail("QA_COPY_DRIFT", rel, "Copied bytes differ from manifest identity")
             os.chmod(dest, stat.S_IMODE(os.stat(root / rel, follow_symlinks=False).st_mode))
 
@@ -419,7 +418,11 @@ def _prepare_locked(spec_path, expected_spec_sha256, out=None):
     try:
         if not (project_root / "owner.json").exists(): _write_owner(project_root, project_owner)
         stage.mkdir(mode=0o700); config_stage.mkdir(mode=0o700)
-        _copy_app(manifest_root, rows, source_app, stage / "App.app")
+        artifact_policy = artifact_doc.get("artifactPolicy")
+        if artifact_policy not in (None, "beaver-unity-build/2"):
+            fail("QA_ARTIFACT_POLICY", str(manifest_path), "Unsupported artifact file budget policy")
+        artifact_max_file_bytes = BUILD_FILE_BYTES if artifact_policy == "beaver-unity-build/2" else FILE_BYTES
+        _copy_app(manifest_root, rows, source_app, stage / "App.app", artifact_max_file_bytes)
         _app_executable(stage / "App.app")
         source_signature = _signature(source_app); copied_signature = _signature(stage / "App.app")
         if source_signature["status"] in ("valid", "invalid") and copied_signature != source_signature:
@@ -435,7 +438,7 @@ def _prepare_locked(spec_path, expected_spec_sha256, out=None):
             os.chmod(profile_stage, 0o700)
         else:
             seed_record = {"status": "existing-profile-preserved", "seedApplied": False}
-        bundle_identity = _hash_tree(stage / "App.app")
+        bundle_identity = _hash_tree(stage / "App.app", max_file_bytes=artifact_max_file_bytes, max_total_bytes=WHOLE_BYTES, max_files=WHOLE_FILES)
         bundle_record = {"path": str(build_root / "App.app"), "treeSha256": bundle_identity, "sourceManifestSha256": source_before["manifestSha256"]}
         source_after = verify_manifest(manifest_root, manifest_path, scope="player", allow_links=True, artifact=True)
         if source_before["manifestSha256"] != source_after["manifestSha256"]: fail("QA_SOURCE_AFTER_DRIFT", str(manifest_path), "Source manifest changed during prepare")
@@ -447,37 +450,43 @@ def _prepare_locked(spec_path, expected_spec_sha256, out=None):
             profile_owner_path.parent.mkdir(parents=True, exist_ok=True); _write_control_json(profile_owner_path, profile_identity, create=True)
             os.chmod(profile_owner_path, 0o600); receipt["committed"].append("profileOwner"); _write_control_json(receipt_path, receipt)
         promote(config_stage, configs_final); receipt["committed"].append("configs"); _write_control_json(receipt_path, receipt)
-        owner = {**identity, "environmentBindings": doc["environmentBindings"], "arguments": doc["arguments"], "testMode": doc["testMode"], "bundle": bundle_record, "configInputs": config_records, "profileSeed": seed_record, "signature": {"source": source_signature, "copy": copied_signature}, "declaredProfileBinding": True}
+        owner = {**identity, "artifactPolicy": artifact_policy or "default", "artifactMaxFileBytes": artifact_max_file_bytes, "artifactMaxTotalBytes": WHOLE_BYTES, "artifactMaxFiles": WHOLE_FILES, "environmentBindings": doc["environmentBindings"], "arguments": doc["arguments"], "testMode": doc["testMode"], "bundle": bundle_record, "configInputs": config_records, "profileSeed": seed_record, "signature": {"source": source_signature, "copy": copied_signature}, "declaredProfileBinding": True}
         owner_sha = sha(encoded(owner)); _write_control_json(stage / "qa-owner.json", owner, create=True)
         promote(stage, build_root); receipt["committed"].append("bundle"); _write_control_json(receipt_path, receipt)
     except BaseException as error:
-        shutil.rmtree(stage, ignore_errors=True)
-        shutil.rmtree(config_stage, ignore_errors=True)
-        if profile_stage is not None: shutil.rmtree(profile_stage, ignore_errors=True)
-        receipt["status"] = "failed-or-recovery-required"; _write_control_json(receipt_path, receipt)
+        retained = [str(path) for path in (stage, config_stage, profile_stage) if path is not None and os.path.lexists(path)]
+        receipt["status"] = "failed-recovery-required"
+        receipt["retainedPaths"] = retained
+        _write_control_json(receipt_path, receipt)
         try: error.qa_failure_receipt = str(receipt_path)
         except Exception: pass
         raise
     receipt.update(status="prepared", sourceVerificationBefore=source_before, sourceVerificationAfter=source_after, ownerSha256=owner_sha, committed=["profileData", "profileOwner", "configs", "bundle"])
     _write_control_json(receipt_path, receipt)
-    report = {"schemaVersion": 1, "contract": "beaver-unity-qa-prepare/1", "status": "prepared", "runId": prep_run_id, "projectId": doc["projectId"], "buildId": doc["buildId"], "profileId": doc["profileId"], "ownerSha256": owner_sha, "specPath": str(spec_path), "specSha256": spec_sha, "artifactManifest": str(manifest_path), "artifactManifestSha256": doc["artifactManifestSha256"], "sourceSha256": artifact_doc["sourceSha256"], "sourceVerificationBefore": source_before, "sourceVerificationAfter": source_after, "bundle": bundle_record, "signature": {"source": source_signature, "copy": copied_signature}, "profileRoot": str(profile_root), "profileOwner": profile_identity, "profileSeed": seed_record, "configInputs": config_records, "testMode": doc["testMode"], "launchPerformed": False, "profileIsolation": "only explicitly declared profile-directory environment bindings; HOME and Unity persistentDataPath are unchanged and not claimed isolated", "limitations": ["No app process launched; no runtime file-access syscall evidence produced", "Existing signature was read-only verified; no signing operation performed", "The consuming app must use a declared profile binding for save isolation; Unity PlayerPrefs and ordinary AppData are not redirected"]}
+    report = {"schemaVersion": 1, "contract": "beaver-unity-qa-prepare/1", "status": "prepared", "runId": prep_run_id, "projectId": doc["projectId"], "buildId": doc["buildId"], "profileId": doc["profileId"], "ownerSha256": owner_sha, "artifactPolicy": owner["artifactPolicy"], "artifactMaxFileBytes": owner["artifactMaxFileBytes"], "artifactMaxTotalBytes": owner["artifactMaxTotalBytes"], "artifactMaxFiles": owner["artifactMaxFiles"], "specPath": str(spec_path), "specSha256": spec_sha, "artifactManifest": str(manifest_path), "artifactManifestSha256": doc["artifactManifestSha256"], "sourceSha256": artifact_doc["sourceSha256"], "sourceVerificationBefore": source_before, "sourceVerificationAfter": source_after, "bundle": bundle_record, "signature": {"source": source_signature, "copy": copied_signature}, "profileRoot": str(profile_root), "profileOwner": profile_identity, "profileSeed": seed_record, "configInputs": config_records, "testMode": doc["testMode"], "launchPerformed": False, "profileIsolation": "only explicitly declared profile-directory environment bindings; HOME and Unity persistentDataPath are unchanged and not claimed isolated", "limitations": ["No app process launched; no runtime file-access syscall evidence produced", "Existing signature was read-only verified; no signing operation performed", "The consuming app must use a declared profile binding for save isolation; Unity PlayerPrefs and ordinary AppData are not redirected"]}
     report["prepareReceipt"] = str(receipt_path)
     if report_dir is not None: report_dir.mkdir(parents=True, exist_ok=False)
     _write_control_json(report_path, report, create=True)
     return dict(status="prepared", runId=report["runId"], projectId=doc["projectId"], buildId=doc["buildId"], profileId=doc["profileId"], report=str(report_path), receipt=str(receipt_path), owner=owner, ownerSha256=owner_sha, bundle=bundle_record, profileRoot=str(profile_root), configInputs=config_records, sourceVerificationBefore=source_before, sourceVerificationAfter=source_after)
 
 
-def _hash_tree(root):
-    digest = hashlib.sha256()
+def _hash_tree(root, max_file_bytes=None, max_total_bytes=WHOLE_BYTES, max_files=WHOLE_FILES):
+    limit = FILE_BYTES if max_file_bytes is None else max_file_bytes
+    digest = hashlib.sha256(); file_count = 0; total_bytes = 0
     for parent, dirs, files in os.walk(root, followlinks=False):
         dirs.sort(); files.sort()
         for name in sorted(dirs + files):
             path = Path(parent) / name; rel = path.relative_to(root).as_posix()
             if path.is_symlink():
+                file_count += 1
                 payload = b"L\0" + rel.encode() + b"\0" + os.readlink(path).encode()
             elif path.is_file():
-                payload = b"F\0" + rel.encode() + b"\0" + bytes.fromhex(digest_file(path)) + str(stat.S_IMODE(path.stat().st_mode)).encode()
+                file_count += 1
+                total_bytes += path.stat().st_size
+                if total_bytes > max_total_bytes: fail("QA_BUNDLE_TOTAL_BUDGET", str(root), "Bundle exceeds its fixed whole-artifact byte ceiling")
+                payload = b"F\0" + rel.encode() + b"\0" + bytes.fromhex(digest_file(path, max_bytes=limit)) + str(stat.S_IMODE(path.stat().st_mode)).encode()
             else: continue
+            if file_count > max_files: fail("QA_BUNDLE_FILE_BUDGET", str(root), "Bundle exceeds its fixed whole-artifact file count ceiling")
             digest.update(payload)
     return digest.hexdigest()
 
@@ -497,6 +506,14 @@ def _read_owner(project_id, build_id, profile_id, expected_owner_sha256):
     if actual != expected_owner_sha256: fail("QA_OWNER_DRIFT", str(marker), "Expected owner SHA256 does not match")
     if owner.get("projectId") != project_id or owner.get("buildId") != build_id or owner.get("profileId") != profile_id:
         fail("QA_UNKNOWN_OWNERSHIP", str(marker), "Build owner identity does not match requested IDs")
+    policy = owner.get("artifactPolicy")
+    if policy not in ("default", "beaver-unity-build/2"):
+        fail("QA_ARTIFACT_POLICY", str(marker), "Owner has an unsupported artifact budget policy")
+    expected_limit = BUILD_FILE_BYTES if policy == "beaver-unity-build/2" else FILE_BYTES
+    if owner.get("artifactMaxFileBytes") != expected_limit:
+        fail("QA_ARTIFACT_POLICY", str(marker), "Owner file limit does not match the validated artifact policy")
+    if owner.get("artifactMaxTotalBytes") != WHOLE_BYTES or owner.get("artifactMaxFiles") != WHOLE_FILES:
+        fail("QA_ARTIFACT_POLICY", str(marker), "Owner whole-artifact limits do not match the fixed Beaver policy")
     project_identity = {"schemaVersion": 1, "contract": "beaver-unity-qa-project/1", "projectId": project_id, "bundleIdentifier": owner.get("bundleIdentifier")}
     _owned(project_root, project_identity)
     return build_root, profile_root, owner
@@ -507,7 +524,7 @@ def launch(project_id, build_id, profile_id, expected_owner_sha256, duration=60,
     if type(duration) is not int or not 1 <= duration <= 3600: fail("QA_DURATION", str(duration), "Expected a 1..3600 second bounded process budget")
     build_root, profile_root, owner = _read_owner(project_id, build_id, profile_id, expected_owner_sha256)
     app = build_root / "App.app"; exe = _app_executable(app)
-    if _hash_tree(app) != owner.get("bundle", {}).get("treeSha256"):
+    if _hash_tree(app, max_file_bytes=owner["artifactMaxFileBytes"], max_total_bytes=owner["artifactMaxTotalBytes"], max_files=owner["artifactMaxFiles"]) != owner.get("bundle", {}).get("treeSha256"):
         fail("QA_BUNDLE_DRIFT", str(app), "Prepared bundle changed after ownership record")
     run_id = _id(run_id or uuid.uuid4().hex, "runId")
     bindings = owner.get("environmentBindings", {})
@@ -552,20 +569,20 @@ def launch(project_id, build_id, profile_id, expected_owner_sha256, duration=60,
         try: fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError: fail("QA_PROFILE_BUSY", str(profile_root), "Another QA launch owns this profile")
         lock.seek(0); lock.truncate(); lock.write(f"{run_id}\n".encode()); lock.flush(); os.fsync(lock.fileno())
-        return _launch_owned(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256)
+        return _launch_owned(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256, owner["artifactMaxFileBytes"])
 
 
-def _launch_owned(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256):
+def _launch_owned(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256, artifact_limit):
     try:
-        return _launch_process(exe,args,app,env,log_path,duration,project_id,build_id,profile_id,run_id,receipt_path,mode,started,sandbox_info,expected_owner_sha256)
+        return _launch_process(exe,args,app,env,log_path,duration,project_id,build_id,profile_id,run_id,receipt_path,mode,started,sandbox_info,expected_owner_sha256,artifact_limit)
     except BaseException as error:
         try:error.qa_failure_receipt=str(receipt_path)
         except Exception:pass
         raise
 
 
-def _launch_process(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256):
-    record_base = {"schemaVersion": 1, "contract": "beaver-unity-qa-process/1", "runId": run_id, "projectId": project_id, "buildId": build_id, "profileId": profile_id, "expectedOwnerSha256": expected_owner_sha256, "executablePath": str(exe), "executableSha256": digest_file(exe), "command": args, "cwd": str(app), "cleanEnvironment": env, "startedUtc": started, "budgetSeconds": duration, "logPath": str(log_path), "mode": mode, "documentsSandbox": sandbox_info}
+def _launch_process(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256, artifact_limit):
+    record_base = {"schemaVersion": 1, "contract": "beaver-unity-qa-process/1", "runId": run_id, "projectId": project_id, "buildId": build_id, "profileId": profile_id, "expectedOwnerSha256": expected_owner_sha256, "executablePath": str(exe), "executableSha256": digest_file(exe, max_bytes=artifact_limit), "command": args, "cwd": str(app), "cleanEnvironment": env, "startedUtc": started, "budgetSeconds": duration, "logPath": str(log_path), "mode": mode, "documentsSandbox": sandbox_info}
     _write_control_json(receipt_path, {**record_base, "pid": None, "owned": False, "status": "starting"}, create=True)
     console_path=_guard_root(log_path.with_name(run_id+'.console.log'))
     record_base['consoleLogPath']=str(console_path)
@@ -608,7 +625,7 @@ def _launch_process(exe, args, app, env, log_path, duration, project_id, build_i
 
 def collect(project_id, build_id, profile_id, expected_owner_sha256, run_id=None, out=None):
     build_root, profile_root, owner = _read_owner(project_id, build_id, profile_id, expected_owner_sha256)
-    app = build_root / "App.app"; bundle_actual = _hash_tree(app)
+    app = build_root / "App.app"; bundle_actual = _hash_tree(app, max_file_bytes=owner["artifactMaxFileBytes"], max_total_bytes=owner["artifactMaxTotalBytes"], max_files=owner["artifactMaxFiles"])
     if run_id is None: fail("QA_RUN_REQUIRED", "runId", "Collect requires an explicit runId")
     run_id = _id(run_id, "runId")
     data_root = build_root.parent.parent / "data"
@@ -636,7 +653,7 @@ def collect(project_id, build_id, profile_id, expected_owner_sha256, run_id=None
     elif process.get("status") == "running" and process.get("presence") == "verified-running": overall_status = "observed_running"
     elif process.get("status") == "exited" and process.get("exitCode") == 0: overall_status = "collected"
     else: overall_status = "failed"
-    report = {"schemaVersion": 1, "contract": "beaver-unity-qa-collect/1", "status": overall_status, "runId": run_id, "projectId": project_id, "buildId": build_id, "profileId": profile_id, "ownerSha256": expected_owner_sha256, "sourceSha256": owner.get("sourceSha256"), "artifactManifestSha256": owner.get("artifactManifestSha256"), "bundle": {"expectedTreeSha256": owner.get("bundle", {}).get("treeSha256"), "actualTreeSha256": bundle_actual, "matches": bundle_matches}, "profileRoot": str(profile_root), "process": process, "logs": logs, "runtimeFileAccessEvidence": "not measured; logs do not establish syscall-level access", "profileIsolation": "only explicitly declared profile-directory environment bindings; HOME, Unity persistentDataPath, PlayerPrefs and ordinary AppData are not redirected", "limitations": ["A successful process exit does not prove menu, gameplay, or save-resume behavior", "A clean run may not reveal existing TCC grants unless denyDocuments mode is used; denial is evidence only for paths covered by that closed profile", "The application must actually consume the declared profile binding before profile isolation can be credited"]}
+    report = {"schemaVersion": 1, "contract": "beaver-unity-qa-collect/1", "status": overall_status, "runId": run_id, "projectId": project_id, "buildId": build_id, "profileId": profile_id, "ownerSha256": expected_owner_sha256, "artifactPolicy": owner["artifactPolicy"], "artifactMaxFileBytes": owner["artifactMaxFileBytes"], "artifactMaxTotalBytes": owner["artifactMaxTotalBytes"], "artifactMaxFiles": owner["artifactMaxFiles"], "sourceSha256": owner.get("sourceSha256"), "artifactManifestSha256": owner.get("artifactManifestSha256"), "bundle": {"expectedTreeSha256": owner.get("bundle", {}).get("treeSha256"), "actualTreeSha256": bundle_actual, "matches": bundle_matches}, "profileRoot": str(profile_root), "process": process, "logs": logs, "runtimeFileAccessEvidence": "not measured; logs do not establish syscall-level access", "profileIsolation": "only explicitly declared profile-directory environment bindings; HOME, Unity persistentDataPath, PlayerPrefs and ordinary AppData are not redirected", "limitations": ["A successful process exit does not prove menu, gameplay, or save-resume behavior", "A clean run may not reveal existing TCC grants unless denyDocuments mode is used; denial is evidence only for paths covered by that closed profile", "The application must actually consume the declared profile binding before profile isolation can be credited"]}
     if out is None: out_path = data_root / "receipts" / ("collect-" + run_id + ".json")
     else:
         out_dir = safe(out)
