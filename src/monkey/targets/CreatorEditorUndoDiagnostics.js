@@ -388,7 +388,7 @@ function install(options = {}) {
             throw new Error('CREATOR_UNDO_OWNED_SCOPE_VALIDITY_CALLBACK_INVALID');
         const scope = {manager, resolveUuid, isValidObject, baselineRecords, baselineRecordPositions, baselineDumpKeys,
             ownedObjects: new WeakSet(), ownedUuids: new Set(), ownedObjectByUuid: new Map(),
-            pendingObjects: new Map(), pendingOwnerRoots: new Map(), ownedRoots: new Set(), suppressedUuids: new Set(),
+            pendingObjects: new Map(), pendingOwnerRoots: new Map(), ownedRoots: new Set(), ownedRootObjects: new Map(), suppressedUuids: new Set(),
             suppressedRecordCount: 0, preRegistrationRecordRemovals: 0, preRegistrationDumpRemovals: 0,
             dynamicOwnedDiscoveries: 0, preexistingOwnedMatches: 0, pendingIdentityConflicts: 0,
             pendingUnresolvedAtFinish: 0, pendingDestroyedOwnedCleanupCount: 0,
@@ -658,6 +658,7 @@ function install(options = {}) {
                     throw new Error('CREATOR_UNDO_OWNED_UUID_IDENTITY_CONFLICT');
             }
             scope.ownedRoots.add(root);
+            scope.ownedRootObjects.set(root, new Set(objects));
             let pendingCount = 0;
             for (const object of objects) {
                 const uuid = objectUuid(object);
@@ -668,6 +669,63 @@ function install(options = {}) {
             return {registered: true, objectCount: objects.filter(object => {
                 const uuid = objectUuid(object); return uuid && scope.ownedUuids.has(uuid);
             }).length, pendingObjectCount: pendingCount};
+        };
+
+        const retireDestroyedOwnedRoot = (root, capturedEntries) => {
+            const rejected = reason => ({retired:false,reason,retiredObjectCount:0});
+            if (scope.closed) return rejected('scope-closed');
+            if (!scope.ownedRoots.has(root)) return rejected('root-not-registered-by-this-scope');
+            if (!Array.isArray(capturedEntries)) return rejected('captured-object-list-required');
+            const rootEntry = capturedEntries.find(entry => entry && entry.kind === 'node' && entry.object === root);
+            const rootUuid = rootEntry && rootEntry.uuid;
+            if (typeof rootUuid !== 'string' || !rootUuid) return rejected('captured-root-uuid-missing');
+            const eligible = [], seen = new Set();
+            for (const entry of capturedEntries) {
+                if (!entry || !['node','component'].includes(entry.kind) || typeof entry.uuid !== 'string' || !entry.uuid ||
+                    !entry.object || typeof entry.object !== 'object') return rejected('captured-entry-invalid');
+                const key = entry.kind + ':' + entry.uuid;
+                if (seen.has(key)) return rejected('captured-entry-duplicate');
+                seen.add(key);
+                const currentUuid = objectUuid(entry.object);
+                if (currentUuid && currentUuid !== entry.uuid) return rejected('captured-object-uuid-changed');
+                if (scope.baselineRecords.has(entry.uuid) || scope.baselineDumpKeys.has(entry.uuid))
+                    return rejected('baseline-uuid-protected');
+                const mapped = scope.ownedObjectByUuid.get(entry.uuid) === entry.object ||
+                    scope.pendingObjects.get(entry.uuid) === entry.object;
+                if (!mapped) continue; // This scope never adopted this captured object identity.
+                try {
+                    if (!scope.isValidObject || scope.isValidObject(entry.object, true) !== false)
+                        return rejected('strict-destroyed-state-unverified');
+                    if (scope.resolveUuid(entry.uuid) !== null)
+                        return rejected('resolver-still-resolves-or-foreign');
+                } catch (_) { return rejected('validity-or-resolver-query-failed'); }
+                eligible.push(entry);
+            }
+            if (!eligible.some(entry => entry.kind === 'node' && entry.object === root && entry.uuid === rootUuid))
+                return rejected('owned-root-identity-not-adopted');
+
+            for (const entry of eligible) {
+                removeOwnedResidue(entry.uuid);
+                if (scope.ownedObjectByUuid.get(entry.uuid) === entry.object) {
+                    scope.ownedObjectByUuid.delete(entry.uuid);
+                    scope.ownedUuids.delete(entry.uuid);
+                    scope.ownedObjects.delete(entry.object);
+                }
+                if (scope.pendingObjects.get(entry.uuid) === entry.object) {
+                    scope.pendingObjects.delete(entry.uuid);
+                    scope.pendingOwnerRoots.delete(entry.uuid);
+                }
+                if (scope.ownedRoots.has(entry.object)) {
+                    scope.ownedRoots.delete(entry.object);
+                    scope.ownedRootObjects.delete(entry.object);
+                }
+                for (const [registeredRoot, members] of scope.ownedRootObjects)
+                    if (members.has(entry.object)) members.delete(entry.object);
+            }
+            scope.ownedRoots.delete(root);
+            scope.ownedRootObjects.delete(root);
+            return {retired:true,reason:null,retiredObjectCount:eligible.length,
+                retiredUuids:eligible.map(entry=>entry.uuid).slice(0,64)};
         };
 
         const finish = () => {
@@ -725,7 +783,7 @@ function install(options = {}) {
             preRegistrationDumpRemovals: scope.preRegistrationDumpRemovals,
             baselineRecordCount: baselineRecords.size, baselineDumpKeyCount: baselineDumpKeys.size,
             closed: scope.closed});
-        return {registerOwnedObject, registerOwnedRoot, finish, summary};
+        return {registerOwnedObject, registerOwnedRoot, retireDestroyedOwnedRoot, finish, summary};
     }
     return {
         installed: true, targetPath: target.filename, constructorName: target.ctor.name,

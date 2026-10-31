@@ -8,6 +8,7 @@ const relations=require('./prefab-instances.js');
 const staticSortQueue=require('./CreatorStaticSortQueueIntegration.js');
 const staticSortSerialization=require('./static-sort-serialization.js');
 const ownedUndo=require('./owned-import-undo.js');
+const ownedBuildTeardown=require('./owned-build-scene-teardown.js');
 let saveCallProbe=null;
 let undoSnapshotProbe=null;
 const dynamic=require('./dynamic-ui.js');
@@ -123,9 +124,10 @@ module.exports = {
                 if(!Number.isInteger(kib)||kib<144||kib>2303)throw Error('Invalid native tiled renderer budget');
                 cc.macro.BATCHER2D_MEM_INCREMENT=kib;
             }
-            const scene = new cc.Scene('Candidate');
+            const scene = ownedBuildTeardown.create(cc,'Candidate');
             ownedUndo.registerRoot(scene);
             let retained=false;
+            let assembleError=null;
             try {
                 const canvasNode = new cc.Node('Canvas');ownedUndo.registerRoot(canvasNode);canvasNode.layer=cc.Layers.Enum.UI_2D;canvasNode.parent=scene;
                 canvasNode.addComponent(cc.UITransform).setContentSize(...plan.designSize);
@@ -302,7 +304,18 @@ module.exports = {
                 return {serialized:typeof serialized==='string'?serialized:JSON.stringify(serialized),nativeInitialNodes,nativeRefs,animationAssets,
                     sourcePrefabs,numericCodeExercise,
                     nodes:plan.nodes.map(n=>({sourceId:n.sourceId,nodeUuid:nodes.get(n.sourceId).uuid})),...describe(scene,plan)};
-            } finally {if(!retained){dynamic.release(scene);scene.destroy();}}
+            } catch(error) {assembleError=error;throw error;}
+            finally {
+                if(!retained) {
+                    const cleanup=await ownedBuildTeardown.cleanupAfterBuild(scene,{cc,cce:globalThis.cce,
+                        editorExtends:globalThis.EditorExtends,dynamicRelease:dynamic.release},assembleError);
+                    if(cleanup.error) {
+                        if(assembleError) {
+                            console.error('CREATOR_BUILD_SCENE_TEARDOWN_AFTER_FAILURE: '+String(cleanup.error.message||cleanup.error));
+                        } else throw cleanup.error;
+                    }
+                }
+            }
         },
         async readSaved(uuid,plan) {
             staticSortQueue.validatePlan(plan);

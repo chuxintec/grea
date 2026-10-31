@@ -12,6 +12,7 @@ function noScope(reason, details = {}) {
         installed: false, reason, summary,
         registerOwnedRoot() { return {registered: false, reason}; },
         registerOwnedObject() { return {registered: false, reason}; },
+        retireDestroyedRoot() { return {retired:false,reason}; },
         finish() { return summary(); },
     };
 }
@@ -91,6 +92,7 @@ function begin(cce, realm = globalThis, requireFn = require, options = {}) {
         installed: true,
         registerOwnedRoot(root) { return closed ? {registered: false, reason: 'scope-closed'} : scope.registerOwnedRoot(root); },
         registerOwnedObject(object) { return closed ? {registered: false, reason: 'scope-closed'} : scope.registerOwnedObject(object); },
+        retireDestroyedRoot(root, entries) { return closed ? {retired:false,reason:'scope-closed'} : scope.retireDestroyedOwnedRoot(root, entries); },
         summary,
         finish() {
             if (closed) return summary();
@@ -117,10 +119,13 @@ function start(cce, realm = globalThis, requireFn = require) {
 function registerRoot(root) {
     return activeScope ? activeScope.registerOwnedRoot(root) : {registered: false, reason: 'no-owned-import'};
 }
+function retireDestroyedRoot(root, entries) {
+    return activeScope ? activeScope.retireDestroyedRoot(root, entries) : {retired:false,reason:'no-owned-import'};
+}
 function finish() {
     if (!activeScope) return {installed: false, reason: 'no-owned-import'};
     const scope = activeScope;
     activeScope = null;
     return scope.finish();
 }
-module.exports = {begin, start, registerRoot, finish};
+module.exports = {begin, start, registerRoot, retireDestroyedRoot, finish};

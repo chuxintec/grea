@@ -407,6 +407,75 @@ test('destroyed-pending cleanup is disabled without an injected strict validity 
     fixture.probe.uninstall();
 });
 
+test('retirement removes only exact destroyed owned identities after UUID queries return null, then permits same-UUID replacement', () => {
+    const fixture = makeFixture(function (input) { return this.realm.JSON.stringify(input); });
+    const manager = new fixture.SceneUndoManager();
+    manager.records = ['user-baseline'];
+    manager._uuidDumpMap = {'user-baseline': {keep:true}};
+    const registry = new Map();
+    const root = {uuid:'retire-root',parent:null,children:[],_components:[],destroyed:false};
+    const component = {uuid:'retire-component',node:root,destroyed:false};root._components.push(component);
+    registry.set(root.uuid,root);registry.set(component.uuid,component);
+    const scope=fixture.probe.beginOwnedImportScope(manager,uuid=>registry.has(uuid)?registry.get(uuid):null,
+        (object,strict)=>strict===true&&object.destroyed!==true);
+    // Records can precede explicit ownership registration during construction.
+    manager.record(root.uuid);manager.record(component.uuid);
+    assert.equal(scope.registerOwnedRoot(root).registered,true);
+    assert.deepEqual(manager.records,['user-baseline']);
+    root.destroyed=true;component.destroyed=true;registry.delete(root.uuid);registry.delete(component.uuid);
+    const retired=scope.retireDestroyedOwnedRoot(root,[
+        {kind:'node',uuid:root.uuid,object:root},{kind:'component',uuid:component.uuid,object:component},
+    ]);
+    assert.equal(retired.retired,true);assert.equal(retired.retiredObjectCount,2);
+    assert.deepEqual(manager.records,['user-baseline']);
+    assert.deepEqual(manager._uuidDumpMap,{'user-baseline':{keep:true}});
+    assert.equal(scope.summary().ownedRootCount,0,'retired descendant root handles do not retain old identities');
+    const replacement={uuid:root.uuid,parent:null,children:[],_components:[],destroyed:false};
+    registry.set(replacement.uuid,replacement);
+    assert.equal(scope.registerOwnedRoot(replacement).registered,true,
+        'same UUID can bind to the new serialized-scene object only after old identity retirement');
+    assert.equal(scope.summary().ownedObjectCount,1);
+    scope.finish();fixture.probe.uninstall();
+});
+
+test('retirement rejects live identities, foreign replacements, query errors, and nonowned roots', () => {
+    const scenarios=[
+        {name:'still-valid',registryMode:'null',destroyed:false,expected:'strict-destroyed-state-unverified'},
+        {name:'foreign-same-uuid',registryMode:'foreign',destroyed:true,expected:'resolver-still-resolves-or-foreign'},
+        {name:'query-error',registryMode:'throw',destroyed:true,expected:'validity-or-resolver-query-failed'},
+    ];
+    for(const scenario of scenarios){
+        const fixture=makeFixture(function(input){return this.realm.JSON.stringify(input);});
+        const manager=new fixture.SceneUndoManager();manager.records=[];manager._uuidDumpMap={};
+        const root={uuid:'retire-'+scenario.name,parent:null,children:[],_components:[],destroyed:false};
+        const registry=new Map([[root.uuid,root]]);
+        let behavior='exact';
+        const resolver=uuid=>{
+            if(behavior==='throw')throw Error('query failed');
+            if(behavior==='foreign')return {uuid,destroyed:true};
+            return registry.get(uuid)||null;
+        };
+        const scope=fixture.probe.beginOwnedImportScope(manager,resolver,(object,strict)=>strict===true&&object.destroyed!==true);
+        scope.registerOwnedRoot(root);root.destroyed=scenario.destroyed;behavior=scenario.registryMode;
+        if(scenario.registryMode==='null')registry.delete(root.uuid);
+        const result=scope.retireDestroyedOwnedRoot(root,[{kind:'node',uuid:root.uuid,object:root}]);
+        assert.equal(result.retired,false,scenario.name);
+        assert.equal(result.reason,scenario.expected,scenario.name);
+        assert.equal(scope.summary().ownedObjectCount,1,scenario.name+' ownership retained');
+        scope.finish();fixture.probe.uninstall();
+    }
+    const fixture=makeFixture(function(input){return this.realm.JSON.stringify(input);});
+    const manager=new fixture.SceneUndoManager();manager.records=['baseline-user'];manager._uuidDumpMap={'baseline-user':{keep:true}};
+    const registry=new Map();const scope=fixture.probe.beginOwnedImportScope(manager,uuid=>registry.get(uuid)||null,
+        (object,strict)=>strict===true&&object.destroyed!==true);
+    const foreignRoot={uuid:'never-registered-root',parent:null,children:[],_components:[],destroyed:true};
+    const denied=scope.retireDestroyedOwnedRoot(foreignRoot,[{kind:'node',uuid:foreignRoot.uuid,object:foreignRoot}]);
+    assert.equal(denied.retired,false);assert.equal(denied.reason,'root-not-registered-by-this-scope');
+    assert.deepEqual(manager.records,['baseline-user']);
+    assert.deepEqual(manager._uuidDumpMap,{'baseline-user':{keep:true}});
+    scope.finish();fixture.probe.uninstall();
+});
+
 test('counts cycles, repeated aliases, Node identities, size and traversal caps without copying contents', () => {
     class Node { constructor(name) { this.name = name; this.uuid = 'node-uuid'; } }
     const shared = {privateText: 'credential-shaped-payload'};

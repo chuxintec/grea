@@ -175,26 +175,31 @@ function managerForKind(cce, kind) {
     return general && general[kind === 'node' ? '_nodeMgr' : '_compMgr'] || null;
 }
 
-function maybeRemoveRetiredObject(kind, uuid, resolved, cce, cc, asset, editorExtends) {
-    const retired = retiredOwnedObjects.get(objectKey(kind, uuid));
-    if (!retired || retired.object !== resolved || retired.sceneAssetUuid !== asset._uuid ||
-        typeof cc.isValid !== 'function' || cc.isValid(resolved, true))
-        return {attempted: false, removed: false, reason: !retired ? 'not-owned-by-saved-scope' :
-            retired.sceneAssetUuid !== asset._uuid ? 'scope-scene-asset-mismatch' : 'identity-or-destroy-state-unverified'};
-
-    try { currentSceneGuard(resolved, asset, cc, cce); }
+function removeExactOwnedTombstone(kind, uuid, resolved, cce, cc, editorExtends, guard) {
+    // Destroy may clear uuid fields on Creator objects. The caller must supply
+    // the exact identity/UUID pair captured before destruction; if the object
+    // still exposes a UUID, it must continue to match that captured value.
+    const currentUuid = resolved && (resolved.uuid || resolved._uuid);
+    if (!['node', 'component'].includes(kind) || typeof uuid !== 'string' || !uuid ||
+        !resolved || typeof resolved !== 'object' || (currentUuid && currentUuid !== uuid))
+        return {attempted: false, removed: false, reason: 'exact-owned-identity-required'};
+    if (typeof cc.isValid !== 'function' || cc.isValid(resolved, true) !== false)
+        return {attempted: false, removed: false, reason: 'identity-or-destroy-state-unverified'};
+    try { if (typeof guard !== 'function') throw new Error('cleanup guard required'); guard(); }
     catch (error) { return {attempted: false, removed: false, reason: 'current-scene-guard-failed', guardCode: error.code || null}; }
+
     const general = currentGeneral(cce);
     const manager = managerForKind(cce, kind);
     const cacheField = kind === 'node' ? '_recycleNode' : '_recycleComponent';
     const queryRecycleName = kind === 'node' ? 'queryRecycleNode' : 'queryRecycleComponent';
-    const cceQuery = kind === 'node' ? cce.Node.query : cce.Component.query;
+    const owner = kind === 'node' ? cce && cce.Node : cce && cce.Component;
+    const cceQuery = owner && owner.query;
     let managerBefore, queryBefore, tombstoneBefore;
-    try { managerBefore = manager && manager.query(uuid); }
+    try { managerBefore = manager && typeof manager.query === 'function' ? manager.query(uuid) : undefined; }
     catch (_) { return {attempted: false, removed: false, reason: 'manager-pre-remove-query-failed'}; }
     if (managerBefore !== resolved)
         return {attempted: false, removed: false, reason: 'manager-pre-remove-object-mismatch', managerClass: shortName(manager)};
-    try { queryBefore = cceQuery.call(kind === 'node' ? cce.Node : cce.Component, uuid); }
+    try { queryBefore = typeof cceQuery === 'function' ? cceQuery.call(owner, uuid) : undefined; }
     catch (_) { return {attempted: false, removed: false, reason: 'cce-pre-remove-query-failed'}; }
     if (queryBefore !== resolved)
         return {attempted: false, removed: false, reason: 'cce-pre-remove-object-mismatch'};
@@ -221,15 +226,14 @@ function maybeRemoveRetiredObject(kind, uuid, resolved, cce, cc, asset, editorEx
     let deleted = false;
     try { deleted = Reflect.deleteProperty(cache, uuid); }
     catch (_) { return {attempted: true, removed: false, reason: 'recycle-entry-delete-threw'}; }
-    if (!deleted)
-        return {attempted: true, removed: false, reason: 'recycle-entry-delete-rejected'};
+    if (!deleted) return {attempted: true, removed: false, reason: 'recycle-entry-delete-rejected'};
 
     let tombstoneAfter, managerAfter, queryAfter;
     try { tombstoneAfter = general[queryRecycleName](uuid); }
     catch (_) { return {attempted: true, removed: false, reason: 'recycle-post-delete-query-failed'}; }
     try { managerAfter = manager.query(uuid); }
     catch (_) { return {attempted: true, removed: false, reason: 'manager-post-delete-query-failed'}; }
-    try { queryAfter = cceQuery.call(kind === 'node' ? cce.Node : cce.Component, uuid); }
+    try { queryAfter = cceQuery.call(owner, uuid); }
     catch (_) { return {attempted: true, removed: false, reason: 'cce-post-delete-query-failed', managerAfter: valueShape(managerAfter)}; }
     if (managerAfter === undefined || queryAfter === undefined ||
         (managerAfter !== null && typeof managerAfter !== 'object') || (queryAfter !== null && typeof queryAfter !== 'object'))
@@ -241,12 +245,19 @@ function maybeRemoveRetiredObject(kind, uuid, resolved, cce, cc, asset, editorEx
         tombstoneAfter !== null ? 'recycle-query-still-resolves-object' :
             managerAfter === resolved ? 'manager-still-resolves-retired-object' :
                 queryAfter === resolved ? 'cce-query-still-resolves-retired-object' : 'post-delete-state-unverified' : null;
-    const result = {attempted: true, removed, reason,
-        cacheField, managerClass: shortName(manager),
+    const result = {attempted: true, removed, reason, cacheField, managerClass: shortName(manager),
         managerAfter: valueShape(managerAfter), queryAfter: valueShape(queryAfter),
         tombstoneAfter: valueShape(tombstoneAfter), entryStillOwn: !!entryAfter};
     if (!removed) emitRuntimeCacheDiagnostic(runtimeCacheDiagnostic(kind, uuid, cce, editorExtends, manager, managerAfter, queryAfter, resolved));
     return result;
+}
+
+function maybeRemoveRetiredObject(kind, uuid, resolved, cce, cc, asset, editorExtends) {
+    const retired = retiredOwnedObjects.get(objectKey(kind, uuid));
+    if (!retired || retired.object !== resolved || retired.sceneAssetUuid !== asset._uuid)
+        return {attempted: false, removed: false, reason: !retired ? 'not-owned-by-saved-scope' : 'scope-scene-asset-mismatch'};
+    return removeExactOwnedTombstone(kind, uuid, resolved, cce, cc, editorExtends,
+        () => currentSceneGuard(resolved, asset, cc, cce));
 }
 
 function queryAndCheck(kind, object, cce, cc, asset, editorExtends, allowRetiredRemoval) {
@@ -449,4 +460,4 @@ function preservePrimaryError(primaryError, cleanupError) {
     return primaryError;
 }
 
-module.exports = {begin, validateOwnedScene, preservePrimaryError, runtimeCacheDiagnostic};
+module.exports = {begin, validateOwnedScene, preservePrimaryError, runtimeCacheDiagnostic, removeExactOwnedTombstone};

@@ -1,15 +1,22 @@
 'use strict';
 // Resource-only nodes live outside the source hierarchy. No recovered program is attached.
 const cc=require('cc');
+const ownedUndo=require('./owned-import-undo.js');
 async function attach(plan,canvas,loadAsset) {
     if(!plan.resourceProbes)return;
     if(plan.resourceProbes.profile!=='creator-spine-3.8-v1')throw Error('Unsupported resource probe profile');
-    const root=new cc.Node('NativeResourceProbes');root.parent=canvas;
+    const root=new cc.Node('NativeResourceProbes');ownedUndo.registerRoot(root);root.parent=canvas;
     for(const spec of plan.resourceProbes.spines) {
-        const node=new cc.Node(spec.nodeName);node.parent=root;node.layer=cc.Layers.Enum.UI_2D;
+        const node=new cc.Node(spec.nodeName);ownedUndo.registerRoot(node);node.parent=root;node.layer=cc.Layers.Enum.UI_2D;
         node.addComponent(cc.UITransform);
-        const skeleton=node.addComponent(cc.sp.Skeleton);skeleton.skeletonData=await loadAsset(spec.skeletonUuid,cc.sp.SkeletonData);
+        const skeleton=node.addComponent(cc.sp.Skeleton);
+        // Re-register the exact node after component construction so the Undo
+        // scope also includes the newly-created native Skeleton component UUID.
+        ownedUndo.registerRoot(node);
+        skeleton.skeletonData=await loadAsset(spec.skeletonUuid,cc.sp.SkeletonData);
     }
+    // Include children added since the root was first constructed.
+    ownedUndo.registerRoot(root);
 }
 function pose(skeleton,bones) {
     return bones.map(data=>{

@@ -38,3 +38,14 @@ class CreatorExtensionDependenciesTests(unittest.TestCase):
             (root / 'scene.js').write_text("require('../outside.js');")
             with self.assertRaisesRegex(ParseError, 'CREATOR_EXTENSION_DEPENDENCY_ESCAPE'):
                 _validate_extension_dependencies(root)
+
+    def test_build_teardown_requires_its_emitted_saved_scene_scope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'owned-build-scene-teardown.js').write_text(
+                "try { require('./creator-saved-scene-scope.js'); } "
+                "catch (_) { require('./CreatorSavedSceneScope.js'); }")
+            with self.assertRaisesRegex(ParseError, 'CREATOR_EXTENSION_DEPENDENCY_MISSING'):
+                _validate_extension_dependencies(root)
+            (root / 'creator-saved-scene-scope.js').write_text('module.exports={};')
+            _validate_extension_dependencies(root)

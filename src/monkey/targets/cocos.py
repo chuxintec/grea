@@ -28,6 +28,12 @@ def _validate_extension_dependencies(extension, static_time_materials=False, spr
             if (script.name=='owned-import-undo.js' and name=='./CreatorEditorUndoDiagnostics.js' and
                     (extension/'editor-undo-diagnostics.js').is_file()):
                 continue
+            if (script.name=='owned-build-scene-teardown.js' and name=='./CreatorSavedSceneScope.js' and
+                    (extension/'creator-saved-scene-scope.js').is_file()):
+                continue  # source-tree Node-test fallback; emitted canonical module is required
+            if (script.name=='owned-build-scene-teardown.js' and name=='./CreatorOwnedImportUndo.js' and
+                    (extension/'owned-import-undo.js').is_file()):
+                continue
             # These imports are invoked only for a declared static-time material plan.
             if (not static_time_materials and script.name in ('main.js','scene.js','prefab.js') and name=='./static-time-materials.js'):
                 continue
@@ -386,6 +392,7 @@ def export(plan_path,output):
     (ext/'owned-import-undo.js').write_bytes(files('monkey.targets').joinpath('CreatorOwnedImportUndo.js').read_bytes())
     (ext/'reopen-verification.js').write_bytes(files('monkey.targets').joinpath('CreatorReopenVerification.js').read_bytes())
     (ext/'creator-saved-scene-scope.js').write_bytes(files('monkey.targets').joinpath('CreatorSavedSceneScope.js').read_bytes())
+    (ext/'owned-build-scene-teardown.js').write_bytes(files('monkey.targets').joinpath('CreatorOwnedBuildSceneTeardown.js').read_bytes())
     (ext/'static-layout-completion.js').write_bytes(files('monkey.targets').joinpath('CreatorStaticLayoutCompletion.js').read_bytes())
     (ext/'static-controls.js').write_bytes(files('monkey.targets').joinpath('CreatorStaticControls.js').read_bytes())
     (ext/'static-progress.js').write_bytes(files('monkey.targets').joinpath('CreatorStaticProgress.js').read_bytes())
