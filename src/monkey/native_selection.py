@@ -89,6 +89,9 @@ _CURRENT_TEMPLATE_DEPENDENCIES = {
     "NativeStaticAnimationBinding.cs": (),
     "NativeRetainedMaterial.cs": (),
     "NativeHorizontalProgressFill.cs": (),
+    "UnitySpineGraphicMaterialPresentation.cs": ("NativeStaticMaskIdentity.cs",),
+    "UnitySpineSourceIdentity.cs": (),
+    "NativeStaticMaskIdentity.cs": (),
 }
 
 
@@ -100,7 +103,10 @@ def _template_profile(path, digest):
     dependencies = _CURRENT_TEMPLATE_DEPENDENCIES.get(name)
     if dependencies is None:
         return None
-    template = Path(__file__).parent / "targets" / name
+    template_root = Path(__file__).parent / "targets"
+    if name in {"UnitySpineGraphicMaterialPresentation.cs", "UnitySpineSourceIdentity.cs"}:
+        template_root = template_root / "spine"
+    template = template_root / name
     if not template.is_file() or sha(read(template, max_bytes=16 * 1024 * 1024)) != digest:
         return None
     return name, dependencies
@@ -445,6 +451,9 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
                 continue
             target = guid_to_path.get(guid)
             if target:
+                if target + ".meta" not in rows and target + ".meta" not in native:
+                    fail("TARGET_GUID_METADATA_UNOWNED", path,
+                         "Referenced Unity GUID metadata is outside the owner/native inventories: " + target + ".meta")
                 pending.append(target)
                 continue
             package = package_guids.get(guid)
@@ -460,6 +469,17 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
             if folder_meta in rows or folder_meta in native:
                 included.add(folder_meta)
             parent = parent.parent
+
+    spine_runtime_evidence = None
+    spine_related = bool(included & {
+        "Assets/Game/Scripts/Presentation/Recovered/Spine/UnitySpineGraphicMaterialPresentation.cs",
+        "Assets/Game/Scripts/Presentation/Recovered/Spine/UnitySpineSourceIdentity.cs",
+    }) or any(path.startswith("Assets/Plugins/Spine38/") for path in included)
+    if spine_related:
+        from .native_code_dependencies import spine_runtime_closure
+        spine_runtime_evidence = spine_runtime_closure(root, rows, native, manifest, included)
+        if spine_runtime_evidence:
+            included.update(row["path"] for row in spine_runtime_evidence["files"])
 
     by_name = {}
     for path in rows:
@@ -595,10 +615,12 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
         packageDependencyPins=dependency_pins,
         supplementalFileAuthorities=supplemental,
         normalizedNativeFiles=normalized_native_files,
+        spineRuntimeClosure=spine_runtime_evidence,
         adoptionDependencies=dict(schemaVersion=1, coverage="producer-declared", edges=sorted(code_edges, key=lambda x:x["path"])),
         codeDependencyAnalysis=dict(schemaVersion=1, coverage="exact-producer-proofs",
-            scripts=sorted(code_analysis, key=lambda x:x["path"]), carrierPlanEvidence=carrier_evidence),
-        coverageBoundary="Unity YAML GUID references are resolved. C# dependencies are producer-declared only for exact bundled templates or exact regenerated disabled carriers; other scripts remain explicitly unanalyzed.",
+            scripts=sorted(code_analysis, key=lambda x:x["path"]), carrierPlanEvidence=carrier_evidence,
+            spineRuntimeClosure=spine_runtime_evidence),
+        coverageBoundary="Unity YAML GUID references are resolved. C# dependencies are producer-declared only for exact bundled templates, exact regenerated disabled carriers, and the manifest-pinned Spine runtime stage; other scripts remain explicitly unanalyzed.",
         diagnostics=sorted(diagnostics, key=lambda d:(d.get('path', ''), d.get('code', ''))),
         files=files,
     )

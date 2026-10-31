@@ -48,7 +48,10 @@ def _fixture(tmp_path, monkeypatch):
         elif path == "ProjectSettings/ProjectVersion.txt":
             data = b"m_EditorVersion: 6000.6.2f1\n"
         elif path.endswith(".cs"):
-            data = (Path(__file__).parents[1] / "src/monkey/targets" / Path(path).name).read_bytes()
+            template_root = Path(__file__).parents[1] / "src/monkey/targets"
+            if Path(path).name.startswith("UnitySpine"):
+                template_root /= "spine"
+            data = (template_root / Path(path).name).read_bytes()
         else:
             data = b""
         _put(root, path, data)
