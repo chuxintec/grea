@@ -11,7 +11,7 @@ import plistlib
 from .io import safe,inside,read,load,sha,encoded,write_json
 from .errors import fail
 from .output_limits import digest_file
-from .adoption import prepare,commit_state,project_files,checked_plan,STATE,native_lock
+from .adoption import prepare,commit_state,project_files,checked_plan,STATE,native_lock,compile_operation
 
 HELPER_ROOT = 'Assets/BeaverAdoption'
 HELPER = HELPER_ROOT+'/Editor/BeaverAdoption.cs'
@@ -46,12 +46,13 @@ def job_spec(stage,plan,journal,mode,budget):
     for op in plan['operations']:
         before=op.get('before') or {};after=op['after']
         operations.append(dict(action=op['action'],source=op['source'],target=op['target'],guid=op['guid'],
+            compileStage=compile_operation(op),
             beforeFileHash=(before.get('file') or {}).get('sha256'),beforeMetaHash=(before.get('meta') or {}).get('sha256'),
             afterFileHash=after['file']['sha256'],afterMetaHash=(after.get('meta') or {}).get('sha256'),
             preserveLocalIds=op['action']=='move' and before['file']['sha256']==after['file']['sha256']))
     changed={p for op in plan['operations'] for p in (op['source'],op['target'])}
     watch=sorted(p for p in plan['targetFiles'] if p.endswith(('.prefab','.unity')) and p not in changed)[:128]
-    return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],operations=operations,watch=watch,
+    return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],operations=operations,watch=watch,codeRestored=journal.get('codeRestored',False),
                 budgetSeconds=budget,deadlineUtc=(datetime.now(timezone.utc)+timedelta(seconds=budget)).isoformat())
 
 
@@ -78,7 +79,8 @@ def run_child(stage,plan,journal,editor,mode,budget):
     if not journal['processExited']:fail('ADOPT_EXIT_PENDING',str(stage),'Owned Editor has not exited; inspect before recovery')
     output=stage/('native-'+mode+'.json')
     result=load(read(output)) if output.exists() else {}
-    if journal.get('exitCode')!=0 or result.get('status') not in ('verified','rolled-back') or result.get('planSha256')!=journal['planSha256']:
+    accepted=('staged',) if mode=='code' else ('verified','rolled-back')
+    if journal.get('exitCode')!=0 or result.get('status') not in accepted or result.get('planSha256')!=journal['planSha256']:
         journal['state']='recovery-required';write_json(stage/'journal.json',journal)
         fail('ADOPT_NATIVE_FAILED',str(stage),'Native step failed; inspect native logs and use beaver adopt rollback for recorded writes')
     return result
@@ -101,10 +103,12 @@ def execute(plan_path,output,editor,budget=1200,expected=None):
     with lock(target):
         fingerprint=helper(target);journal['helperSha256']=fingerprint;write_json(stage/'journal.json',journal)
         try:
+            if any(compile_operation(op) for op in plan['operations']):
+                run_child(stage,plan,journal,editor,'code',budget)
             applied=run_child(stage,plan,journal,editor,'apply',budget)
             reopened=run_child(stage,plan,journal,editor,'verify',budget)
             cleanup(target,fingerprint)
-            return commit_state(stage,plan,journal,dict(status='verified',saveReopen=True,assets=len(reopened['assets']),referencesPreserved=reopened['referencesPreserved'],scope='changed assets and up to 128 untouched prefab/scene direct dependencies'))
+            return commit_state(stage,plan,journal,dict(status='verified',saveReopen=True,assets=len(reopened['assets']),referencesPreserved=reopened['referencesPreserved'],compilerInputs=sum(compile_operation(op) for op in plan['operations']),compilationBoundary='separate-editor-start' if (stage/'native-code.json').exists() else 'no-compiler-input-changes',scope='changed assets and up to 128 untouched prefab/scene direct dependencies'))
         except BaseException:
             journal['state']='recovery-required';write_json(stage/'journal.json',journal)
             if journal.get('processExited'):
@@ -122,7 +126,7 @@ def recover(transaction,editor,budget=1200):
         fail('ADOPT_RECOVERY_STATE',str(stage),'Expected an exited complete or recoverable transaction')
     if type(budget)is not int or not 1<=budget<=1200:fail('ADOPT_BUDGET',str(budget),'Expected 1..1200 seconds')
     target=safe(plan['targetRoot']);native_lock(target)
-    if journal['state'] in ('prepared','recovery-required') and not (stage/'native-apply.json').exists():
+    if journal['state'] in ('prepared','recovery-required') and not (stage/'native-apply.json').exists() and not (stage/'native-code.json').exists():
         if inside(target,HELPER_ROOT).exists():fail('ADOPT_RECOVERY_HELPER_UNKNOWN',str(target),'Inspect retained helper ownership before recovery')
         # Compilation failed before our method entered. Confirm every affected
         # path is still at its exact before-image before declaring no writes.
@@ -147,6 +151,8 @@ def recover(transaction,editor,budget=1200):
         state=inside(target,STATE)
         if journal.get('afterStateSha256') and (not state.exists() or digest_file(state)!=journal['afterStateSha256']):
             fail('ADOPT_ROLLBACK_CONFLICT',str(state),'Later adoption state exists')
+        if (stage/'native-code.json').exists():
+            restore_code(stage,plan,journal)
         fingerprint=helper(target)
         try:
             result=run_child(stage,plan,journal,safe(editor),'rollback',budget);cleanup(target,fingerprint)
@@ -158,3 +164,49 @@ def recover(transaction,editor,budget=1200):
         except BaseException:
             if journal.get('processExited'):cleanup(target,fingerprint)
             journal['state']='recovery-required';write_json(stage/'journal.json',journal);raise
+
+
+def restore_code(stage,plan,journal):
+    """Restore only exact recorded compiler before-images while the Editor is closed.
+
+    This deliberately precedes helper compilation. A broken new source cannot
+    otherwise run its own native recovery method. All guards are checked before
+    the first write; subsequent retries accept exact before-images as well.
+    """
+    from .transaction_fs import atomic
+    target=safe(plan['targetRoot']);project_files(target,plan['targetProfile'])
+    reports=[]
+    for name in ('native-code.json','native-apply.json'):
+        path=stage/name
+        if path.exists():
+            report=load(read(path,max_bytes=128*1024**2),max_nodes=8_000_000)
+            if report.get('planSha256')!=journal['planSha256']:fail('ADOPT_RECOVERY_STATE',name,'Native checkpoint belongs to another plan')
+            reports.append(report)
+    written=set(i for report in reports for i in report.get('written',[]))
+    actions=[]
+    for i in sorted(written,reverse=True):
+        if type(i)is not int or not 0<=i<len(plan['operations']):fail('ADOPT_RECOVERY_STATE',str(i),'Invalid native operation index')
+        op=plan['operations'][i]
+        if not compile_operation(op):continue
+        for kind,suffix in (('file',''),('meta','.meta')):
+            before=(op.get('before') or {}).get(kind);after=op['after'].get(kind)
+            b=(before or {}).get('sha256');a=(after or {}).get('sha256')
+            source=inside(target,op['source']+suffix) if op['source'] else None
+            dest=inside(target,op['target']+suffix)
+            h=lambda p:digest_file(p) if p is not None and p.is_file() else None
+            if source is not None and source!=dest:
+                if h(source) not in (None,b) or h(dest) not in (None,a) or source.exists() and dest.exists() or b is not None and not source.exists() and not dest.exists():
+                    fail('ADOPT_ROLLBACK_CONFLICT',op['target']+suffix,'Compiler input has later or ambiguous changes')
+            elif h(dest) not in (b,a):
+                fail('ADOPT_ROLLBACK_CONFLICT',op['target']+suffix,'Compiler input changed after recorded staging')
+            backup=stage/f'before/{i}/{kind}'
+            if b is not None and (not backup.is_file() or digest_file(backup)!=b):
+                fail('ADOPT_RECOVERY_BEFORE_IMAGE',str(backup),'Compiler before-image changed')
+            actions.append((source,dest,backup,b))
+    journal['codeRestoreState']='guarded';write_json(stage/'journal.json',journal)
+    for source,dest,backup,b in actions:
+        if source is not None and b is not None:atomic(source,read(backup,max_bytes=128*1024**2))
+        elif source is not None and source.exists():source.unlink()
+        if source!=dest and dest.exists():dest.unlink()
+        if source==dest and b is None and dest.exists():dest.unlink()
+    journal.update(codeRestored=True,codeRestoreState='restored');write_json(stage/'journal.json',journal)

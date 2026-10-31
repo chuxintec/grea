@@ -1,5 +1,9 @@
 # Maintainer responsibilities
 
+Active adoption follow-up, baseline b85d44ec: parent owns adoption.py/adoption_native.py/BeaverAdoption.cs, public shared contracts, sole private Editor and sealing. `/root/adopt_dependencies` (requested gpt-6-luna/high; spawn accepted, runtime identity not independently probed) delivered isolated declaration validator/tests/docs; parent integrates after peer contract agreement. No recursion, game writes or other-repository writes.
+
+Dependency module integrated after monkey accepted the exact contract. Contributor also reviewed recovery read-only and identified the missing-meta case; parent now blocks unowned compiler metadata in preview. Parent source trial passed new-script Prefab/SO adoption/reopen/rollback, and confirmed old fixed9 regression. Deliberate compile-error recovery restored code but remaining native recovery is blocked by Unity licensing exit198. Candidate readiness/consumer completion remain pending.
+
 The release maintainer owns shared CLI contracts, transaction boundaries, native integration and release artifacts. Module contributors own explicitly assigned, disjoint implementation paths. Original project data and private validation records are not part of the distribution.
 
 Current approved local P0 modules (shared source baseline e0c7e0c):

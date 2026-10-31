@@ -19,13 +19,14 @@ public static class BeaverAdoption {
     [Serializable] public class Op {
         public string action, source, target, guid;
         public string beforeFileHash, beforeMetaHash, afterFileHash, afterMetaHash;
-        public bool preserveLocalIds;
+        public bool preserveLocalIds, compileStage;
     }
     [Serializable] public class Job {
         public string targetRoot, stage, mode, deadlineUtc, planSha256;
         public int budgetSeconds;
         public Op[] operations;
         public string[] watch;
+        public bool codeRestored;
     }
     [Serializable] public class Entry {
         public int index;
@@ -80,7 +81,7 @@ public static class BeaverAdoption {
         report.createdFolders.Add(new Entry{index=-1,path=parent,guid=guid,localIds=new string[0]});Save();
     }
     static string[] Ids(string relative) {
-        return AssetDatabase.LoadAllAssetsAtPath(relative).Where(a=>a!=null).Select(a=>{
+        return AssetDatabase.LoadAllAssetsAtPath(relative).Concat(new[]{AssetDatabase.LoadMainAssetAtPath(relative)}).Where(a=>a!=null).Distinct().Select(a=>{
             string guid;long id;
             if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(a,out guid,out id))throw new Exception("No local identity "+relative);
             return guid+":"+id+":"+a.GetType().FullName;
@@ -89,12 +90,12 @@ public static class BeaverAdoption {
     static string RefSignature(string path) {
         return String.Join("|",AssetDatabase.GetDependencies(path,false).Select(p=>AssetDatabase.AssetPathToGUID(p)).Where(g=>g!="").OrderBy(g=>g,StringComparer.Ordinal));
     }
-    static void WritePayload(int index,string side,string target,string fileHash,string metaHash) {
+    static void WritePayload(int index,string side,string target,string fileHash,string metaHash,bool import=true) {
         var file=FileFor(index,side,"file");var meta=FileFor(index,side,"meta");
         if(Hash(file)!=fileHash || Hash(meta)!=metaHash)throw new Exception("Staged payload changed");
         Folder(target);File.Copy(file,Full(target),true);
         if(metaHash!=null)File.Copy(meta,Full(target+".meta"),true);
-        AssetDatabase.ImportAsset(target,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+        if(import)AssetDatabase.ImportAsset(target,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
         if(side=="after") {
             report.observedAfter.RemoveAll(row=>row.index==index);
             report.observedAfter.Add(new Observed{index=index,path=target,fileHash=Hash(Full(target)),metaHash=Hash(Full(target+".meta"))});
@@ -109,6 +110,11 @@ public static class BeaverAdoption {
         var guid=AssetDatabase.AssetPathToGUID(op.target);
         if(op.guid!=null && guid!=op.guid)throw new Exception("GUID changed "+op.target);
         var ids=Ids(op.target);
+        if((op.target.EndsWith(".prefab",StringComparison.OrdinalIgnoreCase)||op.target.EndsWith(".asset",StringComparison.OrdinalIgnoreCase)||op.target.EndsWith(".unity",StringComparison.OrdinalIgnoreCase)) && ids.Length==0)throw new Exception("No persistent adopted asset "+op.target);
+        if(op.target.EndsWith(".prefab",StringComparison.OrdinalIgnoreCase)) {
+            var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(op.target);
+            if(prefab==null || prefab.GetComponentsInChildren<Component>(true).Any(c=>c==null))throw new Exception("Missing adopted prefab script "+op.target);
+        }
         if(op.preserveLocalIds && originalIds.ContainsKey(op.target) && !originalIds[op.target].SequenceEqual(ids))throw new Exception("Local IDs changed "+op.target);
         report.assets.Add(new Entry{index=index,path=op.target,guid=guid,localIds=ids});
     }
@@ -127,9 +133,25 @@ public static class BeaverAdoption {
             var outer=DateTime.Parse(job.deadlineUtc,null,System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime();if(outer<deadline)deadline=outer;
             report=new Progress{status="running",mode=job.mode,planSha256=job.planSha256};Save();
             if(job.mode=="rollback") {
-                var previous=JsonUtility.FromJson<Progress>(File.ReadAllText(Path.Combine(job.stage,"native-apply.json")));
+                var priorPath=Path.Combine(job.stage,"native-apply.json");
+                if(!File.Exists(priorPath))priorPath=Path.Combine(job.stage,"native-code.json");
+                var previous=JsonUtility.FromJson<Progress>(File.ReadAllText(priorPath));
+                if(previous.planSha256!=job.planSha256)throw new Exception("Wrong native rollback checkpoint");
+                var codeCheckpoint=Path.Combine(job.stage,"native-code.json");
+                if(File.Exists(codeCheckpoint)) {
+                    var codePrior=JsonUtility.FromJson<Progress>(File.ReadAllText(codeCheckpoint));
+                    if(codePrior.planSha256!=job.planSha256)throw new Exception("Wrong code checkpoint");
+                    previous.written=codePrior.written.Concat(previous.written).Distinct().ToList();
+                    if(previous.beforeAssets.Count==0)previous.beforeAssets=codePrior.beforeAssets;
+                    previous.createdFolders=codePrior.createdFolders.Concat(previous.createdFolders).GroupBy(e=>e.path).Select(g=>g.First()).ToList();
+                }
                 foreach(var i in previous.written.AsEnumerable().Reverse()) {
                     Checkpoint();var op=job.operations[i];var at=File.Exists(Full(op.target))?op.target:op.source;
+                    if(job.codeRestored && op.compileStage) {
+                        if(op.source!=null){Expected(op.source,op.beforeFileHash);Expected(op.source+".meta",op.beforeMetaHash);}
+                        if(op.source!=op.target){Expected(op.target,null);Expected(op.target+".meta",null);}
+                        report.restored.Add(i);Save();continue;
+                    }
                     if(at==null || !File.Exists(Full(at))) { if(op.action=="add"){report.restored.Add(i);Save();continue;}throw new Exception("Rollback asset missing"); }
                     var fh=Hash(Full(at));var mh=Hash(Full(at+".meta"));
                     var observed=(previous.observedAfter ?? new List<Observed>()).FirstOrDefault(row=>row.index==i&&row.path==at);
@@ -156,18 +178,41 @@ public static class BeaverAdoption {
                 report.status="rolled-back";report.referencesPreserved=true;
             } else {
                 var signatures=new Dictionary<string,string>();
-                if(job.mode=="apply") {
-                    foreach(var watch in job.watch ?? new string[0])signatures[watch]=RefSignature(watch);
+                if(job.mode=="code" || job.mode=="apply") {
+                    var codePath=Path.Combine(job.stage,"native-code.json");
+                    bool staged=job.mode=="apply" && File.Exists(codePath);
+                    if(staged) {
+                        var prior=JsonUtility.FromJson<Progress>(File.ReadAllText(codePath));
+                        if(prior.status!="staged" || prior.planSha256!=job.planSha256)throw new Exception("Invalid compilation checkpoint");
+                        report.written=prior.written;report.beforeAssets=prior.beforeAssets;report.createdFolders=prior.createdFolders;report.observedAfter=prior.observedAfter;
+                        foreach(var line in File.ReadAllLines(Path.Combine(job.stage,"reference-signatures.json"))){var parts=line.Split('\t');if(parts.Length!=2||RefSignature(parts[0])!=parts[1])throw new Exception("Compiled watcher dependencies changed");signatures[parts[0]]=parts[1];}
+                        foreach(var old in report.beforeAssets)if(job.operations[old.index].preserveLocalIds)originalIds[job.operations[old.index].target]=old.localIds;
+                    } else {
+                        foreach(var watch in job.watch ?? new string[0])signatures[watch]=RefSignature(watch);
+                        // Capture every original identity before changing compiler inputs.
+                        for(int i=0;i<job.operations.Length;i++) {
+                            var op=job.operations[i];
+                            if(op.source!=null){Expected(op.source,op.beforeFileHash);Expected(op.source+".meta",op.beforeMetaHash);if(op.guid!=null&&AssetDatabase.AssetPathToGUID(op.source)!=op.guid)throw new Exception("Source GUID differs");var ids=Ids(op.source);report.beforeAssets.Add(new Entry{index=i,path=op.source,guid=AssetDatabase.AssetPathToGUID(op.source),localIds=ids});if(op.preserveLocalIds)originalIds[op.target]=ids;}
+                            else {Expected(op.target,null);Expected(op.target+".meta",null);}
+                        }
+                        File.WriteAllText(Path.Combine(job.stage,"reference-signatures.json"),String.Join("\n",signatures.Select(p=>p.Key+"\t"+p.Value)));Save();
+                    }
+                    if(job.mode=="code") {
+                        // All directories are created through the Editor before reload is locked.
+                        foreach(var op in job.operations.Where(op=>op.compileStage))Folder(op.target);
+                        EditorApplication.LockReloadAssemblies();AssetDatabase.DisallowAutoRefresh();
+                    }
                     for(int i=0;i<job.operations.Length;i++) {
                         Checkpoint();var op=job.operations[i];
-                        if(op.source!=null){Expected(op.source,op.beforeFileHash);Expected(op.source+".meta",op.beforeMetaHash);if(op.guid!=null && AssetDatabase.AssetPathToGUID(op.source)!=op.guid)throw new Exception("Source GUID differs");var ids=Ids(op.source);report.beforeAssets.Add(new Entry{index=i,path=op.source,guid=AssetDatabase.AssetPathToGUID(op.source),localIds=ids});if(op.preserveLocalIds)originalIds[op.target]=ids;}
+                        if(staged && op.compileStage){VerifyAsset(i,op);Save();continue;}
+                        if(job.mode=="code" && !op.compileStage)continue;
+                        if(op.source!=null){Expected(op.source,op.beforeFileHash);Expected(op.source+".meta",op.beforeMetaHash);}
                         else {Expected(op.target,null);Expected(op.target+".meta",null);}
                         report.written.Add(i);Save();
                         if(op.action=="move") {Folder(op.target);var error=AssetDatabase.MoveAsset(op.source,op.target);if(error!="")throw new Exception(error);}
-                        WritePayload(i,"after",op.target,op.afterFileHash,op.afterMetaHash);VerifyAsset(i,op);Save();
+                        WritePayload(i,"after",op.target,op.afterFileHash,op.afterMetaHash,job.mode!="code");if(job.mode!="code")VerifyAsset(i,op);Save();
                     }
-                    foreach(var watch in signatures.Keys)if(RefSignature(watch)!=signatures[watch])throw new Exception("Unchanged watcher dependencies changed "+watch);
-                    File.WriteAllText(Path.Combine(job.stage,"reference-signatures.json"),String.Join("\n",signatures.Select(p=>p.Key+"\t"+p.Value)));
+                    if(job.mode!="code")foreach(var watch in signatures.Keys)if(RefSignature(watch)!=signatures[watch])throw new Exception("Unchanged watcher dependencies changed "+watch);
                 } else if(job.mode=="verify") {
                     for(int i=0;i<job.operations.Length;i++){Checkpoint();VerifyAsset(i,job.operations[i]);}
                     foreach(var line in File.ReadAllLines(Path.Combine(job.stage,"reference-signatures.json"))){var parts=line.Split('\t');if(parts.Length!=2||RefSignature(parts[0])!=parts[1])throw new Exception("Reopened dependencies changed");}
@@ -175,7 +220,7 @@ public static class BeaverAdoption {
                     if(prior.assets.Count!=report.assets.Count)throw new Exception("Readback count differs");
                     for(int i=0;i<prior.assets.Count;i++)if(!prior.assets[i].localIds.SequenceEqual(report.assets[i].localIds))throw new Exception("Reopened local IDs differ");
                 } else throw new Exception("Unknown adoption mode");
-                report.status="verified";report.referencesPreserved=true;
+                report.status=job.mode=="code"?"staged":"verified";report.referencesPreserved=job.mode!="code";
             }
             Save();code=0;
         } catch(Exception error) {if(report!=null){report.status="failed";report.error=error.ToString();Save();}Debug.LogException(error);}

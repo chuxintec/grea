@@ -30,6 +30,12 @@
 
 计划文件 `adoption-plan.json` 使用 `beaver-adopt/1`，旁侧 `plan-identity.json` 绑定字节 SHA256。绑定实现身份、明确根、生成基线、目标全部资产 hash、项目依赖/版本、candidate manifest、逐项动作/冲突与恢复信息。执行需相同计划身份；任何目标前置漂移拒绝。
 
+本地 fix10 的采用计划额外记录 `adoptionDependencies` 和 `executionPolicy`。生产者可通过 manifest 的 [版本化依赖声明](ADOPTION-DEPENDENCIES.md) 补充非 GUID C# 依赖；声明节点必须全部在同一冻结清单中，缺省明确为 undeclared，不推断完整性。已有包依赖仍须精确匹配。公开命令参数不变，旧计划/事务继续使用原固定 runner。
+
+变更 `.cs/.asmdef/.asmref/.rsp/.dll` 时，原生 Editor 先记录所有原身份与依赖、暂存编译输入并退出；下一次独立 Editor 启动实际编译后才导入资源，再独立重开严格比较完整 GUID/localID/type 集合。编译输入必须具有冻结的 `.meta` 与真实 GUID；无元数据者在预览阻止，不让 Unity 自动生成未归属身份。两阶段共用同一事务和 before-image，仅最终核验后提交一次状态。`native-code.json` 的 staged 仅表示暂存，不能当编译通过。readback 的 compilerInputs/compilationBoundary 表明是否实际经过该边界。
+
+编译错误使原生 helper 无法运行时，公开 rollback 在确认自有 Editor 已退出、检查全部代码 before/after hash 和备份后，先恢复事务记录的编译输入，再启动 Editor 撤回资源和空的自有目录。该前置恢复仅限明确记账编译输入；后续不同字节、歧义或损坏备份拒绝覆盖。原生恢复继续核对原 GUID/localID 与依赖。Prefab 缺脚本及 Prefab/Scene/SO 零 persistent 对象拒绝；运行时业务、物理输入与视觉仍须消费者分别验收。
+
 输入消费 monkey schemaVersion=1 `manifest.json` 或 Unity `recovery-manifest.json`；候选规范沿用 monkey-project/2.0.0，未新增第二解析器。目标 Unity 6000.6.2f1 和 Creator 3.8.8 可预览；只有 Unity 有原生执行实现（已在自有样例和固定真实工程隔离副本实证）。Creator apply 明确不支持。
 
 首次必须独立共同基线；按 GUID/UUID + namespace + profile 三方比较。保留人工变更和源删除资产；双边变更、身份歧义、未知占位、依赖不匹配均阻止执行。原生移动使用 AssetDatabase，改变 payload 时使用 Unity 导入，检查 GUID/localID 与至多128个未改 prefab/scene直接依赖。字符串加载键和业务/视觉不由此保证。

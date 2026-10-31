@@ -22,11 +22,17 @@ GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$',re.M)
 
 def algorithm_id():
     root=Path(__file__).parent
-    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
+    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','adoption_dependencies.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
     return sha(encoded({name:digest_file(root/name) for name in names}))
 
 
 def asset_root(profile): return 'Assets' if profile.startswith('unity-') else 'assets'
+
+
+def compile_operation(op):
+    """Compiler inputs require a closed Editor boundary before resource import."""
+    return any(p and Path(p).suffix.lower() in ('.cs','.asmdef','.asmref','.rsp','.dll')
+               for p in (op['source'],op['target']))
 
 
 def identity(meta, engine):
@@ -120,6 +126,8 @@ def project_requirements(incoming,target,profile):
 
 def build_plan(candidate,target,baseline=None,lineage=None):
     incoming,im,ifiles,ih=snapshot(candidate);verify(incoming,ifiles)
+    from .adoption_dependencies import validate_dependencies
+    dependencies=validate_dependencies(im,ifiles)
     target=safe(target)
     if target==incoming or target.is_relative_to(incoming) or incoming.is_relative_to(target):
         fail('OUTPUT_OVERLAP',str(target),'Adoption target and candidate must be independent')
@@ -183,12 +191,16 @@ def build_plan(candidate,target,baseline=None,lineage=None):
     for key,unit in before.items():
         if key not in desired:
             live=current.get(key);removed.append(dict(identity=key,path=live['path'] if live else unit['path'],present=live is not None))
+    for op in operations:
+        if compile_operation(op) and (not op['after']['meta'] or not op['guid'] or op['before'] and not op['before']['meta']):
+            conflicts.append(dict(identity=op['identity'],reason='compiler-input-requires-owned-metadata',current=op['source'],desired=op['target']))
     # Moving parent directories is deliberately not implicit: each asset has its
     # own native move and folder GUIDs owned by the developer stay untouched.
     return dict(schemaVersion=1,contract='beaver-adopt/1',producer=dict(name='beaver',version=__version__),algorithmSha256=algorithm_id(),targetRoot=str(target),candidateRoot=str(incoming),
                 candidateManifestName=im['_manifestName'],incomingManifestSha256=ih,beforeManifestSha256=bh,
                 targetProfile=profile,namespace=im['namespace'],lineageOverride=explicit_lineage,projectRequirements=requirements,targetStateSha256=digest_file(state_path) if state else None,
-                targetFiles=actual,generation=desired,operations=operations,conflicts=conflicts,preserved=preserved,
+                targetFiles=actual,generation=desired,operations=operations,conflicts=conflicts,preserved=preserved,adoptionDependencies=dependencies,
+                executionPolicy='compiler-inputs-closed-editor-then-resources; independent-reopen; single-commit',
                 retainedRemoved=removed,counts=dict(operations=len(operations),conflicts=len(conflicts),preserved=len(preserved),retainedRemoved=len(removed)),
                 identityReadback='pending-native',business='not_run',visual='not_run')
 
