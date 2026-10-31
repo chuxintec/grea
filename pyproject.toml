@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "monkey-native"
-version = "0.7.0.dev2"
+version = "0.7.0.dev3"
 description = "Evidence-traceable game package recovery to editable native Unity 6 projects"
 requires-python = ">=3.11"
 license = "MIT"
@@ -21,6 +21,6 @@ where = ["src"]
 astc = ["texture2ddecoder==1.0.6"]
 
 [tool.setuptools.package-data]
-"monkey.targets" = ["*.cs", "*.js", "*.shader", "*.ts", "*.ts.meta", "behaviors/*.cs", "behaviors/*.ts", "behaviors/probes/*.cs", "behaviors/probes/*.ts", "behaviors/probes/Editor/*.cs", "materials/static_controls/*.shader", "materials/static_mask/*.shader", "materials/ui_color/*.cs", "materials/ui_color/*.js", "materials/ui_color/*.shader", "materials/ui_color/*.effect", "materials/spine/*.cs", "materials/spine/*.js", "materials/spine/*.shader", "materials/spine/*.effect", "materials/sprite_outline/*.cs", "materials/sprite_outline/*.js", "materials/sprite_outline/*.shader", "materials/sprite_outline/*.effect", "materials/static_time/*.cs", "materials/static_time/*.js", "materials/static_time/*.shader", "materials/static_time/*.effect", "spine/*.cs", "spine/*.js", "spine/*.ts", "spine/*.ts.meta", "pure_lowering/*.cs", "pure_lowering/*.ts"]
+"monkey.targets" = ["*.cs", "*.js", "*.swift", "*.shader", "*.ts", "*.ts.meta", "behaviors/*.cs", "behaviors/*.ts", "behaviors/probes/*.cs", "behaviors/probes/*.ts", "behaviors/probes/Editor/*.cs", "materials/static_controls/*.shader", "materials/static_mask/*.shader", "materials/ui_color/*.cs", "materials/ui_color/*.js", "materials/ui_color/*.shader", "materials/ui_color/*.effect", "materials/spine/*.cs", "materials/spine/*.js", "materials/spine/*.shader", "materials/spine/*.effect", "materials/sprite_outline/*.cs", "materials/sprite_outline/*.js", "materials/sprite_outline/*.shader", "materials/sprite_outline/*.effect", "materials/static_time/*.cs", "materials/static_time/*.js", "materials/static_time/*.shader", "materials/static_time/*.effect", "spine/*.cs", "spine/*.js", "spine/*.ts", "spine/*.ts.meta", "pure_lowering/*.cs", "pure_lowering/*.ts"]
 "monkey" = ["licenses/*.txt", "*.cjs", "code_profiles/*.json"]
 "monkey.sources" = ["*.cjs"]

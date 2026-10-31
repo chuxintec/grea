@@ -2,9 +2,10 @@ using UnityEngine;
 
 // Explicit native reference retained when a source Button targets a grouping
 // node without a Graphic. This component has no callbacks or runtime behavior.
-public sealed class NativeStaticButtonTarget : MonoBehaviour
+public sealed class NativeStaticButtonTarget : MonoBehaviour, Monkey.NativeUiContracts.INativeStaticButtonTarget
 {
     public GameObject Target;
+    public GameObject TransitionTarget => Target;
     public bool SourceEnabled;
     public int SourceTransition;
     public float SourceZoomScale;

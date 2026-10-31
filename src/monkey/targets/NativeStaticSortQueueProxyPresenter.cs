@@ -124,6 +124,7 @@ namespace Monkey.StaticSortQueueProxy
         [NonSerialized] public bool[] sourceCullBefore = Array.Empty<bool>();
         public bool sourceTreeStayedUnmodified = true;
         bool subscribed;
+        NativeStaticSortQueueRuntime runtime;
 
         void OnEnable()
         {
@@ -136,6 +137,7 @@ namespace Monkey.StaticSortQueueProxy
         {
             if (subscribed) Canvas.willRenderCanvases -= SuppressSources;
             subscribed = false;
+            runtime?.Dispose(); runtime = null;
             for (var i = 0; i < (sourceGraphics ?? Array.Empty<Graphic>()).Length; i++)
                 if (sourceGraphics[i] != null && sourceGraphics[i].canvasRenderer != null && i < sourceCullBefore.Length)
                     sourceGraphics[i].canvasRenderer.cull = sourceCullBefore[i];
@@ -157,6 +159,11 @@ namespace Monkey.StaticSortQueueProxy
         void SuppressSources()
         {
             DisableNestedProxyRoots();
+            if (Application.isPlaying)
+            {
+                if (runtime == null && sourceRoot != null) runtime = new NativeStaticSortQueueRuntime(this);
+                runtime?.Refresh();
+            }
             // CanvasRenderer.cull is runtime-only. Reapply after each Canvas
             // rebuild so generated TMP/Spine child Graphics cannot leak a draw.
             if (sourceRoot != null)

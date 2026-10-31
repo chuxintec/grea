@@ -65,7 +65,8 @@ class StaticFontStyleContractTests(unittest.TestCase):
         self.assertIn("VerifyStaticSdfStyle(saved, item.sdfSpread", self.font_helper)
 
     def test_label_bold_and_outline_remain_separate_contracts(self):
-        self.assertIn("label.fontStyle = spec.bold ? TMPro.FontStyles.Bold : TMPro.FontStyles.Normal", self.importer)
+        self.assertIn("label.fontStyle = SourceFontStyles(spec)", self.importer)
+        self.assertIn("spec.bold?TMPro.FontStyles.Bold:TMPro.FontStyles.Normal", self.importer)
         self.assertRegex(self.importer,
             r"spec\.width\*outlineFont\.faceInfo\.pointSize/Mathf\.Max\(label\.fontSize,1\)/Mathf\.Max\(gradient-1,1\)")
         source_width, face_point_size, label_font_size = 1.0, 90.0, 26.0

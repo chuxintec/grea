@@ -400,6 +400,7 @@ public static class UnitySystemFonts
         return Import(bindingSet, null, null);
     }
 
+#if !MONKEY_STATIC_FONT_COMPLETION_ONLY
     /// <summary>
     /// Editor-side source validation and persistent NativeStaticTextOutline setup.
     /// The runtime component stores only presentation values and reapplies them on
@@ -507,6 +508,8 @@ public static class UnitySystemFonts
         };
     }
 
+#endif
+
     /// <summary>
     /// Create and save the evidence-split DynamicOS + bounded Static SDF assets.
     /// Static inputs are hash-pinned artifacts generated from the exact CoreText receipt.
@@ -596,6 +599,96 @@ public static class UnitySystemFonts
                 AssetDatabase.DeleteAsset(path);
             AssetDatabase.SaveAssets();
             throw;
+        }
+    }
+
+    [Serializable]
+    public sealed class StaticSdfUpgradeReadback
+    {
+        public string assetId, assetPath, status;
+        public int atlasWidth, atlasHeight, characterCount, glyphCount;
+        public uint[] requiredUnicode;
+        public bool tryAddCharactersCalled;
+    }
+
+    /// <summary>
+    /// Upgrade one already-frozen static fallback in a disposable derived candidate.
+    /// The caller owns project/hash guards and save/reopen verification. Native object
+    /// identities are retained; DynamicOS primaries are never populated or rewritten.
+    /// </summary>
+    public static StaticSdfUpgradeReadback UpgradeStaticSdfAsset(BindingSet bindingSet, string assetId,
+        string generationReceiptPath, string expectedGenerationReceiptSha256, TMP_FontAsset targetFont)
+    {
+        ValidateSpec(bindingSet);
+        var input = LoadAndValidateStaticSdfInputs(bindingSet, generationReceiptPath, expectedGenerationReceiptSha256);
+        var spec = bindingSet.systemFonts.fonts.Single(f => f.assetId == assetId);
+        if (targetFont == null || spec.populationMode != "StaticSDFRequired" ||
+            targetFont.atlasPopulationMode != AtlasPopulationMode.Static ||
+            AssetDatabase.GetAssetPath(targetFont) != spec.assetPath)
+            throw new InvalidOperationException("STATIC_FONT_UPGRADE_TARGET_IDENTITY_MISMATCH");
+        VerifyFace(targetFont, spec);
+        var oldAtlas = targetFont.atlasTextures;
+        var oldMaterial = targetFont.material;
+        if (oldAtlas == null || oldAtlas.Length != 1 || oldAtlas[0] == null || oldMaterial == null ||
+            AssetDatabase.GetAssetPath(oldAtlas[0]) != spec.assetPath ||
+            AssetDatabase.GetAssetPath(oldMaterial) != spec.assetPath)
+            throw new InvalidOperationException("STATIC_FONT_UPGRADE_REQUIRES_OWNED_SUBASSETS");
+        var fresh = CreateStaticSdfFontAsset(spec, input);
+        var temporaryAtlas = fresh.atlasTextures[0];
+        var temporaryMaterial = fresh.material;
+        try
+        {
+            fresh.ReadFontAssetDefinition();
+            foreach (var old in targetFont.characterTable)
+            {
+                if (!fresh.characterLookupTable.TryGetValue(old.unicode, out var next) ||
+                    old.glyphIndex != next.glyphIndex || !old.glyph.glyphRect.Equals(next.glyph.glyphRect) ||
+                    !old.glyph.metrics.Equals(next.glyph.metrics) || old.scale != next.scale)
+                    throw new InvalidOperationException("STATIC_FONT_UPGRADE_OLD_GLYPH_CHANGED: " + old.unicode);
+            }
+            // Existing normalized UVs remain valid only with the same atlas dimensions.
+            if (oldAtlas[0].width != temporaryAtlas.width || oldAtlas[0].height != temporaryAtlas.height)
+                throw new InvalidOperationException("STATIC_FONT_UPGRADE_ATLAS_RESIZE_REQUIRES_MESH_RECAPTURE");
+            var oldPixels = oldAtlas[0].GetPixels32();
+            var newPixels = temporaryAtlas.GetPixels32();
+            foreach (var glyph in targetFont.glyphTable)
+            {
+                var rect = glyph.glyphRect;
+                for (var y = rect.y; y < rect.y + rect.height; y++)
+                for (var x = rect.x; x < rect.x + rect.width; x++)
+                    if (!oldPixels[y * oldAtlas[0].width + x].Equals(newPixels[y * temporaryAtlas.width + x]))
+                        throw new InvalidOperationException("STATIC_FONT_UPGRADE_OLD_GLYPH_PIXELS_CHANGED: " + glyph.index);
+            }
+            if (!ImageConversion.LoadImage(oldAtlas[0], input.atlasBytes, false))
+                throw new InvalidOperationException("STATIC_FONT_UPGRADE_ATLAS_DECODE_FAILED");
+            EditorUtility.CopySerialized(temporaryMaterial, oldMaterial);
+            oldMaterial.mainTexture = oldAtlas[0];
+            fresh.atlasTextures = oldAtlas;
+            fresh.material = oldMaterial;
+            var fallbackTable = targetFont.fallbackFontAssetTable;
+            EditorUtility.CopySerialized(fresh, targetFont);
+            targetFont.fallbackFontAssetTable = fallbackTable;
+            // CopySerialized carries glyph indices, not TMP's nonserialized
+            // character.glyph links. Rejoin against the new serialized table.
+            var glyphsByIndex = targetFont.glyphTable.ToDictionary(g => g.index);
+            var characters = targetFont.characterTable.Select(c =>
+                new TMP_Character(c.unicode, targetFont, glyphsByIndex[c.glyphIndex]) { scale = c.scale }).ToList();
+            targetFont.characterTable.Clear(); targetFont.characterTable.AddRange(characters);
+            targetFont.ReadFontAssetDefinition();
+            foreach (var scalar in spec.requiredUnicode)
+                if (!targetFont.characterLookupTable.ContainsKey(scalar))
+                    throw new InvalidOperationException("STATIC_FONT_UPGRADE_LOOKUP_MISSING: " + scalar);
+            EditorUtility.SetDirty(oldAtlas[0]); EditorUtility.SetDirty(oldMaterial); EditorUtility.SetDirty(targetFont);
+            return new StaticSdfUpgradeReadback { assetId = assetId, assetPath = spec.assetPath,
+                status = "updated_pending_save_reopen", atlasWidth = oldAtlas[0].width, atlasHeight = oldAtlas[0].height,
+                requiredUnicode = spec.requiredUnicode, characterCount = targetFont.characterTable.Count,
+                glyphCount = targetFont.glyphTable.Count, tryAddCharactersCalled = false };
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(temporaryMaterial);
+            UnityEngine.Object.DestroyImmediate(temporaryAtlas);
+            UnityEngine.Object.DestroyImmediate(fresh);
         }
     }
 

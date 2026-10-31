@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import tempfile
+import posixpath
 from pathlib import Path, PurePosixPath
 
 from .io import encoded, inside, load, new_output, read, safe, sha, write_json
@@ -16,6 +17,37 @@ from .sources.compiled import fail
 _GUID_REF = re.compile(r"\bguid:\s*([0-9a-fA-F]{32})\b")
 _ZERO_GUIDS = {"0" * 32, "0" * 16 + "e000000000000000"}
 _DYNAMIC_ONLY = {"SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE", "ANIMATION_DYNAMIC_CURVES_NOT_LOWERED"}
+_BUILTIN_SHADER_INCLUDES = {'UnityCG.cginc', 'UnityUI.cginc', 'HLSLSupport.cginc',
+    'UnityShaderVariables.cginc', 'Lighting.cginc', 'AutoLight.cginc', 'UnityPBSLighting.cginc',
+    'UnityStandardUtils.cginc', 'UnityStandardBRDF.cginc', 'UnityStandardConfig.cginc'}
+
+
+def _shader_include_paths(raw, path, root):
+    if PurePosixPath(path).suffix not in {'.shader', '.cginc', '.hlsl', '.compute'}:
+        return [], []
+    try:
+        text = raw.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        fail('SHADER_INCLUDE_UNSUPPORTED', path, 'Shader source is not UTF-8 text')
+    text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+    project, builtin = [], []
+    for line in text.splitlines():
+        if not re.match(r'^\s*#\s*include(?:_with_pragmas)?\b', line): continue
+        match = re.match(r'^\s*#\s*include(?:_with_pragmas)?\s*["<]([^">]+)[">]', line)
+        if not match:
+            fail('SHADER_INCLUDE_UNSUPPORTED', path, 'Only literal include paths have a frozen closure')
+        include = match[1]
+        if '\\' in include or include.startswith('/') or ':' in include:
+            fail('SHADER_INCLUDE_UNSAFE', path, 'Shader include path is not project-relative')
+        relative = posixpath.normpath(include if include.startswith('Assets/') else
+            posixpath.join(posixpath.dirname(path), include))
+        if relative.startswith('Assets/') and (root / relative).is_file():
+            project.append(_relative(relative, path))
+        elif include in _BUILTIN_SHADER_INCLUDES:
+            builtin.append(include)
+        else:
+            fail('SHADER_INCLUDE_UNRESOLVED', path, 'No frozen project include or declared Unity built-in: ' + include)
+    return sorted(set(project)), sorted(set(builtin))
 
 # The old v0.7.0.dev1 Presenter/Graphic templates are pinned as historical
 # producer identities. Current templates are accepted only when their bytes
@@ -27,6 +59,8 @@ _LEGACY_TEMPLATE_PROFILES = {
          "NativeInputBlocker.cs", "NativeInputBlockerSurface.cs")),
     "3dd77464106afce1e1438cd62af16453427372530db92c2406ab2929887bbcb3":
         ("NativeStaticSortQueueProxyGraphic.cs", ()),
+    "aa54cccc69d675ea69f15b8ccf40d0ae1ca0d21837d6a5dc68f9b3f88f4610d3":
+        ("NativeStaticButtonTarget.cs", ()),
 }
 _CURRENT_TEMPLATE_DEPENDENCIES = {
     "NativeStaticSortQueueProxyPresenter.cs": (
@@ -34,10 +68,14 @@ _CURRENT_TEMPLATE_DEPENDENCIES = {
         "NativeInputBlocker.cs", "NativeInputBlockerSurface.cs", "NativeStaticSortQueueRuntime.cs"),
     "NativeStaticSortQueueRuntime.cs": (
         "NativeStaticSortQueueProxyPresenter.cs", "NativeStaticSortQueueProxyGraphic.cs",
-        "NativeStaticSortTextSource.cs", "NativeStaticSortQueueProxyRaycaster.cs"),
+        "NativeStaticSortTextSource.cs", "NativeStaticSortQueueProxyRaycaster.cs",
+        "NativeStaticSortInputSurface.cs", "NativeStaticButtonTargetContract.cs"),
     "NativeStaticSortQueueProxyRaycaster.cs": (
         "NativeStaticSortQueueProxyPresenter.cs", "NativeStaticSortQueueProxyGraphic.cs",
-        "NativeInputBlocker.cs", "NativeInputBlockerSurface.cs"),
+        "NativeStaticSortInputSurface.cs"),
+    "NativeStaticSortInputSurface.cs": (),
+    "NativeStaticButtonTarget.cs": ("NativeStaticButtonTargetContract.cs",),
+    "NativeStaticButtonTargetContract.cs": (),
     "NativeStaticSortQueueProxyGraphic.cs": (),
     "NativeStaticSortQueueProxyMarker.cs": ("NativeStaticSortQueueProxyPresenter.cs",),
     "NativeStaticSortTextSource.cs": (),
@@ -306,6 +344,8 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
     included = set()
     pending = list(selected)
     external = {}
+    shader_edges = []
+    shader_builtins = set()
     while pending:
         path = pending.pop()
         if path in included:
@@ -318,6 +358,11 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
         if path in rows and path not in native and digest != rows[path]["sha256"]:
             fail("CANDIDATE_FILE_DRIFT", path, "Referenced generated file differs from manifest")
         included.add(path)
+        shader_files, builtin_includes = _shader_include_paths(raw, path, root)
+        if shader_files:
+            shader_edges.append(dict(path=path, requires=shader_files, kind='shader-include'))
+            pending.extend(shader_files)
+        shader_builtins.update(builtin_includes)
 
         # Meta accompanies project assets and provides Unity identity.
         meta_path = path + ".meta"
@@ -349,7 +394,7 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
     for path in rows:
         by_name.setdefault(PurePosixPath(path).name, []).append(path)
     code_edges = []
-    code_queue = [p for p in included if p.endswith(".cs")]
+    code_queue = sorted(p for p in included if p.endswith(".cs"))
     seen_code = set()
     diagnostics = []
     while code_queue:
@@ -459,12 +504,16 @@ def freeze(candidate, prefabs, output, expected_manifest, expected_readback):
         selection=dict(prefabs=sorted(selected), coverage="selected-prefab-guid-closure+producer-declared-csharp"),
         externalPackageReferences=[dict(guid=g, **external[g]) for g in sorted(external)],
         packageVersions=package_versions,
+        shaderDependencies=dict(coverage='literal-project-includes+declared-unity-builtins',
+            edges=sorted(shader_edges, key=lambda e:e['path']),
+            builtinIncludes=sorted(shader_builtins), targetUnityVersion='6000.6.2f1',
+            targetShaderCompilation='not_run'),
         packageDependencyPins=dependency_pins,
         supplementalFileAuthorities=supplemental,
         normalizedNativeFiles=normalized_native_files,
         adoptionDependencies=dict(schemaVersion=1, coverage="producer-declared", edges=sorted(code_edges, key=lambda x:x["path"])),
         coverageBoundary="Unity YAML GUID references are resolved. C# dependencies are producer-declared only for exact known static-sort/input template hashes; other generated scripts are explicitly listed as unanalyzed.",
-        diagnostics=diagnostics,
+        diagnostics=sorted(diagnostics, key=lambda d:(d.get('path', ''), d.get('code', ''))),
         files=files,
     )
     font_readback_path = root / "Analysis/Readback/system-fonts.json"

@@ -25,11 +25,19 @@ namespace Monkey.StaticSortQueueProxy
         public string sourceMaterialFingerprint;
         public string transformCaptureDiagnosticJson;
         public string meshAssetGuid, sourceMaterialGuid, sourceTextureGuid;
+        [System.NonSerialized] Mesh runtimeMesh;
+        [System.NonSerialized] Texture runtimeTexture;
+        [System.NonSerialized] Material runtimeMaterial;
+        [System.NonSerialized] bool runtimePresentation;
+        [System.NonSerialized] bool runtimeManaged;
+        [System.NonSerialized] float runtimeInheritedAlpha;
+        [System.NonSerialized] Color runtimeRendererColor;
 
-        public override Texture mainTexture => proxyTexture == null ? Texture2D.whiteTexture : proxyTexture;
+        public override Texture mainTexture => runtimePresentation ? runtimeTexture ?? Texture2D.whiteTexture :
+            proxyTexture == null ? Texture2D.whiteTexture : proxyTexture;
         public override Material material
         {
-            get => proxyBaseMaterial != null ? proxyBaseMaterial : base.material;
+            get => runtimePresentation ? runtimeMaterial ?? base.material : proxyBaseMaterial != null ? proxyBaseMaterial : base.material;
             set { proxyBaseMaterial = value; base.material = value; }
         }
 
@@ -39,17 +47,48 @@ namespace Monkey.StaticSortQueueProxy
         // ordinary uGUI stencil modifier to apply the ancestor Mask state.
         protected override void UpdateGeometry()
         {
-            if (sourceOpacityCaptured)
+            if (runtimePresentation || sourceOpacityCaptured)
             {
                 var opacity = GetComponent<CanvasGroup>();
                 if (opacity != null)
                 {
                     opacity.ignoreParentGroups = true;
-                    opacity.alpha = sourceInheritedAlpha;
+                    opacity.alpha = runtimePresentation ? runtimeInheritedAlpha : sourceInheritedAlpha;
                 }
-                canvasRenderer.SetAlpha(sourceRendererAlpha);
+                if (runtimePresentation) canvasRenderer.SetColor(runtimeRendererColor);
+                else canvasRenderer.SetAlpha(sourceRendererAlpha);
             }
-            canvasRenderer.SetMesh(proxyMesh);
+            canvasRenderer.SetMesh(runtimePresentation ? runtimeMesh : proxyMesh);
+        }
+
+        // Runtime data never replaces the serialized fixed-state proof assets.
+        internal bool AcceptRuntimeOwner()
+        {
+            // A consumer may have intentionally replaced a saved proxy with a
+            // live project control. Preserve that explicit initial opt-out.
+            if (!runtimeManaged && !enabled) return false;
+            runtimeManaged = true;
+            return true;
+        }
+
+        internal void ApplyRuntime(Mesh mesh, Texture texture, Material sourceMaterial,
+            bool visible, Color rendererColor, float inheritedAlpha)
+        {
+            var materialChanged = !runtimePresentation || runtimeMaterial != sourceMaterial || runtimeTexture != texture;
+            runtimePresentation = true; runtimeMesh = mesh; runtimeTexture = texture; runtimeMaterial = sourceMaterial;
+            runtimeRendererColor = rendererColor; runtimeInheritedAlpha = inheritedAlpha;
+            enabled = visible;
+            if (!visible) return;
+            if (materialChanged) RecalculateMasking();
+            canvasRenderer.cull = false;
+            UpdateGeometry();
+            UpdateMaterial();
+        }
+
+        internal void ClearRuntime()
+        {
+            runtimePresentation = false; runtimeMesh = null; runtimeTexture = null; runtimeMaterial = null;
+            SetAllDirty();
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)

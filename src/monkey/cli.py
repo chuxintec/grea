@@ -395,6 +395,26 @@ def main(argv=None):
     p.add_argument('--expected-manifest', required=True)
     p.add_argument('--expected-readback', required=True)
     p.add_argument('--out', required=True)
+    p = sub.add_parser('upgrade-native-runtime', help='Copy a frozen selection and upgrade only exact known native presentation templates')
+    p.add_argument('--candidate', required=True)
+    p.add_argument('--expected-manifest', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('complete-native-font', help='Append an explicitly pinned consumer text corpus using the same static font face and preserved glyphs')
+    p.add_argument('--request', required=True)
+    p.add_argument('--expected-request', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('stage-native-font', help='Prepare a separate native Unity project to apply a pinned static-font completion')
+    p.add_argument('--candidate', required=True)
+    p.add_argument('--expected-manifest', required=True)
+    p.add_argument('--completion', required=True)
+    p.add_argument('--expected-completion', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('finish-native-font', help='Freeze the actually saved font candidate after native identity and glyph checks')
+    p.add_argument('--project', required=True)
+    p.add_argument('--expected-stage-manifest', required=True)
+    p.add_argument('--readback', required=True)
+    p.add_argument('--expected-readback', required=True)
+    p.add_argument('--out', required=True)
     p = sub.add_parser('handoff')
     p.add_argument('--candidate',required=True)
     p.add_argument('--out',required=True)
@@ -465,7 +485,7 @@ def main(argv=None):
                 outputPolicy=dict(wholeInput=policy({'scopeMode':'whole-input'}),selection=policy({}),hashChunkBytes=1048576,sourceDecoderBudgets='independent'),
                 additionalPackageProfiles={'cocos-3.4.1-bundle':dict(scope='version-proven-node-ui-prefab-and-resource-subset',graphs='856-of-857-source-graphs;22503-nodes;52-instances;one-null-quaternion-rejected',native='5-source-frames-plus-6-prefabs-331-nodes-8-instances-7-mounted-nodes-1-mounted-widget-both-targets-verified',operations=['package-convert']), 'egret-custom-resource-plist-v1':dict(scope='reviewed-custom-resource-manifest-plist-binjson-v2',targets=['unity6'],sourceSkins='typed-data-only-native-layout-pending',remoteAcquisition='explicit-manifest-cache-and-bounded-fetch',native='132-source-frames-verified; expanded-atlas-set-pending',operations=['package-convert']), 'cocos-2.1.2-resource':dict(scope='version-proven-resource-subset',native='211-source-frames-both-targets-verified',graphs='pending',operations=['package-convert']), 'generic-image-resources-v1':dict(scope='derived-original-image-gallery-only',families=['laya','layaair','egret','eraget','custom','other'],targets=['unity6'],native='Egret-16-derived-images-verified',sourceGraphs='not-restored',operations=['package-convert']), 'cocos-2.4.11-bundle':dict(scope='version-proven-published-bundle-subset',native='91-source-graphs-both-targets-verified',operations=['package-convert']), 'cocos-3.8.7-bundle':dict(scope='version-proven-node-ui-template-and-resource-subset',native='83-static-graphs-plus-4-prefab-5-native-relations-and-16-node-dynamic-ui-representatives-both-targets-verified',graphs='114-root-closures-static;5-graphs-missing-6-exact-templates;not-all-native-validated',operations=['package-convert'])},
                 toolkit=dict(contract='grea-toolkit/1',runner='monkey tool <id>',tools=list(__import__('monkey.toolkit',fromlist=['TOOLS']).TOOLS)),
-                 schemaVersion=1, dynamicUi=dict(probeVersion=2,verifiedLayoutGroups=6,verifiedLayoutStates=54,native='historical-v02-grid-scale-constraints-child-resize-and-linear-scale-representatives',timing='Editor-native-forced-update;Player-not_run',unityFlowReplacement=dict(status='verified-subset',sourcePrefabs=48,sourceComponents=63,aggregateAssets=50,representatives=6,scope='horizontal-flexible-unscaled-uniform-grid-or-proven-single-row',otherLayouts='review-required;no-source-flow-runtime-fallback',sourceText='questionnaire-Label-not-recovered;Rect-resize-only')), formatting=dict(implemented=['unity-creator-unimported-owned-grea-v1','fresh-package-convert-none-grea'],pending=['unity-general-scene-native-format','unity-source-positive-native-move-sample'],rejected=['materialized-native-assets-require-a-future-native-move-adapter']), unitySourceProfile=dict(inspectionPolicy=dict(defaultObjectValues=250000,defaultContainerValues=8000000,maxObjectValues=1000000,maxContainerValues=16000000,maxDepth=96,streamedFields=['Font.m_FontData','AssetBundle.m_PreloadTable'],chunkElements=8192,maxPayloadBytes=268435456),name='unityfs-unitypy-1.25.3-assetripper-2.0.0',status='partial',inputs='explicit-unity-bundle-or-webdata-files-and-exact-local-texture-cache',additionalContainers=['UnityWebData1.0'],invalidTexturePolicy='block-default-explicit-quarantine-retains-original',dependencyClosure='explicit-frozen-pool-exact-serialized-file-closure',editor='one-prefab-schema-reference-save-reload-verified',publicNative=True,nativeProfile='unity-leaf-prefab-sprite-array-v1',textureHydration=dict(selectionManifest='unity-texture-selection/1',scopes=['container','selected-texture-set'],cachePaths='exact-frozen-literal-bucket-and-token-filename',partialDerivative=True,partialExitCode=1,selectedPngExport='unity-selected-texture-export/1'),shaderHandoff='monkey-shader-handoff/1',nativeFormatting='typed-resource-moves-with-dynamic-path-pins; real sample pinned all 134 assets',methodsRecovered=0), implemented=['freeze-native-selection','prefab-static-fields','prefab-behavior-ir','code-draft','code-types','freeze-resource-candidate','acquire-resources','diagnose','doctor','space-preview','resource-probe','query-methods','query-tables','inspect-aliases','adopt','adopt-recover','unity-field-plan','convert','catalog','inspect','normalize','plan','export','verify','handoff','diff','register','apply','preflight','native-import','research-matrix','code-model','code-emit','code-select','wasm-code-source','wasm-code-candidate','unity-code-source','unity-code-candidate','code-native-probe','format-project','project-model','inspect-unity','export-unity','unity-code-model','index-unity','hydrate-unity','export-unity-textures','classify-unity-shaders','code-handoff','native-finish-plan','native-finish','acquire-unity-textures','prepare-unity-bulk','export-unity-bulk','freeze-handoff','freeze-unity-handoff','native-layout-audit','native-layout-prepare','native-layout-patch','native-layout-finish','native-layout-bundle'], planned=[],
+                 schemaVersion=1, dynamicUi=dict(probeVersion=2,verifiedLayoutGroups=6,verifiedLayoutStates=54,native='historical-v02-grid-scale-constraints-child-resize-and-linear-scale-representatives',timing='Editor-native-forced-update;Player-not_run',unityFlowReplacement=dict(status='verified-subset',sourcePrefabs=48,sourceComponents=63,aggregateAssets=50,representatives=6,scope='horizontal-flexible-unscaled-uniform-grid-or-proven-single-row',otherLayouts='review-required;no-source-flow-runtime-fallback',sourceText='questionnaire-Label-not-recovered;Rect-resize-only')), formatting=dict(implemented=['unity-creator-unimported-owned-grea-v1','fresh-package-convert-none-grea'],pending=['unity-general-scene-native-format','unity-source-positive-native-move-sample'],rejected=['materialized-native-assets-require-a-future-native-move-adapter']), unitySourceProfile=dict(inspectionPolicy=dict(defaultObjectValues=250000,defaultContainerValues=8000000,maxObjectValues=1000000,maxContainerValues=16000000,maxDepth=96,streamedFields=['Font.m_FontData','AssetBundle.m_PreloadTable'],chunkElements=8192,maxPayloadBytes=268435456),name='unityfs-unitypy-1.25.3-assetripper-2.0.0',status='partial',inputs='explicit-unity-bundle-or-webdata-files-and-exact-local-texture-cache',additionalContainers=['UnityWebData1.0'],invalidTexturePolicy='block-default-explicit-quarantine-retains-original',dependencyClosure='explicit-frozen-pool-exact-serialized-file-closure',editor='one-prefab-schema-reference-save-reload-verified',publicNative=True,nativeProfile='unity-leaf-prefab-sprite-array-v1',textureHydration=dict(selectionManifest='unity-texture-selection/1',scopes=['container','selected-texture-set'],cachePaths='exact-frozen-literal-bucket-and-token-filename',partialDerivative=True,partialExitCode=1,selectedPngExport='unity-selected-texture-export/1'),shaderHandoff='monkey-shader-handoff/1',nativeFormatting='typed-resource-moves-with-dynamic-path-pins; real sample pinned all 134 assets',methodsRecovered=0), implemented=['stage-native-font','finish-native-font','complete-native-font','upgrade-native-runtime','freeze-native-selection','prefab-static-fields','prefab-behavior-ir','code-draft','code-types','freeze-resource-candidate','acquire-resources','diagnose','doctor','space-preview','resource-probe','query-methods','query-tables','inspect-aliases','adopt','adopt-recover','unity-field-plan','convert','catalog','inspect','normalize','plan','export','verify','handoff','diff','register','apply','preflight','native-import','research-matrix','code-model','code-emit','code-select','wasm-code-source','wasm-code-candidate','unity-code-source','unity-code-candidate','code-native-probe','format-project','project-model','inspect-unity','export-unity','unity-code-model','index-unity','hydrate-unity','export-unity-textures','classify-unity-shaders','code-handoff','native-finish-plan','native-finish','acquire-unity-textures','prepare-unity-bulk','export-unity-bulk','freeze-handoff','freeze-unity-handoff','native-layout-audit','native-layout-prepare','native-layout-patch','native-layout-finish','native-layout-bundle'], planned=[],
                 targetValidation={UNITY_PROFILE:dict(static='implemented',editor='representative-subset-verified',visual='not_run'),cocos.PROFILE:dict(static='implemented',editor='representative-subset-verified',visual='not_run')},
                 compiledFormats=['compiled-v1','pack-v1','texture-pack-v1'],
                 containerFormats=['plain-wxapkg','APK-ZIP','Cocos-resource-directory'],
@@ -1017,6 +1037,44 @@ def main(argv=None):
         elif args.command == 'preflight':
             from .preflight import preflight
             result=preflight(args.candidate,args.out,args.log,args.progress)
+        elif args.command in ('stage-native-font', 'finish-native-font'):
+            from .native_font_stage import stage, finish_stage, NativeFontStageError
+            try:
+                if args.command == 'stage-native-font':
+                    result = stage(args.candidate, args.expected_manifest, args.completion, args.expected_completion, args.out)
+                else:
+                    result = finish_stage(args.project, args.expected_stage_manifest, args.readback, args.expected_readback, args.out)
+            except NativeFontStageError as exc:
+                fail('NATIVE_FONT_STAGE_REJECTED', args.out, str(exc))
+            print(json.dumps(result, ensure_ascii=False))
+            return 0
+        elif args.command == 'complete-native-font':
+            from .io import read, load, sha
+            from .native_font_completion import complete_native_font_from_corpus, NativeFontCompletionError
+            raw_request = read(args.request)
+            if sha(raw_request) != args.expected_request:
+                fail('FONT_REQUEST_SHA_MISMATCH', args.request, 'Consumer font request differs from its pin')
+            request = load(raw_request)
+            allowed = {'corpus_path','expected_corpus_sha256','base_binding_path','expected_base_binding_sha256',
+                'base_generation_receipt_path','expected_base_generation_receipt_sha256','base_static_plan_path',
+                'expected_base_static_plan_sha256','static_font_asset_id','requested_primary_family',
+                'expected_primary_style','watch_files'}
+            required = allowed - {'requested_primary_family','expected_primary_style','watch_files'}
+            if not isinstance(request, dict) or set(request) - allowed or required - set(request):
+                fail('FONT_REQUEST_INVALID', args.request, 'Expected the documented pinned consumer font request fields')
+            try:
+                result = complete_native_font_from_corpus(**request,
+                    generator_path=Path(__file__).parent / 'targets' / 'GenerateCoreTextSdf.swift', output_dir=args.out)
+            except NativeFontCompletionError as exc:
+                fail('FONT_COMPLETION_REJECTED', args.request, str(exc))
+            print(json.dumps(result, ensure_ascii=False))
+            return 0
+        elif args.command == 'upgrade-native-runtime':
+            from .native_runtime_update import upgrade
+            updated = upgrade(args.candidate, args.expected_manifest, args.out)
+            print(json.dumps(dict(status='prepared', manifest=str(Path(args.out) / 'manifest.json'),
+                runtimeUpdate=updated['runtimeUpdate']), ensure_ascii=False))
+            return 0
         elif args.command == 'freeze-native-selection':
             from .native_selection import freeze
             frozen = freeze(args.candidate, args.prefab, args.out, args.expected_manifest, args.expected_readback)
