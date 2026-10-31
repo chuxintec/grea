@@ -89,6 +89,7 @@ public static class BeaverNative {
         public int buildErrors;
         public bool developmentBuild;
         public bool fontSourcesRestored;
+        public bool fontSourcesRestoredInProcess;
         public List<FontInput> fontInputs=new List<FontInput>();
         public List<MoveRow> moves=new List<MoveRow>();
         public List<MoveRow> moveIdentities=new List<MoveRow>();
@@ -376,7 +377,10 @@ public static class BeaverNative {
     }
     static void ObserveFonts() { foreach(var row in fontCheckpoint.fonts){row.observedSha256=HashFile(Full(row.path));row.observedMetaSha256=HashFile(Full(row.path+".meta"));}SaveFonts(); }
     static void RestoreBuildFonts() {
-        ProtectedBuildFonts.Clear();
+        // Keep the scoped guard active through shutdown. Reimporting restored
+        // bytes can dirty atlas subassets again and serialize them on exit.
+        foreach(var row in fontCheckpoint.fonts)ProtectedBuildFonts.Add(row.path);
+        AssetDatabase.DisallowAutoRefresh();
         foreach(var row in fontCheckpoint.fonts) {
             var source=Path.Combine(job.stage,"before",row.path);var meta=source+".meta";
             if(HashFile(source)!=row.sourceSha256||HashFile(meta)!=row.metaSha256)throw new Exception("Font before-image differs "+row.path);
@@ -385,13 +389,13 @@ public static class BeaverNative {
         }
         foreach(var row in fontCheckpoint.fonts) {
             fontCheckpoint.mutationInProgress=row.path;SaveFonts();
+            foreach(var loaded in AssetDatabase.LoadAllAssetsAtPath(row.path))if(loaded!=null)EditorUtility.ClearDirty(loaded);
             File.Copy(Path.Combine(job.stage,"before",row.path),Full(row.path),true);File.Copy(Path.Combine(job.stage,"before",row.path+".meta"),Full(row.path+".meta"),true);
-            AssetDatabase.ImportAsset(row.path,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
             row.restoredSha256=HashFile(Full(row.path));
             if(row.restoredSha256!=row.sourceSha256||HashFile(Full(row.path+".meta"))!=row.metaSha256)throw new Exception("Font restore import changed bytes "+row.path);
             fontCheckpoint.mutationInProgress=null;ObserveFonts();
         }
-        report.fontInputs=fontCheckpoint.fonts;report.fontSourcesRestored=true;
+        report.fontInputs=fontCheckpoint.fonts;report.fontSourcesRestoredInProcess=true;
     }
     static void RecoverBuildFonts() {
         fontCheckpoint=JsonUtility.FromJson<FontCheckpoint>(File.ReadAllText(Path.Combine(job.stage,"font-checkpoint.json")));
@@ -427,7 +431,6 @@ public static class BeaverNative {
         } finally {
             // The owned process can witness its current writes. After interruption,
             // recovery instead requires the last conclusive durable checkpoint.
-            ProtectedBuildFonts.Clear();
             if(!String.IsNullOrEmpty(fontCheckpoint.mutationInProgress))throw new Exception("Font mutation interrupted without a conclusive checkpoint; inspect before recovery");
             RestoreBuildFonts();
         }

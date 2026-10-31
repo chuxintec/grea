@@ -55,14 +55,28 @@ def recover(stage,data,editor,expected,timeout):
             result=unity.run(editor,project,stage,'recover',data,timeout)
         finally:unity._remove_native_helper(project,helper,fingerprint)
         if unity.source_files(project)!=data['before']:fail('BUILD_FONT_RECOVERY',str(stage),'Restored source differs')
+        result=certify_after_exit(stage,data,result,unity.source_files(project),require_build=False)
         journal.update(status='recovered',nativeRecovery=result);write_json(stage/'journal.json',journal)
-        return dict(status='recovered',report=str(stage/'journal.json'),transaction=str(stage))
+        return dict(status='recovered',operation='build.font-source.recover',report=str(stage/'journal.json'),transaction=str(stage))
 
 
 def validate_readback(policy,report):
     rows=report.get('fontInputs')
-    if report.get('fontSourcesRestored') is not True or not isinstance(rows,list) or len(rows)!=len(policy['fonts']):fail('BUILD_FONT_READBACK','native','Font restoration evidence missing')
+    if report.get('fontSourcesRestoredInProcess') is not True or not isinstance(rows,list) or len(rows)!=len(policy['fonts']):fail('BUILD_FONT_READBACK','native','Font restoration evidence missing')
     for declared,row in zip(policy['fonts'],rows):
         for key in ('path','sourceSha256','metaSha256'):
             if row.get(key)!=declared[key]:fail('BUILD_FONT_READBACK',declared['path'],'Font input identity differs')
         if row.get('restoredSha256')!=declared['sourceSha256'] or not re.fullmatch('[0-9a-f]{64}',row.get('buildSha256','')):fail('BUILD_FONT_READBACK',declared['path'],'Build/restoration identity missing')
+
+
+def certify_after_exit(stage,data,report,after,require_build=True):
+    """Only the waiting parent can certify source bytes after Editor teardown."""
+    process=load(read(stage/'process.json'))
+    if process.get('owned') is not True or process.get('exited') is not True or process.get('exitCode')!=0:
+        fail('BUILD_FONT_EXIT_AUDIT',str(stage),'Successful owned Editor exit required')
+    if after!=data['before']:fail('BUILD_FONT_EXIT_AUDIT',str(stage),'Post-exit source differs; unknown bytes are not adopted')
+    if require_build:validate_readback(data['spec']['tmpFontPolicy'],report)
+    elif report.get('fontSourcesRestoredInProcess') is not True:fail('BUILD_FONT_EXIT_AUDIT',str(stage),'Native restoration checkpoint missing')
+    result=dict(report,fontSourcesRestored=True,sourceRestorationVerifiedBy='parent-after-editor-exit')
+    result['fontInputs']=[dict(row,postExitSha256=after[row['path']]['sha256'],postExitMetaSha256=after[row['path']+'.meta']['sha256']) for row in report.get('fontInputs',[])]
+    return result

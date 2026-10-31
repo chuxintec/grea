@@ -164,6 +164,8 @@ def parser():
     unity_recover=unity.add_parser('recover')
     for flag in ('transaction','expected-plan','editor-path'):unity_recover.add_argument('--'+flag,required=True)
     unity_recover.add_argument('--timeout',type=int,default=600)
+    font_recover=unity.add_parser('recover-font-source')
+    for flag in ('transaction','expected-plan','review','out'):font_recover.add_argument('--'+flag,required=True)
     for entry in (unity_plan,unity_apply,unity_recover):entry.add_argument('--summary',action='store_true')
     batch = sub.add_parser('batch').add_subparsers(dest='action',required=True)
     bp=batch.add_parser('plan');bp.add_argument('--project',required=True);bp.add_argument('--spec',required=True);bp.add_argument('--out',required=True)
@@ -354,6 +356,9 @@ def dispatch(a):
         from .configuration import validate, generate
         return validate(a.schema, a.input) if a.action == "validate" else generate(a.schema, a.out)
     if a.command == "unity":
+        if a.action=='recover-font-source':
+            from .build_font_recovery import recover_reviewed
+            return recover_reviewed(a.transaction,a.expected_plan,a.review,a.out)
         from .unity import plan, apply, recover
         if a.action=='recover':return recover(a.transaction,a.editor_path,a.expected_plan,a.timeout)
         return plan(a.project,a.spec,a.out) if a.action == "plan" else apply(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
@@ -472,7 +477,9 @@ def main(argv=None):
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
         if a.command=='unity' and a.action=='recover':
-            base['actualChanges']=[dict(operation='assets.retire.recover',transaction=data['transaction'],restoredFiles=data.get('restoredFiles'),deletedPaths=data.get('deletedPaths'),deletedFolders=data.get('deletedFolders',[]))]
+            base['actualChanges']=[dict(operation=data.get('operation','assets.retire.recover'),transaction=data['transaction'],restoredFiles=data.get('restoredFiles'),deletedPaths=data.get('deletedPaths'),deletedFolders=data.get('deletedFolders',[]))]
+        if a.command=='unity' and a.action=='recover-font-source':
+            base['actualChanges']=[dict(operation='build.font-source.recover',report=data.get('report'),restoredFiles=len(data.get('restored',[])))]
         if a.command in ('batch','production') and a.action in ('apply','recover'):
             base['actualChanges']=data.get('changes',[dict(operation=a.command+'.recover',restored=data.get('restored'))])
         if a.command=='workspace' and a.action=='apply':
@@ -503,6 +510,8 @@ def main(argv=None):
         blocked=isinstance(error,BeaverError) and error.status=='blocked'
         base.update(status="blocked" if blocked else "failed",
                     diagnostics=[error.as_dict() if isinstance(error, BeaverError) else dict(code="IO_OR_INPUT", location="input", message=str(error))])
+        if a.command=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
+            base['actualChanges']=[dict(status='inspect_recovery_receipt',report=str(Path(a.out,'recovery-result.json')),reason='Recovery can fail after partial writes; inspect the separate receipt')]
         if isinstance(error,BeaverError):
             if error.code=='READBACK_PROJECT_MODIFIED':
                 base['actualChanges']=[dict(status='inspect_source_guard',guard=error.location,reason='Read-only guard failed; inspect witnessed paths and helper before retry')]

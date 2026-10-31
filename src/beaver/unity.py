@@ -815,6 +815,12 @@ def apply(plan_path, output, editor, expected, timeout=600):
             validate_readback(data['spec']['tmpFontPolicy'],applied)
         if data['spec']['operation']=='build.macos' and changes:
             audit_fail('BUILD_SOURCE_DRIFT',str(project),'Build changed source; artifact is not certified')
+        if data['spec']['operation']=='build.macos' and data['spec'].get('tmpFontPolicy'):
+            from .build_policy import certify_after_exit
+            applied=certify_after_exit(stage,data,applied,after)
+            journal['nativeReadback']=applied
+            journal['fontSourceExitAudit']='parent-after-editor-exit'
+            write_json(stage/'journal.json',journal)
         if data['spec']['operation']=='ui.create':
             allowed={data['spec'][k]+suffix for k in ('prefabPath','scenePath','fontAssetPath','tmpSettingsPath') if k in data['spec'] for suffix in ('','.meta')}
             for path_value in list(allowed):

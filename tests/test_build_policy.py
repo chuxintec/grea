@@ -50,8 +50,8 @@ class FontPolicyTests(unittest.TestCase):
 
     def test_missing_native_restoration_or_wrong_build_identity_rejected(self):
         p=self.policy();row=dict(p['fonts'][0],buildSha256='4'*64,restoredSha256='2'*64)
-        validate_readback(p,dict(fontSourcesRestored=True,fontInputs=[row]))
-        for report in [dict(fontSourcesRestored=False,fontInputs=[row]),dict(fontSourcesRestored=True,fontInputs=[dict(row,restoredSha256='5'*64)]),dict(fontSourcesRestored=True,fontInputs=[])]:
+        validate_readback(p,dict(fontSourcesRestoredInProcess=True,fontInputs=[row]))
+        for report in [dict(fontSourcesRestoredInProcess=False,fontInputs=[row]),dict(fontSourcesRestoredInProcess=True,fontInputs=[dict(row,restoredSha256='5'*64)]),dict(fontSourcesRestoredInProcess=True,fontInputs=[])]:
             with self.assertRaises(BeaverError):validate_readback(p,report)
 
     def test_stale_font_rejected_before_plan_output(self):
@@ -116,7 +116,8 @@ class BuildRecoveryGuardTests(unittest.TestCase):
             root=Path(temp).resolve();project,stage,expected,font=self.transaction(root)
             def restore(*args):
                 (project/font).write_bytes((stage/'before'/font).read_bytes())
-                return dict(status='verified',fontSourcesRestored=True)
+                write_json(stage/'process.json',dict(owned=True,exited=True,exitCode=0))
+                return dict(status='verified',fontSourcesRestoredInProcess=True,fontInputs=[])
             with patch('beaver.unity.editor_path',return_value=root/'Unity'),patch('beaver.unity.native_lock'),patch('beaver.unity._install_native_helper',return_value=(root/'helper','fingerprint')) as helper,patch('beaver.unity._remove_native_helper'),patch('beaver.unity.run',side_effect=restore) as native:
                 result=recover(stage,root/'Unity',expected,30)
                 self.assertEqual(result['status'],'recovered')
