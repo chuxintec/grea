@@ -326,10 +326,14 @@ def _copy_seed(seed, destination):
                 if not target_candidate.is_relative_to(destination): fail("QA_PROFILE_SEED_LINK", rel, "Seed symbolic link escapes profile")
                 os.symlink(row["symlink"], target)
             else:
-                with reader.open(rel) as src, target.open("xb") as out: stream_identity(src, rel, output=out)
+                with reader.open(rel) as src, target.open("xb") as out:
+                    digest,size,_=stream_identity(src, rel, output=out)
+                if (digest,size)!=(row['sha256'],row['bytes']):
+                    fail('QA_PROFILE_SEED_DRIFT',rel,'Seed bytes changed after inventory verification')
                 os.chmod(target, stat.S_IMODE(os.stat(root / rel, follow_symlinks=False).st_mode))
     if digest_file(manifest_path) != seed["manifestSha256"]: fail("QA_PROFILE_SEED_DRIFT", str(manifest_path), "Seed manifest changed during copy")
-    return {"status": "seeded", "seedApplied": True, "manifestSha256": seed["manifestSha256"], "verification": verified, "treeSha256": _hash_tree(destination)}
+    after=verify_manifest(root,manifest_path)
+    return {"status": "seeded", "seedApplied": True, "manifestSha256": seed["manifestSha256"], "verification": verified, "verificationAfter":after, "treeSha256": _hash_tree(destination)}
 
 
 def prepare(spec_path, expected_spec_sha256, out=None):
@@ -552,9 +556,22 @@ def launch(project_id, build_id, profile_id, expected_owner_sha256, duration=60,
 
 
 def _launch_owned(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256):
+    try:
+        return _launch_process(exe,args,app,env,log_path,duration,project_id,build_id,profile_id,run_id,receipt_path,mode,started,sandbox_info,expected_owner_sha256)
+    except BaseException as error:
+        try:error.qa_failure_receipt=str(receipt_path)
+        except Exception:pass
+        raise
+
+
+def _launch_process(exe, args, app, env, log_path, duration, project_id, build_id, profile_id, run_id, receipt_path, mode, started, sandbox_info, expected_owner_sha256):
     record_base = {"schemaVersion": 1, "contract": "beaver-unity-qa-process/1", "runId": run_id, "projectId": project_id, "buildId": build_id, "profileId": profile_id, "expectedOwnerSha256": expected_owner_sha256, "executablePath": str(exe), "executableSha256": digest_file(exe), "command": args, "cwd": str(app), "cleanEnvironment": env, "startedUtc": started, "budgetSeconds": duration, "logPath": str(log_path), "mode": mode, "documentsSandbox": sandbox_info}
     _write_control_json(receipt_path, {**record_base, "pid": None, "owned": False, "status": "starting"}, create=True)
-    with log_path.open("xb") as log:
+    console_path=_guard_root(log_path.with_name(run_id+'.console.log'))
+    record_base['consoleLogPath']=str(console_path)
+    # Unity owns -logFile; redirect stdout to another file, never the same inode.
+    fd=os.open(log_path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600);os.close(fd)
+    with os.fdopen(os.open(console_path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600),'wb') as log:
         try: process = subprocess.Popen(args, cwd=app, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         except OSError as error:
             _write_control_json(receipt_path, {**record_base, "pid": None, "owned": False, "status": "failed", "launchError": type(error).__name__})
@@ -604,6 +621,10 @@ def collect(project_id, build_id, profile_id, expected_owner_sha256, run_id=None
     expected_log = data_root / "logs" / profile_id / (run_id + ".log")
     if log_path != expected_log or not log_path.is_file(): fail("QA_RUN_LOG", str(log_path), "Run log must be the exact controlled path for this profile/run")
     logs = [{"path": str(log_path), "sha256": digest_file(log_path), "bytes": log_path.stat().st_size}]
+    console_path=_guard_root(process.get('consoleLogPath',''))
+    if console_path!=expected_log.with_name(run_id+'.console.log') or not console_path.is_file():
+        fail('QA_RUN_LOG',str(console_path),'Console log must match this exact owned run')
+    logs.append(dict(path=str(console_path),sha256=digest_file(console_path),bytes=console_path.stat().st_size))
     bundle_matches = bundle_actual == owner.get("bundle", {}).get("treeSha256")
     if process.get("status") == "running":
         executable_name = plistlib.loads(read(build_root / "App.app" / "Contents" / "Info.plist")).get("CFBundleExecutable")

@@ -483,6 +483,7 @@ def main(argv=None):
         if data.get('status') in ('stale_plan','migration_order_blocked','blocked_existing_output','partial_or_untracked_database'):status='blocked'
         if data.get('status')=='failed_or_needs_action':status='failed'
         if data.get('status') in ('execution_unknown_or_failed','execution_unknown_or_partial'):status='partial'
+        if a.command=='qa' and data.get('status') in ('recovery_required','observed_running','stopped_by_budget','interrupted'):status='partial'
         if a.command=='build-filter' and a.action=='plan' and data.get('execution',{}).get('status')=='blocked':status='blocked'
         base.update(status=status, data=data)
         result_path = data.get("report")
@@ -539,7 +540,7 @@ def main(argv=None):
             from .qa_runtime import failure_receipt
             qa_receipt=failure_receipt(error)
             if qa_receipt:
-                base['actualChanges']=[dict(status='inspect_qa_prepare_receipt',report=qa_receipt,reason='Preparation can fail after controlled Data writes; inspect the recorded transaction')]
+                base['actualChanges']=[dict(status='inspect_qa_runtime_receipt',report=qa_receipt,reason='Runtime operations can fail after controlled Data or owned-process effects; inspect the recorded transaction')]
         if getattr(a,'command',None)=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
             base['actualChanges']=[dict(status='inspect_recovery_receipt',report=str(Path(a.out,'recovery-result.json')),reason='Recovery can fail after partial writes; inspect the separate receipt')]
         if isinstance(error,BeaverError):

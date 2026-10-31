@@ -162,7 +162,7 @@ class QaRuntimePrepareTests(unittest.TestCase):
         with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"):
             report = collect("fixture-project", "launch-build", "profile-a", result["ownerSha256"], "run-a")
         self.assertEqual(report["status"], "collected")
-        self.assertEqual(len(report["logs"]), 1)
+        self.assertEqual(len(report["logs"]), 2)
         self.assertEqual(report["logs"][0]["path"], launched["logPath"])
         process_report = launched["report"]
         self.assertEqual(process_report["expectedOwnerSha256"], result["ownerSha256"])
@@ -207,3 +207,14 @@ class QaRuntimePrepareTests(unittest.TestCase):
         with patch("beaver.qa_runtime._home_root", return_value=self.mock_home / "Library/Application Support/beaver/unity-qa"), patch("beaver.qa_runtime.subprocess.Popen") as popen:
             with self.assertRaises(BeaverError): launch("fixture-project", "owner-build", "profile-a", result["ownerSha256"])
         popen.assert_not_called()
+
+    def test_seed_changed_after_inventory_is_rejected_before_promotion(self):
+        import beaver.qa_runtime as runtime
+        spec=self.make_spec('seed-drift',with_seed=True);original=runtime.stream_identity
+        def change_during_copy(stream,path,**kwargs):
+            if path=='saves/slot.json':(self.root/'seed-tree/saves/slot.json').write_text('{"slot":9}\n')
+            return original(stream,path,**kwargs)
+        with patch('beaver.qa_runtime.stream_identity',side_effect=change_during_copy):
+            with self.assertRaises(BeaverError) as raised:self.call_prepare(spec)
+        self.assertEqual(raised.exception.code,'QA_PROFILE_SEED_DRIFT')
+        self.assertFalse((self.mock_home/'Library/Application Support/beaver/unity-qa/fixture-project/data/profiles/profile-a').exists())
