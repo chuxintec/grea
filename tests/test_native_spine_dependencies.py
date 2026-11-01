@@ -278,6 +278,8 @@ def test_freeze_registers_full_spine_pairs_and_assets_in_candidate_manifest(tmp_
     assert sdk["contract"] == "monkey-native-sdk-declaration/1"
     assert {row["role"] for row in sdk["assemblies"]} == {"editor-only", "player-only"}
     assert len(sdk["assemblies"]) == 4
+    assert all(row["nativeMonoScriptTable"]["status"] == "not_run"
+               and row["nativeMonoScriptTable"]["scripts"] == [] for row in sdk["assemblies"])
     assert sdk["license"]["sha256"] == by_path[sdk["license"]["path"]]["sha256"]
     assert sdk["serializedScriptReferences"] == [dict(path=prefab_path, sha256=sha(prefab),
         objectLocalId=2, scriptGuid=f"{4:032x}", scriptLocalId=-12345,

@@ -321,7 +321,10 @@ def sdk_producer_declarations(root, files, producer, closure):
                 metaSha256=files[meta_path]["sha256"], role=role,
                 declaredAssemblyIdentity=identity,
                 declaredReferences=declared.get("references", []) if role == "editor-only" else None,
-                referenceEvidence="pinned-editor-build" if role == "editor-only" else "consumer-inspection-required")
+                referenceEvidence="pinned-editor-build" if role == "editor-only" else "consumer-inspection-required",
+                nativeMonoScriptTable=dict(status="not_run", scripts=[],
+                    reason="existing-native-evidence-does-not-inventory-DLL-MonoScript-localIDs",
+                    requiredVerification="consumer-native-GetClass-assembly-and-localID-readback"))
             assemblies.append(row)
             by_guid[guids[0]] = path
     references = []

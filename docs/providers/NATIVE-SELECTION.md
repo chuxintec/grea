@@ -53,3 +53,10 @@ rewritten or relabelled, existing `adoptionDependencies` remains C# schema 1, an
 native import, independent compilation, migration/rollback and product Player
 checks retain their original separate evidence requirements. No new CLI flags
 or operation are introduced.
+
+Each assembly's `nativeMonoScriptTable` explicitly records `status: "not_run"`
+and an empty `scripts` list when the producer's existing native evidence lacks
+DLL MonoScript enumeration. This is missing evidence, not a proven zero-script
+assembly. Actual `GetClass` full type/assembly identity, GUID and local ID must
+be inventoried by the consumer's native pre/post checks; PE TypeDefs cannot
+substitute for that table. No Editor is started to issue this declaration.
