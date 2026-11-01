@@ -593,7 +593,10 @@ def _launch_process(exe, args, app, env, log_path, duration, project_id, build_i
         except OSError as error:
             _write_control_json(receipt_path, {**record_base, "pid": None, "owned": False, "status": "failed", "launchError": type(error).__name__})
             fail("QA_LAUNCH_FAILED", str(exe), f"Owned GUI launch failed ({type(error).__name__}); process receipt retained")
-        process_record = {**record_base, "pid": process.pid, "owned": True, "pidIdentity": _pid_identity_snapshot(process.pid, exe, log_path), "status": "running"}
+        from .qa_binding import capture_origin
+        try: origin=capture_origin(process.pid,exe,args,env)
+        except Exception: origin=dict(status='unknown',reason='Owned birth proof unavailable; attach must refuse')
+        process_record = {**record_base, "pid": process.pid, "owned": True, "pidIdentity": _pid_identity_snapshot(process.pid, exe, log_path), "instanceOrigin":origin, "status": "running"}
         _write_control_json(receipt_path, process_record)
         try:
             code = process.wait(timeout=duration); status = "exited"
@@ -646,7 +649,9 @@ def collect(project_id, build_id, profile_id, expected_owner_sha256, run_id=None
     if process.get("status") == "running":
         executable_name = plistlib.loads(read(build_root / "App.app" / "Contents" / "Info.plist")).get("CFBundleExecutable")
         executable_path = build_root / "App.app" / "Contents" / "MacOS" / executable_name
-        process["presence"] = _verify_running_process(process, executable_path, log_path)
+        process["presence"] = _verify_owned_running_instance(
+            process, project_id, build_id, profile_id, expected_owner_sha256, run_id
+        )
     if not bundle_matches or process.get("status") == "failed": overall_status = "failed"
     elif process.get("status") == "recovery_required" or process.get("status") == "interrupted" or process.get("presence") == "identity_unknown": overall_status = "recovery_required"
     elif process.get("status") == "stopped_by_budget": overall_status = "stopped_by_budget"
@@ -685,6 +690,24 @@ def _verify_running_process(process, executable, log_path):
             and current.get("logArgumentMatched") and baseline.get("logArgumentMatched")):
         return "verified-running"
     return "identity_unknown"
+
+
+def _verify_owned_running_instance(process, project_id, build_id, profile_id, expected_owner_sha256, run_id):
+    """Verify a new launch receipt against its captured kernel birth identity.
+
+    Legacy receipts, or receipts whose launch-time origin was unknown, remain
+    unknown. A later ps/lstart snapshot cannot retroactively establish ownership.
+    """
+    origin = process.get("instanceOrigin")
+    if (not isinstance(origin, dict) or origin.get("status") != "verified"
+            or origin.get("pid") != process.get("pid") or not origin.get("uniqueId")):
+        return "identity_unknown"
+    try:
+        from . import qa_binding
+        report = qa_binding._resolve(project_id, build_id, profile_id, expected_owner_sha256, run_id)
+    except (BeaverError, OSError, ValueError, KeyError, TypeError, AttributeError):
+        return "identity_unknown"
+    return "verified-running" if report.get("status") == "process-verified" else "identity_unknown"
 
 
 def _pid_identity_snapshot(pid, executable, log_path):

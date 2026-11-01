@@ -22,7 +22,7 @@ GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$',re.M)
 
 def algorithm_id():
     root=Path(__file__).parent
-    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','adoption_dependencies.py','adoption_assemblies.py','managed_metadata.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
+    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','adoption_dependencies.py','adoption_assemblies.py','adoption_sdk.py','managed_metadata.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
     return sha(encoded({name:digest_file(root/name) for name in names}))
 
 
@@ -124,7 +124,7 @@ def project_requirements(incoming,target,profile):
     return dict(files=observed,packages=requirements,policy='preserve target settings; never install or overwrite dependencies'),conflicts
 
 
-def build_plan(candidate,target,baseline=None,lineage=None):
+def build_plan(candidate,target,baseline=None,lineage=None,sdk_migration=None,expected_sdk_migration_sha256=None):
     incoming,im,ifiles,ih=snapshot(candidate);verify(incoming,ifiles)
     from .adoption_dependencies import validate_dependencies
     dependencies=validate_dependencies(im,ifiles)
@@ -158,15 +158,31 @@ def build_plan(candidate,target,baseline=None,lineage=None):
     else:fail('ADOPT_BASELINE_REQUIRED',str(target),'First adoption requires an explicit frozen baseline')
     profile=im['targetProfile'];actual=project_files(target,profile);current=inventory_assets(target,actual,profile);desired=inventory_assets(incoming,ifiles,profile)
     requirements,conflicts=project_requirements(incoming,target,profile)
+    from .adoption_sdk import validate_spec
+    sdk_spec=validate_spec(sdk_migration,expected_sdk_migration_sha256,incoming,ih,ifiles,target,actual)
+    sdk_variants={v['path']:v for pair in (sdk_spec or {}).get('assemblies',[]) for v in pair['variants']}
+    if len(sdk_variants)!=sum(len(pair['variants']) for pair in (sdk_spec or {}).get('assemblies',[])):
+        fail('ADOPT_SDK_SPEC','assemblies','A DLL path is assigned to multiple canonical roles')
     operations=[];preserved=[];removed=[];used=set()
     def conflict(key,reason,left,right):conflicts.append(dict(identity=key,reason=reason,current=left.get('path') if left else None,desired=right.get('path') if right else None))
     for key,unit in sorted(desired.items()):
         base=before.get(key);live=current.get(key);dest=unit['path']
+        sdk_variant=sdk_variants.get(dest)
         if live:used.add(live['path'])
         # A missing source meta has no proven identity. Its existing path may not
         # be claimed under a newly invented GUID after native import.
         if live is None and key.startswith('path:') and dest in actual:
             live=dict(path=dest,guid=None,file=actual[dest],meta=actual.get(dest+'.meta'));used.add(dest)
+        if sdk_variant and sdk_variant['action']=='reuse':
+            if not live or live['path']!=dest or not same_payload(live,unit):
+                conflict(key,'managed-sdk-reuse-drift',live,unit);continue
+            preserved.append(dict(identity=key,path=dest,reason='explicit-sdk-reuse',present=True));continue
+        if sdk_variant and sdk_variant['action']=='replace-preserve-guid':
+            if (not live or live['path']!=dest or live['guid']!=sdk_variant['after']['guid']
+                    or live['file']['sha256']!=sdk_variant['before']['sha256']
+                    or (live.get('meta') or {}).get('sha256')!=sdk_variant['before']['metaSha256']):
+                conflict(key,'managed-sdk-canonical-before-image-drift',live,unit);continue
+            operations.append(dict(action='update',identity=key,source=dest,target=dest,guid=sdk_variant['after']['guid'],before=live,after=unit,sdkMigrationRole=sdk_variant['pairRole'],sdkDomain=sdk_variant['domain']));continue
         if base and unit['path']==base['path'] and same_payload(base,unit):
             preserved.append(dict(identity=key,path=live['path'] if live else base['path'],reason='incoming-unchanged',present=live is not None));continue
         if unit['file'].get('owner')!='generated' or base and base['file'].get('owner') in ('manual','retained'):
@@ -194,8 +210,27 @@ def build_plan(candidate,target,baseline=None,lineage=None):
     for op in operations:
         if compile_operation(op) and (not op['after']['meta'] or not op['guid'] or op['before'] and not op['before']['meta']):
             conflicts.append(dict(identity=op['identity'],reason='compiler-input-requires-owned-metadata',current=op['source'],desired=op['target']))
+    if sdk_spec:
+        operation_by_target={op['target']:op for op in operations}
+        for op in operations:
+            if op['target'].lower().endswith('.unity'):
+                conflicts.append(dict(identity='managed-sdk-scene:'+op['target'],reason='managed-sdk-scene-reference-inventory-unsupported',current=op['target'],desired=op['target']))
+        for pair in sdk_spec['assemblies']:
+            for variant in pair['variants']:
+                op=operation_by_target.get(variant['path'])
+                if variant['action']=='replace-preserve-guid' and (not op or not op.get('before') or op['guid']!=variant['after']['guid']):
+                    conflicts.append(dict(identity='managed-sdk:'+pair['role'],reason='managed-sdk-canonical-replacement-not-planned',current=variant['path'],desired=variant['path']))
+                if variant['action']=='add' and op and op.get('before'):
+                    conflicts.append(dict(identity='managed-sdk:'+pair['role'],reason='managed-sdk-add-destination-owned',current=variant['path'],desired=variant['path']))
+        for reference in sdk_spec['references']:
+            if reference['root']=='candidate' and reference['action']=='map':
+                op=operation_by_target.get(reference['assetPath'])
+                if not op or op.get('after',{}).get('file',{}).get('sha256')!=reference['assetSha256']:
+                    conflicts.append(dict(identity='managed-sdk-reference:'+reference['assetPath'],reason='managed-sdk-reference-map-needs-owned-operation',current=reference['assetPath'],desired=reference['assetPath']))
+            if reference['root']=='target' and reference['assetPath'] in operation_by_target:
+                conflicts.append(dict(identity='managed-sdk-reference:'+reference['assetPath'],reason='managed-sdk-reference-target-must-be-untouched',current=reference['assetPath'],desired=reference['assetPath']))
     from .adoption_assemblies import inspect_compatibility
-    assembly_compatibility=inspect_compatibility(incoming,target,im,desired,current,operations,profile)
+    assembly_compatibility=inspect_compatibility(incoming,target,im,desired,current,operations,profile,sdk_spec)
     conflicts.extend(assembly_compatibility['conflicts'])
     # Moving parent directories is deliberately not implicit: each asset has its
     # own native move and folder GUIDs owned by the developer stay untouched.
@@ -203,14 +238,15 @@ def build_plan(candidate,target,baseline=None,lineage=None):
                 candidateManifestName=im['_manifestName'],incomingManifestSha256=ih,beforeManifestSha256=bh,
                 targetProfile=profile,namespace=im['namespace'],lineageOverride=explicit_lineage,projectRequirements=requirements,targetStateSha256=digest_file(state_path) if state else None,
                 targetFiles=actual,generation=desired,operations=operations,conflicts=conflicts,preserved=preserved,adoptionDependencies=dependencies,managedAssemblyCompatibility=assembly_compatibility,
+                managedAssemblyMigration=sdk_spec,managedAssemblyMigrationSpecPath=sdk_spec['path'] if sdk_spec else None,managedAssemblyMigrationSpecSha256=sdk_spec['sha256'] if sdk_spec else None,
                 executionPolicy='compiler-inputs-closed-editor-then-resources; independent-reopen; single-commit',
                 retainedRemoved=removed,counts=dict(operations=len(operations),conflicts=len(conflicts),preserved=len(preserved),retainedRemoved=len(removed)),
                 identityReadback='pending-native',business='not_run',visual='not_run')
 
 
-def preview(candidate,target,output,baseline=None,lineage=None):
-    plan=build_plan(candidate,target,baseline,lineage)
-    out=new_output(output,[safe(candidate),safe(target),*([safe(baseline)] if baseline else [])])
+def preview(candidate,target,output,baseline=None,lineage=None,sdk_migration=None,expected_sdk_migration_sha256=None):
+    plan=build_plan(candidate,target,baseline,lineage,sdk_migration,expected_sdk_migration_sha256)
+    out=new_output(output,[safe(candidate),safe(target),*([safe(baseline)] if baseline else []),*([safe(sdk_migration)] if sdk_migration else [])])
     write_json(out/'adoption-plan.json',plan)
     identity=sha(encoded(plan));write_json(out/'plan-identity.json',dict(schemaVersion=1,sha256=identity))
     result=dict(status='blocked' if plan['conflicts'] else 'planned',counts=plan['counts'],planSha256=identity,report=str(out/'adoption-plan.json'))
@@ -238,9 +274,13 @@ def prepare(plan_path,output,expected=None):
         if (digest_file(file) if file.is_file() else None)!=expected:fail('ADOPT_STALE_TARGET',relative,'Target project settings changed after preview')
     actual=project_files(target,plan['targetProfile'])
     if actual!=plan['targetFiles']:fail('ADOPT_STALE_TARGET',str(target),'Target changed after preview')
+    from .adoption_sdk import validate_spec
+    sdk_spec=validate_spec(plan.get('managedAssemblyMigrationSpecPath'),plan.get('managedAssemblyMigrationSpecSha256'),incoming,h,files,target,actual)
+    if sdk_spec!=plan.get('managedAssemblyMigration'):
+        fail('ADOPT_SDK_SPEC_DRIFT',str(plan_path),'SDK migration spec or native inputs differ from the frozen plan')
     state=inside(target,STATE)
     if (digest_file(state) if state.exists() else None)!=plan['targetStateSha256']:fail('ADOPT_BASELINE_STALE',str(target),'Adoption state changed')
-    out=new_output(output,[target,incoming,safe(plan_path).parent])
+    out=new_output(output,[target,incoming,safe(plan_path).parent,*([safe(plan['managedAssemblyMigrationSpecPath'])] if plan.get('managedAssemblyMigrationSpecPath') else [])])
     write_json(out/'adoption-plan.json',plan);write_json(out/'plan-identity.json',dict(schemaVersion=1,sha256=identity_hash))
     for index,op in enumerate(plan['operations']):
         for kind,suffix in (('file',''),('meta','.meta')):
@@ -256,6 +296,16 @@ def prepare(plan_path,output,expected=None):
 
 def commit_state(stage,plan,journal,readback):
     target=safe(plan['targetRoot']);after=project_files(target,plan['targetProfile']);changed=set()
+    sdk_mutations={r['assetPath'] for r in (plan.get('managedAssemblyMigration') or {}).get('references',[]) if r['root']=='candidate' and r['action']=='map'}
+    native_apply=None
+    if sdk_mutations:
+        native_apply=load(read(stage/'native-apply.json',max_bytes=128*1024**2),max_nodes=8_000_000)
+        if native_apply.get('status')!='verified' or native_apply.get('planSha256')!=journal['planSha256']:
+            fail('ADOPT_SDK_READBACK','native-apply.json','SDK reference migration lacks a verified same-plan native report')
+        observed={row.get('path'):row for row in native_apply.get('observedAfter',[])}
+        for path in sdk_mutations:
+            if path not in observed or path not in after or observed[path].get('fileHash')!=after[path]['sha256'] or observed[path].get('metaHash')!=(after.get(path+'.meta') or {}).get('sha256'):
+                fail('ADOPT_SDK_READBACK',path,'Native SDK reference result differs from its saved readback')
     for relative,expected in plan['projectRequirements']['files'].items():
         file=inside(target,relative)
         if (digest_file(file) if file.is_file() else None)!=expected:fail('ADOPT_PROJECT_DRIFT',relative,'Target project settings changed during adoption')
@@ -264,12 +314,22 @@ def commit_state(stage,plan,journal,readback):
             expected=op['after'].get(kind)
             if expected:
                 path=op['target']+suffix;changed.add(path)
-                if path not in after or after[path]['sha256']!=expected['sha256']:fail('ADOPT_READBACK',path,'Applied file differs from staged candidate')
+                if path not in after or after[path]['sha256']!=expected['sha256']:
+                    if not (kind=='file' and op['target'] in sdk_mutations and native_apply):
+                        fail('ADOPT_READBACK',path,'Applied file differs from staged candidate')
             if op['source']:changed.add(op['source']+suffix)
     for path,before in plan['targetFiles'].items():
         if path not in changed and after.get(path)!=before:fail('ADOPT_MANUAL_DRIFT',path,'Untouched target file changed during adoption')
+    generation={key:dict(value) for key,value in plan['generation'].items()}
+    for op in plan['operations']:
+        if op['target'] in sdk_mutations:
+            item=generation.get(op['identity'])
+            if item is None:fail('ADOPT_SDK_READBACK',op['target'],'Mapped reference asset is absent from the adoption generation')
+            item['file']=dict(after[op['target']])
+            meta=after.get(op['target']+'.meta')
+            item['meta']=dict(meta) if meta else None
     state=dict(schemaVersion=1,targetRoot=str(target),namespace=plan['namespace'],lineageOverride=plan.get('lineageOverride'),targetProfile=plan['targetProfile'],
-               incomingManifestSha256=plan['incomingManifestSha256'],generation=plan['generation'],planSha256=journal['planSha256'],
+               incomingManifestSha256=plan['incomingManifestSha256'],generation=generation,planSha256=journal['planSha256'],
                retainedRemoved=plan['retainedRemoved'],transaction=str(stage),nativeReadback=readback)
     from .transaction_fs import atomic
     atomic(inside(target,STATE),encoded(state))

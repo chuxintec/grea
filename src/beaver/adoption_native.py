@@ -52,7 +52,8 @@ def job_spec(stage,plan,journal,mode,budget):
             preserveLocalIds=op['action']=='move' and before['file']['sha256']==after['file']['sha256']))
     changed={p for op in plan['operations'] for p in (op['source'],op['target'])}
     watch=sorted(p for p in plan['targetFiles'] if p.endswith(('.prefab','.unity')) and p not in changed)[:128]
-    return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],operations=operations,watch=watch,codeRestored=journal.get('codeRestored',False),
+    sdk_migration=plan.get('managedAssemblyMigration')
+    return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],operations=operations,watch=watch,codeRestored=journal.get('codeRestored',False),sdkMigrationEnabled=sdk_migration is not None,sdkMigration=sdk_migration,
                 budgetSeconds=budget,deadlineUtc=(datetime.now(timezone.utc)+timedelta(seconds=budget)).isoformat())
 
 
@@ -108,7 +109,8 @@ def execute(plan_path,output,editor,budget=1200,expected=None):
             applied=run_child(stage,plan,journal,editor,'apply',budget)
             reopened=run_child(stage,plan,journal,editor,'verify',budget)
             cleanup(target,fingerprint)
-            return commit_state(stage,plan,journal,dict(status='verified',saveReopen=True,assets=len(reopened['assets']),referencesPreserved=reopened['referencesPreserved'],compilerInputs=sum(compile_operation(op) for op in plan['operations']),compilationBoundary='separate-editor-start' if (stage/'native-code.json').exists() else 'no-compiler-input-changes',scope='changed assets and up to 128 untouched prefab/scene direct dependencies'))
+            sdk_after=reopened.get('sdkAfterMonoScripts',[])
+            return commit_state(stage,plan,journal,dict(status='verified',saveReopen=True,assets=len(reopened['assets']),referencesPreserved=reopened['referencesPreserved'],compilerInputs=sum(compile_operation(op) for op in plan['operations']),compilationBoundary='separate-editor-start' if (stage/'native-code.json').exists() else 'no-compiler-input-changes',sdkAssembliesVerified=reopened.get('sdkAssembliesVerified',False),sdkReferencesVerified=reopened.get('sdkReferencesVerified',False),sdkBeforeMonoScripts=len(reopened.get('sdkBeforeMonoScripts',[])),sdkAfterMonoScripts=len(sdk_after),sdkAssemblyModuleBindingsVerified=sum(x.get('moduleLoadStatus')=='verified' for x in sdk_after),sdkAssemblyModuleBindingsNotObserved=sum(x.get('moduleLoadStatus')=='notObserved' for x in sdk_after),sdkReferenceMappingsApplied=len(applied.get('sdkReferenceMappingsApplied',[])),scope='changed assets and up to 128 untouched prefab/scene direct dependencies'))
         except BaseException:
             journal['state']='recovery-required';write_json(stage/'journal.json',journal)
             if journal.get('processExited'):

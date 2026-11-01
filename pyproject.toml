@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "beaver-game-tools"
-version = "0.5.1.dev20261101+fix17"
+version = "0.5.1.dev20261101+fix18"
 description = "Controlled native game project adoption and development tools"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -23,4 +23,4 @@ beaver = "beaver.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-beaver = ["targets/*.cs", "targets/*.template", "licenses/*.txt", "server_templates/**/*", "server_templates/grea_seed/.dockerignore", "server_templates/grea_seed/.gitignore"]
+beaver = ["targets/*.cs", "targets/*.m", "targets/*.template", "licenses/*.txt", "server_templates/**/*", "server_templates/grea_seed/.dockerignore", "server_templates/grea_seed/.gitignore"]

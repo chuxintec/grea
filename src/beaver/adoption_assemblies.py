@@ -20,30 +20,41 @@ def importer_roles(raw):
     if 'PluginImporter:' not in text or re.search(r'^  defineConstraints:\s*(?!\[\])\S',text,re.M):return None
     if re.search(r'^  (?:defineConstraints|externalObjects):\s*$',text,re.M):return None
     if re.search(r'^  externalObjects:\s*(?!\{\})\S',text,re.M):return None
-    match=re.search(r'^  platformData:\s*\n(.*?)(?=^  [A-Za-z]|\Z)',text,re.M|re.S)
+    match=re.search(r'^  platformData:\s*\n(.*?)(?=^  [A-Za-z][A-Za-z0-9]*:\s|\Z)',text,re.M|re.S)
     if not match:return None
     body=match.group(1);entries={}
     if re.search(r'^  - first:',body,re.M):
         blocks=re.split(r'^  - first:\s*\n',body,flags=re.M)[1:]
         if not blocks:return None
         for b in blocks:
-            m=re.match(r"      (Any|Editor):[^\n]*\n    second:\s*\n      enabled: ([01])\s*\n(.*)\Z",b,re.S)
+            m=re.match(r"      ([A-Za-z][A-Za-z0-9]*):[^\n]*\n    second:\s*\n      enabled: ([01])\s*\n(.*)\Z",b,re.S)
             if not m or m[1] in entries:return None
             entries[m[1]]=(int(m[2]),m[3])
     else:
         # Unity 6000 can serialize platformData as a keyed map.
-        blocks=list(re.finditer(r'^    (Any|Editor):\s*\n(.*?)(?=^    \S|\Z)',body,re.M|re.S))
-        if not blocks or ''.join(x[0] for x in blocks)!=body:return None
-        for m in blocks:
-            e=re.search(r'^      enabled: ([01])\s*$',m[2],re.M)
-            if not e or m[1] in entries:return None
-            entries[m[1]]=(int(e[1]),m[2])
-    if set(entries)!={'Any','Editor'}:return None
+        headers=list(re.finditer(r'^    ([A-Za-z][A-Za-z0-9]*):[^\n]*\n',body,re.M))
+        if not headers:return None
+        if ''.join(body[h.start():headers[i+1].start() if i+1<len(headers) else len(body)] for i,h in enumerate(headers))!=body:return None
+        for i,h in enumerate(headers):
+            section=body[h.end():headers[i+1].start() if i+1<len(headers) else len(body)]
+            enabled=re.search(r'^      enabled: ([01])\s*$',section,re.M)
+            if not enabled or h[1] in entries:return None
+            entries[h[1]]=(int(enabled[1]),re.sub(r'^\s*enabled:\s*[01]\s*$','',section,flags=re.M))
+    if not {'Any','Editor'}<=set(entries):return None
+    # Additional serialized platforms are allowed only when explicitly disabled;
+    # an active unmodeled platform can never be silently treated as Player.
+    if any(enabled for key,(enabled,_settings) in entries.items() if key not in ('Any','Editor')):return None
     any_on,any_settings=entries['Any'];editor_on,editor_settings=entries['Editor']
-    # Do not treat CPU/OS constrained Editor imports as all-Editor proof.
-    for key,expected in [('CPU','AnyCPU'),('OS','AnyOS')]:
-        values=re.findall(r'^\s+'+key+r':\s*(\S+)\s*$',editor_settings,re.M)
-        if values and values!=[expected]:return None
+    # Recognize only default CPU/OS settings; architecture and platform-limited
+    # imports cannot be summarized as a generic Editor/Player role.
+    allowed_settings={'CPU':{'AnyCPU'},'OS':{'AnyOS'},'DefaultValueInitialized':{'true','false'},'Exclude Editor':{'0','1'}}
+    for settings in (any_settings,editor_settings):
+        settings=re.sub(r'^\s*settings:\s*(?:\{\})?\s*$','',settings,flags=re.M)
+        seen={}
+        for key,value in re.findall(r'^\s+([^:\n]+):\s*(\S+)\s*$',settings,re.M):
+            key=key.strip();value=value.strip()
+            if key not in allowed_settings or value not in allowed_settings[key] or key in seen:return None
+            seen[key]=value
     exclusions=re.findall(r'^\s+Exclude ([^:]+):\s*([01])\s*$',any_settings,re.M)
     if any(k!='Editor' for k,v in exclusions) or len(exclusions)>1:return None
     editor=bool(editor_on) if not any_on else not (exclusions and exclusions[0][1]=='1')
@@ -54,24 +65,33 @@ def importer_roles(raw):
     return roles
 
 
-def _policy(manifest):
+def _policy(manifest, sdk_migration=None):
     policy=manifest.get('managedAssemblyPolicy')
-    if policy is None:return {},'reject-ambiguous-sdk'
-    if not isinstance(policy,dict) or set(policy)!={'schemaVersion','strategy','assemblies'} or type(policy['schemaVersion']) is not int or policy['schemaVersion']!=1 or policy['strategy']!='explicit-disjoint-role-pairs' or not isinstance(policy['assemblies'],list):
-        fail('ADOPT_ASSEMBLY_POLICY','managedAssemblyPolicy','Expected exact schema1 explicit-disjoint-role-pairs policy')
-    pins={}
-    for row in policy['assemblies']:
-        if not isinstance(row,dict) or set(row)!={'path','guid','sha256','metaSha256','role'}:fail('ADOPT_ASSEMBLY_POLICY','assemblies','Invalid assembly pin')
-        p=row['path']
-        if not isinstance(p,str) or not p.startswith('Assets/') or not p.endswith('.dll') or any(x in ('','.','..') for x in p.split('/')) or '\\' in p or ':' in p:fail('ADOPT_ASSEMBLY_POLICY',str(p),'Expected canonical Assets DLL path')
-        if p in pins or row['role'] not in ('editor-only','player-only') or not re.fullmatch('[a-f0-9]{32}',str(row['guid'])) or any(not re.fullmatch('[a-f0-9]{64}',str(row[k])) for k in ('sha256','metaSha256')):fail('ADOPT_ASSEMBLY_POLICY',p,'Duplicate/invalid immutable role pin')
-        pins[p]=row
-    return pins,policy['strategy']
+    pins={};strategy='reject-ambiguous-sdk'
+    if policy is not None:
+        if not isinstance(policy,dict) or set(policy)!={'schemaVersion','strategy','assemblies'} or type(policy['schemaVersion']) is not int or policy['schemaVersion']!=1 or policy['strategy']!='explicit-disjoint-role-pairs' or not isinstance(policy['assemblies'],list):
+            fail('ADOPT_ASSEMBLY_POLICY','managedAssemblyPolicy','Expected exact schema1 explicit-disjoint-role-pairs policy')
+        strategy=policy['strategy']
+        for row in policy['assemblies']:
+            if not isinstance(row,dict) or set(row)!={'path','guid','sha256','metaSha256','role'}:fail('ADOPT_ASSEMBLY_POLICY','assemblies','Invalid assembly pin')
+            p=row['path']
+            if not isinstance(p,str) or not p.startswith('Assets/') or not p.endswith('.dll') or any(x in ('','.','..') for x in p.split('/')) or '\\' in p or ':' in p:fail('ADOPT_ASSEMBLY_POLICY',str(p),'Expected canonical Assets DLL path')
+            if p in pins or row['role'] not in ('editor-only','player-only') or not re.fullmatch('[a-f0-9]{32}',str(row['guid'])) or any(not re.fullmatch('[a-f0-9]{64}',str(row[k])) for k in ('sha256','metaSha256')):fail('ADOPT_ASSEMBLY_POLICY',p,'Duplicate/invalid immutable role pin')
+            pins[p]=dict(row)
+    if sdk_migration:
+        for pair in sdk_migration['assemblies']:
+            for variant in pair['variants']:
+                p=variant['path'];row=dict(path=p,guid=variant['after']['guid'],sha256=variant['after']['sha256'],metaSha256=variant['after']['metaSha256'],role='editor-only' if variant['domain']=='editor' else 'player-only',pairRole=pair['role'])
+                if p in pins and any(pins[p].get(k)!=row[k] for k in ('guid','sha256','metaSha256','role')):
+                    fail('ADOPT_ASSEMBLY_POLICY',p,'Producer pin disagrees with consumer-authorized SDK migration')
+                pins[p]=row
+        strategy='consumer-explicit-canonical-role-migration'
+    return pins,strategy
 
 
-def inspect_compatibility(incoming,target,manifest,desired,current,operations,profile):
+def inspect_compatibility(incoming,target,manifest,desired,current,operations,profile,sdk_migration=None):
     if not profile.startswith('unity-'):return dict(status='not-applicable',assemblies=[],conflicts=[])
-    pins,strategy=_policy(manifest)
+    pins,strategy=_policy(manifest,sdk_migration)
     dll=lambda u:u['path'].lower().endswith('.dll')
     relevant={u['path'] for u in desired.values() if dll(u)}
     if not relevant:
@@ -79,12 +99,15 @@ def inspect_compatibility(incoming,target,manifest,desired,current,operations,pr
         return dict(status='not-applicable',assemblies=[],conflicts=[])
     post={u['path']:(u,target) for u in current.values() if dll(u)}
     touched=set();conflicts=[]
+    sdk_variants={v['path']:v for pair in (sdk_migration or {}).get('assemblies',[]) for v in pair['variants']}
     def conflict(reason,paths,detail):conflicts.append(dict(identity='managed-sdk:'+','.join(paths),reason=reason,current=paths,desired=detail))
     for op in operations:
         if not dll(op['after']):continue
         touched.add(op['target'])
         if op.get('before'):
-            if op['before']['file']['sha256']!=op['after']['file']['sha256'] or op['before'].get('meta')!=op['after'].get('meta'):
+            approved=sdk_variants.get(op['target'])
+            authorized_replace=approved and approved['action']=='replace-preserve-guid' and op.get('sdkMigrationRole')==approved['pairRole'] and op.get('sdkDomain')==approved['domain']
+            if (op['before']['file']['sha256']!=op['after']['file']['sha256'] or op['before'].get('meta')!=op['after'].get('meta')) and not authorized_replace:
                 conflict('managed-sdk-existing-replacement-needs-native-migration',[op['source'],op['target']],'Existing compiler/importer bytes cannot be replaced by this policy')
             post.pop(op['source'],None)
         post[op['target']]=(op['after'],incoming)
@@ -131,8 +154,11 @@ def inspect_compatibility(incoming,target,manifest,desired,current,operations,pr
             # new counterpart alongside any retained SDK requires native proof
             # and migration, which this static policy cannot authorize.
             if (a['path'] in touched)!=(b['path'] in touched):
-                conflict('managed-sdk-existing-identity-needs-native-migration',paths,'Cannot add a second identity alongside a retained SDK, even with disjoint importer roles')
-                continue
+                left_role=pins.get(a['path'],{}).get('pairRole');right_role=pins.get(b['path'],{}).get('pairRole')
+                paired=bool(left_role) and left_role==right_role and a.get('explicitRolePin') and b.get('explicitRolePin')
+                if not paired:
+                    conflict('managed-sdk-existing-identity-needs-native-migration',paths,'Cannot add a second identity alongside a retained SDK, even with disjoint importer roles')
+                    continue
             if a['roles'] is None or b['roles'] is None or set(a['roles'])&set(b['roles']):
                 conflict('managed-sdk-assembly-or-type-scope-collision',paths,dict(assemblyNames=[a['name'],b['name']],overlapTypes=sorted(overlap)[:32]));continue
             if not same or not a.get('explicitRolePin') or not b.get('explicitRolePin'):

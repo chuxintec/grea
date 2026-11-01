@@ -97,6 +97,16 @@ class AssemblyAdoptionTests(unittest.TestCase):
         self.assertIsNone(importer_roles(b'guid: '+b'a'*32))
         self.assertIsNone(importer_roles(meta('a'*32,'editor').replace(b'AnyCPU',b'ARM64')))
         self.assertIsNone(importer_roles(meta('a'*32,'player').replace(b'Exclude Editor',b'Exclude Linux')))
+        constrained=meta('a'*32,'player').replace(b'Exclude Editor: 1',b'Exclude Editor: 1\n        CPU: x86_64')
+        self.assertIsNone(importer_roles(constrained))
+
+    def test_unity_native_keyed_platform_map_allows_disabled_extra_but_blocks_enabled_extra(self):
+        base=(b'fileFormatVersion: 2\nguid: '+b'a'*32+b'\nPluginImporter:\n  externalObjects: {}\n  serializedVersion: 3\n'
+              b'  defineConstraints: []\n  platformData:\n    Any:\n      enabled: 0\n      settings: {}\n'
+              b'    Editor:\n      enabled: 1\n      settings:\n        DefaultValueInitialized: true\n        CPU: AnyCPU\n'
+              b'    WindowsStoreApps:\n      enabled: 0\n      settings:\n        CPU: AnyCPU\n')
+        self.assertEqual(importer_roles(base),['editor'])
+        self.assertIsNone(importer_roles(base.replace(b'WindowsStoreApps:\n      enabled: 0',b'WindowsStoreApps:\n      enabled: 1')))
 
     def test_different_assemblies_can_have_same_internal_generated_type(self):
         with tempfile.TemporaryDirectory() as tmp:

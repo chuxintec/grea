@@ -85,6 +85,9 @@ def capabilities():
         dict(id='qa.prepare',state='implemented',effects='verified-bundle-copy-and-owned-test-data',verification='explicit artifact and input hashes; stable named test profile; preparation does not launch Player'),
         dict(id='qa.launch',state='requires_provider',provider='macOS GUI session and explicitly prepared runtime',effects='owned-player-and-controlled-test-data',verification='bounded owned GUI process; optional restrictive Documents denial; actual access and save-resume require consumer evidence'),
         dict(id='qa.collect',state='implemented',effects='owned-run-evidence-report',verification='exact project/build/profile/run identities; process and artifact evidence; no inferred gameplay or TCC verdict'),
+        dict(id='qa.inspect-instance',state='implemented',effects='read-owned-run; fresh-output-only',verification='kernel birth/executable/argv/profile binding; no app launch or GUI input'),
+        dict(id='qa.bind',state='requires_provider',provider='macOS native AX with existing permissions and a strongly owned running run',effects='attach-only-session-output',verification='exact PID/birth/Bundle/run/profile/window-owner; no fallback launch'),
+        dict(id='qa.input',state='requires_provider',provider='hash-bound current native AX/PID session and existing permissions',effects='explicit guarded PID-directed input or window-only observation/capture',verification='per-event identity/window guards; event posting is not atomic or business acceptance'),
         dict(id="image.inspect", state="requires_provider", provider="Pillow", effects="read", verification="exact RGBA/alpha fixture"),
         dict(id="image.compress", state="requires_provider", provider="Pillow", effects="create-only", verification="lossless PNG stream and exact decoded RGBA"),
         dict(id="config.validate", state="implemented", effects="read", verification="strict scalar JSON; native runtime rejects missing/wrong-type fields"),
@@ -122,6 +125,8 @@ def parser():
     plan = adopt.add_parser("plan")
     plan.add_argument("--candidate", required=True)
     plan.add_argument("--baseline")
+    plan.add_argument("--sdk-migration")
+    plan.add_argument("--expected-sdk-migration")
     plan.add_argument("--target", required=True)
     plan.add_argument("--lineage")
     plan.add_argument("--out", required=True)
@@ -234,6 +239,14 @@ def parser():
         q.add_argument('--run')
         if action=='launch':q.add_argument('--duration',type=int,default=60)
         else:q.add_argument('--out')
+    for action in ('inspect-instance','bind'):
+        q=qa.add_parser(action)
+        for field in ('project','build','profile','expected-owner','run','out'):q.add_argument('--'+field,required=True)
+        if action=='bind':
+            q.add_argument('--backend',default='macos-native-ax-pid/1')
+            q.add_argument('--window',type=int)
+    qi=qa.add_parser('input')
+    for field in ('session','expected-session','spec','expected-spec','out'):qi.add_argument('--'+field,required=True)
     payload=sub.add_parser('payload').add_subparsers(dest='action',required=True)
     payload_verify=payload.add_parser('verify')
     payload_verify.add_argument('--root',required=True)
@@ -355,7 +368,7 @@ def dispatch(a):
     if a.command == "adopt":
         if a.action == "plan":
             from .adoption import preview
-            return preview(a.candidate, a.target, a.out, a.baseline, a.lineage)
+            return preview(a.candidate, a.target, a.out, a.baseline, a.lineage,a.sdk_migration,a.expected_sdk_migration)
         if a.action == "apply":
             from .adoption_native import execute
             return execute(a.plan, a.out, a.editor_path, a.timeout, a.expected_plan)
@@ -450,8 +463,12 @@ def dispatch(a):
         return run(a.manifest,a.out,a.duration,a.expected_manifest)
     if a.command=='qa':
         from .qa_runtime import prepare,launch,collect
+        from .qa_binding import inspect_instance,bind,input_event
         if a.action=='prepare':return prepare(a.spec,a.expected_spec,a.out)
         if a.action=='launch':return launch(a.project,a.build,a.profile,a.expected_owner,a.duration,a.run)
+        if a.action=='inspect-instance':return inspect_instance(a.project,a.build,a.profile,a.expected_owner,a.run,a.out)
+        if a.action=='bind':return bind(a.project,a.build,a.profile,a.expected_owner,a.run,a.out,a.window,a.backend)
+        if a.action=='input':return input_event(a.session,a.expected_session,a.spec,a.expected_spec,a.out)
         return collect(a.project,a.build,a.profile,a.expected_owner,a.run,a.out)
     if a.command=='payload':
         from .payload import verify_manifest,plan,apply
@@ -520,6 +537,13 @@ def main(argv=None):
                 base['actualChanges']=[dict(operation='qa.launch',runId=data.get('runId'),pid=data.get('pid'),processRecord=data.get('processRecord'))]
                 base['verification']['player']=data.get('status','unknown')
                 if data.get('stoppedByBudget'):base['status']='partial';status='partial'
+            elif a.action=='bind':
+                base['verification']['native']='attach-only-window-bound' if data.get('status')=='bound' else 'not_bound'
+            elif a.action=='input':
+                native_input=data.get('native',{})
+                if native_input.get('eventsPosted',0) or native_input.get('axActionsAttempted',0):
+                    base['actualChanges']=[dict(operation='qa.input',pid=data.get('pid'),windowId=data.get('windowId'),eventsPosted=native_input.get('eventsPosted',0),axActionsAttempted=native_input.get('axActionsAttempted',0),axActionsPerformed=native_input.get('axActionsPerformed',0))]
+                base['verification']['native']=data.get('native',{}).get('inputDelivery','window-only-observation')
         if a.command=='payload' and a.action=='apply':
             base['actualChanges']=[dict(operation='payload.materialize',targetRoot=data['targetRoot'],files=data['files'],overrides=len(data['overrides']))]
         if getattr(a,'summary',False):

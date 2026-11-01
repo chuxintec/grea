@@ -1,6 +1,6 @@
 # CLI contract v1
 
-当前本地开发候选 0.5.1.dev20261028+fix3（正式基线 0.5.0），沿用 `beaver-result/1`。除保留原始输出和退出码的 `tool <id>` 子命令外，业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
+当前固定候选见 [PLAN.md](PLAN.md)（正式基线 0.5.0），沿用 `beaver-result/1`。除保留原始输出和退出码的 `tool <id>` 子命令外，业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
 退出 0=ok；1=partial；3=blocked/not_run（包括无效参数与前置条件未满足）；2=failed（执行/读回失败）。帮助为 argparse 文本；没有任意 shell 透传。
 
 `actualChanges` 是数组，每项为**非空路径字符串或对象摘要**，消费者须保留类型、顺序及原值。`batch/production apply` 通常返回已变资源相对路径字符串，`unity apply` 沿用原生变化记录；工程绑定、迁移、采用/恢复和失败检查点可返回操作/数量/身份或待核写入对象。对象内部字段由操作定义，不能将整个数组限定为对象，也不能把字符串强转为对象后丢失原值；数字、布尔、null 和嵌套数组不是合法变更项。对应 JSON Schema 项合同为 `{"oneOf":[{"type":"string","minLength":1},{"type":"object"}]}`。这是既有固定 producer 的合同澄清，不改变其输出或身份。
@@ -161,3 +161,10 @@ Post-exit build font recovery: `unity recover-font-source --transaction <fixed11
 Controlled macOS GUI test runtime: `qa prepare --spec <spec> --expected-spec <SHA> [--out <fresh-dir>]`, `qa launch --project <ID> --build <ID> --profile <ID> --expected-owner <SHA> [--duration 60] [--run <ID>]`, and `qa collect` with the same identities plus required `--run` and optional `--out`. See [QA runtime](QA-RUNTIME.md) and [closed spec](schemas/qa-runtime-spec-1.schema.json). Preparation copies verified Bundle bytes/modes/internal links and records actual signatures; it does not launch. Data configs/logs/explicit test profile are under Application Support, profile owner identity persists across builds, and seed applies only on initial creation. GUI/source-file-access/save-resume remain explicit consumer verification; no TCC alteration or source-debug-string access inference.
 
 Managed SDK preflight for Unity adoption is documented in [ADOPTION-ASSEMBLIES.md](ADOPTION-ASSEMBLIES.md). Plans retain the existing CLI but add hash-bound `managedAssemblyCompatibility`; optional exact manifest `managedAssemblyPolicy` permits only new isolated disjoint role pairs, never existing SDK migration. Build certification requires Succeeded and integer buildErrors=0.
+
+
+## SDK migration and attach-only App binding (development)
+
+Explicit `adopt plan --sdk-migration FILE --expected-sdk-migration SHA256` uses the existing immutable adoption transaction. See [SDK-MIGRATION.md](SDK-MIGRATION.md) for complete byte/MVID/native MonoScript/role/reference requirements, rollback, and unsupported cases. The default collision guard above remains unchanged; only this explicit policy permits the supported canonical migration.
+
+`qa inspect-instance`, `qa bind`, and `qa input` are documented in [QA-BINDING.md](QA-BINDING.md). They require a strongly captured owned launch, explicit run and owner hash, and existing host AX permissions. Binding/input never launches an App or falls back to name/BundleID/global input. Kernel guards plus PID-directed posting are not atomic and do not establish business acceptance. Fixed/runtime and consumer validation status is recorded in PLAN.

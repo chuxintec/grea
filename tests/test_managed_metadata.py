@@ -3,6 +3,7 @@ import struct
 import subprocess
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
 
 from beaver.managed_metadata import inspect_managed
@@ -11,7 +12,9 @@ from beaver.managed_metadata import inspect_managed
 def _align4(value): return (value + 3) & ~3
 
 
-def managed_dll(name="Fixture.One", namespace="Demo", type_name="Widget", nested_type_name=None, type_visibility=1) -> bytes:
+def managed_dll(name="Fixture.One", namespace="Demo", type_name="Widget", nested_type_name=None, type_visibility=1,
+                mvid="12345678-1234-5678-90ab-cdef12345678", truncate_guid_heap=False,
+                mvid_index=1,module_count=1) -> bytes:
     """Build a small, valid PE/CLI image containing real ECMA metadata tables."""
     strings=bytearray(b"\0")
     def add_string(value):
@@ -23,9 +26,9 @@ def managed_dll(name="Fixture.One", namespace="Demo", type_name="Widget", nested
     type_count=2 if nested_type_name else 1
     valid=(1<<0)|(1<<2)|(1<<32)|((1<<41) if nested_type_name else 0)
     tables=struct.pack("<IBBBBQQ",0,2,0,0,1,valid,0)
-    tables+=struct.pack("<III",1,type_count,1)
+    tables+=struct.pack("<III",module_count,type_count,1)
     if nested_type_name: tables+=struct.pack("<I",1)
-    tables+=struct.pack("<HHHHH",0,mod_idx,0,0,0)
+    for _ in range(module_count): tables+=struct.pack("<HHHHH",0,mod_idx,mvid_index,0,0)
     # TypeDef row: flags, name, namespace, Extends(TypeDefOrRef), FieldList, MethodList.
     tables+=struct.pack("<IHHHHH",type_visibility,type_idx,ns_idx,0,1,1)
     if nested_type_name: tables+=struct.pack("<IHHHHH",2,nested_idx,0,0,1,1)
@@ -35,11 +38,13 @@ def managed_dll(name="Fixture.One", namespace="Demo", type_name="Widget", nested
 
     version=b"v4.0.30319\0"
     fixed=struct.pack("<IHHII",0x424A5342,1,1,0,len(version))+version
-    fixed+=b"\0"*(_align4(len(fixed))-len(fixed))+struct.pack("<HH",0,3)
-    names=[b"#~\0",b"#Strings\0",b"#Blob\0"]
+    fixed+=b"\0"*(_align4(len(fixed))-len(fixed))+struct.pack("<HH",0,4)
+    names=[b"#~\0",b"#Strings\0",b"#Blob\0",b"#GUID\0"]
     headers_size=sum(8+_align4(len(n)) for n in names)
     data_start=_align4(len(fixed)+headers_size)
-    contents=[bytes(tables),bytes(strings),blob]
+    guid=uuid.UUID(mvid).bytes_le
+    if truncate_guid_heap: guid=guid[:15]
+    contents=[bytes(tables),bytes(strings),blob,guid]
     offsets=[];cursor=data_start
     for content in contents: offsets.append(cursor);cursor+=len(content)
     headers=b"".join(struct.pack("<II",off,len(content))+name+b"\0"*(_align4(len(name))-len(name)) for off,content,name in zip(offsets,contents,names))
@@ -70,6 +75,7 @@ class ManagedMetadataTests(unittest.TestCase):
         self.assertEqual(result["version"],[1,0,0,0])
         self.assertEqual(result["types"],["Demo.Widget"])
         self.assertEqual(result["publicTypes"],["Demo.Widget"])
+        self.assertEqual(result["moduleVersionId"],"12345678-1234-5678-90ab-cdef12345678")
         self.assertIsNone(result["publicKeySha256"])
 
     def test_distinct_assembly_names_can_report_overlapping_type(self):
@@ -93,6 +99,12 @@ class ManagedMetadataTests(unittest.TestCase):
         with self.assertRaises(ValueError): inspect_managed(valid[:-40])
         with self.assertRaises(ValueError): inspect_managed(b"\0"*(64*1024*1024+1))
 
+    def test_rejects_truncated_guid_heap(self):
+        with self.assertRaises(ValueError): inspect_managed(managed_dll(truncate_guid_heap=True))
+        with self.assertRaises(ValueError): inspect_managed(managed_dll(mvid_index=0))
+        with self.assertRaises(ValueError): inspect_managed(managed_dll(mvid_index=2))
+        with self.assertRaises(ValueError): inspect_managed(managed_dll(module_count=2))
+
     @unittest.skipUnless(shutil.which("dotnet"),"dotnet SDK unavailable; pure PE fixture tests still cover metadata parsing")
     def test_real_compiled_managed_dll_renamed_identity_and_overlapping_types(self):
         with tempfile.TemporaryDirectory(dir="/private/tmp") as temp:
@@ -108,8 +120,11 @@ class ManagedMetadataTests(unittest.TestCase):
             dll=root/"Compiler.One/bin/Debug/net8.0/Compiler.One.dll"
             renamed=root/"renamed.bin";renamed.write_bytes(dll.read_bytes())
             a=inspect_managed(renamed.read_bytes())
+            original=inspect_managed(dll.read_bytes())
             b=inspect_managed((root/"Compiler.Two/bin/Debug/net8.0/Compiler.Two.dll").read_bytes())
             self.assertEqual((a["name"],a["version"]),("Compiler.One",[2,3,4,5]))
+            self.assertEqual(a["moduleVersionId"],original["moduleVersionId"])
+            self.assertNotEqual(a["moduleVersionId"],b["moduleVersionId"])
         self.assertIn("Same.Namespace.SharedType",a["types"])
         self.assertEqual(set(a["types"]) & set(b["types"]),{"Same.Namespace.SharedType"})
         self.assertIn("Same.Namespace.SharedType",a["publicTypes"])

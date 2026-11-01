@@ -1,13 +1,15 @@
 """Bounded, read-only PE/CLI metadata inspection. Never loads or executes assemblies.
 
-``types`` lists all TypeDefs, while ``publicTypes`` contains externally visible
-TypeDefs only. This metadata inventory does not prove Unity serialized references
-or native asset bindings are valid.
+``types`` lists all TypeDefs, ``publicTypes`` contains externally visible
+TypeDefs only, and ``moduleVersionId`` is read from Module.Mvid/#GUID. This
+metadata inventory does not prove Unity serialized references or native asset
+bindings are valid.
 """
 from __future__ import annotations
 
 import hashlib
 import struct
+import uuid
 
 MAX_INPUT = 64 * 1024 * 1024
 MAX_ROWS = 1_000_000
@@ -126,6 +128,14 @@ def _blob_heap(r, stream, index):
     return r.bytes(p,length,end)
 
 
+def _guid_heap(r, stream, index):
+    start,end=stream
+    length=end-start
+    if length%16: raise ValueError("GUID heap has a truncated 16-byte entry")
+    if index<=0 or index>length//16: raise ValueError("GUID heap index out of range")
+    return r.bytes(start+(index-1)*16,16,end)
+
+
 def _parse_tables(r, tables, streams):
     pos,end=tables
     r.check(pos,24,end)
@@ -229,6 +239,11 @@ def inspect_managed(data: bytes) -> dict:
     version=list(assembly[1:5]);flags=assembly[5];key=_blob_heap(r,streams["#Blob"],assembly[6])
     if not name or len(version)!=4: raise ValueError("invalid Assembly identity")
     public_hash=hashlib.sha256(key).hexdigest() if key else None
+    if counts.get(0,0)!=1: raise ValueError("expected exactly one Module row for MVID")
+    module=_row_reader(r,0,0,counts,offsets,sizes,heap_sizes,table_end)
+    guid_stream=streams.get("#GUID")
+    if guid_stream is None: raise ValueError("Module MVID requires #GUID heap")
+    module_mvid=str(uuid.UUID(bytes_le=_guid_heap(r,guid_stream,module[2])))
     type_count=counts.get(2,0)
     if type_count>MAX_TYPES: raise ValueError("TypeDef count exceeds 100,000 type budget")
     raw_types=[]
@@ -264,4 +279,4 @@ def inspect_managed(data: bytes) -> dict:
         else: visible=visibility==1
         visiting.remove(i);visibility_cache[i]=visible;return visible
     public_types=[full_name(i) for i in range(type_count) if raw_types[i][2]!="<Module>" and externally_visible(i)]
-    return {"name":name,"version":version,"culture":culture or "neutral","publicKeySha256":public_hash,"types":types,"publicTypes":public_types}
+    return {"name":name,"version":version,"culture":culture or "neutral","publicKeySha256":public_hash,"types":types,"publicTypes":public_types,"moduleVersionId":module_mvid}
