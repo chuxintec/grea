@@ -2,7 +2,7 @@
 
 The QA binding commands attach to one explicitly owned, already running QA instance and one of its visible windows. They use the existing [QA runtime](QA-RUNTIME.md) owner, project, build, profile and run records. Preparing a build, inspecting an instance and binding a window do not launch an application. Launching remains a separate explicit `qa launch` operation.
 
-The current backend is `macos-native-ax-pid/1`. It requires macOS, a local clang SDK for compiling the small source-bound controller, and existing Accessibility permission. Input also checks existing event-post permission; window capture requires the relevant existing macOS capture access. Permission failure returns a blocked result. The implementation does not request permission dialogs, modify TCC, sign an app, install globally, or select a replacement application.
+Two explicit backends are supported: `macos-native-ax-pid/1` preserves the original event-only path; `macos-native-ax-pid-pointer-sync/1` adds guarded system-cursor positioning for Unity input. There is no automatic fallback between them. It requires macOS, a local clang SDK for compiling the small source-bound controller, and existing Accessibility permission. Input also checks existing event-post permission; window capture requires the relevant existing macOS capture access. Permission failure returns a blocked result. The implementation does not request permission dialogs, modify TCC, sign an app, install globally, or select a replacement application.
 
 ## Public commands
 
@@ -84,3 +84,14 @@ Before each CG event and after the operation, the controller rechecks process bi
 `inputDelivery: posted-to-pid-not-business-acceptance` means exactly that the controller issued events. It does not prove a button callback, drag response, entered text, login, server action, save, normal exit or successful resume. Those require the consuming app's own state/log evidence and, where relevant, visual or gameplay validation. This document does not claim uncompleted consumer acceptance.
 
 Process/window checks and OS event posting are separate operations, not an atomic capability. A target can exit, change or replace a window between checks and a post. The controller narrows this interval through per-event and final verification, reports failures and partial effects, and never claims an atomic guarantee. Existing permissions and a valid binding also do not enlarge the authorized application or data scope.
+
+
+## Explicit system-cursor synchronization
+
+Select `qa bind --backend macos-native-ax-pid-pointer-sync/1` for a Player which reads physical pointer state, such as the verified Unity 6000.6.2f1 input probe. The choice is fixed in the session; ordinary click/drag specs remain unchanged. Only this backend's mouse gestures add the native `cursorMode: sync-owned-window`. Other operations never relocate the pointer. The default backend does not provide this positioning and failed actual Unity input acceptance when the system pointer was elsewhere.
+
+This mode changes the system-wide pointer position. It first verifies the exact foreground process/window, unchanged geometry, the first visible layer-zero window covering the intended point, and the actual AX hit element's same PID and exact selected AX window. Transparent system overlays are recorded; an actual foreign AX hit or an unknown mapping blocks before positioning. It then moves the pointer directly to the selected window's global point without posting a global mouse event. Click/drag events still use only `CGEventPostToPid` and window-relative measured payloads. No global event fallback, app launch, permission change, or pointer restoration to another location occurs. Use exclusive desktop ownership; user or application pointer movement stops the gesture.
+
+Each point records `cursorSync` and the bounded `cursorSyncHistory`, before/after/target positions, attempted/completed state and AX hit evidence. Drift, process/window/focus changes or an unknown outcome remains blocked/partial with all known effects retained. A positioning attempt alone can change global state even when `eventsPosted` is zero; timeout receipts mark the cursor state possibly changed. Kernel checks, AX hit tests, pointer changes and event posting remain non-atomic. Actual callbacks, saves and product behavior require separate observation.
+
+Window screenshots explicitly request PNG without shadows (`screencapture -o -t png -l <bound-window>`). Click coordinates are logical window points including the titlebar; screenshot bitmap pixels may use Retina scale. Compare the captured dimensions with the reported logical bounds before choosing points. Historical fixed18 captures contain shadows and require padding as well as scale correction.

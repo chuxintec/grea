@@ -92,6 +92,11 @@ def _policy(manifest, sdk_migration=None):
 def inspect_compatibility(incoming,target,manifest,desired,current,operations,profile,sdk_migration=None):
     if not profile.startswith('unity-'):return dict(status='not-applicable',assemblies=[],conflicts=[])
     pins,strategy=_policy(manifest,sdk_migration)
+    retained_block=(sdk_migration or {}).get('retainedInactiveAssemblies')
+    retained_rows=(retained_block or {}).get('assemblies',[])
+    retained_pins={row['path']:row for row in retained_rows}
+    if retained_block and retained_block.get('policy')!='preserve-exact-disabled-target-assemblies':
+        fail('ADOPT_ASSEMBLY_POLICY','retainedInactiveAssemblies','Unknown explicit inactive retention policy')
     dll=lambda u:u['path'].lower().endswith('.dll')
     relevant={u['path'] for u in desired.values() if dll(u)}
     if not relevant:
@@ -113,7 +118,7 @@ def inspect_compatibility(incoming,target,manifest,desired,current,operations,pr
         post[op['target']]=(op['after'],incoming)
     relevant|=touched
     if len(post)>128:fail('ADOPT_ASSEMBLY_BUDGET','Assets','At most 128 managed DLLs may be checked in one adoption')
-    rows=[];used=set()
+    rows=[];used=set();used_retained=set()
     with RootReader(incoming) as src,RootReader(target) as dst:
         for path,(u,root) in sorted(post.items()):
             view=src if root==incoming else dst
@@ -133,8 +138,17 @@ def inspect_compatibility(incoming,target,manifest,desired,current,operations,pr
                 used.add(path);role=['editor'] if pin['role']=='editor-only' else ['player']
                 row['explicitRolePin']=all(row[k]==pin[k] for k in ('guid','sha256','metaSha256')) and row['roles']==role
                 if not row['explicitRolePin']:conflict('managed-sdk-role-pin-mismatch',[path],'Actual bytes/GUID/importer role differ from policy')
+            inactive=retained_pins.get(path)
+            if inactive:
+                used_retained.add(path)
+                row['explicitInactivePin']=(root==target and path not in touched and
+                    all(row[k]==inactive[k] for k in ('path','guid','sha256','metaSha256','moduleVersionId','roles')) and
+                    row.get('name','').casefold()==inactive['assemblyName'].casefold())
+                if not row['explicitInactivePin']:
+                    conflict('managed-sdk-retained-inactive-pin-mismatch',[path],'Retained inactive DLL is changed, touched, or not fully disabled')
             rows.append(row)
     if used!=set(pins):fail('ADOPT_ASSEMBLY_POLICY','assemblies','Pins must name actual post-adoption assemblies')
+    if used_retained!=set(retained_pins):fail('ADOPT_ASSEMBLY_POLICY','retainedInactiveAssemblies','Pins must name actual unchanged target assemblies')
     if sum(len(r.get('types',[])) for r in rows)>100000 or sum(sum(len(t) for t in r.get('types',[])) for r in rows)>16*1024**2:
         fail('ADOPT_ASSEMBLY_BUDGET','Assets','Managed type inventory exceeds bounded comparison budget')
     active_names={r.get('name','').casefold() for r in rows if r['path'] in relevant}
@@ -149,6 +163,13 @@ def inspect_compatibility(incoming,target,manifest,desired,current,operations,pr
             overlap=set(a.get('publicTypes',[]))&set(b.get('publicTypes',[]))
             if not same and not overlap:continue
             paths=[a['path'],b['path']]
+            if a.get('explicitInactivePin') or b.get('explicitInactivePin'):
+                both_inactive=a.get('explicitInactivePin') and b.get('explicitInactivePin')
+                inactive=a if a.get('explicitInactivePin') else b
+                active=b if inactive is a else a
+                paired_active=active['path'] in sdk_variants and active.get('explicitRolePin')
+                if both_inactive or paired_active:
+                    continue
             # Even disjoint compilation domains do not prove that historical
             # serialized MonoScript GUID/localIDs still resolve. Installing a
             # new counterpart alongside any retained SDK requires native proof
@@ -156,7 +177,8 @@ def inspect_compatibility(incoming,target,manifest,desired,current,operations,pr
             if (a['path'] in touched)!=(b['path'] in touched):
                 left_role=pins.get(a['path'],{}).get('pairRole');right_role=pins.get(b['path'],{}).get('pairRole')
                 paired=bool(left_role) and left_role==right_role and a.get('explicitRolePin') and b.get('explicitRolePin')
-                if not paired:
+                inactive_pair=(a.get('explicitInactivePin') and b['path'] in sdk_variants and b.get('explicitRolePin')) or (b.get('explicitInactivePin') and a['path'] in sdk_variants and a.get('explicitRolePin'))
+                if not paired and not inactive_pair:
                     conflict('managed-sdk-existing-identity-needs-native-migration',paths,'Cannot add a second identity alongside a retained SDK, even with disjoint importer roles')
                     continue
             if a['roles'] is None or b['roles'] is None or set(a['roles'])&set(b['roles']):

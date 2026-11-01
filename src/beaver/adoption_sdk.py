@@ -17,6 +17,7 @@ CONTRACT = "beaver-sdk-migration/1"
 GUID = re.compile(r"^[a-f0-9]{32}$")
 SHA = re.compile(r"^[a-f0-9]{64}$")
 MVID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+SPEC_NODES = 500_000
 
 
 def _hash(value, where):
@@ -55,9 +56,9 @@ def load_spec(path, expected_sha256):
     path = safe(path); raw = read(path, 4 * 1024 * 1024); digest = sha(raw)
     if digest != _hash(expected_sha256, "expectedSdkMigrationSha256"):
         fail("ADOPT_SDK_SPEC_DRIFT", str(path), "Explicit SDK migration spec SHA256 differs")
-    doc = load(raw, max_nodes=100_000)
+    doc = load(raw, max_nodes=SPEC_NODES)
     required = {"schemaVersion", "contract", "unityVersion", "candidateManifestSha256", "targetAssetsSha256", "referenceCoverage", "licenses", "assemblies", "references"}
-    if (not isinstance(doc, dict) or set(doc) != required or type(doc.get("schemaVersion")) is not int
+    if (not isinstance(doc, dict) or set(doc) not in (required,required|{"retainedInactiveAssemblies"}) or type(doc.get("schemaVersion")) is not int
             or doc["schemaVersion"] != 1 or doc.get("contract") != CONTRACT):
         fail("ADOPT_SDK_SPEC", str(path), "Expected closed beaver-sdk-migration/1 spec")
     if doc["unityVersion"] != "6000.6.2f1": fail("ADOPT_SDK_SPEC",str(path),"This implementation supports Unity 6000.6.2f1 only")
@@ -219,7 +220,50 @@ def validate_spec(spec_path, expected_sha256, incoming, manifest_sha256, files, 
                 fail("ADOPT_SDK_MVID_UNKNOWN",where,"Inactive Player attestation requires exact Player-after/Editor-before DLL bytes and MVID")
         pairs.append(dict(role=pair["role"],assemblyName=name,licenseId=pair["licenseId"],monoScriptPolicy=pair["monoScriptPolicy"],variants=normalized))
 
-    references=[]; seen=set()
+    retained_inactive=None;retained_guids=set();retained_paths=set()
+    if "retainedInactiveAssemblies" in doc:
+        block=doc["retainedInactiveAssemblies"]
+        if not isinstance(block,dict) or set(block)!={"policy","assemblies"} or block["policy"]!="preserve-exact-disabled-target-assemblies" or not isinstance(block["assemblies"],list) or not block["assemblies"]:
+            fail("ADOPT_SDK_SPEC","retainedInactiveAssemblies","Expected explicit preserve-exact-disabled-target-assemblies policy and nonempty rows")
+        retained_inactive=[]
+        for i,row in enumerate(block["assemblies"]):
+            where=f"retainedInactiveAssemblies.assemblies[{i}]"
+            fields={"path","guid","sha256","metaSha256","assemblyName","moduleVersionId","roles"}
+            if not isinstance(row,dict) or set(row)!=fields or row["roles"]!=[]:
+                fail("ADOPT_SDK_SPEC",where,"Expected closed exact disabled DLL pin with roles=[]")
+            p=_path(row["path"],where,".dll")
+            if p in retained_paths or p in target_paths or p in source_paths or p in files or p+".meta" in files:
+                fail("ADOPT_SDK_SPEC",p,"Inactive DLL must be a unique unchanged target-only path")
+            retained_paths.add(p)
+            if not isinstance(row["guid"],str) or not GUID.fullmatch(row["guid"]) or row["guid"] in retained_guids:
+                fail("ADOPT_SDK_SPEC",p,"Inactive DLL GUID must be valid and unique")
+            retained_guids.add(row["guid"])
+            file_hash=_hash(row["sha256"],p);meta_hash=_hash(row["metaSha256"],p+".meta")
+            mvid=row["moduleVersionId"]
+            if not isinstance(mvid,str) or not MVID.fullmatch(mvid) or not isinstance(row["assemblyName"],str) or not row["assemblyName"]:
+                fail("ADOPT_SDK_SPEC",p,"Inactive DLL requires exact assembly identity and canonical MVID")
+            raw=_read_target(target,target_files,p,file_hash,"Retained inactive SDK DLL")
+            meta_raw=_read_target(target,target_files,p+".meta",meta_hash,"Retained inactive SDK importer")
+            from .adoption import identity
+            if identity(meta_raw,"Assets")!=row["guid"]:
+                fail("ADOPT_SDK_IDENTITY",p+".meta","Retained inactive GUID differs from its exact meta")
+            if importer_roles(meta_raw)!=[]:
+                fail("ADOPT_SDK_ROLE",p+".meta","Retained inactive importer is not proven disabled on every serialized platform")
+            try: observed=inspect_managed(raw)
+            except (ValueError,UnicodeError) as error:
+                fail("ADOPT_SDK_IDENTITY",p,f"Retained inactive managed metadata inspection failed: {error}")
+            if observed["name"].casefold()!=row["assemblyName"].casefold() or observed.get("moduleVersionId")!=mvid:
+                fail("ADOPT_SDK_IDENTITY",p,"Retained inactive assembly name/MVID differs from exact target DLL bytes")
+            canonical_editors=[variant for pair in pairs for variant in pair["variants"]
+                if variant["domain"]=="editor" and pair["assemblyName"].casefold()==observed["name"].casefold()
+                and variant["after"]["sha256"]==file_hash and variant["after"]["moduleVersionId"]==mvid]
+            if len(canonical_editors)!=1:
+                fail("ADOPT_SDK_INACTIVE_SOURCE",p,"Retained inactive DLL must be byte/MVID-identical to one declared canonical Editor after-image")
+            if canonical_editors[0]["before"] is None:
+                fail("ADOPT_SDK_INACTIVE_SOURCE",p,"Retained inactive source requires a pinned canonical Editor before-image for every transaction phase")
+            retained_inactive.append(dict(path=p,guid=row["guid"],sha256=file_hash,metaSha256=meta_hash,assemblyName=observed["name"],moduleVersionId=mvid,roles=[],canonicalEditorPath=canonical_editors[0]["path"]))
+
+    references=[]; seen=set(); reference_assets={}
     for i,row in enumerate(doc["references"]):
         where=f"references[{i}]"; fields={"root","assetPath","assetSha256","objectLocalId","propertyPath","action","source","canonical"}
         if not isinstance(row,dict) or set(row)!=fields or row["root"] not in ("candidate","target"):
@@ -233,8 +277,11 @@ def validate_spec(spec_path, expected_sha256, incoming, manifest_sha256, files, 
         if row["action"]=="map" and row["propertyPath"]=="m_Script":
             fail("ADOPT_SDK_REFERENCE","m_Script","Schema v1 never rewrites serialized script identities")
         inv=files if row["root"]=="candidate" else target_files; root=incoming if row["root"]=="candidate" else target
-        if row["root"]=="candidate": _read_candidate(root,inv,p,h,"Serialized object asset")
-        else: _read_target(root,inv,p,h,"Serialized object asset")
+        asset_key=(row["root"],p,h)
+        if asset_key not in reference_assets:
+            if row["root"]=="candidate": _read_candidate(root,inv,p,h,"Serialized object asset")
+            else: _read_target(root,inv,p,h,"Serialized object asset")
+            reference_assets[asset_key]=(row["root"],p,h)
         key=(row["root"],p,row["objectLocalId"],row["propertyPath"])
         if key in seen: fail("ADOPT_SDK_REFERENCE",p,"Reference object/property is duplicated")
         seen.add(key)
@@ -244,11 +291,23 @@ def validate_spec(spec_path, expected_sha256, incoming, manifest_sha256, files, 
             _local_id(value["localId"],where+"."+label+".localId")
             return dict(guid=value["guid"],localId=value["localId"],type=value["type"])
         source=parse_ref(row["source"],"source"); canonical=parse_ref(row["canonical"],"canonical")
+        if row["root"]=="candidate" and (source["guid"] in retained_guids or canonical["guid"] in retained_guids):
+            fail("ADOPT_SDK_REFERENCE",where,"Incoming SDK references cannot target a retained inactive duplicate")
+        if row["action"]=="map" and (source["guid"] in retained_guids or canonical["guid"] in retained_guids):
+            fail("ADOPT_SDK_REFERENCE",where,"Reference maps cannot target a retained inactive duplicate")
         if row["action"]=="preserve" and source!=canonical: fail("ADOPT_SDK_REFERENCE",where,"Preserve must keep exact GUID/localID/type")
         if row["action"]=="map" and source==canonical: fail("ADOPT_SDK_REFERENCE",where,"Map must specify an actual explicit identity change")
         if row["propertyPath"]=="m_Script":
             if row["action"]!="preserve" or source["type"] not in [name for guid,name in script_types if guid==source["guid"]]:
                 fail("ADOPT_SDK_REFERENCE",where,"m_Script must preserve a declared native assembly type; localID is confirmed by Unity during execution")
         references.append(dict(root=row["root"],assetPath=p,assetSha256=h,objectLocalId=row["objectLocalId"],propertyPath=row["propertyPath"],action=row["action"],source=source,canonical=canonical))
-    return dict(path=str(path),sha256=spec_sha,candidateManifestSha256=manifest_sha256,
+    # Recheck each unique serialized asset once after traversing the full spec.
+    # Large prefab bytes must not be rehashed once per object/property row.
+    for root_name,p,h in reference_assets.values():
+        if root_name=="candidate": _read_candidate(incoming,files,p,h,"Serialized object asset final check")
+        else: _read_target(target,target_files,p,h,"Serialized object asset final check")
+    normalized=dict(path=str(path),sha256=spec_sha,candidateManifestSha256=manifest_sha256,
                 targetAssetsSha256=sha(encoded(target_files)),referenceCoverage=doc["referenceCoverage"],licenses=licenses,assemblies=pairs,references=references)
+    if retained_inactive is not None:
+        normalized["retainedInactiveAssemblies"]=dict(policy="preserve-exact-disabled-target-assemblies",assemblies=retained_inactive)
+    return normalized

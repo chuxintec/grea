@@ -212,6 +212,9 @@ def build_plan(candidate,target,baseline=None,lineage=None,sdk_migration=None,ex
             conflicts.append(dict(identity=op['identity'],reason='compiler-input-requires-owned-metadata',current=op['source'],desired=op['target']))
     if sdk_spec:
         operation_by_target={op['target']:op for op in operations}
+        for retained in (sdk_spec.get('retainedInactiveAssemblies') or {}).get('assemblies',[]):
+            if any(op['source']==retained['path'] or op['target']==retained['path'] for op in operations):
+                conflicts.append(dict(identity='managed-sdk-retained-inactive:'+retained['path'],reason='managed-sdk-retained-inactive-must-remain-untouched',current=retained['path'],desired=retained['path']))
         for op in operations:
             if op['target'].lower().endswith('.unity'):
                 conflicts.append(dict(identity='managed-sdk-scene:'+op['target'],reason='managed-sdk-scene-reference-inventory-unsupported',current=op['target'],desired=op['target']))

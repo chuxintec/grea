@@ -14,6 +14,10 @@ static pid_t targetPid;
 static NSUInteger posted;
 static NSUInteger axActionsAttempted,axActionsPerformed;
 static NSDictionary *preparedMousePoint,*preparedMouseBounds;
+static CGPoint synchronizedPointer;
+static NSDictionary *pointerSyncBounds;
+static NSMutableDictionary *activeCursorSyncRecord;
+static BOOL pointerSyncComplete;
 static void Reject(NSString *code, NSString *message) {
     response[@"status"]=@"blocked";response[@"errorCode"]=code;response[@"message"]=message;
     @throw [NSException exceptionWithName:@"BindingBlocked" reason:message userInfo:nil];
@@ -97,6 +101,96 @@ static AXUIElementRef Selected(AXUIElementRef app,BOOL requireFocus) {
     response[@"selectedWindow"]=row;return match;
 }
 static void Recheck(AXUIElementRef app) {AXUIElementRef w=Selected(app,YES);CFRelease(w);}
+static CGPoint ReadPointer(void) {
+    CGEventRef snapshot=CGEventCreate(NULL);if(!snapshot)Reject(@"CURSOR_STATE_UNAVAILABLE",@"Cannot read current pointer position");
+    CGPoint p=CGEventGetLocation(snapshot);CFRelease(snapshot);
+    if(!isfinite(p.x)||!isfinite(p.y))Reject(@"CURSOR_STATE_UNAVAILABLE",@"Current pointer position is not finite");
+    return p;
+}
+static void GuardOwnedAXHit(AXUIElementRef app,CGPoint point,NSMutableDictionary *evidence) {
+    AXUIElementRef selected=NULL,current=NULL,system=NULL;
+    @try {
+        selected=Selected(app,YES);system=AXUIElementCreateSystemWide();
+        if(!system)Reject(@"CURSOR_AX_HIT_UNKNOWN",@"Cannot create a read-only system hit-test handle");
+        AXError hit=AXUIElementCopyElementAtPosition(system,(float)point.x,(float)point.y,&current);
+        evidence[@"hitError"]=@(hit);
+        if(hit!=kAXErrorSuccess||!current)Reject(@"CURSOR_AX_HIT_UNKNOWN",@"Cannot identify the actual accessibility element at the target point");
+        for(NSUInteger depth=0;depth<=12;depth++) {
+            pid_t owner=0;AXError ownerError=AXUIElementGetPid(current,&owner);evidence[@"hitOwnerPid"]=@(owner);evidence[@"parentDepth"]=@(depth);
+            if(ownerError!=kAXErrorSuccess||owner!=targetPid)Reject(@"CURSOR_AX_HIT_OWNER_MISMATCH",@"Actual hit element or ancestor is not owned by the selected process");
+            if(CFEqual(current,selected)){evidence[@"windowMatch"]=@YES;evidence[@"matchMethod"]=depth==0?@"hit-is-selected-window":@"parent-is-selected-window";return;}
+            CFTypeRef window=NULL;AXError windowError=AXUIElementCopyAttributeValue(current,kAXWindowAttribute,&window);
+            if(windowError==kAXErrorSuccess&&window) {
+                pid_t windowOwner=0;BOOL valid=CFGetTypeID(window)==AXUIElementGetTypeID()&&AXUIElementGetPid((AXUIElementRef)window,&windowOwner)==kAXErrorSuccess&&windowOwner==targetPid&&CFEqual(window,selected);
+                CFRelease(window);if(!valid)Reject(@"CURSOR_AX_HIT_WINDOW_MISMATCH",@"Actual hit element names a different or unknown AX window");
+                evidence[@"windowMatch"]=@YES;evidence[@"matchMethod"]=@"AXWindow-attribute-equals-selected";return;
+            }
+            if(window)CFRelease(window);
+            if(windowError!=kAXErrorNoValue&&windowError!=kAXErrorAttributeUnsupported&&windowError!=kAXErrorSuccess)Reject(@"CURSOR_AX_HIT_UNKNOWN",@"Hit element window could not be read reliably");
+            if(depth==12)Reject(@"CURSOR_AX_HIT_UNKNOWN",@"Hit ancestry did not prove the selected window within twelve parents");
+            CFTypeRef parent=NULL;AXError parentError=AXUIElementCopyAttributeValue(current,kAXParentAttribute,&parent);
+            if(parentError!=kAXErrorSuccess||!parent||CFGetTypeID(parent)!=AXUIElementGetTypeID()){if(parent)CFRelease(parent);Reject(@"CURSOR_AX_HIT_UNKNOWN",@"Hit element has no verifiable same-process window ancestor");}
+            if(CFEqual(parent,current)){CFRelease(parent);Reject(@"CURSOR_AX_HIT_UNKNOWN",@"Cyclic hit ancestry cannot prove a window");}
+            CFRelease(current);current=(AXUIElementRef)parent;
+        }
+    } @finally {if(system)CFRelease(system);if(current)CFRelease(current);if(selected)CFRelease(selected);}
+}
+static void GuardForegroundTopmost(AXUIElementRef app,CGPoint point,NSDictionary *expectedBounds) {
+    Recheck(app);
+    if(![response[@"selectedWindow"][@"bounds"] isEqual:expectedBounds])Reject(@"CURSOR_WINDOW_GEOMETRY_CHANGED",@"Selected window geometry changed during pointer synchronization");
+    CFTypeRef front=NULL;AXError ax=AXUIElementCopyAttributeValue(app,kAXFrontmostAttribute,&front);
+    BOOL active=ax==kAXErrorSuccess&&front&&CFGetTypeID(front)==CFBooleanGetTypeID()&&CFBooleanGetValue((CFBooleanRef)front);
+    if(front)CFRelease(front);if(!active)Reject(@"CURSOR_TARGET_NOT_FRONTMOST",@"Pointer synchronization requires the selected app already frontmost");
+    NSArray *windows=CFBridgingRelease(CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly|kCGWindowListExcludeDesktopElements,kCGNullWindowID));
+    if(!windows)Reject(@"CURSOR_TOPMOST_UNPROVEN",@"Cannot inspect window stacking at target point");
+    NSDictionary *topLayerZero=nil;NSUInteger selectedMatches=0,higherCount=0;NSMutableArray *higher=[NSMutableArray array];
+    for(NSDictionary *w in windows) {
+        CGRect bounds;if(!CGRectMakeWithDictionaryRepresentation((__bridge CFDictionaryRef)w[(id)kCGWindowBounds],&bounds)||!isfinite(bounds.origin.x)||!isfinite(bounds.origin.y)||!isfinite(bounds.size.width)||!isfinite(bounds.size.height))Reject(@"CURSOR_TOPMOST_UNPROVEN",@"Window bounds unavailable while checking stacking");
+        if([w[(id)kCGWindowNumber] unsignedIntValue]==[request[@"windowId"] unsignedIntValue])selectedMatches++;
+        if([w[(id)kCGWindowAlpha] doubleValue]>0&&CGRectContainsPoint(bounds,point)) {
+            int layer=[w[(id)kCGWindowLayer] intValue];
+            if(layer==0&&!topLayerZero)topLayerZero=w;
+            if(layer>0){higherCount++;if(higher.count<16)[higher addObject:@{@"windowId":w[(id)kCGWindowNumber],@"ownerPid":w[(id)kCGWindowOwnerPID],@"layer":@(layer)}];}
+        }
+    }
+    NSMutableDictionary *evidence=[NSMutableDictionary dictionaryWithDictionary:@{@"status":@"checking",@"point":@[@(point.x),@(point.y)],@"higherLayerRectanglesCoverPoint":@(higherCount>0),@"higherLayerRectangleCount":@(higherCount),@"higherLayerRectangles":higher,@"higherLayerListTruncated":@(higherCount>higher.count),@"windowMatch":@NO}];response[@"cursorHitEvidence"]=evidence;
+    if(selectedMatches!=1||!topLayerZero||[topLayerZero[(id)kCGWindowOwnerPID] intValue]!=targetPid||[topLayerZero[(id)kCGWindowNumber] unsignedIntValue]!=[request[@"windowId"] unsignedIntValue])Reject(@"CURSOR_TOPMOST_UNPROVEN",@"First visible layer-zero window covering the point is not uniquely the selected window");
+    evidence[@"topLayerZeroWindowId"]=topLayerZero[(id)kCGWindowNumber];
+    GuardOwnedAXHit(app,point,evidence);
+    Recheck(app);if(![response[@"selectedWindow"][@"bounds"] isEqual:expectedBounds])Reject(@"CURSOR_WINDOW_GEOMETRY_CHANGED",@"Selected window changed during hit verification");
+    evidence[@"status"]=@"verified";
+}
+static void CheckSynchronizedPointer(AXUIElementRef app) {
+    if(!pointerSyncComplete)return;
+    GuardForegroundTopmost(app,synchronizedPointer,pointerSyncBounds);
+    CGPoint current=ReadPointer();activeCursorSyncRecord[@"lastObserved"]=@[@(current.x),@(current.y)];
+    if(fabs(current.x-synchronizedPointer.x)>0.5||fabs(current.y-synchronizedPointer.y)>0.5)Reject(@"CURSOR_MOVED_AFTER_SYNC",@"Pointer changed after synchronization; no further input or restoration attempted");
+}
+static void SynchronizePointer(AXUIElementRef app,NSDictionary *point) {
+    if(![request[@"cursorMode"] isEqual:@"sync-owned-window"])Reject(@"CURSOR_MODE_REQUIRED",@"Pointer synchronization requires explicit sync-owned-window mode");
+    NSMutableArray *history=response[@"cursorSyncHistory"];if(!history){history=[NSMutableArray array];response[@"cursorSyncHistory"]=history;}
+    NSMutableDictionary *record=[NSMutableDictionary dictionaryWithDictionary:@{@"mode":@"sync-owned-window",@"pointIndex":@(history.count),@"relativePoint":[point copy],@"attempted":@NO,@"completed":@NO,@"restoreAttempted":@NO,@"before":[NSNull null],@"after":[NSNull null],@"target":[NSNull null],@"eventsPostedBeforeSync":@(posted),@"phase":@"checking-previous-pointer",@"limitation":@"physical pointer side effect; layer-zero plus exact AX hit checked; non-atomic; never restored to another position"}];
+    [history addObject:record];response[@"cursorSync"]=record;
+    // Do not hide a human/engine pointer change by synchronizing the next point.
+    CheckSynchronizedPointer(app);
+    pointerSyncComplete=NO;activeCursorSyncRecord=record;record[@"phase"]=@"checking-target";
+    Recheck(app);pointerSyncBounds=[response[@"selectedWindow"][@"bounds"] copy];
+    double x=[point[@"x"] doubleValue],y=[point[@"y"] doubleValue];
+    if(x<0||y<0||x>=[pointerSyncBounds[@"width"] doubleValue]||y>=[pointerSyncBounds[@"height"] doubleValue])Reject(@"POINT_OUTSIDE_WINDOW",@"Pointer sync point outside selected window");
+    synchronizedPointer=CGPointMake([pointerSyncBounds[@"x"] doubleValue]+x,[pointerSyncBounds[@"y"] doubleValue]+y);
+    record[@"target"]=@[@(synchronizedPointer.x),@(synchronizedPointer.y)];
+    GuardForegroundTopmost(app,synchronizedPointer,pointerSyncBounds);record[@"hitBefore"]=response[@"cursorHitEvidence"];
+    CGPoint before=ReadPointer();record[@"before"]=@[@(before.x),@(before.y)];
+    GuardForegroundTopmost(app,synchronizedPointer,pointerSyncBounds);record[@"hitBefore"]=response[@"cursorHitEvidence"];
+    record[@"attempted"]=@YES;record[@"phase"]=@"synchronizing";
+    CGError result=CGWarpMouseCursorPosition(synchronizedPointer);record[@"resultCode"]=@(result);record[@"apiSucceeded"]=@(result==kCGErrorSuccess);
+    usleep(120000);
+    CGPoint after=ReadPointer();record[@"after"]=@[@(after.x),@(after.y)];record[@"phase"]=@"checking-after";
+    if(result!=kCGErrorSuccess)Reject(@"CURSOR_SYNC_FAILED",@"Pointer synchronization API failed; inspect recorded pointer side effects");
+    GuardForegroundTopmost(app,synchronizedPointer,pointerSyncBounds);record[@"hitAfter"]=response[@"cursorHitEvidence"];
+    if(fabs(after.x-synchronizedPointer.x)>0.5||fabs(after.y-synchronizedPointer.y)>0.5)Reject(@"CURSOR_SYNC_UNPROVEN",@"Pointer did not remain at requested point after wait");
+    pointerSyncComplete=YES;record[@"completed"]=@YES;record[@"phase"]=@"synchronized";
+}
 static void RouteMouse(CGEventRef event,CGWindowID windowId) {
     CGEventType type=CGEventGetType(event);
     BOOL right=type==kCGEventRightMouseDown||type==kCGEventRightMouseUp||type==kCGEventRightMouseDragged;
@@ -113,7 +207,7 @@ static void RouteMouse(CGEventRef event,CGWindowID windowId) {
 }
 static void Post(AXUIElementRef app,CGEventRef event) {
     if(!event)Reject(@"EVENT_CREATION_FAILED",@"Cannot create targeted input event");
-    @try {Recheck(app);
+    @try {Recheck(app);CheckSynchronizedPointer(app);
         CGEventType type=CGEventGetType(event);
         if(type==kCGEventLeftMouseDown||type==kCGEventLeftMouseUp||type==kCGEventLeftMouseDragged||type==kCGEventRightMouseDown||type==kCGEventRightMouseUp||type==kCGEventRightMouseDragged) {
             NSDictionary *b=response[@"selectedWindow"][@"bounds"];
@@ -220,11 +314,12 @@ static void Validate(void) {
     if(![op isKindOfClass:[NSString class]]||![ops containsObject:op])Reject(@"INVALID_OPERATION",@"Unknown operation");
     NSMutableSet *allowed=[NSMutableSet setWithArray:@[@"operation",@"pid",@"startTime",@"executableDevice",@"executableInode",@"bundleIdentifier"]];
     if(![op isEqual:@"windows"])[allowed addObject:@"windowId"];
-    if([op isEqual:@"click"])[allowed addObjectsFromArray:@[@"x",@"y",@"button"]];
-    if([op isEqual:@"drag"])[allowed addObjectsFromArray:@[@"points",@"button"]];
+    if([op isEqual:@"click"])[allowed addObjectsFromArray:@[@"x",@"y",@"button",@"cursorMode"]];
+    if([op isEqual:@"drag"])[allowed addObjectsFromArray:@[@"points",@"button",@"cursorMode"]];
     if([op isEqual:@"key"])[allowed addObject:@"key"];
     if([op isEqual:@"text"])[allowed addObject:@"text"];
     for(id k in request)if(![allowed containsObject:k])Reject(@"INVALID_REQUEST",@"Unknown request field");
+    if(request[@"cursorMode"]&&![request[@"cursorMode"] isEqual:@"sync-owned-window"])Reject(@"INVALID_CURSOR_MODE",@"Only explicit sync-owned-window mode is supported for click or drag");
     if(!Integer(request[@"pid"])||[request[@"pid"] longLongValue]<=0||[request[@"pid"] unsignedLongLongValue]>INT_MAX)Reject(@"INVALID_REQUEST",@"Expected positive pid");
     targetPid=[request[@"pid"] intValue];NSArray *birth=request[@"startTime"];
     if(![birth isKindOfClass:[NSArray class]]||birth.count!=2||!Nonnegative(birth[0])||!Nonnegative(birth[1])||[birth[0] unsignedLongLongValue]==0||[birth[1] unsignedLongLongValue]>=1000000)Reject(@"INVALID_REQUEST",@"Expected exact process start time");
@@ -273,8 +368,9 @@ int main(void) {@autoreleasepool {
                         BOOL right=[request[@"button"] isEqual:@"right"];
                         NSArray *points=[op isEqual:@"click"]?@[@{@"x":request[@"x"],@"y":request[@"y"]}]:request[@"points"];
                         for(NSDictionary *p in points)RelativePoint(p); // Validate whole gesture before its first event.
+                        if(request[@"cursorMode"])SynchronizePointer(app,points[0]);
                         Recheck(app);Post(app,WindowMouseEvent(right?NSEventTypeRightMouseDown:NSEventTypeLeftMouseDown,points[0]));
-                        for(NSUInteger i=1;i<points.count;i++){Recheck(app);Post(app,WindowMouseEvent(right?NSEventTypeRightMouseDragged:NSEventTypeLeftMouseDragged,points[i]));}
+                        for(NSUInteger i=1;i<points.count;i++){Recheck(app);if(request[@"cursorMode"])SynchronizePointer(app,points[i]);Post(app,WindowMouseEvent(right?NSEventTypeRightMouseDragged:NSEventTypeLeftMouseDragged,points[i]));}
                         Recheck(app);Post(app,WindowMouseEvent(right?NSEventTypeRightMouseUp:NSEventTypeLeftMouseUp,points.lastObject));
                     } else {
                         NSDictionary *keys=@{@"return":@36,@"escape":@53,@"space":@49,@"tab":@48,@"left":@123,@"right":@124,@"up":@126,@"down":@125,@"backspace":@51,@"command-q":@12};
@@ -285,13 +381,16 @@ int main(void) {@autoreleasepool {
                         }
                     }
                 } @finally {if(source)CFRelease(source);}
-                Recheck(app);response[@"status"]=@"performed";
+                Recheck(app);CheckSynchronizedPointer(app);response[@"status"]=@"performed";
             }
         }
     } @catch(NSException *e) {
         if(![e.name isEqual:@"BindingBlocked"]){response[@"status"]=@"blocked";response[@"errorCode"]=@"NATIVE_BINDING_FAILED";response[@"message"]=@"Native binding operation failed";}
         if(((posted>0&&[request[@"key"] isEqual:@"command-q"])||axActionsPerformed>0)&&[response[@"errorCode"] isEqual:@"PROCESS_NOT_FOUND"]){response[@"status"]=@"performed_exit_observed";response[@"exitObserved"]=@YES;}
     } @finally {if(app)CFRelease(app);}
+    NSUInteger syncAttempted=0,syncCompleted=0;for(NSDictionary *entry in response[@"cursorSyncHistory"]){if([entry[@"attempted"] boolValue])syncAttempted++;if([entry[@"completed"] boolValue])syncCompleted++;}
+    response[@"cursorSyncAttemptedCount"]=@(syncAttempted);response[@"cursorSyncCompletedCount"]=@(syncCompleted);response[@"cursorPositionMayHaveChanged"]=@(syncAttempted>0);response[@"cursorRestorationAttempted"]=@NO;
+    if([response[@"status"] isEqual:@"blocked"]&&(posted>0||axActionsAttempted>0||syncAttempted>0))response[@"partialEffects"]=@YES;
     response[@"eventsPosted"]=@(posted);response[@"axActionsAttempted"]=@(axActionsAttempted);response[@"axActionsPerformed"]=@(axActionsPerformed);if(axActionsAttempted)response[@"inputDelivery"]=@"ax-close-button-action-not-business-acceptance";if(posted)response[@"inputDelivery"]=@"posted-to-pid-not-business-acceptance";
     NSData *result=[NSJSONSerialization dataWithJSONObject:response options:NSJSONWritingSortedKeys error:nil];fwrite(result.bytes,1,result.length,stdout);fputc('\n',stdout);
     return [response[@"status"] isEqual:@"blocked"]?3:0;

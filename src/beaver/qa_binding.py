@@ -21,6 +21,9 @@ from .output_limits import digest_file
 from . import process_identity
 
 BACKEND='macos-native-ax-pid/1'
+BACKEND_POINTER_SYNC='macos-native-ax-pid-pointer-sync/1'
+BACKENDS=(BACKEND,BACKEND_POINTER_SYNC)
+CURSOR_SYNC_MODE='sync-owned-window'
 CONTRACT='beaver-unity-qa-binding/1'
 
 
@@ -118,28 +121,30 @@ def _native(helper,request,before_dispatch=None):
     if before_dispatch is not None:before_dispatch()
     try:
         result=subprocess.run([helper['path']],input=encoded(request),capture_output=True,timeout=20)
-    except (subprocess.TimeoutExpired,OSError,subprocess.SubprocessError):
-        return _unknown_native('QA_ATTACH_NATIVE_OUTCOME_UNKNOWN')
-    if len(result.stdout)>2*1024**2:return _unknown_native('QA_ATTACH_HELPER_OUTPUT_UNKNOWN',result.returncode)
+    except subprocess.TimeoutExpired as error:
+        return _unknown_native('QA_ATTACH_NATIVE_OUTCOME_UNKNOWN',request=request,observed=_best_effort_native(error.stdout))
+    except (OSError,subprocess.SubprocessError):
+        return _unknown_native('QA_ATTACH_NATIVE_OUTCOME_UNKNOWN',request=request)
+    if len(result.stdout)>2*1024**2:return _unknown_native('QA_ATTACH_HELPER_OUTPUT_UNKNOWN',result.returncode,request)
     try:data=load(result.stdout,max_nodes=15000)
-    except Exception:return _unknown_native('QA_ATTACH_HELPER_PROTOCOL_UNKNOWN',result.returncode)
+    except Exception:return _unknown_native('QA_ATTACH_HELPER_PROTOCOL_UNKNOWN',result.returncode,request,_best_effort_native(result.stdout))
     if not isinstance(data,dict) or data.get('status') not in ('verified','performed','performed_exit_observed','blocked'):
-        return _unknown_native('QA_ATTACH_HELPER_STATUS_UNKNOWN',result.returncode)
+        return _unknown_native('QA_ATTACH_HELPER_STATUS_UNKNOWN',result.returncode,request,data if isinstance(data,dict) else None)
     if request.get('operation') in ('click','drag','key','text','close'):
         counts=('eventsPosted','axActionsAttempted','axActionsPerformed')
         if any(type(data.get(k)) is not int or data[k]<0 for k in counts):
-            return _unknown_native('QA_ATTACH_EFFECT_COUNTS_UNKNOWN',result.returncode)
+            return _unknown_native('QA_ATTACH_EFFECT_COUNTS_UNKNOWN',result.returncode,request,data)
         op=request['operation'];status=data['status']
         delivered=data['axActionsPerformed']>0 if op=='close' else data['eventsPosted']>0
         if status=='verified' or (status in ('performed','performed_exit_observed') and not delivered):
-            return _unknown_native('QA_ATTACH_EFFECT_STATUS_MISMATCH',result.returncode)
+            return _unknown_native('QA_ATTACH_EFFECT_STATUS_MISMATCH',result.returncode,request,data)
     data['processExitCode']=result.returncode
     if result.returncode!=0 and data.get('status')!='blocked':
         data['nativeStatus']=data['status']
         data['status']='partial' if _reported_effects(data) else 'unknown'
         data['errorCode']='QA_ATTACH_NATIVE_EXIT_UNEXPECTED'
     elif result.returncode==0 and data.get('status')=='blocked':
-        return _unknown_native('QA_ATTACH_NATIVE_STATUS_EXIT_MISMATCH',result.returncode)
+        return _unknown_native('QA_ATTACH_NATIVE_STATUS_EXIT_MISMATCH',result.returncode,request,data)
     elif data.get('status')=='blocked' and _reported_effects(data):
         data['nativeStatus']='blocked'
         data['status']='partial'
@@ -148,13 +153,33 @@ def _native(helper,request,before_dispatch=None):
 
 
 def _reported_effects(data):
-    return any(type(data.get(k)) is int and data[k]>0 for k in ('eventsPosted','axActionsAttempted','axActionsPerformed'))
+    if any(type(data.get(k)) is int and data[k]>0 for k in ('eventsPosted','axActionsAttempted','axActionsPerformed')):return True
+    cursor=data.get('cursorSync')
+    if isinstance(cursor,dict):
+        if cursor.get('attempted') is True or cursor.get('attempted')=='unknown' or cursor.get('state')=='possibly-changed':return True
+        # A helper may report its native schema using different status keys; an
+        # unclassified cursorSync object is evidence, not a zero-effect result.
+        if cursor.get('attempted') is not False and cursor.get('state') not in ('not-attempted','unchanged'):return True
+    return False
 
 
-def _unknown_native(code='QA_ATTACH_NATIVE_OUTCOME_UNKNOWN',exit_code='unknown'):
-    return dict(status='unknown',errorCode=code,message='Native operation outcome is unknown; effects may have been delivered.',
+def _best_effort_native(raw):
+    if not isinstance(raw,(bytes,bytearray)) or len(raw)>2*1024**2:return None
+    try:
+        value=load(bytes(raw),max_nodes=15000)
+        return value if isinstance(value,dict) else None
+    except Exception:return None
+
+
+def _unknown_native(code='QA_ATTACH_NATIVE_OUTCOME_UNKNOWN',exit_code='unknown',request=None,observed=None):
+    result=dict(status='unknown',errorCode=code,message='Native operation outcome is unknown; effects may have been delivered.',
                 eventsPosted='unknown',axActionsAttempted='unknown',axActionsPerformed='unknown',
                 inputDelivery='possibly-delivered',processExitCode=exit_code)
+    if isinstance(observed,dict) and 'cursorSync' in observed:
+        result['cursorSync']=observed['cursorSync']
+    elif isinstance(request,dict) and request.get('cursorMode')==CURSOR_SYNC_MODE:
+        result['cursorSync']=dict(mode=CURSOR_SYNC_MODE,attempted='unknown',state='possibly-changed')
+    return result
 
 
 def _atomic_receipt(folder,response):
@@ -173,7 +198,7 @@ def _atomic_receipt(folder,response):
 def _validate_session_shape(session,path):
     keys={'schemaVersion','contract','sessionId','implementationSha256','backend','createdUtc','expiresUtc','instance','window','helper','launchPerformed','limitation'}
     if not isinstance(session,dict) or set(session)!=keys:fail('QA_BIND_SESSION_SCHEMA',str(path),'Binding session has an unknown or incomplete envelope')
-    if (session.get('schemaVersion')!=1 or session.get('contract')!=CONTRACT or session.get('backend')!=BACKEND
+    if (session.get('schemaVersion')!=1 or session.get('contract')!=CONTRACT or session.get('backend') not in BACKENDS
             or session.get('launchPerformed') is not False or not isinstance(session.get('sessionId'),str)
             or len(session['sessionId'])!=32 or any(c not in '0123456789abcdef' for c in session['sessionId'])):
         fail('QA_BIND_SESSION_SCHEMA',str(path),'Binding session identity or launch invariant is invalid')
@@ -209,7 +234,7 @@ def _request(report,operation,window=None):
 
 
 def bind(project,build,profile,expected_owner,run,out,window_id=None,backend=BACKEND):
-    if backend!=BACKEND:fail('QA_ATTACH_BACKEND_UNSUPPORTED',backend,'cua-macos getApp may launch and has no PID attach-only contract; no fallback is allowed')
+    if backend not in BACKENDS:fail('QA_ATTACH_BACKEND_UNSUPPORTED',backend,'Backend is not an explicit attach-only PID contract; no fallback is allowed')
     report=_resolve(project,build,profile,expected_owner,run,True);folder=new_output(out,[safe(report['launchBundlePath']),safe(report['processRecord']).parent])
     helper=_compile(folder);result=_native(helper,_request(report,'windows'))
     windows=result.get('windows',[])
@@ -220,7 +245,7 @@ def bind(project,build,profile,expected_owner,run,out,window_id=None,backend=BAC
     report2=_resolve(project,build,profile,expected_owner,run)
     if report2['uniqueId']!=report['uniqueId'] or report2['executableSha256']!=report['executableSha256']:fail('QA_BIND_PROCESS_CHANGED',run,'Process changed during window binding')
     if chosen[0].get('ownerPid')!=report['pid']:fail('QA_BIND_WINDOW_OWNER',run,'Window owner does not match the controlled process')
-    now=datetime.now(timezone.utc);session=dict(schemaVersion=1,contract=CONTRACT,sessionId=uuid.uuid4().hex,implementationSha256=identity(),backend=BACKEND,createdUtc=now.isoformat(),expiresUtc=(now+timedelta(minutes=5)).isoformat(),instance=report,window=chosen[0],helper=helper,launchPerformed=False,
+    now=datetime.now(timezone.utc);session=dict(schemaVersion=1,contract=CONTRACT,sessionId=uuid.uuid4().hex,implementationSha256=identity(),backend=backend,createdUtc=now.isoformat(),expiresUtc=(now+timedelta(minutes=5)).isoformat(),instance=report,window=chosen[0],helper=helper,launchPerformed=False,
         limitation='Kernel/owner guards run before every event and afterward; checks and OS event posting are not atomic and do not prove business acceptance')
     session_path=folder/'qa-binding.json';write_json(session_path,session);session_sha=digest_file(session_path)
     result=dict(status='bound',session=str(session_path),sessionSha256=session_sha,pid=report['pid'],uniqueId=report['uniqueId'],window=chosen[0],launchPerformed=False,report=str(folder/'qa-bind-result.json'))
@@ -232,7 +257,7 @@ def _validate_session(path,expected):
     if sha(raw)!=expected:fail('QA_BIND_SESSION_DRIFT',str(path),'Explicit expected binding SHA differs')
     session=load(raw)
     _validate_session_shape(session,path)
-    if session.get('contract')!=CONTRACT or session.get('implementationSha256')!=identity() or session.get('backend')!=BACKEND:fail('QA_BIND_SESSION_TOOL',str(path),'Binding belongs to a different tool/backend')
+    if session.get('contract')!=CONTRACT or session.get('implementationSha256')!=identity() or session.get('backend') not in BACKENDS:fail('QA_BIND_SESSION_TOOL',str(path),'Binding belongs to a different tool/backend')
     try:expired=datetime.now(timezone.utc)>=datetime.fromisoformat(session['expiresUtc'])
     except Exception:fail('QA_BIND_SESSION_TIME',str(path),'Invalid binding expiry')
     if expired:fail('QA_BIND_SESSION_EXPIRED',str(path),'Create a fresh attach-only binding to the still-running explicit run')
@@ -275,20 +300,24 @@ def input_event(session_path,expected_session,spec_path,expected_spec,out):
     if spec['operation']=='screenshot':
         request['operation']='observe';result=_native(session['helper'],request)
         if result['status']=='verified':
-            target=folder/'window.png';capture=subprocess.run(['/usr/sbin/screencapture','-x','-l',str(session['window']['windowId']),str(target)],capture_output=True,timeout=20)
+            target=folder/'window.png';capture=subprocess.run(['/usr/sbin/screencapture','-x','-l',str(session['window']['windowId']),'-o','-t','png',str(target)],capture_output=True,timeout=20)
             after=_native(session['helper'],request)
             if capture.returncode or not target.is_file():result=dict(status='blocked',errorCode='QA_BIND_SCREENSHOT_UNPROVEN',message='Window capture failed; no global fallback')
             elif after['status']!='verified':result=dict(status='unknown',errorCode='QA_BIND_SCREENSHOT_OWNER_UNKNOWN',message='Screenshot was captured but post-capture owner verification is unknown.',screenshot=dict(path=str(target),sha256=digest_file(target)))
             else:result=dict(status='performed',screenshot=dict(path=str(target),sha256=digest_file(target)),identity=after.get('identity'),selectedWindow=after.get('selectedWindow'),eventsPosted=0)
     else:request.update(spec)
+    if session['backend']==BACKEND_POINTER_SYNC and op in ('click','drag'):
+        request['cursorMode']=CURSOR_SYNC_MODE
     mutating=op in ('click','drag','key','text','close')
     if op!='screenshot':
         pending=None;dispatch_started=False
         if mutating:
+            pending_native=_unknown_native('QA_ATTACH_DISPATCH_PENDING',request=request)
             pending=dict(status='partial',rawStatus='dispatch_outcome_unknown',sessionSha256=expected_session,inputSpecSha256=expected_spec,
                          pid=report['pid'],uniqueId=report['uniqueId'],windowId=session['window']['windowId'],launchPerformed=False,
-                         dispatchState='possibly-delivered',native=_unknown_native('QA_ATTACH_DISPATCH_PENDING'),
+                         dispatchState='possibly-delivered',native=pending_native,
                          limitations=['Native input may have been delivered; this receipt is durable before controller dispatch','Input delivery does not establish business acceptance'])
+            if 'cursorSync' in pending_native:pending['cursorSync']=pending_native['cursorSync']
         def persist_pending():
             nonlocal dispatch_started
             _atomic_receipt(folder,pending);dispatch_started=True
@@ -298,13 +327,16 @@ def input_event(session_path,expected_session,spec_path,expected_spec,out):
             raise
         except subprocess.TimeoutExpired:
             if not dispatch_started and pending is not None:persist_pending()
-            result=_unknown_native('QA_ATTACH_NATIVE_OUTCOME_UNKNOWN')
+            result=_unknown_native('QA_ATTACH_NATIVE_OUTCOME_UNKNOWN',request=request)
         except Exception:
             if not dispatch_started:raise
-            result=_unknown_native('QA_ATTACH_NATIVE_OUTCOME_UNKNOWN')
+            result=_unknown_native('QA_ATTACH_NATIVE_OUTCOME_UNKNOWN',request=request)
     raw_status=result.get('status','unknown')
     response_status=raw_status if raw_status in ('blocked','failed','not_run','performed','performed_exit_observed') else 'partial' if raw_status in ('partial','unknown') or mutating else raw_status
     response=dict(status=response_status,rawStatus=raw_status,dispatchState='possibly-delivered' if mutating and raw_status in ('unknown','partial') else 'completed',sessionSha256=expected_session,inputSpecSha256=expected_spec,pid=report['pid'],uniqueId=report['uniqueId'],windowId=session['window']['windowId'],launchPerformed=False,native=result,
                   report=str(folder/'qa-input-result.json'),limitations=['Event posting is directed to a guarded PID but OS guard/event sequence is not atomic','Posted input does not establish a click callback, save, server action or other business acceptance'])
+    if 'cursorSync' in result:response['cursorSync']=result['cursorSync']
+    if request.get('cursorMode')==CURSOR_SYNC_MODE:
+        response['limitations'].append('Pointer synchronization changes global cursor state; cursorSync evidence is retained separately from PID-directed event delivery')
     if raw_status=='unknown' and mutating:response_status='partial';response['status']=response_status
     _atomic_receipt(folder,response);return response

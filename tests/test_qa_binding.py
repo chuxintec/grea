@@ -38,10 +38,10 @@ class QaBindingTests(unittest.TestCase):
         p=folder/'native/BeaverAppBinding';p.parent.mkdir();p.write_bytes(b'fixture controller; never run')
         return dict(path=str(p),sha256=digest_file(p),sourceSha256='a'*64)
 
-    def make_binding(self,out='binding'):
+    def make_binding(self,out='binding',backend=binding.BACKEND):
         windows=dict(status='verified',windows=[dict(windowId=88,ownerPid=4321,bounds=dict(x=0,y=0,width=300,height=200))])
         with patch.object(binding.process_identity,'snapshot',return_value=self.snapshot),patch.object(binding,'_compile',side_effect=self.native_compile),patch.object(binding,'_native',return_value=windows):
-            return binding.bind(*self.args(),self.root/out)
+            return binding.bind(*self.args(),self.root/out,backend=backend)
 
     def test_inspection_proves_wrapper_exec_birth_without_changing_historical_record(self):
         before=self.run.read_bytes()
@@ -129,6 +129,71 @@ class QaBindingTests(unittest.TestCase):
         self.assertEqual(receipt['native']['eventsPosted'],'unknown')
         self.assertEqual(receipt['dispatchState'],'possibly-delivered')
         self.assertNotIn('private partial native output',json.dumps(receipt))
+
+    def test_pointer_sync_backend_is_session_bound_and_only_adds_private_click_drag_mode(self):
+        bound=self.make_binding('binding-pointer-sync',backend=binding.BACKEND_POINTER_SYNC)
+        session=json.loads(Path(bound['session']).read_text())
+        self.assertEqual(session['backend'],binding.BACKEND_POINTER_SYNC)
+        spec=self.root/'pointer-click.json';write_json(spec,dict(operation='click',x=90,y=97))
+        cursor_sync={'mode':'sync-owned-window','attempted':True,'state':'changed','screenPoint':[646,147]}
+        with patch.object(binding.process_identity,'snapshot',return_value=self.snapshot),patch.object(binding,'_native',return_value=dict(status='performed',eventsPosted=2,axActionsAttempted=0,axActionsPerformed=0,cursorSync=cursor_sync)) as native:
+            result=binding.input_event(bound['session'],bound['sessionSha256'],spec,digest_file(spec),self.root/'pointer-click-result')
+        request=native.call_args.args[1]
+        self.assertEqual(request['cursorMode'],'sync-owned-window')
+        self.assertEqual(set(json.loads(spec.read_text())),{'operation','x','y'})
+        self.assertEqual(result['cursorSync'],cursor_sync)
+        self.assertEqual(result['native']['cursorSync'],cursor_sync)
+        observe=self.root/'pointer-observe.json';write_json(observe,dict(operation='observe'))
+        with patch.object(binding.process_identity,'snapshot',return_value=self.snapshot),patch.object(binding,'_native',return_value=dict(status='verified',axSnapshot={})) as native:
+            binding.input_event(bound['session'],bound['sessionSha256'],observe,digest_file(observe),self.root/'pointer-observe-result')
+        self.assertNotIn('cursorMode',native.call_args.args[1])
+        legacy=self.make_binding('binding-legacy-click',backend=binding.BACKEND)
+        with patch.object(binding.process_identity,'snapshot',return_value=self.snapshot),patch.object(binding,'_native',return_value=dict(status='performed',eventsPosted=2,axActionsAttempted=0,axActionsPerformed=0)) as native:
+            binding.input_event(legacy['session'],legacy['sessionSha256'],spec,digest_file(spec),self.root/'legacy-click-result')
+        self.assertNotIn('cursorMode',native.call_args.args[1])
+
+    def test_cursor_sync_attempt_is_partial_even_when_no_event_was_posted(self):
+        helper=self.root/'pointer-controller';helper.write_bytes(b'helper')
+        source=self.root/'pointer-controller.m';source.write_bytes(b'source')
+        identity=dict(path=str(helper),sha256=digest_file(helper),sourceSha256=digest_file(source))
+        cursor_sync={'mode':'sync-owned-window','attempted':True,'state':'changed','screenPoint':[646,147]}
+        completed=subprocess.CompletedProcess([str(helper)],3,stdout=encoded(dict(status='blocked',errorCode='WINDOW_MOVED_BEFORE_EVENT',eventsPosted=0,axActionsAttempted=0,axActionsPerformed=0,cursorSync=cursor_sync)),stderr=b'')
+        with patch.object(binding,'_helper_source',return_value=source),patch.object(binding.subprocess,'run',return_value=completed):
+            result=binding._native(identity,dict(operation='click',cursorMode='sync-owned-window'))
+        self.assertEqual(result['status'],'partial')
+        self.assertEqual(result['eventsPosted'],0)
+        self.assertEqual(result['cursorSync'],cursor_sync)
+
+    def test_pointer_sync_timeout_receipt_marks_global_cursor_as_possibly_changed(self):
+        bound=self.make_binding('binding-pointer-timeout',backend=binding.BACKEND_POINTER_SYNC);session_path=Path(bound['session']);session=json.loads(session_path.read_text())
+        helper_file=Path(session['helper']['path']);helper_file.write_bytes(b'owned fake native helper')
+        source=self.root/'pointer-helper-source.m';source.write_bytes(b'owned test helper source')
+        session['helper']['sha256']=digest_file(helper_file);session['helper']['sourceSha256']=digest_file(source);write_json(session_path,session)
+        bound['sessionSha256']=digest_file(session_path);spec=self.root/'pointer-timeout-spec.json';write_json(spec,dict(operation='click',x=90,y=97))
+        def timeout(*args,**kwargs):
+            pending=json.loads((self.root/'pointer-timeout-result/qa-input-result.json').read_text())
+            self.assertEqual(pending['cursorSync']['state'],'possibly-changed')
+            raise subprocess.TimeoutExpired(args[0],20)
+        with patch.object(binding.process_identity,'snapshot',return_value=self.snapshot),patch.object(binding,'_helper_source',return_value=source),patch.object(binding.subprocess,'run',side_effect=timeout):
+            result=binding.input_event(session_path,bound['sessionSha256'],spec,digest_file(spec),self.root/'pointer-timeout-result')
+        receipt=json.loads(Path(result['report']).read_text())
+        self.assertEqual(receipt['cursorSync']['attempted'],'unknown')
+        self.assertEqual(receipt['cursorSync']['state'],'possibly-changed')
+        self.assertEqual(receipt['native']['cursorSync'],receipt['cursorSync'])
+
+    def test_screenshot_uses_selected_window_without_shadow_and_keeps_both_guards(self):
+        bound=self.make_binding('binding-screenshot');spec=self.root/'screenshot-spec.json';write_json(spec,dict(operation='screenshot'))
+        native_result=dict(status='verified',identity=dict(pid=4321),selectedWindow=dict(windowId=88,ownerPid=4321))
+        def capture(args,**kwargs):
+            Path(args[-1]).write_bytes(b'fixture PNG bytes')
+            return subprocess.CompletedProcess(args,0,stdout=b'',stderr=b'')
+        with patch.object(binding.process_identity,'snapshot',return_value=self.snapshot),patch.object(binding,'_native',side_effect=[native_result,native_result]) as native,patch.object(binding.subprocess,'run',side_effect=capture) as screenshot:
+            result=binding.input_event(bound['session'],bound['sessionSha256'],spec,digest_file(spec),self.root/'screenshot-result')
+        command=screenshot.call_args.args[0]
+        self.assertEqual(command[:2],['/usr/sbin/screencapture','-x'])
+        self.assertEqual(command[2:7],['-l','88','-o','-t','png'])
+        self.assertEqual(native.call_count,2)
+        self.assertEqual(result['status'],'performed')
 
     def test_native_block_after_reported_events_is_partial(self):
         helper=self.root/'controller';helper.write_bytes(b'helper')

@@ -87,7 +87,7 @@ def capabilities():
         dict(id='qa.collect',state='implemented',effects='owned-run-evidence-report',verification='exact project/build/profile/run identities; process and artifact evidence; no inferred gameplay or TCC verdict'),
         dict(id='qa.inspect-instance',state='implemented',effects='read-owned-run; fresh-output-only',verification='kernel birth/executable/argv/profile binding; no app launch or GUI input'),
         dict(id='qa.bind',state='requires_provider',provider='macOS native AX with existing permissions and a strongly owned running run',effects='attach-only-session-output',verification='exact PID/birth/Bundle/run/profile/window-owner; no fallback launch'),
-        dict(id='qa.input',state='requires_provider',provider='hash-bound current native AX/PID session and existing permissions',effects='explicit guarded PID-directed input or window-only observation/capture',verification='per-event identity/window guards; event posting is not atomic or business acceptance'),
+        dict(id='qa.input',state='requires_provider',provider='hash-bound current native AX/PID session and existing permissions',effects='explicit guarded PID-directed input; opt-in owned-window system-cursor positioning; window-only observation/capture',verification='per-event identity/window guards; event posting is not atomic or business acceptance'),
         dict(id="image.inspect", state="requires_provider", provider="Pillow", effects="read", verification="exact RGBA/alpha fixture"),
         dict(id="image.compress", state="requires_provider", provider="Pillow", effects="create-only", verification="lossless PNG stream and exact decoded RGBA"),
         dict(id="config.validate", state="implemented", effects="read", verification="strict scalar JSON; native runtime rejects missing/wrong-type fields"),
@@ -541,8 +541,11 @@ def main(argv=None):
                 base['verification']['native']='attach-only-window-bound' if data.get('status')=='bound' else 'not_bound'
             elif a.action=='input':
                 native_input=data.get('native',{})
-                if native_input.get('eventsPosted',0) or native_input.get('axActionsAttempted',0):
-                    base['actualChanges']=[dict(operation='qa.input',pid=data.get('pid'),windowId=data.get('windowId'),eventsPosted=native_input.get('eventsPosted',0),axActionsAttempted=native_input.get('axActionsAttempted',0),axActionsPerformed=native_input.get('axActionsPerformed',0))]
+                if native_input.get('eventsPosted',0) or native_input.get('axActionsAttempted',0) or native_input.get('cursorSync',{}).get('attempted'):
+                    effect=dict(operation='qa.input',pid=data.get('pid'),windowId=data.get('windowId'),eventsPosted=native_input.get('eventsPosted',0),axActionsAttempted=native_input.get('axActionsAttempted',0),axActionsPerformed=native_input.get('axActionsPerformed',0))
+                    if 'cursorSync' in native_input:effect['cursorSync']=native_input['cursorSync']
+                    if 'cursorSyncHistory' in native_input:effect['cursorSyncHistory']=native_input['cursorSyncHistory']
+                    base['actualChanges']=[effect]
                 base['verification']['native']=data.get('native',{}).get('inputDelivery','window-only-observation')
         if a.command=='payload' and a.action=='apply':
             base['actualChanges']=[dict(operation='payload.materialize',targetRoot=data['targetRoot'],files=data['files'],overrides=len(data['overrides']))]

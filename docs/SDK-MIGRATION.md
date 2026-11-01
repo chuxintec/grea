@@ -22,7 +22,9 @@ images, and rollback remain the only write and recovery path.
 
 ## Spec version 1
 
-The top-level object is closed: unknown fields are rejected.
+The top-level object is closed: unknown fields are rejected. The optional
+`retainedInactiveAssemblies` block is an explicit opt-in for exact disabled
+target duplicates; omitting it preserves the existing conflict behavior.
 
 ```json
 {
@@ -83,6 +85,20 @@ The top-level object is closed: unknown fields are rejected.
       ]
     }
   ],
+  "retainedInactiveAssemblies": {
+    "policy": "preserve-exact-disabled-target-assemblies",
+    "assemblies": [
+      {
+        "path": "Assets/Game/Adopted/SDK/EditorRuntime/spine-unity.dll",
+        "guid": "<target GUID>",
+        "sha256": "<target DLL SHA256>",
+        "metaSha256": "<target importer SHA256>",
+        "assemblyName": "Spine.Unity",
+        "moduleVersionId": "<derived target Module MVID>",
+        "roles": []
+      }
+    ]
+  },
   "references": [
     {
       "root": "target",
@@ -127,6 +143,26 @@ before capture, or a different tuple remain blocked. This evidence does not
 prove a Player compile or runtime load. Unity local IDs are nonzero signed
 64-bit integers and remain exact, including negative IDs.
 
+`retainedInactiveAssemblies` names only existing target DLLs. Each entry pins
+its path, GUID, DLL and importer SHA, managed assembly name/MVID, and the exact
+empty role list. Beaver requires the importer parser to prove every serialized
+platform is disabled, prohibits candidate copies or transaction operations at
+those paths, and rejects incoming references/maps to their GUIDs. Only a valid
+explicit pin exempts that particular target row from collision checks against
+the declared SDK pair; other duplicates remain blocked. Native before/apply/
+reopen/rollback checks revalidate the same bytes, GUID, disabled state for all
+Unity `BuildTarget` values, absence of native MonoScripts, and that the runtime
+did not load the assembly from the retained path. `CompilationPipeline` must
+also show the canonical Editor DLL path among the Editor precompiled user
+references and exclude the retained path; a shadow-copy `Assembly.Location`
+alone is not used to infer the source. The report records that selected source
+path evidence and the observed runtime location/MVID. If the source path cannot
+be distinguished, native verification blocks. Reports keep the observed
+disabled DLL identities without inferring a MonoScript/localID table. Existing
+target references may be preserved unchanged. This pin proves an inactive
+target copy stayed inactive and in place; it does not prove Player compilation
+or runtime behavior.
+
 For a replacement, the spec pins the existing target file and `.meta`, its
 assembly identity/version, and importer role. The planned destination must be
 that exact path. A new role variant must have an empty target path. The after
@@ -162,7 +198,10 @@ and type. The helper also scans adopted Prefab and Asset objects and refuses
 any SDK reference that is missing from the spec. Schema v1 never rewrites
 `m_Script`. A non-`m_Script` object reference can be mapped with
 `SerializedObject` only when both object identities are explicit and the
-containing asset is part of this adoption transaction.
+containing asset is part of this adoption transaction. A complete reference
+inventory may contain up to 500,000 JSON values within the existing 4 MiB spec
+byte limit; each unique serialized asset is read and rechecked once, regardless
+of how many object/property references it contributes.
 
 ## Refusal boundaries
 

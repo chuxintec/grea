@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Security.Cryptography;
 using UnityEditor;
 using UnityEngine;
@@ -34,6 +35,12 @@ public static class BeaverAdoption {
         public SdkLicense[] licenses;
         public SdkPair[] assemblies;
         public SdkReference[] references;
+        public SdkRetainedInactiveBlock retainedInactiveAssemblies;
+    }
+    [Serializable] public class SdkRetainedInactiveBlock { public string policy; public SdkRetainedInactiveImage[] assemblies; }
+    [Serializable] public class SdkRetainedInactiveImage {
+        public string path,guid,sha256,metaSha256,assemblyName,moduleVersionId,canonicalEditorPath;
+        public string[] roles;
     }
     [Serializable] public class SdkLicense { public string id, root, path, sha256; }
     [Serializable] public class SdkPair { public string role, assemblyName, licenseId, monoScriptPolicy; public SdkVariant[] variants; }
@@ -70,9 +77,12 @@ public static class BeaverAdoption {
         public bool referencesPreserved;
         public bool sdkBeforeComplete;
         public bool sdkAssembliesVerified, sdkReferencesVerified;
+        public bool sdkInactiveAssembliesVerified;
         public List<string> sdkReferenceMappingsApplied=new List<string>();
         public List<SdkScriptSnapshot> sdkBeforeMonoScripts=new List<SdkScriptSnapshot>();
         public List<SdkScriptSnapshot> sdkAfterMonoScripts=new List<SdkScriptSnapshot>();
+        public List<SdkRetainedInactiveSnapshot> sdkBeforeInactiveAssemblies=new List<SdkRetainedInactiveSnapshot>();
+        public List<SdkRetainedInactiveSnapshot> sdkAfterInactiveAssemblies=new List<SdkRetainedInactiveSnapshot>();
         public List<Observed> observedAfter=new List<Observed>();
     }
     [Serializable] public class Observed { public int index; public string path,fileHash,metaHash; }
@@ -80,6 +90,12 @@ public static class BeaverAdoption {
         public string path,guid,assemblyName,expectedEditorModuleVersionId,loadedModuleVersionId,moduleLoadStatus;
         public string evidenceClass,evidenceSourcePath,evidenceSourceSha256,evidenceSourceModuleVersionId,evidenceSourceTupleSha256;
         public string[] roles; public SdkMonoScript[] scripts;
+    }
+    [Serializable] public class SdkRetainedInactiveSnapshot {
+        public string path,guid,sha256,metaSha256,assemblyName,moduleVersionId,canonicalEditorPath,selectedEditorPrecompiledPath,runtimeLoadedModuleVersionId,runtimeLoadedLocation,runtimeSourceEvidence;
+        public string[] roles;
+        public int monoScriptCount;
+        public bool allPlatformsDisabled,runtimeLoadedFromInactivePath,canonicalEditorSourceSelected,inactiveSourceExcluded;
     }
     static Job job;
     static Progress report;
@@ -232,6 +248,102 @@ public static class BeaverAdoption {
         if(!before.Select(x=>x.moduleVersionId).SequenceEqual(now.Select(x=>x.moduleVersionId)))return false;
         return String.IsNullOrEmpty(old.loadedModuleVersionId)||SameOptionalText(old.loadedModuleVersionId,current.loadedModuleVersionId);
     }
+    static bool SameRetainedInactiveSnapshot(SdkRetainedInactiveSnapshot left,SdkRetainedInactiveSnapshot right) {
+        return left!=null&&right!=null&&left.path==right.path&&left.guid==right.guid&&left.sha256==right.sha256&&left.metaSha256==right.metaSha256&&
+               left.assemblyName==right.assemblyName&&left.moduleVersionId==right.moduleVersionId&&left.canonicalEditorPath==right.canonicalEditorPath&&left.selectedEditorPrecompiledPath==right.selectedEditorPrecompiledPath&&
+               SameOptionalText(left.runtimeLoadedModuleVersionId,right.runtimeLoadedModuleVersionId)&&SameOptionalText(left.runtimeLoadedLocation,right.runtimeLoadedLocation)&&left.runtimeSourceEvidence==right.runtimeSourceEvidence&&
+               left.canonicalEditorSourceSelected&&right.canonicalEditorSourceSelected&&left.inactiveSourceExcluded&&right.inactiveSourceExcluded&&left.monoScriptCount==right.monoScriptCount&&
+               left.allPlatformsDisabled&&right.allPlatformsDisabled&&!left.runtimeLoadedFromInactivePath&&!right.runtimeLoadedFromInactivePath&&
+               (left.roles??new string[0]).SequenceEqual(right.roles??new string[0]);
+    }
+    static string FullReferencePath(string path) {
+        if(String.IsNullOrEmpty(path))throw new Exception("CompilationPipeline returned an empty precompiled reference path");
+        return Path.GetFullPath(Path.IsPathRooted(path)?path:Path.Combine(root,path)).TrimEnd(Path.DirectorySeparatorChar);
+    }
+    static void CheckSdkInactiveAssemblies(bool after) {
+        if(!SdkEnabled()||job.sdkMigration==null||job.sdkMigration.retainedInactiveAssemblies==null)return;
+        var block=job.sdkMigration.retainedInactiveAssemblies;
+        if(block.policy!="preserve-exact-disabled-target-assemblies"||block.assemblies==null||block.assemblies.Length==0)
+            throw new Exception("Unsupported retained inactive SDK policy");
+        if((job.operations??new Op[0]).Any(op=>block.assemblies.Any(row=>op.source==row.path||op.target==row.path)))
+            throw new Exception("Retained inactive SDK DLL is in the native write set");
+        var snapshots=after?report.sdkAfterInactiveAssemblies:report.sdkBeforeInactiveAssemblies;
+        snapshots.Clear();
+        var precompiled=UnityEditor.Compilation.CompilationPipeline.GetPrecompiledAssemblyPaths(UnityEditor.Compilation.CompilationPipeline.PrecompiledAssemblySources.UserAssembly)
+            .Select(FullReferencePath).ToArray();
+        foreach(var row in block.assemblies) {
+            if((row.roles??new string[0]).Length!=0)throw new Exception("Retained inactive SDK role declaration must be empty "+row.path);
+            var full=Full(row.path);var meta=Full(row.path+".meta");
+            if(Hash(full)!=row.sha256||Hash(meta)!=row.metaSha256)throw new Exception("Retained inactive SDK before/meta hash changed "+row.path);
+            if(AssetDatabase.AssetPathToGUID(row.path)!=row.guid)throw new Exception("Retained inactive SDK GUID changed "+row.path);
+            var importer=AssetImporter.GetAtPath(row.path) as PluginImporter;
+            if(importer==null||importer.GetCompatibleWithEditor()||importer.GetCompatibleWithAnyPlatform())throw new Exception("Retained inactive SDK is active for Editor/Any platform "+row.path);
+            foreach(BuildTarget target in Enum.GetValues(typeof(BuildTarget)))if(importer.GetCompatibleWithPlatform(target))
+                throw new Exception("Retained inactive SDK is enabled for BuildTarget "+target+" at "+row.path);
+            if(AssetDatabase.LoadAllAssetsAtPath(row.path).OfType<MonoScript>().Any())throw new Exception("Retained inactive SDK exposes MonoScripts "+row.path);
+            var editorVariant=(job.sdkMigration.assemblies??new SdkPair[0]).SelectMany(pair=>pair.variants??new SdkVariant[0])
+                .SingleOrDefault(variant=>variant.domain=="editor"&&variant.path==row.canonicalEditorPath);
+            if(editorVariant==null||editorVariant.after==null||editorVariant.before==null||editorVariant.after.sha256!=row.sha256||
+               editorVariant.after.moduleVersionId!=row.moduleVersionId||editorVariant.after.guid==row.guid)
+                throw new Exception("Retained inactive SDK lacks a distinct byte-identical canonical Editor source pair "+row.path);
+            var editorImage=after?editorVariant.after:editorVariant.before;
+            if(Hash(Full(editorVariant.path))!=editorImage.sha256||Hash(Full(editorVariant.path+".meta"))!=editorImage.metaSha256||AssetDatabase.AssetPathToGUID(editorVariant.path)!=editorImage.guid)
+                throw new Exception("Canonical Editor source differs from its phase-bound image "+editorVariant.path);
+            var canonicalEditorPath=Path.GetFullPath(Full(editorVariant.path)).TrimEnd(Path.DirectorySeparatorChar);
+            var inactivePath=Path.GetFullPath(full).TrimEnd(Path.DirectorySeparatorChar);
+            var matchingPrecompiled=new List<string>();
+            foreach(var precompiledPath in precompiled) {
+                string managedName;
+                try { managedName=AssemblyName.GetAssemblyName(precompiledPath).Name; }
+                catch(Exception error) { throw new Exception("Cannot identify a selected Editor precompiled reference "+precompiledPath,error); }
+                if(String.Equals(managedName,row.assemblyName,StringComparison.OrdinalIgnoreCase))matchingPrecompiled.Add(precompiledPath);
+            }
+            bool canonicalSelected=matchingPrecompiled.Count==1&&matchingPrecompiled[0].Equals(canonicalEditorPath,StringComparison.OrdinalIgnoreCase);
+            bool inactiveExcluded=!precompiled.Any(path=>path.Equals(inactivePath,StringComparison.OrdinalIgnoreCase));
+            if(!canonicalSelected||!inactiveExcluded)throw new Exception("CompilationPipeline cannot uniquely prove canonical Editor selection over inactive duplicate "+row.path);
+            var fullNormalized=Path.GetFullPath(full);
+            bool loadedFromPath=false;
+            var loadedAssemblies=AppDomain.CurrentDomain.GetAssemblies().Where(a=>a.GetName().Name==row.assemblyName).ToArray();
+            var loadedMvids=loadedAssemblies.Select(a=>a.ManifestModule.ModuleVersionId.ToString("D").ToLowerInvariant()).Distinct(StringComparer.Ordinal).ToArray();
+            if(loadedMvids.Length>1)throw new Exception("Retained inactive SDK runtime assembly MVID is ambiguous "+row.assemblyName);
+            if(loadedAssemblies.Length>1)throw new Exception("Retained inactive SDK runtime assembly location is ambiguous "+row.assemblyName);
+            var loadedMvid=loadedMvids.FirstOrDefault();
+            if(editorImage==null)throw new Exception("Retained inactive SDK has no active Editor image for this phase "+row.path);
+            if(loadedMvid!=null&&loadedMvid!=editorImage.moduleVersionId)throw new Exception("Loaded same-name SDK MVID differs from the phase Editor image "+row.assemblyName);
+            string loadedLocation=null;
+            foreach(var assembly in loadedAssemblies) {
+                if(assembly.IsDynamic)throw new Exception("Retained inactive SDK runtime assembly has no source location "+row.assemblyName);
+                string location;
+                try { location=assembly.Location; }
+                catch(Exception error) { throw new Exception("Cannot verify retained inactive SDK runtime load location "+row.assemblyName,error); }
+                if(String.IsNullOrEmpty(location))throw new Exception("Retained inactive SDK runtime assembly has no verifiable location "+row.assemblyName);
+                loadedLocation=Path.GetFullPath(location);
+                if(loadedLocation.Equals(fullNormalized,StringComparison.OrdinalIgnoreCase))loadedFromPath=true;
+            }
+            if(loadedFromPath)throw new Exception("Retained inactive SDK assembly was loaded from its disabled path "+row.path);
+            var snapshot=new SdkRetainedInactiveSnapshot{path=row.path,guid=row.guid,sha256=row.sha256,metaSha256=row.metaSha256,
+                assemblyName=row.assemblyName,moduleVersionId=row.moduleVersionId,canonicalEditorPath=editorVariant.path,runtimeLoadedModuleVersionId=loadedMvid,
+                selectedEditorPrecompiledPath=canonicalSelected?matchingPrecompiled[0]:null,runtimeLoadedLocation=loadedLocation,
+                runtimeSourceEvidence="CompilationPipeline.UserAssembly-precompiled-paths+AssemblyName",roles=new string[0],monoScriptCount=0,
+                allPlatformsDisabled=true,runtimeLoadedFromInactivePath=false,canonicalEditorSourceSelected=canonicalSelected,inactiveSourceExcluded=inactiveExcluded};
+            snapshots.Add(snapshot);Save();
+        }
+        report.sdkInactiveAssembliesVerified=snapshots.Count==block.assemblies.Length&&snapshots.All(x=>x.allPlatformsDisabled&&!x.runtimeLoadedFromInactivePath&&x.monoScriptCount==0);
+        Save();
+        if(!report.sdkInactiveAssembliesVerified)throw new Exception("Retained inactive SDK verification is incomplete");
+        if(after&&(job.mode=="verify"||job.mode=="apply")) {
+            Progress applyReport=null;
+            if(job.mode=="verify") {
+                applyReport=JsonUtility.FromJson<Progress>(File.ReadAllText(Path.Combine(job.stage,"native-apply.json")));
+                report.sdkBeforeInactiveAssemblies=applyReport.sdkBeforeInactiveAssemblies;
+            }
+            var prior=job.mode=="verify"?applyReport.sdkAfterInactiveAssemblies:report.sdkBeforeInactiveAssemblies;
+            var expected=(prior??new List<SdkRetainedInactiveSnapshot>()).OrderBy(x=>x.path,StringComparer.Ordinal).ToArray();
+            var observed=snapshots.OrderBy(x=>x.path,StringComparer.Ordinal).ToArray();
+            if(expected.Length!=observed.Length)throw new Exception("Retained inactive SDK checkpoint count differs");
+            for(int i=0;i<expected.Length;i++)if(!SameRetainedInactiveSnapshot(expected[i],observed[i]))throw new Exception("Retained inactive SDK checkpoint differs "+observed[i].path);
+        }
+    }
     static string[] LoadedModuleVersionIds(string assemblyName) {
         return AppDomain.CurrentDomain.GetAssemblies().Where(a=>a.GetName().Name==assemblyName)
             .Select(a=>a.ManifestModule.ModuleVersionId.ToString("D").ToLowerInvariant()).Distinct(StringComparer.Ordinal).ToArray();
@@ -260,6 +372,7 @@ public static class BeaverAdoption {
     static void CheckSdkAssemblies(bool after) {
         if(!SdkEnabled())return;
         if(job.sdkMigration==null)throw new Exception("SDK migration is enabled but its frozen spec is missing");
+        CheckSdkInactiveAssemblies(after);
         if((job.sdkMigration.assemblies??new SdkPair[0]).Any(pair=>pair.monoScriptPolicy!="capture-before-preserve-and-pair-localids"&&pair.monoScriptPolicy!="capture-before-preserve-and-attest-inactive-player"))throw new Exception("Unsupported SDK MonoScript evidence policy");
         var previous=new Dictionary<string,SdkScriptSnapshot>();
         if(after) {
@@ -368,6 +481,7 @@ public static class BeaverAdoption {
     static void CheckSdkReferences(bool after,bool applyMappings) {
         if(!SdkEnabled())return;
         if(job.sdkMigration==null)throw new Exception("SDK migration is enabled but its frozen spec is missing");
+        var retainedGuids=new HashSet<string>((job.sdkMigration.retainedInactiveAssemblies?.assemblies??new SdkRetainedInactiveImage[0]).Select(x=>x.guid),StringComparer.Ordinal);
         Progress mappedCheckpoint=report;
         if(after&&!applyMappings) {
             var appliedPath=Path.Combine(job.stage,"native-apply.json");
@@ -377,6 +491,9 @@ public static class BeaverAdoption {
         }
         foreach(var row in job.sdkMigration.references ?? new SdkReference[0]) {
             if(!after && row.root!="target")continue;
+            if(row.root=="candidate"&&(retainedGuids.Contains(row.source.guid)||retainedGuids.Contains(row.canonical.guid))||
+               row.action=="map"&&(retainedGuids.Contains(row.source.guid)||retainedGuids.Contains(row.canonical.guid)))
+                throw new Exception("SDK reference cannot be added or mapped to a retained inactive duplicate "+row.assetPath);
             var path=row.assetPath;var asset=FindLocalObject(path,row.objectLocalId);
             bool candidateMap=after&&row.root=="candidate"&&row.action=="map";
             if(!candidateMap&&Hash(Full(path))!=row.assetSha256)
@@ -416,7 +533,8 @@ public static class BeaverAdoption {
     static void CheckSdkReferenceCoverage() {
         if(job.sdkMigration.referenceCoverage!="all-sdk-references-in-adopted-assets")throw new Exception("SDK reference coverage policy is unknown");
         var assemblies=(job.sdkMigration.assemblies??new SdkPair[0]).Select(x=>x.assemblyName).ToArray();
-        var guids=(job.sdkMigration.assemblies??new SdkPair[0]).SelectMany(x=>x.variants??new SdkVariant[0]).Select(x=>x.after.guid).ToArray();
+        var guids=(job.sdkMigration.assemblies??new SdkPair[0]).SelectMany(x=>x.variants??new SdkVariant[0]).Select(x=>x.after.guid)
+            .Concat((job.sdkMigration.retainedInactiveAssemblies?.assemblies??new SdkRetainedInactiveImage[0]).Select(x=>x.guid)).ToArray();
         var declared=(job.sdkMigration.references??new SdkReference[0]).Where(x=>x.root=="candidate").ToDictionary(x=>x.assetPath+"\0"+x.objectLocalId+"\0"+x.propertyPath,StringComparer.Ordinal);
         var found=new HashSet<string>(StringComparer.Ordinal);
         foreach(var op in job.operations) {
@@ -439,9 +557,11 @@ public static class BeaverAdoption {
                     string referenceGuid;long referenceId;
                     if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(iterator.objectReferenceValue,out referenceGuid,out referenceId))continue;
                     var objectType=ObjectType(iterator.objectReferenceValue);
+                    var key=path+"\0"+objectId+"\0"+iterator.propertyPath;
+                    if((job.sdkMigration.retainedInactiveAssemblies?.assemblies??new SdkRetainedInactiveImage[0]).Any(x=>x.guid==referenceGuid))
+                        throw new Exception("Adopted asset references a retained inactive duplicate "+key);
                     var referenceAssembly=iterator.objectReferenceValue is MonoScript ? ((MonoScript)iterator.objectReferenceValue).GetClass()?.Assembly.GetName().Name : iterator.objectReferenceValue.GetType().Assembly.GetName().Name;
                     if(!guids.Contains(referenceGuid)&&!assemblies.Contains(referenceAssembly))continue;
-                    var key=path+"\0"+objectId+"\0"+iterator.propertyPath;
                     SdkReference row;
                     if(!declared.TryGetValue(key,out row))throw new Exception("Adopted asset has an undeclared SDK serialized reference "+key);
                     if(referenceGuid!=row.canonical.guid||referenceId!=row.canonical.localId||objectType!=row.canonical.type)
@@ -481,6 +601,7 @@ public static class BeaverAdoption {
                     previous.written=codePrior.written.Concat(previous.written).Distinct().ToList();
                     if(previous.beforeAssets.Count==0)previous.beforeAssets=codePrior.beforeAssets;
                     if(previous.sdkBeforeMonoScripts==null||previous.sdkBeforeMonoScripts.Count==0)previous.sdkBeforeMonoScripts=codePrior.sdkBeforeMonoScripts;
+                    if(previous.sdkBeforeInactiveAssemblies==null||previous.sdkBeforeInactiveAssemblies.Count==0)previous.sdkBeforeInactiveAssemblies=codePrior.sdkBeforeInactiveAssemblies;
                     previous.sdkBeforeComplete=previous.sdkBeforeComplete||codePrior.sdkBeforeComplete;
                     previous.createdFolders=codePrior.createdFolders.Concat(previous.createdFolders).GroupBy(e=>e.path).Select(g=>g.First()).ToList();
                 }
@@ -513,6 +634,12 @@ public static class BeaverAdoption {
                     if(AssetDatabase.AssetPathToGUID(old.path)!=old.guid || !Ids(old.path).SequenceEqual(old.localIds))throw new Exception("Restored local identities differ "+old.path);
                 }
                 CheckSdkAssemblies(false);CheckSdkReferences(false,false);ConfirmSdkModuleBindings(false);
+                var expectedInactive=previous.sdkBeforeInactiveAssemblies??new List<SdkRetainedInactiveSnapshot>();
+                var restoredInactive=report.sdkBeforeInactiveAssemblies.ToDictionary(x=>x.path,StringComparer.Ordinal);
+                foreach(var old in expectedInactive) {
+                    SdkRetainedInactiveSnapshot restored;
+                    if(!restoredInactive.TryGetValue(old.path,out restored)||!SameRetainedInactiveSnapshot(old,restored))throw new Exception("Rollback retained inactive SDK differs "+old.path);
+                }
                 var expectedSdkBefore=previous.sdkBeforeMonoScripts??new List<SdkScriptSnapshot>();
                 var restoredSdkByPath=report.sdkBeforeMonoScripts.ToDictionary(x=>x.path,StringComparer.Ordinal);
                 // Failed preflight may stop midway through native capture. Its
@@ -534,7 +661,7 @@ public static class BeaverAdoption {
                     if(staged) {
                         var prior=JsonUtility.FromJson<Progress>(File.ReadAllText(codePath));
                         if(prior.status!="staged" || prior.planSha256!=job.planSha256)throw new Exception("Invalid compilation checkpoint");
-                        report.written=prior.written;report.beforeAssets=prior.beforeAssets;report.createdFolders=prior.createdFolders;report.observedAfter=prior.observedAfter;report.sdkBeforeMonoScripts=prior.sdkBeforeMonoScripts;report.sdkBeforeComplete=prior.sdkBeforeComplete;
+                        report.written=prior.written;report.beforeAssets=prior.beforeAssets;report.createdFolders=prior.createdFolders;report.observedAfter=prior.observedAfter;report.sdkBeforeMonoScripts=prior.sdkBeforeMonoScripts;report.sdkBeforeComplete=prior.sdkBeforeComplete;report.sdkBeforeInactiveAssemblies=prior.sdkBeforeInactiveAssemblies;
                         foreach(var line in File.ReadAllLines(Path.Combine(job.stage,"reference-signatures.json"))){var parts=line.Split('\t');if(parts.Length!=2||RefSignature(parts[0])!=parts[1])throw new Exception("Compiled watcher dependencies changed");signatures[parts[0]]=parts[1];}
                         foreach(var old in report.beforeAssets)if(job.operations[old.index].preserveLocalIds)originalIds[job.operations[old.index].target]=old.localIds;
                     } else {

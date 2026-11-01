@@ -16,7 +16,7 @@ class AppBindingNativeTests(unittest.TestCase):
         root=SOURCE.parents[3]/'.private/app-binding-native/tests'
         root.mkdir(parents=True,exist_ok=True)
         cls.directory=tempfile.TemporaryDirectory(dir=root);cls.root=Path(cls.directory.name)
-        cls.binary=cls.root/'bridge';cls.denied=cls.root/'denied';cls.routing=cls.root/'routing'
+        cls.binary=cls.root/'bridge';cls.denied=cls.root/'denied';cls.routing=cls.root/'routing';cls.no_mode=cls.root/'no-mode'
         cls.flags=['xcrun','clang','-fobjc-arc','-Wall','-Wextra','-Werror','-framework','Foundation','-framework','AppKit','-framework','ApplicationServices']
         subprocess.run(cls.flags+[str(SOURCE),'-o',str(cls.binary)],check=True,capture_output=True)
         shim=cls.root/'denied.m'
@@ -43,6 +43,20 @@ class AppBindingNativeTests(unittest.TestCase):
             return ok&&outside&&posted==0?0:1;
         }}''')
         subprocess.run(cls.flags+[str(routing),'-o',str(cls.routing)],check=True,capture_output=True)
+        no_mode=cls.root/'no-mode.m'
+        no_mode.write_text('#import <Foundation/Foundation.h>\n#import <ApplicationServices/ApplicationServices.h>\nstatic NSUInteger warpCalls;\nstatic CGError TestWarp(CGPoint p){(void)p;warpCalls++;return kCGErrorSuccess;}\n#define CGWarpMouseCursorPosition TestWarp\n#define main BeaverBindingMain\n#include "'+str(SOURCE)+'"\n#undef main\n'+r'''int main(void){@autoreleasepool {
+            response=[NSMutableDictionary dictionary];request=@{@"operation":@"click"};BOOL refused=NO;
+            @try {SynchronizePointer(NULL,@{@"x":@1,@"y":@1});} @catch(NSException *e){refused=[response[@"errorCode"] isEqual:@"CURSOR_MODE_REQUIRED"];}
+            if(!refused||warpCalls||posted||response[@"cursorSyncHistory"])return 1;
+            NSMutableDictionary *prior=[NSMutableDictionary dictionaryWithDictionary:@{@"attempted":@YES,@"completed":@YES,@"target":@[@10,@10]}];
+            NSMutableArray *history=[NSMutableArray arrayWithObject:prior];response=[NSMutableDictionary dictionaryWithDictionary:@{@"cursorSyncHistory":history,@"cursorSync":prior}];
+            activeCursorSyncRecord=prior;pointerSyncComplete=YES;targetPid=INT_MAX;request=@{@"operation":@"drag",@"cursorMode":@"sync-owned-window"};
+            BOOL stopped=NO;@try {SynchronizePointer(NULL,@{@"x":@20,@"y":@20});} @catch(NSException *e){stopped=YES;}
+            NSDictionary *next=history.lastObject;
+            return stopped&&history.count==2&&[prior[@"attempted"] boolValue]&&[prior[@"completed"] boolValue]&&![next[@"attempted"] boolValue]&&![next[@"completed"] boolValue]&&warpCalls==0&&posted==0?0:1;
+        }}''')
+        subprocess.run(cls.flags+[str(no_mode),'-o',str(cls.no_mode)],check=True,capture_output=True)
+
 
 
     @classmethod
@@ -100,3 +114,25 @@ class AppBindingNativeTests(unittest.TestCase):
         self.assertNotRegex(source,r'\bCGS[A-Z]\w*\s*\(')
         self.assertNotRegex(source,r'CGEventSet(?:Integer|Double)ValueField\([^,]+,\s*(?:\([^)]*\)\s*)?\d')
         self.assertIn('CGEventPostToPid(targetPid,event)',source)
+
+    def test_cursor_mode_is_closed_and_only_supported_for_mouse_gestures(self):
+        for mode in [None,True,1,'automatic','none','global']:
+            request=self.request();request.update(operation='click',windowId=1,x=1,y=1,cursorMode=mode)
+            with self.subTest(mode=mode):self.blocked(request,'INVALID_CURSOR_MODE')
+        for operation in ['observe','close','text','key']:
+            request=self.request();request.update(operation=operation,windowId=1,cursorMode='sync-owned-window')
+            with self.subTest(operation=operation):self.blocked(request,'INVALID_REQUEST')
+
+    def test_opted_in_gestures_cannot_sync_when_permission_or_identity_fails(self):
+        for operation,fields in [('click',dict(x=1,y=1)),('drag',dict(points=[dict(x=1,y=1),dict(x=2,y=2)]))]:
+            request=self.request();request.update(operation=operation,windowId=1,cursorMode='sync-owned-window',**fields)
+            denied=self.blocked(request,'AX_PERMISSION_REQUIRED',self.denied)
+            self.assertEqual(denied['cursorSyncAttemptedCount'],0);self.assertEqual(denied['cursorSyncCompletedCount'],0)
+            self.assertFalse(denied['cursorPositionMayHaveChanged']);self.assertFalse(denied['cursorRestorationAttempted'])
+            missing=self.blocked(request)
+            self.assertIn(missing['errorCode'],['AX_PERMISSION_REQUIRED','PROCESS_NOT_FOUND','PROCESS_IDENTITY_UNAVAILABLE'])
+            self.assertEqual(missing['cursorSyncAttemptedCount'],0);self.assertFalse(missing['cursorPositionMayHaveChanged'])
+
+    def test_internal_sync_requires_opt_in_and_next_point_preserves_partial_history(self):
+        result=subprocess.run([str(self.no_mode)],capture_output=True,timeout=12)
+        self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(result.stdout,b'');self.assertEqual(result.stderr,b'')
