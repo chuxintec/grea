@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.7.0.dev7",
+  "sourceCommit": "78f4f8d160ab7e09d38e84ba0f374a1b0a98081e",
+  "wheelSha256": "265a6f74dd175cb9f315325d5179dadbc90a645e159455fe246c38751ca3ab5d",
+  "sourceArchiveSha256": "21a2d40d3e906a47424f96fa2ef10bd5ef09990073673d67ad62ffd0e4643941",
+  "runtimeFilesEqualCommitWheelFrozenSource": 436,
+  "state": "fixed_stage_identity_recorded_no_forced_adapter_switch",
+  "reportedScope": "Exact staged Spine helper/runtime saved-selection closure; 23 focused checks passed; no adoptionDependencies v1 schema extension; source native static/GUI proof remains bound to dev6a18e786 Stage09.",
+  "providerReportedChanges": [
+    "Graphic SDA .01 with Canvas PPU100 preserves source node scale .75",
+    "Spine non-GUID helper/runtime/DLL/meta/license selection closure separate spineRuntimeClosure",
+    "adoptionDependencies v1 remains csharp-compile only"
+  ],
+  "evidenceAttribution": "Source static/GUI proof stays bound to dev6 a18e786 Stage09; dev7 selection closure is a separate stage, not a new source-native run",
+  "greaDispatchChanged": false,
+  "limits": [
+    "No GREA Editor, native, GUI or consumer rerun.",
+    "Exact S2 identity does not establish 1.9.4 season/time mapping or dynamic playTimes/cache recovery.",
+    "Consumer adoption must preserve full runtime or prove equivalent GUID/PPU mapping.",
+    "Old dev4 and completed font/input evidence retained; no forced migration, install, push or release."
+  ]
+}

@@ -1,6 +1,6 @@
 # monkey 批量恢复与开发交接
 
-当前新工作流有限适配 **monkey 0.4.0 / 0.4.1 / 0.6.0**。源码模块锁指定正式 **0.6.0** 的精确 wheel（`modules.lock.json`），旧版本继续按原 lock 使用。既有来源工具通过 `monkey tool <id>` 委托：Laya 契约、ELF 常量、XAPK/wxapkg、配置表和 Shader 探针。GREA 不复制转换器、不放开任意 CLI 参数；实际 launcher、包树、完整 capabilities 摘要与所选操作均须匹配。显式 ensure 可安装缺失工具，已有安装不自动升级。候选完整性、原生回读与游戏业务分层验收；新工程布局以实际产物 `projectLayout` 为准。
+当前转换工作流有限适配 **monkey 0.4.0 / 0.4.1 / 0.6.0**；固定 **0.7.0.dev1** 仅支持下述候选只读复核，不据版本号放开转换。源码模块锁指定正式 **0.6.0** 的精确 wheel（`modules.lock.json`），旧版本继续按原 lock 使用。既有来源工具通过 `monkey tool <id>` 委托：Laya 契约、ELF 常量、XAPK/wxapkg、配置表和 Shader 探针。GREA 不复制转换器、不放开任意 CLI 参数；实际 launcher、包树、完整 capabilities 摘要与所选操作均须匹配。显式 ensure 可安装缺失工具，已有安装不自动升级。候选完整性、原生回读与游戏业务分层验收；新工程布局以实际产物 `projectLayout` 为准。
 
 <!-- grea:tool monkey_pipeline -->
 <!-- grea:tool monkey_bridge -->
@@ -39,7 +39,7 @@ bin/grea legacy monkey_pipeline audit --workspace /path/new-run/provider-output 
 
 默认绑定和 GREA 管理的缺失安装位于 `~/.local/share/grea/providers/monkey/`；测试或受控部署可设置 `GREA_PROVIDER_STATE_DIR`。新安装用独立 venv；从插件自带 Python 安装时另保留独立 Python 副本，不让 provider 依赖会被替换的插件缓存。文件夹已存在但安装不完整、绑定失效、发现歧义均保留并报错，不自动重装。已有外部 monkey 安装只绑定，不移动文件或替换日常入口。
 
-安装最新版不等于适配器支持所有新版本：当前批量适配接受 0.4.0 / 0.4.1 / 0.6.0，若 GitHub 最新版超出范围，安装结果保留、ready=false，不降级或冒称可转换。已固定计划继续使用旧身份，执行前后检查变化。
+安装最新版不等于适配器支持所有新版本：当前转换适配接受 0.4.0 / 0.4.1 / 0.6.0；0.7.0.dev1仅接受精确候选的只读复核。若 GitHub 最新版超出范围，安装结果保留、ready=false，不降级或冒称可转换。已固定计划继续使用旧身份，执行前后检查变化。
 
 lock v2 固定实际安装包文件集、launcher、解释器文件、command/probe 与 capabilities 摘要；pyc 缓存不纳入产品身份，非全部第三方依赖认证。计划 `--config` 可显式固定旧 lock；省略时读取当前已验证绑定。历史 bridge 保留 v1/v2 显式 lock 接口。自定义 provider 仍可按[安装与平台](monkey与beaver调用.md)配置，再用 `pin --package-root <安装包目录> --output <新目录>` 固定；多参数自定义 launcher 不自动推断包位置。
 
@@ -148,6 +148,55 @@ monkey_pipeline classify-shaders --config /absolute/p0-lock.json
 
 ## v0.7目标与接入状态
 
-monkey v0.7当前目标是Prefab完整恢复及逐样本原生/脚本/动态/视觉验收，优先于此前source-family扩张安排；这是一项开发目标，不代表能力已实现或GREA已支持0.7调用。源组件分母与纯候选口径见[独立恢复对照](../../grea-recover/references/全量初版工程与协作.md#prefab完整恢复的独立对照)，实际样本与版本完成条件由批准计划维护。
+monkey v0.7按先静态、后动态推进：静态阶段保全层级、组件/字段、图片/文字/材质及引用，核真实渲染、保存独立重开和再生；业务行为允许禁用/未运行/部分执行，并单列动态结果。源组件分母、阶段出口与三态身份见[独立恢复对照](../../grea-recover/references/全量初版工程与协作.md#prefab完整恢复的独立对照)及[候选交接](../../grea-recover/references/全量初版工程与协作.md#生成态保存态与项目采用身份)。样本数与双目标范围由批准计划维护，不变成所有游戏的固定门槛。
 
-monkey唯一实现源恢复，GREA只在固定开发版本/包SHA/producer、真实CLI/Schema及分层回执交付后作有限适配；不提前加入版本范围、猜0.7命令或改正式模块锁。旧0.6正式版及已固定P0包继续按原身份消费，不把游戏人工修补计为工具成果。双目标只限明确批准的工具隔离验证，不恢复暂停产品或新增引擎安装权限。
+### 固定 dev1 的保存态只读复核
+
+已有限接入 `0.7.0.dev1`，固定提交 `a458790a68d57108b4cfe038d8aa565d5cc1599b`、wheel SHA `06bc81ea71c4e6a0e9b6ccc9a16b43b34f1fc0ecdc7c3d772921b535ff6152f8`。该版本capabilities没有producer字段，不伪造它；以423个包文件的相对路径→SHA映射摘要 `c3673a4f7cf1f724ab6c30b2235bba6a9475426e561d42c069d082b4dd750b7d` 和capabilities规范摘要 `487e5d37974bf9e9556591aae7af5081fa8f76f0c7bbb28599ce3a5dc449c57b`精确绑定。`pin`和实际probe均拒同版本不同内容；锁还绑定程序与包树。包多出文件也属于不同身份，不修改上游来迁就锁，可用已核wheel的独立副本。
+
+通过显式`GREA_PROVIDERS`选择固定程序，沿用`monkey_pipeline pin --package-root PACKAGE --output NEW`生成v2锁；不改默认binding或正式模块锁。已有源码/自定义launcher不走自动ensure，不把全局0.6发现信息当成本次dev1生成器。实际调用：
+
+```sh
+bin/grea legacy monkey_pipeline audit --config /absolute/dev1-lock/monkey-lock.json \
+  --workspace /absolute/SavedUnityCandidate --level editor \
+  --expected-manifest <generated-manifest-SHA256> \
+  --expected-readback <saved-editor-readback-SHA256> --output /absolute/new-audit
+```
+
+MCP使用`run_tool`选择同一`monkey_pipeline`及上列arguments；外层预算至少360秒。适配器调用固定provider已有`verify --candidate --level editor --out`，只读核现有原生回执与当前字节，**不启动Editor**，不另写原生解析/采用器。`--level static`只核生成态，需要expected-manifest且禁止expected-readback；省略level保持旧generated审计语义，dev1必须显式指定static/editor。此增量不允许dev1的plan/run转换，不修改旧版本接口。
+
+editor级读取固定`Analysis/Readback/editor-readback.json`的nativeFiles实际哈希和原生字段/引用；生成manifest的.meta采用保存回执，其他生成文件仍核原hash，ProjectVersion只按固定provider的6000.6.2f1标准化规则处理。GREA执行前后核manifest/readback/锁及程序包身份，原生成清单不写回。provider输出`verification.json`和执行回执保留；`staticValidation/nativeStaticValidation/runtimeCheck`、`editorValidation`、诊断、视觉与业务各自报告，exit1的动态partial不一律等同静态失败。GREA顶层仍needs_action/handoff_ready=false：这是同provider对既有记录的再核，不是新原生运行、独立认证或项目采用通过。
+
+调用失败核`failure.json`及executed，保留已有输出；身份漂移、错预期hash、不兼容候选和未适配操作拒绝，不用raw argv绕过。新`freeze-native-selection`与`adoptionDependencies`目前为monkey/beaver协调中的下一固定合同，dev1未实现，不提前注册或用项目helper冒充公开能力。
+
+### 固定 dev2 的保存态选择冻结
+
+`0.7.0.dev2`固定提交`c279a6ac9ec3766a4550b5cfdaa5df6cced953c3`、wheel SHA `40cd12a06754b99cd8989d6b61b41c91725223a8a9ed5c5bd380f20c6499938e`，425文件包摘要`05f429c84c46bde954f01af90be96fe448789e881de7defbcc51444aa25c6517`、capabilities规范摘要`8660a3d7d1f576392191fb7d94d66a55bb1d531048658f5d8fca12c85c01973b`。无producer字段，不虚构；沿显式pin固定精确内容。
+
+使用`monkey_pipeline freeze-native-selection --config LOCK --candidate SAVED_PROJECT --prefab Assets/Path/Item.prefab --expected-manifest SHA --expected-readback SHA --output NEW`，prefab可重复，最多128条唯一规范路径。GREA转发已验同名provider命令，复核父身份与输出文件hash；输出项目在NEW/provider-output。实际闭包、包GUID、字体依据和依赖声明由monkey实现，不在GREA重复解析。旧dev1只读audit接口保持；dev2只开放本选择冻结，常规plan/run转换仍未适配。
+
+输出adoptionDependencies是producer-declared，并非完整C#分析；未分析脚本、DynamicOS/新增文字覆盖未知和全部诊断保留。将原始manifest与选集交固定beaver fix10，路径适配需保留依赖映射，不手写producer声明。此出口已固定交付，覆盖前文“拟议出口”状态；实时代理与扩字修复仍属于后续版本。复用保存回执不等于新Editor、采用或业务通过。
+
+### 固定dev3选择与运行时/字体交接
+
+`0.7.0.dev3`固定`4ad7498a35e762f6ef5b6f15a334e973d7794845`，wheel SHA `d95cabf4ef9ec4cf610fcacf17b4db1130ae337a8598702eebef32fb2bd9fe34`；434包文件摘要`f77c5bcaca208a8a9e5a6481db384275fd69688e640de1a921863289263fe11c`、规范capabilities摘要`f6e67a8a6f4921a8ef265f2ae3cb250c7c01a5a1f0d3e888bdd1c5b719f6ab13`。同dev2的显式pin/freeze入口已开放此精确身份，普通convert与新增生成操作不因版本白名单自动放开。
+
+选择冻结递归跟随literal Shader include，shaderDependencies与C#边分列；未知/macro/不安全include拒绝，Unity内建include标来源，编译仍须原生验。dev3修复dev2遗漏，保留旧219原件及失败边界。运行时/字体最终候选与原保存态选集分别固定manifest，不能混用221与247文件身份。采用保留Monkey.NativeUiContracts接口，不另造全局marker别名；原Slider.fillRect=null保留，项目typed绑定实际验。
+
+已核固定provider的四个CLI合同：upgrade-native-runtime要求candidate/expected-manifest；complete-native-font要求request/expected-request；stage-native-font要求candidate/expected-manifest及completion/expected-completion；finish-native-font要求project/expected-stage-manifest及readback/expected-readback，均写新out。它们现已由下述native-step有限调度，不提供raw argv；已有固定最终候选可直接进入beaver采用，无需重复运行。中性native raycast/合成callback、435字形/17文本和保存重开各是有限证据，不证明物理输入、产品字体覆盖或Player业务通过。
+
+### dev3四项生成操作的冻结请求
+
+公共入口为`monkey_pipeline native-step --config LOCK --request REQUEST --output NEW`，只接受固定dev3。REQUEST字段严格为schema_version=1、operation、options、input_roots、timeout_seconds；operation仅upgrade-native-runtime、complete-native-font、stage-native-font、finish-native-font，options恰为上列各命令的命名参数（去掉双横线），不得含out/executeMethod或任意argv。timeout为1..1800整数；input_roots为1..64个存在、互不包含的绝对输入文件/目录。MCP使用同tool_id/arguments，外层预算需覆盖内部timeout和审计。
+
+所有路径选项必须在冻结根内，输入前后按有界完整快照比较；manifest、request、completion/font-completion.json、stage manifest和readback的expected SHA均在执行前核对。complete-native-font的request内全部*_path及watch_files路径也须处于冻结范围；相关绑定/回执引用的资料目录应完整声明，缺少或超预算拒绝，不静默跳过Library等子树。平台CoreText字体/OS/生成器身份由固定provider精确核，GREA不声称冻结整个主机。
+
+仅转调用固定provider，输出限定NEW/provider-output，保存原stdout/exit及failure.executed；输入/锁/包变化不签收。输出有界快照及各manifest登记文件逐项核path/SHA/bytes，不能越出输出；没有登记清单的输出仅提供库存字节证据，provider语义和原生结果分别保留。阶段生成的launchArguments不自动执行，stage不等于字体导入，finish须由provider核真实passing readback；顶层仍needs_action/handoff_ready=false，Player与物理输入另验。
+
+本轮验证覆盖31项受影响检查及四个固定CLI非法输入拒绝，未重跑字体生成或Editor。既有247最终候选继续独立采用；新增正向生成在自然需求中按同合同验证，不借本次调度测试宣称生成/产品通过。
+
+### 固定dev4的依赖补证
+
+`0.7.0.dev4`固定提交`19d51d4dbe7971bb14c5724963c42dfdbd9ddaca`、wheel SHA `590241cef89fa460090088318002c355187235eee2cbe21a471d8bbc34ac7a26`，435文件摘要`5689b6dc039c4f9aafbda9dbdeaf634c25f1013c9ef09cc91fa53377a113baf1`、规范capabilities摘要`b8c1e66b8215c3133c8f0ba4e2bf5d1ae9a9d2632979f41c3c80106ee00ae252`。支持同形freeze/native-step有限入口；新operation `audit-native-code-dependencies`只接受dev4，options恰为candidate、expected-manifest、producer-candidate、expected-producer-manifest。按native-step v1提供输入根和预算，两个项目manifest预核SHA，输出独立目录，不改旧候选/诊断。
+
+补证报告schema=monkey-native-code-dependency-supplement/1；GREA核目标与producer父清单身份、originalDiagnostics未变、逐script/requires/package SHA及固定包中的producerImplementation SHA。模板profile/可再生carrier证明由monkey实现，不另建C#分析器。uncovered为0只指这份目标库存中的精确producer证明范围，不代表任意C#分析、原生编译、业务或真实输入完成；旧warning不删除。已有相同目标、provider与报告时复用冻结补证，不强制重跑大producer树或字体/Editor。

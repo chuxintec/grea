@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.5.1.dev20261031+fix11",
+  "sourceCommit": "6b7e74f53436ad1395b4f51404e76cd2391c3ad8",
+  "producer": "44a1280aa75d7b720fa0bdfada800441e09dc76c95911ed1b00e2993725f766c",
+  "wheelSha256": "9cb2596b2953a4a9f568287c3afe96d01f7c8f53b039e5fc1902a113507e83ff",
+  "runtimeFilesEqualCommitWheelInstall": 124,
+  "contractHashesVerified": 19,
+  "actualGreaCliPin": "ready",
+  "nativeEvidence": {
+    "origin": "upstream fixed installed run, read-only reuse",
+    "artifactManifestSha256": "6d0414a501bcf5e88a28cc0f33b889c5c42b642128200137e405544ac9d2e774",
+    "development": true,
+    "fonts": 4,
+    "sourceHashesRestored": true
+  },
+  "failureEvidenceReuse": "all installed runtime files equal failure/interruption-tested source, except version string; reconstructed prior implementation hash verified",
+  "consumer": "blocked: post-exit font source drift; artifact not certified",
+  "limits": [
+    "No GREA Editor/build/recovery run.",
+    "Failure/interruption checks reused with disclosed version-only difference, not rerun as fixed installation.",
+    "Player glyph coverage, visual correctness and profile/account isolation not established.",
+    "No global installation, game writes, push or release."
+  ],
+  "actualGreaCliPlans": [
+    {
+      "case": "development",
+      "status": "ok",
+      "native": "not_run"
+    },
+    {
+      "case": "bad-mode",
+      "status": "blocked",
+      "native": "not_run"
+    },
+    {
+      "case": "hook",
+      "status": "blocked",
+      "native": "not_run"
+    }
+  ],
+  "targetedTests": 29,
+  "consumerFailure": {
+    "state": "recovery-required",
+    "evidenceHashes": {
+      "journal.json": "0980187e3033d60d9fede6d332bc0567364389b8ca1efab296fd94e3cffe4ff0",
+      "font-checkpoint.json": "6e39e88fefa1a4c025fbc3ef48d6e9417c6922eb4b7ca5d32b5ffcc318024859",
+      "process.json": "4869719b6d220d68a0ad538ed3a9ebc78324c3a870720c90ae9c7e5059371325",
+      "native-apply.json": "b6082b19df12e54c1b618f7269e900bc26f148a3f06cc9b55abe64f2537a330e"
+    },
+    "summary": "Consumer reports five font sources rewritten after native restoration on Editor exit; public parent source guard rejected certification.",
+    "recovery": "Pending original fixed transaction recovery or new explicit owner contract; no GREA game write",
+    "acceptance": "Native build success and native restored flag do not establish source restoration after process exit"
+  }
+}

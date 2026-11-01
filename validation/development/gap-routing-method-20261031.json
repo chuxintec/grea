@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "sourceClassificationSha256": "3beeb9acc0d20306727c67d2c00dc86b4e7081f6cc1247b5ba9814a3646ac8fd",
+  "sourcePlanSha256": "6be96049edd4fd64290ef52aa663f74285adb8998988a20087986e601f024b63",
+  "groupCounts": {
+    "projectImplementationWithInputDependencies": 2,
+    "resourceOrMixedRecovery": 4,
+    "projectRulesServicesVersionMapping": 19
+  },
+  "state": "method_and_routing_updated_product_gaps_not_closed",
+  "separateIdDomains": [
+    "product gap P04",
+    "recovery sample P04"
+  ],
+  "checks": {
+    "stageRoutingTests": 4,
+    "documentLinks": 737,
+    "skillClosureLinks": 368,
+    "generatedContracts": "no drift"
+  },
+  "implementation": "No new GREA execution defect or fixed-provider contract change supplied; existing exact adapters and verified segments reused",
+  "remaining": [
+    "Producer unknown compile dependencies require honest coverage/evidence.",
+    "Dynamic real Player interaction remains separate from neutral/synthetic checks.",
+    "Exact source resources and renderable component gaps go to monkey only when source existence and recovery failure are evidenced.",
+    "Project rules/services/version mapping are not parser bugs or authorization for payment."
+  ],
+  "gameWrites": false,
+  "pushReleaseOrGlobalInstall": false
+}

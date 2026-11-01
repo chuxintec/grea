@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.7.0.dev3",
+  "sourceCommit": "4ad7498a35e762f6ef5b6f15a334e973d7794845",
+  "wheelSha256": "d95cabf4ef9ec4cf610fcacf17b4db1130ae337a8598702eebef32fb2bd9fe34",
+  "packageSha256": "f77c5bcaca208a8a9e5a6481db384275fd69688e640de1a921863289263fe11c",
+  "capabilitiesCanonicalSha256": "f6e67a8a6f4921a8ef265f2ae3cb250c7c01a5a1f0d3e888bdd1c5b719f6ab13",
+  "packageFilesComparedToCommit": 434,
+  "publicFreezeFiles": 221,
+  "publicFreezeManifestSha256": "93325cf779d5e093a77cc5de959ac36a7aae485fd3d8d48d6c003b5ccac80ddb",
+  "shaderIncludeAndMetaCarried": true,
+  "shaderDependencies": {
+    "builtinIncludes": [
+      "UnityCG.cginc",
+      "UnityUI.cginc"
+    ],
+    "coverage": "literal-project-includes+declared-unity-builtins",
+    "edges": [
+      {
+        "kind": "shader-include",
+        "path": "Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader",
+        "requires": [
+          "Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc"
+        ]
+      }
+    ],
+    "targetShaderCompilation": "not_run",
+    "targetUnityVersion": "6000.6.2f1"
+  },
+  "finalCandidateManifestSha256": "bae39e86484f94e8b5edbb541c03fc8b48edbbcf19b8f6f348497c360d732373",
+  "finalCandidateFiles": 247,
+  "finalCompileEdges": 6,
+  "targetedTests": 28,
+  "scope": "Actual GREA fixed pin/freeze and file-byte audit; no Editor/native input. Final candidate manifest reviewed; consumer full payload verification reused.",
+  "newNativeCommands": "Four fixed CLI help contracts inspected; not registered as GREA typed operations",
+  "consumer": "pending new candidate adoption/runtime/Player",
+  "limits": [
+    "221 saved selection is separate from 247 runtime/font final candidate.",
+    "Include closure does not establish Shader compilation.",
+    "Neutral synthetic callback and font native receipts do not establish physical input or product Player."
+  ]
+}

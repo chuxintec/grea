@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-01",
+  "state": "interface_preview_reviewed_fixed17_pending",
+  "contractDocumentSha256": "203cf92cc3eafb265187223c3ac1defa83174dec242dd329585ea16cc2405bef",
+  "existingEnvelope": "blocked data.managedAssemblyCompatibility and diagnostics accepted unchanged by existing schema",
+  "scope": "Synthetic schema check only; no fixed17 runtime or SDK native acceptance",
+  "greaNewOperation": false,
+  "greaVersionWhitelistChanged": false,
+  "limits": [
+    "Existing plans/transactions retain original producer/algorithm.",
+    "Public-type and Assets importer metadata checks do not cover package cache, native plugins or full compiler/serialized hierarchies.",
+    "Explicit role pair policy cannot authorize replacing retained SDK/importer or rewriting m_Script.",
+    "Build certificate requires Succeeded and explicit integer errors zero; failure still requires source protection."
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.7.0.dev5",
+  "sourceCommit": "ea172e0f214dbcd6e179821c05678d86ca0be992",
+  "wheelSha256": "8989a9863e7ecf92b5ebc0259f0f0e424d64807f7df81323a130fd12a99d684b",
+  "sourceArchiveSha256": "b5bb8d7d6c7f10df48b0ef8b89f659bfb0ada71a76cd64ae02ffad937991300f",
+  "runtimeFilesEqualCommitWheelAndFrozenSource": 436,
+  "state": "fixed_helper_equivalence_and_recorded_native_static_proof_reviewed",
+  "nativeScope": "Creator recorded static resource proof reviewed; no GREA engine run",
+  "greaVersionWhitelistChanged": false,
+  "operationContractChanged": false,
+  "limits": [
+    "No forced switch of verified dev4 chain.",
+    "Unity renderer/initial pose, product entry/animation/season mapping remain unaccepted.",
+    "Archived/paused Cocos game development not resumed.",
+    "Receipt pass is static scope; actual process exited -15 after native_completed, not normal user exit."
+  ],
+  "nativeReceiptReview": {
+    "metadataToolVersion": "0.7.0.dev4",
+    "helpersEqualFixedDev5": [
+      {
+        "source": "CreatorOwnedBuildSceneTeardown.js",
+        "emitted": "owned-build-scene-teardown.js",
+        "sha256": "05fdf448115cb7bd0f5af67a3f11e4ad04092ff181138c24e93cb31a4f15f1b0"
+      },
+      {
+        "source": "CreatorSavedSceneScope.js",
+        "emitted": "creator-saved-scene-scope.js",
+        "sha256": "25ed82868c976f3dbe2f8c64b0dcceea0ee6000af68e96871fac7e6f22e7d70d"
+      },
+      {
+        "source": "CreatorOwnedImportUndo.js",
+        "emitted": "owned-import-undo.js",
+        "sha256": "61ebbf9797f1abea91643bef86c8bea762929d53f3f939cb4473c00796a9b4dc"
+      },
+      {
+        "source": "CreatorEditorUndoDiagnostics.js",
+        "emitted": "editor-undo-diagnostics.js",
+        "sha256": "9ec4b732420213e1648fcd8ceb598c8c274c78ccc500b3d4cba08535b2ae0206"
+      },
+      {
+        "source": "CreatorScene.js",
+        "emitted": "scene.js",
+        "sha256": "23a5300c056ee1fe23564f4d06c3a9c4cf50d5c3f407126ca6bf3bbedea9795b"
+      },
+      {
+        "source": "CreatorResources.js",
+        "emitted": "resources.js",
+        "sha256": "c1d79a9b7793b1e5138090b0fc9a8b4ddcb001ba76950f0aeeeb4695ab406678"
+      }
+    ],
+    "executionExitCode": -15,
+    "stopReason": "native_completed",
+    "editor": "pass",
+    "diagnostics": 0,
+    "staticResourceStatus": "static_resource_identity_verified",
+    "dynamicAnimationComplete": false,
+    "spines": [
+      {
+        "sourceId": "spineAsset:baa9b9a1-0238-4e44-b830-90c77dadf6e8",
+        "skeletonUuid": "79ed7105-f53d-515a-a63c-581ef1853224",
+        "sourceSkeletonSha256": "4525b06a52288aca4a5017d108807804c64ff4a87a7b6fbd7fd01b13de989d9a",
+        "version": "3.8.99",
+        "savedReferenceVerified": true,
+        "bones": 13,
+        "slots": 11,
+        "textureIdentitiesVerified": true,
+        "dynamicPoseStatus": "not_assessed_by_static_proof",
+        "diagnostics": []
+      }
+    ],
+    "evidenceSha256": {
+      "execution-result.json": "33b6155655b7a25665648e902b83276bc9dfdb9d8c1ae2bffb58a2d0bd92a384",
+      "Verification/verification.json": "185304e6395991021f9181a4be1c37fe6b3fc0cb1acaf22aaeca9d129b7a9a95",
+      "static-resource-proof.json": "f061f2cbe85c2dd3d0a3c0afd05ae25eabb4ea38ae3e8b87574ccae8f8ceda48",
+      "CocosProject/manifest.json": "ae0d3d95d9d259d4d81520cf9da4727c72f4304503545c15d157ef22594140ff",
+      "CocosProject/Analysis/Readback/editor-readback.json": "3c53fe8b1bbc5a0aeeedaeb93cbfd60f1c2ace2962f770bdbfccca075e496120"
+    }
+  }
+}

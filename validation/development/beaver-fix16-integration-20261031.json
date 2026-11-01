@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.5.1.dev20261031+fix16",
+  "sourceCommit": "ee13bddd1cda510dfcf600ba71d7f4e2ff194da4",
+  "producer": "d2c25c5bbc6e21b48adae58c13801ea2edf217b35eee8a65b8a1f46b73853678",
+  "wheelSha256": "4d4380a1a70f81274243fc15c0a51f9e09712bdf7966aa4e690647f4908d8a19",
+  "runtimeFilesEqualCommitWheelInstall": 126,
+  "contractHashesVerified": 22,
+  "actualGreaCliPin": "ready",
+  "consumer": "accepted",
+  "scope": "Fixed identity and thin dispatch only; no actual user Library or Player operation",
+  "actualGreaCliNegative": [
+    {
+      "operation": "qa.prepare",
+      "status": "blocked",
+      "executed": true,
+      "native": "not_run"
+    },
+    {
+      "operation": "qa.collect",
+      "status": "blocked",
+      "executed": true,
+      "native": "not_run"
+    }
+  ],
+  "targetedTests": 36,
+  "upstreamHistoricalCollect": {
+    "reportSha256": "2af044df089d0d53703c7f035d5e7b522dc2ba8d780dde6adce01280d408a305",
+    "scope": "fixed16 collector reading old fixed15 run; no GUI replay",
+    "bundleMatches": true
+  },
+  "compatibility": "existing fixed15 owner/profile/Bundle/run supported unchanged; report path corrected, filesystem samefile identity required with unchanged start/log guards",
+  "consumerAcceptance": {
+    "receiptSha256": "d19091c82ca5b623b4701bfe32ce5cb11675d563334d7c4e68eda32d62c132e9",
+    "restrictionControlSha256": "822e7a888c01be266edfe0946172022392931c1eac7af8ae3ab24d25be788b05",
+    "sourceRevision": "d4578aafb16b4a9168ec269ce3450ad9144471b7",
+    "candidate": "qa-v20-nine-20261031-23",
+    "runs": [
+      {
+        "run": "http23-deny-01",
+        "exitCode": 0,
+        "normalExit": true,
+        "launchCLI": "ok",
+        "collector": "collected",
+        "bundleMatches": true,
+        "connectionErrorCount": 0,
+        "receiveFailureCount": 0,
+        "deniedDocuments": true,
+        "restrictionProfileSha256": "5a17c31e4ae96a268fec0f13e02b9da638af4f9b52ad0b52508008ac0087a3f2",
+        "logSHA256": "61b0451b6d814c57df39e5676fdc626d4cdbf30769daacde4a9e063c929e1a09"
+      },
+      {
+        "run": "http23-deny-02",
+        "exitCode": 0,
+        "normalExit": true,
+        "launchCLI": "ok",
+        "collector": "collected",
+        "bundleMatches": true,
+        "connectionErrorCount": 0,
+        "receiveFailureCount": 0,
+        "deniedDocuments": true,
+        "restrictionProfileSha256": "5a17c31e4ae96a268fec0f13e02b9da638af4f9b52ad0b52508008ac0087a3f2",
+        "logSHA256": "0866abe7fb22fdc807a77b0c4bb2d4ee34729a470542da0455a070a6a6338f7b"
+      }
+    ],
+    "logHashesIndependentlyMatched": [
+      "http23-deny-01",
+      "http23-deny-02"
+    ],
+    "stableProfileAcrossBuilds": true,
+    "seedUnchanged": true,
+    "saveMoveRetained": true,
+    "limitations": [
+      "Controlled denyDocuments checks required paths, not a syscall trace or clean-TCC claim.",
+      "First live collect remained identity_unknown because launch baseline caught sandbox-exec before exec; preserved recovery_required receipt. Both final exited collectors passed.",
+      "App21 old HTTP/Mono transient errors and fixed14/15 failed tool receipts retained.",
+      "Full v2.0 and 25 original-rule/resource/payment gaps remain incomplete; no production/public release."
+    ],
+    "reviewScope": "GREA read consumer summary/control and matched two run log hashes; no new GUI or syscall inspection"
+  },
+  "consumerAcceptanceScope": "Current Entry/Mainline required normal runtime and stable-profile continuation under controlled denyDocuments; not full syscall/TCC/product acceptance"
+}

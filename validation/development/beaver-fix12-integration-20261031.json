@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.5.1.dev20261031+fix12",
+  "sourceCommit": "61fc30bdcc002054ca04fd0e14b7cda179e3879f",
+  "producer": "8733083d0a3c153679282a1b77c7375744aca02042d6a184545ff62680e4c9cb",
+  "wheelSha256": "446667f8abfb65cb1ca6b88d019efcf7758545a445c354828d2144a59bb6eece",
+  "runtimeFilesEqualCommitWheelInstall": 125,
+  "contractHashesVerified": 20,
+  "actualGreaCliPin": "ready",
+  "upstreamPostExitSourceEvidenceSha256": "9b6cabc2a0e5d46cc16e6eaddd58c55fa62243f61f19795b136ad52e41d9d9a8",
+  "postExitFontHashesEqual": true,
+  "fonts": 5,
+  "consumer": "build segment passed; Player and other chain gates pending",
+  "limits": [
+    "Upstream native build evidence read and hash checked; no GREA Editor/build/recovery execution.",
+    "Old fixed11 failure evidence unchanged; exceptional recovery has separate reviewed contract.",
+    "Glyph coverage, Player visuals and runtime account/profile isolation not established."
+  ],
+  "actualGreaCliPlans": [
+    {
+      "case": "development",
+      "status": "ok",
+      "native": "not_run"
+    },
+    {
+      "case": "bad-mode",
+      "status": "blocked",
+      "native": "not_run"
+    },
+    {
+      "case": "hook",
+      "status": "blocked",
+      "native": "not_run"
+    }
+  ],
+  "targetedTests": 33,
+  "actualGreaRecoveryNegative": {
+    "status": "blocked",
+    "native": "not_run",
+    "scope": "Empty synthetic transaction and invalid review refused; no game recovery"
+  },
+  "consumerBuildReceipt": {
+    "candidate": "qa-v20-nine-20261031-16",
+    "sourceRevision": "bae7b4655a8ddb7770478cb9c6eb1dcc944eccd1",
+    "producer": {
+      "name": "beaver",
+      "version": "0.5.1.dev20261031+fix12",
+      "implementationSha256": "8733083d0a3c153679282a1b77c7375744aca02042d6a184545ff62680e4c9cb"
+    },
+    "publicEntry": "GREA beaver_pipeline unity.plan/apply, fixed fix12",
+    "buildResult": "Succeeded",
+    "buildErrors": 0,
+    "development": true,
+    "sourceFiles": 55608,
+    "sourceMismatch": [],
+    "fonts": 14,
+    "fontAndMetaMismatch": [],
+    "sourceRestorationVerifiedBy": "parent-after-editor-exit",
+    "artifactFiles": 275,
+    "providerArtifactManifestSHA256": "5768d97b90d09d87e7c3e171a5c85d1878b57945d3a76137cee81c27f5f230c3",
+    "nativePlayer": "not_run",
+    "businessVisual": "not_run",
+    "legacyBuilderUsed": false,
+    "ownedProcessExited": true
+  },
+  "consumerBuildReceiptSha256": "1ffe86a5648fbab52083965f6213eb459fba9e6a4eb21c705baf0bc394977c79",
+  "consumerReviewScope": "GREA read and hash-bound consumer receipt; artifact manifest hash independently checked when present; no source/payload full rescan or new build"
+}

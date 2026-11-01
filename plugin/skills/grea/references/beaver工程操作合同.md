@@ -116,7 +116,7 @@ UI spec包含`schemaVersion:1`、mode和显式assets；静态模式为`static-pr
 
 ## 固定本地 P0 候选
 
-源码优先显式绑定 `0.5.1.dev20261029+fix8`，仅接受 producer `6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3`（上游提交 `1b44c0b7fc3073f4ae0a8719e9c9fea4956f8b62`，wheel SHA `e9cacdd3ee54c06f960b089c34c8e153c6081438a69d18e0501aa066d0f4599f`）。初版与fix1/fix2/fix3/fix6/fix7继续按原固定锁处理在途链，不自动重放或升级旧事务。这不是默认安装版本；正式 `modules.lock.json` 仍固定发布版。沿用 `beaver_pipeline pin/check/invoke` 与 `schema_version:1` 命名请求，不透传任意参数。旧固定版本不能调用以下新增路由。
+源码可显式绑定 `0.5.1.dev20261031+fix9`，仅接受 producer `554075acb4960db076c49c60e26b39c427c37c0029aac5f2f30dc6f49cbd13eb`（上游提交 `b85d44ec7b7926038043e585a4c27fe622fe3058`，wheel SHA `0ef0a30f53cd9af71d44cfb9dfdd7c5dca6d9e3d4e940810e02545323390572c`）。初版与fix1/fix2/fix3/fix6/fix7/fix8继续按原固定锁处理在途链，不自动重放或升级旧事务。这不是默认安装版本；正式 `modules.lock.json` 仍固定发布版。沿用 `beaver_pipeline pin/check/invoke` 与 `schema_version:1` 命名请求，不透传任意参数。旧固定版本不能调用以下新增路由。
 
 | GREA operation | 精确 beaver CLI 与输入 |
 | --- | --- |
@@ -189,3 +189,57 @@ unity/batch move在任何原生写入前检查目标组件的非法字符、末�
 对象配对由真实AssetDatabase/IsPersistent回读；源文件、meta、保护闭包、覆盖缺口和报告128MiB/8M节点预算保持。采集返回摘要给objectIdentityCount，完整objects只在SHA绑定磁盘快照内；该计数不是源组件分母、Prefab完整恢复率或动态闭包证明。GREA只核上游原回执、字段/哈希与转发，不将其算作本轮新原生采集。
 
 增量模式保留初始完整writeSet哈希，每步仅重hash移动源/目标与meta及新父目录meta；缓存delta仅供观察，不是当前源状态证书。成功及可恢复失败必须有完整full-final落盘、全部路径覆盖及Python完整post-state一致，后改或缺full-final拒绝恢复。逐步完整JSON序列化与退役checkpoint成本仍在；上游128小资产的33886→1120原生hash读取计数不能外推大游戏耗时。原生性能/失败恢复证据仍归对应固定producer，本轮GREA只做合成只读规划。
+
+### fix9 精确字段owner
+
+`native.readback`的spec schemaVersion1在每条query可加`ownerIdentity:{"guid":"<所选序列化文件的32位GUID>","localId":123}`；asset/nodePath/componentType/propertyPath仍全部必需。这是查询JSON字段，不是新CLI参数，`hasOwnerIdentity`由provider派生、调用者不得传入。组件查询使用实际组件ID，不能用GameObject/MonoScript ID或源引擎UUID代替。
+
+localId必须为非零有符号64位整数，写JSON保留精度（包括负ID），不经JavaScript Number或浮点中转。原生读取先限定所选资产、精确路径和具体类型，再筛实际GUID/localID，唯一匹配才observed；错GUID、旧ID、错路径/类型或不可确定身份均unknown，禁止按同名节点回退。旧无ownerIdentity查询仍要求路径唯一；null引用、空字符串和别名语义不变。unknown保持partial/exit1，正例全observed才exit0。
+
+fix9不修复同批新脚本采用/加载时序，不证明静态代理可实时更新，也未新增Creator、输入或玩法能力。选择性采用与身份层级按[候选交接](../../grea-recover/references/全量初版工程与协作.md#生成态保存态与项目采用身份)记录，旧锁和事务继续使用原producer。
+
+### 选择性采用依赖合同的接续状态
+
+下一候选拟在manifest增加`adoptionDependencies={schemaVersion:1,coverage:"producer-declared",edges:[{path:"Assets/.../Consumer.cs",requires:["Assets/.../Provider.cs"],kind:"csharp-compile"}]}`；所有端点须为manifest.files拥有的.cs，包版本仍精确匹配。monkey声明已知代码依赖，beaver校验/采用，不在GREA或beaver复制C#依赖分析器；缺省声明记undeclared，不能说完整闭包。计划保留beaver-adopt/1并绑定新algorithm，拟保持adopt plan/apply/rollback参数。
+
+这仍是协调合同：固定dev1尚无选择冻结出口，fix9尚无分阶段adopt修复；收到新包/producer/algorithm、原始正反例及消费者结果后再接入。当前项目分阶段采用回执仅支撑其已验部分，不能升级为新公开能力。
+
+fix10后续固定交付已完成工具侧原生复验并由GREA有限接入：`0.5.1.dev20261031+fix10`，producer `3a64f4f5301e1ec1591df6e3ad92a8236e504cb0a9379a21e63c01f81419ed89`，提交`8e25793fe6eaf1c325f701c94256352095a0f3b9`。上段evaluation状态保留过程含义，当前可显式pin/check/invoke；adopt参数不变，编译输入先暂存、另一次Editor启动编译，再导入资源并独立重开，整批单次提交。失败恢复按原事务/固定producer执行，不据外层失败自动重放。依赖声明只有producer-declared覆盖，消费者实际采用及业务仍须另验；monkey选择冻结出口以其实际固定交付为准。
+
+### 固定fix11构建策略
+
+固定`0.5.1.dev20261031+fix11`（提交`6b7e74f53436ad1395b4f51404e76cd2391c3ad8`，producer `44a1280aa75d7b720fa0bdfada800441e09dc76c95911ed1b00e2993725f766c`）沿`unity.plan/apply/recover`使用build.macos spec，无新增CLI透传。`development`为可选boolean、默认false，冻结进计划并从BuildReport回读；它控制调试日志/探针，不证明profile、连接、账号或存档隔离。
+
+可选`tmpFontPolicy={schemaVersion:1,fonts:[{path,guid,sourceSha256,metaSha256,normalizeDynamicAtlas}]}`只操作明确字体。每项保护源字节，显式true才原生规范化动态atlas；无明确规范化的动态多atlas拒绝。只允许有限SaveGuard/SaveAssetIfDirty，不执行任意hook、executeMethod、数值buildOptions或全局SaveAssets。源/build/restored字体hash和实际development进入制品manifest，恢复后全source必须一致。
+
+构建失败/中断保留事务与before-image；未知checkpoint、后续编辑、损坏备份或无关漂移拒绝恢复，不能覆盖新内容。公开unity.recover要求原拥有进程退出与精确原事务条件，恢复不认证半成品。字体atlas有效及源恢复不等于字形覆盖/Player视觉；消费者实际QA构建通过前保留在途项目构建链。
+
+### fix12退出后源身份与专用恢复
+
+固定`0.5.1.dev20261031+fix12`（提交`61fc30bdcc002054ca04fd0e14b7cda179e3879f`，producer `8733083d0a3c153679282a1b77c7375744aca02042d6a184545ff62680e4c9cb`）保持build.macos输入形状。native的fontSourcesRestoredInProcess只代表进程内观察；成功认证必须由拥有父进程在Editor退出后核全source与每字体postExitSha256/postExitMetaSha256，制品标sourceRestorationVerifiedBy=parent-after-editor-exit。fix11真实消费者失败保留，原生restore标志不能替代退出后校验。
+
+新增独立命名操作`unity.recover-font-source`，options仅transaction、expected-plan、review，输出由GREA统一指定新目录；不传editor-path、不启动Editor。仅fix12可转发，实际review按provider build-font-post-exit-recovery-1.schema.json绑定固定fix11已记录BUILD_SOURCE_DRIFT的旧plan/implementation、journal/process及逐文件原始/观测hash，reviewReference只记录审核依据、不创造授权。此例外不放宽普通unity.recover，不自动重放构建，不认证旧失败App；未知漂移、后续修改或不符before-image须拒绝。所有恢复按原事务和明确范围执行，消费者修复/构建/Player结果分别记录。
+
+### 固定fix14的macOS QA运行
+
+固定`0.5.1.dev20261031+fix14`，提交`d4ff4c6cdac7b3abea3154c2d1a827e49785eac6`，producer `b657770aafa92fc98eb9fc47235e14c3ec22fc3acfe619d234ff34909d1c5a7a`。沿beaver_pipeline invoke的命名请求开放qa.prepare/launch/collect，不需要Unity Editor；launch需要实际macOS GUI与本次运行授权。
+
+prepare options={spec,expected-spec}，仅准备不启动；collect options={project,build,profile,expected-owner,run}；launch options={project,build,profile,expected-owner}，可加duration、run。project/build/profile/run是1..64位字母数字开头的字母数字点下划线短横ID，不是路径。prepare/collect的out由GREA统一指定，launch没有out。默认duration=60，GREA外层timeout至少70；显式duration支持1..1700且timeout至少duration+10，CLI/MCP再覆盖该适配预算。
+
+prepare按闭合qa-runtime-spec-1.schema.json核单一Bundle/签名真实身份、配置及首次seed，稳定profile跨build共享，既存档不覆盖。真实用户HOME保持，typed profile绑定须由App实际使用；不能宣称隔离PlayerPrefs/普通AppData。源复制前中后核hash，内部framework links/exec mode保留，外链、未知owner、半初始化及符号链接根拒绝。新build的owner摘要与稳定profile owner分别保留。配置不混入App载荷，不手改签名/TCC。
+
+launch同步等待GUI进程，受控cwd/log/tmp/clean typed环境，Unity和console日志分开。预算结束仅SIGTERM本次拥有Popen，不SIGKILL；stopped_by_budget是partial，不等正常退出；未退出保留recovery-required。collect只读本次project/build/profile/run；已退出读原回执，不追复用PID；活动进程核kernel exe、开始时刻和本次日志，否则unknown。GREA保留provider状态/退出码/actualChanges，不把外层finding当未写入或自动重放prepare。
+
+denyDocuments是可选附加限制，requested/profileSHA不证明实际独立生效；enforcementIndependentlyVerified=false保持。真实正常启动、配置读取、日志/同档续玩、一次新构建接续及受控访问来源由消费者验。已有TCC授权、源码路径字符串或开关存在不算无依赖证明。固定模块源/包身份检查与模拟复制证据不等于实际App权限整改完成。
+
+fix15以固定提交`3096fdedfe1e90eb082b0b22079e1e0834239af4`、producer `7f32aaf491fed8a32168b1cb633b62209b350309b1e299ac1f06c9277745deb7`接续相同qa三操作及spec。仅合格beaver-unity-build/2的既有artifact预算贯通复制/Bundle/exe hash及launch/collect（4GiB单文件、8GiB总量、500000项），ordinary/seed/config原限额不变；调用者不能任意抬高owner冻结policy。fix14大资源预算失败保留原receipt，不能自动重放；重试前由消费者核未提升build/config/profile/owner且无后续数据变动，再用新stage/回执。任何已提交profile不删除，新失败保留stage供审核；真大Bundle准备通过仍不代表GUI、续档或denyDocs通过。
+
+fix16固定提交`ee13bddd1cda510dfcf600ba71d7f4e2ff194da4`、producer `d2c25c5bbc6e21b48adae58c13801ea2edf217b35eee8a65b8a1f46b73853678`保持qa三操作/spec及既有owner/profile兼容，不重prepare或重放旧run。qa.launch的report为持久JSON路径，process单独保留完整对象；可执行身份以samefile核实际同一文件，不做大小写fold，仍核相同开始时刻与本次log参数，其他文件/启动/日志不符保持unknown。新collector读取旧退出回执不把旧CLI失败改记成功；新GUI运行、同档重开与denyDocs/新build需新run ID分别验。
+
+### 固定fix17 SDK采用与构建认证
+
+固定`0.5.1.dev20261101+fix17`（提交`9e587a79e0fc91a6b4e3b9c60ab125d2f177ccf8`，producer `912606877e9725ba1bd4dc3513b36f9dde80bb5321d7172dfc88e9533d2941af`）沿原adoption.plan/apply及构建入口，无新增参数。初次采用必须显式独立冻结baseline工程根，不是manifest文件或当前target；新producer需新计划，旧事务不重放。
+
+计划managedAssemblyCompatibility核Assets中managed DLL的实际PE/CLI身份及public types、精确GUID/文件/meta和有限importer角色。改DLL文件名不改assembly身份；未知scope、同assembly或公有类型冲突默认阻断。仅隔离全新SDK可在manifest显式managedAssemblyPolicy schemaVersion1/strategy explicit-disjoint-role-pairs，以path/guid/sha256/metaSha256/role精确声明Editor-only与Player-only配对；不能override冲突，也不授权并存/替换历史SDK/importer或改m_Script。此类历史身份变更仍需独立native migration，本补丁未实现。
+
+GREA原样保留blocked、conflicts及有限覆盖说明，不把清洁pair规划通过写成native采用/渲染通过；包缓存、native plugin、完整C#绑定和内部序列化继承链不在该检查范围。构建须native与parent各自核Succeeded且明确整数buildErrors=0，缺失/非法/非零不认证；失败仍执行既有字体退出后保源。消费者保持working候选和原SDK不动，在独立副本复验最小正反例，真实旧绑定回归另记。

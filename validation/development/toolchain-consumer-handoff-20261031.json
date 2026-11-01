@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "baselineCommit": "240eead2366ee54270075172f330df2839b65a94",
+  "state": "local_integration_and_method_verified_consumer_chain_open",
+  "scope": "Read-only existing P04 consumer receipts and local GREA thin-adapter checks; not a new game/Editor run",
+  "consumerCalls": [
+    {
+      "label": "beaver-code-apply-01",
+      "status": "ok",
+      "producer": {
+        "name": "beaver",
+        "version": "0.5.0",
+        "implementationSha256": "bee1d06780155a50735d9e836041cd967a3da0bc2dbe368d1d55cb2cd8700e90"
+      },
+      "native": {
+        "status": "verified",
+        "saveReopen": true,
+        "assets": 16,
+        "referencesPreserved": true,
+        "scope": "changed assets and up to 128 untouched prefab/scene direct dependencies"
+      },
+      "business": "not_run",
+      "actualProviderCommand": [
+        "adopt",
+        "apply"
+      ],
+      "sourceReceiptSha256": "accd719cb3d31d9cf66e7ba2af1a74a4aab6605aee09ccd7ac6fb561c84277c5"
+    },
+    {
+      "label": "beaver-resource-apply-01",
+      "status": "ok",
+      "producer": {
+        "name": "beaver",
+        "version": "0.5.0",
+        "implementationSha256": "bee1d06780155a50735d9e836041cd967a3da0bc2dbe368d1d55cb2cd8700e90"
+      },
+      "native": {
+        "status": "verified",
+        "saveReopen": true,
+        "assets": 72,
+        "referencesPreserved": true,
+        "scope": "changed assets and up to 128 untouched prefab/scene direct dependencies"
+      },
+      "business": "not_run",
+      "actualProviderCommand": [
+        "adopt",
+        "apply"
+      ],
+      "sourceReceiptSha256": "04fc8a5f0500f449e95a8e278accbd0814de531058e0a46d6f7da884de3b6fa4"
+    }
+  ],
+  "identityStages": [
+    "generated",
+    "native-saved",
+    "project-adapted"
+  ],
+  "sourceReceipts": [
+    {
+      "label": "before.json",
+      "sha256": "4ed64c7d9a174c24576e5e460361671721f5008dfddabfbabbca00bc65fcdf86",
+      "bytes": 499
+    },
+    {
+      "label": "p04-csharp-dependencies.json",
+      "sha256": "05c62685403a86c2eb1965423e5dd4177109d684a3292343ac7da6ff12243308",
+      "bytes": 1173
+    },
+    {
+      "label": "p04-adaptation.json",
+      "sha256": "3a5b607506180b89a10d00e74d5b134ed57cc17116b758743e62c933ece2bfec",
+      "bytes": 37376
+    },
+    {
+      "label": "beaver-localid-diff.json",
+      "sha256": "fef3d311500d98132e1b7fe61d1f19bd4d30a177fc6dfb2e951d6935bb2a4a40",
+      "bytes": 1622
+    },
+    {
+      "label": "toolchain-issues-20261031.json",
+      "sha256": "9c3b0774f14bce229568b4b012445ff0a2224b8f7e61ee00f5ce69b7a2b9dc79",
+      "bytes": 3829
+    },
+    {
+      "label": "beaver-code-apply-request.json",
+      "sha256": "2f697c93156aba4f95e6b8c5df09502f7a0cdbe5b16a631ad23f2ae8fb8cf6b5",
+      "bytes": 569
+    },
+    {
+      "label": "beaver-resource-apply-request.json",
+      "sha256": "b79613f692087f06354a7e156739eb385bc2f8da347b3733dfd40d30b3f96875",
+      "bytes": 573
+    },
+    {
+      "label": "beaver-code-apply-01/result.json",
+      "sha256": "accd719cb3d31d9cf66e7ba2af1a74a4aab6605aee09ccd7ac6fb561c84277c5",
+      "bytes": 4636
+    },
+    {
+      "label": "beaver-resource-apply-01/result.json",
+      "sha256": "04fc8a5f0500f449e95a8e278accbd0814de531058e0a46d6f7da884de3b6fa4",
+      "bytes": 4658
+    },
+    {
+      "label": "beaver-code-apply-01/invocation/run.json",
+      "sha256": "98a6d6ce860be1e1b4ae179e82dff03af79925992b40830d42c433f1a3cf7b01",
+      "bytes": 7238
+    },
+    {
+      "label": "beaver-resource-apply-01/invocation/run.json",
+      "sha256": "e29155e7003849da1043317db2bd411f723953d6dd03be8b18aa07960bd7a6df",
+      "bytes": 7290
+    }
+  ],
+  "remaining": [
+    "Producer and adopter must agree an explicit resource plus non-GUID compile-dependency handoff; fixed repair and consumer revalidation pending.",
+    "Same-batch script identity/import timing remains separate from fix9 read-only owner selection.",
+    "Static rendering proxy updates, dynamic font coverage and real input surfaces need tool-level repair and consumer revalidation; temporary project adapter is not chain acceptance.",
+    "monkey dev1 direct CLI and native-saved receipts do not establish support in the GREA typed pipeline or installed plugin."
+  ],
+  "localChecks": {
+    "targetedTests": 27,
+    "publicSourceCli": "fix9 pin, positive batch plan and invalid-owner refusal",
+    "sourceStdioMcp": "invalid owner blocked, native not_run",
+    "scope": "No full pipeline/gameplay assertion",
+    "documentLinks": 723,
+    "skillSet": {
+      "skills": 5,
+      "markdown": 70,
+      "links": 366,
+      "isolatedClosure": "pass",
+      "workspaceSync": "consistent"
+    },
+    "generatedContracts": "no drift",
+    "changedFilePublicPatternGate": "12 files, no findings"
+  },
+  "formalModuleLockChanged": false,
+  "globalPluginChanged": false,
+  "gameWrites": false,
+  "pushOrRelease": false,
+  "localSourceHashes": {
+    "src/grea/integrations/beaver.py": "ccf06591202cd4c75a795a66515d32349bfa0cba5b2877e5e97045e5f3bff53d",
+    "schemas/beaver-operation.schema.json": "de8971426fde73c06a89e37f6917a3d8b759a27b4fb801d890b0fd7bfd20062e",
+    "plugin/skills/grea-recover/references/全量初版工程与协作.md": "8fb382acccf5b25fcfdd3ca8e99768cdafd718dd42b6733407a01cfe4d99c981",
+    "tests/test_beaver_fix9.py": "d7e98968b6698883424ed27c88ead95be4bcff3f8dd7b01b12c6f64669b95eb7"
+  },
+  "selectedConsumerIdentityRecheck": {
+    "scope": "Read-only 90 selected source/raw asset-meta pairs; current source and frozen raw compared; no regeneration or game operation",
+    "nativeSaved": 162,
+    "unchangedGeneratedCSharp": 18,
+    "sourceManifestSha256": "b2b8f5df49da0cac32fd04cdeb55061bde106959ea060c9476b704a1e5f46655",
+    "nativeSavedReadbackSha256": "85a1fe3a608a597a3340c654ab869f97d4389d262bec04e043129e0dd3e8301c",
+    "sourceManifestRetained": true,
+    "mismatches": 0,
+    "authority": "nativeFiles for native-saved entries, original generated manifest only for unchanged CSharp/code-meta entries absent from nativeFiles; no blanket meta exemption",
+    "limits": "Verifies selected bytes and parent receipt hashes; does not authenticate all provider native assertions or dynamic behavior."
+  },
+  "consumerEntryChain": [
+    "GREA audit_unity_dependencies delegates to fixed beaver 0.5.0",
+    "project temporary preparation helper freezes subset, performs namespace adaptation and writes selection manifests",
+    "GREA legacy beaver_pipeline invoke -> beaver adopt plan/apply: code 16 then resources 72"
+  ],
+  "defaultMonkeyProbeAttribution": "0.6.0 discovery/readiness is not the dev1 generator of this module; dev1 direct verify editor remains a separate actual invocation",
+  "subsequentDev1Adapter": {
+    "state": "fixed_saved_candidate_audit_only",
+    "record": "monkey-dev1-integration-20261031.json",
+    "convert": "not_adapted",
+    "nextSelectionAndAdoptionRepair": "pending_fixed_delivery"
+  },
+  "consumerPublicCalls20261031": {
+    "receipts": [
+      {
+        "label": "grea-dev1-saved-audit-01",
+        "receiptSha256": "9d6c7bfcc01133d12cf52d801a8d4a5454ef7b279cab0c54042a31cab039d2fb",
+        "status": "needs_action",
+        "executed": true,
+        "native": "recorded_provider_evidence_rechecked",
+        "provider": {
+          "version": "0.7.0.dev1"
+        }
+      },
+      {
+        "label": "fix10-static-preflight-01",
+        "receiptSha256": "c3f237eff3d15c81a981116885b9f016da9605db91631e79effc0afcdc282b03",
+        "status": "ok",
+        "executed": true,
+        "native": "not_run",
+        "provider": {
+          "name": "beaver",
+          "version": "0.5.1.dev20261031+fix10",
+          "implementationSha256": "3a64f4f5301e1ec1591df6e3ad92a8236e504cb0a9379a21e63c01f81419ed89"
+        }
+      }
+    ],
+    "stage": "saved-audit and adoption-plan consumed; native apply and business pending",
+    "dependencyCoverage": "undeclared; producer selection freeze pending",
+    "defaultProbeAttribution": "default monkey 0.6 discovery is not the actual dev1 verifier or fix10 adopter"
+  },
+  "consumerNativeReportReceived": {
+    "name": "fix10-consumer-native-result-01.json",
+    "sha256": "59a8b8dd3f7b1ba1c4a77268287d14ff7d4ed46bcbd5c2477fc5ee174a40e217",
+    "scope": "Project-adapted dev1 with fix10; not new dev2 selection or dynamic acceptance",
+    "evidenceLevel": "consumer summary read; raw nested transactions not independently rerun"
+  },
+  "dev2ConsumerNativeSummary": {
+    "receipt": "dev2-consumer-native-result-02.json",
+    "sha256": "9ed7c036c0a20b5853c6d105c453e64d0e54689f68599c699c9fb290845b9f81",
+    "evidenceLevel": "Consumer summary read; native transactions not rerun by GREA",
+    "scope": "Public dev2 freeze and mapped project adaptation with fix10; target preexisting shader include masks producer selection gap",
+    "fullDependencyGate": false,
+    "playerBusiness": "not_established"
+  }
+}

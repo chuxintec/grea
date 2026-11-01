@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.7.0.dev2",
+  "sourceCommit": "c279a6ac9ec3766a4550b5cfdaa5df6cced953c3",
+  "wheelSha256": "40cd12a06754b99cd8989d6b61b41c91725223a8a9ed5c5bd380f20c6499938e",
+  "packageSha256": "05f429c84c46bde954f01af90be96fe448789e881de7defbcc51444aa25c6517",
+  "capabilitiesSha256": "8660a3d7d1f576392191fb7d94d66a55bb1d531048658f5d8fca12c85c01973b",
+  "runtimeFilesVerified": 425,
+  "publicCli": "pin and freeze-native-selection executed",
+  "manifestSha256": "a38604c3caeeddf2112a5436af99f0fb4abf5edcd9f97cfd48a4d3fe0a1822c8",
+  "files": 219,
+  "bytes": 138714857,
+  "dependencyEdges": 3,
+  "coverage": "producer-declared",
+  "warnings": 12,
+  "targetedTests": 28,
+  "native": "existing saved receipts reused; no Editor launched",
+  "business": "not_run",
+  "consumer": "pending",
+  "limits": [
+    "Dynamic proxy WIP not in dev2.",
+    "Unknown CSharp dependencies and DynamicOS/new-text coverage remain unknown.",
+    "Original source extra meta preserved; exact wheel copy used locally.",
+    "No global install, push or release."
+  ],
+  "knownShaderDependencyGap": {
+    "state": "confirmed_missing_literal_include",
+    "shader": "Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader",
+    "missingSavedFiles": {
+      "Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc": "66db1f03e8d7a413eba79bcb6602fdb2de710b586f34a6f2584ed6f68f028e90",
+      "Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc.meta": "edace33591894d86d9a4144466fb3606e538d3341030fe22f908551755120ea5"
+    },
+    "selectionUnchanged": true,
+    "completeShaderDependencies": "not_pass",
+    "nextFixedCandidate": "pending; no project-side manual supplement"
+  }
+}

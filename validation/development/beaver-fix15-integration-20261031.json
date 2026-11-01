@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.5.1.dev20261031+fix15",
+  "sourceCommit": "3096fdedfe1e90eb082b0b22079e1e0834239af4",
+  "producer": "7f32aaf491fed8a32168b1cb633b62209b350309b1e299ac1f06c9277745deb7",
+  "wheelSha256": "e0d24b4546ee4f8bced459550c342e57f8f6ca1096a107a933ec00a6eaf9c1d3",
+  "runtimeFilesEqualCommitWheelInstall": 126,
+  "contractHashesVerified": 22,
+  "actualGreaCliPin": "ready",
+  "consumer": "prepare succeeded; GUI launch side effects retained but runtime chain blocked by CLI result failure",
+  "scope": "Fixed identity and thin dispatch only; no actual user Library or Player operation",
+  "actualGreaCliNegative": [
+    {
+      "operation": "qa.prepare",
+      "status": "blocked",
+      "executed": true,
+      "native": "not_run"
+    },
+    {
+      "operation": "qa.collect",
+      "status": "blocked",
+      "executed": true,
+      "native": "not_run"
+    }
+  ],
+  "targetedTests": 36,
+  "upstreamActualLargeCopy": {
+    "proofSha256": "df8cde9ad92acdd4af84b05e319ed253986e0f05d4c11e25a100457e1b8fa304",
+    "files": 277,
+    "bytes": 2204390599,
+    "artifactPolicy": "beaver-unity-build/2",
+    "sourceAndCopyCDHashEqual": true,
+    "scope": "Read-only upstream fixed public CLI evidence; GREA did not repeat 2.2GB copy"
+  },
+  "oldFailureAuditSha256": "4fdb01f716ab60e203de6d208cf96889fef5e88986d8ace6f982ceacc15145af",
+  "retryBoundary": "Consumer must recheck no promotion or later data changes; no GREA automatic replay or cleanup",
+  "consumerLaunchFailure": {
+    "cliSha256": "a56b359b338a7ceaa7636c6c7429c06a7a39ec8d11e4f6b395a4376479c639d8",
+    "processReceiptSha256": "dc69f22299263f9c4867db0337b578a75e7d2713a95e05d600b840754f5badde",
+    "state": "Actual Player launch/normal exit reported; provider CLI finalization failed",
+    "scope": "Process receipt read; no relaunch or raw evidence rewrite",
+    "pidIdentity": "unknown; provider case-sensitive path mismatch reported",
+    "httpStability": "not passed; consumer investigating",
+    "next": "Fixed provider output finalization/identity repair pending; do not replay launch"
+  }
+}

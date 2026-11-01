@@ -128,6 +128,13 @@ OPERATIONS['unity.recover']=dict(command=['unity','recover'],required={'transact
     versions=set(beaver.P0_RETIRE_VERSIONS),capability='unity.assets.retire/recover')
 
 
+OPERATIONS['unity.recover-font-source']=dict(command=['unity','recover-font-source'],required={'transaction','expected-plan','review'},paths={'transaction','review'},hashes={'expected-plan'},output='out',versions={beaver.P0_FIX12_VERSION},capability='unity.build.macos')
+
+
+OPERATIONS['qa.prepare']=dict(command=['qa','prepare'],required={'spec','expected-spec'},paths={'spec'},hashes={'expected-spec'},output='out',versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION},capability='qa.prepare')
+OPERATIONS['qa.launch']=dict(command=['qa','launch'],required={'project','build','profile','expected-owner'},text={'project','build','profile','run'},hashes={'expected-owner'},integers={'duration':(1,1700)},versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION},capability='qa.launch')
+OPERATIONS['qa.collect']=dict(command=['qa','collect'],required={'project','build','profile','expected-owner','run'},text={'project','build','profile','run'},hashes={'expected-owner'},output='out',versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION},capability='qa.collect')
+
 def read_json(path, max_bytes=8*1024**2):
     path=canonical_path(path)
     if not path.is_file() or path.stat().st_size>max_bytes:raise ValueError('Missing or oversized request/plan JSON')
@@ -151,6 +158,10 @@ def validate(request):
     if set(options)-allowed or not spec['required']<=options.keys():raise ValueError('Unknown or missing named options')
     if request['operation']=='structure.inspect' and (('product-root' in options)!=('profile' in options)):
         raise ValueError('product-root and profile must be supplied together')
+    if request['operation'] in ('qa.launch','qa.collect'):
+        for key in ('project','build','profile','run'):
+            if key in options and (not isinstance(options[key],str) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9._-]{0,63}',options[key])):raise ValueError('Expected stable QA identifier')
+        if request['operation']=='qa.launch' and 'duration' not in options and request['timeout_seconds']<70:raise ValueError('Default QA duration requires outer budget >=70')
     timeout=request['timeout_seconds']
     if type(timeout)is not int or not 1<=timeout<=1800:raise ValueError('timeout_seconds must be 1..1800')
     values={}

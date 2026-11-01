@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.5.1.dev20261031+fix10",
+  "sourceCommit": "8e25793fe6eaf1c325f701c94256352095a0f3b9",
+  "producer": "3a64f4f5301e1ec1591df6e3ad92a8236e504cb0a9379a21e63c01f81419ed89",
+  "wheelSha256": "c119880b5f68ab27430a8624b38d3a96f0cd546f4cf187424f828f029cdbb2d8",
+  "actualGreaCliPin": "ready",
+  "targetedTests": 26,
+  "upstreamNativeReceipts": [
+    {
+      "name": "broken-rollback03-result.json",
+      "sha256": "384ba8c42dddc56b854117516a6d1725f4f781e2c4569b06eabbd792eeb84b0b",
+      "verification": {
+        "native": "rolled_back",
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    },
+    {
+      "name": "final-apply01-result.json",
+      "sha256": "fe0c48aee8034f4517ff315fa4b08efcfbbf4ef0abd15e40df6485377d38281f",
+      "verification": {
+        "native": {
+          "status": "verified",
+          "saveReopen": true,
+          "assets": 5,
+          "referencesPreserved": true,
+          "compilerInputs": 3,
+          "compilationBoundary": "separate-editor-start",
+          "scope": "changed assets and up to 128 untouched prefab/scene direct dependencies"
+        },
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    },
+    {
+      "name": "final-rollback01-result.json",
+      "sha256": "5e2e671cc8fa6a1cb3be646e03cddf1daa092c9eba1ff28c382336bc87a7f332",
+      "verification": {
+        "native": "rolled_back",
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    }
+  ],
+  "scope": "Read-only upstream fixed native results and actual GREA CLI pin; no GREA Editor/apply/recovery run",
+  "applyJournal": "Superseded by subsequent rollback; historical apply SHA not asserted as current",
+  "consumer": "pending",
+  "globalInstall": false,
+  "pushOrRelease": false
+}

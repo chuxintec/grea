@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.5.1.dev20261031+fix14",
+  "sourceCommit": "d4ff4c6cdac7b3abea3154c2d1a827e49785eac6",
+  "producer": "b657770aafa92fc98eb9fc47235e14c3ec22fc3acfe619d234ff34909d1c5a7a",
+  "wheelSha256": "efe687f2e34621ca684cd46c9756cd665247cb7e8cb38ff0b9bbb6f9dd7b5735",
+  "runtimeFilesEqualCommitWheelInstall": 126,
+  "contractHashesVerified": 22,
+  "actualGreaCliPin": "ready",
+  "consumer": "blocked: PAYLOAD_FILE_BUDGET during prepare; no launch",
+  "scope": "Fixed identity and thin dispatch only; no actual user Library or Player operation",
+  "actualGreaCliNegative": [
+    {
+      "operation": "qa.prepare",
+      "status": "blocked",
+      "executed": true,
+      "native": "not_run"
+    },
+    {
+      "operation": "qa.collect",
+      "status": "blocked",
+      "executed": true,
+      "native": "not_run"
+    }
+  ],
+  "targetedTests": 36,
+  "consumerPrepareFailure": {
+    "receipt": "prepare21-01-cli.json",
+    "sha256": "8ca230bbf6a7ce015433d49aeb0f8f44280adf7cbbf23e485e992f00f7a1bdca",
+    "state": "provider partial preparation retained; do not replay automatically",
+    "persistentReceipt": "prepare-260c50fccba44f238cbb55ee1d76b74f.json",
+    "next": "Fixed provider repair and safe partial-stage contract pending"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-01",
+  "state": "implementation_contract_coordination_open",
+  "authorization": "Native human request verified; local scope only",
+  "planSha256": "8eb440db4c73220f33f7a8ae5e96caaa22b9759932631bd25131b82c316ceca1",
+  "statusReviewSha256": "e8119c7eb86cf79c71e4756f8989eccf8da0221b49c42b9860e58a72fd4232f9",
+  "actualDesktopBackend": {
+    "tool": "cua_repl",
+    "platform": "macOS",
+    "checkedBy": "readonly cua.getState plus returned API documentation",
+    "getAppSelector": "string name/path/bundle identifier only",
+    "mayLaunch": true,
+    "pidSelector": false,
+    "macWindowIdSelector": false,
+    "noLaunchFlag": false,
+    "attachOnlyFlag": false,
+    "actionsPerformed": "inventory only; no app selection/reset/launch/input"
+  },
+  "specificGap": "Current getApp cannot guarantee binding an already-running exact PID without launching another instance; checking before/after or resetting session cannot establish that guarantee",
+  "requiredAlternative": "Actual PID/window-scoped no-launch control backend with identity checks before input; beaver owns implementation, GREA thin adapter pending fixed contract",
+  "sdkMigration": "fix17 preflight only; native migration fixed contract pending",
+  "statusCorrections": [
+    "GREA dev7 is stage identity review only, not typed dispatch availability.",
+    "Latest11 retained diagnostics plus dev4 22-script/zero-uncovered supplement replace old12-unknown interpretation within scope.",
+    "Closed build/runtime and bounded Player/native results reused with original evidence, not rerun."
+  ],
+  "closed": false,
+  "beaverBackendResponse": "cua-macos bind will fail QA_ATTACH_BACKEND_UNSUPPORTED without getApp; SDK migration continues independently",
+  "alternativeAuthorizationBoundary": "Explicit human native AX/PID-directed CGEvent approval verified in original director chat; limited to this task own test App and project Player, existing permissions, no TCC changes or fallback launch",
+  "alternativeReadyState": "Technology authorization resolved; fixed native backend contract, implementation and real consumer acceptance still pending",
+  "authorizationUpdate": {
+    "date": "2026-11-01",
+    "nativeHumanVerified": true,
+    "scope": "Local native AX/PID-directed CGEvent bridge only; no new system permission, automatic alternative App launch or ordinary player data",
+    "pending": "Provider fixed delivery and consumer validation"
+  }
+}

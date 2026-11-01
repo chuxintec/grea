@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "candidateVersion": "0.5.1.dev20261031+fix9",
+  "sourceCommit": "b85d44ec7b7926038043e585a4c27fe622fe3058",
+  "implementationSha256": "554075acb4960db076c49c60e26b39c427c37c0029aac5f2f30dc6f49cbd13eb",
+  "wheelSha256": "0ef0a30f53cd9af71d44cfb9dfdd7c5dca6d9e3d4e940810e02545323390572c",
+  "contractHashesVerified": 17,
+  "runtimeFilesEqualCommitWheelAndInstall": 122,
+  "publicSourceCli": [
+    {
+      "case": "pin",
+      "outerStatus": "ok",
+      "status": "ok",
+      "native": "not_run",
+      "executed": false
+    },
+    {
+      "case": "plan",
+      "outerStatus": "ok",
+      "status": "ok",
+      "native": "not_run",
+      "executed": true
+    },
+    {
+      "case": "bad-owner",
+      "outerStatus": "partial",
+      "status": "blocked",
+      "native": "not_run",
+      "executed": true
+    }
+  ],
+  "installedValidator": {
+    "largePositiveAccepted": true,
+    "negativeAccepted": true,
+    "rejectedCases": [
+      "zero",
+      "float",
+      "boolean",
+      "string",
+      "overflow",
+      "underflow",
+      "caller-presence-flag"
+    ]
+  },
+  "upstreamEvidence": {
+    "scope": "Read-only reused producer native artifacts; not a GREA engine run",
+    "observed": 7,
+    "intentionalUnknown": 7,
+    "positiveOnlyObserved": 7,
+    "negativeId": -6705498737901325648,
+    "artifactHashesVerified": 4,
+    "noNameFallback": true,
+    "independentReopen": true
+  },
+  "limits": [
+    "No Editor, game, apply, recovery, formal module lock or global plugin operation.",
+    "fix9 only improves native.readback owner selection; script adoption stability and dynamic display are not fixed or accepted by this integration.",
+    "monkey dev1 not yet registered in GREA typed pipeline; actual source invocation is distinguished from installed plugin availability."
+  ],
+  "sourceStdioMcp": {
+    "outerStatus": "partial",
+    "providerStatus": "blocked",
+    "diagnostic": "READBACK_OWNER_SELECTOR",
+    "native": "not_run",
+    "scope": "Actual source stdio subprocess and fixed installed provider; no Editor; not installed Codex plugin or client hot load."
+  },
+  "targetedTests": 27
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "targetedTests": 31,
+  "actualPublicNegativeCalls": [
+    {
+      "operation": "upgrade-native-runtime",
+      "status": "invalid provider input refused",
+      "executed": true,
+      "editor_started": false
+    },
+    {
+      "operation": "complete-native-font",
+      "status": "invalid provider input refused",
+      "executed": true,
+      "editor_started": false
+    },
+    {
+      "operation": "stage-native-font",
+      "status": "invalid provider input refused",
+      "executed": true,
+      "editor_started": false
+    },
+    {
+      "operation": "finish-native-font",
+      "status": "invalid provider input refused",
+      "executed": true,
+      "editor_started": false
+    }
+  ],
+  "positiveHeavyOperations": "not rerun; existing producer artifacts retained",
+  "scope": "Typed dispatch, frozen input guards, output inventory/manifest audit; no Editor, font generation, game writes or publication"
+}

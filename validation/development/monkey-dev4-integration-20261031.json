@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "version": "0.7.0.dev4",
+  "sourceCommit": "19d51d4dbe7971bb14c5724963c42dfdbd9ddaca",
+  "wheelSha256": "590241cef89fa460090088318002c355187235eee2cbe21a471d8bbc34ac7a26",
+  "packageSha256": "5689b6dc039c4f9aafbda9dbdeaf634c25f1013c9ef09cc91fa53377a113baf1",
+  "capabilitiesSha256": "b8c1e66b8215c3133c8f0ba4e2bf5d1ae9a9d2632979f41c3c80106ee00ae252",
+  "packageFilesVerified": 435,
+  "publicPin": "passed",
+  "publicInvalidInput": "refused",
+  "reusedSupplementSha256": "7f93acaaedc6543640fd8303e6f0e629418b3fb7297998da61f899311165b68e",
+  "offlineSupplementAudit": "parent identities, original diagnostics, all script/requires/package and implementation hashes matched",
+  "scripts": 22,
+  "uncovered": 0,
+  "originalDiagnosticsPreserved": 11,
+  "targetedTests": 32,
+  "limits": [
+    "No full producer snapshot, regeneration, native or Player run repeated.",
+    "Producer exact compilation proofs are not arbitrary CSharp analysis or independent native compilation.",
+    "Existing target and old diagnostics unchanged; resource gaps remain separate."
+  ]
+}

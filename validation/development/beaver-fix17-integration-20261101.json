@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-01",
+  "version": "0.5.1.dev20261101+fix17",
+  "sourceCommit": "9e587a79e0fc91a6b4e3b9c60ab125d2f177ccf8",
+  "producer": "912606877e9725ba1bd4dc3513b36f9dde80bb5321d7172dfc88e9533d2941af",
+  "wheelSha256": "1d1d673255949e44fc67909851e844571b7c2a8eaedb8c36fba2bbb7ebd0f13b",
+  "runtimeFilesEqualCommitWheelInstall": 128,
+  "contractHashesVerified": 23,
+  "actualGreaCliPin": "ready",
+  "consumer": "pending real GUI/profile/new-build/access verification",
+  "scope": "GREA public clean SDK pair plan, frozen legacy baseline collision plan and pre-native apply refusal; no Editor or product SDK writes",
+  "actualPublicPlans": [
+    {
+      "case": "clean-explicit-pair",
+      "status": "ok",
+      "conflicts": 0,
+      "managedCompatibilityRetained": true
+    },
+    {
+      "case": "retained-sdk-conflict",
+      "status": "blocked",
+      "conflicts": 8,
+      "managedCompatibilityRetained": true
+    },
+    {
+      "case": "conflicted-apply",
+      "status": "blocked",
+      "diagnostic": "ADOPT_CONFLICT",
+      "transactionCreated": false,
+      "editorStarted": false
+    }
+  ],
+  "targetedTests": 39,
+  "consumerNativeAcceptance": "pending"
+}

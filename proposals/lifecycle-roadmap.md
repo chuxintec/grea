@@ -4,15 +4,40 @@
 
 2026-10-26｜状态：固定beaver0.3候选07及0.3.0运行实现（08/09/final等价包）的有限GREA适配通过；已只读核验正式08中文路径原生收敛采用回执，旧0.1/0.2/07链保留。0.3整版G由beaver主开发汇总；项目App默认渲染和正向购买L3仍是独立边界。安装和发布分别保留范围。**本文件为本轮唯一产品进度入口。** 历史研究/Cocos/Go成果见docs/design/research-cocos-go.md，保留原状态，不重做或补造通过。
 
-## 2026-10-29 monkey v0.7 Prefab版本协调（目标已记录，能力待交付）
+## 当前有效状态（2026-11-01 P0接续）
 
-已核验本轮用户将Prefab完整恢复作为monkey v0.7.0目标：优先于旧source-family扩张，以至少10个不同核心Prefab完成Creator/Unity双端分层验收。当前13项文件仅为定位线索，源UUID/RF/代码/资源闭包仍待monkey冻结；不能把修补版当真值或用重复窗口/多个状态凑数。Creator3.8.8与Unity6000.6.2f1以实际环境核定，仅工具隔离验证，不恢复暂停的Cocos产品，不改变现行游戏版本出口。
+本节覆盖下方历史“等待交付/旧未知项”的当前解释；旧原始回执与失败不改写。
 
-GREA已在原恢复参考补源组件分母、源→IR/IR→目标独立检查、原包/旧纯候选/新纯候选/人工修补四组对照及树/资源/脚本/动态/视觉/再生矩阵。关键显示或本地行为受服务缺口影响仍记partial；至少10项双端适用项未通过时versionComplete=false。门槛属于本次monkey版本，不变成所有游戏通用固定数量。
+2026-11-01用户直接授权提交并推送当前GREA源码快照。本次范围为下列已验薄适配、Skill流程及脱敏记录；不发布版本、不更新正式provider锁或本机插件。SDK原生迁移与稳定绑定实现/消费者验收仍未完成，后续固定交付另行接入。
 
-GREA方法验证：157份文档714条引用、隔离5技能70篇361条内部链接及4项阶段路由检查通过；契约生成无漂移，现行monkey版本支持未改。见[Prefab版本口径验证](../validation/development/monkey-prefab-version-contract-20261029.json)。
+| 事项 | 当前状态与下一步 |
+| --- | --- |
+| monkey公开有限调度 | dev1保存态audit；dev2/dev3/dev4精确freeze与dev3/dev4有限native-step，dev4增加依赖补证。dev5/dev7仅固定制品/阶段证明审阅，尚非GREA白名单调度，不把“记录交付”写成“接口可调用” |
+| 依赖状态 | 最新选择包11原诊断保留，dev4对247库存22脚本/0uncovered的精确producer证明补齐；旧12未知属于历史，非当前未处理总量。不是任意C#分析/原生证明 |
+| 已通过段 | dev3独立Player显示/点击、dev7 A10采用按消费者原证据复用；fix12真实保源构建、fix15/16受控文稿拒绝下的正常路径/续档闭合。不因P0重跑全体 |
+| beaver公开固定入口 | 最新有限接入fix17；旧fix12、15/16和历史事务保持原producer。正式模块/用户插件不因源码接入自动升级 |
+| P0-A SDK迁移 | fix17只实现守卫/清洁pair规划和冲突拒绝，原生历史SDK迁移尚未交付。等待beaver真实事务/映射/rollback合同及固定候选，GREA不复制迁移器 |
+| P0-B App实例绑定 | 已核当前macOS CUA无PID/window限定attach-only且getApp可能launch；已交beaver协调真实无fallback控制后端/固定实例合同。只读盘点不等输入绑定，CUA重置仅缓解；未闭合 |
 
-monkey维护唯一恢复实现与版本进度；GREA等待真实0.7开发包身份、CLI/Schema、分母账本和回执再有限接入，当前SUPPORTED_VERSIONS/正式锁/全局插件未改。beaver已验原生工具按实际能力选用。规范已记录不代表Prefab能力或样本验收完成；游戏工程与当前P0成果保留。
+新用户P0授权已原生核验；唯一出口仍为通用实现→固定交付→GREA公开接入→肥鹅真实验证。当前SDK/App实例阶段待真实新能力，不新增版本号占位/空实现，不停止无依赖业务。下文历史状态按各自日期保留，不覆盖本节。
+
+## 2026-10-31 真实项目驱动的工具链接续（本地进行中，未闭环）
+
+本轮工具链完善与可重复的公开流程优先于单独完成功能。以消费者P04为真实样本，GREA维护阶段、固定版本/producer/能力绑定和薄调用合同；monkey维护来源恢复/输出依赖与显示代理，beaver维护采用闭包/导入时序/事务，项目负责业务与消费者复验。各自单写，不复制解析器/采用器，不强制每次全量重跑。已推送main `240eead`保留，本轮没有新增推送、发布或全局安装。
+
+已只读核现有消费者请求及实际调用回执：公开`beaver_pipeline invoke`转`adopt apply`，使用正式beaver0.5.0 producer `bee1d06780155a50735d9e836041cd967a3da0bc2dbe368d1d55cb2cd8700e90`，16脚本/72资源分别保存重开与引用核验通过。此前资源GUID闭包遗漏两份普通C#编译依赖，同批新脚本加载又使首次读取与重开引用不同；临时分阶段已保全成果，未记为通用采用器已修。静态代理实时文字/图片/进度/显隐、字体覆盖和点击表面仍由工具owner修复并回项目复验；项目适配成功不能替工具签全链通过。
+
+GREA在原参考中统一生成态→原生保存态→项目适配态身份，保留原manifest/失败和实际变化，不按.meta或固定数量豁免差异；分清资源依赖与编译依赖、静态与动态结果、直接provider CLI与GREA typed路由。脚本退役须有固定工具公开调用及消费者问题解除证据，业务继续自包含。已与当前monkey、beaver及消费者交接精确合同需求，尚无本轮新增采用修复候选可验。
+
+固定beaver `0.5.1.dev20261031+fix9`的有限接入已验：17份交接文件、122个运行文件与提交/wheel/安装字节一致；公开GREA源码CLI完成pin/正向batch规划/错误owner拒绝，源码stdio MCP保留同一blocked诊断；大正/负64位ID校验及7类非法selector拒绝通过。复用并核hash的上游原生回执为7 observed＋7预期unknown、独立重开及负Material ID；GREA本轮未启动Editor或应用事务。fix9只增强`native.readback`精确owner，不修复脚本adopt、代理动态或输入。见[fix9有限验收](../validation/development/beaver-p0-fix9-integration-20261031.json)及[真实链路审阅](../validation/development/toolchain-consumer-handoff-20261031.json)。旧候选/事务/正式模块锁/用户插件保持；消费者现有0.5.0回执不归功于fix9。
+
+## monkey v0.7 Prefab阶段口径（静态优先，动态另验）
+
+现行门槛覆盖此前静态/脚本/动态合并签收口径：第一阶段至少10个不同核心Prefab完成Creator3.8.8与Unity6000.6.2f1双目标静态验收；来源身份、层级、组件字段、资源引用、实际静态渲染、保存独立重开、再生七项可独立签`staticAcceptance=pass`。业务脚本允许disabled/not_run/partial，第二阶段另核动态/生命周期/事件/输入，不以其未运行抹去静态pass，也不据静态pass称完整恢复或游戏完成。样本/版本范围由monkey批准计划维护，不成为每个游戏固定10项门槛；闭包节点/重复状态不凑核心样本数。
+
+现已有上游dev1 `a458790a68d57108b4cfe038d8aa565d5cc1599b`及消费者P04证据；GREA本轮只读核当前采用链，未重新验全部样本或Creator。保存态可以合法不同于生成态，但需固定合同、前后身份和当前字节回执，不改原清单。已核dev1真实capabilities/CLI及保存态合同；capabilities没有producer字段，实际通过423文件包摘要＋capabilities摘要、launcher/包树v2锁绑定。不把版本白名单当完整适配。
+
+规范已按阶段修订；[旧版本口径回执](../validation/development/monkey-prefab-version-contract-20261029.json)保留历史，不回写旧验收。当前[交接审阅记录](../validation/development/toolchain-consumer-handoff-20261031.json)明确方法/薄适配与消费者未闭环的边界。批准双目标仅为隔离工具验证，不恢复暂停的Cocos产品，不改游戏工程。
 
 ## 2026-10-28 UI生产与验收方法（方法已落实，项目实证待补）
 
@@ -270,3 +295,141 @@ LC1/LC2/LC3是本轮内部版本标识，分别包含实质开发成果。正式
 - 最后待验是正常刷新／新会话后的真实客户端session版本与package_root；必要时由用户在合适时机正常重开Codex，不强重启当前或其他工作。分层回执见validation/development/codex-upgrade-20261024.json。未推送、打标签或发布；LC1／2／3原有未验边界继续保留。
 
 - 收尾向总监发送一次报告被自动审批拒绝（未认可当前会话对具体接收线程的明确授权）；未重试或换渠道。本地代码／安装／回执不受影响，发送阻塞原因已写入本轮分层记录。
+
+## 2026-10-31 固定 monkey dev1 的公开保存态复核（有限接入）
+
+沿用`monkey_pipeline pin/audit`，新增显式`--level static/editor`及预期manifest/readback SHA，转调用固定provider现有只读verify；不启动Editor、不重跑恢复/30×2，不重写原生校验器。423包文件与wheel/归档/固定提交一致；交付源码多出的两份Unity.meta未删除，改用GREA私有wheel副本获得准确身份，无全局安装。pin/probe拒同版不同内容，dev1转换plan/run保持未适配。
+
+公开GREA源码CLI实际完成固定pin与Unity保存态复核：static/nativeStatic/runtimeCheck=pass、editor=partial，原样保留378条Spine动态与56条动画曲线边界，视觉/业务not_run，顶层needs_action。错manifest、错readback（源码stdio MCP）、已锁包漂移、同版异包pin及未适配convert正确定向拒绝。消费者90组原始资源/代码与meta的162保存态＋18未变生成代码/meta当前哈希已只读核对，不为它们重做Editor。
+
+新选择冻结/编译依赖声明和beaver分阶段adopt仍待下一固定交付；已协调唯一adoptionDependencies合同，不预注册命令、不宣布全链完成。新接入证据见[dev1公开入口验证](../validation/development/monkey-dev1-integration-20261031.json)，此前交接审阅保留初次未支持状态，追加当前接入进展，不改历史原始回执。正式锁、全局插件与游戏工程保持，本轮无新增推送/发布。
+
+## 2026-10-31 beaver fix10 evaluation 合同审阅（未晋升）
+
+已核固定源码 `8e25793fe6eaf1c325f701c94256352095a0f3b9`、version `0.5.1.dev20261031+fix10`、producer `3a64f4f5301e1ec1591df6e3ad92a8236e504cb0a9379a21e63c01f81419ed89`；123运行文件与提交/wheel/私有安装逐字节一致，18份合同hash一致。adoptionDependencies v1正式冻结为producer-declared .cs边：缺项/重复/自引用拒绝，异文件环允许；缺省undeclared，不等于完整闭包。adopt plan/apply/rollback参数保持，GREA现有命名转发无需新增参数或C#分析器。
+
+此次仅evaluation接收，不加入GREA可执行版本集合。上游源码试验5资产采用/重开/回滚通过，不替代最终固定安装原生验收；故意编译失败在资源写入前停止并恢复代码before-image，后续原生恢复两次被Unity许可exit198阻断，目录/身份恢复、固定安装原生及消费者复验仍pending。已有fix9与0.5.0记录按原身份保留；不自行修许可证、重放事务或修改游戏。详见[fix10 evaluation审阅](../validation/development/beaver-fix10-evaluation-review-20261031.json)。
+
+### fix10 固定安装原生复验后的接入
+
+随后同一8e25793制品完成固定安装5资产采用/独立重开/公开rollback；故意编译失败事务也完成原生恢复。GREA已核三份原始结果的producer/Schema及最终rollback制品hash；apply journal被后续rollback合法更新，旧apply哈希不当当前文件哈希。历史许可失败和evaluation审阅保留。现增加fix10精确producer版本门，既有adopt参数不变；真实GREA CLI pin ready，26项受影响检查通过。消费者仍pending，GREA未重跑Editor/事务、未改全局安装或发布。见[固定接入回执](../validation/development/beaver-fix10-integration-20261031.json)。
+
+### 消费者公开入口复验进展
+
+已只读核消费者实际grea-dev1-saved-audit-01与fix10-static-preflight-01回执：前者真实调用dev1，static/nativeStatic/runtimeCheck=pass、editor=partial，executed=true/editor_started=false/handoff_ready=false；后者真实fix10 producer完成adoption.plan，native/player/visual/business均not_run。此为消费者已执行保存态审计与采用规划，不是原生apply完成。非GUID支持代码仍由目标基线保全，依赖声明undeclared，等待monkey公开冻结出口；默认monkey0.6发现信息不当实际执行版本。回执hash追加到既有真实链路审阅，未重跑游戏或工具。
+
+### dev2 保存态选择出口已有限接入
+
+固定c279a6a dev2的425文件与wheel/提交逐字节核对，通过GREA公开CLI pin及freeze-native-selection实际生成P04选集219文件、3条producer-declared边；12条未分析脚本诊断保留，字体覆盖仍unknown，动态修复未包含。28项受影响测试通过；源目录额外meta不删除，使用已核wheel私有副本。已开放公开选择出口供fix10消费，原生成态/保存态父hash不变，未启动Editor或推送发布。见[dev2接入](../validation/development/monkey-dev2-integration-20261031.json)。
+
+### 构建链真实消费缺口（待beaver固定合同）
+
+已只读核fix10已安装BeaverNative.Build确为BuildOptions.None；消费者现有构建器实际使用Development，并对TMP动态字体执行有界规范化、逐字体源字节备份、源/构建输入hash区分及finally恢复/reimport。现行通用入口不能冒充项目QA构建。Development策略、profile/Connection明确选择和可审计TMP源保护归beaver设计实现，GREA待固定合同按真实差异适配；不开放任意executeMethod、隐式项目hook或全局SaveAssets。现有在途项目构建链单列未迁移，真实profile/存档隔离和包内字体正确性仍由消费者验收。见[构建合同缺口](../validation/development/consumer-build-contract-gap-20261031.json)；本次仅代码核对，未构建或操作游戏。
+
+消费者随后更正：Profile/Connection环境读取无DEVELOPMENT_BUILD守卫，普通构建也读取；Development用于受限连接错误日志与只读验收探针，不是隔离配置生效条件。不得从BuildOptions.None推断必然使用默认存档。构建模式与运行profile身份分别验收，TMP保护缺口不变。
+
+### fix11构建合同已有限接入
+
+已核固定6b7e74f的124运行文件与提交/wheel/安装相等、19合同及上游固定构建manifest哈希；4字体源/恢复hash相等。固定安装成功构建证据复用；失败/中断证据按上游说明复用仅version字符串不同的源，不冒称另跑固定失败。GREA真实CLI pin及Development正向规划、字符串模式/任意hook拒绝已验，29受影响检查通过，未启动Editor。消费者QA构建与字形/视觉/运行配置仍pending，不退役项目链。见[fix11接入](../validation/development/beaver-fix11-integration-20261031.json)。
+
+### dev2 Shader文本依赖缺口（已实证，待新固定候选）
+
+已只读确认219文件选集漏TMP_SDF-Mobile.shader的literal include TMPro_Properties.cginc及meta；两文件源hash与U106 nativeFiles一致，选集确未登记。dev2公开冻结/字节校验结果保留，但完整Shader依赖门不得记pass；既有fix10加载/回滚只按原限定结果使用。monkey负责通用递归include闭包与独立shaderDependencies合同，新候选未交前不预注册、不手拷修补原选集；原件保留。缺口hash已追加dev2验收记录。
+
+### dev2公开冻结的真实消费者采用（限定通过）
+
+已读取消费者dev2-consumer-native-result-02.json并固定hash：公开freeze的219文件经项目仅路径/namespace适配及3条依赖边映射，fix10在未预置两支持类型的干净目标副本同批采用90资产、18编译输入，独立编译重开身份一致，公开rollback恢复90项，55349基线文件零字节差异；首次导入新增3个Art目录meta明确保留。原私有扫描入口已停用，项目适配仍自包含。
+
+完整依赖门仍false：目标原本存在缺失的TMP include及meta，因此此次成功不能证明219选集完整。12未分析警告、动态/视觉/Player业务未验继续保留；等待新固定修复。消费者fix11 Development＋14字体构建已开始但结果尚未交付，不记构建通过或旧项目builder退役。GREA本次只读消费者摘要，未重跑原生事务。
+
+### fix11真实消费者构建阻塞：进程退出后字体源漂移
+
+已核消费者保全journal状态recovery-required及四份证据hash。原生Build成功、Development及字体恢复标志为true后，退出进程的完整source校验仍发现5份小型动态字体源漂移，公共apply拒绝认证，App15无合格制品清单。不能用原生成功或旧私有fixture替代真实构建通过，现行项目builder不退役。
+
+源恢复/guard生命周期归beaver，要求原fix11事务兼容恢复或明确逐hash before/after合同；GREA只读保留原失败，待固定修复再接入，不写字体/YAML、不自动重放构建。当前消费者恢复结果待交付，尚未签全链通过。
+
+### fix12退出后字体保护接入（消费者待复验）
+
+已核61fc30b固定制品125文件与提交/wheel/安装一致、20合同hash及上游真实安装退出后全source回执hash，5字体源/meta postExit哈希相等。GREA精确绑定fix12，原构建请求不变；独立新增unity.recover-font-source严格review入口，不放宽旧普通recover。真实CLI pin与Development规划/非法模式和hook拒绝通过，33项受影响检查通过，GREA未执行Editor/源恢复。消费者原14字体QA构建待交付；fix11源漂移与旧App不认证的证据保持。见[fix12接入](../validation/development/beaver-fix12-integration-20261031.json)。
+
+### fix12真实消费者构建段通过（App16）
+
+已核consumer-verification-01.json：App16源码bae7b4655a8ddb7770478cb9c6eb1dcc944eccd1通过GREA公开unity.plan/apply使用固定fix12，Development=true，构建0错误，拥有Editor退出0；parent-after-editor-exit认证。消费者逐项复核55608源文件、14字体及meta无差异，275制品文件bytes/SHA一致，legacyBuilderUsed=false。GREA核固定producer、消费者回执hash与provider制品manifest hash，不重复全源/载荷扫描。构建段可记真实消费通过，旧App15失败和人工恢复仍不改记工具恢复成功。Shader闭包、字形、Player登录及业务视觉仍未验，不签全链或v2完成。证据追加fix12接入记录。
+
+### dev3固定选择入口及最终候选接续
+
+434文件与固定4ad7498提交/wheel一致；GREA实际pin/freeze生成221文件并核TMP include+meta存在，28受影响检查通过。运行时/字体最终247文件候选另核manifest bae39e...732373及6依赖边，复用消费者全hash与beaver核验，不重跑全池/Editor。四个新native runtime/font CLI帮助参数已核，尚未注册GREA typed操作；当前已有最终候选可直接采用。221选集与247最终候选分开记，Shader编译、物理输入、Player尚未验。见[dev3接入](../validation/development/monkey-dev3-integration-20261031.json)。
+
+### dev3四项生成操作有限调度已实现
+
+monkey_pipeline native-step新增严格四操作请求；精确dev3锁、有限命名参数、显式输入根及前后完整快照、expected hash、字体request外部路径边界、输出库存/manifest逐文件审计；不自动启动stage指令或Editor。31项受影响检查和四项真实公共CLI非法输入拒绝通过。重型正向生成/字体/Editor本轮未重跑，旧247候选不变。见[四操作适配记录](../validation/development/monkey-dev3-native-steps-20261031.json)；实际新正向产物仍需自然任务复验，不能将调度接通当产品闭环。
+
+### macOS文稿访问整改的通用运行合同（实施等待固定交付）
+
+已原生核验用户要求整改测试App反复文稿提示并继续开发。GREA现有player.run/debug并无本轮prepare/launch/collect合同，不冒充支持；已将有限CLI/MCP、producer/能力、稳定profile/备份、env/cwd/签名及受控denyDocs回执需求交beaver。开发/发布参考补齐运行身份与真实验收门；收到固定实现后有限转发与实调，当前不签整改完成，不在GREA复制启动器。既有dev3和构建结果复用，新增自然运行由消费者执行；无Editor/桌面接管或全局安装。
+
+运行接口设计已收到：拟qa.prepare/launch/collect，仍无固定候选。已向beaver交接实际调度前必须明确的ID/路径与owner摘要、跨构建profile初次seed及不覆盖保护、Bundle内部链接身份、run/PID归属与超时/收集语义、denyDocuments实际生效证据。CLI参数尚在设计中，不预注册；原流程状态继续等待固定合同，独立消费者开发不阻断。
+
+### fix14 QA运行有限接入已交付
+
+已核d4ff4c6固定126运行文件与提交/wheel/安装一致、22合同hash；GREA实际pin ready，公开prepare非法spec与collect未知owner拒绝；36受影响检查通过。新增三项有限命名转发及ID/预算约束，launch无out、不套Editor占用门。真实App21/App22 GUI、同档重开/新构建续档和denyDocs访问来源由消费者自然任务验证，当前不签权限整改完成。见[fix14接入](../validation/development/beaver-fix14-integration-20261031.json)，不重跑Editor或既有构建。
+
+### fix14真实prepare预算阻塞
+
+消费者公开prepare App21-normal在复制resources.assets.resS时触发PAYLOAD_FILE_BUDGET，未launch。已保存消费者CLI回执hash；actualChanges与持久prepare-260c50fccba44f238cbb55ee1d76b74f.json反映阶段写入，blocked不当零写入、不自动重放。原build/spec继续冻结，待beaver固定流复制预算修复及安全partial-stage处理合同，当前权限整改仍未完成。
+
+### fix15大制品prepare修复已接入
+
+已核3096fde固定126运行文件/22合同与提交/wheel/安装一致；GREA公开pin与两项拒绝路径、36检查通过。上游固定公开CLI真实复制App21的277文件/2204390599字节及源副本同CDHash证明已只读核producer与原回执hash，GREA未重复大包复制。旧fixed14失败审核为committed空、无提升，属于当时状态；消费者重试前须再核，无自动清理/重放。三操作/spec不变，仅合格artifact预算贯通。GUI/同档重开/真实新构建/访问来源仍待消费者；见[fix15接入](../validation/development/beaver-fix15-integration-20261031.json)。
+
+### fix15真实launch收口失败
+
+消费者大包prepare成功后，App21真实GUI进入游戏并正常CmdQ退出（消费者记录），但provider CLI收口IO_OR_INPUT失败：data.report为process对象而被当路径处理；kernel路径大小写差异还使PID身份unknown。已固定CLI与持久run回执hash，实际进程副作用保留，不据外层failed自动重放。待beaver固定结果/进程身份合同修复，HTTP瞬时ReceiveFailure由项目修，均未记稳定通过；本轮GREA仅只读核据，无启动/桌面操作。
+
+### fix16运行结果与文件身份修复接入
+
+已核ee13bdd固定126运行文件/22合同与提交/wheel/安装一致，公开pin及拒绝路径、36检查通过；同qa参数兼容旧owner/profile。修复report对象误作路径，samefile处理真实路径别名并保留start/log护栏。已核上游fixed16只读collect原fixed15 normal01的报告hash，不重跑GUI/大包扫描，不改旧失败/unknown。消费者新GUI、同档重开、denyDocs及新构建续档仍待验；HTTP项目问题分列。见[fix16接入](../validation/development/beaver-fix16-integration-20261031.json)。
+
+### 真实HTTP与文稿运行路径影响范围通过
+
+已核App23 d4578aafb16b4a9168ec269ce3450ad9144471b7消费者验收记录/受控拒绝回执hash，并独立匹配两轮运行日志SHA。公开fixed15 prepare复用App21稳定profile且seed未重播；fixed16两轮denyDocuments GUI正常退出0、launch ok、最终collect collected/Bundle匹配，0连接错误与ReceiveFailure，棋盘真实移动退出重开保留，未观察到文稿提示。此影响范围的HTTP和测试运行路径可记消费者通过。
+
+初次live collect在sandbox-exec切换前捕获基线，identity_unknown/recovery_required仍保留，最终退出态collect通过不抹去该限制。受控deny只证明测试所需路径条件，非全文件syscall或clean-TCC；全v2与其他规则/资源/支付缺口仍未完成。旧App21/旧工具失败保持，不新增启动/改数据/发布。
+
+### 25项产品缺口的工具链分流
+
+已原生核本轮用户归属核查指令及批准分类：2项项目算法/集成输入依赖、4项资源/混合恢复、19项规则/服务/版本映射，不是25个工具bug。gap:P04为背包主题，sample:P04为周任务，两ID域分开。GREA在原排障参考加入来源缺失/解析失败/采用失败/项目接线/权威状态/薄适配六路分流，恢复/开发参考按需链接，不复制产品25项台账。
+
+已闭合固定采用/回滚、fix12保源构建及fix15/16运行路径复用，已实调freeze/upgrade/finish不重跑全套。现存12未知依赖、动态Player真实点击及资源限定核查分别由monkey/项目接续；没有新固定合同或实际GREA消费缺陷，不为文档增加实现/版本。分类不关闭产品项，不新增支付/普通档/全局安装/发布权限。
+
+### dev4依赖补证有限接入
+
+已核19d51d4固定435包文件与wheel/提交一致，公开pin和非法审计输入拒绝通过；native-step新增严格audit-native-code-dependencies，冻结两项目manifest与有限命名参数。复用Final247FixedSupplement01报告做只读输出审计：22脚本/逐requires/2包文件及3实现文件hash匹配、0uncovered、11原诊断逐值保留。未重跑producer完整快照/生成、字体、Editor或Player；既有dev3采用/L2继续复用，资源缺口另线不算完成。见[dev4接入](../validation/development/monkey-dev4-integration-20261031.json)。
+
+### dev5 A10原生资源前置门固定交付审核
+
+已核ea172e0固定436包文件与wheel/归档/提交/冻结源码一致。新operation合同未变，不为版本号切换已验dev4链或重跑依赖/字体。Producer报告Creator通用owned树/tombstone/Undo修复后静态S2原生pass，原候选metadata仍dev4，helper等价须单独绑定；GREA已请求准确原生回执与emitted helper根，当前只核固定制品，不冒称独立验过原生证明。Unity renderer/初态及项目入口、动画、赛季映射继续待验，不恢复暂停产品。见[资源前置门审核](../validation/development/monkey-dev5-resource-gate-review-20261031.json)。
+
+已按补齐路径只读核实际NativeRun01/CocosProject：6发射helper与固定dev5源码逐hash相等，候选manifest匹配原生proof/execution父身份，metadata/verification仍dev4不改。静态resource proof为准确S2骨骼13bones/11slots、保存引用及纹理身份通过；editor pass0diag。execution实际exit -15、stopReason=native_completed保留，不当正常用户退出。原生原文及readback hash已封存于原dev5审核记录，GREA未重跑Editor；动态动画、Unity初态/renderer及产品入口仍未验。
+
+### dev7 A10选择闭包阶段记录
+
+已核78f4f8d固定436文件与提交/wheel/归档及冻结源码一致，现有CLI与adoptionDependencies v1未改，不新增typed dispatch或强制迁移旧消费链。producer报告A10源静态/GUI像素证明仍绑定dev6 a18e786 Stage09，dev7补选择包非GUID Spine helper/runtime/DLL/meta/license闭包，独立spineRuntimeClosure不扩csharp边类型。Graphic SDA .01/CanvasPPU100保留源节点.75的单位映射按实际采用核对。
+
+GREA本轮只核固定制品身份与阶段归属，不把源证明改记dev7新运行；S2不等1.9.4赛季/时间，动态playTimes/cache未恢复，目标须采用完整runtime或证明等价GUID/PPU映射。既有dev4/字体/输入及beaver闭环复用，无新Editor/产品Cocos启动。见[dev7阶段审核](../validation/development/monkey-dev7-stage-review-20261031.json)。
+
+## 2026-11-01 SDK采用与构建认证接口预审（固定17待交）
+
+已原生核用户继续推动产品开发指令，沿真实工具链缺陷接续。beaver拟保持adopt plan/apply参数，增加managedAssemblyCompatibility计划数据：Assets内managed PE/CLI实际身份、公有类型、精确importer角色有限覆盖；显式互斥角色policy不授权替换旧SDK/importer或改m_Script，真实native migration仍未实现。GREA现有结果Schema已用合成blocked数据核可原样保留新增对象/诊断，不需新操作或复制DLL分析器。
+
+构建须Succeeded且明确整数errors=0由native和parent独立核；源码/字体保源仍适用失败路径。当前仅接口预审，未注册未知fix17或重放旧计划；收到固定producer、合同及原始正反例后再实调blocked保持阻断。见[SDK接口预审](../validation/development/sdk-adoption-interface-preview-20261101.json)。
+
+### fix17 SDK守卫固定接入
+
+已核9e587a7固定128运行文件与提交/wheel/安装一致、23合同hash，GREA实际pin及39检查通过。公开adoption.plan清洁4 DLL显式pair通过；使用原独立legacy baseline的冲突规划blocked，随后公开apply在ADOPT_CONFLICT处拒绝，无事务/Editor。初次错误baseline参数被原保护拒绝的调试回执保留，不放松保护。
+
+新managedAssemblyCompatibility data/diagnostics原样消费，无额外DLL分析器或新operation。构建Succeeded且显式整数errors0由上游双层核；GREA未重跑Editor/产品构建。App31、fixed12旧事务保持，consumerNativeAcceptance仍pending，历史SDK迁移未实现。见[fix17接入](../validation/development/beaver-fix17-integration-20261101.json)。
+
+P0-B后端协调补充：beaver确认cua-macos bind将以QA_ATTACH_BACKEND_UNSUPPORTED安全拒绝、不调用getApp，SDK迁移独立推进。已向总监给出最小attachExisting接口及native AX替代路径。当前Computer Use只允许cua_repl交互，其他技术须人类明确指定；故可准备本地桥接实现/接口审阅，但实际非CUA输入须明确人类技术授权或可用后端API到达，Agent互相消息不能代签。无新真实输入/TCC/进程控制操作，P0-B保持具体未闭合。
+
+P0-B授权更新（2026-11-01）：已原生核验用户明确允许本轮macOS原生AX／按PID定向CGEvent桥接，仅自有测试App与项目Player、已有权限，不改TCC、不自动启动替代实例。技术授权阻塞解除；beaver固定实现、GREA公开接入和实际消费者验收仍待交，当前不宣称可用。monkey新SDK声明交付已收到，尚未纳入本次已验typed dispatch，不改旧dev7资源/原生证明身份。

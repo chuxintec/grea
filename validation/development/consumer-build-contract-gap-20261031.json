@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "state": "confirmed_consumer_build_contract_gap",
+  "projectBuilderSha256": "049ddb0260d7fed60f2a9704cf0a84a42800b68af85aea6f64a415f1fef501c7",
+  "fixedProvider": "beaver 0.5.1.dev20261031+fix10",
+  "observed": [
+    "Fixed BeaverNative.Build uses BuildOptions.None.",
+    "Consumer builder uses Development and scoped TMP normalization with font byte backup, build/source hashes and finally restoration/reimport."
+  ],
+  "requiredContract": [
+    "Explicit Development/build policy for debug logging and acceptance probes; profile/connection identity verified independently of Development.",
+    "Finite typed TMP normalization/protection scope; source-before, actual-build-input, source-after identities and failure recovery.",
+    "No arbitrary executeMethod or global SaveAssets; no implicit project hook execution."
+  ],
+  "owner": "beaver implements; GREA adapts fixed delivered contract; project validates actual profile, font and build behavior",
+  "limits": [
+    "Read-only code inspection; no build, Editor or player operation.",
+    "Existing project build chain may continue within its authorization; not counted as beaver build closure.",
+    "Runtime profile selection and packaged font validity not established by this review."
+  ],
+  "consumerCorrection": "Profile/Connection environment selection has no DEVELOPMENT_BUILD guard and also works in ordinary builds. Development is needed for restricted connection-error logging and readonly acceptance probes; BuildOptions.None does not imply default-save fallback."
+}

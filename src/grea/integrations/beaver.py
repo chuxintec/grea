@@ -17,7 +17,15 @@ P0_FIX3_VERSION = '0.5.1.dev20261028+fix3'
 P0_FIX6_VERSION = '0.5.1.dev20261028+fix6'
 P0_FIX7_VERSION = '0.5.1.dev20261029+fix7'
 P0_FIX8_VERSION = '0.5.1.dev20261029+fix8'
-P0_RETIRE_VERSIONS = {P0_FIX6_VERSION, P0_FIX7_VERSION, P0_FIX8_VERSION}
+P0_FIX9_VERSION = '0.5.1.dev20261031+fix9'
+P0_FIX10_VERSION = '0.5.1.dev20261031+fix10'
+P0_FIX11_VERSION = '0.5.1.dev20261031+fix11'
+P0_FIX12_VERSION = '0.5.1.dev20261031+fix12'
+P0_FIX14_VERSION = '0.5.1.dev20261031+fix14'
+P0_FIX15_VERSION = '0.5.1.dev20261031+fix15'
+P0_FIX16_VERSION = '0.5.1.dev20261031+fix16'
+P0_FIX17_VERSION = '0.5.1.dev20261101+fix17'
+P0_RETIRE_VERSIONS = {P0_FIX17_VERSION, P0_FIX16_VERSION, P0_FIX15_VERSION, P0_FIX14_VERSION, P0_FIX12_VERSION, P0_FIX11_VERSION, P0_FIX6_VERSION, P0_FIX7_VERSION, P0_FIX8_VERSION, P0_FIX9_VERSION, P0_FIX10_VERSION}
 P0_VERSIONS = {P0_VERSION, P0_FIX1_VERSION, P0_FIX2_VERSION, P0_FIX3_VERSION, *P0_RETIRE_VERSIONS}
 P0_GROUPS = {'structure.inspect/plan', 'build-filter.collect/plan', 'native.readback'}
 # The historical name is retained; entries pin compatible lineage, never a version range.
@@ -26,6 +34,14 @@ V03_CANDIDATES = {
     '0.3.0':dict(candidate='08',implementation_sha256='e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882'),
     # 0.4.0 = 0.3.0 contracts plus the toolkit received from GREA; released as a GREA module.
     '0.4.0':dict(candidate='module-2026.10.27',implementation_sha256='06a710a70b8e9257e68e6e3b83a34db41e7e1f4e32b2810fe80367db518717f7'),
+    P0_FIX17_VERSION:dict(candidate='local-p0-fix17-9e587a7',implementation_sha256='912606877e9725ba1bd4dc3513b36f9dde80bb5321d7172dfc88e9533d2941af'),
+    P0_FIX16_VERSION:dict(candidate='local-p0-fix16-ee13bdd',implementation_sha256='d2c25c5bbc6e21b48adae58c13801ea2edf217b35eee8a65b8a1f46b73853678'),
+    P0_FIX15_VERSION:dict(candidate='local-p0-fix15-3096fde',implementation_sha256='7f32aaf491fed8a32168b1cb633b62209b350309b1e299ac1f06c9277745deb7'),
+    P0_FIX14_VERSION:dict(candidate='local-p0-fix14-d4ff4c6',implementation_sha256='b657770aafa92fc98eb9fc47235e14c3ec22fc3acfe619d234ff34909d1c5a7a'),
+    P0_FIX12_VERSION:dict(candidate='local-p0-fix12-61fc30b',implementation_sha256='8733083d0a3c153679282a1b77c7375744aca02042d6a184545ff62680e4c9cb'),
+    P0_FIX11_VERSION:dict(candidate='local-p0-fix11-6b7e74f',implementation_sha256='44a1280aa75d7b720fa0bdfada800441e09dc76c95911ed1b00e2993725f766c'),
+    P0_FIX10_VERSION:dict(candidate='local-p0-fix10-8e25793',implementation_sha256='3a64f4f5301e1ec1591df6e3ad92a8236e504cb0a9379a21e63c01f81419ed89'),
+    P0_FIX9_VERSION:dict(candidate='local-p0-fix9-b85d44e',implementation_sha256='554075acb4960db076c49c60e26b39c427c37c0029aac5f2f30dc6f49cbd13eb'),
     P0_FIX8_VERSION:dict(candidate='local-p0-fix8-1b44c0b',implementation_sha256='6e81b67b87a3b5fd4d965dbe952672ca99c9e4149a678863c39f3706165211f3'),
     P0_FIX7_VERSION:dict(candidate='local-p0-fix7-5b765eb',implementation_sha256='b889a59214782d6bcc442a53156150d9729a24d18a2e9349f468e85dcba5725c'),
     P0_FIX6_VERSION:dict(candidate='local-p0-fix6-c1d80d9',implementation_sha256='8e5d595c15c63c222fcc7ece0013ddd97ef3360d8331d76eb4befc61a6fcafc6'),

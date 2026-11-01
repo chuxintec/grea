@@ -11,7 +11,32 @@ from grea.safe_paths import canonical_path, disjoint
 from .identity import read, pinned
 
 # 0.4.1 = 0.4.0 conversion plus the toolkit received from GREA (same CLI options).
-SUPPORTED_VERSIONS = ('0.4.0', '0.4.1', '0.6.0')
+DEV1_VERSION = '0.7.0.dev1'
+DEV1_PACKAGE_SHA256 = 'c3673a4f7cf1f724ab6c30b2235bba6a9475426e561d42c069d082b4dd750b7d'
+DEV1_CAPABILITIES_SHA256 = '487e5d37974bf9e9556591aae7af5081fa8f76f0c7bbb28599ce3a5dc449c57b'
+DEV2_VERSION = '0.7.0.dev2'
+DEV2_PACKAGE_SHA256 = '05f429c84c46bde954f01af90be96fe448789e881de7defbcc51444aa25c6517'
+DEV2_CAPABILITIES_SHA256 = '8660a3d7d1f576392191fb7d94d66a55bb1d531048658f5d8fca12c85c01973b'
+DEV3_VERSION = '0.7.0.dev3'
+DEV3_PACKAGE_SHA256 = 'f77c5bcaca208a8a9e5a6481db384275fd69688e640de1a921863289263fe11c'
+DEV3_CAPABILITIES_SHA256 = 'f6e67a8a6f4921a8ef265f2ae3cb250c7c01a5a1f0d3e888bdd1c5b719f6ab13'
+DEV4_VERSION = '0.7.0.dev4'
+DEV4_PACKAGE_SHA256 = '5689b6dc039c4f9aafbda9dbdeaf634c25f1013c9ef09cc91fa53377a113baf1'
+DEV4_CAPABILITIES_SHA256 = 'b8c1e66b8215c3133c8f0ba4e2bf5d1ae9a9d2632979f41c3c80106ee00ae252'
+SUPPORTED_VERSIONS = ('0.4.0', '0.4.1', '0.6.0', DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION)
+
+
+def validate_fixed_candidate(cfg, cap):
+    if cfg['version'] not in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION):
+        return
+    files = {Path(k).relative_to(cfg['identity_root']).as_posix(): v
+             for k, v in cfg['package_files'].items()}
+    package, capabilities = (DEV1_PACKAGE_SHA256, DEV1_CAPABILITIES_SHA256) if cfg['version']==DEV1_VERSION else (DEV2_PACKAGE_SHA256, DEV2_CAPABILITIES_SHA256)
+    if cfg['version']==DEV3_VERSION:package,capabilities=DEV3_PACKAGE_SHA256,DEV3_CAPABILITIES_SHA256
+    if cfg['version']==DEV4_VERSION:package,capabilities=DEV4_PACKAGE_SHA256,DEV4_CAPABILITIES_SHA256
+    if (digest(files) != package or digest(cap) != capabilities
+            or 'verify' not in cap.get('implemented', [])):
+        raise ValueError('Expected exact monkey dev1 a458790 or dev2 c279a6a or dev3 4ad7498 or dev4 19d51d4 package and capabilities')
 # Options are transcribed from the versioned CLI, not passed through wholesale.
 OPERATIONS = {
     'convert': {
@@ -73,6 +98,7 @@ def probe(lock, output):
         raise ValueError('Provider capability probe failed')
     if cap.get('version')!=cfg['version'] or cap.get('schemaVersion')!=1 or digest(cap)!=cfg['capabilities_sha256']:
         raise ValueError('Provider capabilities differ from lock')
+    validate_fixed_candidate(cfg, cap)
     return cfg,cap
 
 
@@ -135,6 +161,8 @@ def plan(config, request_path, output):
     out.mkdir()
     try:
         cfg,cap=probe(config,out/'capabilities')
+        if cfg['version'] in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION):
+            raise ValueError('Fixed dev1 supports explicit audit --level static/editor only; conversion is not adapted')
         if request['operation'] not in cap.get('implemented',[]):raise ValueError('Operation not advertised by pinned provider')
         record=dict(schema_version=1,kind='monkey-execution-plan',provider_version=cfg['version'],
                     lock=hash_file(config),request=hash_file(request_path),command_identity=command_identity(),
@@ -159,7 +187,9 @@ def execute(config, plan_path, output):
     if out.exists() or not out.parent.is_dir():raise ValueError('Use a fresh execution output')
     out.mkdir()
     try:
-        probe(config,out/'capabilities')
+        cfg,_=probe(config,out/'capabilities')
+        if cfg['version'] in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION):
+            raise ValueError('Fixed dev1 conversion execution is not adapted; use explicit saved-candidate audit')
         value,_,error=runner.execute('monkey',argv+['--out',str(out/'provider-output')],out/'execution',
                                     timeout_seconds=request['timeout_seconds'],max_output_bytes=8*1024**2,max_inline_bytes=1024**2)
         pinned(config)

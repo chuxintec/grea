@@ -1,0 +1,100 @@
+{
+  "runtimeFiles": 423,
+  "packageSha256": "c3673a4f7cf1f724ab6c30b2235bba6a9475426e561d42c069d082b4dd750b7d",
+  "capabilitiesSha256": "487e5d37974bf9e9556591aae7af5081fa8f76f0c7bbb28599ce3a5dc449c57b",
+  "sourceCommit": "a458790a68d57108b4cfe038d8aa565d5cc1599b",
+  "wheelSha256": "06bc81ea71c4e6a0e9b6ccc9a16b43b34f1fc0ecdc7c3d772921b535ff6152f8",
+  "sourceArchiveSha256": "cde340153f4a1bbbf812fd6aa426b5f063898a765a655c96c886539ae3bfc8a9",
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "baselineCommit": "240eead2366ee54270075172f330df2839b65a94",
+  "providerVersion": "0.7.0.dev1",
+  "providerProducerField": "absent; no synthetic producer asserted",
+  "adapterScope": "Explicit fixed package pin and static/editor saved-candidate audit only; convert plan/run not adapted",
+  "packageChecks": "423 wheel entries equal fixed source archive and Git commit; loaded from isolated GREA wheel copy",
+  "upstreamSourceExtrasPreserved": [
+    "targets/behaviors/probes/Editor/MonkeyBehaviorProbeBootstrap.cs.meta",
+    "targets/behaviors/probes/UnityBehaviorProbe.cs.meta"
+  ],
+  "publicSourceCli": {
+    "pin": "pinned",
+    "savedAuditStatus": "needs_action",
+    "providerStatus": "partial",
+    "providerExit": 1,
+    "executed": true,
+    "editorStarted": false,
+    "nativeValidation": "recorded_provider_evidence_rechecked",
+    "providerCommand": [
+      "verify",
+      "--candidate",
+      "<saved-project>",
+      "--level",
+      "editor",
+      "--out",
+      "<fresh-output>"
+    ]
+  },
+  "verification": {
+    "staticValidation": "pass",
+    "nativeStaticValidation": "pass",
+    "runtimeCheck": "pass",
+    "editorValidation": "partial",
+    "visualValidation": "not_run",
+    "businessValidation": "not_run"
+  },
+  "diagnosticCodes": {
+    "SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE": 378,
+    "ANIMATION_DYNAMIC_CURVES_NOT_LOWERED": 56
+  },
+  "verificationArtifactSha256": "484906755fa43bbec6e7cedd66485c410ef6524ad7bc2c1d1e83dee54c74f15c",
+  "inputSha256": {
+    "monkey-lock.json": "71dbaf8cb778f82a1799a74d23f1906edcf1195e6e21385a6c9d10328a2ac357",
+    "manifest.json": "b2b8f5df49da0cac32fd04cdeb55061bde106959ea060c9476b704a1e5f46655",
+    "editor-readback.json": "85a1fe3a608a597a3340c654ab869f97d4389d262bec04e043129e0dd3e8301c"
+  },
+  "publicNegativeChecks": [
+    {
+      "label": "manifest-drift",
+      "error": "Candidate generated manifest differs from expected identity"
+    },
+    {
+      "label": "package-drift",
+      "error": "Provider package changed"
+    },
+    {
+      "label": "unadapted-convert-v2",
+      "error": "Fixed dev1 supports explicit audit --level static/editor only; conversion is not adapted"
+    },
+    {
+      "label": "source-stdio-mcp-readback-drift",
+      "error": "Saved readback differs from expected identity"
+    }
+  ],
+  "pinChecks": [
+    {
+      "case": "fixed-content-pin",
+      "status": "pinned"
+    },
+    {
+      "case": "same-version-different-package-pin",
+      "status": "failed",
+      "error": "Expected exact monkey dev1 a458790 package and capabilities"
+    }
+  ],
+  "targetedMonkeyTests": 39,
+  "limits": [
+    "This invokes the fixed provider existing readonly verifier over already-saved evidence; no Editor start, recovery regeneration or new 30x2 native run.",
+    "Static/editor/visual/business states and all 434 dynamic boundary diagnostics remain unchanged; outer needs_action and handoff_ready=false.",
+    "Current native assertions remain provider evidence, not independent authentication, real input or product acceptance.",
+    "No new freeze-native-selection/adoptionDependencies implementation is registered; upcoming fixed contract remains pending.",
+    "GREA source subprocess CLI/MCP only; installed plugin and formal module lock unchanged; no game writes, push or release."
+  ],
+  "finalAffectedTests": 62,
+  "documentLinks": 724,
+  "sourceFilesSha256": {
+    "src/grea/integrations/monkey/pipeline.py": "779eaf3a73f9af743040221a09d1fbd84ab8ce55eb4a1fa4dc872c2c08143e74",
+    "src/grea/integrations/monkey/identity.py": "ef9e792ff8ed08965e9474f79295a71193ab0cba90f16cbbea948c31905b0e59",
+    "src/grea/integrations/monkey/saved.py": "9b8758b3859da83f3166dd0b39f7bf5c485a5b526858973f3892385daa62f3bd",
+    "src/grea/tools/monkey_pipeline.py": "c267121e92b249c3879696e13bef16562d35d1ce90859e9dc3c842b41647a115"
+  }
+}

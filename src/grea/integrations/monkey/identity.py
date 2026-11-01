@@ -41,6 +41,8 @@ def create_lock(root, output):
     cfg=dict(schema_version=2,version=cap['version'],capabilities_sha256=digest(cap),identity_root=str(root),
              command=command,probe=probe,package_files=package_files(root),
              identity_files=[dict(path=p,sha256=s) for p,s in sorted(files.items())])
+    from .pipeline import validate_fixed_candidate
+    validate_fixed_candidate(cfg, cap)
     write_new(out/'monkey-lock.json',cfg)
     return cfg
 

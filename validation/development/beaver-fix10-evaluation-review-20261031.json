@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-31",
+  "state": "evaluation_contract_review_only",
+  "candidateVersion": "0.5.1.dev20261031+fix10",
+  "sourceCommit": "8e25793fe6eaf1c325f701c94256352095a0f3b9",
+  "implementationSha256": "3a64f4f5301e1ec1591df6e3ad92a8236e504cb0a9379a21e63c01f81419ed89",
+  "wheelSha256": "c119880b5f68ab27430a8624b38d3a96f0cd546f4cf187424f828f029cdbb2d8",
+  "deliverySha256": "381a952670b5a55e59e08b753fd608b6e87d0600a3bec55a53462fdac6a780af",
+  "contractHashesVerified": 18,
+  "runtimeFilesEqualCommitWheelAndInstall": 123,
+  "upstreamNativeEvidence": {
+    "oldFixed9Failure": "Reopened local IDs differ; original runner rollback passed",
+    "sourceTrial": "5 assets apply/reopen/public rollback passed before final guards",
+    "intentionalCompileFailure": "resource writes absent; compiler before-images restored",
+    "remaining": "Unity exit198 blocked native recovery twice; final installed native/consumer not run"
+  },
+  "greaNativeRun": false,
+  "greaSupportedVersionAdded": false,
+  "limits": [
+    "Source-trial results do not establish final installed native acceptance.",
+    "Unity licensing exit198 blocks upstream recovery completion and final native/consumer validation.",
+    "Existing named adoption parameters remain; no new GREA parser or automatic fixed-candidate adoption."
+  ]
+}

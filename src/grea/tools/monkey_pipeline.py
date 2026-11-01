@@ -17,12 +17,29 @@ def main(argv=None):
     for action in ('plan','run','audit'):
         p=commands.add_parser(action);p.add_argument('--config',help='Omit to use the checked persistent local binding');p.add_argument('--output',required=True)
         p.add_argument({'plan':'--request','run':'--plan','audit':'--workspace'}[action],required=True)
+        if action=='audit':
+            p.add_argument('--level',choices=['generated','static','editor'],default='generated')
+            p.add_argument('--expected-manifest')
+            p.add_argument('--expected-readback')
     shader=commands.add_parser('classify-shaders',help='Bounded read-only classification with an explicit fixed local P0 lock')
     for name in ('config','project','manifest','expected-manifest','output'):shader.add_argument('--'+name,required=True)
     shader.add_argument('--source-mapping');shader.add_argument('--expected-source-mapping')
     shader.add_argument('--timeout-seconds',type=int,default=30)
+    selection=commands.add_parser('freeze-native-selection')
+    for name in ('config','candidate','expected-manifest','expected-readback','output'):selection.add_argument('--'+name,required=True)
+    selection.add_argument('--prefab',action='append',required=True)
+    native=commands.add_parser('native-step')
+    for name in ('config','request','output'):native.add_argument('--'+name,required=True)
     args=parser.parse_args(argv)
     try:
+        if args.action=='native-step':
+            from grea.integrations.monkey.native_steps import run
+            result=run(args.config,args.request,args.output)
+            print(json.dumps(dict(status=result['status'],output=args.output,executed=result['executed'])));return 1
+        if args.action=='freeze-native-selection':
+            from grea.integrations.monkey.selection import freeze
+            result=freeze(args.config,args.candidate,args.prefab,args.expected_manifest,args.expected_readback,args.output)
+            print(json.dumps(result));return 1 if result['status']=='needs_action' else 0
         if args.action=='classify-shaders':
             from grea.integrations.monkey.shader import classify
             result=classify(args.config,args.project,args.manifest,args.expected_manifest,args.output,args.source_mapping,args.expected_source_mapping,args.timeout_seconds)
@@ -43,9 +60,18 @@ def main(argv=None):
         if args.action=='plan':result=pipeline.plan(args.config,args.request,args.output)
         elif args.action=='run':result=pipeline.execute(args.config,args.plan,args.output)
         else:
+            if args.level!='generated':
+                from grea.integrations.monkey.saved import verify
+                result=verify(args.config,args.workspace,args.output,args.level,args.expected_manifest,args.expected_readback)
+                print(json.dumps(dict(status=result['status'],output=args.output,executed=result['executed'])))
+                return 1 if result['status']=='needs_action' else 0
+            if args.expected_manifest is not None or args.expected_readback is not None:
+                raise ValueError('Expected hashes require an explicit static/editor audit level')
             from grea.safe_paths import disjoint
             from pathlib import Path
             cfg=pinned(args.config);out=disjoint(args.output,args.workspace,args.config,*[r['path'] for r in cfg['identity_files']])
+            if cfg['version'] in (pipeline.DEV1_VERSION,pipeline.DEV2_VERSION,pipeline.DEV3_VERSION,pipeline.DEV4_VERSION):
+                raise ValueError('Fixed dev1 audit requires explicit --level static/editor and expected hashes')
             if out.exists() or not out.parent.is_dir():raise ValueError('Use a fresh audit output')
             result=audit(args.workspace,cfg['version']);out.mkdir();write_new(out/'result.json',result)
         print(json.dumps(dict(status=result.get('status','planned'),output=args.output,executed=result.get('executed',False))))
