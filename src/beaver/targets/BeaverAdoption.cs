@@ -251,7 +251,7 @@ public static class BeaverAdoption {
     static bool SameRetainedInactiveSnapshot(SdkRetainedInactiveSnapshot left,SdkRetainedInactiveSnapshot right) {
         return left!=null&&right!=null&&left.path==right.path&&left.guid==right.guid&&left.sha256==right.sha256&&left.metaSha256==right.metaSha256&&
                left.assemblyName==right.assemblyName&&left.moduleVersionId==right.moduleVersionId&&left.canonicalEditorPath==right.canonicalEditorPath&&left.selectedEditorPrecompiledPath==right.selectedEditorPrecompiledPath&&
-               SameOptionalText(left.runtimeLoadedModuleVersionId,right.runtimeLoadedModuleVersionId)&&SameOptionalText(left.runtimeLoadedLocation,right.runtimeLoadedLocation)&&left.runtimeSourceEvidence==right.runtimeSourceEvidence&&
+               left.runtimeSourceEvidence==right.runtimeSourceEvidence&&
                left.canonicalEditorSourceSelected&&right.canonicalEditorSourceSelected&&left.inactiveSourceExcluded&&right.inactiveSourceExcluded&&left.monoScriptCount==right.monoScriptCount&&
                left.allPlatformsDisabled&&right.allPlatformsDisabled&&!left.runtimeLoadedFromInactivePath&&!right.runtimeLoadedFromInactivePath&&
                (left.roles??new string[0]).SequenceEqual(right.roles??new string[0]);

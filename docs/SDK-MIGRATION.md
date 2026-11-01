@@ -220,3 +220,6 @@ closed-Editor compiler stage; apply and independent reopen validate SDK roles,
 types, GUID/localID bindings, and serialized references. Native failures use
 the existing rollback and later-edit guards. No Editor, Player build, or
 project is launched by planning or prepare.
+
+
+Across a canonical replacement, the active Editor runtime MVID and loaded location may legitimately change. Each phase still independently validates its own planned before/after Editor image, exact compiler-selected canonical source and exclusion of the retained inactive path. Cross-phase checkpoints compare the inactive DLL/importer/GUID/MVID/roles/source invariants; they do not require the active Editor's historical runtime MVID/location to stay equal. Rollback validates the original phase image again.
