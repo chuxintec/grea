@@ -22,7 +22,7 @@ GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$',re.M)
 
 def algorithm_id():
     root=Path(__file__).parent
-    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','adoption_dependencies.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
+    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','adoption_dependencies.py','adoption_assemblies.py','managed_metadata.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
     return sha(encoded({name:digest_file(root/name) for name in names}))
 
 
@@ -194,12 +194,15 @@ def build_plan(candidate,target,baseline=None,lineage=None):
     for op in operations:
         if compile_operation(op) and (not op['after']['meta'] or not op['guid'] or op['before'] and not op['before']['meta']):
             conflicts.append(dict(identity=op['identity'],reason='compiler-input-requires-owned-metadata',current=op['source'],desired=op['target']))
+    from .adoption_assemblies import inspect_compatibility
+    assembly_compatibility=inspect_compatibility(incoming,target,im,desired,current,operations,profile)
+    conflicts.extend(assembly_compatibility['conflicts'])
     # Moving parent directories is deliberately not implicit: each asset has its
     # own native move and folder GUIDs owned by the developer stay untouched.
     return dict(schemaVersion=1,contract='beaver-adopt/1',producer=dict(name='beaver',version=__version__),algorithmSha256=algorithm_id(),targetRoot=str(target),candidateRoot=str(incoming),
                 candidateManifestName=im['_manifestName'],incomingManifestSha256=ih,beforeManifestSha256=bh,
                 targetProfile=profile,namespace=im['namespace'],lineageOverride=explicit_lineage,projectRequirements=requirements,targetStateSha256=digest_file(state_path) if state else None,
-                targetFiles=actual,generation=desired,operations=operations,conflicts=conflicts,preserved=preserved,adoptionDependencies=dependencies,
+                targetFiles=actual,generation=desired,operations=operations,conflicts=conflicts,preserved=preserved,adoptionDependencies=dependencies,managedAssemblyCompatibility=assembly_compatibility,
                 executionPolicy='compiler-inputs-closed-editor-then-resources; independent-reopen; single-commit',
                 retainedRemoved=removed,counts=dict(operations=len(operations),conflicts=len(conflicts),preserved=len(preserved),retainedRemoved=len(removed)),
                 identityReadback='pending-native',business='not_run',visual='not_run')

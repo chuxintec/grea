@@ -808,6 +808,8 @@ def apply(plan_path, output, editor, expected, timeout=600):
             journal.update(status='recovery-required',diagnostic=dict(code=code,location=location,message=message))
             write_json(stage/'journal.json',journal)
             fail(code,str(stage),message+' ('+location+')')
+        if data['spec']['operation']=='build.macos' and (applied.get('buildResult')!='Succeeded' or type(applied.get('buildErrors')) is not int or applied['buildErrors']!=0):
+            audit_fail('BUILD_RESULT_ERRORS',str(stage),'Build requires Succeeded and an explicit integer buildErrors=0; artifact is not certified')
         if data['spec']['operation']=='build.macos' and applied.get('developmentBuild') is not data['spec'].get('development',False):
             audit_fail('BUILD_OPTIONS_READBACK',str(stage),'Native build mode differs from explicit policy')
         if data['spec']['operation']=='build.macos' and data['spec'].get('tmpFontPolicy'):

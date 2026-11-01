@@ -445,7 +445,7 @@ public static class BeaverNative {
         report.developmentBuild=(result.summary.options&BuildOptions.Development)!=0;
         if(report.developmentBuild!=job.development)throw new Exception("Actual build mode differs from requested policy");
         report.buildResult=result.summary.result.ToString();report.buildBytes=result.summary.totalSize;report.buildErrors=result.summary.totalErrors;report.buildPath=path;
-        if(result.summary.result!=BuildResult.Succeeded)throw new Exception("Build failed: "+report.buildResult);
+        if(result.summary.result!=BuildResult.Succeeded || result.summary.totalErrors!=0)throw new Exception("Build not certifiable: "+report.buildResult+"; errors="+report.buildErrors);
     }
     static void SpriteImport(bool write) {
         var importer=AssetImporter.GetAtPath(job.assetPath) as TextureImporter;
