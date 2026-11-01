@@ -16,7 +16,7 @@ class AppBindingNativeTests(unittest.TestCase):
         root=SOURCE.parents[3]/'.private/app-binding-native/tests'
         root.mkdir(parents=True,exist_ok=True)
         cls.directory=tempfile.TemporaryDirectory(dir=root);cls.root=Path(cls.directory.name)
-        cls.binary=cls.root/'bridge';cls.denied=cls.root/'denied';cls.routing=cls.root/'routing';cls.no_mode=cls.root/'no-mode'
+        cls.binary=cls.root/'bridge';cls.denied=cls.root/'denied';cls.routing=cls.root/'routing';cls.no_mode=cls.root/'no-mode';cls.sequence=cls.root/'sequence'
         cls.flags=['xcrun','clang','-fobjc-arc','-Wall','-Wextra','-Werror','-framework','Foundation','-framework','AppKit','-framework','ApplicationServices']
         subprocess.run(cls.flags+[str(SOURCE),'-o',str(cls.binary)],check=True,capture_output=True)
         shim=cls.root/'denied.m'
@@ -26,14 +26,14 @@ class AppBindingNativeTests(unittest.TestCase):
         routing.write_text('#define main BeaverBindingMain\n#include "'+str(SOURCE)+'"\n#undef main\n'+r'''int main(void){@autoreleasepool {
             BOOL ok=YES;NSUInteger checked=0;
             NSArray *geometries=@[@{@"x":@140,@"y":@470,@"width":@480,@"height":@332},@{@"x":@(-1920),@"y":@0,@"width":@1024,@"height":@768},@{@"x":@0,@"y":@(-200),@"width":@640,@"height":@1000}];
-            NSArray *types=@[@(NSEventTypeLeftMouseDown),@(NSEventTypeLeftMouseUp),@(NSEventTypeLeftMouseDragged),@(NSEventTypeRightMouseDown),@(NSEventTypeRightMouseUp),@(NSEventTypeRightMouseDragged)];
+            NSArray *types=@[@(NSEventTypeMouseMoved),@(NSEventTypeLeftMouseDown),@(NSEventTypeLeftMouseUp),@(NSEventTypeLeftMouseDragged),@(NSEventTypeRightMouseDown),@(NSEventTypeRightMouseUp),@(NSEventTypeRightMouseDragged)];
             for(NSDictionary *bounds in geometries) {
                 NSArray *points=@[@{@"x":@0,@"y":@0},@{@"x":@190.25,@"y":@183.5},@{@"x":@([bounds[@"width"] doubleValue]-.5),@"y":@([bounds[@"height"] doubleValue]-.5)}];
                 for(NSDictionary *point in points)for(NSNumber *type in types){
                     response=[NSMutableDictionary dictionaryWithDictionary:@{@"selectedWindow":@{@"windowId":@12345,@"bounds":bounds}}];
                     CGEventRef event=WindowMouseEvent([type unsignedIntegerValue],point);RouteMouse(event,12345);
                     NSEvent *roundtrip=[NSEvent eventWithCGEvent:event];CGPoint at=CGEventGetLocation(event);
-                    ok=ok&&roundtrip.windowNumber==12345&&fabs(at.x-[point[@"x"] doubleValue])<.001&&fabs(at.y-[point[@"y"] doubleValue])<.001&&[response[@"constructionAttempts"] unsignedIntegerValue]<=2&&CGEventGetIntegerValueField(event,kCGMouseEventWindowUnderMousePointer)==12345&&CGEventGetIntegerValueField(event,kCGMouseEventWindowUnderMousePointerThatCanHandleThisEvent)==12345&&CGEventGetIntegerValueField(event,kCGMouseEventClickState)==1&&CGEventGetIntegerValueField(event,kCGMouseEventNumber)==1;
+                    ok=ok&&roundtrip.windowNumber==12345&&fabs(at.x-[point[@"x"] doubleValue])<.001&&fabs(at.y-[point[@"y"] doubleValue])<.001&&[response[@"constructionAttempts"] unsignedIntegerValue]<=2&&CGEventGetIntegerValueField(event,kCGMouseEventWindowUnderMousePointer)==12345&&CGEventGetIntegerValueField(event,kCGMouseEventWindowUnderMousePointerThatCanHandleThisEvent)==12345&&CGEventGetIntegerValueField(event,kCGMouseEventClickState)==([type unsignedIntegerValue]==NSEventTypeMouseMoved?0:1)&&CGEventGetDoubleValueField(event,kCGMouseEventPressure)==(([type unsignedIntegerValue]==NSEventTypeMouseMoved||[type unsignedIntegerValue]==NSEventTypeLeftMouseUp||[type unsignedIntegerValue]==NSEventTypeRightMouseUp)?0.0:1.0)&&CGEventGetIntegerValueField(event,kCGMouseEventNumber)==1;
                     CFRelease(event);checked++;
                 }
             }
@@ -56,6 +56,34 @@ class AppBindingNativeTests(unittest.TestCase):
             return stopped&&history.count==2&&[prior[@"attempted"] boolValue]&&[prior[@"completed"] boolValue]&&![next[@"attempted"] boolValue]&&![next[@"completed"] boolValue]&&warpCalls==0&&posted==0?0:1;
         }}''')
         subprocess.run(cls.flags+[str(no_mode),'-o',str(cls.no_mode)],check=True,capture_output=True)
+        # Execute the actual production gesture branch with all OS/input
+        # boundaries stubbed. This checks sequencing without UI or cursor use.
+        runtime=SOURCE.read_text();begin=runtime.index('                        BOOL right=',runtime.index('if([op isEqual:@"click"]||[op isEqual:@"drag"])'))
+        end=runtime.index('                    } else {',begin);gesture=runtime[begin:end]
+        sequence=cls.root/'sequence.m'
+        sequence.write_text('#define main BeaverBindingMain\n#include "'+str(SOURCE)+'"\n#undef main\n'+r'''static NSMutableArray *actions;
+static NSEventType lastType;
+static NSDictionary *lastPoint;
+static void NoCheck(AXUIElementRef app){(void)app;}
+static CGPoint NoPoint(NSDictionary *point){return CGPointMake([point[@"x"] doubleValue],[point[@"y"] doubleValue]);}
+static void NoSync(AXUIElementRef app,NSDictionary *point){(void)app;[actions addObject:@{@"sync":point}];}
+static CGEventRef NoCreate(NSEventType type,NSDictionary *point){lastType=type;lastPoint=point;return NULL;}
+static void NoPost(AXUIElementRef app,CGEventRef event){(void)app;(void)event;[actions addObject:@{@"event":@(lastType),@"point":lastPoint}];}
+#define Recheck NoCheck
+#define RelativePoint NoPoint
+#define SynchronizePointer NoSync
+#define WindowMouseEvent NoCreate
+#define Post NoPost
+static NSArray *Exercise(BOOL sync,BOOL drag){
+    actions=[NSMutableArray array];NSMutableDictionary *spec=[NSMutableDictionary dictionaryWithDictionary:@{@"operation":drag?@"drag":@"click",@"x":@1,@"y":@2,@"points":@[@{@"x":@1,@"y":@2},@{@"x":@3,@"y":@4},@{@"x":@5,@"y":@6}]}];
+    if(sync)spec[@"cursorMode"]=@"sync-owned-window";request=spec;NSString *op=request[@"operation"];AXUIElementRef app=NULL;
+'''+gesture+r'''
+    return actions;
+}
+int main(void){@autoreleasepool {NSDictionary *result=@{@"click":Exercise(NO,NO),@"syncClick":Exercise(YES,NO),@"drag":Exercise(NO,YES),@"syncDrag":Exercise(YES,YES)};NSData *out=[NSJSONSerialization dataWithJSONObject:result options:0 error:nil];fwrite(out.bytes,1,out.length,stdout);return 0;}}
+''')
+        subprocess.run(cls.flags+[str(sequence),'-o',str(cls.sequence)],check=True,capture_output=True)
+
 
 
 
@@ -104,7 +132,7 @@ class AppBindingNativeTests(unittest.TestCase):
     def test_mouse_window_annotations_roundtrip_without_posting(self):
         result=subprocess.run([str(self.routing)],capture_output=True,timeout=12)
         self.assertEqual(result.returncode,0,result.stderr)
-        receipt=json.loads(result.stdout);self.assertTrue(receipt['passed']);self.assertEqual(receipt['cases'],54);self.assertEqual(receipt['eventsPosted'],0);self.assertTrue(receipt['outsideRefused']);self.assertEqual(result.stderr,b'')
+        receipt=json.loads(result.stdout);self.assertTrue(receipt['passed']);self.assertEqual(receipt['cases'],63);self.assertEqual(receipt['eventsPosted'],0);self.assertTrue(receipt['outsideRefused']);self.assertEqual(result.stderr,b'')
 
     def test_source_forbids_location_setter_global_post_and_private_routing_fields(self):
         source=SOURCE.read_text()
@@ -136,3 +164,18 @@ class AppBindingNativeTests(unittest.TestCase):
     def test_internal_sync_requires_opt_in_and_next_point_preserves_partial_history(self):
         result=subprocess.run([str(self.no_mode)],capture_output=True,timeout=12)
         self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(result.stdout,b'');self.assertEqual(result.stderr,b'')
+
+    def test_actual_gesture_branch_adds_one_initial_move_only_for_explicit_sync(self):
+        run=subprocess.run([str(self.sequence)],capture_output=True,timeout=12)
+        self.assertEqual(run.returncode,0,run.stderr);self.assertEqual(run.stderr,b'')
+        cases=json.loads(run.stdout)
+        def actions(name):return ['sync' if 'sync' in row else row['event'] for row in cases[name]]
+        self.assertEqual(actions('click'),[1,2])
+        self.assertEqual(actions('syncClick'),['sync',5,1,2])
+        self.assertEqual(actions('drag'),[1,6,6,2])
+        self.assertEqual(actions('syncDrag'),['sync',5,1,'sync',6,'sync',6,2])
+        sync_drag=cases['syncDrag']
+        self.assertEqual(sync_drag[1]['point'],{'x':1,'y':2})
+        self.assertEqual(sync_drag[4]['point'],{'x':3,'y':4})
+        self.assertEqual(sync_drag[6]['point'],{'x':5,'y':6})
+        self.assertEqual(sync_drag[7]['point'],{'x':5,'y':6})

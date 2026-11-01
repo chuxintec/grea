@@ -98,3 +98,6 @@ Window screenshots explicitly request PNG without shadows (`screencapture -o -t 
 
 
 Known consumer boundary: the fixed19 self-owned Unity probe proved IMGUI/legacy callbacks, text and drag. FoodStreet App40 uses Input System1.20.1, activeInputHandler1 and uGUI InputSystemUIInputModule; its fixed19 pointer-positioning guards passed, but login/text still produced no observed action. That input stack remains unaccepted while a matching neutral fixture is investigated. No QA action pump, application patch or global event fallback is part of this backend.
+
+
+The matching InputSystem1.20.1/uGUI fixture isolated the fixed19 failure: button transitions reached the device, but pointer position remained(0,0). The explicit synchronization gesture now posts one guarded window-relative `mouseMoved` after initial positioning and before the first down event. New Input System position is initialized before hit-testing the click; subsequent drag points keep the existing synchronization and dragged-event route. This adds one posted event only to the opt-in synchronization path (click3; N-point drag N+2); event-only defaults remain unchanged. Neutral uGUI callbacks/text and held-button motion have been observed; fixed-package and product acceptance are separately recorded in PLAN. No application action pump or global event route is used.

@@ -199,17 +199,17 @@ static void RouteMouse(CGEventRef event,CGWindowID windowId) {
     // path. Supply both public window annotations explicitly after rechecking.
     CGEventSetIntegerValueField(event,kCGMouseEventWindowUnderMousePointer,windowId);
     CGEventSetIntegerValueField(event,kCGMouseEventWindowUnderMousePointerThatCanHandleThisEvent,windowId);
-    CGEventSetIntegerValueField(event,kCGMouseEventClickState,1);
+    CGEventSetIntegerValueField(event,kCGMouseEventClickState,type==kCGEventMouseMoved?0:1);
     CGEventSetIntegerValueField(event,kCGMouseEventButtonNumber,right?kCGMouseButtonRight:kCGMouseButtonLeft);
     CGEventSetIntegerValueField(event,kCGMouseEventNumber,1); // same down/drag/up gesture
-    CGEventSetDoubleValueField(event,kCGMouseEventPressure,up?0.0:1.0);
+    CGEventSetDoubleValueField(event,kCGMouseEventPressure,(up||type==kCGEventMouseMoved)?0.0:1.0);
     CGEventSetFlags(event,0);
 }
 static void Post(AXUIElementRef app,CGEventRef event) {
     if(!event)Reject(@"EVENT_CREATION_FAILED",@"Cannot create targeted input event");
     @try {Recheck(app);CheckSynchronizedPointer(app);
         CGEventType type=CGEventGetType(event);
-        if(type==kCGEventLeftMouseDown||type==kCGEventLeftMouseUp||type==kCGEventLeftMouseDragged||type==kCGEventRightMouseDown||type==kCGEventRightMouseUp||type==kCGEventRightMouseDragged) {
+        if(type==kCGEventMouseMoved||type==kCGEventLeftMouseDown||type==kCGEventLeftMouseUp||type==kCGEventLeftMouseDragged||type==kCGEventRightMouseDown||type==kCGEventRightMouseUp||type==kCGEventRightMouseDragged) {
             NSDictionary *b=response[@"selectedWindow"][@"bounds"];
             if(![b isEqual:preparedMouseBounds])Reject(@"WINDOW_MOVED_BEFORE_EVENT",@"Selected window geometry changed after event preparation");
             NSEvent *native=[NSEvent eventWithCGEvent:event];CGPoint payload=CGEventGetLocation(event);
@@ -239,7 +239,7 @@ static CGEventRef WindowMouseEvent(NSEventType type,NSDictionary *point) {
     CGEventRef result=NULL;NSUInteger attempts=0;
     for(NSUInteger i=0;i<2;i++) {
         attempts=i+1;
-        NSEvent *native=[NSEvent mouseEventWithType:type location:encoded modifierFlags:0 timestamp:NSProcessInfo.processInfo.systemUptime windowNumber:[row[@"windowId"] integerValue] context:nil eventNumber:1 clickCount:1 pressure:up?0.0:1.0];
+        NSEvent *native=[NSEvent mouseEventWithType:type location:encoded modifierFlags:0 timestamp:NSProcessInfo.processInfo.systemUptime windowNumber:[row[@"windowId"] integerValue] context:nil eventNumber:1 clickCount:type==NSEventTypeMouseMoved?0:1 pressure:(up||type==NSEventTypeMouseMoved)?0.0:1.0];
         if(!native||!native.CGEvent||native.windowNumber!=[row[@"windowId"] integerValue])Reject(@"EVENT_CREATION_FAILED",@"Measured-coordinate event creation failed");
         CGEventRef event=CGEventCreateCopy(native.CGEvent);if(!event)Reject(@"EVENT_CREATION_FAILED",@"Cannot copy window-bound event");
         CGPoint observed=CGEventGetLocation(event);
@@ -368,7 +368,12 @@ int main(void) {@autoreleasepool {
                         BOOL right=[request[@"button"] isEqual:@"right"];
                         NSArray *points=[op isEqual:@"click"]?@[@{@"x":request[@"x"],@"y":request[@"y"]}]:request[@"points"];
                         for(NSDictionary *p in points)RelativePoint(p); // Validate whole gesture before its first event.
-                        if(request[@"cursorMode"])SynchronizePointer(app,points[0]);
+                        if(request[@"cursorMode"]) {
+                            SynchronizePointer(app,points[0]);
+                            // InputSystem receives button state without position unless
+                            // the guarded initial move is sent before the first down.
+                            Recheck(app);Post(app,WindowMouseEvent(NSEventTypeMouseMoved,points[0]));
+                        }
                         Recheck(app);Post(app,WindowMouseEvent(right?NSEventTypeRightMouseDown:NSEventTypeLeftMouseDown,points[0]));
                         for(NSUInteger i=1;i<points.count;i++){Recheck(app);if(request[@"cursorMode"])SynchronizePointer(app,points[i]);Post(app,WindowMouseEvent(right?NSEventTypeRightMouseDragged:NSEventTypeLeftMouseDragged,points[i]));}
                         Recheck(app);Post(app,WindowMouseEvent(right?NSEventTypeRightMouseUp:NSEventTypeLeftMouseUp,points.lastObject));
