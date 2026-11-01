@@ -271,6 +271,107 @@ def spine_runtime_closure(candidate, rows, native, manifest, included):
         dynamicRuntime="not_run")
 
 
+
+def sdk_producer_declarations(root, files, producer, closure):
+    """Describe already-proven SDK payloads; never infer CLR or migration compatibility.
+
+    Assembly names/references below are declarations from the hash-bound build
+    receipt, not a second PE reader. The consumer must inspect the actual DLLs
+    and resolve historical MonoScript identities with its existing native tools.
+    """
+    if closure is None:
+        return []
+    plan_path = closure["sourceImportPlanPath"]
+    plan_raw = read(inside(producer, plan_path), max_bytes=128 * 1024 * 1024)
+    if sha(plan_raw) != closure["sourceImportPlanSha256"]:
+        fail("SDK_DECLARATION_PLAN_DRIFT", plan_path, "SDK declaration plan changed after verification")
+    plan = load(plan_raw, max_nodes=8_000_000)
+    stage = plan["spineNativeStage"]
+    editor = stage["editorRuntimeVariant"]
+    evidence_raw = read(safe(editor["sourceEvidencePath"]), max_bytes=128 * 1024 * 1024)
+    if sha(evidence_raw) != editor["sourceEvidenceSha256"]:
+        fail("SDK_DECLARATION_EVIDENCE_DRIFT", plan_path, "SDK build evidence changed after verification")
+    evidence = load(evidence_raw, max_nodes=8_000_000)
+    runtime = load(read(inside(root, closure["runtimeManifestPath"])))
+    assemblies, by_guid = [], {}
+    for role, paths in (("editor-only", closure["editorAssemblies"]),
+                        ("player-only", closure["playerAssemblies"])):
+        for path in paths:
+            meta_path = path + ".meta"
+            # Both payload and meta were checked by the closure and target audit.
+            # A GUID is still independently required: hashes do not imply one.
+            text = read(inside(root, meta_path)).decode("utf-8")
+            guids = re.findall(r"(?m)^guid: ([0-9a-f]{32})\s*$", text)
+            if len(guids) != 1 or guids[0] == "0" * 32 or guids[0] in by_guid:
+                fail("SDK_DECLARATION_GUID_INVALID", meta_path, "SDK DLL GUID must be unique, nonzero and explicit")
+            name = Path(path).name
+            declared = evidence["editorAssemblies"][name]
+            identity = (dict(name=declared["assemblyName"], version=declared["assemblyVersion"])
+                        if role == "editor-only" else declared["playerReferenceIdentity"])
+            if (not isinstance(identity.get("name"), str) or not identity["name"]
+                    or not re.fullmatch(r"[0-9]+(?:\.[0-9]+){3}", str(identity.get("version")))):
+                fail("SDK_DECLARATION_IDENTITY_INVALID", path, "Build evidence lacks its declared assembly identity")
+            staged = editor["assemblies"][name]
+            if identity != dict(name=staged["assemblyName"], version=staged["assemblyVersion"]):
+                fail("SDK_DECLARATION_IDENTITY_INVALID", path, "Stage and build declared identities differ")
+            if role == "editor-only" and declared.get("references", []) != staged.get("references", []):
+                fail("SDK_DECLARATION_IDENTITY_INVALID", path, "Stage and build declared references differ")
+            row = dict(path=path, guid=guids[0], sha256=files[path]["sha256"],
+                bytes=files[path]["bytes"], metaPath=meta_path,
+                metaSha256=files[meta_path]["sha256"], role=role,
+                declaredAssemblyIdentity=identity,
+                declaredReferences=declared.get("references", []) if role == "editor-only" else None,
+                referenceEvidence="pinned-editor-build" if role == "editor-only" else "consumer-inspection-required")
+            assemblies.append(row)
+            by_guid[guids[0]] = path
+    references = []
+    for path in sorted(files):
+        if not path.endswith((".prefab", ".asset", ".unity")):
+            continue
+        raw = read(inside(root, path), max_bytes=256 * 1024 * 1024)
+        if not any(guid.encode() in raw for guid in by_guid):
+            continue
+        # Only literal serialized m_Script PPtrs are claimed, without mapping
+        # their local IDs to CLR names or rewriting any asset.
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            fail("SDK_SCRIPT_REFERENCE_UNSUPPORTED", path, "SDK script reference is not UTF-8 serialized text")
+        local_id = None
+        for line in text.splitlines():
+            header = re.fullmatch(r"--- !u![0-9]+ &(-?[0-9]+)(?: stripped)?", line)
+            if line.startswith("---"):
+                local_id = int(header[1]) if header else None
+            if not re.match(r"^\s+m_Script:", line):
+                continue
+            if not any(guid in line for guid in by_guid):
+                continue
+            match = re.fullmatch(r"\s+m_Script: \{fileID: (-?[0-9]+), guid: ([0-9a-f]{32}), type: 3\}", line)
+            if not match or local_id is None or local_id == 0 or int(match[1]) == 0:
+                fail("SDK_SCRIPT_REFERENCE_UNSUPPORTED", path, "Expected explicit object and script GUID/localID tuple")
+            references.append(dict(path=path, sha256=files[path]["sha256"],
+                objectLocalId=local_id, scriptGuid=match[2], scriptLocalId=int(match[1]),
+                assemblyPath=by_guid[match[2]], typeResolution="consumer-native-readback-required"))
+    license_path = closure["licensePath"]
+    return [dict(schemaVersion=1, contract="monkey-native-sdk-declaration/1", sdkId="spine-3.8",
+        evidenceClass="producer-declaration-not-migration-approval",
+        sourceManifestSha256=closure["sourceManifestSha256"], sourceIrSha256=closure["sourceIrSha256"],
+        sourceImportPlanPath=plan_path, sourceImportPlanSha256=closure["sourceImportPlanSha256"],
+        runtimeManifestPath=closure["runtimeManifestPath"], runtimeManifestSha256=closure["runtimeManifestSha256"],
+        upstreamCommit=runtime["upstreamCommit"], sourceVersion=runtime["sourceVersion"],
+        compiledAgainst=runtime["compiledAgainst"],
+        editorBuildEvidence=dict(sha256=editor["sourceEvidenceSha256"], status=evidence["status"]),
+        assemblies=sorted(assemblies, key=lambda row: row["path"]),
+        license=dict(path=license_path, sha256=files[license_path]["sha256"],
+            terms="retained-verbatim-not-license-entitlement-or-redistribution-approval"),
+        runtimeShaders=closure["runtimeShaders"], producerHelpers=closure["helperPaths"],
+        serializedScriptReferences=references,
+        coverage=dict(assemblyIdentity="pinned-build-declaration", publicTypes="consumer-pe-cli-inspection-required",
+            playerAssemblyReferences="consumer-inspection-required", serializedReferences="literal-selected-m_Script-tuples-only",
+            nativeTypeResolution="not-performed", retainedSdkCompatibility="not-claimed",
+            migration="not-performed", packageCacheAssemblies="not-analyzed"))]
+
+
 def audit(candidate, expected_manifest, producer_candidate, expected_producer_manifest, output):
     root, producer = safe(candidate), safe(producer_candidate)
     raw = read(root / "manifest.json", max_bytes=128 * 1024 * 1024)
@@ -315,6 +416,10 @@ def audit(candidate, expected_manifest, producer_candidate, expected_producer_ma
         native = {row.get("path"): row.get("sha256") for row in readback.get("nativeFiles", [])
                   if isinstance(row, dict)}
         expected_spine = spine_runtime_closure(producer, source_files, native, source, set(files))
+        for row in expected_spine["files"]:
+            actual = files.get(row["path"])
+            if not actual or actual["sha256"] != row["sha256"] or actual["bytes"] != row["bytes"]:
+                fail("SPINE_RUNTIME_SELECTION_INCOMPLETE", row["path"], "Selected SDK file must match the complete producer closure")
         if manifest.get("spineRuntimeClosure") != expected_spine:
             fail("SPINE_RUNTIME_CLOSURE_MISMATCH", str(root), "Frozen Spine closure differs from the owner-manifest stage proof")
     elif manifest.get("spineRuntimeClosure") is not None:
@@ -353,6 +458,7 @@ def audit(candidate, expected_manifest, producer_candidate, expected_producer_ma
             for path in ("Packages/manifest.json", "Packages/packages-lock.json") if path in files],
         scripts=scripts, uncovered=uncovered,
         spineRuntimeClosure=expected_spine,
+        sdkProducerDeclarations=sdk_producer_declarations(root, files, producer, expected_spine),
         originalDiagnostics=manifest.get("diagnostics", []),
         boundary="Supplement only; original manifests/warnings unchanged. Compile proofs do not establish native compilation, physical input or recovered business behavior.")
     out = new_output(output, [root, producer])

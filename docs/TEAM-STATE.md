@@ -1,3 +1,13 @@
+# Current ownership and checkpoint — 2026-11-01
+
+The primary is the sole current monkey contract/source/version/delivery writer. Earlier renderer, resource, Creator teardown and selected-runtime modules have delivered and stopped writing. No monkey Editor/desktop window is active or reserved. SDK migration and App-instance binding execution belong to beaver; product integration belongs to its maintainer, with shared desktop ownership coordinated before any actual native work. No product files are assigned to monkey.
+
+Latest fixed monkey is dev7 `78f4f8d160ab7e09d38e84ba0f374a1b0a98081e`. The current bounded increment adds versioned SDK producer declarations to the existing immutable-selection supplement, preserving dev1/dev3/dev4/dev5/dev6/dev7 identities and evidence. PLAN.md's current table is the acceptance summary: dev3 actual Player checks, dev4 twenty-two scripts/zero uncovered with eleven historical warnings, dev6 exact-S2 native scale and GUI proof, dev7 eighty-seven-file closure/independent compile/beaver receipt and later bounded App31 product use are completed evidence. Historical pending statements below do not reopen those tasks. Generic SDK migration and reliable existing-App binding remain open and are not implied by declaration, guard or planning success.
+
+No new module agents, independent analyzer, full recovery, Editor operation, product write or release is needed for the producer declaration increment. Private paths, frozen package identities and consumer receipts remain in ignored evidence. Public source records contain no private logs or material.
+
+# Historical checkpoint records
+
 Current native validation: the previous complete save/reload baseline remains preserved. New sorting-presentation candidates have not passed; actual Editor execution has exposed source hierarchy boundaries, valid two-dimensional zero-Z transforms, empty-renderer states and Creator scene-context/API issues. Repairs and neutral checks are local work in progress. Do not report the earlier fifty-two save/reload count as acceptance of these newer candidates. The primary remains the only Editor and exporter operator.
 
 Latest native checkpoint: both Editors completed all fifty-two Prefab saves/reopens. Strict acceptance remains failed on the newly enforced static-presentation scope. Current integration corrects source asset identity recovery, source bitmap missing-glyph behavior, stencil material variant proof, editable layout initialization and native render ordering. The primary owns all shared import/export/hooks and Editors. No current failure is counted as dynamic-only merely because source business is disabled. Detailed candidate receipts remain private; no new Git push is authorized by this checkpoint.

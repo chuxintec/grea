@@ -19,3 +19,37 @@ When the candidate has a system-font readback, the output also includes its evid
 No `Library` tree is copied. Prefab YAML and selected asset bytes are carried without rewriting. Project business code, generated artifacts outside the selected closure, and unknown producer compile edges are not inferred or silently brought in.
 
 For an already finalized selection, `audit-native-code-dependencies --candidate <frozen> --expected-manifest <sha> --producer-candidate <original> --expected-producer-manifest <sha> --out <fresh>` writes an independent `code-dependency-supplement.json`. It verifies every target file and the target's original producer-manifest lineage. Template profiles are evaluated against the actual target script hashes, so a later runtime revision cannot borrow proof for older bytes. Carrier proof regenerates from the pinned original producer plan and joins its result to the exact target script hash; the plan need not be copied into the finalized target. Each script includes dependency paths and target hashes, package manifest/lock identities and a proof profile. Modified or unknown scripts remain in `uncovered`; original diagnostics are copied unchanged into the supplement. Consumers may accept only exact matching rows, retain unsupported warnings, and continue their existing compile/adopt/reopen validation. This command never changes the finalized candidate or repeats font generation.
+
+
+## Versioned SDK producer declarations
+
+The existing `audit-native-code-dependencies` supplement additionally emits
+`sdkProducerDeclarations` (empty for selections without a verified Spine stage).
+Each row uses `contract: "monkey-native-sdk-declaration/1"` and schema version 1.
+It binds the same source manifest/IR/import plan/runtime manifest/build evidence,
+upstream commit/source version and target Unity version as `spineRuntimeClosure`.
+The selected target must contain every closure file at its exact hash and byte
+count; a complete-looking closure claim cannot cover an omitted runtime file.
+
+Each assembly records exact project path, SHA/bytes, meta path/SHA, nonzero unique
+GUID and `editor-only` or `player-only` role. Its `declaredAssemblyIdentity` comes
+from the pinned producer build receipt, and Editor references are explicitly
+labelled build declarations. Player references and actual public types require
+consumer PE/CLI inspection. The declaration records license path/hash without
+asserting entitlement or redistribution approval; shader/helper paths remain
+bound by the parent closure. It is not an adoption `managedAssemblyPolicy` and
+cannot override consumer conflict checks or authorize a retained-SDK replacement.
+
+`serializedScriptReferences` records literal selected-asset `m_Script` tuples
+whose GUID targets one of those exact DLLs: asset path/SHA, object local ID,
+script GUID/local ID and assembly path. Unknown tuple syntax or missing object
+identity fails instead of guessing. It neither resolves the local ID to a CLR
+type nor claims all serialized/conditional/package references were analyzed.
+Use beaver's actual metadata inspection and native type/reference readback for
+that work; matching names alone do not prove historical MonoScript compatibility.
+
+This is additive supplemental evidence only. The finalized candidate is never
+rewritten or relabelled, existing `adoptionDependencies` remains C# schema 1, and
+native import, independent compilation, migration/rollback and product Player
+checks retain their original separate evidence requirements. No new CLI flags
+or operation are introduced.

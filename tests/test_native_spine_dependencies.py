@@ -225,7 +225,8 @@ def test_freeze_registers_full_spine_pairs_and_assets_in_candidate_manifest(tmp_
     prefab_path = "Assets/Game/Prefabs/Spine.prefab"
     prefab = ("--- !u!114 &1\nMonoBehaviour:\n" + "\n".join(
         f"  m_Script: {{fileID: 11500000, guid: {helper_guid[path]}, type: 3}}"
-        for path in helper_guid) + "\n").encode()
+        for path in helper_guid) + "\n--- !u!114 &2\nMonoBehaviour:\n"
+        + f"  m_Script: {{fileID: -12345, guid: {4:032x}, type: 3}}\n").encode()
     add_owned(prefab_path, prefab)
     add_owned(prefab_path + ".meta", f"fileFormatVersion: 2\nguid: {'b' * 32}\n".encode())
     add_owned("Packages/manifest.json", b'{"dependencies":{"com.unity.ugui":"2.0.0"}}\n')
@@ -273,3 +274,42 @@ def test_freeze_registers_full_spine_pairs_and_assets_in_candidate_manifest(tmp_
     audited = audit(output, sha((output / "manifest.json").read_bytes()), root, sha(manifest_raw),
                     tmp_path / "code-dependency-audit")
     assert audited["spineRuntimeClosure"]["playerAssemblies"] == result["spineRuntimeClosure"]["playerAssemblies"]
+    sdk, = audited["sdkProducerDeclarations"]
+    assert sdk["contract"] == "monkey-native-sdk-declaration/1"
+    assert {row["role"] for row in sdk["assemblies"]} == {"editor-only", "player-only"}
+    assert len(sdk["assemblies"]) == 4
+    assert sdk["license"]["sha256"] == by_path[sdk["license"]["path"]]["sha256"]
+    assert sdk["serializedScriptReferences"] == [dict(path=prefab_path, sha256=sha(prefab),
+        objectLocalId=2, scriptGuid=f"{4:032x}", scriptLocalId=-12345,
+        assemblyPath="Assets/Plugins/Spine38/EditorRuntime/spine-unity.dll",
+        typeResolution="consumer-native-readback-required")]
+    assert sdk["coverage"]["retainedSdkCompatibility"] == "not-claimed"
+    assert sdk["coverage"]["publicTypes"] == "consumer-pe-cli-inspection-required"
+    # A self-consistent target manifest cannot omit a non-GUID runtime file.
+    removed = "Assets/Plugins/Spine38/spine-csharp.dll"
+    (output / removed).unlink()
+    result["files"] = [row for row in result["files"] if row["path"] != removed]
+    changed = json.dumps(result).encode()
+    (output / "manifest.json").write_bytes(changed)
+    with pytest.raises(ParseError, match="SPINE_RUNTIME_SELECTION_INCOMPLETE"):
+        audit(output, sha(changed), root, sha(manifest_raw), tmp_path / "incomplete-audit")
+
+
+def test_sdk_declaration_rejects_ambiguous_guid_and_unbound_script_tuple(tmp_path):
+    from monkey.native_code_dependencies import sdk_producer_declarations
+    root, rows, manifest, included, _ = _fixture(tmp_path)
+    closure = spine_runtime_closure(root, rows, {}, manifest, included)
+    files = {row["path"]: row for row in closure["files"]}
+    dll = closure["editorAssemblies"][0]
+    meta = root / (dll + ".meta")
+    original = meta.read_text()
+    meta.write_text(original.replace(f"{3:032x}", f"{1:032x}"))
+    with pytest.raises(ParseError, match="SDK_DECLARATION_GUID_INVALID"):
+        sdk_producer_declarations(root, files, root, closure)
+    meta.write_text(original)
+    asset = "Assets/Bad.asset"
+    raw = f"  m_Script: {{fileID: 17, guid: {3:032x}, type: 3}}\n".encode()
+    (root / asset).write_bytes(raw)
+    files[asset] = dict(path=asset, sha256=sha(raw), bytes=len(raw))
+    with pytest.raises(ParseError, match="SDK_SCRIPT_REFERENCE_UNSUPPORTED"):
+        sdk_producer_declarations(root, files, root, closure)
