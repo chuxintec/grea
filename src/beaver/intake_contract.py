@@ -108,6 +108,14 @@ def _unique(values, where):
         seen[key] = value
 
 
+def _unique_exact(values, where):
+    seen = set()
+    for value in values:
+        if value in seen:
+            _bad(where, f"Duplicate value: {value!r}", "DUPLICATE")
+        seen.add(value)
+
+
 def _simple_assembly(value, where):
     _string(value, where)
     if (not re.fullmatch(r"[A-Za-z0-9_.-]+", value) or value in (".", "..")
@@ -135,11 +143,14 @@ def _field_value(kind, value, where):
         _int64(local_id, where + ".localId", nonzero=True)
         _string(obj_type, where + ".type")
         _simple_assembly(assembly, where + ".assembly")
+    elif kind == "character":
+        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 65535:
+            _bad(where, "UTF-16 code unit integer in 0..65535 required", "VALUE")
     else:
         _bad(where, "Field kind must be integer, float, boolean, string, or object", "ENUM")
 
 
-def _owner_rows(objects, where, total_fields=None):
+def _owner_rows(objects, where, total_fields=None, allow_character=False):
     """Validate typed native owner observations; optionally enforce a shared field budget."""
     local_ids = []
     for obj_index, obj in enumerate(objects):
@@ -161,20 +172,39 @@ def _owner_rows(objects, where, total_fields=None):
             _exact(field, {"propertyPath", "kind", "value"}, field_where)
             property_paths.append(_string(field["propertyPath"], field_where + ".propertyPath"))
             kind = _string(field["kind"], field_where + ".kind")
+            if kind == "character" and not allow_character:
+                _bad(field_where + ".kind", "character kind is available only in schemaVersion 3", "ENUM")
             _field_value(kind, field["value"], field_where + ".value")
         _unique(property_paths, obj_where + ".fields.propertyPath")
     _unique([str(v) for v in local_ids], where + ".localId")
     return total_fields
 
 
+def _csharp_identifier(value, where):
+    _string(value, where)
+    if not value:
+        _bad(where, "C# identifier required", "IDENTIFIER")
+    def start(ch):
+        category = unicodedata.category(ch)
+        return ch == "_" or category in {"Lu", "Ll", "Lt", "Lm", "Lo", "Nl"}
+    def part(ch):
+        category = unicodedata.category(ch)
+        return start(ch) or category in {"Mn", "Mc", "Nd", "Pc", "Cf"}
+    if not start(value[0]) or any(not part(ch) for ch in value[1:]):
+        _bad(where, "C# identifier required", "IDENTIFIER")
+    return value
+
+
 def validate_spec(doc):
-    """Validate and return a v1 or v2 additive intake spec without normalization."""
+    """Validate and return a v1, v2 or v3 additive intake spec without normalization."""
     if not isinstance(doc, dict):
         _bad("$", "Object required")
     version = doc.get("schemaVersion")
-    if type(version) is not int or version not in (1, 2):
-        _bad("schemaVersion", "schemaVersion 1 or 2 required", "VERSION")
+    if type(version) is not int or version not in (1, 2, 3):
+        _bad("schemaVersion", "schemaVersion 1, 2, or 3 required", "VERSION")
     keys = _TOP_KEYS if version == 1 else _TOP_KEYS | {"externalAssets", "packageScripts"}
+    if version == 3:
+        keys = keys | {"newScripts"}
     _exact(doc, keys, "$")
     if doc["operation"] != "additive-intake":
         _bad("operation", "operation must be additive-intake", "OPERATION")
@@ -229,20 +259,6 @@ def validate_spec(doc):
         _bad("externalScripts", "External script paths cannot overlap addition sources or targets", "OVERLAP")
 
     omitted = _array(doc["omittedCompilerInputs"], "omittedCompilerInputs")
-    omitted_paths = []
-    add_source_keys = {p.casefold() for p in addition_sources}
-    for index, item in enumerate(omitted):
-        where = f"omittedCompilerInputs[{index}]"
-        _exact(item, {"path", "reason", "coveredByExternalScript"}, where)
-        path = _asset_path(item["path"], where + ".path", _COMPILER_EXTENSIONS)
-        _string(item["reason"], where + ".reason")
-        covered = _string(item["coveredByExternalScript"], where + ".coveredByExternalScript")
-        if covered not in ext_source_set:
-            _bad(where + ".coveredByExternalScript", "Must name a declared externalScripts.source", "REFERENCE")
-        if path.casefold() in add_source_keys or path.casefold() in {p.casefold() for p in ext_sources}:
-            _bad(where + ".path", "Omitted compiler input cannot overlap an addition or external script source", "OVERLAP")
-        omitted_paths.append(path)
-    _unique(omitted_paths, "omittedCompilerInputs.path")
 
     verifications = _array(doc["verifications"], "verifications")
     verified_assets, total_fields = [], 0
@@ -254,12 +270,13 @@ def validate_spec(doc):
             _bad(where + ".asset", "Verification asset must match an additions.source prefab", "REFERENCE")
         verified_assets.append(asset)
         objects = _array(item["objects"], where + ".objects", 1, 4096)
-        total_fields = _owner_rows(objects, where + ".objects", total_fields)
+        total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version == 3))
     _unique(verified_assets, "verifications.asset")
 
     external_asset_sources, external_asset_targets, external_asset_guids = [], [], []
     external_asset_paths = set()
-    if version == 2:
+    package_guids = []
+    if version in (2, 3):
         external_assets = _array(doc["externalAssets"], "externalAssets", maximum=256)
         total_asset_objects = 0
         for index, item in enumerate(external_assets):
@@ -277,7 +294,7 @@ def validate_spec(doc):
             total_asset_objects += len(objects)
             if total_asset_objects > 4096:
                 _bad("externalAssets", "Combined object count exceeds 4096", "BOUNDS")
-            total_fields = _owner_rows(objects, where + ".objects", total_fields)
+            total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version == 3))
             external_asset_sources.append(source)
             external_asset_targets.append(target)
             external_asset_guids.append(item["guid"])
@@ -293,7 +310,7 @@ def validate_spec(doc):
             _bad("externalAssets", "External asset GUID cannot overlap an external script GUID", "OVERLAP")
 
         package_scripts = _array(doc["packageScripts"], "packageScripts", maximum=64)
-        package_targets, package_guids = [], []
+        package_targets = []
         for index, item in enumerate(package_scripts):
             where = f"packageScripts[{index}]"
             _exact(item, {"target", "guid", "type", "assembly", "localId", "name", "packageName", "packageVersion", "packageSource", "packageJsonSha256", "sha256", "metaSha256", "reason"}, where)
@@ -326,6 +343,82 @@ def validate_spec(doc):
         _unique(package_guids, "packageScripts.guid")
         if set(package_guids) & (set(ext_guids) | set(external_asset_guids)):
             _bad("packageScripts", "Package script GUID cannot overlap an external script or asset GUID", "OVERLAP")
+
+    new_script_sources, new_script_targets, new_script_guids, new_script_types = [], [], [], []
+    new_script_paths = set()
+    if version == 3:
+        new_scripts = _array(doc["newScripts"], "newScripts", maximum=16)
+        keys = {"source", "target", "guid", "sha256", "metaSha256", "sourceType", "sourceAssembly", "targetType", "targetAssembly", "baseType", "baseAssembly", "localId", "fields", "reason"}
+        for index, item in enumerate(new_scripts):
+            where = f"newScripts[{index}]"
+            _exact(item, keys, where)
+            source = _asset_path(item["source"], where + ".source", {".cs"})
+            target = _asset_path(item["target"], where + ".target", {".cs"})
+            if any(part.casefold() == "editor" for part in target.split("/")[1:-1]):
+                _bad(where + ".target", "New script target cannot be inside an Editor directory", "PATH")
+            _guid(item["guid"], where + ".guid")
+            _hash(item["sha256"], where + ".sha256")
+            _hash(item["metaSha256"], where + ".metaSha256")
+            source_type = _string(item["sourceType"], where + ".sourceType")
+            target_type = _string(item["targetType"], where + ".targetType")
+            if source_type != target_type:
+                _bad(where, "Frozen source and target script types must match", "TYPE")
+            class_name = target_type.rsplit(".", 1)[-1]
+            _csharp_identifier(class_name, where + ".targetType")
+            target_stem = target.rsplit("/", 1)[-1][:-3]
+            if target_stem != class_name:
+                _bad(where + ".target", "Target filename must match the target type's final class name", "TYPE")
+            _simple_assembly(item["sourceAssembly"], where + ".sourceAssembly")
+            if item["targetAssembly"] != "Assembly-CSharp":
+                _bad(where + ".targetAssembly", "New scripts must target Assembly-CSharp", "ASSEMBLY")
+            _string(item["baseType"], where + ".baseType")
+            _simple_assembly(item["baseAssembly"], where + ".baseAssembly")
+            _int64(item["localId"], where + ".localId", nonzero=True)
+            fields = _array(item["fields"], where + ".fields", maximum=128)
+            field_names = []
+            for field_index, field in enumerate(fields):
+                field_where = f"{where}.fields[{field_index}]"
+                _exact(field, {"name", "type", "assembly"}, field_where)
+                field_names.append(_csharp_identifier(field["name"], field_where + ".name"))
+                _string(field["type"], field_where + ".type")
+                _simple_assembly(field["assembly"], field_where + ".assembly")
+            _unique_exact(field_names, where + ".fields.name")
+            _string(item["reason"], where + ".reason")
+            new_script_sources.append(source)
+            new_script_targets.append(target)
+            new_script_guids.append(item["guid"])
+            new_script_types.append(target_type)
+            row_paths = {source.casefold(), target.casefold()}
+            if new_script_paths & row_paths:
+                _bad(where, "New script paths cannot overlap paths from another newScripts row", "OVERLAP")
+            new_script_paths.update(row_paths)
+
+        _unique(new_script_sources, "newScripts.source")
+        _unique(new_script_targets, "newScripts.target")
+        _unique(new_script_guids, "newScripts.guid")
+        _unique_exact(new_script_types, "newScripts.type")
+        other_paths = addition_path_keys | {p.casefold() for p in ext_sources + ext_targets} | external_asset_paths
+        if new_script_paths & other_paths:
+            _bad("newScripts", "New script paths cannot overlap additions, external scripts, or external assets", "OVERLAP")
+        if set(new_script_guids) & (set(ext_guids) | set(external_asset_guids) | set(package_guids)):
+            _bad("newScripts", "New script GUID cannot overlap external script, external asset, or package script GUID", "OVERLAP")
+
+    omitted_paths = []
+    add_source_keys = {p.casefold() for p in addition_sources}
+    external_script_sources = ext_source_set | set(new_script_sources)
+    external_script_path_keys = {p.casefold() for p in ext_sources + new_script_sources}
+    for index, item in enumerate(omitted):
+        where = f"omittedCompilerInputs[{index}]"
+        _exact(item, {"path", "reason", "coveredByExternalScript"}, where)
+        path = _asset_path(item["path"], where + ".path", _COMPILER_EXTENSIONS)
+        _string(item["reason"], where + ".reason")
+        covered = _string(item["coveredByExternalScript"], where + ".coveredByExternalScript")
+        if covered not in external_script_sources:
+            _bad(where + ".coveredByExternalScript", "Must name a declared externalScripts.source or newScripts.source", "REFERENCE")
+        if path.casefold() in add_source_keys or path.casefold() in external_script_path_keys:
+            _bad(where + ".path", "Omitted compiler input cannot overlap an addition or declared script source", "OVERLAP")
+        omitted_paths.append(path)
+    _unique(omitted_paths, "omittedCompilerInputs.path")
 
     protected = _array(doc["protectedAssets"], "protectedAssets")
     protected_paths = []

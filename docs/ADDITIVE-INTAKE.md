@@ -8,7 +8,7 @@ discovery. Plan, apply, rollback, native readback, and prefab-context coverage
 belong to separate workflow stages; passing this validator alone is not
 evidence that any of those stages ran or that a product works.
 
-The [v1 JSON Schema](schemas/additive-intake-1.schema.json) and [v2 JSON Schema](schemas/additive-intake-2.schema.json)
+The [v1 JSON Schema](schemas/additive-intake-1.schema.json), [v2 JSON Schema](schemas/additive-intake-2.schema.json), and [v3 JSON Schema](schemas/additive-intake-3.schema.json)
 use draft 2020-12 to describe each version's static closed-object shape,
 required fields, array limits, scalar types, hashes, and typed field-value
 union. They are useful for editors and early structural checks.
@@ -87,6 +87,48 @@ before and after native import and must fail closed if its report exceeds the
 native output budget. The JSON Schema and contract validator only establish
 the declaration shape; they do not read packages, import assets, or prove
 native identity.
+
+## Schema version 3: frozen new scripts and UTF-16 characters
+
+Version 3 keeps all version 2 fields and rules and requires a closed
+`newScripts` array with at most 16 records. It also adds the `character` field
+kind to prefab and external-asset observations. Versions 1 and 2 remain
+unchanged and reject `character`.
+
+Each `newScripts` record has exactly `source`, `target`, `guid`, `sha256`,
+`metaSha256`, `sourceType`, `sourceAssembly`, `targetType`, `targetAssembly`,
+`baseType`, `baseAssembly`, `localId`, `fields`, and `reason`. Source and target
+are canonical `Assets/` C# paths. The target cannot be under an `Editor`
+directory, and its filename must equal the final class name in `targetType`.
+Source and target types must match; the target assembly is exactly
+`Assembly-CSharp`. Source/base assemblies are simple names. The GUID and file
+and metadata hashes are pinned; local ID is a nonzero signed 64-bit integer.
+Fields have at most 128 exact `{name, type, assembly}` entries, with unique C#
+identifier names and nonempty types/simple assembly names. Source, target,
+GUID, and target type values are unique across the array. One row may use the
+same source and target path; path reuse across rows or with additions,
+external scripts, or external assets is rejected. GUIDs cannot collide with
+external script, external asset, or package script declarations.
+
+`omittedCompilerInputs.coveredByExternalScript` may name either an
+`externalScripts.source` or a `newScripts.source` in v3. A new script source
+cannot itself be listed as omitted. The plan stage still discovers all
+candidate compiler inputs and rejects unaccounted compiler files.
+
+The native workflow freezes each declared script's source and metadata bytes,
+uses the compiler stage, then runs an independent code check for
+`MonoScript.GetClass()`, the declared base type, and field identities before
+Prefab verification and an independent cold reopen. If the gated method
+entered and a later phase fails, recovery uses the existing low-level
+`restore_code` path under its recorded before-image guards. A failure before
+the native method is entered does not invoke that method or count as a
+behavior pass. These gates verify declared source identities and serialized
+fields; they do not claim gameplay behavior. Existing transactions keep their
+previous runtime contract.
+
+The v3 `character` value is an integer UTF-16 code unit from 0 through 65535,
+including surrogate values. It is preserved as the supplied code unit; it is
+not converted to or normalized as a Unicode code point.
 
 Paths reject traversal, empty components, backslashes, colons, control
 characters, non-NFC spellings, Windows-invalid/reserved names, and trailing
@@ -208,3 +250,5 @@ Fixed24 package declarations require an already-resolved, direct, exact version 
 ## Fixed25 reference traversal
 
 The 250000-visited-property guard stays in place per retained object, and the persistent-reference guard remains 250000. Traversal skips a nonempty homogeneous array subtree only when Unity reports a recognized primitive element type and its first element is a matching childless, non-array scalar SerializedProperty. Character bytes, integers, booleans, floats and strings qualify only with this double check. Empty or unknown arrays, object/PPtr arrays, structs, managed references and arrays whose element shape contradicts a primitive name are traversed normally. Nested complex arrays remain traversed; a proven primitive array inside a nested struct can be skipped without hiding its sibling references. Declared typed-field checks still run independently before traversal. Native reports add referenceTraversals with visited counts and each skipped array's path/type/length/scalar property type. Exact object and persistent-reference snapshots continue to be compared across preflight, cold reopen and rollback. No larger budget, reference suppression, resource rewrite or new CLI/spec field is introduced.
+
+The source compiler stage reuses BeaverAdoption code staging and its closed-Editor restore_code recovery; intake does not synthesize an adoption baseline or change old adoption state. A declaration cannot add asmdefs/asmrefs/DLLs. Existing ancestor asmdef/asmref paths are refused for new scripts, and native loaded-type absence is required before staging. GetClass must match the only loaded type of the reviewed full name, its default Assembly-CSharp domain, direct base and every declared field type/assembly before any new Prefab import. Partial failed compilation is recoverable only after the owned Editor exits and current files/directories exactly match the recorded transaction; offline restore_code removes only checkpointed unchanged new source/meta, then a separate native rollback verifies source restoration, type absence and exact original files/directories. Later edits refuse before this removal. Apply may need five native phases; recommended outer budget5*inner+310, rollback2*inner+160, e.g inner<=280 under an1800-second cap. Unknown methods are neither invoked nor declared restored.

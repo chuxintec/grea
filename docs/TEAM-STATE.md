@@ -1,5 +1,17 @@
 # Maintainer responsibilities
 
+## Replacement owner — 2026-11-02
+
+Current primary local/01a19b7a-b50f-7fb0-9c2b-64e71cc9b342 took repository/private Editor single writer after Manager writeReleased=true and verified quiesced structured handoff SHA867a00c6aa674f438357e7083f14ab6da921807addd5163ddb4b61652a59f348. Old primary and contributor instances are not reused. Source WIP/backup and old journals remain preserved. Current injected policy is never/danger-full-access/network enabled; Manager independently records user reviewer and Sol High. One fresh read-only reviewer /root/review_intake3 requested Luna High (spawn accepted; actual identity not independently probed) reviewed contract/schema/tests with no substantive defect; no write scope, Editor or recursion. Primary owns implementation, integration, final installed/native validation and sealing.
+
+## Replacement quiescence — 2026-11-02
+
+Parent stopped new transactions and delegation after verified human replacement request. Source fix26 positive and compile-error transactions both rolled-back/exited; intake_contract contributor completed/reclaimable, no active module writer. Handoff `.private/handoffs/20261102-beaver-replacement/` records exact WIP and source evidence. Tool repo/isolated Editor writer released; no ordinary-message resume.
+
+## Active fixed26 module — 2026-11-02
+
+Reused /root/intake_contract owns only intake_contract.py/schema3/contract tests/ADDITIVE-INTAKE docs; parent owns compiler plan/orchestration/native companion/shared CLI/version/PLAN/TEAM, plan guard tests, private fixtures and fixed delivery. No new agent or recursive delegation. Actual source trial two schema-only classes/default-domain cold/native Character42/0/65535 passed; final installed failure/recovery acceptance pending. Project owner alone writes formal code/metadata; old transactions and screen remain untouched.
+
 ## Active fixed25 — 2026-11-02
 
 Primary sole writer for narrow BeaverIntake.cs scalar-array traversal, shared version/docs and isolated native font/complex-array fixtures. No additional subagent for this single critical path. Real formal font only copied read-only; formal project/old fixed24 transaction stays owner-controlled. Existing primitive/reference limits, exact references, cold/rollback and source-partial boundaries remain. Fixed25 source43adf74/producer3c342593 sealed:137 runtime files match source/wheel/install;81 installed checks without skips. Final real-font/full-oracle/cold/rollback and reference/complex-array budget refusals passed, font later-edit protection preserved. Three necessary recipient deliveries succeeded after fresh explicit human fix25 approval; initial automatic-review refusal retained. GREA public binding verified:137 package/2 launcher pins,101 focused checks; paired source CLI config/lock/examples delivered for owner new-plan TipUI consumption. Actual formal TipUI font gap closed:126437 old ledger entries preserved,8 added file hashes/closure checked,16owners/195fields,3 font objects/13 refs,2 package+2 project identities match cold;2 exited0 processes. Closure SHAd157463364248b0592a75bb397da200354ebb2e1c74071102accbde8308c6dd8. Formal cumulative5 roots, source partial and visual/Player/business open. Old fixed24 zero rollback unchanged; new formal rollback not_run; installed plugin unchanged.

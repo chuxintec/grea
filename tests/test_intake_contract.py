@@ -36,6 +36,13 @@ def spec_v2():
     return value
 
 
+def spec_v3():
+    value = spec_v2()
+    value["schemaVersion"] = 3
+    value["newScripts"] = []
+    return value
+
+
 def external_script(**changes):
     item = {
         "source": "Assets/Candidate/Widget.cs", "sourceGuid": GUID,
@@ -68,6 +75,21 @@ def package_script(**changes):
         "packageVersion": "1.0.0-pre.2+build.7", "packageSource": "registry",
         "packageJsonSha256": HASH, "sha256": "f" * 64, "metaSha256": "c" * 64,
         "reason": "Existing uGUI package script identity required by retained references",
+    }
+    item.update(changes)
+    return item
+
+
+def new_script(**changes):
+    item = {
+        "source": "Assets/Candidate/Creature.cs", "target": "Assets/Game/Creature.cs",
+        "guid": "6" * 32, "sha256": HASH, "metaSha256": "c" * 64,
+        "sourceType": "Game.Creature", "sourceAssembly": "Candidate.Game",
+        "targetType": "Game.Creature", "targetAssembly": "Assembly-CSharp",
+        "baseType": "UnityEngine.MonoBehaviour", "baseAssembly": "UnityEngine.CoreModule",
+        "localId": 11500000,
+        "fields": [{"name": "health", "type": "System.Int32", "assembly": "System.Private.CoreLib"}],
+        "reason": "Frozen user script added by the approved source port",
     }
     item.update(changes)
     return item
@@ -365,6 +387,141 @@ class AdditiveIntakeContractTests(unittest.TestCase):
             {**valid, "unexpected": 1},
             {**valid, "externalAssets": [{**external_asset(), "extra": 1}]},
             {**valid, "packageScripts": [{**package_script(), "packageVersion": "../package"}]},
+        ):
+            self.assertFalse(validator.is_valid(invalid))
+
+    def test_v1_and_v2_continue_to_reject_character_fields(self):
+        for value in (spec(), spec_v2()):
+            value["verifications"][0]["objects"][0]["fields"][0] = {"propertyPath": "glyph", "kind": "character", "value": 42}
+            self.assert_invalid(value, "ENUM")
+        value = spec_v2(); value["externalAssets"] = [external_asset(objects=[{
+            "localId": 1, "type": "CharacterAsset", "assembly": "Game", "name": "", "fields": [
+                {"propertyPath": "glyph", "kind": "character", "value": 42}
+            ]
+        }])]
+        self.assert_invalid(value, "ENUM")
+
+    def test_v3_accepts_utf16_code_units_including_surrogates(self):
+        value = spec_v3()
+        value["verifications"][0]["objects"][0]["fields"] = [
+            {"propertyPath": f"glyph{i}", "kind": "character", "value": code}
+            for i, code in enumerate((0, 42, 65535, 0xD800))
+        ]
+        value["externalAssets"] = [external_asset(objects=[{
+            "localId": 1, "type": "CharacterAsset", "assembly": "Game", "name": "", "fields": [
+                {"propertyPath": "glyph", "kind": "character", "value": 65535}
+            ]
+        }])]
+        self.assertIs(validate_spec(value), value)
+
+    def test_v3_character_values_reject_bool_float_and_out_of_range_values(self):
+        for invalid in (True, False, -1, 65536, 1.0, "A"):
+            value = spec_v3()
+            value["verifications"][0]["objects"][0]["fields"][0] = {"propertyPath": "glyph", "kind": "character", "value": invalid}
+            self.assert_invalid(value)
+
+    def test_v3_new_scripts_accept_frozen_code_contract_and_same_source_target_path(self):
+        value = spec_v3(); value["newScripts"] = [new_script()]
+        self.assertIs(validate_spec(value), value)
+        same = spec_v3(); same["newScripts"] = [new_script(source="Assets/Game/Creature.cs", target="Assets/Game/Creature.cs")]
+        self.assertIs(validate_spec(same), same)
+
+    def test_v3_new_script_paths_types_assemblies_hashes_and_identifiers_are_strict(self):
+        for bad in (
+            {"target": "Assets/Game/Editor/Creature.cs"},
+            {"target": "Assets/Game/Other.cs"},
+            {"targetType": "Game.Other"},
+            {"sourceType": "Game.Other"},
+            {"targetAssembly": "Candidate.Game"},
+            {"sourceAssembly": "Game.dll"},
+            {"baseType": ""},
+            {"baseAssembly": "Game.dll"},
+            {"localId": True},
+            {"localId": 0},
+            {"guid": "F" * 32},
+            {"sha256": "A" * 64},
+            {"metaSha256": "z" * 64},
+            {"fields": [{"name": "1bad", "type": "System.Int32", "assembly": "Core"}]},
+            {"fields": [{"name": "bad-name", "type": "System.Int32", "assembly": "Core"}]},
+            {"fields": [{"name": "health", "type": "", "assembly": "Core"}]},
+            {"fields": [{"name": "health", "type": "System.Int32", "assembly": "Core.dll"}]},
+        ):
+            value = spec_v3(); value["newScripts"] = [new_script(**bad)]
+            self.assert_invalid(value)
+        value = spec_v3(); value["newScripts"] = [new_script(fields=[
+            {"name": "health", "type": "System.Int32", "assembly": "Core"},
+            {"name": "health", "type": "System.Single", "assembly": "Core"},
+        ])]
+        self.assert_invalid(value, "DUPLICATE")
+        value = spec_v3(); value["newScripts"] = [new_script(fields=[
+            {"name": f"field{i}", "type": "System.Int32", "assembly": "Core"} for i in range(129)
+        ])]
+        self.assert_invalid(value, "BOUNDS")
+
+    def test_v3_new_script_uniqueness_path_crossings_and_guid_collisions(self):
+        value = spec_v3(); value["newScripts"] = [new_script(), new_script(source="Assets/Candidate/Other.cs", target="Assets/Other/Creature.cs", guid="7" * 32)]
+        self.assert_invalid(value, "DUPLICATE")
+        value = spec_v3(); value["newScripts"] = [new_script(), new_script(source="Assets/Game/Creature.cs", target="Assets/Game/Other.cs", guid="7" * 32, sourceType="Game.Other", targetType="Game.Other")]
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v3(); value["externalScripts"] = [external_script()]; value["newScripts"] = [new_script(source="Assets/Game/Widget.cs", target="Assets/Game/Creature.cs")]
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v3(); value["externalScripts"] = [external_script()]; value["newScripts"] = [new_script(guid=GUID)]
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v3(); value["externalAssets"] = [external_asset(guid="8" * 32)]; value["newScripts"] = [new_script(guid="8" * 32)]
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v3(); value["packageScripts"] = [package_script(guid="8" * 32)]; value["newScripts"] = [new_script(guid="8" * 32)]
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v3(); value["newScripts"] = [new_script()]; value["omittedCompilerInputs"] = [{
+            "path": "Assets/Candidate/Creature.cs", "reason": "wrongly omitted", "coveredByExternalScript": "Assets/Candidate/Creature.cs"
+        }]
+        self.assert_invalid(value, "OVERLAP")
+
+    def test_v3_new_script_array_is_bounded_and_closed(self):
+        value = spec_v3(); value["newScripts"] = [{}] * 17
+        self.assert_invalid(value, "BOUNDS")
+        value = spec_v3(); value["newScripts"] = [{**new_script(), "extra": True}]
+        self.assert_invalid(value, "FIELDS")
+
+    def test_v3_omitted_compiler_input_can_name_new_script_source_as_coverage_only(self):
+        value = spec_v3(); value["newScripts"] = [new_script()]
+        value["omittedCompilerInputs"] = [{
+            "path": "Assets/Candidate/Other.asmdef", "reason": "Candidate-only assembly setup",
+            "coveredByExternalScript": "Assets/Candidate/Creature.cs",
+        }]
+        self.assertIs(validate_spec(value), value)
+
+    def test_schema3_is_closed_and_adds_character_and_new_script_definitions(self):
+        path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-3.schema.json"
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
+        self.assertEqual(schema["properties"]["schemaVersion"], {"const": 3})
+        self.assertIs(schema["additionalProperties"], False)
+        self.assertIn("newScripts", schema["required"])
+        self.assertEqual(schema["properties"]["newScripts"]["maxItems"], 16)
+        self.assertIs(schema["$defs"]["newScript"]["additionalProperties"], False)
+        self.assertEqual(len(schema["$defs"]["field"]["oneOf"]), 6)
+        self.assertEqual(schema["$defs"]["field"]["oneOf"][-1]["properties"]["value"], {"type": "integer", "minimum": 0, "maximum": 65535})
+
+    def test_schema3_examples_when_optional_jsonschema_is_available(self):
+        try:
+            from jsonschema import Draft202012Validator
+        except ImportError:
+            self.skipTest("optional jsonschema package is not installed")
+        path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-3.schema.json"
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        valid = spec_v3(); valid["newScripts"] = [new_script()]
+        valid["verifications"][0]["objects"][0]["fields"] = [{"propertyPath": "glyph", "kind": "character", "value": 0xD800}]
+        self.assertTrue(validator.is_valid(valid))
+        for invalid in (
+            {**valid, "unexpected": 1},
+            {**valid, "newScripts": [{**new_script(), "unknown": True}]},
+            {**valid, "verifications": [{"asset": "Assets/A.prefab", "objects": [{
+                "localId": 1, "type": "T", "assembly": "A", "name": "", "fields": [
+                    {"propertyPath": "glyph", "kind": "character", "value": 65536}
+                ]
+            }]}]},
         ):
             self.assertFalse(validator.is_valid(invalid))
 

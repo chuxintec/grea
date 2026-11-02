@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using UnityEngine;
 using UnityEditor;
+using System.Reflection;
 
 // Read-only native gates for create-only intake. Asset writes use BeaverAdoption.
 public static class BeaverIntake {
@@ -18,12 +19,15 @@ public static class BeaverIntake {
     [Serializable] public class Addition { public string target,guid,fileHash,metaHash; }
     [Serializable] public class External { public string target,guid,sha256,metaSha256; public Owner[] objects; }
     [Serializable] public class PackageScript { public string target,guid,type,assembly,name,packageName,packageVersion,packageSource,packageJsonSha256,sha256,metaSha256,resolvedRoot; public long localId; }
-    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public Check[] verifications; }
+    [Serializable] public class Member { public string name,type,assembly; }
+    [Serializable] public class NewScript { public string target,guid,sha256,metaSha256,targetType,targetAssembly,baseType,baseAssembly; public long localId; public Member[] fields; }
+    [Serializable] public class NewObserved { public Observed identity; public string baseType,baseAssembly; public Member[] fields; }
+    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public NewScript[] newScripts; public Check[] verifications; }
     [Serializable] public class Observed { public string path,guid,type,assembly,name; public long localId; }
     [Serializable] public class Reference { public string asset,propertyPath; public long ownerLocalId; public Observed value; }
     [Serializable] public class SkippedArray { public string propertyPath,elementType,scalarPropertyType; public int length; }
     [Serializable] public class Traversal { public string asset; public long ownerLocalId; public int visited; public List<SkippedArray> scalarArrays=new List<SkippedArray>(); }
-    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); public List<Traversal> referenceTraversals=new List<Traversal>(); }
+    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); public List<Traversal> referenceTraversals=new List<Traversal>(); public List<NewObserved> newScripts=new List<NewObserved>(); }
     static Job job; static Report report; static string root;
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe intake path");
@@ -67,6 +71,23 @@ public static class BeaverIntake {
         }
         return true;
     }
+    static void NewScripts() {
+        foreach(var s in job.newScripts??new NewScript[0]) {
+            var types=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType(s.targetType,false)).Where(t=>t!=null).ToArray();
+            if(job.mode=="preflight"||job.mode=="rollback-check") {
+                if(types.Length!=0)throw new Exception("New script type already exists "+s.targetType);
+                continue;
+            }
+            if(Hash(Full(s.target))!=s.sha256||Hash(Full(s.target+".meta"))!=s.metaSha256||AssetDatabase.GUIDToAssetPath(s.guid)!=s.target)throw new Exception("New script source/GUID drift "+s.target);
+            var script=AssetDatabase.LoadAssetAtPath<MonoScript>(s.target);var type=script==null?null:script.GetClass();var found=Identity(script,s.target);
+            if(type==null||types.Length!=1||types[0]!=type||type.FullName!=s.targetType||type.Assembly.GetName().Name!=s.targetAssembly||type.BaseType==null||type.BaseType.FullName!=s.baseType||type.BaseType.Assembly.GetName().Name!=s.baseAssembly||found.guid!=s.guid||found.localId!=s.localId)throw new Exception("New script GetClass/domain/base/unique type mismatch "+s.target);
+            foreach(var field in s.fields) {
+                var member=type.GetField(field.name,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);
+                if(member==null||member.FieldType.FullName!=field.type||member.FieldType.Assembly.GetName().Name!=field.assembly)throw new Exception("New script field mismatch "+s.target+":"+field.name);
+            }
+            found.type=type.FullName;found.assembly=type.Assembly.GetName().Name;report.newScripts.Add(new NewObserved{identity=found,baseType=type.BaseType.FullName,baseAssembly=type.BaseType.Assembly.GetName().Name,fields=s.fields});
+        }
+    }
     static void Dependencies() {
         foreach(var s in job.packageScripts??new PackageScript[0]) {
             var info=UnityEditor.PackageManager.PackageInfo.FindForAssetPath(s.target);
@@ -102,7 +123,10 @@ public static class BeaverIntake {
     }
     static void Value(SerializedProperty p,Field f) {
         if(p==null)throw new Exception("Missing serialized property "+f.propertyPath);
-        if(f.kind=="integer") {
+        if(f.kind=="character") {
+            long value=Int64.Parse(f.text,CultureInfo.InvariantCulture);
+            if(value<0||value>65535||p.propertyType!=SerializedPropertyType.Character||p.intValue!=value)throw new Exception("UTF16 Character field/type/range mismatch "+f.propertyPath);
+        } else if(f.kind=="integer") {
             if(p.propertyType!=SerializedPropertyType.Integer&&p.propertyType!=SerializedPropertyType.Enum&&p.propertyType!=SerializedPropertyType.LayerMask&&p.propertyType!=SerializedPropertyType.ArraySize)throw new Exception("Integer property type mismatch");
             long value=(p.propertyType==SerializedPropertyType.Enum||p.propertyType==SerializedPropertyType.ArraySize)?p.intValue:p.longValue;
             if(value!=Int64.Parse(f.text,CultureInfo.InvariantCulture))throw new Exception("Integer field mismatch "+f.propertyPath);
@@ -147,10 +171,10 @@ public static class BeaverIntake {
             var path=new System.Text.UTF8Encoding(false,true).GetString(Convert.FromBase64String(encoded));job=JsonUtility.FromJson<Job>(File.ReadAllText(path));
             root=Path.GetFullPath(job.targetRoot).TrimEnd(Path.DirectorySeparatorChar);
             if(Application.unityVersion!="6000.6.2f1"||root!=Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName).TrimEnd(Path.DirectorySeparatorChar))throw new Exception("Wrong Editor/project");
-            report=new Report{status="running",mode=job.mode,planSha256=job.planSha256};Scripts();Dependencies();
-            if(job.mode!="preflight"&&job.mode!="verify"&&job.mode!="rollback-check")throw new Exception("Unknown intake gate");
+            report=new Report{status="running",mode=job.mode,planSha256=job.planSha256};Scripts();Dependencies();NewScripts();
+            if(job.mode!="preflight"&&job.mode!="verify"&&job.mode!="rollback-check"&&job.mode!="code-check")throw new Exception("Unknown intake gate");
             foreach(var a in job.additions) {
-                if(job.mode=="preflight"||job.mode=="rollback-check") {
+                if(job.mode=="preflight"||job.mode=="rollback-check"||job.mode=="code-check"&&!(job.newScripts??new NewScript[0]).Any(s=>s.target==a.target)) {
                     if(File.Exists(Full(a.target))||File.Exists(Full(a.target+".meta"))||AssetDatabase.GUIDToAssetPath(a.guid)!="")throw new Exception("New asset identity/destination is occupied "+a.target);
                 } else {
                     if(Hash(Full(a.target))!=a.fileHash||Hash(Full(a.target+".meta"))!=a.metaHash||AssetDatabase.AssetPathToGUID(a.target)!=a.guid)throw new Exception("Imported payload changed "+a.target);

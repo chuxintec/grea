@@ -13,6 +13,7 @@ from .implementation import identity
 
 CONTRACT = 'beaver-additive-intake/1'
 CONTRACT_V2 = 'beaver-additive-intake/2'
+CONTRACT_V3 = 'beaver-additive-intake/3'
 GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$', re.M)
 REFERENCES = re.compile(rb'\bguid:\s*([a-f0-9]{32})\b')
 COMPILER = {'.cs', '.asmdef', '.asmref', '.rsp', '.dll'}
@@ -84,11 +85,18 @@ def build_plan(candidate, target, spec_path):
     new_guids = set()
     targets = set()
     keys = {resource_key(p) for p in before if not p.endswith('.meta') and resource_key(p)}
-    for row in spec['additions']:
+    new_scripts = spec.get('newScripts', [])
+    for row in spec['additions'] + new_scripts:
         src, dest = row['source'], row['target']
         if src not in files or src+'.meta' not in files:
             fail('INTAKE_SOURCE_PAIR', src, 'Selected manifest file and metadata pair required')
         g = guid(read(inside(incoming, src+'.meta')), src)
+        if row in new_scripts:
+            if g != row['guid'] or files[src]['sha256'] != row['sha256'] or files[src+'.meta']['sha256'] != row['metaSha256']:
+                fail('INTAKE_NEW_SCRIPT_PIN', src, 'Reviewed exact compiler source/meta/GUID required')
+            for path in before:
+                if path.endswith(('.asmdef','.asmref')) and dest.startswith(str(Path(path).parent)+'/'):
+                    fail('INTAKE_NEW_SCRIPT_DOMAIN', dest, 'New scripts require default Assembly-CSharp, not an existing assembly scope')
         if g in existing_guids or g in new_guids:
             fail('INTAKE_GUID_OCCUPIED', g, 'New asset GUID is already owned; declare external script reuse separately')
         if folded(dest) in case_paths or folded(dest+'.meta') in case_paths or (target/dest).exists():
@@ -107,7 +115,7 @@ def build_plan(candidate, target, spec_path):
         new_guids.add(g); targets.add(dest)
         additions.append(dict(source=src, target=dest, guid=g, file=files[src], meta=files[src+'.meta']))
     externals = []
-    covered = set()
+    covered = {r['source'] for r in new_scripts}
     for row in spec['externalScripts']:
         src, dest = row['source'], row['target']
         if src not in files or src+'.meta' not in files or guid(read(incoming/(src+'.meta')), src) != row['sourceGuid']:
@@ -170,7 +178,7 @@ def build_plan(candidate, target, spec_path):
         while p.as_posix() != 'Assets':
             if not inside(target, p.as_posix()).exists(): parents.add(p.as_posix())
             p = p.parent
-    plan = dict(schemaVersion=spec['schemaVersion'], contract=CONTRACT if spec['schemaVersion']==1 else CONTRACT_V2, implementationSha256=identity(),
+    plan = dict(schemaVersion=spec['schemaVersion'], contract={1:CONTRACT,2:CONTRACT_V2,3:CONTRACT_V3}[spec['schemaVersion']], implementationSha256=identity(),
                 candidateRoot=str(incoming), candidateManifestSha256=manifest_hash, namespace=manifest['namespace'],
                 targetRoot=str(target), targetProfile=manifest['targetProfile'], targetBefore=before,
                 targetDirectoriesBefore=directories,targetAuxiliary=auxiliary,
@@ -180,9 +188,11 @@ def build_plan(candidate, target, spec_path):
                 projectRequirements=requirements, existingAdoptionState='untouched',
                 policy='create-only; retained source/meta unchanged; no baseline claim; independent native reopen; guarded rollback',
                 native='not_run', visual='not_run', business='not_run')
-    if spec['schemaVersion']==2:
+    if spec['schemaVersion']>=2:
         from .intake_external import package_inputs
         plan.update(externalAssets=external_assets, packageScripts=packages, packageInputs=package_inputs(packages))
+    if spec['schemaVersion']==3:
+        plan['newScripts'] = new_scripts
     return plan
 
 
@@ -194,8 +204,10 @@ def preview(candidate, target, spec, output):
     write_json(out/'plan-identity.json', dict(sha256=digest))
     result = dict(status='planned', report=str(out/'intake-plan.json'), planSha256=digest,
                   additions=len(plan['additions']), externalScripts=len(plan['externalScripts']), native='not_run')
-    if plan['schemaVersion']==2:
+    if plan['schemaVersion']>=2:
         result.update(externalAssets=len(plan['externalAssets']), packageScripts=len(plan['packageScripts']))
+    if plan['schemaVersion']==3:
+        result.update(newScripts=len(plan['newScripts']),maximumNativePhases=5 if plan['newScripts'] else 3)
     return result
 
 
@@ -204,7 +216,7 @@ def checked_plan(path, expected):
     if not expected or digest_file(path) != expected:
         fail('INTAKE_PLAN_CHANGED', str(path), 'Explicit exact plan hash required')
     plan = load(read(path, max_bytes=MANIFEST_BYTES), max_nodes=MANIFEST_NODES)
-    if plan.get('contract') not in (CONTRACT, CONTRACT_V2) or plan.get('implementationSha256') != identity():
+    if plan.get('contract') not in (CONTRACT, CONTRACT_V2, CONTRACT_V3) or plan.get('implementationSha256') != identity():
         fail('INTAKE_IMPLEMENTATION', str(path), 'Original exact intake implementation required')
     if digest_file(path) != load(read(path.parent/'plan-identity.json')).get('sha256'):
         fail('INTAKE_PLAN_CHANGED', str(path), 'Saved plan identity differs')

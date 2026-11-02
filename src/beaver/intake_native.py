@@ -13,7 +13,7 @@ from .native_environment import editor_environment
 from .unity import editor_path, source_files, source_directories
 from .intake import checked_plan, recheck, CONTRACT
 from .adoption import native_lock
-from .adoption_native import run_child
+from .adoption_native import run_child, restore_code
 from .intake_external import recheck_packages
 
 HELPER_ROOT = 'Assets/BeaverIntakeTools'
@@ -77,7 +77,7 @@ def _guard(plan, current):
 
 
 def _native_plan(plan):
-    return dict(targetRoot=plan['targetRoot'], targetFiles=plan['targetBefore'], operations=[
+    return dict(targetRoot=plan['targetRoot'], targetProfile=plan['targetProfile'], targetFiles=plan['targetBefore'], operations=[
         dict(action='add', source=None, target=r['target'], guid=r['guid'], before=None,
              after=dict(path=r['target'], guid=r['guid'], file=r['file'], meta=r['meta'])) for r in plan['additions']])
 
@@ -100,7 +100,7 @@ def _job(stage, plan, journal, mode):
     return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],
                 additions=[dict(target=r['target'],guid=r['guid'],fileHash=r['file']['sha256'],metaHash=r['meta']['sha256']) for r in plan['additions']],
                 externalScripts=plan['externalScripts'],externalAssets=[dict(r,objects=owners_for(r['objects'])) for r in plan.get('externalAssets',[])],
-                packageScripts=plan.get('packageScripts',[]),verifications=checks)
+                packageScripts=plan.get('packageScripts',[]),newScripts=plan.get('newScripts',[]),verifications=checks)
 
 
 def _gate(stage, plan, journal, editor, mode, budget):
@@ -151,6 +151,11 @@ def execute(plan_path, output, editor, expected, budget=600):
             before=_gate(stage,plan,journal,editor,'preflight',budget)
             if _files(target)!=plan['targetBefore']:fail('INTAKE_PREFLIGHT_CHANGED',str(target),'Preflight changed project inputs before import')
             recheck_packages(plan)
+            if plan.get('newScripts'):
+                run_child(stage,_native_plan(plan),journal,editor,'code',budget)
+                _guard(plan,_files(target))
+                code_checked=_gate(stage,plan,journal,editor,'code-check',budget)
+                _guard(plan,_files(target))
             # Same native importer/identity-preserving payload and rollback code as adoption.
             imported=run_child(stage,_native_plan(plan),journal,editor,'apply',budget)
             _guard(plan,_files(target))
@@ -158,6 +163,8 @@ def execute(plan_path, output, editor, expected, budget=600):
             if before['scripts']!=reopened['scripts']:fail('INTAKE_SCRIPT_BINDING_DRIFT',str(target),'Retained script identities changed across independent Editor processes')
             if any(before.get(key,[])!=reopened.get(key,[]) for key in ('externalObjects','externalReferences','packageScripts')):
                 fail('INTAKE_EXTERNAL_BINDING_DRIFT',str(target),'Retained resource/reference/package identities changed across independent Editor processes')
+            if plan.get('newScripts') and code_checked['newScripts']!=reopened['newScripts']:
+                fail('INTAKE_NEW_SCRIPT_DRIFT',str(target),'New script GetClass/base/field identities changed after importing assets')
             _cleanup(target,owned);owned=None
             after=_files(target);_guard(plan,after)
             for r in plan['additions']:
@@ -168,8 +175,10 @@ def execute(plan_path, output, editor, expected, budget=600):
             provenance=plan['sourceCandidateValidation'];native_source=provenance.get('native')
             partial=bool(provenance.get('diagnostics')) or native_source is not None and native_source not in ('pass','verified','native-verified')
             result=dict(status='partial' if partial else 'verified',intakeStatus='verified',sourceCandidateValidation=provenance,transaction=str(stage),report=str(stage/'journal.json'),additions=len(plan['additions']),externalScripts=len(plan['externalScripts']),existingBytesUnchanged=True,independentReopen=True,fieldsChecked=reopened['fieldsChecked'],native='verified-declared-intake-subset',visual='not_run',business='not_run')
-            if plan['schemaVersion']==2:
+            if plan['schemaVersion']>=2:
                 result.update(externalAssets=len(plan['externalAssets']),packageScripts=len(plan['packageScripts']),externalObjects=len(reopened['externalObjects']),externalReferences=len(reopened['externalReferences']))
+            if plan['schemaVersion']==3:
+                result.update(newScripts=len(plan['newScripts']),compilationBoundary='separate-editor-code-check-before-assets' if plan['newScripts'] else 'no-new-compiler-inputs')
             write_json(stage/'intake-result.json',result);return result
         except BaseException:
             journal['state']='recovery-required'
@@ -197,10 +206,12 @@ def recover(transaction, editor, expected, budget=600):
             _guard(plan,current)
         except BeaverError as error:
             fail('INTAKE_ROLLBACK_CONFLICT',str(target),'Retained inputs changed; preserve later edits: '+error.code)
-        if not (stage/'native-apply.json').exists():
+        if not (stage/'native-apply.json').exists() and not (stage/'native-code.json').exists():
             if current!=plan['targetBefore']:fail('INTAKE_RECOVERY_UNKNOWN',str(stage),'No native write checkpoint and project is not exact before-state')
             journal.update(state='rolled-back',restored=0);write_json(stage/'journal.json',journal)
             return dict(status='rolled-back',restored=0,report=str(stage/'journal.json'))
+        if (stage/'native-code.json').exists():
+            restore_code(stage,_native_plan(plan),journal)
         owned=_install(target)
         try:
             native=run_child(stage,_native_plan(plan),journal,editor,'rollback',budget)

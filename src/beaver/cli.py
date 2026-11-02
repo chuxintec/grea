@@ -101,7 +101,7 @@ def capabilities():
         dict(id="creator.build", state="not_supported", effects="none", verification="not_run")
     ]
     return dict(contract="beaver-capabilities/1", capabilities=capabilities, requiredProviders=[],
-                nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",additiveIntakeContract='beaver-additive-intake/2',additiveIntakeSpecVersions=[1,2],
+                nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",additiveIntakeContract='beaver-additive-intake/3',additiveIntakeSpecVersions=[1,2,3],
                 productionOperationContract='beaver-production/3',productionTransactionContract='beaver-production-transaction/3',projectProfileContract='beaver-project/1',
                 limitations=["Provider readiness is not Editor connection or gameplay", "Native tests cover Unity 6000.6.2f1 only", "No source package parser; candidates are produced by monkey", "No global install, release, account/service/savegame writes", "Native receipts do not prove physical input, visual parity or game business acceptance"])
 
