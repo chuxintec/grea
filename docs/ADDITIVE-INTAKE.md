@@ -231,7 +231,7 @@ beaver intake rollback --transaction <transaction> --expected-plan <sha256> --ed
 
 `plan` produces a pinned declarative plan and does not import or reopen assets.
 `apply` performs the guarded native operation; `rollback` recovers that
-transaction only when its recorded before/after state still matches. The native path is exercised separately on private neutral fixtures; formal product intake remains consumer-owned and requires its own evidence. A successful Python plan does not establish native execution. Each native phase has its own timeout; budget the outer call for three phases plus startup/cleanup (apply) or two phases (rollback). No command uses a foreground Editor or changes TCC.
+transaction only when its recorded before/after state still matches. The native path is exercised separately on private neutral fixtures; formal product intake remains consumer-owned and requires its own evidence. A successful Python plan does not establish native execution. Each native phase has its own timeout; budget the outer call for three phases plus startup/cleanup (apply without newScripts) or two phases (rollback). Spec3 with newScripts requires the five-phase budget documented below. No command uses a foreground Editor or changes TCC.
 
 ## Execution and preservation boundary
 
