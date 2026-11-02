@@ -157,7 +157,9 @@ def execute(plan_path, output, editor, expected, budget=600):
                     fail('INTAKE_IMPORTED_DRIFT',r['target'],'Imported bytes differ from pinned payload')
             journal.update(state='complete',afterFiles=after,afterDirectories=_directories(target),nativeVerified=True)
             write_json(stage/'journal.json',journal)
-            result=dict(status='verified',transaction=str(stage),report=str(stage/'journal.json'),additions=len(plan['additions']),externalScripts=len(plan['externalScripts']),existingBytesUnchanged=True,independentReopen=True,fieldsChecked=reopened['fieldsChecked'],native='verified-declared-intake-subset',visual='not_run',business='not_run')
+            provenance=plan['sourceCandidateValidation'];native_source=provenance.get('native')
+            partial=bool(provenance.get('diagnostics')) or native_source is not None and native_source not in ('pass','verified','native-verified')
+            result=dict(status='partial' if partial else 'verified',intakeStatus='verified',sourceCandidateValidation=provenance,transaction=str(stage),report=str(stage/'journal.json'),additions=len(plan['additions']),externalScripts=len(plan['externalScripts']),existingBytesUnchanged=True,independentReopen=True,fieldsChecked=reopened['fieldsChecked'],native='verified-declared-intake-subset',visual='not_run',business='not_run')
             write_json(stage/'intake-result.json',result);return result
         except BaseException:
             journal['state']='recovery-required'

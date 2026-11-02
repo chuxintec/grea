@@ -163,6 +163,7 @@ def build_plan(candidate, target, spec_path):
                 targetDirectoriesBefore=directories,targetAuxiliary=auxiliary,
                 targetBeforeSha256=sha(encoded(before)), specPath=str(spec_path), specSha256=digest_file(spec_path),
                 spec=spec, additions=additions, externalScripts=externals, newDirectories=sorted(parents),
+                sourceCandidateValidation={k:manifest.get(k) for k in ('native','diagnostics','staticPresentation','visibleEdits','player','business')},
                 projectRequirements=requirements, existingAdoptionState='untouched',
                 policy='create-only; retained source/meta unchanged; no baseline claim; independent native reopen; guarded rollback',
                 native='not_run', visual='not_run', business='not_run')
