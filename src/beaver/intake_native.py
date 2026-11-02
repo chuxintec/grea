@@ -6,7 +6,7 @@ import signal
 import threading
 
 from .io import safe, inside, read, load, write_json, new_output, encoded
-from .errors import fail
+from .errors import fail, BeaverError
 from .output_limits import digest_file, copy_verified, MANIFEST_BYTES, MANIFEST_NODES
 from .transaction_fs import lock
 from .native_environment import editor_environment
@@ -14,6 +14,7 @@ from .unity import editor_path, source_files, source_directories
 from .intake import checked_plan, recheck, CONTRACT
 from .adoption import native_lock
 from .adoption_native import run_child
+from .intake_external import recheck_packages
 
 HELPER_ROOT = 'Assets/BeaverIntakeTools'
 
@@ -58,6 +59,7 @@ def _directories(target):
 
 
 def _guard(plan, current):
+    recheck_packages(plan)
     before = plan['targetBefore']
     if any(current.get(p) != v for p,v in before.items()):
         fail('INTAKE_EXISTING_CHANGED', plan['targetRoot'], 'An existing source/meta/settings file changed; preserve evidence')
@@ -83,19 +85,22 @@ def _native_plan(plan):
 def _job(stage, plan, journal, mode):
     targets = {r['source']:r['target'] for r in plan['additions']}
     checks = []
-    for v in plan['spec']['verifications']:
+    def owners_for(objects):
         owners = []
-        for o in v['objects']:
+        for o in objects:
             fields = []
             for f in o['fields']:
                 value = f['value']
                 text = value if isinstance(value,str) else ('true' if value is True else 'false' if value is False else str(value))
                 fields.append(dict(propertyPath=f['propertyPath'],kind=f['kind'],text=text if f['kind']!='object' else '',reference=value if f['kind']=='object' else None))
             owners.append(dict(o,fields=fields))
-        checks.append(dict(asset=targets[v['asset']],objects=owners))
+        return owners
+    for v in plan['spec']['verifications']:
+        checks.append(dict(asset=targets[v['asset']],objects=owners_for(v['objects'])))
     return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],
                 additions=[dict(target=r['target'],guid=r['guid'],fileHash=r['file']['sha256'],metaHash=r['meta']['sha256']) for r in plan['additions']],
-                externalScripts=plan['externalScripts'],verifications=checks)
+                externalScripts=plan['externalScripts'],externalAssets=[dict(r,objects=owners_for(r['objects'])) for r in plan.get('externalAssets',[])],
+                packageScripts=plan.get('packageScripts',[]),verifications=checks)
 
 
 def _gate(stage, plan, journal, editor, mode, budget):
@@ -134,7 +139,7 @@ def execute(plan_path, output, editor, expected, budget=600):
     plan=checked_plan(plan_path,expected);target=safe(plan['targetRoot']);editor=editor_path(editor)
     stage=new_output(output,[target,safe(plan['candidateRoot']),safe(plan_path).parent,safe(plan['specPath'])])
     write_json(stage/'intake-plan.json',plan);write_json(stage/'plan-identity.json',dict(sha256=expected))
-    journal=dict(contract=CONTRACT,planSha256=expected,state='prepared',processExited=True,targetRoot=str(target))
+    journal=dict(contract=plan['contract'],planSha256=expected,state='prepared',processExited=True,targetRoot=str(target))
     write_json(stage/'journal.json',journal)
     with lock(target):
         recheck(plan);native_lock(target)
@@ -145,11 +150,14 @@ def execute(plan_path, output, editor, expected, budget=600):
         try:
             before=_gate(stage,plan,journal,editor,'preflight',budget)
             if _files(target)!=plan['targetBefore']:fail('INTAKE_PREFLIGHT_CHANGED',str(target),'Preflight changed project inputs before import')
+            recheck_packages(plan)
             # Same native importer/identity-preserving payload and rollback code as adoption.
             imported=run_child(stage,_native_plan(plan),journal,editor,'apply',budget)
             _guard(plan,_files(target))
             reopened=_gate(stage,plan,journal,editor,'verify',budget)
             if before['scripts']!=reopened['scripts']:fail('INTAKE_SCRIPT_BINDING_DRIFT',str(target),'Retained script identities changed across independent Editor processes')
+            if any(before.get(key,[])!=reopened.get(key,[]) for key in ('externalObjects','externalReferences','packageScripts')):
+                fail('INTAKE_EXTERNAL_BINDING_DRIFT',str(target),'Retained resource/reference/package identities changed across independent Editor processes')
             _cleanup(target,owned);owned=None
             after=_files(target);_guard(plan,after)
             for r in plan['additions']:
@@ -160,6 +168,8 @@ def execute(plan_path, output, editor, expected, budget=600):
             provenance=plan['sourceCandidateValidation'];native_source=provenance.get('native')
             partial=bool(provenance.get('diagnostics')) or native_source is not None and native_source not in ('pass','verified','native-verified')
             result=dict(status='partial' if partial else 'verified',intakeStatus='verified',sourceCandidateValidation=provenance,transaction=str(stage),report=str(stage/'journal.json'),additions=len(plan['additions']),externalScripts=len(plan['externalScripts']),existingBytesUnchanged=True,independentReopen=True,fieldsChecked=reopened['fieldsChecked'],native='verified-declared-intake-subset',visual='not_run',business='not_run')
+            if plan['schemaVersion']==2:
+                result.update(externalAssets=len(plan['externalAssets']),packageScripts=len(plan['packageScripts']),externalObjects=len(reopened['externalObjects']),externalReferences=len(reopened['externalReferences']))
             write_json(stage/'intake-result.json',result);return result
         except BaseException:
             journal['state']='recovery-required'
@@ -177,13 +187,16 @@ def recover(transaction, editor, expected, budget=600):
     if type(budget)is not int or not 1<=budget<=1200:fail('INTAKE_BUDGET',str(budget),'1..1200 seconds per phase')
     stage=safe(transaction);plan=checked_plan(stage/'intake-plan.json',expected);target=safe(plan['targetRoot']);editor=editor_path(editor)
     journal=load(read(stage/'journal.json',max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
-    if journal.get('contract')!=CONTRACT or journal.get('planSha256')!=expected or not journal.get('processExited') or journal.get('state') not in ('complete','recovery-required') or journal.get('cleanupError'):
+    if journal.get('contract')!=plan['contract'] or journal.get('planSha256')!=expected or not journal.get('processExited') or journal.get('state') not in ('complete','recovery-required') or journal.get('cleanupError'):
         fail('INTAKE_RECOVERY_STATE',str(stage),'Exited owned complete/recoverable transaction and clean helper required')
     with lock(target):
         native_lock(target);current=_files(target)
         if current!=journal.get('afterFiles') or _directories(target)!=journal.get('afterDirectories'):
             fail('INTAKE_ROLLBACK_CONFLICT',str(target),'Project changed after recorded transaction; preserve all later edits')
-        _guard(plan,current)
+        try:
+            _guard(plan,current)
+        except BeaverError as error:
+            fail('INTAKE_ROLLBACK_CONFLICT',str(target),'Retained inputs changed; preserve later edits: '+error.code)
         if not (stage/'native-apply.json').exists():
             if current!=plan['targetBefore']:fail('INTAKE_RECOVERY_UNKNOWN',str(stage),'No native write checkpoint and project is not exact before-state')
             journal.update(state='rolled-back',restored=0);write_json(stage/'journal.json',journal)
@@ -191,7 +204,10 @@ def recover(transaction, editor, expected, budget=600):
         owned=_install(target)
         try:
             native=run_child(stage,_native_plan(plan),journal,editor,'rollback',budget)
-            _gate(stage,plan,journal,editor,'rollback-check',budget)
+            checked=_gate(stage,plan,journal,editor,'rollback-check',budget)
+            before=load(read(stage/'native-intake-preflight.json',max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
+            if any(before.get(key,[])!=checked.get(key,[]) for key in ('scripts','externalObjects','externalReferences','packageScripts')):
+                fail('INTAKE_EXTERNAL_BINDING_DRIFT',str(target),'Retained dependency identities/references changed during rollback')
             _cleanup(target,owned);owned=None
             if _files(target)!=plan['targetBefore'] or _directories(target)!=plan['targetDirectoriesBefore']:
                 fail('INTAKE_ROLLBACK_INCOMPLETE',str(stage),'Existing/new-file set differs from exact original before-state')

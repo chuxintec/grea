@@ -17,12 +17,19 @@ _TOP_KEYS = {
     "protectedAssets", "evidence",
 }
 _ASSET_EXTENSIONS = {".prefab", ".asset", ".mat", ".png", ".ttf", ".otf", ".shader", ".txt", ".json"}
+_EXTERNAL_ASSET_EXTENSIONS = _ASSET_EXTENSIONS - {".prefab"}
 _COMPILER_EXTENSIONS = {".cs", ".asmdef", ".asmref", ".rsp"}
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
 _GUID = re.compile(r"[0-9a-f]{32}\Z")
 _INT64_MIN, _INT64_MAX = -(1 << 63), (1 << 63) - 1
 _WIN_BAD = set('<>:"|?*')
 _WIN_RESERVED = re.compile(r"(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?\Z", re.IGNORECASE)
+_SEMVER = re.compile(
+    r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+    r"(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\Z"
+)
 
 
 def _bad(where, message, suffix="INVALID"):
@@ -132,11 +139,43 @@ def _field_value(kind, value, where):
         _bad(where, "Field kind must be integer, float, boolean, string, or object", "ENUM")
 
 
+def _owner_rows(objects, where, total_fields=None):
+    """Validate typed native owner observations; optionally enforce a shared field budget."""
+    local_ids = []
+    for obj_index, obj in enumerate(objects):
+        obj_where = f"{where}[{obj_index}]"
+        _exact(obj, {"localId", "type", "assembly", "name", "fields"}, obj_where)
+        _int64(obj["localId"], obj_where + ".localId", nonzero=True)
+        local_ids.append(obj["localId"])
+        _string(obj["type"], obj_where + ".type")
+        _simple_assembly(obj["assembly"], obj_where + ".assembly")
+        _string(obj["name"], obj_where + ".name", nonempty=False)
+        fields = _array(obj["fields"], obj_where + ".fields")
+        if total_fields is not None:
+            total_fields += len(fields)
+            if total_fields > 250000:
+                _bad(where, "Combined field count exceeds 250000", "BOUNDS")
+        property_paths = []
+        for field_index, field in enumerate(fields):
+            field_where = f"{obj_where}.fields[{field_index}]"
+            _exact(field, {"propertyPath", "kind", "value"}, field_where)
+            property_paths.append(_string(field["propertyPath"], field_where + ".propertyPath"))
+            kind = _string(field["kind"], field_where + ".kind")
+            _field_value(kind, field["value"], field_where + ".value")
+        _unique(property_paths, obj_where + ".fields.propertyPath")
+    _unique([str(v) for v in local_ids], where + ".localId")
+    return total_fields
+
+
 def validate_spec(doc):
-    """Validate and return a v1 additive intake spec without changing its values."""
-    _exact(doc, _TOP_KEYS, "$")
-    if type(doc["schemaVersion"]) is not int or doc["schemaVersion"] != 1:
-        _bad("schemaVersion", "schemaVersion 1 required", "VERSION")
+    """Validate and return a v1 or v2 additive intake spec without normalization."""
+    if not isinstance(doc, dict):
+        _bad("$", "Object required")
+    version = doc.get("schemaVersion")
+    if type(version) is not int or version not in (1, 2):
+        _bad("schemaVersion", "schemaVersion 1 or 2 required", "VERSION")
+    keys = _TOP_KEYS if version == 1 else _TOP_KEYS | {"externalAssets", "packageScripts"}
+    _exact(doc, keys, "$")
     if doc["operation"] != "additive-intake":
         _bad("operation", "operation must be additive-intake", "OPERATION")
     _hash(doc["candidateManifestSha256"], "candidateManifestSha256")
@@ -215,29 +254,78 @@ def validate_spec(doc):
             _bad(where + ".asset", "Verification asset must match an additions.source prefab", "REFERENCE")
         verified_assets.append(asset)
         objects = _array(item["objects"], where + ".objects", 1, 4096)
-        local_ids = []
-        for obj_index, obj in enumerate(objects):
-            obj_where = f"{where}.objects[{obj_index}]"
-            _exact(obj, {"localId", "type", "assembly", "name", "fields"}, obj_where)
-            _int64(obj["localId"], obj_where + ".localId", nonzero=True)
-            local_ids.append(obj["localId"])
-            _string(obj["type"], obj_where + ".type")
-            _simple_assembly(obj["assembly"], obj_where + ".assembly")
-            _string(obj["name"], obj_where + ".name", nonempty=False)
-            fields = _array(obj["fields"], obj_where + ".fields")
-            total_fields += len(fields)
-            if total_fields > 250000:
-                _bad("verifications", "Combined field count exceeds 250000", "BOUNDS")
-            property_paths = []
-            for field_index, field in enumerate(fields):
-                field_where = f"{obj_where}.fields[{field_index}]"
-                _exact(field, {"propertyPath", "kind", "value"}, field_where)
-                property_paths.append(_string(field["propertyPath"], field_where + ".propertyPath"))
-                kind = _string(field["kind"], field_where + ".kind")
-                _field_value(kind, field["value"], field_where + ".value")
-            _unique(property_paths, obj_where + ".fields.propertyPath")
-        _unique([str(v) for v in local_ids], where + ".objects.localId")
+        total_fields = _owner_rows(objects, where + ".objects", total_fields)
     _unique(verified_assets, "verifications.asset")
+
+    external_asset_sources, external_asset_targets, external_asset_guids = [], [], []
+    external_asset_paths = set()
+    if version == 2:
+        external_assets = _array(doc["externalAssets"], "externalAssets", maximum=256)
+        total_asset_objects = 0
+        for index, item in enumerate(external_assets):
+            where = f"externalAssets[{index}]"
+            _exact(item, {"source", "target", "guid", "sha256", "metaSha256", "objects", "reason"}, where)
+            source = _asset_path(item["source"], where + ".source", _EXTERNAL_ASSET_EXTENSIONS)
+            target = _asset_path(item["target"], where + ".target", _EXTERNAL_ASSET_EXTENSIONS)
+            if source.rsplit(".", 1)[-1].casefold() != target.rsplit(".", 1)[-1].casefold():
+                _bad(where, "Source and target extensions must match", "EXTENSION")
+            _guid(item["guid"], where + ".guid")
+            _hash(item["sha256"], where + ".sha256")
+            _hash(item["metaSha256"], where + ".metaSha256")
+            _string(item["reason"], where + ".reason")
+            objects = _array(item["objects"], where + ".objects", 1, 4096)
+            total_asset_objects += len(objects)
+            if total_asset_objects > 4096:
+                _bad("externalAssets", "Combined object count exceeds 4096", "BOUNDS")
+            total_fields = _owner_rows(objects, where + ".objects", total_fields)
+            external_asset_sources.append(source)
+            external_asset_targets.append(target)
+            external_asset_guids.append(item["guid"])
+        _unique(external_asset_sources, "externalAssets.source")
+        _unique(external_asset_targets, "externalAssets.target")
+        _unique(external_asset_guids, "externalAssets.guid")
+        external_asset_paths = {p.casefold() for p in external_asset_sources + external_asset_targets}
+        if external_asset_paths & addition_path_keys:
+            _bad("externalAssets", "External asset paths cannot overlap addition sources or targets", "OVERLAP")
+        if external_asset_paths & {p.casefold() for p in ext_sources + ext_targets}:
+            _bad("externalAssets", "External asset paths cannot overlap external script paths", "OVERLAP")
+        if set(external_asset_guids) & set(ext_guids):
+            _bad("externalAssets", "External asset GUID cannot overlap an external script GUID", "OVERLAP")
+
+        package_scripts = _array(doc["packageScripts"], "packageScripts", maximum=64)
+        package_targets, package_guids = [], []
+        for index, item in enumerate(package_scripts):
+            where = f"packageScripts[{index}]"
+            _exact(item, {"target", "guid", "type", "assembly", "localId", "name", "packageName", "packageVersion", "packageSource", "packageJsonSha256", "sha256", "metaSha256", "reason"}, where)
+            target = _asset_path(item["target"], where + ".target", {".cs"}, require_asset_root=False)
+            prefix = "Packages/com.unity.ugui/Runtime/"
+            if not target.startswith(prefix):
+                _bad(where + ".target", "Package script must be under the uGUI Runtime package", "PATH")
+            _guid(item["guid"], where + ".guid")
+            _string(item["type"], where + ".type")
+            if not item["type"].startswith("UnityEngine.UI.") or len(item["type"]) == len("UnityEngine.UI."):
+                _bad(where + ".type", "uGUI package script type must start with UnityEngine.UI.", "TYPE")
+            if item["assembly"] != "UnityEngine.UI":
+                _bad(where + ".assembly", "uGUI package assembly must be UnityEngine.UI", "ASSEMBLY")
+            _int64(item["localId"], where + ".localId", nonzero=True)
+            _string(item["name"], where + ".name", nonempty=False)
+            if item["packageName"] != "com.unity.ugui":
+                _bad(where + ".packageName", "Only com.unity.ugui package scripts are supported", "PACKAGE")
+            version_string = _string(item["packageVersion"], where + ".packageVersion")
+            if not _SEMVER.fullmatch(version_string):
+                _bad(where + ".packageVersion", "Strict semantic version required", "PACKAGE")
+            if item["packageSource"] not in ("registry", "builtin"):
+                _bad(where + ".packageSource", "packageSource must be registry or builtin", "PACKAGE")
+            _hash(item["packageJsonSha256"], where + ".packageJsonSha256")
+            _hash(item["sha256"], where + ".sha256")
+            _hash(item["metaSha256"], where + ".metaSha256")
+            _string(item["reason"], where + ".reason")
+            package_targets.append(target)
+            package_guids.append(item["guid"])
+        _unique(package_targets, "packageScripts.target")
+        _unique(package_guids, "packageScripts.guid")
+        if set(package_guids) & (set(ext_guids) | set(external_asset_guids)):
+            _bad("packageScripts", "Package script GUID cannot overlap an external script or asset GUID", "OVERLAP")
 
     protected = _array(doc["protectedAssets"], "protectedAssets")
     protected_paths = []

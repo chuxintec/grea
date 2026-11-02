@@ -172,4 +172,4 @@ Explicit `adopt plan --sdk-migration FILE --expected-sdk-migration SHA256` uses 
 
 `qa inspect-instance`, `qa bind`, and `qa input` are documented in [QA-BINDING.md](QA-BINDING.md). They require a strongly captured owned launch, explicit run and owner hash, and existing host AX permissions. Binding/input never launches an App or falls back to name/BundleID/global input. Kernel guards plus PID-directed posting are not atomic and do not establish business acceptance. Fixed/runtime and consumer validation status is recorded in PLAN.
 
-Additive intake has a separate `beaver-additive-intake/1` contract and closed [specification](ADDITIVE-INTAKE.md). It does not relax `beaver-adopt/1` or replace the exact prior baseline required by that operation.
+Additive intake has separate `beaver-additive-intake/1` (spec1) and `beaver-additive-intake/2` (spec2) contracts and closed [specification](ADDITIVE-INTAKE.md). It does not relax `beaver-adopt/1` or replace the exact prior baseline required by that operation.

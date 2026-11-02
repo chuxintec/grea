@@ -12,6 +12,7 @@ from .unity import source_files, source_directories
 from .implementation import identity
 
 CONTRACT = 'beaver-additive-intake/1'
+CONTRACT_V2 = 'beaver-additive-intake/2'
 GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$', re.M)
 REFERENCES = re.compile(rb'\bguid:\s*([a-f0-9]{32})\b')
 COMPILER = {'.cs', '.asmdef', '.asmref', '.rsp', '.dll'}
@@ -117,6 +118,13 @@ def build_plan(candidate, target, spec_path):
             if before.get(path, {}).get('sha256') != expected:
                 fail('INTAKE_SCRIPT_DRIFT', path, 'Reviewed retained script bytes differ')
         externals.append(row); covered.add(src)
+    from .intake_external import assets, package_scripts
+    external_assets = assets(spec, incoming, files, before, existing_guids, guid)
+    packages = package_scripts(spec, target, existing_guids)
+    for row in packages:
+        source = candidate_guids.get(row['guid'])
+        if source and source.endswith('.cs'):
+            covered.add(source)
     for row in spec['omittedCompilerInputs']:
         if row['path'] not in files:
             fail('INTAKE_COMPILER_OMISSION', row['path'], 'Omitted compiler input must exist in candidate')
@@ -124,8 +132,8 @@ def build_plan(candidate, target, spec_path):
     compiler_inputs = {p for p in files if p.startswith('Assets/') and Path(p).suffix.lower() in COMPILER}
     if compiler_inputs != covered or any(p.endswith('.dll') for p in compiler_inputs):
         fail('INTAKE_COMPILER_COVERAGE', str(incoming), 'Every compiler input must be explicitly reused or covered; DLL intake unsupported')
-    selected_guids = new_guids | {r['sourceGuid'] for r in externals}
-    for row in additions:
+    selected_guids = new_guids | {r['sourceGuid'] for r in externals} | {r['guid'] for r in external_assets + packages}
+    for row in additions + external_assets:
         # V1 supports GUID-serialized text assets and opaque raw image/font inputs.
         if Path(row['source']).suffix.lower() not in {'.png', '.ttf', '.otf'}:
             raw = read(incoming/row['source'], max_bytes=MANIFEST_BYTES)
@@ -146,6 +154,11 @@ def build_plan(candidate, target, spec_path):
             for field in obj['fields']:
                 if field['kind'] == 'object' and field['value']['guid'] not in selected_guids | {''}:
                     fail('INTAKE_EXPECTATION_REFERENCE', v['asset'], 'Object expectation references outside selected closure')
+    for row in external_assets:
+        for obj in row['objects']:
+            for field in obj['fields']:
+                if field['kind'] == 'object' and field['value']['guid'] not in selected_guids | {''}:
+                    fail('INTAKE_EXPECTATION_REFERENCE', row['source'], 'External resource expectation is outside selected closure')
     for r in spec['protectedAssets']:
         for path, expected in [(r['path'], r['sha256']), (r['path']+'.meta', r['metaSha256'])]:
             if before.get(path, {}).get('sha256') != expected:
@@ -157,7 +170,7 @@ def build_plan(candidate, target, spec_path):
         while p.as_posix() != 'Assets':
             if not inside(target, p.as_posix()).exists(): parents.add(p.as_posix())
             p = p.parent
-    return dict(schemaVersion=1, contract=CONTRACT, implementationSha256=identity(),
+    plan = dict(schemaVersion=spec['schemaVersion'], contract=CONTRACT if spec['schemaVersion']==1 else CONTRACT_V2, implementationSha256=identity(),
                 candidateRoot=str(incoming), candidateManifestSha256=manifest_hash, namespace=manifest['namespace'],
                 targetRoot=str(target), targetProfile=manifest['targetProfile'], targetBefore=before,
                 targetDirectoriesBefore=directories,targetAuxiliary=auxiliary,
@@ -167,6 +180,10 @@ def build_plan(candidate, target, spec_path):
                 projectRequirements=requirements, existingAdoptionState='untouched',
                 policy='create-only; retained source/meta unchanged; no baseline claim; independent native reopen; guarded rollback',
                 native='not_run', visual='not_run', business='not_run')
+    if spec['schemaVersion']==2:
+        from .intake_external import package_inputs
+        plan.update(externalAssets=external_assets, packageScripts=packages, packageInputs=package_inputs(packages))
+    return plan
 
 
 def preview(candidate, target, spec, output):
@@ -175,8 +192,11 @@ def preview(candidate, target, spec, output):
     write_json(out/'intake-plan.json', plan)
     digest = digest_file(out/'intake-plan.json')
     write_json(out/'plan-identity.json', dict(sha256=digest))
-    return dict(status='planned', report=str(out/'intake-plan.json'), planSha256=digest,
-                additions=len(plan['additions']), externalScripts=len(plan['externalScripts']), native='not_run')
+    result = dict(status='planned', report=str(out/'intake-plan.json'), planSha256=digest,
+                  additions=len(plan['additions']), externalScripts=len(plan['externalScripts']), native='not_run')
+    if plan['schemaVersion']==2:
+        result.update(externalAssets=len(plan['externalAssets']), packageScripts=len(plan['packageScripts']))
+    return result
 
 
 def checked_plan(path, expected):
@@ -184,7 +204,7 @@ def checked_plan(path, expected):
     if not expected or digest_file(path) != expected:
         fail('INTAKE_PLAN_CHANGED', str(path), 'Explicit exact plan hash required')
     plan = load(read(path, max_bytes=MANIFEST_BYTES), max_nodes=MANIFEST_NODES)
-    if plan.get('contract') != CONTRACT or plan.get('implementationSha256') != identity():
+    if plan.get('contract') not in (CONTRACT, CONTRACT_V2) or plan.get('implementationSha256') != identity():
         fail('INTAKE_IMPLEMENTATION', str(path), 'Original exact intake implementation required')
     if digest_file(path) != load(read(path.parent/'plan-identity.json')).get('sha256'):
         fail('INTAKE_PLAN_CHANGED', str(path), 'Saved plan identity differs')

@@ -28,6 +28,14 @@ def spec():
     }
 
 
+def spec_v2():
+    value = spec()
+    value["schemaVersion"] = 2
+    value["externalAssets"] = []
+    value["packageScripts"] = []
+    return value
+
+
 def external_script(**changes):
     item = {
         "source": "Assets/Candidate/Widget.cs", "sourceGuid": GUID,
@@ -36,6 +44,30 @@ def external_script(**changes):
         "targetType": "Widget", "targetAssembly": "Game.Runtime",
         "targetLocalId": -42, "targetSha256": HASH, "targetMetaSha256": "c" * 64,
         "reason": "Existing source required by serialized prefab reference",
+    }
+    item.update(changes)
+    return item
+
+
+def external_asset(**changes):
+    item = {
+        "source": "Assets/Candidate/Shared.asset", "target": "Assets/Game/Shared.asset",
+        "guid": "d" * 32, "sha256": HASH, "metaSha256": "c" * 64,
+        "objects": [{"localId": 321, "type": "SharedData", "assembly": "Game", "name": "Shared", "fields": []}],
+        "reason": "Retained package-independent asset identity referenced by the candidate",
+    }
+    item.update(changes)
+    return item
+
+
+def package_script(**changes):
+    item = {
+        "target": "Packages/com.unity.ugui/Runtime/UI/Graphic.cs",
+        "guid": "e" * 32, "type": "UnityEngine.UI.Graphic", "assembly": "UnityEngine.UI",
+        "localId": 11500000, "name": "Graphic", "packageName": "com.unity.ugui",
+        "packageVersion": "1.0.0-pre.2+build.7", "packageSource": "registry",
+        "packageJsonSha256": HASH, "sha256": "f" * 64, "metaSha256": "c" * 64,
+        "reason": "Existing uGUI package script identity required by retained references",
     }
     item.update(changes)
     return item
@@ -194,6 +226,147 @@ class AdditiveIntakeContractTests(unittest.TestCase):
         for key, bad in (("schemaVersion", True), ("schemaVersion", 1.0), ("schemaVersion", 2), ("operation", "replace")):
             value = spec(); value[key] = bad
             self.assert_invalid(value)
+
+    def test_v1_remains_closed_and_unmodified_while_v2_requires_both_new_arrays(self):
+        original = spec()
+        self.assertIs(validate_spec(original), original)
+        version_one_extra = spec(); version_one_extra["externalAssets"] = []
+        self.assert_invalid(version_one_extra, "FIELDS")
+        for missing in ("externalAssets", "packageScripts"):
+            value = spec_v2(); del value[missing]
+            self.assert_invalid(value, "FIELDS")
+        value = spec_v2(); value["unexpected"] = None
+        self.assert_invalid(value, "FIELDS")
+        value = spec_v2()
+        self.assertIs(validate_spec(value), value)
+
+    def test_v2_accepts_external_asset_object_observations_and_package_script_identity(self):
+        value = spec_v2()
+        asset = external_asset(objects=[
+            {"localId": -5, "type": "SharedData", "assembly": "Game", "name": "", "fields": [
+                {"propertyPath": "active", "kind": "boolean", "value": True},
+                {"propertyPath": "ref", "kind": "object", "value": {"guid": "", "localId": 0, "type": "", "assembly": ""}},
+            ]},
+            {"localId": 6, "type": "Secondary", "assembly": "Game", "name": "Secondary", "fields": []},
+        ])
+        value["externalAssets"] = [asset]
+        value["packageScripts"] = [package_script()]
+        self.assertIs(validate_spec(value), value)
+
+    def test_v2_external_asset_paths_extensions_ids_and_cross_table_guids_are_guarded(self):
+        for bad in (
+            {"target": "Assets/Game/Shared.prefab"},
+            {"source": "Assets/Candidate/Script.cs"},
+            {"guid": "D" * 32},
+            {"sha256": "A" * 64},
+            {"objects": []},
+        ):
+            value = spec_v2(); value["externalAssets"] = [external_asset(**bad)]
+            self.assert_invalid(value)
+        value = spec_v2(); value["externalAssets"] = [external_asset(objects=[
+            {"localId": 1, "type": "A", "assembly": "Game", "name": "", "fields": []},
+            {"localId": 1, "type": "B", "assembly": "Game", "name": "", "fields": []},
+        ])]
+        self.assert_invalid(value, "DUPLICATE")
+        value = spec_v2(); value["externalAssets"] = [external_asset(), external_asset(source="Assets/Candidate/Other.asset")]
+        self.assert_invalid(value, "DUPLICATE")
+        value = spec_v2(); value["externalAssets"] = [external_asset(target="Assets/Game/Panel.prefab")]
+        self.assert_invalid(value)
+        value = spec_v2(); value["externalAssets"] = [external_asset()]
+        value["additions"] = [{"source": "Assets/Candidate/Incoming.asset", "target": "Assets/Game/Shared.asset"}]
+        value["verifications"] = []
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v2(); value["externalScripts"] = [external_script()]
+        value["externalAssets"] = [external_asset(guid=GUID)]
+        self.assert_invalid(value, "OVERLAP")
+
+    def test_v2_external_asset_combined_object_and_field_budgets_apply_with_verifications(self):
+        value = spec_v2()
+        def owners(start, count):
+            return [{"localId": i, "type": "X", "assembly": "Game", "name": "", "fields": []}
+                    for i in range(start, start + count)]
+        value["externalAssets"] = [external_asset(objects=owners(1, 2048)),
+                                    external_asset(source="Assets/Candidate/Other.asset", target="Assets/Game/Other.asset", guid="9" * 32, objects=owners(1, 2049))]
+        self.assert_invalid(value, "BOUNDS")
+        value = spec_v2()
+        fields = [{"propertyPath": "x", "kind": "string", "value": ""}] * 250000
+        owner = {"localId": 1, "type": "X", "assembly": "Game", "name": "", "fields": []}
+        value["externalAssets"] = [external_asset(objects=[{**owner, "fields": fields}])]
+        self.assert_invalid(value, "BOUNDS")
+
+    def test_v2_external_asset_and_package_script_array_limits(self):
+        value = spec_v2(); value["externalAssets"] = [{}] * 257
+        self.assert_invalid(value, "BOUNDS")
+        value = spec_v2(); value["packageScripts"] = [{}] * 65
+        self.assert_invalid(value, "BOUNDS")
+        value = spec_v2(); value["externalAssets"] = [external_asset(guid="7" * 32), external_asset(source="Assets/Candidate/Other.asset", target="Assets/Game/Other.asset", guid="7" * 32)]
+        self.assert_invalid(value, "DUPLICATE")
+
+    def test_v2_external_asset_guid_cannot_collide_with_external_script_guid(self):
+        # The extension allowlists make a literal .cs path collision impossible,
+        # but the cross-table guard remains explicit for future-safe closure.
+        value = spec_v2(); value["externalScripts"] = [external_script()]
+        value["externalAssets"] = [external_asset(guid=GUID)]
+        self.assert_invalid(value, "OVERLAP")
+
+    def test_v2_package_script_scope_semver_and_identity_collisions_are_strict(self):
+        value = spec_v2(); value["packageScripts"] = [package_script()]
+        self.assertIs(validate_spec(value), value)
+        for bad in (
+            {"target": "Packages/com.unity.ugui/Editor/Graphic.cs"},
+            {"target": "Packages/com.unity.textmeshpro/Runtime/Graphic.cs"},
+            {"type": "UnityEngine.EventSystems.EventSystem"},
+            {"assembly": "UnityEngine.UI.dll"},
+            {"packageName": "com.unity.textmeshpro"},
+            {"packageVersion": "file:../com.unity.ugui"},
+            {"packageVersion": "01.0.0"},
+            {"packageSource": "local"},
+            {"localId": True},
+            {"guid": "F" * 32},
+        ):
+            value = spec_v2(); value["packageScripts"] = [package_script(**bad)]
+            self.assert_invalid(value)
+        value = spec_v2(); value["externalAssets"] = [external_asset(guid="8" * 32)]
+        value["packageScripts"] = [package_script(guid="8" * 32)]
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v2(); value["externalScripts"] = [external_script()]
+        value["packageScripts"] = [package_script(guid=GUID)]
+        self.assert_invalid(value, "OVERLAP")
+        value = spec_v2(); value["packageScripts"] = [package_script(), package_script(target="Packages/com.unity.ugui/Runtime/UI/Image.cs")]
+        self.assert_invalid(value, "DUPLICATE")
+
+    def test_schema2_is_closed_and_describes_reused_owner_and_package_fields(self):
+        path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-2.schema.json"
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
+        self.assertEqual(schema["properties"]["schemaVersion"], {"const": 2})
+        self.assertIs(schema["additionalProperties"], False)
+        self.assertIn("externalAssets", schema["required"])
+        self.assertIn("packageScripts", schema["required"])
+        self.assertIs(schema["$defs"]["externalAsset"]["additionalProperties"], False)
+        self.assertIs(schema["$defs"]["packageScript"]["additionalProperties"], False)
+        self.assertEqual(len(schema["$defs"]["field"]["oneOf"]), 5)
+        self.assertIn("maxItems", schema["properties"]["packageScripts"])
+        self.assertEqual(schema["properties"]["packageScripts"]["maxItems"], 64)
+        self.assertEqual(schema["properties"]["externalAssets"]["maxItems"], 256)
+
+    def test_schema2_validation_examples_when_optional_jsonschema_is_available(self):
+        try:
+            from jsonschema import Draft202012Validator
+        except ImportError:
+            self.skipTest("optional jsonschema package is not installed")
+        path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-2.schema.json"
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        valid = spec_v2(); valid["externalAssets"] = [external_asset()]; valid["packageScripts"] = [package_script()]
+        self.assertTrue(validator.is_valid(valid))
+        for invalid in (
+            {**valid, "unexpected": 1},
+            {**valid, "externalAssets": [{**external_asset(), "extra": 1}]},
+            {**valid, "packageScripts": [{**package_script(), "packageVersion": "../package"}]},
+        ):
+            self.assertFalse(validator.is_valid(invalid))
 
     def test_published_schema_is_loadable_closed_and_describes_typed_field_union(self):
         path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-1.schema.json"

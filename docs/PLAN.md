@@ -1,5 +1,11 @@
 # beaver development
 
+## Active implementation — 2026-11-02: fixed24 exact resource/package reuse
+
+The formal login preflight exposed a real fix23 limitation: byte-identical already-owned non-code resources and native-observed UGUI package scripts cannot be declared. Fixed24 adds strict spec2/contract2 externalAssets and official com.unity.ugui packageScripts; spec1/contract1 remain supported and old fixed23 transactions remain immutable. Source+target resource/meta must be identical at the unique GUID/path. Native exact object/type/name/declared fields and full persistent-reference snapshots are compared across preflight, independent reopen and rollback. The existing official direct package version/source/lock, full cached package tree, script/meta/package.json and native GetClass are pinned; nothing installs/imports compiler inputs or bypasses dependency closure. Missing application scripts and deadbeef source dependencies remain blocked.
+
+Primary owns native/runtime/CLI/version/sealing and sole isolated batchmode/nographics fixture. Reused intake_contract contributor owns only strict validator/schema/tests/docs. First trial exposed an obsolete Unity6.6 SerializedProperty API, was retained and zero-asset rolled back; corrected actual source trial verified one new Prefab, two retained resources including a referenced ScriptableObject, two retained scripts and one official Button package script, independent cold reopen and one-asset rollback. 81 affected checks passed with2 optional-schema skips; final fixed installed verification and targeted conflicts are next. No formal project write or screen use.
+
 ## Current implementation — 2026-11-02: fixed23 first-module intake tool gap CLOSED; source partial
 
 The create-only `beaver-additive-intake/1` contract is sealed separately from old adopt. It pins the current source/directory/state inputs, exact selected candidate assets and reviewed same-GUID/type retained scripts. Native GetClass/domain, exact owner/typed-field/reference checks and an independent headless reopen protect existing files; scope journals do not synthesize prior exports or replace adoption state. Rollback removes only owned unchanged additions and refuses later manual edits.

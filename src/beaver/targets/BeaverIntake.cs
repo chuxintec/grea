@@ -16,9 +16,12 @@ public static class BeaverIntake {
     [Serializable] public class Check { public string asset; public Owner[] objects; }
     [Serializable] public class Script { public string target,targetGuid,targetType,targetAssembly,targetSha256,targetMetaSha256; public long targetLocalId; }
     [Serializable] public class Addition { public string target,guid,fileHash,metaHash; }
-    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256; public Addition[] additions; public Script[] externalScripts; public Check[] verifications; }
+    [Serializable] public class External { public string target,guid,sha256,metaSha256; public Owner[] objects; }
+    [Serializable] public class PackageScript { public string target,guid,type,assembly,name,packageName,packageVersion,packageSource,packageJsonSha256,sha256,metaSha256,resolvedRoot; public long localId; }
+    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public Check[] verifications; }
     [Serializable] public class Observed { public string path,guid,type,assembly,name; public long localId; }
-    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); }
+    [Serializable] public class Reference { public string asset,propertyPath; public long ownerLocalId; public Observed value; }
+    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); }
     static Job job; static Report report; static string root;
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe intake path");
@@ -37,6 +40,38 @@ public static class BeaverIntake {
             if(t==null||t.FullName!=s.targetType||t.Assembly.GetName().Name!=s.targetAssembly)throw new Exception("Retained script GetClass/domain mismatch "+s.target);
             var found=Identity(script,s.target);if(found.guid!=s.targetGuid||found.localId!=s.targetLocalId)throw new Exception("Retained script localID mismatch "+s.target);
             found.type=t.FullName;found.assembly=t.Assembly.GetName().Name;report.scripts.Add(found);
+        }
+    }
+    static void Dependencies() {
+        foreach(var s in job.packageScripts??new PackageScript[0]) {
+            var info=UnityEditor.PackageManager.PackageInfo.FindForAssetPath(s.target);
+            if(info==null||info.name!=s.packageName||info.version!=s.packageVersion||info.source.ToString().ToLowerInvariant()!=s.packageSource||Path.GetFullPath(info.resolvedPath)!=s.resolvedRoot)throw new Exception("Package identity/source mismatch "+s.target);
+            string relative=s.target.Substring(("Packages/"+s.packageName+"/").Length);string file=Path.Combine(info.resolvedPath,relative);
+            if(Hash(Path.Combine(info.resolvedPath,"package.json"))!=s.packageJsonSha256||Hash(file)!=s.sha256||Hash(file+".meta")!=s.metaSha256||AssetDatabase.GUIDToAssetPath(s.guid)!=s.target)throw new Exception("Package source/meta drift "+s.target);
+            var script=AssetDatabase.LoadAssetAtPath<MonoScript>(s.target);var type=script==null?null:script.GetClass();
+            var observed=Identity(script,s.target);
+            if(type==null||type.FullName!=s.type||type.Assembly.GetName().Name!=s.assembly||observed.guid!=s.guid||observed.localId!=s.localId||observed.name!=s.name)throw new Exception("Package GetClass/identity mismatch "+s.target);
+            observed.type=type.FullName;observed.assembly=type.Assembly.GetName().Name;report.packageScripts.Add(observed);
+        }
+        foreach(var e in job.externalAssets??new External[0]) {
+            if(Hash(Full(e.target))!=e.sha256||Hash(Full(e.target+".meta"))!=e.metaSha256||AssetDatabase.GUIDToAssetPath(e.guid)!=e.target)throw new Exception("Retained resource drift "+e.target);
+            var values=AssetDatabase.LoadAllAssetsAtPath(e.target).Concat(new[]{AssetDatabase.LoadMainAssetAtPath(e.target)}).Where(v=>v!=null).Distinct().Select(v=>new{value=v,id=Identity(v,e.target)}).OrderBy(v=>v.id.localId).ToArray();
+            if(values.Length!=e.objects.Length||values.Select(v=>v.id.localId).Distinct().Count()!=values.Length)throw new Exception("Retained resource exact object set mismatch "+e.target);
+            foreach(var v in values) {
+                var o=e.objects.SingleOrDefault(expected=>expected.localId==v.id.localId);
+                if(o==null||v.id.guid!=e.guid||v.id.type!=o.type||v.id.assembly!=o.assembly||v.id.name!=o.name)throw new Exception("Retained resource object identity mismatch "+e.target);
+                report.externalObjects.Add(v.id);var so=new SerializedObject(v.value);so.UpdateIfRequiredOrScript();
+                foreach(var f in o.fields)Value(so.FindProperty(f.propertyPath),f);
+                var iterator=so.GetIterator();int count=0;
+                while(iterator.Next(true)) {
+                    if(++count>250000)throw new Exception("Retained resource reference traversal budget");
+                    if(iterator.propertyType!=SerializedPropertyType.ObjectReference)continue;
+                    var value=iterator.objectReferenceValue;
+                    if(value==null&&iterator.objectReferenceEntityIdValue!=EntityId.None)throw new Exception("Unresolved retained resource reference "+iterator.propertyPath);
+                    report.externalReferences.Add(new Reference{asset=e.target,ownerLocalId=o.localId,propertyPath=iterator.propertyPath,value=value==null?null:Identity(value,AssetDatabase.GetAssetPath(value))});
+                    if(report.externalReferences.Count>250000)throw new Exception("Retained resource reference budget");
+                }
+            }
         }
     }
     static void Value(SerializedProperty p,Field f) {
@@ -86,7 +121,7 @@ public static class BeaverIntake {
             var path=new System.Text.UTF8Encoding(false,true).GetString(Convert.FromBase64String(encoded));job=JsonUtility.FromJson<Job>(File.ReadAllText(path));
             root=Path.GetFullPath(job.targetRoot).TrimEnd(Path.DirectorySeparatorChar);
             if(Application.unityVersion!="6000.6.2f1"||root!=Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName).TrimEnd(Path.DirectorySeparatorChar))throw new Exception("Wrong Editor/project");
-            report=new Report{status="running",mode=job.mode,planSha256=job.planSha256};Scripts();
+            report=new Report{status="running",mode=job.mode,planSha256=job.planSha256};Scripts();Dependencies();
             if(job.mode!="preflight"&&job.mode!="verify"&&job.mode!="rollback-check")throw new Exception("Unknown intake gate");
             foreach(var a in job.additions) {
                 if(job.mode=="preflight"||job.mode=="rollback-check") {

@@ -1,4 +1,4 @@
-# Additive Unity intake specification v1
+# Additive Unity intake specifications v1 and v2
 
 `beaver.intake_contract.validate_spec(doc)` checks the closed, declarative input
 contract for additive asset intake. It returns the original dictionary on
@@ -8,14 +8,15 @@ discovery. Plan, apply, rollback, native readback, and prefab-context coverage
 belong to separate workflow stages; passing this validator alone is not
 evidence that any of those stages ran or that a product works.
 
-The [JSON Schema draft 2020-12 document](schemas/additive-intake-1.schema.json)
-describes the static closed-object shape, required fields, array limits,
-scalar types, hashes, and typed field-value union. It is useful for editors
-and early structural checks. `validate_spec` and the plan guards remain the
-semantic authority: they additionally enforce Windows-invalid names, NFC and
-case-fold path aliases, matching extensions, nonzero/reference relationships,
-cross-list uniqueness and disjointness, and prefab/asset/compiler context.
-JSON Schema does not claim to enforce those cross-table or filesystem facts.
+The [v1 JSON Schema](schemas/additive-intake-1.schema.json) and [v2 JSON Schema](schemas/additive-intake-2.schema.json)
+use draft 2020-12 to describe each version's static closed-object shape,
+required fields, array limits, scalar types, hashes, and typed field-value
+union. They are useful for editors and early structural checks.
+`validate_spec` and the plan guards remain the semantic authority: they
+additionally enforce Windows-invalid names, NFC and case-fold path aliases,
+matching extensions, nonzero/reference relationships, cross-list uniqueness
+and disjointness, and prefab/asset/compiler context. JSON Schema does not
+claim to enforce those cross-table or filesystem facts.
 
 ## Top-level shape
 
@@ -41,6 +42,51 @@ both are canonical `Assets/` paths with the same allowed extension: `.prefab`,
 Scripts, assemblies, DLLs, scenes, metadata files, and other imports are
 excluded. Source and destination paths are each unique under NFC plus
 case-insensitive comparison.
+
+## Schema version 2: retained assets and package scripts
+
+Version 2 keeps every version 1 field and its validation rules, changes
+`schemaVersion` to `2`, and requires two additional closed arrays:
+`externalAssets` and `packageScripts`. A version 1 object remains valid as-is;
+v1 rejects either v2 field as unknown, and v2 rejects a missing new array.
+
+`externalAssets` has at most 256 entries. Each entry has exactly `source`,
+`target`, `guid`, `sha256`, `metaSha256`, `objects`, and `reason`. Source and
+target are canonical `Assets/` asset paths with the same non-compiler
+allowlisted extension (`.asset`, `.mat`, `.png`, `.ttf`, `.otf`, `.shader`,
+`.txt`, or `.json`); `.prefab` and compiler inputs are excluded. Each object
+list has 1–4096 entries, with at most 4096 objects total across the array.
+Objects and fields use the same exact owner/typed-field structure as prefab
+`verifications`. Their fields combined with all v1 `verifications` fields are
+limited to 250,000. Local IDs are unique within each external asset. Source
+paths, target paths, and GUIDs are each unique; external-asset paths cannot
+intersect additions or external-script paths, and GUIDs cannot collide with
+external-script GUIDs.
+
+An external asset declares retained identity reuse: its source and target
+metadata must resolve to the same declared GUID, and the declared asset and
+metadata hashes pin the reviewed bytes. It is not a copy or overwrite request.
+Native apply must check exact native object observations for the declared
+objects and preserve the existing asset bytes.
+
+`packageScripts` has at most 64 entries. Each entry has exactly `target`,
+`guid`, `type`, `assembly`, `localId`, `name`, `packageName`, `packageVersion`,
+`packageSource`, `packageJsonSha256`, `sha256`, `metaSha256`, and `reason`.
+Targets must be canonical C# files under
+`Packages/com.unity.ugui/Runtime/`; package identity is fixed to
+`com.unity.ugui`, assembly to `UnityEngine.UI`, and type names must begin with
+`UnityEngine.UI.`. Versions use strict semantic-version syntax and sources are
+`registry` or `builtin`. Each package script has a nonzero signed 64-bit native
+local ID and pinned package JSON, script, and metadata hashes. Target paths and
+GUIDs are unique, and package-script GUIDs cannot collide with external asset
+or external-script GUIDs. Native verification must resolve exact objects and
+confirm `MonoScript.GetClass()` identity.
+
+The plan/apply implementation owns the complete serialized-reference snapshot
+before and after native import and must fail closed if its report exceeds the
+native output budget. The JSON Schema and contract validator only establish
+the declaration shape; they do not read packages, import assets, or prove
+native identity.
 
 Paths reject traversal, empty components, backslashes, colons, control
 characters, non-NFC spellings, Windows-invalid/reserved names, and trailing
@@ -156,3 +202,5 @@ Transactions live outside the product. No singleton adoption state is created or
 Neutral validation covers explicit source/default-domain script compatibility, typed fields/references, cold reopen, failed name expectation with guarded rollback, and later-edit refusal. Visual, Player, game behavior, unsupported source shaders and unknown recovered behavior remain separate consumer gates. Existing `adopt` baseline requirements and old fixed transactions are unchanged.
 
 A successful intake preserves source diagnostics and native/presentation/Player/business provenance in `sourceCandidateValidation`. Source native-partial/unknown statuses or diagnostics keep the public result partial (exit1), while `intakeStatus=verified` and a complete transaction mean the declared intake succeeded. This is not a retry instruction: inspect the complete receipt and reuse it. Unsupported source behavior is never certified by object/field counts.
+
+Fixed24 package declarations require an already-resolved, direct, exact version in both Packages/manifest.json and packages-lock.json. Registry source must be https://packages.unity.com; builtin is also supported. Exactly one matching non-symlink Library/PackageCache root is required. The full cached package file tree is pinned and rechecked before mutation/rollback and after native work; package source/meta/package.json hashes and native PackageInfo resolved root/source/version/GetClass are independently checked. Nothing installs or copies package scripts. Candidate compiler stubs with a declared official package GUID are omitted, never imported. Other missing scripts and unselected/deadbeef references remain blocked. External non-code objects require exact object sets, declared typed fields and automatic full persistent-reference snapshots compared across preflight, cold verification and rollback.
