@@ -111,6 +111,8 @@ class VirtualPointerTests(unittest.TestCase):
                 "sequence": request["sequence"], "lastAcceptedSequence": request["sequence"], "framesQueued": 1,
                 "framesConsumed": 1, "inputEventsQueued": 1, "buttonDown": False, "ackFrame": 12, "lastEventFrame": 11,
                 "physicalTakeover": False, "cleanupPerformed": False, "sourceIsolation": "device-specific-ui-actions", "targetRoute": "InputSystemUIInputModule"}
+        if status == "stopped" and extra.get("cleanupPerformed") is True:
+            base.update({k: True for k in ("deviceRemoved", "actionRoutesRestored", "listenerStopped", "backgroundRestored", "endpointRemoved")})
         base.update(extra)
         return base
 
@@ -277,6 +279,32 @@ class VirtualPointerTests(unittest.TestCase):
         finally:
             for context in reversed(contexts): context.__exit__(None, None, None)
             server.__exit__(None, None, None)
+
+    def test_incomplete_cleanup_never_retires_private_state(self):
+        for field in ("deviceRemoved", "actionRoutesRestored", "listenerStopped", "backgroundRestored", "endpointRemoved"):
+            with self.subTest(field=field):
+                def answer(req, _):
+                    if req["operation"] == "hello": return self.receipt(req, "verified")
+                    if req["operation"] == "inspect": return self.receipt(req, "verified", lastAcceptedSequence=0)
+                    return self.receipt(req, "stopped", cleanupPerformed=True, **{field: False})
+                server, prepared, public, config, owner, bound, contexts = self.bind_session(answer)
+                try:
+                    output = self.root / ("incomplete-" + field)
+                    result = vp.stop(bound["session"], bound["sessionSha256"], output)
+                    self.assertEqual(result["status"], "partial")
+                    self.assertFalse(result["cleanupPerformed"])
+                    self.assertTrue(result["needsAction"])
+                    self.assertTrue(Path(public["configPath"]).exists())
+                    state_path = Path(json.loads(Path(bound["session"]).read_text())["statePath"])
+                    state = vp._read_private(state_path)
+                    self.assertFalse(state["stopped"])
+                    self.assertTrue(state["blockedUnknown"])
+                finally:
+                    for context in reversed(contexts): context.__exit__(None, None, None)
+                    server.__exit__(None, None, None)
+                    # Each subcase starts a fresh immutable session in its own output.
+                    import shutil
+                    shutil.rmtree(self.root / "bound")
 
     def test_replacement_endpoint_preserves_all_channel_files(self):
         def answer(req, _):

@@ -42,7 +42,7 @@ RECEIPT_FIELDS = {
     "buildGUID", "unityVersion", "inputSystemVersion", "deviceId", "deviceNative", "deviceCanRunInBackground",
     "coordinateSpace", "screenWidth", "screenHeight", "focused", "osForeground", "frontmostPid", "applicationBatchMode", "sequence", "lastAcceptedSequence",
     "framesQueued", "framesConsumed", "inputEventsQueued", "buttonDown", "ackFrame", "lastEventFrame",
-    "physicalTakeover", "cleanupPerformed", "sourceIsolation", "targetRoute", "targetHitName", "targetHitFrame",
+    "physicalTakeover", "cleanupPerformed", "deviceRemoved", "actionRoutesRestored", "listenerStopped", "backgroundRestored", "endpointRemoved", "sourceIsolation", "targetRoute", "targetHitName", "targetHitFrame",
     "capturePath", "captureSha", "captureSha256", "lastCommandSequence", "lastCommandState", "lastCommandReceipt",
     "lastAckFrame", "lastInputEventsQueued", "reason",
 }
@@ -417,6 +417,11 @@ def _persist_receipt(config, sequence, receipt):
     return str(target)
 
 
+def _cleanup_confirmed(receipt):
+    return (receipt.get("status") == "stopped" and receipt.get("buttonDown") is False
+            and all(receipt.get(k) is True for k in ("cleanupPerformed", "deviceRemoved", "actionRoutesRestored", "listenerStopped", "backgroundRestored", "endpointRemoved")))
+
+
 def _dispatch(config, discovery, state_path, state, operation, **extra):
     seq = state["nextSequence"]
     state["nextSequence"] = seq + 1
@@ -434,7 +439,7 @@ def _dispatch(config, discovery, state_path, state, operation, **extra):
     state["lastReceipt"] = receipt
     state["blockedUnknown"] = receipt.get("status") in ("partial",)
     if operation == "stop":
-        stopped_cleanly = receipt.get("status") == "stopped" and receipt.get("cleanupPerformed") is True
+        stopped_cleanly = _cleanup_confirmed(receipt)
         state["stopped"] = stopped_cleanly
         state["blockedUnknown"] = not stopped_cleanly
     _write_private(state_path, state, create=False)
@@ -592,12 +597,12 @@ def stop(session, expected_session, out):
             state["nextSequence"] = accepted + 1
             receipt = _dispatch(config, discovery, state_path, state, "stop")
         cleanup_ok = False; cleanup_reason = None
-        if receipt.get("status") == "stopped" and receipt.get("cleanupPerformed") is True:
+        if _cleanup_confirmed(receipt):
             cleanup_ok, cleanup_reason = _stop_cleanup(config, envelope, discovery, state_path)
             if not cleanup_ok:
                 state["stopped"] = False; state["blockedUnknown"] = True
                 _write_private(state_path, state, create=False)
-    clean_stop = receipt.get("status") == "stopped" and receipt.get("cleanupPerformed") is True and cleanup_ok
+    clean_stop = _cleanup_confirmed(receipt) and cleanup_ok
     if not clean_stop and cleanup_reason is None:
         cleanup_reason = "Stop receipt did not confirm completed release and companion cleanup."
     result = {"schemaVersion": 1, "contract": "beaver-virtual-pointer-stop-result/1", "status": "stopped" if clean_stop else ("partial" if cleanup_reason else receipt.get("status")),

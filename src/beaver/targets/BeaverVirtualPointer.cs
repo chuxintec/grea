@@ -465,7 +465,9 @@ namespace Beaver.VirtualPointer
                 if (op == "stop") Shutdown("requested_stop");
                 bool cancellation = activeErrorCode == "COMMAND_DISCONNECTED" || activeErrorCode == "COMMAND_TIMEOUT" || activeErrorCode == "COMMAND_EXPIRED" || activeErrorCode == "SCENE_CHANGED";
                 var resultStatus = !String.IsNullOrEmpty(activeErrorCode) ? (cancellation && eventCountForActive > 0 ? "partial" : "blocked") : (op == "stop" ? "stopped" : "consumed");
-                var receipt = Receipt(resultStatus, activeErrorCode ?? "", seq, eventCountForActive);
+                string resultError = activeErrorCode ?? "";
+                if (op == "stop" && !CleanupConfirmed) { resultStatus = "partial"; resultError = "CLEANUP_INCOMPLETE"; }
+                var receipt = Receipt(resultStatus, resultError, seq, eventCountForActive);
                 receipt["buttonDown"] = isDown; receipt["ackFrame"] = ackFrame; receipt["lastEventFrame"] = lastEventFrame;
                 if (!PersistReceipt(receipt, seq)) { receipt["status"] = "partial"; receipt["errorCode"] = "RECEIPT_WRITE_FAILED"; receipt["reason"] = "RECEIPT_WRITE_FAILED"; }
                 UpdateLastCommand(receipt);
@@ -573,7 +575,7 @@ namespace Beaver.VirtualPointer
         }
         void BindRoutes()
         {
-            RestoreRoutes();
+            if (!RestoreRoutes()) throw new InvalidOperationException("Previous virtual UI routes could not be restored");
             var modules = Resources.FindObjectsOfTypeAll<InputSystemUIInputModule>();
             bool hasModule = false;
             foreach (var module in modules) if (module != null && module.gameObject.scene.IsValid() && module.isActiveAndEnabled) { hasModule = true; break; }
@@ -625,10 +627,13 @@ namespace Beaver.VirtualPointer
             if (enabled && !reference.action.enabled) reference.action.Enable();
             else if (!enabled && reference.action.enabled) reference.action.Disable();
         }
-        void RestoreRoutes()
+        bool RestoreRoutes()
         {
+            bool restored = true;
             foreach (var r in routes)
             {
+                try
+                {
                 if (r.Module != null)
                 {
                     r.Module.point = r.OldPoint; r.Module.leftClick = r.OldClick; r.Module.middleClick = r.OldMiddleClick; r.Module.rightClick = r.OldRightClick;
@@ -638,13 +643,21 @@ namespace Beaver.VirtualPointer
                     RestoreEnabled(r.OldRightClick, r.OldEnabled[3]); RestoreEnabled(r.OldScroll, r.OldEnabled[4]); RestoreEnabled(r.OldMove, r.OldEnabled[5]);
                     RestoreEnabled(r.OldSubmit, r.OldEnabled[6]); RestoreEnabled(r.OldCancel, r.OldEnabled[7]); RestoreEnabled(r.OldTrackedOrientation, r.OldEnabled[8]);
                     RestoreEnabled(r.OldTrackedPosition, r.OldEnabled[9]);
+                    var actual = new[] { r.Module.point, r.Module.leftClick, r.Module.middleClick, r.Module.rightClick, r.Module.scrollWheel, r.Module.move, r.Module.submit, r.Module.cancel, r.Module.trackedDeviceOrientation, r.Module.trackedDevicePosition };
+                    var expected = new[] { r.OldPoint, r.OldClick, r.OldMiddleClick, r.OldRightClick, r.OldScroll, r.OldMove, r.OldSubmit, r.OldCancel, r.OldTrackedOrientation, r.OldTrackedPosition };
+                    for (int i = 0; i < actual.Length; i++) if (actual[i] != expected[i] || IsEnabled(expected[i]) != r.OldEnabled[i]) restored = false;
                 }
+                else restored = false;
                 if (r.NewPoint != null) Destroy(r.NewPoint); if (r.NewClick != null) Destroy(r.NewClick); if (r.NewMiddleClick != null) Destroy(r.NewMiddleClick); if (r.NewRightClick != null) Destroy(r.NewRightClick);
                 if (r.NewScroll != null) Destroy(r.NewScroll); if (r.NewMove != null) Destroy(r.NewMove); if (r.NewSubmit != null) Destroy(r.NewSubmit); if (r.NewCancel != null) Destroy(r.NewCancel);
                 if (r.NewTrackedOrientation != null) Destroy(r.NewTrackedOrientation); if (r.NewTrackedPosition != null) Destroy(r.NewTrackedPosition);
+                }
+                catch { restored = false; }
             }
             routes.Clear();
-            if (virtualActionsAsset != null) { virtualActionsAsset.Disable(); Destroy(virtualActionsAsset); virtualActionsAsset = null; }
+            try { if (virtualActionsAsset != null) { virtualActionsAsset.Disable(); Destroy(virtualActionsAsset); virtualActionsAsset = null; } }
+            catch { restored = false; }
+            return restored;
         }
 
         bool ReleaseNow()
@@ -674,6 +687,8 @@ namespace Beaver.VirtualPointer
             FinalShutdown();
         }
 
+        bool CleanupConfirmed { get { return cleanupDone && !isDown && terminalDeviceRemoved && terminalActionsRestored && terminalListenerStopped && terminalBackgroundRestored && terminalEndpointRemoved; } }
+
         void FinalShutdown()
         {
             if (cleanupDone) return; cleanupDone = true; alive = false; shutdownAfterRelease = false; safetyReleasePending = false; safetyReleaseAwaitingAck = false;
@@ -681,12 +696,11 @@ namespace Beaver.VirtualPointer
             InputSystem.onBeforeUpdate -= BeforeInputUpdate; InputSystem.onEvent -= ObservePhysicalMouse; SceneManager.sceneLoaded -= SceneLoaded;
             int routesToRestore = routes.Count; terminalUiRouteCount = 0;
             foreach (var route in routes) if (route.Module != null) terminalUiRouteCount++;
-            RestoreRoutes();
-            terminalActionsRestored = terminalUiRouteCount == routesToRestore;
+            terminalActionsRestored = RestoreRoutes() && terminalUiRouteCount == routesToRestore;
             try { if (listener != null) listener.Stop(); terminalListenerStopped = true; } catch { }
             try { if (device != null && device.added) InputSystem.RemoveDevice(device); terminalDeviceRemoved = device == null || !device.added; } catch { }
             // Restore the prior application background setting; do not change global InputSettings.
-            try { if (backgroundChanged) Application.runInBackground = backgroundBefore; terminalBackgroundRestored = true; } catch { }
+            try { if (backgroundChanged) Application.runInBackground = backgroundBefore; terminalBackgroundRestored = Application.runInBackground == backgroundBefore; } catch { }
             terminalEndpointRemoved = RemoveOwnedEndpoint();
             if (active != null) { CompleteInterrupted(active, "partial", "COMPANION_STOPPED", eventCountForActive); active = null; }
             lock (queueLock) while (pending.Count > 0) CompleteInterrupted(pending.Dequeue(), "blocked", "COMPANION_STOPPED", 0);
@@ -711,7 +725,7 @@ namespace Beaver.VirtualPointer
             var lifecycle = new Dictionary<string, object>
             {
                 { "schemaVersion", 1 }, { "contract", "beaver-virtual-pointer-lifecycle/1" },
-                { "status", (shutdownReason != null && shutdownReason.StartsWith("not_supported_", StringComparison.Ordinal)) ? "not_supported" : (shutdownReason == "viewport_unavailable" ? "blocked" : "stopped") },
+                { "status", (shutdownReason != null && shutdownReason.StartsWith("not_supported_", StringComparison.Ordinal)) ? "not_supported" : (shutdownReason == "viewport_unavailable" ? "blocked" : (CleanupConfirmed ? "stopped" : "partial")) },
                 { "reason", shutdownReason ?? "unspecified" }, { "channelId", config.channelId }, { "instanceId", instanceId ?? "" },
                 { "pid", processId }, { "physicalTakeover", physicalTakeover }, { "unityFocused", runtimeFocused },
                 { "applicationBatchMode", runtimeBatchMode }, { "osForeground", osFrontmostAvailable && osFrontmostPid == processId },
@@ -721,7 +735,7 @@ namespace Beaver.VirtualPointer
                 { "frame", Time.frameCount }, { "framesQueued", framesQueued }, { "framesConsumed", framesConsumed },
                 { "inputEventsQueued", inputEventsQueued }, { "ackFrame", ackFrame }, { "lastEventFrame", lastEventFrame },
                 { "buttonDown", isDown }, { "deviceCreated", deviceCreated }, { "listenerStarted", listenerStarted },
-                { "endpointPublished", endpointPublished }, { "cleanupPerformed", cleanupDone },
+                { "endpointPublished", endpointPublished }, { "cleanupPerformed", CleanupConfirmed },
                 { "actionRoutesRestored", terminalActionsRestored }, { "uiRoutesRestored", terminalUiRouteCount },
                 { "deviceRemoved", terminalDeviceRemoved }, { "listenerStopped", terminalListenerStopped },
                 { "endpointRemoved", terminalEndpointRemoved }, { "backgroundRestored", terminalBackgroundRestored }
@@ -764,7 +778,7 @@ namespace Beaver.VirtualPointer
 
         Dictionary<string, object> Receipt(string status, string error, long seq, int eventCount)
         {
-            return new Dictionary<string, object> { { "schemaVersion", 1 }, { "contract", ReceiptContract }, { "backend", "unity-inputsystem-virtual-pointer/1" }, { "status", status }, { "errorCode", error }, { "channelId", config == null ? "" : config.channelId }, { "instanceId", instanceId ?? "" }, { "pid", processId }, { "buildGUID", buildGuid ?? "unknown" }, { "unityVersion", runtimeUnityVersion ?? "unknown" }, { "inputSystemVersion", runtimeInputSystemVersion ?? "unknown" }, { "deviceId", deviceId ?? "" }, { "deviceNative", false }, { "deviceCanRunInBackground", true }, { "coordinateSpace", coordinateSpace }, { "screenWidth", screenWidth }, { "screenHeight", screenHeight }, { "focused", runtimeFocused }, { "osForeground", osFrontmostAvailable && osFrontmostPid == processId }, { "frontmostPid", osFrontmostPid }, { "applicationBatchMode", runtimeBatchMode }, { "sequence", seq }, { "lastAcceptedSequence", lastAccepted }, { "framesQueued", framesQueued }, { "framesConsumed", framesConsumed }, { "inputEventsQueued", inputEventsQueued }, { "buttonDown", isDown }, { "ackFrame", ackFrame }, { "lastEventFrame", lastEventFrame }, { "physicalTakeover", physicalTakeover }, { "cleanupPerformed", cleanupDone }, { "sourceIsolation", "device-specific-ui-actions" }, { "targetRoute", "InputSystemUIInputModule" }, { "targetHitName", "" }, { "targetHitFrame", 0 }, { "capturePath", "" }, { "captureSha", "" }, { "lastCommandState", status }, { "reason", error } };
+            return new Dictionary<string, object> { { "schemaVersion", 1 }, { "contract", ReceiptContract }, { "backend", "unity-inputsystem-virtual-pointer/1" }, { "status", status }, { "errorCode", error }, { "channelId", config == null ? "" : config.channelId }, { "instanceId", instanceId ?? "" }, { "pid", processId }, { "buildGUID", buildGuid ?? "unknown" }, { "unityVersion", runtimeUnityVersion ?? "unknown" }, { "inputSystemVersion", runtimeInputSystemVersion ?? "unknown" }, { "deviceId", deviceId ?? "" }, { "deviceNative", false }, { "deviceCanRunInBackground", true }, { "coordinateSpace", coordinateSpace }, { "screenWidth", screenWidth }, { "screenHeight", screenHeight }, { "focused", runtimeFocused }, { "osForeground", osFrontmostAvailable && osFrontmostPid == processId }, { "frontmostPid", osFrontmostPid }, { "applicationBatchMode", runtimeBatchMode }, { "sequence", seq }, { "lastAcceptedSequence", lastAccepted }, { "framesQueued", framesQueued }, { "framesConsumed", framesConsumed }, { "inputEventsQueued", inputEventsQueued }, { "buttonDown", isDown }, { "ackFrame", ackFrame }, { "lastEventFrame", lastEventFrame }, { "physicalTakeover", physicalTakeover }, { "cleanupPerformed", CleanupConfirmed }, { "deviceRemoved", terminalDeviceRemoved }, { "actionRoutesRestored", terminalActionsRestored }, { "listenerStopped", terminalListenerStopped }, { "backgroundRestored", terminalBackgroundRestored }, { "endpointRemoved", terminalEndpointRemoved }, { "sourceIsolation", "device-specific-ui-actions" }, { "targetRoute", "InputSystemUIInputModule" }, { "targetHitName", "" }, { "targetHitFrame", 0 }, { "capturePath", "" }, { "captureSha", "" }, { "lastCommandState", status }, { "reason", error } };
         }
 
         void UpdateLastCommand(Dictionary<string, object> receipt)

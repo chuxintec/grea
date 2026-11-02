@@ -81,7 +81,7 @@ bound channel, process, build, device and coordinate identity. Redacted receipts
 are persisted below a separate private `client-receipts/` directory with mode
 `0600`; the companion retains ownership of its configured `receiptRoot`.
 
-`stop` requests release and device cleanup. Local channel config, endpoint and
+`stop` requests release and device cleanup. A stopped receipt must report buttonDown=false and independently confirm deviceRemoved, actionRoutesRestored, listenerStopped, backgroundRestored and endpointRemoved as true. Missing or failed substeps remain partial, preserve credentials/state and block further gestures; attempted shutdown is not completed cleanup. Local channel config, endpoint and
 client state are removed only after a stopped receipt confirms cleanup, the
 endpoint still belongs to the bound channel/instance/PID/nonce (or is absent),
 and the original owned run is revalidated. A replacement or unreadable endpoint
