@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "monkey-native"
-version = "0.8.0.dev6"
+version = "0.8.0.dev7"
 description = "Evidence-traceable game package recovery to editable native Unity 6 projects"
 requires-python = ">=3.11"
 license = "MIT"

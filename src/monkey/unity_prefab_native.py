@@ -5,11 +5,13 @@ import os
 import shutil
 import subprocess
 import time
+import struct
 
 from .io import inside, load, read, safe, sha, write_json, new_output
 from .sources.compiled import fail
 from .unity_prefab_recovery import source_inputs
 from .native_selection import _guid_meta
+from .unity_prefab_renderer_profiles import renderer_scalar_mapping
 
 
 _ASSEMBLIES = {
@@ -32,8 +34,9 @@ def unity_guid_text_from_serialized_hex(raw):
     return "".join(raw[i+1] + raw[i] for i in range(0, 32, 2))
 
 
-def rect_layout_expectations(graph):
+def rect_layout_expectations(graph, driven_fields=None):
     """RectTransform XY is derived from anchors/pivots, not stale Transform XY."""
+    f32 = lambda value: struct.unpack("<f", struct.pack("<f", value))[0]
     nodes = {n["sourceObjectId"]: n for n in graph["gameObjects"]}
     objects = {o["sourceObjectId"]: o for o in graph["reachableObjects"]}
     result = {}
@@ -44,13 +47,21 @@ def rect_layout_expectations(graph):
         layout = None
         if rect:
             data = rect["data"]
+            overrides = (driven_fields or {}).get(rect['sourceObjectId'], {})
+            if overrides:
+                data = dict(data)
+                for prop, row in overrides.items():
+                    vector, axis = prop.split('.')
+                    if vector not in ('m_AnchorMin', 'm_AnchorMax') or axis not in ('x', 'y'):
+                        fail('UNITY_PREFAB_DRIVEN_RECT_FIELD', prop, 'Only proven source-driven anchor axes affect this layout bridge')
+                    data[vector] = dict(data[vector], **{axis: row['expectedDrivenValue']})
             size, position = {}, {}
             for axis in ("x", "y"):
-                span = data["m_AnchorMax"][axis] - data["m_AnchorMin"][axis]
+                span = f32(data["m_AnchorMax"][axis] - data["m_AnchorMin"][axis])
                 parent_size = parent["size"][axis] if parent else 0
-                size[axis] = parent_size * span + data["m_SizeDelta"][axis]
-                anchor = data["m_AnchorMin"][axis] + span * data["m_Pivot"][axis]
-                position[axis] = data["m_AnchoredPosition"][axis] + parent_size * (anchor - parent["pivot"][axis]) if parent else data["m_AnchoredPosition"][axis]
+                size[axis] = f32(f32(parent_size * span) + data["m_SizeDelta"][axis])
+                anchor = f32(data["m_AnchorMin"][axis] + f32(span * data["m_Pivot"][axis]))
+                position[axis] = f32(data["m_AnchoredPosition"][axis] + f32(parent_size * f32(anchor - parent["pivot"][axis]))) if parent else f32(data["m_AnchoredPosition"][axis])
             layout = dict(size=size, pivot=data["m_Pivot"], position=position)
             result[rect["sourceObjectId"]] = layout
         for child in node["childSourceObjectIds"]:
@@ -173,7 +184,8 @@ def prepare(project, expected_manifest):
     source_files = [r["source"] for r in moves]
     resource_bindings, scripts, shapes, source_file_names = {}, {}, {}, {}
     sdk_path = project / "Analysis/Mappings/native-sdk-scripts.json"
-    sdk_bindings = load(read(sdk_path))["bindings"] if sdk_path.is_file() else []
+    sdk_document = load(read(sdk_path)) if sdk_path.is_file() else {}
+    sdk_bindings = sdk_document.get("bindings", [])
     sdk_scripts = {}
     for binding in sdk_bindings:
         if binding.get("status") != "planned_sdk_binding":
@@ -294,9 +306,32 @@ def prepare(project, expected_manifest):
     disabled = {(c["identity"]["assembly"].removesuffix(".dll"), c["identity"]["namespace"], c["identity"]["name"])
                 for c in code if c["state"] == "disabled-unavailable-carrier"}
     exclusions = []
-    rect_geometry = rect_layout_expectations(graph)
+    driven_fields = {}
+    slider_plan = None
+    if any(o['type'] == 'MonoScript' and o['data'].get('m_ClassName') == 'Slider'
+           and o['data'].get('m_Namespace') == 'UnityEngine.UI' and o['data'].get('m_AssemblyName') == 'UnityEngine.UI.dll'
+           for o in objects.values()):
+        from .unity_prefab_slider_layout import planned_slider_overrides
+        owned = {r['path']: r for r in manifest['files']}
+        class_pins = {sid: dict(path=row['path'], sha256=owned[row['path']]['sha256'])
+                      for sid, row in scripts.items() if row.get('path') in owned}
+        slider_plan = planned_slider_overrides(graph, sdk_bindings=sdk_document,
+            source_candidate_root=project, source_candidate_manifest=manifest, source_class_pins=class_pins)
+        for slider in slider_plan['sliders']:
+            for row in slider['overrides']:
+                target = driven_fields.setdefault(row['sourceObjectId'], {})
+                if row['path'] in target:
+                    fail('UNITY_PREFAB_DRIVEN_FIELD_COLLISION', row['path'], 'Only one proven driver may own a source field')
+                target[row['path']] = row
+    rect_geometry = rect_layout_expectations(graph, driven_fields)
 
     def flatten(sid, value, prop, loc, schema=None):
+        driven = driven_fields.get(sid, {}).get(prop)
+        if driven:
+            if type(value) not in (int, float) or value != driven['sourceStoredValue']:
+                fail('UNITY_PREFAB_DRIVEN_SOURCE_VALUE', loc, 'Driver plan must retain exact source field value')
+            return [dict(path=prop, kind='float', floatValue=driven['expectedDrivenValue'],
+                sourceStoredValue=value, mapping=driven['mapping'], driverEvidence=driven['driver'])]
         if isinstance(value, dict) and value.get("$type") == "UnityPPtr":
             edge = edges.get((sid, loc))
             if not edge:
@@ -397,6 +432,11 @@ def prepare(project, expected_manifest):
                 fields = []
                 children = {c["name"]: c for c in shapes.get(cid, {}).get("children", [])}
                 for key, value in obj["data"].items():
+                    renderer_field = renderer_scalar_mapping(obj["type"], obj.get("classId"), graph["sourceUnityVersions"],
+                        "6000.6.2f1", key, value, children.get(key))
+                    if renderer_field is not None:
+                        fields.append(renderer_field)
+                        continue
                     if key == "m_LocalPosition" and cid in rect_geometry:
                         for axis in ("x", "y"):
                             fields.append(dict(path=key + "." + axis, kind="float", floatValue=rect_geometry[cid]["position"][axis],
@@ -424,7 +464,7 @@ def prepare(project, expected_manifest):
     return dict(schemaVersion=1, targetUnityVersion="6000.6.2f1", outputRelative="Analysis/Readback/unity-prefab-static.json",
                 sourceCandidateManifestSha256=expected_manifest, roots=root_plans,
                 reconstructRoots=bool(sdk_bindings or native_asset_bindings),
-                fieldMappingExclusions=exclusions, resourceBindings=resource_bindings,
+                fieldMappingExclusions=exclusions, resourceBindings=resource_bindings, sourceDrivenSliderPlan=slider_plan,
                 sourceBusiness="not_run", unavailablePresentation="not-accepted")
 
 

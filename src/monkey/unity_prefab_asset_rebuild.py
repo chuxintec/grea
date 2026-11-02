@@ -24,7 +24,8 @@ def _files(root, scopes):
             for scope in scopes for p in sorted((root / scope).rglob('*')) if p.is_file()]
 
 
-def _run(project, editor, plan, label, budget):
+def _run(project, editor, plan, label, budget, *, method='MonkeyUnitySource.UnityPrefabEmbeddedAssets.Run',
+         plan_variable='MONKEY_UNITY_EMBEDDED_PLAN', readback_variable=None):
     rows = subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True).splitlines()
     if any(r.strip().endswith(('/Contents/MacOS/Unity', '/Contents/MacOS/CocosCreator', '/Unity.exe', '/CocosCreator.exe')) for r in rows):
         fail('UNITY_PREFAB_EDITOR_BUSY', '$', 'Another main Editor is running')
@@ -32,14 +33,18 @@ def _run(project, editor, plan, label, budget):
     result_path = project / 'Analysis' / (label + '-readback.json')
     plan = dict(plan, reopenOnly=label == 'cold', outputAbsolute=str(result_path))
     write_json(plan_path, plan)
-    env = dict(os.environ, MONKEY_UNITY_EMBEDDED_PLAN=str(plan_path), MONKEY_UNITY_EMBEDDED_PLAN_SHA256=sha(read(plan_path)))
+    env = dict(os.environ)
+    env[plan_variable] = str(plan_path)
+    env[plan_variable + '_SHA256'] = sha(read(plan_path))
+    if readback_variable:
+        env[readback_variable] = str(result_path)
     stage = project.parent
     result = dict(label=label, plan=_pin(plan_path), graphics='not_run_headless', sourceCodeExecuted=False)
     child = None
     try:
         with (stage / (label + '-console.log')).open('wb') as log:
             child = subprocess.Popen([str(editor), '-batchmode', '-nographics', '-quit', '-projectPath', str(project),
-                '-executeMethod', 'MonkeyUnitySource.UnityPrefabEmbeddedAssets.Run', '-logFile', str(stage / (label + '-editor.log'))],
+                '-executeMethod', method, '-logFile', str(stage / (label + '-editor.log'))],
                 cwd=project, env=env, stdout=log, stderr=subprocess.STDOUT)
             result['pid'] = child.pid
             try:
@@ -211,6 +216,9 @@ def execute(request_path, expected_request, output, editor, budget_seconds=600):
     if atlas_mode:
         result['normalization'] = ['selected original atlas PNG decoded back to pinned bottom-up RGBA32/no-mip Texture2D',
             'existing Sprite GUID/localID/meta and serialized geometry preserved; only native texture references rebound']
+        if any(s.get('geometryCorrectionProfile') for s in specs):
+            result['normalization'][1] = 'existing Sprite GUID/localID/meta preserved; before-pinned provider logical rect/offset/pivot/trim corrected from exact source data, plus native texture references rebound'
+            result['normalization'].append('original SpriteAtlas metadata remains in source graph; target uses a standalone Sprite with exact atlas texture/mesh/UV, not an equivalent native SpriteAtlas identity')
     write_json(artifact / 'manifest.json', result)
     write_json(out / 'result.json', dict(status=result['status'], candidate=str(artifact), manifestSha256=sha(read(artifact / 'manifest.json')), visual='not_run_headless'))
     return load(read(out / 'result.json'))
@@ -223,6 +231,9 @@ def load_supplement(pin, graph, lineage):
     manifest_path, raw = pinned(pin)
     root = manifest_path.parent
     result = load(raw)
+    if result.get('contract') == 'monkey-unity-prefab-texture-material-assets/1':
+        from .unity_prefab_texture_material_rebuild import load_supplement as load_texture_material
+        return load_texture_material(pin, graph, lineage)
     if (result.get('contract') != CONTRACT or result.get('status') != 'native-assets-verified-subset'
             or result.get('targetVersion') != '6000.6.2f1' or result.get('sourceVersion') != '2021.3.30f1'
             or result.get('nativeIdentityAndBytesStable') is not True):

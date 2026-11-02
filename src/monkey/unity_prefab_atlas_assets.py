@@ -97,10 +97,13 @@ def _verify_target_shape(asset, source, atlas_row, geometry):
     """Verify source identity against the existing native Sprite before pinning it."""
     rect = atlas_row["textureRect"]
     target_rect = _yaml_rect(asset, "m_Rect")
-    _need(target_rect == {k: float(v) for k, v in rect.items()}, "ATLAS_ASSET_TARGET_RECT", source["sourceObjectId"],
+    def same_float32(left, right):
+        import struct
+        return set(left) == set(right) and all(struct.pack('<f', left[k]) == struct.pack('<f', right[k]) for k in left)
+    _need(same_float32(target_rect, rect), "ATLAS_ASSET_TARGET_RECT", source["sourceObjectId"],
           "Existing target Sprite rect differs from exact atlas region")
     target_rd_rect = _yaml_rect(asset, "textureRect")
-    _need(target_rd_rect == {k: float(v) for k, v in rect.items()}, "ATLAS_ASSET_TARGET_RENDER_RECT", source["sourceObjectId"],
+    _need(same_float32(target_rd_rect, rect), "ATLAS_ASSET_TARGET_RENDER_RECT", source["sourceObjectId"],
           "Existing target render rect differs from atlas render-data entry")
     _need(re.search(rb"(?m)^\s*settingsRaw:\s*67\s*$", asset) is not None,
           "ATLAS_ASSET_TARGET_SETTINGS", source["sourceObjectId"], "Target native Sprite is not the expected rectangle atlas record")
@@ -122,7 +125,7 @@ def _verify_target_shape(asset, source, atlas_row, geometry):
 def plan_packed_atlas_rebind(*, candidate_root, expected_manifest_sha256,
                              selected_pixel_manifest, selected_pixel_manifest_sha256,
                              source_sprite_ids, target_assets_root, provider_assets,
-                             output_path):
+                             output_path, allow_trimmed_source_correction=False):
     """Create a pinned plan for exact selected Sprites; no source/target is modified.
 
     ``provider_assets`` is an explicit ``sourceObjectId -> {assetPath: ...}``
@@ -131,6 +134,7 @@ def plan_packed_atlas_rebind(*, candidate_root, expected_manifest_sha256,
     validates each path's native GUID/localID, mesh, and atlas region, and never
     searches by basename or Sprite name.
     """
+    _need(type(allow_trimmed_source_correction) is bool, 'ATLAS_ASSET_CORRECTION_MODE', '$', 'Explicit Boolean correction mode required')
     candidate = Path(candidate_root).resolve()
     manifest_raw = _pin_file(candidate / "manifest.json", expected_manifest_sha256, 32 * 1024 * 1024)
     manifest = load(manifest_raw)
@@ -235,9 +239,17 @@ def plan_packed_atlas_rebind(*, candidate_root, expected_manifest_sha256,
         _need(sha(png_raw) == pixel.get("target", {}).get("sha256")
               and len(png_raw) == pixel.get("target", {}).get("bytes"),
               "ATLAS_ASSET_PIXEL_PNG", sid, "Selected pixel PNG differs from its pinned manifest")
-        geometry = rectangle_atlas_geometry(source["data"], render, width, height)
-        _need(render.get("textureRectOffset") == {"x": 0.0, "y": 0.0}, "ATLAS_ASSET_TRIM", sid,
-              "Trimmed atlas region requires another profile")
+        region = render['textureRect']
+        local = source['data']['m_Rect']
+        trimmed = allow_trimmed_source_correction and (render.get('textureRectOffset') != dict(x=0, y=0)
+            or local['width'] != region['width'] or local['height'] != region['height'])
+        if trimmed:
+            from .unity_prefab_trimmed_atlas import trimmed_rectangle_atlas_geometry
+            geometry = trimmed_rectangle_atlas_geometry(source['data'], render, width, height)
+        else:
+            geometry = rectangle_atlas_geometry(source["data"], render, width, height)
+            _need(render.get("textureRectOffset") == {"x": 0.0, "y": 0.0}, "ATLAS_ASSET_TRIM", sid,
+                  "Trimmed atlas region requires an explicitly authorized correction profile")
         binding = provider_assets[sid]
         _need(isinstance(binding, dict) and set(binding) == {"assetPath"}, "ATLAS_ASSET_TARGET_PATH", sid,
               "Explicit relocation record must contain only assetPath")
@@ -255,6 +267,10 @@ def plan_packed_atlas_rebind(*, candidate_root, expected_manifest_sha256,
         relocation_row = relocation_rows[0]
         _need(local_id == 21300000, "ATLAS_ASSET_TARGET_FILEID", asset_rel, "Existing native Sprite main localID must be 21300000")
         target_proof = _verify_target_shape(asset, source, render, geometry)
+        if trimmed:
+            target_proof['providerBeforeGeometry'] = dict(rect=_yaml_rect(asset, 'm_Rect'),
+                offset=_yaml_vector(asset, 'm_Offset'), pivot=_yaml_vector(asset, 'm_Pivot'),
+                textureRectOffset=_yaml_vector(asset, 'textureRectOffset'))
         _need(b"guid: 0000000deadbeef15deadf00d0000000" in asset,
               "ATLAS_ASSET_TARGET_REBIND", asset_rel, "Expected original known-dead Sprite texture binding before repair")
         plan_rows.append(dict(sourceSpriteId=sid, sourceSpriteIdentity=ident, sourceSpriteRawSha256=source["rawSha256"],
@@ -267,7 +283,8 @@ def plan_packed_atlas_rebind(*, candidate_root, expected_manifest_sha256,
                 assetSha256=sha(asset), assetBytes=len(asset), metaSha256=sha(meta), metaBytes=len(meta), **target_proof),
             candidateRelocation=dict(sourcePath=relocation_row["source"], targetPath=relocation_row["target"],
                 guid=relocation_row["guid"], kind=relocation_row["kind"], reason=relocation_row.get("reason")),
-            operation=dict(kind="native-SerializedObject-render-texture-rebind", fields=["m_RD.texture", "m_AtlasRD.texture"],
+            operation=dict(kind="native-source-derived-trim-correction-and-texture-rebind" if trimmed else "native-SerializedObject-render-texture-rebind",
+                fields=(["m_Rect", "m_Offset", "m_Pivot", "m_RD.textureRectOffset"] if trimmed else []) + ["m_RD.texture", "m_AtlasRD.texture"],
                 preserveAssetGuid=True, preserveLocalId=True, preserveRectBorderPivotPpuMeshAndMeta=True,
                 createTextureGuid="Unity-generated", noYamlWrite=True)))
     output = Path(output_path).resolve()
@@ -277,8 +294,8 @@ def plan_packed_atlas_rebind(*, candidate_root, expected_manifest_sha256,
     result = dict(schemaVersion=1, contract=CONTRACT, status="planned-not-applied", sourceVersion="2021.3.30f1",
         targetVersion=manifest.get("targetProfile"), candidateManifestSha256=sha(manifest_raw), sourceGraphSha256=sha(graph_raw),
         sourceInputsSha256=sha(inputs_raw), relocationSha256=sha(relocation_raw), selectedPixelManifestSha256=sha(pixel_raw), targetAssetsRoot=str(root),
-        profile="unity-2021.3-unrotated-rectangle-atlas-v1", assets=plan_rows,
+        profile="unity-2021.3-trimmed-unrotated-rectangle-atlas-v1" if allow_trimmed_source_correction else "unity-2021.3-unrotated-rectangle-atlas-v1", assets=plan_rows,
         nativeEditorApplied=False, nativeAssetDatabaseGetClass="not_applicable", sourceCodeExecuted=False,
-        limitation="This is a texture-only native execution plan; no Editor import, save, reopen, or visual verification was run.")
+        limitation="This is an unapplied source-pinned native resource plan; no Editor import, save, reopen, or visual verification was run.")
     write_json(output, result)
     return result

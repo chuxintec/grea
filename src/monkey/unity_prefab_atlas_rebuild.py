@@ -15,7 +15,8 @@ def stage_atlas_specs(request, candidate, manifest_sha256, out, project, objects
     plan = plan_packed_atlas_rebind(candidate_root=candidate, expected_manifest_sha256=manifest_sha256,
         selected_pixel_manifest=pixel_path, selected_pixel_manifest_sha256=sha(pixel_raw),
         source_sprite_ids=selected, target_assets_root=target_root, provider_assets=request['providerAssets'],
-        output_path=out / 'Evidence/atlas-rebind-plan.json')
+        output_path=out / 'Evidence/atlas-rebind-plan.json',
+        allow_trimmed_source_correction=request.get('allowTrimmedSourceCorrection', False))
     specs, seen, total = [], {}, 0
     for row in plan['assets']:
         sid = row['sourceSpriteId']
@@ -74,7 +75,7 @@ def stage_atlas_specs(request, candidate, manifest_sha256, out, project, objects
             width=image.width, height=image.height, sourceColorSpace=tex['m_ColorSpace'],
             filterMode=settings['m_FilterMode'], aniso=settings['m_Aniso'], wrapU=settings['m_WrapU'],
             wrapV=settings['m_WrapV'], wrapW=settings['m_WrapW'], mipBias=settings['m_MipBias'],
-            pixelsToUnits=data['m_PixelsToUnits'], extrude=data['m_Extrude'], rect=geometry['targetRect'],
+            pixelsToUnits=data['m_PixelsToUnits'], extrude=data['m_Extrude'], rect=geometry.get('targetRect', geometry.get('atlasRect')),
             pivot=data['m_Pivot'], border=data['m_Border'], offset=data['m_Offset'],
             textureRect=atlas['textureRect'], textureRectOffset=atlas['textureRectOffset'],
             atlasRectOffset=atlas['atlasRectOffset'], uvTransform=atlas['uvTransform'],
@@ -82,6 +83,9 @@ def stage_atlas_specs(request, candidate, manifest_sha256, out, project, objects
             channels=rd['m_VertexData']['m_Channels'], subMeshes=rd['m_SubMeshes'],
             meshVertices=geometry['meshVertices'], triangleIndices=geometry['triangleIndices'], meshUv=geometry['meshUv']))
         specs[-1]['physicsShapes'] = [dict(vertices=points) for points in data.get('m_PhysicsShape', [])]
+        if geometry.get('geometryProfile') == 'unity-2021.3-trimmed-unrotated-rectangle-atlas-v1':
+            specs[-1].update(geometryCorrectionProfile='trimmed-unrotated-source-derived-v1',
+                sourceLogicalRect=geometry['sourceRect'], providerBeforeGeometry=before['providerBeforeGeometry'])
     evidence = out / 'AtlasPixelEvidence'
     evidence.mkdir()
     shutil.copyfile(pixel_path, evidence / 'manifest.json')

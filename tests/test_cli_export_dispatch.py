@@ -19,3 +19,15 @@ class ExportDispatchTests(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(main(['export', '--plan', str(plan), '--out', output]), 1)
                 export.assert_called_once_with(str(plan), output)
+
+
+class TextureMaterialDispatchTests(unittest.TestCase):
+    def test_selected_material_command_routes_pins_and_budget(self):
+        with patch('monkey.unity_prefab_texture_material_rebuild.execute', return_value={'status': 'native-assets-verified-subset'}) as execute:
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                result = main(['rebuild-unity-prefab-texture-material-assets', '--request', 'request.json',
+                               '--expected-request', 'a' * 64, '--unity-editor', '/exact/Unity',
+                               '--budget-seconds', '120', '--out', 'fresh-output'])
+            self.assertEqual(result, 0)
+            execute.assert_called_once_with('request.json', 'a' * 64, 'fresh-output', '/exact/Unity', 120)
+            self.assertEqual(json.loads(output.getvalue())['status'], 'native-assets-verified-subset')

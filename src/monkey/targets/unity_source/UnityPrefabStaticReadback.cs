@@ -642,6 +642,13 @@ namespace MonkeyUnitySource
                     row.expected = field.intValue.ToString(Invariant);
                     row.actual = actualInteger.ToString(Invariant);
                     row.passed = actualInteger == field.intValue;
+                    const string curveSuffix = ".m_Curve.Array.size";
+                    if (!row.passed && field.path.EndsWith(curveSuffix, StringComparison.Ordinal))
+                    {
+                        var curve = serialized.FindProperty(field.path.Substring(0, field.path.Length - curveSuffix.Length));
+                        if (curve != null && curve.propertyType == SerializedPropertyType.AnimationCurve)
+                            row.actual += ";nativeCurveKeys=" + curve.animationCurveValue.length;
+                    }
                 }
                 else if (field.kind == "float")
                 {
@@ -733,7 +740,7 @@ namespace MonkeyUnitySource
                     throw new InvalidOperationException("Unsupported expected field kind: " + field.kind);
                 }
                 if (!row.passed && String.IsNullOrEmpty(row.error))
-                    row.error = "Serialized value differs; phase=" + phase + ";sourceId=" + componentPlan.sourceId + ";field=" + field.path;
+                    row.error = "Serialized value differs; phase=" + phase + ";sourceId=" + componentPlan.sourceId + ";field=" + field.path + ";expected=" + row.expected + ";actual=" + row.actual;
             }
             catch (Exception error)
             {

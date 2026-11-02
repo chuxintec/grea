@@ -37,6 +37,27 @@ def test_rect_anchor_layout_uses_source_anchors_and_retains_stale_transform_as_e
     assert layouts['ct']['position']['x'] == pytest.approx(-25)
     assert layouts['ct']['position']['y'] == pytest.approx(22)
     assert child['data']['m_LocalPosition'] == dict(x=0, y=0, z=0)
+    root['data']['m_SizeDelta']['y'] = 1366.0
+    child['data']['m_AnchorMin']['y'] = child['data']['m_AnchorMax']['y'] = 1.0
+    child['data']['m_AnchoredPosition']['y'] = -97.30000305175781
+    assert rect_layout_expectations(graph)['ct']['position']['y'] == 585.70001220703125
+
+
+def test_source_driven_anchor_changes_geometry_without_mutating_frozen_source():
+    def rect(sid, size):
+        return dict(sourceObjectId=sid, data=dict(m_AnchorMin=dict(x=0, y=0), m_AnchorMax=dict(x=0, y=0),
+            m_Pivot=dict(x=.5, y=.5), m_SizeDelta=dict(x=size, y=size), m_AnchoredPosition=dict(x=0, y=0),
+            m_LocalPosition=dict(x=0, y=0, z=0)))
+    root, child = rect('rt', 200), rect('ct', 0)
+    graph = dict(roots=[dict(sourceObjectId='root')], reachableObjects=[root, child], gameObjects=[
+        dict(sourceObjectId='root', orderedComponents=[dict(type='RectTransform', sourceObjectId='rt')], childSourceObjectIds=['fill']),
+        dict(sourceObjectId='fill', orderedComponents=[dict(type='RectTransform', sourceObjectId='ct')], childSourceObjectIds=[])])
+    frozen = encoded(graph)
+    driven = {'ct': {'m_AnchorMax.x': dict(expectedDrivenValue=.5), 'm_AnchorMax.y': dict(expectedDrivenValue=1)}}
+    geometry = rect_layout_expectations(graph, driven)
+    assert geometry['ct']['size'] == dict(x=100, y=200)
+    assert geometry['ct']['position'] == dict(x=-50, y=0)
+    assert encoded(graph) == frozen
 
 
 def test_freeze_rejects_old_same_process_only_receipt(tmp_path):

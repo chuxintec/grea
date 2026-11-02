@@ -48,6 +48,9 @@ namespace MonkeyUnitySource
             public string sourceBeforeMetaSha256;
             public int expectedNativeSpriteSettingsRaw;
             public int sourcePackedSettingsRaw;
+            public string geometryCorrectionProfile;
+            public RectDto sourceLogicalRect;
+            public ProviderBeforeGeometryDto providerBeforeGeometry;
             public string texturePath;
             public string spritePath;
             public string rgbaPath;
@@ -85,6 +88,11 @@ namespace MonkeyUnitySource
 
         [Serializable] public sealed class RectDto { public float x, y, width, height; }
         [Serializable] public sealed class Vector2Dto { public float x, y; }
+        [Serializable] public sealed class ProviderBeforeGeometryDto
+        {
+            public RectDto rect;
+            public Vector2Dto offset, pivot, textureRectOffset;
+        }
         [Serializable] public sealed class PhysicsShapeDto { public Vector2Dto[] vertices; }
         [Serializable] public sealed class Vector3Dto { public float x, y, z; }
         [Serializable] public sealed class Vector4Dto { public float x, y, z, w; }
@@ -117,6 +125,11 @@ namespace MonkeyUnitySource
             public string spritePath, spriteGuid, spriteLocalId, spriteType, spriteName;
             public string spriteIdentityDisposition, beforeSpriteGuid, beforeSpriteLocalId;
             public string sourceBeforeAssetSha256, sourceBeforeMetaSha256;
+            public string geometryCorrectionProfile, atlasNonTextureSerializedSha256;
+            public bool sourceDerivedGeometryCorrectionApplied;
+            public int expectedNativeSpriteSettingsRaw, sourcePackedSettingsRaw;
+            public Rect providerBeforeRect, sourceLogicalRect;
+            public Vector2 providerBeforeOffset, providerBeforePivot, providerBeforeTextureRectOffset;
             public string texturePath, textureGuid, textureLocalId, textureType, textureName;
             public string pixelSha256, vertexBytesSha256, sourceVertexBytesSha256, atlasVertexBytesSha256, indexBytesSha256;
             public int originalPackedSettingsRaw, targetRenderCacheSettingsRaw;
@@ -146,6 +159,8 @@ namespace MonkeyUnitySource
             public string beforeSpriteGuid, beforeSpriteLocalId;
             public int beforeRenderSettingsRaw, beforeAtlasSettingsRaw;
             public float beforeRenderDownscale, beforeAtlasDownscale;
+            public string beforeAtlasNonTextureSerializedSha256;
+            public string[] beforeAtlasNonTextureFields;
             public AssetResult result;
         }
 
@@ -191,7 +206,10 @@ namespace MonkeyUnitySource
                     throw new InvalidOperationException("Plan targetUnityVersion differs from the required Editor");
                 ValidateOutputPath(plan.outputAbsolute, paths);
                 bool hasPreservedSprite = plan.assets != null && plan.assets.Any(item => item != null && item.preserveExistingSprite);
-                result.staticProfile = hasPreservedSprite
+                bool hasTrimmedCorrection = plan.assets != null && plan.assets.Any(item => item != null && IsTrimmedCorrection(item));
+                result.staticProfile = hasTrimmedCorrection
+                    ? "Texture2D: decoded CPU-readable RGBA32/no-mipmap derived texture; preserved Sprite identity with source-full-rect/trimmed unrotated atlas profile and explicit pinned geometry correction"
+                    : hasPreservedSprite
                     ? "Texture2D: decoded CPU-readable RGBA32/no-mipmap derived texture; preserved Sprite identity with source-verified full unrotated atlas-region geometry; only m_RD.texture and m_AtlasRD.texture rebound"
                     : "Texture2D: decoded RGBA32, CPU-readable, no mipmaps; new embedded Sprite asset; source compression/atlas metadata not claimed";
 
@@ -371,7 +389,7 @@ namespace MonkeyUnitySource
                     if (preserved == null) throw new InvalidOperationException("Preserved Sprite asset is absent/not a Sprite: " + spriteAssetPath);
                     ReadNativeIdentity(preserved, spriteAssetPath, out prepared.beforeSpriteGuid, out prepared.beforeSpriteLocalId, out _);
                     VerifyPreservedSpriteIdentity(spec, prepared.beforeSpriteGuid, prepared.beforeSpriteLocalId);
-                    VerifyPreservedSpriteGeometryBeforeBind(preserved, prepared);
+                    VerifyPreservedSpriteGeometryBeforeBind(preserved, prepared, !reopenOnly);
                 }
                 else if (reopenOnly && AssetDatabase.LoadAssetAtPath<Sprite>(spriteAssetPath) == null)
                 {
@@ -451,16 +469,26 @@ namespace MonkeyUnitySource
                 throw new InvalidOperationException("Preserved Sprite GUID/localID differs from pinned identity: " + spec.sourceId);
         }
 
-        static void VerifyPreservedSpriteGeometryBeforeBind(Sprite sprite, PreparedAsset asset)
+        static void VerifyPreservedSpriteGeometryBeforeBind(Sprite sprite, PreparedAsset asset, bool expectProviderBeforeImage)
         {
             AssetSpec spec = asset.spec;
-            Rect sourceRect = ToRect(spec.rect);
+            bool correction = IsTrimmedCorrection(spec);
+            Rect serializedRect = correction
+                ? (expectProviderBeforeImage ? ToRect(spec.providerBeforeGeometry.rect) : ToRect(spec.sourceLogicalRect))
+                : ToRect(spec.rect);
+            Vector2 serializedOffset = correction && expectProviderBeforeImage
+                ? ToVector2(spec.providerBeforeGeometry.offset) : ToVector2(spec.offset);
+            Vector2 serializedPivot = correction && expectProviderBeforeImage
+                ? ToVector2(spec.providerBeforeGeometry.pivot) : ToVector2(spec.pivot);
+            Vector2 serializedTextureRectOffset = correction && expectProviderBeforeImage
+                ? ToVector2(spec.providerBeforeGeometry.textureRectOffset) : ToVector2(spec.textureRectOffset);
+            Rect spriteRect = serializedRect;
             if (!String.Equals(sprite.name, spec.spriteName, StringComparison.Ordinal) ||
-                !Close(sprite.rect, sourceRect, GeometryTolerance) ||
+                !Close(sprite.rect, spriteRect, GeometryTolerance) ||
                 !Close(sprite.pixelsPerUnit, spec.pixelsToUnits, GeometryTolerance) ||
-                !Close(sprite.pivot, new Vector2(spec.pivot.x * spec.rect.width, spec.pivot.y * spec.rect.height), GeometryTolerance) ||
+                !Close(sprite.pivot, new Vector2(serializedPivot.x * serializedRect.width, serializedPivot.y * serializedRect.height), GeometryTolerance) ||
                 !Close(sprite.border, ToVector4(spec.border), GeometryTolerance) ||
-                !Close(sprite.textureRectOffset, Vector2.zero, GeometryTolerance))
+                !Close(sprite.textureRectOffset, serializedTextureRectOffset, GeometryTolerance))
                 throw new InvalidOperationException("Preserved Sprite public source geometry/name differs before texture repair: " + spec.sourceId);
             Vector2[] vertices = sprite.vertices;
             Vector2[] uv = sprite.uv;
@@ -481,13 +509,13 @@ namespace MonkeyUnitySource
 
             var so = new SerializedObject(sprite);
             so.UpdateIfRequiredOrScript();
-            if (!Close(FindRequired(so, "m_Rect").rectValue, sourceRect, GeometryTolerance) ||
-                !Close(FindRequired(so, "m_Pivot").vector2Value, ToVector2(spec.pivot), GeometryTolerance) ||
-                !Close(FindRequired(so, "m_Offset").vector2Value, Vector2.zero, GeometryTolerance) ||
+            if (!Close(FindRequired(so, "m_Rect").rectValue, serializedRect, GeometryTolerance) ||
+                !Close(FindRequired(so, "m_Pivot").vector2Value, serializedPivot, GeometryTolerance) ||
+                !Close(FindRequired(so, "m_Offset").vector2Value, serializedOffset, GeometryTolerance) ||
                 !Close(FindRequired(so, "m_Border").vector4Value, ToVector4(spec.border), GeometryTolerance) ||
                 !Close(FindRequired(so, "m_PixelsToUnits").floatValue, spec.pixelsToUnits, GeometryTolerance) ||
                 !Close(FindRequired(so, "m_RD.textureRect").rectValue, ToRect(spec.rect), GeometryTolerance) ||
-                !Close(FindRequired(so, "m_RD.textureRectOffset").vector2Value, Vector2.zero, GeometryTolerance) ||
+                !Close(FindRequired(so, "m_RD.textureRectOffset").vector2Value, serializedTextureRectOffset, GeometryTolerance) ||
                 !Close(FindRequired(so, "m_RD.atlasRectOffset").vector2Value, ToVector2(spec.atlasRectOffset), GeometryTolerance) ||
                 !Close(FindRequired(so, "m_RD.uvTransform").vector4Value, ToVector4(spec.uvTransform), GeometryTolerance))
                 throw new InvalidOperationException("Preserved Sprite serialized geometry differs before texture repair: " + spec.sourceId);
@@ -501,8 +529,25 @@ namespace MonkeyUnitySource
             asset.beforeAtlasDownscale = FindRequired(so, "m_AtlasRD.downscaleMultiplier").floatValue;
             if (!Finite(asset.beforeRenderDownscale) || !Finite(asset.beforeAtlasDownscale))
                 throw new InvalidOperationException("Preserved Sprite downscale multiplier is non-finite: " + spec.sourceId);
-            VerifyRenderData(so, "m_RD", null, asset, false);
-            VerifyRenderData(so, "m_AtlasRD", null, asset, false);
+            if (correction)
+            {
+                if (expectProviderBeforeImage)
+                {
+                    if (!Close(serializedRect, ToRect(spec.providerBeforeGeometry.rect), 0d) ||
+                        !Close(serializedOffset, ToVector2(spec.providerBeforeGeometry.offset), 0d) ||
+                        !Close(serializedPivot, ToVector2(spec.providerBeforeGeometry.pivot), 0d) ||
+                        !Close(serializedTextureRectOffset, ToVector2(spec.providerBeforeGeometry.textureRectOffset), 0d))
+                        throw new InvalidOperationException("Pinned provider-before geometry DTO differs from the native Sprite: " + spec.sourceId);
+                }
+                asset.beforeAtlasNonTextureSerializedSha256 = HashSerializedSubtree(so, "m_AtlasRD", "m_AtlasRD.texture", "m_AtlasRD.textureRectOffset");
+                asset.beforeAtlasNonTextureFields = SerializedSubtreeValues(so, "m_AtlasRD", "m_AtlasRD.texture", "m_AtlasRD.textureRectOffset");
+                VerifyRenderData(so, "m_RD", null, asset, false, false);
+            }
+            else
+            {
+                VerifyRenderData(so, "m_RD", null, asset, false);
+                VerifyRenderData(so, "m_AtlasRD", null, asset, false);
+            }
             VerifyPreservedPhysicsShapes(sprite, spec);
         }
 
@@ -557,8 +602,36 @@ namespace MonkeyUnitySource
                 spec.textureRect.x < 0f || spec.textureRect.y < 0f ||
                 spec.textureRect.x + spec.textureRect.width > spec.width || spec.textureRect.y + spec.textureRect.height > spec.height)
                 throw new InvalidOperationException("Sprite rect/textureRect escapes the source texture bounds: " + spec.sourceId);
-            if (spec.border.x + spec.border.z > spec.rect.width || spec.border.y + spec.border.w > spec.rect.height)
-                throw new InvalidOperationException("Sprite border exceeds the source rect: " + spec.sourceId);
+            RectDto borderRect = IsTrimmedCorrection(spec) ? spec.sourceLogicalRect : spec.rect;
+            if (borderRect == null || spec.border.x + spec.border.z > borderRect.width || spec.border.y + spec.border.w > borderRect.height)
+                throw new InvalidOperationException("Sprite border exceeds the source logical rect: " + spec.sourceId);
+            if (!String.IsNullOrEmpty(spec.geometryCorrectionProfile))
+            {
+                if (!spec.preserveExistingSprite || spec.geometryCorrectionProfile != "trimmed-unrotated-source-derived-v1")
+                    throw new InvalidOperationException("Only the explicit trimmed-unrotated source-derived correction profile is supported: " + spec.sourceId);
+                RequireRect(spec.sourceLogicalRect, "sourceLogicalRect", spec.sourceId);
+                if (spec.providerBeforeGeometry == null || spec.providerBeforeGeometry.rect == null ||
+                    spec.providerBeforeGeometry.offset == null || spec.providerBeforeGeometry.pivot == null ||
+                    spec.providerBeforeGeometry.textureRectOffset == null)
+                    throw new InvalidOperationException("Trimmed correction requires all providerBeforeGeometry pins: " + spec.sourceId);
+                RequireRect(spec.providerBeforeGeometry.rect, "providerBeforeGeometry.rect", spec.sourceId);
+                RequireVector(spec.providerBeforeGeometry.offset, "providerBeforeGeometry.offset", spec.sourceId);
+                RequireVector(spec.providerBeforeGeometry.pivot, "providerBeforeGeometry.pivot", spec.sourceId);
+                RequireVector(spec.providerBeforeGeometry.textureRectOffset, "providerBeforeGeometry.textureRectOffset", spec.sourceId);
+                if (spec.sourceLogicalRect.x < 0f || spec.sourceLogicalRect.y < 0f ||
+                    spec.sourceLogicalRect.width <= 0f || spec.sourceLogicalRect.height <= 0f ||
+                    spec.providerBeforeGeometry.pivot.x < 0f || spec.providerBeforeGeometry.pivot.x > 1f ||
+                    spec.providerBeforeGeometry.pivot.y < 0f || spec.providerBeforeGeometry.pivot.y > 1f)
+                    throw new InvalidOperationException("Trimmed correction logical rect/provider pivot is out of range: " + spec.sourceId);
+                if (!Close(ToRect(spec.rect), ToRect(spec.textureRect), 0d))
+                    throw new InvalidOperationException("Trimmed correction atlas rect and textureRect must exactly match: " + spec.sourceId);
+                if (!Close(ToRect(spec.providerBeforeGeometry.rect), ToRect(spec.rect), 0d))
+                    throw new InvalidOperationException("Pinned provider-before m_Rect must equal the candidate's pinned atlas region: " + spec.sourceId);
+            }
+            else if (spec.sourceLogicalRect != null || spec.providerBeforeGeometry != null)
+            {
+                throw new InvalidOperationException("Source logical rect/provider correction values require an explicit correction profile: " + spec.sourceId);
+            }
             if (spec.preserveExistingSprite)
             {
                 if (!IsGuid32(spec.expectedSpriteGuid) || String.IsNullOrWhiteSpace(spec.expectedSpriteLocalId) ||
@@ -588,6 +661,41 @@ namespace MonkeyUnitySource
             if (spec.preserveExistingSprite && (spec.sourcePackedSettingsRaw != 67 || spec.expectedNativeSpriteSettingsRaw != 3139))
                 throw new InvalidOperationException("Only source packed flags 67 and observed Unity 6000.6 native cache flags 3139 are verified: " + spec.sourceId);
             if (!spec.preserveExistingSprite) return;
+            if (IsTrimmedCorrection(spec))
+            {
+                Rect logical = ToRect(spec.sourceLogicalRect);
+                Rect region = ToRect(spec.rect);
+                if (!Close(region, ToRect(spec.textureRect), 0d))
+                    throw new InvalidOperationException("Trimmed atlas region and render-data textureRect differ: " + spec.sourceId);
+                if (spec.textureRectOffset.x < 0f || spec.textureRectOffset.y < 0f ||
+                    spec.textureRectOffset.x + region.width > logical.width ||
+                    spec.textureRectOffset.y + region.height > logical.height ||
+                    (region.width >= logical.width && region.height >= logical.height &&
+                     spec.textureRectOffset.x == 0f && spec.textureRectOffset.y == 0f))
+                    throw new InvalidOperationException("Trimmed atlas crop/offset is not inside the source logical full rect: " + spec.sourceId);
+                float atlasX = region.x - spec.textureRectOffset.x;
+                float atlasY = region.y - spec.textureRectOffset.y;
+                if (!SameFloat(atlasX, spec.atlasRectOffset.x) || !SameFloat(atlasY, spec.atlasRectOffset.y))
+                    throw new InvalidOperationException("atlasRectOffset must equal atlas region origin minus exact source trim offset: " + spec.sourceId);
+                float expectedUvY = spec.atlasRectOffset.x + logical.width * spec.pivot.x;
+                float expectedUvW = spec.atlasRectOffset.y + logical.height * spec.pivot.y;
+                if (!SameFloat(spec.uvTransform.x, spec.pixelsToUnits) || !SameFloat(spec.uvTransform.y, expectedUvY) ||
+                    !SameFloat(spec.uvTransform.z, spec.pixelsToUnits) || !SameFloat(spec.uvTransform.w, expectedUvW))
+                    throw new InvalidOperationException("Trimmed atlas uvTransform differs from source logical rect/pivot mapping: " + spec.sourceId);
+                for (int i = 0; i < spec.meshVertices.Length; i++)
+                {
+                    float xScale = spec.meshVertices[i].x * spec.uvTransform.x;
+                    float xPixel = xScale + spec.uvTransform.y;
+                    float u = xPixel / spec.width;
+                    float yScale = spec.meshVertices[i].y * spec.uvTransform.z;
+                    float yPixel = yScale + spec.uvTransform.w;
+                    float v = yPixel / spec.height;
+                    if (!Finite(u) || !Finite(v) || u < 0f || u > 1f || v < 0f || v > 1f ||
+                        !SameFloat(u, spec.meshUv[i].x) || !SameFloat(v, spec.meshUv[i].y))
+                        throw new InvalidOperationException("Trimmed atlas Float32 UV differs from source geometry or leaves texture at " + i + ": " + spec.sourceId);
+                }
+                return;
+            }
             if (!Close(spec.rect.x, spec.textureRect.x, GeometryTolerance) ||
                 !Close(spec.rect.y, spec.textureRect.y, GeometryTolerance) ||
                 !Close(spec.rect.width, spec.textureRect.width, GeometryTolerance) ||
@@ -608,6 +716,17 @@ namespace MonkeyUnitySource
                 if (!Close(spec.meshUv[i].x, (float)u, GeometryTolerance) || !Close(spec.meshUv[i].y, (float)v, GeometryTolerance))
                     throw new InvalidOperationException("Atlas-region profile UVs are not the exact unrotated RD transform of source vertices: " + spec.sourceId + "[" + i + "]");
             }
+        }
+
+        static bool IsTrimmedCorrection(AssetSpec spec)
+        {
+            return spec != null && String.Equals(spec.geometryCorrectionProfile,
+                "trimmed-unrotated-source-derived-v1", StringComparison.Ordinal);
+        }
+
+        static bool SameFloat(float left, float right)
+        {
+            return BitConverter.SingleToInt32Bits(left) == BitConverter.SingleToInt32Bits(right);
         }
 
         static void ValidateAndDecodeMesh(AssetSpec spec, out byte[] vertexBytes, out byte[] indexBytes)
@@ -835,6 +954,17 @@ namespace MonkeyUnitySource
                         throw new InvalidOperationException("Preserved Sprite runtime type changed before binding: " + spec.sourceId);
                     var serialized = new SerializedObject(preserved);
                     serialized.UpdateIfRequiredOrScript();
+                    if (IsTrimmedCorrection(spec))
+                    {
+                        // The provider preimage SHA plus explicit before-geometry
+                        // tuple were checked during preflight. Apply only these
+                        // source-derived logical/crop corrections.
+                        SetRequiredRect(serialized, "m_Rect", ToRect(spec.sourceLogicalRect));
+                        SetRequiredVector2(serialized, "m_Offset", ToVector2(spec.offset));
+                        SetRequiredVector2(serialized, "m_Pivot", ToVector2(spec.pivot));
+                        SetRequiredVector2(serialized, "m_RD.textureRectOffset", ToVector2(spec.textureRectOffset));
+                        asset.result.sourceDerivedGeometryCorrectionApplied = true;
+                    }
                     SetRequiredReference(serialized, "m_RD.texture", texture);
                     SetRequiredReference(serialized, "m_AtlasRD.texture", texture);
                     if (!serialized.ApplyModifiedPropertiesWithoutUndo()) serialized.UpdateIfRequiredOrScript();
@@ -843,6 +973,7 @@ namespace MonkeyUnitySource
                     asset.result.spriteName = preserved.name;
                     asset.result.spriteType = "UnityEngine.Sprite";
                     asset.result.spriteIdentityDisposition = "preserved-existing-provider";
+                    asset.result.geometryCorrectionProfile = spec.geometryCorrectionProfile;
                     continue;
                 }
                 var sprite = Sprite.Create(texture, ToRect(spec.rect), ToVector2(spec.pivot), spec.pixelsToUnits,
@@ -1049,9 +1180,9 @@ namespace MonkeyUnitySource
                 throw new InvalidOperationException("Candidate Sprite unexpectedly packed into an atlas: " + spec.sourceId);
             if (!Close(sprite.pixelsPerUnit, spec.pixelsToUnits, GeometryTolerance))
                 throw new InvalidOperationException("Sprite pixelsPerUnit differs: " + spec.sourceId);
-            Rect expectedRect = ToRect(spec.rect);
+            Rect expectedRect = IsTrimmedCorrection(spec) ? ToRect(spec.sourceLogicalRect) : ToRect(spec.rect);
             if (!Close(sprite.rect, expectedRect, GeometryTolerance)) throw new InvalidOperationException("Sprite rect differs: " + spec.sourceId);
-            Vector2 expectedPivotPixels = new Vector2(spec.pivot.x * spec.rect.width, spec.pivot.y * spec.rect.height);
+            Vector2 expectedPivotPixels = new Vector2(spec.pivot.x * expectedRect.width, spec.pivot.y * expectedRect.height);
             if (!Close(sprite.pivot, expectedPivotPixels, GeometryTolerance))
                 throw new InvalidOperationException("Sprite public pixel pivot differs: " + spec.sourceId);
             if (!Close(sprite.border, ToVector4(spec.border), GeometryTolerance))
@@ -1106,7 +1237,8 @@ namespace MonkeyUnitySource
             VerifyEmptyArrayIfPresent(so, "m_ScriptableObjects");
             VerifyNullReferenceIfPresent(so, "m_SpriteAtlas");
             VerifyRenderData(so, "m_RD", texture, asset);
-            VerifyRenderData(so, "m_AtlasRD", texture, asset);
+            if (IsTrimmedCorrection(spec)) VerifyTrimmedAtlasRenderData(so, texture, asset);
+            else VerifyRenderData(so, "m_AtlasRD", texture, asset);
 
             asset.result.spriteName = sprite.name;
             asset.result.packed = sprite.packed;
@@ -1121,6 +1253,17 @@ namespace MonkeyUnitySource
             asset.result.border = sprite.border;
             asset.result.pixelsToUnits = sprite.pixelsPerUnit;
             asset.result.uvTransform = ToVector4(spec.uvTransform);
+            asset.result.geometryCorrectionProfile = spec.geometryCorrectionProfile;
+            asset.result.sourceDerivedGeometryCorrectionApplied = IsTrimmedCorrection(spec);
+            asset.result.sourceLogicalRect = expectedRect;
+            asset.result.atlasNonTextureSerializedSha256 = asset.beforeAtlasNonTextureSerializedSha256;
+            if (IsTrimmedCorrection(spec))
+            {
+                asset.result.providerBeforeRect = ToRect(spec.providerBeforeGeometry.rect);
+                asset.result.providerBeforeOffset = ToVector2(spec.providerBeforeGeometry.offset);
+                asset.result.providerBeforePivot = ToVector2(spec.providerBeforeGeometry.pivot);
+                asset.result.providerBeforeTextureRectOffset = ToVector2(spec.providerBeforeGeometry.textureRectOffset);
+            }
             asset.result.vertices = vertices;
             asset.result.uv = uv;
             asset.result.triangles = triangles;
@@ -1136,7 +1279,16 @@ namespace MonkeyUnitySource
             asset.result.spriteDownscaleMultiplier = FindRequired(so, "m_RD.downscaleMultiplier").floatValue;
             asset.result.atlasDownscaleMultiplier = FindRequired(so, "m_AtlasRD.downscaleMultiplier").floatValue;
             asset.result.indexBytesSha256 = Sha256(asset.indexBytes);
-            asset.result.normalization = spec.preserveExistingSprite
+            asset.result.normalization = IsTrimmedCorrection(spec)
+                ? new[] {
+                    "Texture is a decoded CPU-readable RGBA32/no-mipmap derived atlas texture; original compressed storage/readability flags are not preserved.",
+                    "Existing provider Sprite identity/GUID/localID/meta are preserved; source graph proves full logical rect separately from trimmed atlas crop.",
+                    "Explicit source-derived correction restores m_Rect, m_Offset, m_Pivot and m_RD.textureRectOffset from the pinned source Sprite; provider preimage asset SHA and before-geometry tuple are verified first.",
+                    "Atlas m_RD textureRect/atlasRectOffset/uvTransform and all source mesh/index/physics data remain source-verified; only m_RD.texture and m_AtlasRD.texture are rebound beyond the listed geometry correction.",
+                    "Unity mirrors the source-derived trim into m_AtlasRD.textureRectOffset; it is verified exactly. The cache hash excludes only this modeled trim and the separately verified texture reference; every other cache field is unchanged.",
+                    "Atlas render-map settingsRaw and missing-texture import/cache flags are recorded separately; no rotated packing, clamp, or source packed-state equivalence is claimed."
+                }
+                : spec.preserveExistingSprite
                 ? new[] {
                     "Texture bytes are a decoded, CPU-readable derived RGBA32/no-mipmap asset; a source unreadable flag is normalized for exact pixel verification, and source compressed storage is not preserved.",
                     "Existing provider Sprite .asset and .meta identity are preserved; only m_RD.texture and m_AtlasRD.texture references are rebound.",
@@ -1169,17 +1321,18 @@ namespace MonkeyUnitySource
         }
 
         static void VerifyRenderData(SerializedObject so, string prefix, Texture2D texture, PreparedAsset asset,
-                                     bool verifyTextureReference = true)
+                                     bool verifyTextureReference = true, bool verifySourceGeometry = true)
         {
             AssetSpec spec = asset.spec;
             if (verifyTextureReference && FindRequired(so, prefix + ".texture").objectReferenceValue != texture)
                 throw new InvalidOperationException(prefix + ".texture differs: " + spec.sourceId);
             if (FindRequired(so, prefix + ".alphaTexture").objectReferenceValue != null)
                 throw new InvalidOperationException(prefix + ".alphaTexture must be null: " + spec.sourceId);
-            if (!Close(FindRequired(so, prefix + ".textureRect").rectValue, ToRect(spec.textureRect), GeometryTolerance) ||
-                !Close(FindRequired(so, prefix + ".textureRectOffset").vector2Value, ToVector2(spec.textureRectOffset), GeometryTolerance) ||
-                !Close(FindRequired(so, prefix + ".atlasRectOffset").vector2Value, ToVector2(spec.atlasRectOffset), GeometryTolerance) ||
-                !Close(FindRequired(so, prefix + ".uvTransform").vector4Value, ToVector4(spec.uvTransform), GeometryTolerance))
+            if (verifySourceGeometry &&
+                (!Close(FindRequired(so, prefix + ".textureRect").rectValue, ToRect(spec.textureRect), GeometryTolerance) ||
+                 !Close(FindRequired(so, prefix + ".textureRectOffset").vector2Value, ToVector2(spec.textureRectOffset), GeometryTolerance) ||
+                 !Close(FindRequired(so, prefix + ".atlasRectOffset").vector2Value, ToVector2(spec.atlasRectOffset), GeometryTolerance) ||
+                 !Close(FindRequired(so, prefix + ".uvTransform").vector4Value, ToVector4(spec.uvTransform), GeometryTolerance)))
                 throw new InvalidOperationException(prefix + " crop/offset/UV transform differs: " + spec.sourceId);
             int settingsRaw = FindRequired(so, prefix + ".settingsRaw").intValue;
             if (spec.preserveExistingSprite)
@@ -1208,6 +1361,72 @@ namespace MonkeyUnitySource
             VerifySubmeshes(FindRequired(so, prefix + ".m_SubMeshes"), spec.subMeshes, prefix);
             VerifyEmptyArray(FindRequired(so, prefix + ".m_Bindpose"), prefix + ".m_Bindpose");
             VerifyEmptyBlendShapes(so, prefix + ".m_BlendShapes");
+        }
+
+        static void VerifyTrimmedAtlasRenderData(SerializedObject so, Texture2D texture, PreparedAsset asset)
+        {
+            if (FindRequired(so, "m_AtlasRD.texture").objectReferenceValue != texture)
+                throw new InvalidOperationException("m_AtlasRD.texture differs after trimmed repair: " + asset.spec.sourceId);
+            if (!FindRequired(so, "m_AtlasRD.textureRectOffset").vector2Value.Equals(ToVector2(asset.spec.textureRectOffset)))
+                throw new InvalidOperationException("Trimmed native cache offset differs from exact source trim: " + asset.spec.sourceId);
+            string after = HashSerializedSubtree(so, "m_AtlasRD", "m_AtlasRD.texture", "m_AtlasRD.textureRectOffset");
+            if (!String.Equals(after, asset.beforeAtlasNonTextureSerializedSha256, StringComparison.Ordinal))
+            {
+                string[] afterFields = SerializedSubtreeValues(so, "m_AtlasRD", "m_AtlasRD.texture", "m_AtlasRD.textureRectOffset");
+                string[] changes = afterFields.Except(asset.beforeAtlasNonTextureFields).Select(value => "after:" + value)
+                    .Concat(asset.beforeAtlasNonTextureFields.Except(afterFields).Select(value => "before:" + value)).ToArray();
+                throw new InvalidOperationException("Trimmed repair changed source-unmodeled m_AtlasRD fields: " + asset.spec.sourceId + "\n" + String.Join("\n", changes));
+            }
+        }
+
+        static string HashSerializedSubtree(SerializedObject serialized, string rootPath, string excludedPath, string sourceModeledCachePath = null)
+        {
+            return Sha256(Encoding.UTF8.GetBytes(String.Join("\n", SerializedSubtreeValues(serialized, rootPath, excludedPath, sourceModeledCachePath))));
+        }
+
+        static string[] SerializedSubtreeValues(SerializedObject serialized, string rootPath, string excludedPath, string sourceModeledCachePath = null)
+        {
+            SerializedProperty root = FindRequired(serialized, rootPath).Copy();
+            SerializedProperty end = root.GetEndProperty();
+            var values = new List<string>();
+            bool enterChildren = true;
+            while (root.Next(enterChildren) && !SerializedProperty.EqualContents(root, end))
+            {
+                string path = root.propertyPath;
+                enterChildren = !String.Equals(path, excludedPath, StringComparison.Ordinal) &&
+                    !String.Equals(path, sourceModeledCachePath, StringComparison.Ordinal);
+                if (!enterChildren) continue;
+                string value;
+                switch (root.propertyType)
+                {
+                    case SerializedPropertyType.Boolean: value = root.boolValue ? "1" : "0"; break;
+                    case SerializedPropertyType.Integer: value = root.longValue.ToString(CultureInfo.InvariantCulture); break;
+                    case SerializedPropertyType.Float: value = root.doubleValue.ToString("R", CultureInfo.InvariantCulture); break;
+                    case SerializedPropertyType.String: value = root.stringValue; break;
+                    case SerializedPropertyType.Enum: value = root.enumValueIndex.ToString(CultureInfo.InvariantCulture); break;
+                    case SerializedPropertyType.ObjectReference:
+                        UnityEngine.Object reference = root.objectReferenceValue;
+                        if (reference == null) value = "null";
+                        else
+                        {
+                            string guid; long localId;
+                            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(reference, out guid, out localId))
+                                throw new InvalidOperationException("Cannot pin a non-null m_AtlasRD reference at " + path);
+                            value = guid + ":" + localId.ToString(CultureInfo.InvariantCulture);
+                        }
+                        break;
+                    case SerializedPropertyType.Vector2: value = root.vector2Value.ToString("R"); break;
+                    case SerializedPropertyType.Vector3: value = root.vector3Value.ToString("R"); break;
+                    case SerializedPropertyType.Vector4: value = root.vector4Value.ToString("R"); break;
+                    case SerializedPropertyType.Rect: value = root.rectValue.ToString("R"); break;
+                    case SerializedPropertyType.Bounds: value = root.boundsValue.ToString("R"); break;
+                    case SerializedPropertyType.Quaternion: value = root.quaternionValue.ToString("R"); break;
+                    case SerializedPropertyType.Color: value = root.colorValue.ToString("R"); break;
+                    default: value = String.Empty; break;
+                }
+                values.Add(path + "|" + root.propertyType + "|" + value);
+            }
+            return values.ToArray();
         }
 
         static void VerifyChannels(SerializedProperty array, ChannelDto[] expected, string prefix)
@@ -1574,7 +1793,15 @@ namespace MonkeyUnitySource
                 spriteName = spec.spriteName, textureName = spec.textureName,
                 spriteIdentityDisposition = spec.preserveExistingSprite ? "preserved-existing-provider" : "new-native-derived",
                 beforeSpriteGuid = asset.beforeSpriteGuid, beforeSpriteLocalId = asset.beforeSpriteLocalId,
-                sourceBeforeAssetSha256 = spec.sourceBeforeAssetSha256, sourceBeforeMetaSha256 = spec.sourceBeforeMetaSha256 };
+                sourceBeforeAssetSha256 = spec.sourceBeforeAssetSha256, sourceBeforeMetaSha256 = spec.sourceBeforeMetaSha256,
+                geometryCorrectionProfile = spec.geometryCorrectionProfile,
+                expectedNativeSpriteSettingsRaw = spec.expectedNativeSpriteSettingsRaw,
+                sourcePackedSettingsRaw = spec.sourcePackedSettingsRaw,
+                sourceLogicalRect = IsTrimmedCorrection(spec) ? ToRect(spec.sourceLogicalRect) : ToRect(spec.rect),
+                providerBeforeRect = IsTrimmedCorrection(spec) ? ToRect(spec.providerBeforeGeometry.rect) : new Rect(),
+                providerBeforeOffset = IsTrimmedCorrection(spec) ? ToVector2(spec.providerBeforeGeometry.offset) : Vector2.zero,
+                providerBeforePivot = IsTrimmedCorrection(spec) ? ToVector2(spec.providerBeforeGeometry.pivot) : Vector2.zero,
+                providerBeforeTextureRectOffset = IsTrimmedCorrection(spec) ? ToVector2(spec.providerBeforeGeometry.textureRectOffset) : Vector2.zero };
         }
 
         static void WriteResult(string outputAbsolute, ExecutionResult result)
