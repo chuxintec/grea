@@ -1,2 +1,2 @@
 """Native project development tools; no source-engine runtime."""
-__version__ = "0.5.1.dev20261102+fix26"
+__version__ = "0.6.0.dev20261102+virtual1"

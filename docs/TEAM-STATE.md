@@ -1,5 +1,9 @@
 # Maintainer responsibilities
 
+## Virtual pointer modules — 2026-11-02
+
+Human01a19bb4-aca8-7c13-8fda-c0d2ca7ca8b8 natively verified; Manager decision20261102-virtual-pointer. Current root owns protocol, CLI/shared runtime integration, neutral native UI/Player/readonly OS observations and fixed sealing. Fresh /root/virtual_client (requested Luna High, spawn accepted; runtime identity not independently probed) owns qa_virtual_pointer.py/test_qa_virtual_pointer.py/VIRTUAL-POINTER.md. Fresh /root/virtual_runtime (same requested/observed limits) owns BeaverVirtualPointer.cs/.md only. Reused /root/review_intake3 is read-only review. No recursion, other repository/product writes, foreground input or hardware cursor route. Root controls all Editor/Player resources; old source/fixed26/private watcher evidence preserved. Modules deliver working implementation+targeted checks, actual runtime and consumer acceptance remain pending.
+
 ## Replacement owner — 2026-11-02
 
 Current primary local/01a19b7a-b50f-7fb0-9c2b-64e71cc9b342 took repository/private Editor single writer after Manager writeReleased=true and verified quiesced structured handoff SHA867a00c6aa674f438357e7083f14ab6da921807addd5163ddb4b61652a59f348. Old primary and contributor instances are not reused. Source WIP/backup and old journals remain preserved. Current injected policy is never/danger-full-access/network enabled; Manager independently records user reviewer and Sol High. One fresh read-only reviewer /root/review_intake3 requested Luna High (spawn accepted; actual identity not independently probed) reviewed contract/schema/tests with no substantive defect; no write scope, Editor or recursion. Primary owns implementation, integration, final installed/native validation and sealing.
@@ -7,6 +11,10 @@ Current primary local/01a19b7a-b50f-7fb0-9c2b-64e71cc9b342 took repository/priva
 ## Replacement quiescence — 2026-11-02
 
 Parent stopped new transactions and delegation after verified human replacement request. Source fix26 positive and compile-error transactions both rolled-back/exited; intake_contract contributor completed/reclaimable, no active module writer. Handoff `.private/handoffs/20261102-beaver-replacement/` records exact WIP and source evidence. Tool repo/isolated Editor writer released; no ordinary-message resume.
+
+## Watcher follow-up — 2026-11-02
+
+Primary sole implementation/private Editor writer for observed fix26 code-to-asset dependency boundary. /root/review_intake3 reused read-only; no new instance or recursive dispatch. Existing fixed26 is immutable. Formal owner alone recovered its failed transaction, no formal Editor/Player/desktop takeover. Independent neutral watcher repro is in .private/watcher-intake-20261102; final acceptance must include declared-resolution positive and deletion/unrelated/unreferenced/byte-drift negatives.
 
 ## Active fixed26 module — 2026-11-02
 

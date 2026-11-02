@@ -87,6 +87,11 @@ def capabilities():
         dict(id='qa.launch',state='requires_provider',provider='macOS GUI session and explicitly prepared runtime',effects='owned-player-and-controlled-test-data',verification='bounded owned GUI process; optional restrictive Documents denial; actual access and save-resume require consumer evidence'),
         dict(id='qa.collect',state='implemented',effects='owned-run-evidence-report',verification='exact project/build/profile/run identities; process and artifact evidence; no inferred gameplay or TCC verdict'),
         dict(id='qa.inspect-instance',state='implemented',effects='read-owned-run; fresh-output-only',verification='kernel birth/executable/argv/profile binding; no app launch or GUI input'),
+        dict(id='qa.virtual-prepare',state='implemented',effects='private-local-test-channel-config',verification='explicit development companion only; credentials excluded from reports; no launch'),
+        dict(id='qa.virtual-bind',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
+        dict(id='qa.virtual-input',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
+        dict(id='qa.virtual-status',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
+        dict(id='qa.virtual-stop',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
         dict(id='qa.bind',state='requires_provider',provider='macOS native AX with existing permissions and a strongly owned running run',effects='attach-only-session-output',verification='exact PID/birth/Bundle/run/profile/window-owner; no fallback launch'),
         dict(id='qa.input',state='requires_provider',provider='hash-bound current native AX/PID session and existing permissions',effects='explicit guarded PID-directed input; opt-in owned-window system-cursor positioning; window-only observation/capture',verification='per-event identity/window guards; event posting is not atomic or business acceptance'),
         dict(id="image.inspect", state="requires_provider", provider="Pillow", effects="read", verification="exact RGBA/alpha fixture"),
@@ -257,6 +262,15 @@ def parser():
             q.add_argument('--window',type=int)
     qi=qa.add_parser('input')
     for field in ('session','expected-session','spec','expected-spec','out'):qi.add_argument('--'+field,required=True)
+    qvp=qa.add_parser('virtual-prepare')
+    for field in ('spec','expected-spec','out'):qvp.add_argument('--'+field,required=True)
+    qvb=qa.add_parser('virtual-bind')
+    for field in ('project','build','profile','expected-owner','run','channel','expected-channel','out'):qvb.add_argument('--'+field,required=True)
+    for action in ('virtual-input','virtual-status','virtual-stop'):
+        qv=qa.add_parser(action)
+        for field in ('session','expected-session','out'):qv.add_argument('--'+field,required=True)
+        if action=='virtual-input':
+            for field in ('spec','expected-spec'):qv.add_argument('--'+field,required=True)
     payload=sub.add_parser('payload').add_subparsers(dest='action',required=True)
     payload_verify=payload.add_parser('verify')
     payload_verify.add_argument('--root',required=True)
@@ -479,6 +493,13 @@ def dispatch(a):
         from .player import run
         return run(a.manifest,a.out,a.duration,a.expected_manifest)
     if a.command=='qa':
+        if a.action.startswith('virtual-'):
+            from . import qa_virtual_pointer as virtual
+            if a.action=='virtual-prepare':return virtual.prepare(a.spec,a.expected_spec,a.out)
+            if a.action=='virtual-bind':return virtual.bind(a.project,a.build,a.profile,a.expected_owner,a.run,a.channel,a.expected_channel,a.out)
+            if a.action=='virtual-input':return virtual.input_event(a.session,a.expected_session,a.spec,a.expected_spec,a.out)
+            if a.action=='virtual-status':return virtual.status(a.session,a.expected_session,a.out)
+            if a.action=='virtual-stop':return virtual.stop(a.session,a.expected_session,a.out)
         from .qa_runtime import prepare,launch,collect
         from .qa_binding import inspect_instance,bind,input_event
         if a.action=='prepare':return prepare(a.spec,a.expected_spec,a.out)
@@ -518,9 +539,15 @@ def main(argv=None):
         if data.get('status')=='failed_or_needs_action':status='failed'
         if data.get('status') in ('execution_unknown_or_failed','execution_unknown_or_partial'):status='partial'
         if a.command=='qa' and data.get('status') in ('recovery_required','observed_running','stopped_by_budget','interrupted'):status='partial'
+        if a.command=='qa' and a.action.startswith('virtual-'):
+            if data.get('status')=='unknown':status='partial'
+            if data.get('status')=='not_supported':status='blocked'
+            data.update(inputMode='virtual-pointer',backend='unity-inputsystem-virtual-pointer/1')
         if a.command=='build-filter' and a.action=='plan' and data.get('execution',{}).get('status')=='blocked':status='blocked'
         base.update(status=status, data=data)
         result_path = data.get("report")
+        if a.command=='qa' and a.action.startswith('virtual-') and not result_path:
+            result_path=next((data[k] for k in ('receipt','session','channel') if isinstance(data.get(k),str)),None)
         if result_path and Path(result_path).is_file():
             base["artifacts"].append(dict(path=result_path, sha256=sha(Path(result_path).read_bytes())))
         if data.get("nativeReadback"):
@@ -551,7 +578,10 @@ def main(argv=None):
         if a.command=='player':
             base['verification']['player']='launched_and_exited' if not data.get('stoppedByBudget') else 'launched_and_stopped_by_budget'
         if a.command=='qa':
-            if a.action=='prepare':
+            if a.action.startswith('virtual-'):
+                base['verification']['virtualInput']=('application-device-consumed' if data.get('status') in ('verified','consumed') else 'not_verified') if a.action=='virtual-input' else ('device-cleanup-receipt' if a.action=='virtual-stop' else 'not_dispatched')
+                base['actualChanges']=[dict(operation='qa.'+a.action,inputMode='virtual-pointer',backend=data['backend'],receipt=data.get('receipt'),status=data.get('status'))]
+            elif a.action=='prepare':
                 base['actualChanges']=[dict(operation='qa.prepare',project=data.get('projectId'),build=data.get('buildId'),profile=data.get('profileId'),receipt=data.get('receipt'))]
             elif a.action=='launch':
                 base['actualChanges']=[dict(operation='qa.launch',runId=data.get('runId'),pid=data.get('pid'),processRecord=data.get('processRecord'))]
