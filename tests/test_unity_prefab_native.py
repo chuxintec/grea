@@ -4,6 +4,21 @@ from monkey.io import encoded, sha
 from monkey.sources.compiled import ParseError
 from monkey.unity_prefab_native import freeze, rect_layout_expectations
 from monkey.unity_prefab_native import unity_guid_text_from_serialized_hex
+from monkey.unity_prefab_native import bind_source_root_rows
+
+
+def test_multi_root_paths_follow_identity_not_graph_or_request_order():
+    # Reused file/path IDs across different containers must remain separate.
+    graph = [dict(sourceObjectId=c, identity=dict(containerSha256=c, serializedFile="CAB-" + c, pathId="7"))
+             for c in ("b", "a")]
+    rows = [dict(source=dict(sourceSha256=c, file="0", pathId="7"), providerPath=c + ".prefab") for c in ("a", "b")]
+    files = {(c, "0"): "CAB-" + c for c in ("a", "b")}
+    bound = bind_source_root_rows(graph, rows, files)
+    assert [bound[r["sourceObjectId"]]["providerPath"] for r in graph] == ["b.prefab", "a.prefab"]
+    with pytest.raises(ParseError, match="UNITY_PREFAB_NATIVE_ROOT_MAPPING"):
+        bind_source_root_rows(graph, rows[:1], files)
+    with pytest.raises(ParseError, match="UNITY_PREFAB_NATIVE_ROOT_MAPPING"):
+        bind_source_root_rows(graph, [rows[0], rows[0]], files)
 
 
 def test_rect_anchor_layout_uses_source_anchors_and_retains_stale_transform_as_evidence():

@@ -12,6 +12,8 @@ The primary owns shared CLI/schema/version, candidate export/native checks and E
 
 Exit: at least ten distinct frozen roots and their dependency closure have per-root source/target mappings, actual native import/compile/load/static display/save/independent reopen evidence; representative text/image/transform edits visibly work. At least one useful complete module must be adopted through fixed public tools and verified by the actual consumer. Static, Player, business and visual/source-version limits stay separate. A graph/field count, local unit tests or provider export alone does not close this version. Continue approved ready work without ordinary ACKs; report fixed/public/actual consumer groups or specific severe blockers.
 
+The dev3 four-root native attempt exposed positional pairing between independently ordered source-graph roots and provider paths. It failed before saving any root and remains unaccepted. The next local increment joins paths through exact pinned container/file/path identity, rejects ambiguous or incomplete root sets, and retains the original graph order only for representative selection. The bounded four-root native run is the affected integration check; earlier single-root and consumer receipts are not rerun.
+
 ## Preserved v0.7 history and accepted consumer scopes
 
 # monkey v0.7.0 — complete core Prefab recovery

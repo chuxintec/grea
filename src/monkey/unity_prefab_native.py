@@ -60,6 +60,29 @@ def rect_layout_expectations(graph):
     return result
 
 
+def bind_source_root_rows(graph_roots, report_roots, file_names):
+    """Join root paths by pinned source identity, independently of list order."""
+    by_key = {}
+    for root in graph_roots:
+        identity = root["identity"]
+        key = (identity["containerSha256"], identity["serializedFile"], identity["pathId"])
+        if key in by_key:
+            fail("UNITY_PREFAB_NATIVE_ROOT_AMBIGUOUS", str(key), "Duplicate source root identity")
+        by_key[key] = root["sourceObjectId"]
+    bound = {}
+    for row in report_roots:
+        source = row["source"]
+        filename = file_names.get((source["sourceSha256"], source["file"]))
+        key = (source["sourceSha256"], filename, source["pathId"])
+        sid = by_key.get(key)
+        if sid is None or sid in bound:
+            fail("UNITY_PREFAB_NATIVE_ROOT_MAPPING", str(key), "One exact source root/path binding required")
+        bound[sid] = row
+    if set(bound) != set(by_key.values()):
+        fail("UNITY_PREFAB_NATIVE_ROOT_MAPPING", "$", "Source root/path sets differ")
+    return bound
+
+
 def cold_reopen(native_output, editor, budget_seconds=600):
     """Read the saved candidate in a different headless process; never save again."""
     from .native import now, stamp
@@ -148,7 +171,7 @@ def prepare(project, expected_manifest):
     moves = load(read(project / "Analysis/Mappings/unity-relocation.json"))["moves"]
     moved = {r["source"]: r["target"] for r in moves}
     source_files = [r["source"] for r in moves]
-    resource_bindings, scripts, shapes = {}, {}, {}
+    resource_bindings, scripts, shapes, source_file_names = {}, {}, {}, {}
     sdk_path = project / "Analysis/Mappings/native-sdk-scripts.json"
     sdk_bindings = load(read(sdk_path))["bindings"] if sdk_path.is_file() else []
     sdk_scripts = {}
@@ -167,6 +190,7 @@ def prepare(project, expected_manifest):
             fail("UNITY_PREFAB_NATIVE_SOURCE_DRIFT", str(typed_path), "Source evidence changed after generation")
         doc = load(typed_raw, max_nodes=8_000_000)
         f_names = {f["id"]: f["name"] for f in doc["files"]}
+        source_file_names.update({(record["sourceSha256"], fid): name for fid, name in f_names.items()})
         ids = {(o["identity"]["serializedFile"], o["identity"]["pathId"]): sid for sid, o in objects.items()
                if o["identity"]["containerSha256"] == record["sourceSha256"]}
         for obj in doc["objects"]:
@@ -284,7 +308,8 @@ def prepare(project, expected_manifest):
                 target = resource_bindings[target_sid]
                 if not target["guid"]:
                     fail("UNITY_PREFAB_NATIVE_REFERENCE_GUID", target["path"], "Missing native resource metadata")
-                row.update(refGuid=target["guid"], refType="UnityEngine." + target_obj["type"])
+                row.update(refGuid=target["guid"], refType="UnityEditor.Animations.AnimatorController"
+                           if target_obj["type"] == "AnimatorController" else "UnityEngine." + target_obj["type"])
             else:
                 fail("UNITY_PREFAB_NATIVE_REFERENCE_MAPPING", loc, "No exact original container or script mapping for " + target_obj["type"] + ": " + target_sid)
             return [row]
@@ -318,9 +343,10 @@ def prepare(project, expected_manifest):
         fail("UNITY_PREFAB_NATIVE_FIELD_SHAPE", loc, "Unsupported serialized source shape")
 
     root_plans = []
+    root_rows = bind_source_root_rows(graph["roots"], report["roots"], source_file_names)
     for index, root in enumerate(graph["roots"]):
         source_id = root["sourceObjectId"]
-        row = report["roots"][index]
+        row = root_rows[source_id]
         original = row["providerPath"].removeprefix("ExportedProject/")
         path = moved.get(original, original)
         node_plans = []
