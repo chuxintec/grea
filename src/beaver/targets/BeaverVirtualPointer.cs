@@ -587,6 +587,7 @@ namespace Beaver.VirtualPointer
             var map = virtualActionsAsset.AddActionMap("BeaverVirtualPointerUI");
             map.devices = new InputDevice[] { device };
             var point = map.AddAction("Point", InputActionType.PassThrough, "<BeaverVirtualMouse>/position", expectedControlLayout: "Vector2");
+            point.wantsInitialStateCheck = true;
             var click = map.AddAction("LeftClick", InputActionType.PassThrough, "<BeaverVirtualMouse>/leftButton", expectedControlLayout: "Button");
             var middleClick = map.AddAction("MiddleClick", InputActionType.PassThrough, "<BeaverVirtualMouse>/middleButton", expectedControlLayout: "Button");
             var rightClick = map.AddAction("RightClick", InputActionType.PassThrough, "<BeaverVirtualMouse>/rightButton", expectedControlLayout: "Button");
@@ -620,6 +621,7 @@ namespace Beaver.VirtualPointer
                 module.scrollWheel = route.NewScroll; module.move = route.NewMove; module.submit = route.NewSubmit; module.cancel = route.NewCancel;
                 module.trackedDeviceOrientation = route.NewTrackedOrientation; module.trackedDevicePosition = route.NewTrackedPosition;
             }
+            virtualActionsAsset.Enable();
         }
         static bool IsEnabled(InputActionReference reference) { return reference != null && reference.action != null && reference.action.enabled; }
         static void RestoreEnabled(InputActionReference reference, bool enabled)
