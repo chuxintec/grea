@@ -1,5 +1,9 @@
 # Maintainer responsibilities
 
+## Current consumer contact — 2026-11-02
+
+FoodStreet primary: `local/01a199fb-fbe3-7b80-b2a2-50932c99d6e5`. This replaces archived `01a18189-efa1-7f91-8a2a-75b5d3d3856a` for future necessary coordination only. Verified against `/Users/wangmeng/Documents/Manager/sessions.json` and `/Users/wangmeng/Documents/Manager/decisions/20261102-foodstreet-takeover/HANDOFF.md` (human `01a199fa-3a5d-7461-8278-0641b93a5fb6`). Historical receipts and accepted toolchain evidence remain unchanged; no replay of prior deliveries, archived-chat restart or completed-tool work.
+
 Active adoption follow-up, baseline b85d44ec: parent owns adoption.py/adoption_native.py/BeaverAdoption.cs, public shared contracts, sole private Editor and sealing. `/root/adopt_dependencies` (requested gpt-6-luna/high; spawn accepted, runtime identity not independently probed) delivered isolated declaration validator/tests/docs; parent integrates after peer contract agreement. No recursion, game writes or other-repository writes.
 
 Dependency module integrated after monkey accepted the exact contract. Contributor also reviewed recovery read-only and identified the missing-meta case; parent now blocks unowned compiler metadata in preview. Parent source trial passed new-script Prefab/SO adoption/reopen/rollback, and confirmed old fixed9 regression. Deliberate compile-error recovery restored code but remaining native recovery is blocked by Unity licensing exit198. Candidate readiness/consumer completion remain pending.
