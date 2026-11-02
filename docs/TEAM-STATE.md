@@ -2,7 +2,7 @@
 
 ## Current Zombie toolchain work — 2026-11-02
 
-Primary alone owns beaver intake and compatibility preflight; no new subagent or desktop session. Zombie consumer is `local/01a19a01-63bf-7823-af9f-e1daed5ec385`; archived `01a16d44-0c10-7d41-94b6-23d7da1a0f82` receives no new delivery. Formal project/Editor single writer is the consumer. Existing fix8 name-catalog entry was delivered with verified paired provider config/lock; completed fix7 transactions remain immutable. Fixed static candidate, exact script/subasset mapping and real consumer acceptance remain pending. See PLAN current work and private adoption-intake-01; earlier FoodStreet scoped closure remains closed.
+Primary alone owns beaver intake and compatibility preflight; no new subagent or desktop session. Zombie consumer is `local/01a19a01-63bf-7823-af9f-e1daed5ec385`; archived `01a16d44-0c10-7d41-94b6-23d7da1a0f82` receives no new delivery. Formal project/Editor single writer is the consumer. Existing fix8 name-catalog entry was delivered with verified paired provider config/lock; completed fix7 transactions remain immutable. Actual stale-marker self-match was fixed and sealed as fix22 (`ab642145`, producer `315db9ff`); primary alone verified 113 installed affected checks, 132 runtime files and a real owned wrapper without an Editor or project write. GREA collect binding and real consumer recheck pending. Fixed static candidate, exact script/subasset mapping and real consumer acceptance remain pending. See PLAN current work and private adoption-intake-01; earlier FoodStreet scoped closure remains closed.
 
 ## Current consumer contact — 2026-11-02
 
