@@ -21,7 +21,9 @@ public static class BeaverIntake {
     [Serializable] public class Job { public string targetRoot,stage,mode,planSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public Check[] verifications; }
     [Serializable] public class Observed { public string path,guid,type,assembly,name; public long localId; }
     [Serializable] public class Reference { public string asset,propertyPath; public long ownerLocalId; public Observed value; }
-    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); }
+    [Serializable] public class SkippedArray { public string propertyPath,elementType,scalarPropertyType; public int length; }
+    [Serializable] public class Traversal { public string asset; public long ownerLocalId; public int visited; public List<SkippedArray> scalarArrays=new List<SkippedArray>(); }
+    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); public List<Traversal> referenceTraversals=new List<Traversal>(); }
     static Job job; static Report report; static string root;
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe intake path");
@@ -41,6 +43,29 @@ public static class BeaverIntake {
             var found=Identity(script,s.target);if(found.guid!=s.targetGuid||found.localId!=s.targetLocalId)throw new Exception("Retained script localID mismatch "+s.target);
             found.type=t.FullName;found.assembly=t.Assembly.GetName().Name;report.scripts.Add(found);
         }
+    }
+    // Unity arrays are homogeneous. Require both the engine's element type and
+    // a childless scalar element; user structs, PPtrs and managed references do
+    // not qualify even if their type name resembles a primitive alias.
+    static bool ScalarArray(SerializedProperty p,Traversal traversal) {
+        if(!p.isArray||p.propertyType!=SerializedPropertyType.Generic||p.arraySize==0)return false;
+        string kind=p.arrayElementType;SerializedPropertyType expected;
+        switch(kind) {
+            case "bool":expected=SerializedPropertyType.Boolean;break;
+            case "float":case "double":expected=SerializedPropertyType.Float;break;
+            case "string":expected=SerializedPropertyType.String;break;
+            case "char":expected=SerializedPropertyType.Character;break;
+            case "SInt8":case "UInt8":case "SInt16":case "UInt16":case "SInt32":case "UInt32":case "SInt64":case "UInt64":
+            case "byte":case "sbyte":case "short":case "ushort":case "int":case "uint":case "long":case "ulong":
+            case "unsigned char":case "unsigned short":case "unsigned int":case "unsigned long long":case "long long":
+                expected=SerializedPropertyType.Integer;break;
+            default:return false;
+        }
+        using(var first=p.GetArrayElementAtIndex(0)) {
+            if(first.hasChildren||first.isArray||!(first.propertyType==expected||kind=="char"&&first.propertyType==SerializedPropertyType.Integer))return false;
+            traversal.scalarArrays.Add(new SkippedArray{propertyPath=p.propertyPath,elementType=kind,scalarPropertyType=first.propertyType.ToString(),length=p.arraySize});
+        }
+        return true;
     }
     static void Dependencies() {
         foreach(var s in job.packageScripts??new PackageScript[0]) {
@@ -62,9 +87,10 @@ public static class BeaverIntake {
                 if(o==null||v.id.guid!=e.guid||v.id.type!=o.type||v.id.assembly!=o.assembly||v.id.name!=o.name)throw new Exception("Retained resource object identity mismatch "+e.target);
                 report.externalObjects.Add(v.id);var so=new SerializedObject(v.value);so.UpdateIfRequiredOrScript();
                 foreach(var f in o.fields)Value(so.FindProperty(f.propertyPath),f);
-                var iterator=so.GetIterator();int count=0;
-                while(iterator.Next(true)) {
-                    if(++count>250000)throw new Exception("Retained resource reference traversal budget");
+                var iterator=so.GetIterator();var traversal=new Traversal{asset=e.target,ownerLocalId=o.localId};report.referenceTraversals.Add(traversal);bool enterChildren=true;
+                while(iterator.Next(enterChildren)) {
+                    if(++traversal.visited>250000)throw new Exception("Retained resource reference traversal budget");
+                    enterChildren=!ScalarArray(iterator,traversal);
                     if(iterator.propertyType!=SerializedPropertyType.ObjectReference)continue;
                     var value=iterator.objectReferenceValue;
                     if(value==null&&iterator.objectReferenceEntityIdValue!=EntityId.None)throw new Exception("Unresolved retained resource reference "+iterator.propertyPath);

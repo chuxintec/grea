@@ -1,5 +1,9 @@
 # Maintainer responsibilities
 
+## Active fixed25 — 2026-11-02
+
+Primary sole writer for narrow BeaverIntake.cs scalar-array traversal, shared version/docs and isolated native font/complex-array fixtures. No additional subagent for this single critical path. Real formal font only copied read-only; formal project/old fixed24 transaction stays owner-controlled. Existing primitive/reference limits, exact references, cold/rollback and source-partial boundaries remain. Fixed candidate verification pending.
+
 ## Active fixed24 module — 2026-11-02
 
 Reused /root/intake_contract (existing configured instance; no new model selection) delivered spec2 validator, Schema, contract tests/docs in disjoint files; parent owns intake_external.py/intake.py/intake_native.py/BeaverIntake.cs, shared CLI/version/PLAN/TEAM, tests of plan guards, sole isolated headless Editor and sealing. No recursive agents, game writes or foreground. Final fixed24 source3565efc/producer0a2594ed:137 runtime files match source/wheel/install;81 installed checks pass without skips. Final headless exact reuse/cold/rollback, two native pre-import identity refusals and later retained-resource/package-source edit protection passed. New fixed delivery reached GREA, Zombie owner and monkey under fresh explicit human authorization, after initial auto-review refusal. Primary owns sealing; GREA public adapter verified (137 package/2 launcher pins,98 focused checks); paired source CLI config/lock/examples delivered to owner. Actual formal consumer validation remains pending; no plugin upgrade. MODULE-DEVELOPERS applies without widening communication or product permissions.
