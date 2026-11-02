@@ -77,7 +77,7 @@ def _guard(plan, current):
 
 
 def _native_plan(plan):
-    return dict(targetRoot=plan['targetRoot'], targetProfile=plan['targetProfile'], targetFiles=plan['targetBefore'], operations=[
+    return dict(targetRoot=plan['targetRoot'], targetProfile=plan['targetProfile'], targetFiles=plan['targetBefore'], intakeNewScripts=plan.get('newScripts',[]), operations=[
         dict(action='add', source=None, target=r['target'], guid=r['guid'], before=None,
              after=dict(path=r['target'], guid=r['guid'], file=r['file'], meta=r['meta'])) for r in plan['additions']])
 
@@ -100,7 +100,7 @@ def _job(stage, plan, journal, mode):
     return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],
                 additions=[dict(target=r['target'],guid=r['guid'],fileHash=r['file']['sha256'],metaHash=r['meta']['sha256']) for r in plan['additions']],
                 externalScripts=plan['externalScripts'],externalAssets=[dict(r,objects=owners_for(r['objects'])) for r in plan.get('externalAssets',[])],
-                packageScripts=plan.get('packageScripts',[]),newScripts=plan.get('newScripts',[]),verifications=checks)
+                packageScripts=plan.get('packageScripts',[]),newScripts=plan.get('newScripts',[]),watcherBeforeSha256=journal.get('watcherBeforeSha256'),watcherCompiledSha256=journal.get('watcherCompiledSha256'),verifications=checks)
 
 
 def _gate(stage, plan, journal, editor, mode, budget):
@@ -131,7 +131,22 @@ def _gate(stage, plan, journal, editor, mode, budget):
     result=load(read(result_path,max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES) if result_path.is_file() else {}
     if process.returncode!=0 or result.get('status')!='verified' or result.get('planSha256')!=journal['planSha256']:
         fail('INTAKE_NATIVE_FAILED',str(result_path),'Native gate failed; inspect evidence and use intake rollback, never replay apply')
+    if mode=='code-check' and plan.get('newScripts'):
+        journal['watcherCompiledSha256']=digest_file(stage/'intake-watchers-compiled.json');write_json(stage/'journal.json',journal)
     return result
+
+
+def _bind_watcher_before(stage, journal):
+    """Bind the original native compiler checkpoint, never learn a later baseline."""
+    code=load(read(stage/'native-code.json',max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
+    expected=code.get('intakeWatcherBeforeSha256')
+    if code.get('planSha256')!=journal['planSha256']:
+        fail('INTAKE_WATCHER_CHECKPOINT',str(stage),'Compiler checkpoint belongs to another plan')
+    if not expected and not code.get('written') and not (stage/'intake-watchers-before.json').exists():
+        return  # Failure before the compiler snapshot or any compiler write.
+    if not expected or not (stage/'intake-watchers-before.json').is_file() or digest_file(stage/'intake-watchers-before.json')!=expected or journal.get('watcherBeforeSha256',expected)!=expected:
+        fail('INTAKE_WATCHER_CHECKPOINT',str(stage),'Original native watcher before-image changed')
+    journal['watcherBeforeSha256']=expected;write_json(stage/'journal.json',journal)
 
 
 def execute(plan_path, output, editor, expected, budget=600):
@@ -153,6 +168,7 @@ def execute(plan_path, output, editor, expected, budget=600):
             recheck_packages(plan)
             if plan.get('newScripts'):
                 run_child(stage,_native_plan(plan),journal,editor,'code',budget)
+                _bind_watcher_before(stage,journal)
                 _guard(plan,_files(target))
                 code_checked=_gate(stage,plan,journal,editor,'code-check',budget)
                 _guard(plan,_files(target))
@@ -179,6 +195,8 @@ def execute(plan_path, output, editor, expected, budget=600):
                 result.update(externalAssets=len(plan['externalAssets']),packageScripts=len(plan['packageScripts']),externalObjects=len(reopened['externalObjects']),externalReferences=len(reopened['externalReferences']))
             if plan['schemaVersion']==3:
                 result.update(newScripts=len(plan['newScripts']),compilationBoundary='separate-editor-code-check-before-assets' if plan['newScripts'] else 'no-new-compiler-inputs')
+                if plan['newScripts']:
+                    result.update(watcherPolicy=reopened['watcherCheck']['policy'],watchersChecked=reopened['watcherCheck']['watchersChecked'],watcherResolutions=reopened['watcherCheck']['resolutions'])
             write_json(stage/'intake-result.json',result);return result
         except BaseException:
             journal['state']='recovery-required'
@@ -211,6 +229,7 @@ def recover(transaction, editor, expected, budget=600):
             journal.update(state='rolled-back',restored=0);write_json(stage/'journal.json',journal)
             return dict(status='rolled-back',restored=0,report=str(stage/'journal.json'))
         if (stage/'native-code.json').exists():
+            if plan.get('newScripts'):_bind_watcher_before(stage,journal)
             restore_code(stage,_native_plan(plan),journal)
         owned=_install(target)
         try:

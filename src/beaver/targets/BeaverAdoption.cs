@@ -7,6 +7,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,10 +24,11 @@ public static class BeaverAdoption {
         public bool preserveLocalIds, compileStage;
     }
     [Serializable] public class Job {
-        public string targetRoot, stage, mode, deadlineUtc, planSha256;
+        public string targetRoot, stage, mode, deadlineUtc, planSha256,watcherBeforeSha256,watcherCompiledSha256;
         public int budgetSeconds;
         public Op[] operations;
         public string[] watch;
+        public IntakeScript[] intakeNewScripts;
         public bool codeRestored, sdkMigrationEnabled;
         public SdkMigration sdkMigration;
     }
@@ -67,7 +69,7 @@ public static class BeaverAdoption {
         public string[] localIds;
     }
     [Serializable] public class Progress {
-        public string status, mode, planSha256, error;
+        public string status, mode, planSha256, error,intakeWatcherBeforeSha256;
         public List<int> written=new List<int>();
         public List<int> restored=new List<int>();
         public List<Entry> assets=new List<Entry>();
@@ -84,8 +86,14 @@ public static class BeaverAdoption {
         public List<SdkRetainedInactiveSnapshot> sdkBeforeInactiveAssemblies=new List<SdkRetainedInactiveSnapshot>();
         public List<SdkRetainedInactiveSnapshot> sdkAfterInactiveAssemblies=new List<SdkRetainedInactiveSnapshot>();
         public List<Observed> observedAfter=new List<Observed>();
+        public IntakeWatcherReport watcherCheck;
     }
     [Serializable] public class Observed { public int index; public string path,fileHash,metaHash; }
+    [Serializable] public class IntakeScript { public string target,guid,sha256,metaSha256; public long localId; }
+    [Serializable] public class IntakeWatcher { public string path,fileHash,metaHash; public string[] dependencies,serializedScriptGuids; }
+    [Serializable] public class IntakeWatcherDelta { public string path; public string[] before,after,added; }
+    [Serializable] public class IntakeWatcherSnapshot { public string policy,planSha256; public IntakeScript[] scripts; public IntakeWatcher[] watchers; }
+    [Serializable] public class IntakeWatcherReport { public string policy,planSha256,mode; public int watchersChecked,resolutions; public List<IntakeWatcherDelta> watchers=new List<IntakeWatcherDelta>(); }
     [Serializable] public class SdkScriptSnapshot {
         public string path,guid,assemblyName,expectedEditorModuleVersionId,loadedModuleVersionId,moduleLoadStatus;
         public string evidenceClass,evidenceSourcePath,evidenceSourceSha256,evidenceSourceModuleVersionId,evidenceSourceTupleSha256;
@@ -145,6 +153,85 @@ public static class BeaverAdoption {
     }
     static string RefSignature(string path) {
         return String.Join("|",AssetDatabase.GetDependencies(path,false).Select(p=>AssetDatabase.AssetPathToGUID(p)).Where(g=>g!="").OrderBy(g=>g,StringComparer.Ordinal));
+    }
+    const string IntakeWatcherPolicy="declared-new-script-resolution/1";
+    static bool IntakeWatchers(Job input) { return input.intakeNewScripts!=null && input.intakeNewScripts.Length>0; }
+    static string[] WatcherDependencies(string path) {
+        var result=RefSignature(path).Split(new[]{'|'},StringSplitOptions.RemoveEmptyEntries);
+        if(result.Distinct(StringComparer.Ordinal).Count()!=result.Length)throw new Exception("Duplicate watcher dependency identity "+path);
+        return result;
+    }
+    static void CheckIntakeScripts(Job input,bool imported) {
+        if(input.intakeNewScripts.Length>16)throw new Exception("Intake script watcher limit");
+        if(!input.operations.Where(o=>o.compileStage).Select(o=>o.target).OrderBy(p=>p,StringComparer.Ordinal).SequenceEqual(input.intakeNewScripts.Select(s=>s.target).OrderBy(p=>p,StringComparer.Ordinal)))throw new Exception("Undeclared compiler operation at intake watcher boundary");
+        if((input.watch??new string[0]).Length>128 || (input.watch??new string[0]).Distinct(StringComparer.Ordinal).Count()!=(input.watch??new string[0]).Length)throw new Exception("Intake watcher inventory limit or duplicate");
+        foreach(var s in input.intakeNewScripts) {
+            var ops=input.operations.Where(o=>o.target==s.target && o.action=="add" && String.IsNullOrEmpty(o.source) && String.IsNullOrEmpty(o.beforeFileHash) && String.IsNullOrEmpty(o.beforeMetaHash) && o.compileStage && o.target.EndsWith(".cs",StringComparison.Ordinal) && o.guid==s.guid && o.afterFileHash==s.sha256 && o.afterMetaHash==s.metaSha256).ToArray();
+            if(ops.Length!=1 || s.localId==0)throw new Exception("Watcher script is not an exact declared new source "+s.target);
+            if(imported) {
+                var at=AssetDatabase.GUIDToAssetPath(s.guid);var script=AssetDatabase.LoadAssetAtPath<MonoScript>(s.target);string guid;long id;
+                if(at!=s.target || Hash(Full(s.target))!=s.sha256 || Hash(Full(s.target+".meta"))!=s.metaSha256 || script==null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(script,out guid,out id) || guid!=s.guid || id!=s.localId)throw new Exception("Watcher script identity drift "+s.target);
+            }
+        }
+        if(input.intakeNewScripts.Select(s=>s.guid).Distinct(StringComparer.Ordinal).Count()!=input.intakeNewScripts.Length)throw new Exception("Duplicate declared watcher script");
+    }
+    static string[] SerializedIntakeScripts(string path,IntakeScript[] scripts) {
+        // A conservative reader of canonical native text serialization, never a
+        // writer or a replacement importer. Binary/noncanonical input permits
+        // no dependency relaxation. Require the exact MonoScript PPtr triple.
+        if(new FileInfo(Full(path)).Length>128*1024*1024)return new string[0];
+        var bytes=File.ReadAllBytes(Full(path));string text;
+        try{text=new System.Text.UTF8Encoding(false,true).GetString(bytes);}catch(System.Text.DecoderFallbackException){return new string[0];}
+        if(!text.TrimStart('\uFEFF').StartsWith("%YAML",StringComparison.Ordinal))return new string[0];
+        return scripts.Where(s=>Regex.IsMatch(text,@"(?m)^  m_Script: *\{fileID: *"+s.localId.ToString(System.Globalization.CultureInfo.InvariantCulture)+@", guid: *"+Regex.Escape(s.guid)+@", type: *3\} *\r?$",RegexOptions.CultureInvariant)).Select(s=>s.guid).OrderBy(g=>g,StringComparer.Ordinal).ToArray();
+    }
+    static void SaveIntakeWatcherBefore(Job input) {
+        CheckIntakeScripts(input,false);
+        var rows=(input.watch??new string[0]).Select(p=>new IntakeWatcher{path=p,fileHash=Hash(Full(p)),metaHash=Hash(Full(p+".meta")),dependencies=WatcherDependencies(p),serializedScriptGuids=SerializedIntakeScripts(p,input.intakeNewScripts)}).ToArray();
+        var snapshot=new IntakeWatcherSnapshot{policy=IntakeWatcherPolicy,planSha256=input.planSha256,scripts=input.intakeNewScripts,watchers=rows};
+        using(var stream=new StreamWriter(new FileStream(Path.Combine(input.stage,"intake-watchers-before.json"),FileMode.CreateNew)))stream.Write(JsonUtility.ToJson(snapshot,true));
+        report.intakeWatcherBeforeSha256=Hash(Path.Combine(input.stage,"intake-watchers-before.json"));Save();
+    }
+    static IntakeWatcherSnapshot ReadIntakeWatcherBefore(Job input) {
+        var before=JsonUtility.FromJson<IntakeWatcherSnapshot>(File.ReadAllText(Path.Combine(input.stage,"intake-watchers-before.json")));
+        if(before.policy!=IntakeWatcherPolicy || before.planSha256!=input.planSha256 || before.watchers==null || before.scripts==null || !before.watchers.Select(w=>w.path).SequenceEqual(input.watch??new string[0]) || JsonUtility.ToJson(new IntakeWatcherSnapshot{scripts=before.scripts})!=JsonUtility.ToJson(new IntakeWatcherSnapshot{scripts=input.intakeNewScripts}))throw new Exception("Intake watcher checkpoint identity mismatch");
+        return before;
+    }
+    public static IntakeWatcherReport CheckIntakeWatcherBoundary(string stage,string expected,string mode,string beforeHash,string compiledHash) {
+        var input=JsonUtility.FromJson<Job>(File.ReadAllText(Path.Combine(stage,"job-code.json")));
+        if(input.stage!=stage || input.planSha256!=expected || !IntakeWatchers(input) || Path.GetFullPath(input.targetRoot)!=Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName))throw new Exception("Intake watcher job mismatch");
+        // This helper is also called by BeaverIntake in separate Editor gates.
+        // Do not replace the active adoption Job/mode when called at apply-start.
+        var savedRoot=root;root=Path.GetFullPath(input.targetRoot).TrimEnd(Path.DirectorySeparatorChar);
+        try {
+        CheckIntakeScripts(input,mode!="rollback-check");
+        if(String.IsNullOrEmpty(beforeHash) || Hash(Path.Combine(stage,"intake-watchers-before.json"))!=beforeHash)throw new Exception("Intake watcher before checkpoint changed");
+        var before=ReadIntakeWatcherBefore(input);IntakeWatcherReport compiled=null;
+        if(mode!="code-check" && mode!="rollback-check") {
+            if(String.IsNullOrEmpty(compiledHash) || Hash(Path.Combine(stage,"intake-watchers-compiled.json"))!=compiledHash)throw new Exception("Intake watcher compiled checkpoint changed");
+            compiled=JsonUtility.FromJson<IntakeWatcherReport>(File.ReadAllText(Path.Combine(stage,"intake-watchers-compiled.json")));
+            if(compiled.policy!=IntakeWatcherPolicy || compiled.planSha256!=expected || !compiled.watchers.Select(w=>w.path).SequenceEqual(before.watchers.Select(w=>w.path)))throw new Exception("Compiled watcher checkpoint mismatch");
+        }
+        var result=new IntakeWatcherReport{policy=IntakeWatcherPolicy,planSha256=expected,mode=mode};
+        foreach(var old in before.watchers) {
+            if(Hash(Full(old.path))!=old.fileHash || Hash(Full(old.path+".meta"))!=old.metaHash)throw new Exception("Intake watcher source/meta changed "+old.path);
+            if(!(old.serializedScriptGuids??new string[0]).SequenceEqual(SerializedIntakeScripts(old.path,input.intakeNewScripts)))throw new Exception("Watcher serialized script proof changed "+old.path);
+            var actual=WatcherDependencies(old.path);var added=actual.Except(old.dependencies,StringComparer.Ordinal).ToArray();
+            if(mode=="code-check") {
+                if(old.dependencies.Except(actual,StringComparer.Ordinal).Any() || added.Except(old.serializedScriptGuids,StringComparer.Ordinal).Any())throw new Exception("Unapproved compiled watcher dependency change "+old.path);
+            } else {
+                var target=old.dependencies;
+                if(mode!="rollback-check") {
+                    var row=compiled.watchers.Single(w=>w.path==old.path);target=row.after;
+                    if(!row.before.SequenceEqual(old.dependencies) || !row.added.SequenceEqual(row.after.Except(old.dependencies,StringComparer.Ordinal)) || old.dependencies.Except(row.after,StringComparer.Ordinal).Any() || row.added.Except(old.serializedScriptGuids,StringComparer.Ordinal).Any())throw new Exception("Invalid compiled watcher delta "+old.path);
+                }
+                if(!actual.SequenceEqual(target))throw new Exception("Intake watcher stage dependency drift "+old.path);
+            }
+            result.watchers.Add(new IntakeWatcherDelta{path=old.path,before=old.dependencies,after=actual,added=added});result.watchersChecked++;result.resolutions+=added.Length;
+        }
+        if(mode=="code-check")using(var stream=new StreamWriter(new FileStream(Path.Combine(stage,"intake-watchers-compiled.json"),FileMode.CreateNew)))stream.Write(JsonUtility.ToJson(result,true));
+        return result;
+        } finally {root=savedRoot;}
     }
     static void WritePayload(int index,string side,string target,string fileHash,string metaHash,bool import=true) {
         var file=FileFor(index,side,"file");var meta=FileFor(index,side,"meta");
@@ -662,7 +749,10 @@ public static class BeaverAdoption {
                         var prior=JsonUtility.FromJson<Progress>(File.ReadAllText(codePath));
                         if(prior.status!="staged" || prior.planSha256!=job.planSha256)throw new Exception("Invalid compilation checkpoint");
                         report.written=prior.written;report.beforeAssets=prior.beforeAssets;report.createdFolders=prior.createdFolders;report.observedAfter=prior.observedAfter;report.sdkBeforeMonoScripts=prior.sdkBeforeMonoScripts;report.sdkBeforeComplete=prior.sdkBeforeComplete;report.sdkBeforeInactiveAssemblies=prior.sdkBeforeInactiveAssemblies;
-                        foreach(var line in File.ReadAllLines(Path.Combine(job.stage,"reference-signatures.json"))){var parts=line.Split('\t');if(parts.Length!=2||RefSignature(parts[0])!=parts[1])throw new Exception("Compiled watcher dependencies changed");signatures[parts[0]]=parts[1];}
+                        if(IntakeWatchers(job)) {
+                            var boundary=CheckIntakeWatcherBoundary(job.stage,job.planSha256,"apply-start",job.watcherBeforeSha256,job.watcherCompiledSha256);report.watcherCheck=boundary;
+                            foreach(var row in boundary.watchers)signatures[row.path]=String.Join("|",row.after);
+                        } else foreach(var line in File.ReadAllLines(Path.Combine(job.stage,"reference-signatures.json"))){var parts=line.Split('\t');if(parts.Length!=2||RefSignature(parts[0])!=parts[1])throw new Exception("Compiled watcher dependencies changed");signatures[parts[0]]=parts[1];}
                         foreach(var old in report.beforeAssets)if(job.operations[old.index].preserveLocalIds)originalIds[job.operations[old.index].target]=old.localIds;
                     } else {
                         if(job.mode=="code"||SdkEnabled()){CheckSdkAssemblies(false);CheckSdkReferences(false,false);}
@@ -674,6 +764,7 @@ public static class BeaverAdoption {
                             else {Expected(op.target,null);Expected(op.target+".meta",null);}
                         }
                         File.WriteAllText(Path.Combine(job.stage,"reference-signatures.json"),String.Join("\n",signatures.Select(p=>p.Key+"\t"+p.Value)));Save();
+                        if(job.mode=="code" && IntakeWatchers(job))SaveIntakeWatcherBefore(job);
                     }
                     if(job.mode=="code") {
                         // All directories are created through the Editor before reload is locked.
@@ -691,6 +782,7 @@ public static class BeaverAdoption {
                         WritePayload(i,"after",op.target,op.afterFileHash,op.afterMetaHash,job.mode!="code");if(job.mode!="code")VerifyAsset(i,op);Save();
                     }
                     if(job.mode!="code")foreach(var watch in signatures.Keys)if(RefSignature(watch)!=signatures[watch])throw new Exception("Unchanged watcher dependencies changed "+watch);
+                    if(job.mode=="apply" && IntakeWatchers(job))report.watcherCheck=CheckIntakeWatcherBoundary(job.stage,job.planSha256,"apply-end",job.watcherBeforeSha256,job.watcherCompiledSha256);
                     if(job.mode=="apply") { CheckSdkAssemblies(true);CheckSdkReferences(true,true);ConfirmSdkModuleBindings(true); }
                 } else if(job.mode=="verify") {
                     CheckSdkAssemblies(true);CheckSdkReferences(true,false);

@@ -22,12 +22,12 @@ public static class BeaverIntake {
     [Serializable] public class Member { public string name,type,assembly; }
     [Serializable] public class NewScript { public string target,guid,sha256,metaSha256,targetType,targetAssembly,baseType,baseAssembly; public long localId; public Member[] fields; }
     [Serializable] public class NewObserved { public Observed identity; public string baseType,baseAssembly; public Member[] fields; }
-    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public NewScript[] newScripts; public Check[] verifications; }
+    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256,watcherBeforeSha256,watcherCompiledSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public NewScript[] newScripts; public Check[] verifications; }
     [Serializable] public class Observed { public string path,guid,type,assembly,name; public long localId; }
     [Serializable] public class Reference { public string asset,propertyPath; public long ownerLocalId; public Observed value; }
     [Serializable] public class SkippedArray { public string propertyPath,elementType,scalarPropertyType; public int length; }
     [Serializable] public class Traversal { public string asset; public long ownerLocalId; public int visited; public List<SkippedArray> scalarArrays=new List<SkippedArray>(); }
-    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); public List<Traversal> referenceTraversals=new List<Traversal>(); public List<NewObserved> newScripts=new List<NewObserved>(); }
+    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); public List<Traversal> referenceTraversals=new List<Traversal>(); public List<NewObserved> newScripts=new List<NewObserved>(); public BeaverAdoption.IntakeWatcherReport watcherCheck; }
     static Job job; static Report report; static string root;
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe intake path");
@@ -172,6 +172,7 @@ public static class BeaverIntake {
             root=Path.GetFullPath(job.targetRoot).TrimEnd(Path.DirectorySeparatorChar);
             if(Application.unityVersion!="6000.6.2f1"||root!=Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName).TrimEnd(Path.DirectorySeparatorChar))throw new Exception("Wrong Editor/project");
             report=new Report{status="running",mode=job.mode,planSha256=job.planSha256};Scripts();Dependencies();NewScripts();
+            if((job.newScripts??new NewScript[0]).Length>0 && job.mode!="preflight" && (job.mode!="rollback-check" || File.Exists(Path.Combine(job.stage,"intake-watchers-before.json"))))report.watcherCheck=BeaverAdoption.CheckIntakeWatcherBoundary(job.stage,job.planSha256,job.mode,job.watcherBeforeSha256,job.watcherCompiledSha256);
             if(job.mode!="preflight"&&job.mode!="verify"&&job.mode!="rollback-check"&&job.mode!="code-check")throw new Exception("Unknown intake gate");
             foreach(var a in job.additions) {
                 if(job.mode=="preflight"||job.mode=="rollback-check"||job.mode=="code-check"&&!(job.newScripts??new NewScript[0]).Any(s=>s.target==a.target)) {
