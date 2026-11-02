@@ -26,6 +26,9 @@ NATIVE_BASES = {
     "UnityEngine.ScriptableObject": "UnityEngine.ScriptableObject",
     "UnityEngine.UI.Image": "UnityEngine.UI.Image",
     "UnityEngine.UI.Text": "UnityEngine.UI.Text",
+    "UnityEngine.UI.RawImage": "UnityEngine.UI.RawImage",
+    "UnityEngine.UI.Graphic": "UnityEngine.UI.Graphic",
+    "UnityEngine.UI.GridLayoutGroup": "UnityEngine.UI.GridLayoutGroup",
     "UnityEngine.UI.BaseMeshEffect": "UnityEngine.UI.BaseMeshEffect",
     "UnityEngine.EventSystems.UIBehaviour": "UnityEngine.EventSystems.UIBehaviour",
 }
@@ -36,6 +39,10 @@ _NATIVE_COMPONENT_CHAINS = {
                               "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.MonoBehaviour"],
     "UnityEngine.UI.Text": ["UnityEngine.UI.Text", "UnityEngine.UI.MaskableGraphic", "UnityEngine.UI.Graphic",
                             "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.MonoBehaviour"],
+    "UnityEngine.UI.RawImage": ["UnityEngine.UI.RawImage", "UnityEngine.UI.MaskableGraphic", "UnityEngine.UI.Graphic",
+                                "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.MonoBehaviour"],
+    "UnityEngine.UI.Graphic": ["UnityEngine.UI.Graphic", "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.MonoBehaviour"],
+    "UnityEngine.UI.GridLayoutGroup": ["UnityEngine.UI.GridLayoutGroup", "UnityEngine.UI.LayoutGroup", "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.MonoBehaviour"],
     "UnityEngine.UI.BaseMeshEffect": ["UnityEngine.UI.BaseMeshEffect", "UnityEngine.EventSystems.UIBehaviour",
                                       "UnityEngine.MonoBehaviour"],
 }
@@ -75,6 +82,29 @@ _UI_INHERITED_FIELDS = {
 }
 
 
+# Bounded source 2021.3 declaration/TypeTree profiles. Common Graphic fields
+# were checked in original DummyDLL declarations and target uGUI 2.6.0 sources.
+_UI_INHERITED_FIELDS["UnityEngine.UI.Graphic"] = {
+    k: v for k, v in _UI_INHERITED_FIELDS["UnityEngine.UI.Image"].items()
+    if k in ("m_Material", "m_Color", "m_RaycastTarget", "m_RaycastPadding")
+}
+_UI_INHERITED_FIELDS["UnityEngine.UI.RawImage"] = {
+    **{k: v for k, v in _UI_INHERITED_FIELDS["UnityEngine.UI.Image"].items()
+       if k in ("m_Material", "m_Color", "m_RaycastTarget", "m_RaycastPadding", "m_Maskable", "m_OnCullStateChanged")},
+    "m_Texture": ("PPtr<$Texture>", "UnityEngine.Texture"),
+    "m_UVRect": ("Rectf", "UnityEngine.Rect"),
+}
+_UI_INHERITED_FIELDS["UnityEngine.UI.GridLayoutGroup"] = {
+    "m_Padding": ("RectOffset", "UnityEngine.RectOffset"),
+    "m_ChildAlignment": ("int", "UnityEngine.TextAnchor"),
+    "m_StartCorner": ("int", "UnityEngine.UI.GridLayoutGroup.Corner"),
+    "m_StartAxis": ("int", "UnityEngine.UI.GridLayoutGroup.Axis"),
+    "m_CellSize": ("Vector2f", "UnityEngine.Vector2"),
+    "m_Spacing": ("Vector2f", "UnityEngine.Vector2"),
+    "m_Constraint": ("int", "UnityEngine.UI.GridLayoutGroup.Constraint"),
+    "m_ConstraintCount": ("int", "int"),
+}
+
 def _source_identity(assembly: str, namespace: str, name: str) -> tuple[str, str, str]:
     if not isinstance(assembly, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:\.dll)?", assembly):
         fail("UNITY_PREFAB_ASSEMBLY", str(assembly), "Unsafe or missing source assembly identity")
@@ -89,6 +119,10 @@ def _type_expr(values: list[str], start: int, end: int) -> str | None:
     """Accept a plain or qualified type name; reject aliases/generics here."""
     if start >= end:
         return None
+    suffix = ""
+    if end - start >= 3 and values[end-2:end] == ["[", "]"]:
+        suffix = "[]"
+        end -= 2
     out = []
     expect_name = True
     for value in values[start:end]:
@@ -98,7 +132,7 @@ def _type_expr(values: list[str], start: int, end: int) -> str | None:
             out.append(value); expect_name = True
         else:
             return None
-    return "".join(out) if out and not expect_name else None
+    return "".join(out) + suffix if out and not expect_name else None
 
 
 def _parse_using(values: list[str]) -> list[str]:
@@ -246,7 +280,7 @@ def _evaluate_enum_values(values: list[str] | None, underlying: str) -> list[dic
 
 
 def parse_declarations(source_text: str, *, assembly: str, source_path: str = "<memory>",
-                       source_sha256: str | None = None) -> dict[str, Any]:
+                       source_sha256: str | None = None, top_level_only: bool = False) -> dict[str, Any]:
     """Parse type/base/field/enum declarations from hash-pinned decompiler text."""
     if not isinstance(source_text, str) or len(source_text.encode("utf-8")) > MAX_SOURCE_BYTES:
         fail("UNITY_PREFAB_SOURCE_BUDGET", source_path, "Decompiler text exceeds the static parsing budget")
@@ -269,6 +303,8 @@ def parse_declarations(source_text: str, *, assembly: str, source_path: str = "<
         namespace_rows = sorted((ns for ns in namespaces if ns["start"] < row["declIndex"] < ns["end"]), key=lambda ns: ns["start"])
         namespace = ".".join(ns["name"] for ns in namespace_rows)
         parents = sorted((parent for parent in type_rows if parent["open"] < row["declIndex"] < parent["close"]), key=lambda p: p["open"])
+        if top_level_only and parents:
+            continue
         name = "+".join([*(parent["name"] for parent in parents), row["name"]])
         source_id = _source_identity(assembly, namespace, name)
         kind = row["kind"]
@@ -404,10 +440,12 @@ def propose_schema(parsed: dict[str, Any], script_identity: dict[str, str], type
             else:
                 gaps.append("TypeTree field has no exact source declaration or native inheritance proof: " + field_name)
             continue
-        enum_matches = [e for e in enum_decls if e["identity"]["assembly"] == assembly
+        ref = decl.get("fieldTypeReferences", {}).get(field_name)
+        enum_matches = [e for e in enum_decls if (e["identity"] == ref["targetType"] if ref else e["identity"]["assembly"] == assembly)
                         and e["identity"]["name"].split("+")[-1] == source_field["type"].split(".")[-1]
                         and (e["identity"]["namespace"] == namespace
-                             or e["identity"]["namespace"] in decl["imports"])]
+                             or e["identity"]["namespace"] in decl["imports"]
+                             or source_field["type"] == e["identity"]["namespace"] + "." + e["identity"]["name"])]
         if enum_matches:
             if len(enum_matches) != 1 or enum_matches[0].get("enumValues") is None:
                 gaps.append("enum declaration is ambiguous or lacks exact numeric constants: " + field_name)
@@ -425,6 +463,8 @@ def propose_schema(parsed: dict[str, Any], script_identity: dict[str, str], type
                 gaps.append("enum storage differs from TypeTree: " + field_name)
                 continue
             cs_type = enum_name
+            if enum["identity"]["namespace"] != namespace:
+                cs_type = "global::" + (enum["identity"]["namespace"] + "." if enum["identity"]["namespace"] else "") + enum_name
             record = {"name": enum_name, "namespace": enum["identity"]["namespace"],
                       "underlyingType": underlying, "values": enum["enumValues"],
                       "identity": enum["identity"], "sourceEvidence": enum["source"]}
@@ -434,15 +474,36 @@ def propose_schema(parsed: dict[str, Any], script_identity: dict[str, str], type
                                   "declarationType": source_field["type"], "schemaEvidence": "strict-TypeTree+exact-source-declaration"})
             continue
         try:
-            cs_type = field_type(node)
+            if ref and ref.get("fieldTypeKind") == "class" and not ref["targetType"]["assembly"].startswith("UnityEngine."):
+                fail("UNITY_PREFAB_FIELD_CLASS_ASSEMBLY", field_name, "A custom source class cannot be replaced by a same-name native type")
+            try:
+                cs_type = "bool" if source_field["type"] == "bool" and node.get("type") in ("bool", "UInt8") else field_type(node)
+            except ValueError:
+                if not ref or ref.get("fieldTypeKind") != "class":
+                    raise
+                target = ref["targetType"]
+                if not target["assembly"].startswith("UnityEngine.") or target["namespace"] not in ("UnityEngine", "UnityEngine.UI", "UnityEngine.EventSystems"):
+                    raise
+                pointer = node
+                if ref.get("arrayRank", 0) == 1 and node.get("type") == "vector":
+                    arrays = [n for n in node.get("children", []) if n.get("type") == "Array"]
+                    values = [n for n in arrays[0].get("children", []) if n.get("name") == "data"] if len(arrays) == 1 else []
+                    if len(values) != 1:
+                        raise
+                    pointer = values[0]
+                elif ref.get("arrayRank", 0) != 0:
+                    raise
+                if pointer.get("type") not in ("PPtr<" + target["name"] + ">", "PPtr<$" + target["name"] + ">"):
+                    raise
+                cs_type = target["namespace"] + "." + target["name"] + ("[]" if ref.get("arrayRank", 0) else "")
             identifier(field_name)
         except ValueError as error:
             gaps.append(getattr(error, "code", "unsupported") + ":" + field_name)
             continue
         declared = source_field["type"]
-        declared_simple = declared.rsplit(".", 1)[-1]
-        cs_simple = cs_type.removeprefix("UnityEngine.").removesuffix("[]")
-        if declared_simple != cs_simple and not (declared == "int" and cs_type == "int"):
+        declared_simple = declared.rsplit(".", 1)[-1].removesuffix("[]")
+        cs_simple = cs_type.rsplit(".", 1)[-1].removesuffix("[]")
+        if declared.endswith("[]") != cs_type.endswith("[]") or (declared_simple != cs_simple and not (declared == "int" and cs_type == "int")):
             gaps.append("source and TypeTree field types differ: " + field_name)
             continue
         output_fields.append({"name": field_name, "sourceType": node["type"], "csType": cs_type,

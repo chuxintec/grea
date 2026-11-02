@@ -86,7 +86,7 @@ def source_inputs(index_pin, roots):
     return list(docs.values()), evidence
 
 
-def type_models(evidence):
+def type_models(evidence, selected_script_identities=None):
     parsed = dict(declarations=[])
     proofs = []
     for row in evidence:
@@ -102,6 +102,22 @@ def type_models(evidence):
             parsed["declarations"].extend(model["declarations"])
             proofs.append(dict(path=str(path), sha256=sha(raw), assembly=assembly,
                                dummyDllSha256=sha(dll_raw), methodsRecovered=0))
+        for source in row.get("ilDeclarations", []):
+            from .unity_prefab_il_fields import parse_il_field_references
+            path, raw = pinned(source, 8 * 1024 * 1024)
+            wanted = [d["identity"] for d in parsed["declarations"] if d["identity"]["assembly"] == assembly and d["kind"] == "class" and "+" not in d["identity"]["name"]
+                      and (selected_script_identities is None or (assembly, d["identity"]["namespace"], d["identity"]["name"]) in selected_script_identities)]
+            if not wanted:
+                proofs.append(dict(path=str(path), sha256=sha(raw), assembly=assembly, methodsRecovered=0, kind="pinned-unused-IL-declarations"))
+                continue
+            il = parse_il_field_references(raw.decode("utf-8"), assembly=assembly, wanted_types=wanted, source_path=str(path), source_sha256=sha(raw))
+            for ref in il["fieldReferences"]:
+                owners = [d for d in parsed["declarations"] if d["identity"] == ref["owner"]]
+                if len(owners) != 1:
+                    fail("UNITY_PREFAB_IL_FIELD_OWNER", str(ref["owner"]), "Exact decompiled class declaration required")
+                owners[0].setdefault("fieldTypeReferences", {})[ref["fieldName"]] = ref
+            proofs.append(dict(path=str(path), sha256=sha(raw), assembly=assembly, dummyDllSha256=sha(dll_raw),
+                               methodsRecovered=0, kind="static-IL-field-type-references", fieldReferences=il["fieldReferences"]))
     keys = [(r["identity"]["assembly"], r["identity"]["namespace"], r["identity"]["name"])
             for r in parsed["declarations"]]
     if len(set(keys)) != len(keys):
@@ -109,13 +125,16 @@ def type_models(evidence):
     return parsed, proofs
 
 
-def script_proposals(inputs, parsed, allow_disabled):
+def script_proposals(inputs, parsed, allow_disabled, selected_objects=None):
     output = {}
     for entry in inputs:
         doc = entry["document"]
+        file_names = {f["id"]: f["name"] for f in doc["files"]}
         objects = {(o["file"], o["pathId"]): o for o in doc["objects"]}
         for obj in doc["objects"]:
             if obj["type"] != "MonoBehaviour" or obj.get("status") != "parsed":
+                continue
+            if selected_objects is not None and (entry["sourceSha256"], file_names[obj["file"]], obj["pathId"]) not in selected_objects:
                 continue
             ptr = obj["data"].get("m_Script", {})
             if ptr.get("fileId") != "0":
@@ -139,9 +158,15 @@ def script_proposals(inputs, parsed, allow_disabled):
                 emitted["enums"] = []
                 code = emit_schema(emitted)
                 state = "native-base-schema-only"
+                if proposal["base"] in ("UnityEngine.MonoBehaviour", "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.UI.Graphic", "UnityEngine.UI.GridLayoutGroup"):
+                    state = "disabled-unavailable-carrier"
+                    proposal = dict(proposal, disabledCarrier=dict(sourceBaseRestored=True, behavior="disabled-required",
+                        staticPresentation="unverified-source-custom-component", methodsRecovered=0))
             elif allow_disabled:
                 try:
-                    fallback = emit_disabled_carrier(proposal)
+                    carrier_proposal = copy.deepcopy(proposal)
+                    carrier_proposal["enums"] = []
+                    fallback = emit_disabled_carrier(carrier_proposal)
                 except ValueError:
                     continue
                 code, state = fallback["source"], "disabled-unavailable-carrier"
@@ -222,10 +247,24 @@ def recover(request_path, expected_request, output):
     roots = request["roots"]
     inputs, source_evidence = source_inputs(request["inputIndex"], roots)
     graph = build(inputs, roots)
+    builtin_receipts = []
+    for pin in request.get("builtinSchemaReceipts", []):
+        _, data = pinned(pin, 16 * 1024 * 1024)
+        receipt = load(data)
+        if receipt.get("status") != "schemas_read" or receipt.get("exitCode") != 0 or receipt.get("processExited") is not True or receipt.get("sourceUnchanged") is not True:
+            fail("UNITY_PREFAB_BUILTIN_SCHEMA_RECEIPT", str(pin), "Completed immutable source schema read required")
+        from .unity_prefab_schemas import _validate_report
+        wanted = [dict(serializedFile=o["identity"]["serializedFile"], serializedFileSha256=o["identity"]["serializedFileSha256"],
+                       pathId=o["identity"]["pathId"], type=o["identity"]["type"], rawSha256=o["identity"]["rawSha256"]) for o in receipt["objects"]]
+        _validate_report(receipt, wanted, receipt["source"]["sha256"])
+        builtin_receipts.append(receipt)
     if graph["sourceUnityVersions"] != ["2021.3.30f1"]:
         fail("UNITY_PREFAB_SOURCE_VERSION", "$", "This fixed profile requires exact source Unity 2021.3.30f1")
-    parsed, type_evidence = type_models(request.get("typeEvidence", []))
-    proposals = script_proposals(inputs, parsed, request.get("allowDisabledUnavailableCarriers") is True)
+    selected_scripts = {(o["data"]["m_AssemblyName"], o["data"].get("m_Namespace") or "", o["data"]["m_ClassName"])
+                        for o in graph["reachableObjects"] if o["type"] == "MonoScript" and o.get("status") == "parsed"}
+    parsed, type_evidence = type_models(request.get("typeEvidence", []), selected_scripts)
+    selected_objects = {(o["identity"]["containerSha256"], o["identity"]["serializedFile"], o["identity"]["pathId"]) for o in graph["reachableObjects"]}
+    proposals = script_proposals(inputs, parsed, request.get("allowDisabledUnavailableCarriers") is True, selected_objects)
     provider = request["providerExport"]
     lineage = provider_lineage(provider, source_evidence)
     export_root = safe(provider["root"])
@@ -302,15 +341,51 @@ def recover(request_path, expected_request, output):
     project = out / "UnityProject"
     project.mkdir()
     code_records, enums = [], {}
+    sdk_plan = None
+    if request.get("sdkEvidence"):
+        from .unity_prefab_sdk import plan_sdk_script_bindings
+        sdk = request["sdkEvidence"]
+        native_scripts = {}
+        for obj in graph["reachableObjects"]:
+            if obj["type"] != "MonoScript" or obj.get("status") != "parsed":
+                continue
+            info = obj["data"]
+            if info["m_AssemblyName"] != "UnityEngine.UI.dll":
+                continue
+            namespace, name = info.get("m_Namespace") or "", info["m_ClassName"]
+            path = "ExportedProject/Assets/Scripts/UnityEngine.UI/" + (namespace.replace(".", "/") + "/" if namespace else "") + name + ".cs"
+            matches = re.findall(rb"(?m)^guid: ([0-9a-f]{32})\s*$", payload(path + ".meta"))
+            if len(matches) != 1:
+                fail("UNITY_PREFAB_SDK_SOURCE_GUID", path, "One exact provider MonoScript GUID required")
+            key = (namespace, name)
+            row = native_scripts.setdefault(key, dict(identity=dict(assembly="UnityEngine.UI.dll", namespace=namespace, name=name),
+                sourceTuple=dict(guid=matches[0].decode(), fileID=11500000, type=3), sourceObjectIds=[]))
+            row["sourceObjectIds"].append(obj["sourceObjectId"])
+        sdk_plan = plan_sdk_script_bindings(native_scripts.values(), sdk_root=sdk["root"], pinned_files=sdk["pinnedFiles"])
+        for binding in sdk_plan["bindings"]:
+            identity = binding["identity"]
+            binding["sourceObjectIds"] = native_scripts[(identity["namespace"], identity["class"])]["sourceObjectIds"]
     for path, data in sorted(selected.items()):
         relative = path.removeprefix("ExportedProject/")
+        if relative.endswith(".cs.meta") and path[:-5] in selected:
+            code_path = path[:-5].removeprefix("ExportedProject/")
+            parts = code_path[len("Assets/Scripts/"):].split("/") if code_path.startswith("Assets/Scripts/") else []
+            key = (parts[0] + ".dll", ".".join(parts[1:-1]), Path(parts[-1]).stem) if len(parts) >= 2 else None
+            if key not in proposals:
+                dest = inside(project, "SourceRecovery/UnsupportedProviderCode/" + relative)
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(data)
+                continue
         if relative.endswith(".cs"):
             prefix = "Assets/Scripts/"
             parts = relative[len(prefix):].split("/") if relative.startswith(prefix) else []
             key = (parts[0] + ".dll", ".".join(parts[1:-1]), Path(parts[-1]).stem) if len(parts) >= 2 else None
             model = proposals.get(key)
             if model is None:
-                gaps.append(dict(code="UNITY_PREFAB_SCRIPT_SCHEMA_UNSUPPORTED", path=relative))
+                sdk_binding = next((b for b in (sdk_plan or {}).get("bindings", [])
+                    if key == (b["identity"]["assembly"], b["identity"]["namespace"], b["identity"]["class"])), None)
+                gaps.append(dict(code="UNITY_PREFAB_NATIVE_SCRIPT_REBIND_PENDING" if sdk_binding else "UNITY_PREFAB_SCRIPT_SCHEMA_UNSUPPORTED",
+                                 path=relative))
                 dest = inside(project, "SourceRecovery/UnsupportedProviderCode/" + relative)
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(data)
@@ -318,7 +393,7 @@ def recover(request_path, expected_request, output):
             data = model["code"].encode()
             code_records.append(dict(path=relative, **{k: v for k, v in model.items() if k != "code"}))
             for enum in model["proposal"].get("enums", []):
-                enum_key = (key[0], enum["namespace"], enum["name"])
+                enum_key = (enum["identity"]["assembly"], enum["namespace"], enum["name"])
                 if enum_key in enums and enums[enum_key] != enum:
                     fail("UNITY_PREFAB_ENUM_CONFLICT", enum["name"], "Exact enum declarations differ")
                 enums[enum_key] = enum
@@ -337,11 +412,14 @@ def recover(request_path, expected_request, output):
             fail("UNITY_PREFAB_ENUM_PATH_COLLISION", str(dest), "Enum would overwrite a selected file")
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(text)
-    for assembly in sorted({r["identity"]["assembly"] for r in code_records}):
+    for assembly in sorted({r["identity"]["assembly"] for r in code_records} | {key[0] for key in enums}):
         if assembly == "Assembly-CSharp.dll":
             continue
         path = project / "Assets/Scripts" / assembly.removesuffix(".dll") / (assembly.removesuffix(".dll") + ".asmdef")
-        write_json(path, dict(name=assembly.removesuffix(".dll"), references=["UnityEngine.UI"], autoReferenced=True))
+        dependencies = {e["identity"]["assembly"] for r in code_records if r["identity"]["assembly"] == assembly for e in r["proposal"].get("enums", [])} - {assembly}
+        if "Assembly-CSharp.dll" in dependencies:
+            fail("UNITY_PREFAB_ENUM_ASSEMBLY", assembly, "A named assembly cannot reference the default script assembly")
+        write_json(path, dict(name=assembly.removesuffix(".dll"), references=["UnityEngine.UI", *sorted(d.removesuffix(".dll") for d in dependencies)], autoReferenced=True))
     (project / "ProjectSettings").mkdir()
     (project / "ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: 6000.6.2f1\n")
     write_json(project / "Packages/manifest.json", dict(dependencies={"com.unity.ugui": "2.6.0"}))
@@ -350,6 +428,10 @@ def recover(request_path, expected_request, output):
     write_json(project / "Analysis/Evidence/type-evidence.json", type_evidence)
     write_json(project / "Analysis/Evidence/provider-lineage.json", lineage)
     write_json(project / "Analysis/Evidence/request-evidence.json", request_evidence)
+    if builtin_receipts:
+        write_json(project / "Analysis/Evidence/builtin-schemas.json", builtin_receipts)
+    if sdk_plan is not None:
+        write_json(project / "Analysis/Mappings/native-sdk-scripts.json", sdk_plan)
     write_json(project / "Analysis/Code/schema-carriers.json", code_records)
     for r in code_records:
         if r["state"] == "disabled-unavailable-carrier":

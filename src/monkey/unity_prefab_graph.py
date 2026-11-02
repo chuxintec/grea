@@ -191,11 +191,6 @@ def build(inputs: list[dict], roots: list[dict]) -> dict:
         for schema_field in ("embeddedSchemas", "borrowedSchemas"):
             schema_pool = doc.get(schema_field, {})
             _require(isinstance(schema_pool, dict), f"{container_sha}: {schema_field} must be an object")
-            nodes, byte_count = _count_values(schema_pool, limit=MAX_TYPED_VALUE_NODES - typed_value_count,
-                                              byte_limit=MAX_TYPED_VALUE_BYTES - typed_value_bytes,
-                                              depth_limit=MAX_TYPED_VALUE_DEPTH, label=f"{container_sha}:{schema_field}")
-            typed_value_count += nodes
-            typed_value_bytes += byte_count
         payload_files = doc.get("payloadFiles", [])
         _require(isinstance(payload_files, list), f"{container_sha}: payloadFiles must be a list")
         nodes, byte_count = _count_values(payload_files, limit=MAX_TYPED_VALUE_NODES - typed_value_count,
@@ -234,12 +229,6 @@ def build(inputs: list[dict], roots: list[dict]) -> dict:
             reference_row_count += len(refs)
             _require(reference_row_count <= MAX_REFERENCE_ROWS,
                      f"reference row budget exceeded ({MAX_REFERENCE_ROWS})")
-            nodes, byte_count = _count_values(obj, limit=MAX_TYPED_VALUE_NODES - typed_value_count,
-                                              byte_limit=MAX_TYPED_VALUE_BYTES - typed_value_bytes,
-                                              depth_limit=MAX_TYPED_VALUE_DEPTH,
-                                              label=f"{container_sha}:{obj['file']}#{obj['pathId']}")
-            typed_value_count += nodes
-            typed_value_bytes += byte_count
             objects[key] = obj
             file_objects.setdefault((container_sha, obj["file"]), []).append(obj)
             object_ids[key] = _identity_id(_identity(container_sha, file_rows[(container_sha, obj["file"])], obj["pathId"]))
@@ -249,10 +238,19 @@ def build(inputs: list[dict], roots: list[dict]) -> dict:
     for name, group in file_groups.items():
         hashes = {file_rows[k]["serializedFileSha256"] for k in group}
         _require(len(hashes) == 1, f"serialized filename collision with different bytes: {name}")
-        signatures = []
-        for key in group:
-            signatures.append(_file_evidence_signature(key, file_objects.get(key, []), file_docs[key]))
-        _require(len(set(signatures)) == 1, f"serialized filename collision with different object identities/data: {name}")
+        if len(group) > 1:
+            signatures = []
+            for key in group:
+                # Aliasing is a whole-file equality claim, so its complete
+                # comparison retains a separate hard budget before encoding.
+                members = file_objects.get(key, [])
+                used_shapes = [file_docs[key].get(pool, {}).get(obj[field], {})
+                              for obj in members for field, pool in (("embeddedSchemaId", "embeddedSchemas"), ("borrowedSchemaId", "borrowedSchemas"))
+                              if isinstance(obj.get(field), str)]
+                _count_values(dict(objects=members, schemas=used_shapes), limit=MAX_TYPED_VALUE_NODES,
+                              byte_limit=MAX_TYPED_VALUE_BYTES, depth_limit=MAX_TYPED_VALUE_DEPTH, label="serialized alias " + name)
+                signatures.append(_file_evidence_signature(key, file_objects.get(key, []), file_docs[key]))
+            _require(len(set(signatures)) == 1, f"serialized filename collision with different object identities/data: {name}")
         ordered = sorted(group)
         chosen = ordered[0]
         for key in group:
@@ -307,6 +305,7 @@ def build(inputs: list[dict], roots: list[dict]) -> dict:
         matches = [e for e in file_row["externals"] if e.get("fileId") == ptr["fileId"]]
         return matches[0] if len(matches) == 1 else None
 
+    counted_schemas = set()
     while queue:
         key = queue.popleft()
         if key in reachable:
@@ -314,6 +313,23 @@ def build(inputs: list[dict], roots: list[dict]) -> dict:
         reachable.add(key)
         obj = objects[key]
         oid = object_ids[key]
+        nodes, byte_count = _count_values(obj, limit=MAX_TYPED_VALUE_NODES - typed_value_count,
+                                          byte_limit=MAX_TYPED_VALUE_BYTES - typed_value_bytes,
+                                          depth_limit=MAX_TYPED_VALUE_DEPTH, label=oid)
+        typed_value_count += nodes
+        typed_value_bytes += byte_count
+        for field, pool_name in (("embeddedSchemaId", "embeddedSchemas"), ("borrowedSchemaId", "borrowedSchemas")):
+            schema_id = obj.get(field)
+            _require(schema_id is None or isinstance(schema_id, str), f"{oid}: schema ID must be a string")
+            schema_key = (key[0], pool_name, schema_id)
+            if schema_id is not None and schema_key not in counted_schemas:
+                counted_schemas.add(schema_key)
+                schema = input_by_sha[key[0]].get(pool_name, {}).get(schema_id, {})
+                nodes, byte_count = _count_values(schema, limit=MAX_TYPED_VALUE_NODES - typed_value_count,
+                                                  byte_limit=MAX_TYPED_VALUE_BYTES - typed_value_bytes,
+                                                  depth_limit=MAX_TYPED_VALUE_DEPTH, label=oid + "/schema")
+                typed_value_count += nodes
+                typed_value_bytes += byte_count
         if obj.get("status") != "parsed":
             add_gap(dict(sourceObjectId=oid, kind="object-unparsed", status=obj.get("status", "unknown")))
         if obj.get("type") == "MonoBehaviour":
@@ -366,6 +382,7 @@ def build(inputs: list[dict], roots: list[dict]) -> dict:
                                                 "serializedFileSha256": file_rows[key[:2]]["serializedFileSha256"],
                                                 "name": file_rows[key[:2]]["name"]},
                         "fileId": ptr["fileId"], "path": external.get("path"), "guid": external.get("guid"),
+                        "guidEncoding": "serialized-guid-bytes-hex",
                     }
                     add_gap(dict(sourceObjectId=oid, kind="engine-reference-unverified", location=location,
                                  category=builtin_kind, pointer=dict(fileId=ptr["fileId"], pathId=ptr["pathId"]),
@@ -573,5 +590,8 @@ def build(inputs: list[dict], roots: list[dict]) -> dict:
                                         aliases=[dict(containerSha256=c, fileId=fid) for c, fid in sorted(group[1:])])
                                   for name, group in sorted(file_groups.items()) if len(group) > 1],
         "gaps": [gap_map[k] for k in sorted(gap_map)],
+        "budgetUsage": {"scope": "selected-reachable-object-values-and-used-schemas;all-input-identities-and-reference-counts-checked",
+                        "typedValueNodes": typed_value_count, "typedStringBytes": typed_value_bytes,
+                        "maxTypedValueNodes": MAX_TYPED_VALUE_NODES, "maxTypedStringBytes": MAX_TYPED_VALUE_BYTES},
         "execution": {"sourceCode": "not_run", "nativeEditor": "not_run", "runtime": "not_run"},
     }

@@ -3,6 +3,7 @@ import pytest
 from monkey.io import encoded, sha
 from monkey.sources.compiled import ParseError
 from monkey.unity_prefab_native import freeze, rect_layout_expectations
+from monkey.unity_prefab_native import unity_guid_text_from_serialized_hex
 
 
 def test_rect_anchor_layout_uses_source_anchors_and_retains_stale_transform_as_evidence():
@@ -29,3 +30,10 @@ def test_freeze_rejects_old_same_process_only_receipt(tmp_path):
     with pytest.raises(ParseError, match='UNITY_PREFAB_COLD_NOT_COMPLETE'):
         freeze(tmp_path, sha(raw), tmp_path / 'selected')
     assert not (tmp_path / 'selected').exists()
+
+
+def test_serialized_guid_representation_is_not_a_builtin_name_lookup():
+    assert unity_guid_text_from_serialized_hex('00000000000000000e00000000000000') == '0000000000000000e000000000000000'
+    assert unity_guid_text_from_serialized_hex('1032547698badcfe1032547698badcfe') == '0123456789abcdef0123456789abcdef'
+    with pytest.raises(ParseError, match='UNITY_PREFAB_GUID_ENCODING'):
+        unity_guid_text_from_serialized_hex('000')

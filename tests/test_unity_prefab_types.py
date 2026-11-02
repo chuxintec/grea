@@ -149,6 +149,63 @@ namespace X {
                                   {"children": [{"name": "bad-name", "type": "int"}]})
         self.assertEqual(proposal["status"], "gap")
 
+    def test_foreign_enum_requires_exact_il_field_assembly_reference(self):
+        parsed = parse("using UnityEngine; using Shared; namespace App { public class Panel : MonoBehaviour { public Mode Selection; } }")
+        other = parse("namespace Shared { public enum Mode { Off = 0, On = 4 } }", assembly="Settings.dll")
+        parsed['declarations'].extend(other['declarations'])
+        identity = dict(assembly='GameBase.dll', namespace='App', name='Panel')
+        schema = dict(children=[dict(name='Selection', type='int')])
+        self.assertEqual(propose_schema(parsed, identity, schema)['status'], 'gap')
+        owner = next(d for d in parsed['declarations'] if d['identity'] == identity)
+        owner['fieldTypeReferences'] = {'Selection': dict(targetType=dict(assembly='Settings.dll', namespace='Shared', name='Mode'))}
+        proposal = propose_schema(parsed, identity, schema)
+        self.assertEqual(proposal['status'], 'schema_only')
+        self.assertEqual(proposal['fields'][0]['csType'], 'global::Shared.Mode')
+        self.assertEqual(proposal['enums'][0]['identity']['assembly'], 'Settings.dll')
+
+    def test_raw_image_base_retains_native_texture_and_uv_without_fake_methods(self):
+        parsed = parse('using UnityEngine.UI; namespace Renamed { public class Preview : RawImage {} }')
+        proposal = propose_schema(parsed, dict(assembly='GameBase.dll', namespace='Renamed', name='Preview'),
+            dict(children=[dict(name='m_Texture', type='PPtr<$Texture>'), dict(name='m_UVRect', type='Rectf')]))
+        self.assertEqual(proposal['status'], 'schema_only')
+        self.assertEqual(proposal['fields'], [])
+        self.assertIn('UnityEngine.UI.RawImage', emit_schema(proposal))
+        self.assertNotIn('OnPopulateMesh', emit_schema(proposal))
+
+    def test_native_ui_pointer_needs_exact_framework_field_metadata(self):
+        parsed = parse('using UnityEngine; using UnityEngine.UI; namespace App { public class Binder : MonoBehaviour { public Text Label; } }')
+        identity = dict(assembly='GameBase.dll', namespace='App', name='Binder')
+        schema = dict(children=[dict(name='Label', type='PPtr<$Text>')])
+        self.assertEqual(propose_schema(parsed, identity, schema)['status'], 'gap')
+        parsed['declarations'][0]['fieldTypeReferences'] = {'Label': dict(fieldTypeKind='class', arrayRank=0,
+            targetType=dict(assembly='UnityEngine.UI.dll', namespace='UnityEngine.UI', name='Text'))}
+        proposal = propose_schema(parsed, identity, schema)
+        self.assertEqual(proposal['status'], 'schema_only')
+        self.assertEqual(proposal['fields'][0]['csType'], 'UnityEngine.UI.Text')
+
+    def test_native_renderer_array_preserves_element_type_and_rank(self):
+        parsed = parse('using UnityEngine; namespace App { public class Binder : MonoBehaviour { public Renderer[] Targets; } }')
+        parsed['declarations'][0]['fieldTypeReferences'] = {'Targets': dict(fieldTypeKind='class', arrayRank=1,
+            targetType=dict(assembly='UnityEngine.CoreModule.dll', namespace='UnityEngine', name='Renderer'))}
+        schema = dict(children=[dict(name='Targets', type='vector', children=[dict(name='Array', type='Array', children=[
+            dict(name='size', type='int'), dict(name='data', type='PPtr<$Renderer>')])])])
+        proposal = propose_schema(parsed, dict(assembly='GameBase.dll', namespace='App', name='Binder'), schema)
+        self.assertEqual(proposal['status'], 'schema_only')
+        self.assertEqual(proposal['fields'][0]['csType'], 'UnityEngine.Renderer[]')
+
+    def test_custom_same_name_class_is_not_replaced_by_native_gameobject(self):
+        parsed = parse('using UnityEngine; namespace App { public class Binder : MonoBehaviour { public GameObject Value; } }')
+        parsed['declarations'][0]['fieldTypeReferences'] = {'Value': dict(fieldTypeKind='class', arrayRank=0,
+            targetType=dict(assembly='Custom.dll', namespace='App', name='GameObject'))}
+        proposal = propose_schema(parsed, dict(assembly='GameBase.dll', namespace='App', name='Binder'), dict(children=[dict(name='Value', type='PPtr<GameObject>')]))
+        self.assertEqual(proposal['status'], 'gap')
+
+    def test_declared_bool_stored_as_uint8_does_not_become_an_integer_field(self):
+        parsed = parse('using UnityEngine; namespace Renamed { public class Flag : MonoBehaviour { public bool Visible; } }')
+        proposal = propose_schema(parsed, dict(assembly='GameBase.dll', namespace='Renamed', name='Flag'), dict(children=[dict(name='Visible', type='UInt8')]))
+        self.assertEqual(proposal['status'], 'schema_only')
+        self.assertEqual(proposal['fields'][0]['csType'], 'bool')
+
 
 if __name__ == "__main__":
     unittest.main()

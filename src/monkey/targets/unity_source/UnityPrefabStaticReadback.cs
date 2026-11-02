@@ -16,7 +16,7 @@ using UnityEngine.UI;
 
 namespace MonkeyUnitySource
 {
-    public static class UnityPrefabStaticReadback
+    public static partial class UnityPrefabStaticReadback
     {
         [Serializable] sealed class Plan
         {
@@ -25,6 +25,7 @@ namespace MonkeyUnitySource
             public string outputRelative;
             public bool headless;
             public bool reopenOnly;
+            public bool reconstructRoots;
             public RootPlan[] roots;
         }
 
@@ -43,6 +44,7 @@ namespace MonkeyUnitySource
             public string name;
             public bool active;
             public int layer;
+            public string tag;
             public ComponentPlan[] components;
         }
 
@@ -101,6 +103,7 @@ namespace MonkeyUnitySource
             public bool saved;
             public bool reopened;
             public bool nativeIdentitiesStable;
+            public bool reconstructedFromSource;
             public NativeIdentity[] nativeIdentitiesBefore;
             public NativeIdentity[] nativeIdentitiesAfter;
             public DisabledBehavior[] disabledBehaviors;
@@ -131,6 +134,7 @@ namespace MonkeyUnitySource
         {
             public string sourceId;
             public bool sourceEnabled;
+            public bool nativeEnabledBeforeDisabling;
             public bool readbackEnabled;
         }
 
@@ -282,7 +286,7 @@ namespace MonkeyUnitySource
                         representative = true;
                         implicitRepresentativeSelected = true;
                     }
-                    report.roots[i] = plan.reopenOnly ? VerifyColdRoot(projectRoot, root) : VerifyRoot(projectRoot, root, representative, plan.headless);
+                    report.roots[i] = plan.reopenOnly ? VerifyColdRoot(projectRoot, root) : VerifyRoot(projectRoot, root, representative, plan.headless, plan.reconstructRoots);
                 }
                 bool allPassed = report.roots.All(r => r != null && r.status == "passed");
                 bool anyFailed = report.roots.Any(r => r == null || r.status == "failed");
@@ -352,7 +356,7 @@ namespace MonkeyUnitySource
             return result;
         }
 
-        static RootResult VerifyRoot(string projectRoot, RootPlan plan, bool representative, bool headless)
+        static RootResult VerifyRoot(string projectRoot, RootPlan plan, bool representative, bool headless, bool reconstruct)
         {
             RootResult result = new RootResult {
                 sourceId = plan.sourceId, sourcePrefabPath = plan.path, status = "failed",
@@ -363,6 +367,7 @@ namespace MonkeyUnitySource
                 editability = new EditResult[0], disabledBehaviors = new DisabledBehavior[0]
             };
             var failures = new List<Failure>();
+            result.reconstructedFromSource = reconstruct;
             var limitations = new List<string>();
             string readbackAsset = null;
             GameObject contents = null;
@@ -376,10 +381,11 @@ namespace MonkeyUnitySource
                 RequireWithin(projectRoot, fullReadbackAsset, "candidate Prefab");
 
                 PreflightPlanCallbacks(plan);
+                if (reconstruct) ReconstructRoot(projectRoot, plan);
 
                 GameObject sourceAsset = AssetDatabase.LoadAssetAtPath<GameObject>(plan.path);
                 if (sourceAsset == null) throw new InvalidOperationException("Candidate Prefab asset could not be loaded");
-                MappedTree before = CheckTree(plan, sourceAsset, "source-asset", true, true, result, failures);
+                MappedTree before = CheckTree(plan, sourceAsset, "source-asset", !reconstruct, true, result, failures);
                 result.sourceNodes = plan.nodes.Length;
                 result.sourceComponents = before.componentCount;
                 result.fieldsExpected = before.fieldsExpected;
@@ -391,7 +397,7 @@ namespace MonkeyUnitySource
                 contents = PrefabUtility.LoadPrefabContents(plan.path);
                 if (contents == null) throw new InvalidOperationException("LoadPrefabContents returned null");
                 EnsureNoGameLifecycleCallbacks(contents, plan.sourceId);
-                MappedTree beforeContents = CheckTree(plan, contents, "source-load", true, false, result, failures);
+                MappedTree beforeContents = CheckTree(plan, contents, "source-load", !reconstruct, false, result, failures);
                 if (GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(contents) != 0)
                     throw new InvalidOperationException("MissingScript component found on root");
 
@@ -406,8 +412,10 @@ namespace MonkeyUnitySource
                     if (sourceEnabled != null) sourceEnabled.actual = enabledBefore.ToString();
                     behaviour.enabled = false;
                     if (behaviour.enabled) throw new InvalidOperationException("Could not disable explicitly unavailable MonoBehaviour: " + pair.Key);
-                    disabledRows.Add(new DisabledBehavior { sourceId = pair.Key, sourceEnabled = enabledBefore, readbackEnabled = behaviour.enabled });
-                    limitations.Add("disabled-unavailable:" + pair.Key + ":sourceEnabled=" + enabledBefore.ToString().ToLowerInvariant());
+                    FieldPlan sourcePlan = (pair.Value.fields ?? new FieldPlan[0]).FirstOrDefault(f => f.path == "m_Enabled");
+                    bool sourceValue = sourcePlan != null ? sourcePlan.boolValue : enabledBefore;
+                    disabledRows.Add(new DisabledBehavior { sourceId = pair.Key, sourceEnabled = sourceValue, nativeEnabledBeforeDisabling = enabledBefore, readbackEnabled = behaviour.enabled });
+                    limitations.Add("disabled-unavailable:" + pair.Key + ":sourceEnabled=" + sourceValue.ToString().ToLowerInvariant());
                 }
                 result.disabledBehaviors = disabledRows.ToArray();
 
@@ -530,6 +538,7 @@ namespace MonkeyUnitySource
                     throw new InvalidOperationException("Node name differs at " + IndexKey(node.indices) + ": expected=" + node.name + ", actual=" + actual.name);
                 if (actual.activeSelf != node.active) throw new InvalidOperationException("Node activeSelf differs: " + node.sourceId);
                 if (actual.layer != node.layer) throw new InvalidOperationException("Node layer differs: " + node.sourceId);
+                if (!String.IsNullOrEmpty(node.tag) && actual.tag != node.tag) throw new InvalidOperationException("Node tag differs: " + node.sourceId);
                 int expectedChildCount = expectedChildCounts.ContainsKey(IndexKey(node.indices)) ? expectedChildCounts[IndexKey(node.indices)] : 0;
                 if (actual.transform.childCount != expectedChildCount)
                     throw new InvalidOperationException("Transform child count differs: " + node.sourceId + ", expected=" + expectedChildCount + ", actual=" + actual.transform.childCount);
@@ -608,7 +617,14 @@ namespace MonkeyUnitySource
                 SerializedProperty property = serialized.FindProperty(field.path);
                 if (property == null) throw new InvalidOperationException("SerializedProperty is absent: " + field.path);
                 row.propertyType = property.propertyType.ToString();
-                if (field.kind == "integer")
+                if (field.kind == "byte" && property.propertyType == SerializedPropertyType.Boolean)
+                {
+                    if (field.intValue != 0 && field.intValue != 1) throw new InvalidOperationException("Source UInt8 cannot represent target Boolean");
+                    row.expected = field.intValue.ToString(Invariant) + " (source UInt8 to target Boolean)";
+                    row.actual = property.boolValue.ToString();
+                    row.passed = property.boolValue == (field.intValue == 1);
+                }
+                else if (field.kind == "integer" || field.kind == "byte")
                 {
                     if (property.propertyType != SerializedPropertyType.Integer &&
                         property.propertyType != SerializedPropertyType.Enum &&
@@ -1339,7 +1355,7 @@ namespace MonkeyUnitySource
                         {
                             totalFields++;
                             if (field == null || String.IsNullOrEmpty(field.path) ||
-                                !(field.kind == "integer" || field.kind == "float" || field.kind == "boolean" || field.kind == "string" || field.kind == "reference"))
+                                !(field.kind == "integer" || field.kind == "byte" || field.kind == "float" || field.kind == "boolean" || field.kind == "string" || field.kind == "reference"))
                                 throw new InvalidOperationException("Malformed/unsupported serialized field in component " + component.sourceId);
                             if (field.kind == "reference" && field.isNull &&
                                 (!String.IsNullOrEmpty(field.refSourceId) || !String.IsNullOrEmpty(field.refGuid) ||

@@ -20,6 +20,18 @@ _ASSEMBLIES = {
 }
 
 
+def unity_guid_text_from_serialized_hex(raw):
+    """UnityGuid prints low nibble first for each byte of its serialized data.
+
+    Format reference: AssetRipper.Primitives/UnityGuid.cs, ToString(Span<char>)
+    at 7091ff7f362da3784315a0aee04843771664cdd5. This converts representation;
+    it never maps an engine path ID to an assumed resource name or behavior.
+    """
+    if not isinstance(raw, str) or not re.fullmatch(r"[0-9a-f]{32}", raw):
+        fail("UNITY_PREFAB_GUID_ENCODING", str(raw), "Exact serialized 16-byte GUID hex required")
+    return "".join(raw[i+1] + raw[i] for i in range(0, 32, 2))
+
+
 def rect_layout_expectations(graph):
     """RectTransform XY is derived from anchors/pivots, not stale Transform XY."""
     nodes = {n["sourceObjectId"]: n for n in graph["gameObjects"]}
@@ -59,6 +71,9 @@ def cold_reopen(native_output, editor, budget_seconds=600):
     plan = load(read(work / "Analysis/Tasks/native-prefab-plan.json"))
     if sha(read(work / "Assets/Editor/MonkeyUnitySource/UnityPrefabStaticReadback.cs")) != receipt["helperSha256"]:
         fail("UNITY_PREFAB_COLD_HELPER_DRIFT", str(out), "Use the exact first-process helper")
+    for helper in receipt.get("helpers", []):
+        if sha(read(inside(work, helper["path"]))) != helper["sha256"]:
+            fail("UNITY_PREFAB_COLD_HELPER_DRIFT", helper["path"], "Native helper set changed")
     first = load(read(receipt["readbackPath"], max_bytes=128 * 1024 * 1024), max_nodes=8_000_000)
     if sha(read(receipt["readbackPath"], max_bytes=128 * 1024 * 1024)) != receipt["readbackSha256"]:
         fail("UNITY_PREFAB_COLD_RECEIPT_DRIFT", str(out), "First readback changed")
@@ -134,6 +149,16 @@ def prepare(project, expected_manifest):
     moved = {r["source"]: r["target"] for r in moves}
     source_files = [r["source"] for r in moves]
     resource_bindings, scripts, shapes = {}, {}, {}
+    sdk_path = project / "Analysis/Mappings/native-sdk-scripts.json"
+    sdk_bindings = load(read(sdk_path))["bindings"] if sdk_path.is_file() else []
+    sdk_scripts = {}
+    for binding in sdk_bindings:
+        if binding.get("status") != "planned_sdk_binding":
+            fail("UNITY_PREFAB_NATIVE_SDK_BINDING", str(sdk_path), "Exact SDK script plan required")
+        for sid in binding["sourceObjectIds"]:
+            if sid in sdk_scripts:
+                fail("UNITY_PREFAB_NATIVE_SDK_DUPLICATE", sid, "Ambiguous source SDK mapping")
+            sdk_scripts[sid] = binding
     evidence = load(read(project / "Analysis/Evidence/source-inputs.json"))
     for record in evidence:
         typed_path = safe(record["typedObjectsPath"])
@@ -153,6 +178,14 @@ def prepare(project, expected_manifest):
                 shapes[sid] = schema
             if obj["type"] == "MonoScript" and obj.get("status") == "parsed":
                 info = obj["data"]
+                if sid in sdk_scripts:
+                    binding = sdk_scripts[sid]
+                    identity, target = binding["identity"], binding["expectedTuple"]
+                    if (identity["assembly"], identity["namespace"], identity["class"]) != (info["m_AssemblyName"], info.get("m_Namespace") or "", info["m_ClassName"]):
+                        fail("UNITY_PREFAB_NATIVE_SDK_IDENTITY", sid, "SDK plan/source class identity differs")
+                    scripts[sid] = dict(type=(identity["namespace"] + "." if identity["namespace"] else "") + identity["class"],
+                        assembly=binding["targetSource"]["assemblyDefinitionName"], guid=target["guid"], localId=str(target["fileID"]))
+                    continue
                 original = "Assets/Scripts/" + info["m_AssemblyName"].removesuffix(".dll") + "/"
                 original += (info["m_Namespace"].replace(".", "/") + "/") if info.get("m_Namespace") else ""
                 original += info["m_ClassName"] + ".cs"
@@ -174,7 +207,8 @@ def prepare(project, expected_manifest):
                 source_type = objects[target_sid]["type"]
                 suffixes = {"Sprite": {".asset"}, "Font": {".ttf", ".otf", ".fontsettings"},
                             "Material": {".mat"}, "Shader": {".asset", ".shader"},
-                            "Texture2D": {".png", ".jpg", ".jpeg", ".asset"}, "GameObject": {".prefab"}}.get(source_type, set())
+                            "Texture2D": {".png", ".jpg", ".jpeg", ".asset"}, "GameObject": {".prefab"},
+                            "AnimatorController": {".controller"}, "AnimationClip": {".anim"}}.get(source_type, set())
                 # Only exact original container directory/stem plus a bounded
                 # provider extension conversion is accepted, never name search.
                 stem = str(Path(logical).with_suffix("")).casefold()
@@ -186,6 +220,20 @@ def prepare(project, expected_manifest):
                                                         sourceLogicalPath=logical, sourceType=source_type)
 
     code = load(read(project / "Analysis/Code/schema-carriers.json"))
+    builtin_path = project / "Analysis/Evidence/builtin-schemas.json"
+    if builtin_path.is_file():
+        for receipt in load(read(builtin_path, max_bytes=32 * 1024 * 1024)):
+            for obj in receipt["objects"]:
+                identity = obj["identity"]
+                matches = [sid for sid, source in objects.items() if source["identity"]["containerSha256"] == identity["sourceSha256"]
+                    and source["identity"]["serializedFileSha256"] == identity["serializedFileSha256"]
+                    and source["identity"]["serializedFile"] == identity["serializedFile"] and source["identity"]["pathId"] == identity["pathId"]]
+                if len(matches) != 1:
+                    continue  # Unreachable peer objects do not become native expectations.
+                source = objects[matches[0]]
+                if source["type"] != identity["type"] or source["rawSha256"] != identity["rawSha256"]:
+                    fail("UNITY_PREFAB_BUILTIN_SCHEMA_IDENTITY", matches[0], "Schema/source object identity differs")
+                shapes[matches[0]] = obj["schemaNode"]
     boolean_paths = {}
     for carrier in code:
         proposal = carrier["proposal"]
@@ -216,6 +264,15 @@ def prepare(project, expected_manifest):
                 return [row]
             target_sid = edge.get("targetSourceObjectId")
             if target_sid is None:
+                if edge["status"] == "engine-provided-unverified":
+                    match = re.fullmatch(r"PPtr<\$?([A-Za-z0-9_]+)>", (schema or {}).get("type", ""))
+                    native_assets = {"Mesh", "Material", "Shader", "Font", "Texture", "Texture2D", "Sprite"}
+                    raw_guid = edge.get("externalIdentity", {}).get("guid")
+                    guid = unity_guid_text_from_serialized_hex(raw_guid) if raw_guid else None
+                    if match and match[1] in native_assets and guid and re.fullmatch(r"0{16}[ef]0{15}", guid):
+                        row.update(refGuid=guid, refLocalId=edge["pathId"], refType="UnityEngine." + match[1],
+                                   sourceEngineIdentity=edge["externalIdentity"], sourceEnginePayload="not_exported;native-identity-readback-required")
+                        return [row]
                 fail("UNITY_PREFAB_NATIVE_REFERENCE_UNRESOLVED", loc, "Do not infer a missing source reference")
             target_obj = objects[target_sid]
             if target_sid in nodes or any(target_sid == c.get("sourceObjectId") for n in nodes.values() for c in n["orderedComponents"]):
@@ -229,7 +286,7 @@ def prepare(project, expected_manifest):
                     fail("UNITY_PREFAB_NATIVE_REFERENCE_GUID", target["path"], "Missing native resource metadata")
                 row.update(refGuid=target["guid"], refType="UnityEngine." + target_obj["type"])
             else:
-                fail("UNITY_PREFAB_NATIVE_REFERENCE_MAPPING", loc, "No exact original container or script mapping for " + target_obj["type"])
+                fail("UNITY_PREFAB_NATIVE_REFERENCE_MAPPING", loc, "No exact original container or script mapping for " + target_obj["type"] + ": " + target_sid)
             return [row]
         if isinstance(value, dict):
             children = {c["name"]: c for c in (schema or {}).get("children", [])}
@@ -249,6 +306,10 @@ def prepare(project, expected_manifest):
                 fail("UNITY_PREFAB_NATIVE_BOOLEAN", loc, "Not a source boolean")
             return [dict(path=prop, kind="boolean", boolValue=bool(value))]
         if isinstance(value, int):
+            if (schema or {}).get("type") in ("UInt8", "unsigned char"):
+                if not 0 <= value <= 255:
+                    fail("UNITY_PREFAB_NATIVE_BYTE", loc, "Source byte exceeds UInt8 storage")
+                return [dict(path=prop, kind="byte", intValue=value)]
             return [dict(path=prop, kind="integer", intValue=value)]
         if isinstance(value, float):
             return [dict(path=prop, kind="float", floatValue=value)]
@@ -266,6 +327,8 @@ def prepare(project, expected_manifest):
 
         def visit(sid, indices):
             node = nodes[sid]
+            if node.get("tag") != 0:
+                fail("UNITY_PREFAB_NATIVE_TAG_MAPPING", sid, "Source custom/builtin tag ID requires original tag-name evidence")
             component_plans = []
             for component in node["orderedComponents"]:
                 cid = component["sourceObjectId"]
@@ -293,7 +356,7 @@ def prepare(project, expected_manifest):
                     if key == "m_Name" and obj["type"] == "MonoBehaviour" and value == "":
                         exclusions.append(dict(sourceObjectId=cid, field=key, reason="source-empty-MonoBehaviour-header;class-identity-verified-separately"))
                         continue
-                    if key == "m_Enabled" and obj["type"] == "MonoBehaviour":
+                    if key == "m_Enabled":
                         if value not in (True, False, 0, 1):
                             fail("UNITY_PREFAB_NATIVE_BOOLEAN", cid, "Invalid source enabled byte")
                         fields.append(dict(path=key, kind="boolean", boolValue=bool(value)))
@@ -302,7 +365,7 @@ def prepare(project, expected_manifest):
                 component_plans.append(dict(sourceId=cid, type=comp_type, assembly=assembly,
                                             disabledUnavailable=unavailable, fields=fields))
             node_plans.append(dict(sourceId=sid, indices=indices, name=node["name"], active=node["active"],
-                                   layer=node["layer"], components=component_plans))
+                                   layer=node["layer"], tag="Untagged", components=component_plans))
             for i, child in enumerate(node["childSourceObjectIds"]):
                 visit(child, indices + [i])
 
@@ -310,6 +373,7 @@ def prepare(project, expected_manifest):
         root_plans.append(dict(path=path, sourceId=source_id, isRepresentative=index == 0, nodes=node_plans))
     return dict(schemaVersion=1, targetUnityVersion="6000.6.2f1", outputRelative="Analysis/Readback/unity-prefab-static.json",
                 sourceCandidateManifestSha256=expected_manifest, roots=root_plans,
+                reconstructRoots=bool(sdk_bindings),
                 fieldMappingExclusions=exclusions, resourceBindings=resource_bindings,
                 sourceBusiness="not_run", unavailablePresentation="not-accepted")
 
@@ -336,9 +400,13 @@ def execute(project, expected_manifest, output, editor, budget_seconds=600, head
         if sha(read(inside(work, row["path"]), max_bytes=256 * 1024 * 1024)) != row["sha256"]:
             fail("UNITY_PREFAB_NATIVE_COPY_DRIFT", row["path"], "Candidate changed while copying")
     helper = Path(__file__).parent / "targets/unity_source/UnityPrefabStaticReadback.cs"
-    helper_path = work / "Assets/Editor/MonkeyUnitySource/UnityPrefabStaticReadback.cs"
-    helper_path.parent.mkdir(parents=True)
-    helper_path.write_bytes(read(helper))
+    helper_dir = work / "Assets/Editor/MonkeyUnitySource"
+    helper_dir.mkdir(parents=True)
+    helpers = []
+    for source in sorted(helper.parent.glob("*.cs")):
+        dest = helper_dir / source.name
+        dest.write_bytes(read(source))
+        helpers.append(dict(path=dest.relative_to(work).as_posix(), sha256=sha(read(source))))
     plan_path = work / "Analysis/Tasks/native-prefab-plan.json"
     write_json(plan_path, plan)
     env = dict(os.environ, MONKEY_UNITY_PREFAB_PLAN=str(plan_path),
@@ -346,6 +414,7 @@ def execute(project, expected_manifest, output, editor, budget_seconds=600, head
     result = dict(schemaVersion=1, status="started", sourceCandidateManifestSha256=expected_manifest,
                   nativePlanSha256=sha(read(plan_path)), helperSha256=sha(read(helper)),
                   startedUtc=stamp(now()), sourceCodeExecuted=False, business="not_run", player="not_run")
+    result["helpers"] = helpers
     result["graphics"] = "not_run_headless" if headless else "requested"
     receipt = out / "execution-result.json"
     log, console = out / "editor.log", out / "console.log"

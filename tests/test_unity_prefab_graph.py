@@ -213,3 +213,17 @@ def test_typed_value_node_budget_is_enforced(monkeypatch):
     monkeypatch.setattr(prefab_graph, "MAX_TYPED_VALUE_NODES", 5)
     with pytest.raises(GraphInputError, match="node budget exceeded"):
         build([{"sourceSha256": source, "document": doc}], [{"sourceSha256": source, "file": "0", "pathId": "1"}])
+
+
+def test_unreferenced_library_values_do_not_consume_selected_graph_budget(monkeypatch):
+    source = sha("selected-root-library")
+    doc = make_doc("selected", "CAB-SELECTED", sha("selected-file"), [
+        obj(1, "GameObject", {"m_Name": "Root", "m_IsActive": True, "m_Layer": 0, "m_Tag": 0,
+            "m_Component": [{"component": ptr(0, 2)}]}),
+        obj(2, "Transform", {"m_GameObject": ptr(0, 1), "m_Father": ptr(0, 0), "m_Children": []}),
+        obj(3, "Shader", {"unused": list(range(1000))}),
+    ])
+    monkeypatch.setattr(prefab_graph, "MAX_TYPED_VALUE_NODES", 200)
+    result = build([{"sourceSha256": source, "document": doc}], [{"sourceSha256": source, "file": "0", "pathId": "1"}])
+    assert len(result['reachableObjects']) == 2
+    assert result['budgetUsage']['typedValueNodes'] < 200
