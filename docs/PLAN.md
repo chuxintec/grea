@@ -1,5 +1,13 @@
 # beaver development
 
+## Current work — 2026-11-02: Zombie Unity static Prefab adoption
+
+Human `01a199fe-c1cb-7280-a012-302f9b7da911` approved the project-driven Unity static Prefab chain; takeover human `01a199ff-4025-73b1-a8ae-cf5411526c14` and governing Manager decision were verified. New product owner `01a19a01-63bf-7823-af9f-e1daed5ec385` alone writes the formal Unity project and operates its Editor. Beaver owns tools and isolated candidate preflight; monkey owns source parsing/export, GREA owns thin routing. No FoodStreet AX authorization expansion.
+
+Existing fix8 full-catalog persistent object/name collection is already fixed and ready: original wheel and 124 locked package/launcher files match; current public GREA check passed with its matching explicit providers configuration and unchanged lock. An initial check without that configuration correctly refused the default official provider; its failure is retained. The product owner received exact entry/lock/contracts for remaining 6717-Sprite name verification, without replaying the three completed fix7 relocation phases. Empty scratch cleanup remains product-owned.
+
+Twelve source roots are frozen; the fixed monkey candidate is pending. First EnemyHpBar review found original GameBase.dll DodText/DodImage versus existing same-named source classes in the target default compilation domain; native mapping and deliberate compatibility are required before adoption, not name matching or an extra overlapping DLL. Outline behavior remains unknown. Intake evidence: `.private/zombie-static-prefab-20261102/adoption-intake-01.json`. Continue when candidate/dependency identities arrive; only actual new generic gaps justify code or a new fixed candidate. No Editor/Player/build/adopt execution occurred in this preparation.
+
 ## Current authoritative status — 2026-11-01: scoped toolchain CLOSED
 
 - **Build/font source preservation closed on fixed12.** Actual public GREA/FoodStreet build and post-Editor-exit0 scan preserved14 font sources and55608 original source entries;275 artifacts. Original consumer verification SHA1ffe86a5648fbab52083965f6213eb459fba9e6a4eb21c705baf0bc394977c79 still matches. This accepted lifecycle proof was reused, not rebuilt.

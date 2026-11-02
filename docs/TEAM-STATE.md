@@ -1,5 +1,9 @@
 # Maintainer responsibilities
 
+## Current Zombie toolchain work — 2026-11-02
+
+Primary alone owns beaver intake and compatibility preflight; no new subagent or desktop session. Zombie consumer is `local/01a19a01-63bf-7823-af9f-e1daed5ec385`; archived `01a16d44-0c10-7d41-94b6-23d7da1a0f82` receives no new delivery. Formal project/Editor single writer is the consumer. Existing fix8 name-catalog entry was delivered with verified paired provider config/lock; completed fix7 transactions remain immutable. Fixed static candidate, exact script/subasset mapping and real consumer acceptance remain pending. See PLAN current work and private adoption-intake-01; earlier FoodStreet scoped closure remains closed.
+
 ## Current consumer contact — 2026-11-02
 
 FoodStreet primary: `local/01a199fb-fbe3-7b80-b2a2-50932c99d6e5`. This replaces archived `01a18189-efa1-7f91-8a2a-75b5d3d3856a` for future necessary coordination only. Verified against `/Users/wangmeng/Documents/Manager/sessions.json` and `/Users/wangmeng/Documents/Manager/decisions/20261102-foodstreet-takeover/HANDOFF.md` (human `01a199fa-3a5d-7461-8278-0641b93a5fb6`). Historical receipts and accepted toolchain evidence remain unchanged; no replay of prior deliveries, archived-chat restart or completed-tool work.
