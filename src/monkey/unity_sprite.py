@@ -8,7 +8,7 @@ import base64
 import math
 import struct
 
-from .io import sha
+from .io import sha, encoded
 
 
 def atlas_settings(raw):
@@ -21,11 +21,9 @@ def atlas_settings(raw):
                 packingRotation=('None','FlipHorizontal','FlipVertical','Rotate180')[values[2]],meshType='Tight')
 
 
-def tight_geometry(data,atlas,width,height):
+def _tight_mesh(data):
     def check(ok,message):
         if not ok:raise ValueError(message)
-    settings=atlas_settings(atlas.get('settingsRaw',65))
-    check(settings['packingMode']=='Tight','Exact tight packing required')
     rd=data['m_RD'];vd=rd['m_VertexData'];n=vd['m_VertexCount'];channels=vd['m_Channels']
     check(type(n) is int and 3<=n<=10000,'Unsupported tight vertex count')
     active={i:c for i,c in enumerate(channels) if c['dimension']}
@@ -43,6 +41,15 @@ def tight_geometry(data,atlas,width,height):
     check(all(i<n for i in triangles),'Tight triangle index outside vertex range')
     meshes=rd['m_SubMeshes']
     check(len(meshes)==1 and all(meshes[0].get(k)==v for k,v in dict(firstByte=0,indexCount=len(triangles),topology=0,baseVertex=0,firstVertex=0,vertexCount=n).items()),'Unsupported tight submesh layout')
+    return vertices,triangles
+
+
+def tight_geometry(data,atlas,width,height):
+    def check(ok,message):
+        if not ok:raise ValueError(message)
+    settings=atlas_settings(atlas.get('settingsRaw',65))
+    check(settings['packingMode']=='Tight','Exact tight packing required')
+    vertices,triangles=_tight_mesh(data)
     uv=atlas['uvTransform'];values=[uv[k] for k in ('x','y','z','w')]
     check(all(type(v) in (int,float) and math.isfinite(v) for v in (*values,width,height)) and width>0 and height>0,'Invalid tight atlas UV transform')
     coords=[dict(x=(x*uv['x']+uv['y'])/width,y=(y*uv['z']+uv['w'])/height) for x,y,_ in vertices]
@@ -54,3 +61,49 @@ def tight_geometry(data,atlas,width,height):
             if settings['packingRotation']in('FlipVertical','Rotate180'):row['y']=(2*rect['y']+rect['height'])/height-row['y']
     check(all(math.isfinite(v) and abs(v)<=1 for row in coords for v in row.values()),'Unbounded or nonfinite tight atlas UV')
     return dict(meshVertices=[dict(x=x,y=y) for x,y,_ in vertices],triangleIndices=triangles,meshUv=coords,verifyMesh=True)
+
+
+def unpacked_tight_geometry(data,width,height,pixels_to_units,settings_raw=64,*,pixel_sha256):
+    """Separate full-texture, unpacked-tight profile; packed atlas rules stay strict.
+
+    Pixel bytes are verified by the outer hydration layer. This descriptor pins
+    that layer's hash together with the exact source Sprite data and geometry.
+    It does not assert an existing target GUID or builtin resource identity.
+    """
+    import re
+    def check(ok,message):
+        if not ok:raise ValueError(message)
+    check(type(width)is int and type(height)is int and 0<width*height<=16*1024*1024
+          and width>0 and height>0,'Exact bounded texture dimensions required')
+    check(type(pixels_to_units)in(int,float) and math.isfinite(pixels_to_units)
+          and pixels_to_units>0 and data.get('m_PixelsToUnits')==pixels_to_units,'Source pixels-to-units differs')
+    check(type(settings_raw)is int and settings_raw==64 and data['m_RD'].get('settingsRaw')==64,
+          'Only separate unpacked-tight settingsRaw 64 is proven')
+    check(isinstance(pixel_sha256,str) and re.fullmatch('[0-9a-f]{64}',pixel_sha256) is not None,
+          'Exact hydrated RGBA SHA256 required')
+    rd=data['m_RD']
+    check(rd.get('alphaTexture',{}).get('fileId')=='0' and rd.get('alphaTexture',{}).get('pathId')=='0'
+          and not rd.get('secondaryTextures') and not rd.get('m_Bindpose') and rd.get('downscaleMultiplier')==1,
+          'Separate alpha/secondary/skinned/downscaled Sprite requires another profile')
+    check(data.get('m_SpriteAtlas',{}).get('pathId')=='0' and not data.get('m_AtlasTags'),
+          'Unpacked source Sprite must not reference an atlas')
+    rect=data['m_Rect'];pivot=data['m_Pivot'];border=data['m_Border']
+    check(rect==dict(x=0,y=0,width=width,height=height),'Only exact full-texture source rect is proven')
+    check(set(pivot)=={'x','y'} and all(type(v)in(int,float) and math.isfinite(v) and 0<=v<=1 for v in pivot.values()),
+          'Finite normalized source pivot required')
+    check(set(border)=={'x','y','z','w'} and all(type(v)in(int,float) and math.isfinite(v) and v>=0 for v in border.values())
+          and border['x']+border['z']<=width and border['y']+border['w']<=height,'Finite bounded source border required')
+    check(type(data.get('m_Extrude'))is int and 0<=data['m_Extrude']<=64 and data.get('m_IsPolygon')is False,
+          'Source extrusion/polygon profile is unsupported')
+    for name in ('m_Bones','m_Skin'):
+        check(not data.get(name),'Skinned Sprite requires another profile')
+    uv=data['m_RD']['uvTransform'];expected=dict(x=pixels_to_units,y=width*pivot['x'],z=pixels_to_units,w=height*pivot['y'])
+    check(uv==expected,'Unpacked source UV transform differs from rect/pivot/PPU')
+    vertices,triangles=_tight_mesh(data)
+    coords=[dict(x=(x*uv['x']+uv['y'])/width,y=(y*uv['z']+uv['w'])/height) for x,y,_ in vertices]
+    check(all(math.isfinite(v) and 0<=v<=1 for row in coords for v in row.values()),'Unpacked source UV exceeds texture bounds')
+    descriptor=dict(geometryProfile='unity-2021.3-unpacked-tight-v1',sourceSpriteDataSha256=sha(encoded(data)),
+        textureRgbaRawSha256=pixel_sha256,textureWidth=width,textureHeight=height,pixelsToUnits=pixels_to_units,
+        meshVertices=[dict(x=x,y=y) for x,y,_ in vertices],triangleIndices=triangles,meshUv=coords,verifyMesh=True)
+    descriptor['geometrySha256']=sha(encoded(descriptor))
+    return descriptor

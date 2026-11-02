@@ -243,6 +243,20 @@ def prepare(project, expected_manifest):
                     resource_bindings[target_sid] = dict(path=target, guid=_guid_meta(project / (target + ".meta")),
                                                         sourceLogicalPath=logical, sourceType=source_type)
 
+    native_asset_path = project / "Analysis/Mappings/native-source-assets.json"
+    native_asset_bindings = load(read(native_asset_path)) if native_asset_path.is_file() else []
+    for row in native_asset_bindings:
+        sid = row["sourceObjectId"]
+        obj = objects.get(sid)
+        if obj is None or obj["rawSha256"] != row["rawSha256"] or obj["type"] != row["type"]:
+            fail("UNITY_PREFAB_NATIVE_ASSET_SOURCE", sid, "Exact source identity for native resource differs")
+        if sid in resource_bindings:
+            fail("UNITY_PREFAB_NATIVE_ASSET_CONFLICT", sid, "Do not replace an already mapped original native resource")
+        target_path = moved.get(row["path"], row["path"])
+        if _guid_meta(project / (target_path + ".meta")) != row["guid"]:
+            fail("UNITY_PREFAB_NATIVE_ASSET_GUID", sid, "Pinned native-created resource GUID changed")
+        resource_bindings[sid] = dict(path=target_path, guid=row["guid"], localId=row["localId"], sourceType=row["type"],
+                                     nativeSupplement=row["supplementManifestSha256"])
     code = load(read(project / "Analysis/Code/schema-carriers.json"))
     builtin_path = project / "Analysis/Evidence/builtin-schemas.json"
     if builtin_path.is_file():
@@ -258,10 +272,11 @@ def prepare(project, expected_manifest):
                 if source["type"] != identity["type"] or source["rawSha256"] != identity["rawSha256"]:
                     fail("UNITY_PREFAB_BUILTIN_SCHEMA_IDENTITY", matches[0], "Schema/source object identity differs")
                 shapes[matches[0]] = obj["schemaNode"]
-    boolean_paths = {}
+    boolean_paths, character_paths = {}, {}
     for carrier in code:
         proposal = carrier["proposal"]
         paths = {f["name"] for f in proposal.get("fields", []) + proposal.get("inheritedFields", []) if f["csType"] == "bool"}
+        characters = {f["name"] for f in proposal.get("fields", []) + proposal.get("inheritedFields", []) if f["csType"] == "char"}
         # Bounded 2021.3 UI.FontData declaration profile, checked against source
         # DummyDLL declaration and target uGUI. UInt8 alone is not a bool proof.
         if any(f["csType"] == "UnityEngine.UI.FontData" for f in proposal.get("inheritedFields", [])):
@@ -273,6 +288,7 @@ def prepare(project, expected_manifest):
                 fail("UNITY_PREFAB_BOOLEAN_IDENTITY_AMBIGUOUS", str(source), "Do not choose one serialized file by path ID alone")
             if matches:
                 boolean_paths[matches[0]] = paths
+                character_paths[matches[0]] = characters
     disabled = {(c["identity"]["assembly"].removesuffix(".dll"), c["identity"]["namespace"], c["identity"]["name"])
                 for c in code if c["state"] == "disabled-unavailable-carrier"}
     exclusions = []
@@ -310,6 +326,8 @@ def prepare(project, expected_manifest):
                     fail("UNITY_PREFAB_NATIVE_REFERENCE_GUID", target["path"], "Missing native resource metadata")
                 row.update(refGuid=target["guid"], refType="UnityEditor.Animations.AnimatorController"
                            if target_obj["type"] == "AnimatorController" else "UnityEngine." + target_obj["type"])
+                if target.get("localId"):
+                    row["refLocalId"] = target["localId"]
             else:
                 fail("UNITY_PREFAB_NATIVE_REFERENCE_MAPPING", loc, "No exact original container or script mapping for " + target_obj["type"] + ": " + target_sid)
             return [row]
@@ -331,6 +349,10 @@ def prepare(project, expected_manifest):
                 fail("UNITY_PREFAB_NATIVE_BOOLEAN", loc, "Not a source boolean")
             return [dict(path=prop, kind="boolean", boolValue=bool(value))]
         if isinstance(value, int):
+            if prop in character_paths.get(sid, set()):
+                if not 0 <= value <= 65535:
+                    fail("UNITY_PREFAB_NATIVE_CHARACTER", loc, "Source char must be one UTF-16 code unit")
+                return [dict(path=prop, kind="character", intValue=value)]
             if (schema or {}).get("type") in ("UInt8", "unsigned char"):
                 if not 0 <= value <= 255:
                     fail("UNITY_PREFAB_NATIVE_BYTE", loc, "Source byte exceeds UInt8 storage")
@@ -399,7 +421,7 @@ def prepare(project, expected_manifest):
         root_plans.append(dict(path=path, sourceId=source_id, isRepresentative=index == 0, nodes=node_plans))
     return dict(schemaVersion=1, targetUnityVersion="6000.6.2f1", outputRelative="Analysis/Readback/unity-prefab-static.json",
                 sourceCandidateManifestSha256=expected_manifest, roots=root_plans,
-                reconstructRoots=bool(sdk_bindings),
+                reconstructRoots=bool(sdk_bindings or native_asset_bindings),
                 fieldMappingExclusions=exclusions, resourceBindings=resource_bindings,
                 sourceBusiness="not_run", unavailablePresentation="not-accepted")
 

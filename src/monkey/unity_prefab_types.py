@@ -105,6 +105,13 @@ _UI_INHERITED_FIELDS["UnityEngine.UI.GridLayoutGroup"] = {
     "m_ConstraintCount": ("int", "int"),
 }
 
+from .unity_prefab_input_profiles import merge_inputfield_native_profile
+
+_input_profile = merge_inputfield_native_profile(NATIVE_BASES, _NATIVE_COMPONENT_CHAINS, _UI_INHERITED_FIELDS)
+NATIVE_BASES = _input_profile["nativeBases"]
+_NATIVE_COMPONENT_CHAINS = _input_profile["nativeComponentChains"]
+_UI_INHERITED_FIELDS = _input_profile["uiInheritedFields"]
+
 def _source_identity(assembly: str, namespace: str, name: str) -> tuple[str, str, str]:
     if not isinstance(assembly, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:\.dll)?", assembly):
         fail("UNITY_PREFAB_ASSEMBLY", str(assembly), "Unsafe or missing source assembly identity")

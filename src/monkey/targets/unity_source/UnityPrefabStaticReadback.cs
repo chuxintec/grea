@@ -624,6 +624,14 @@ namespace MonkeyUnitySource
                     row.actual = property.boolValue.ToString();
                     row.passed = property.boolValue == (field.intValue == 1);
                 }
+                else if (field.kind == "character")
+                {
+                    if (field.intValue < 0 || field.intValue > 65535 || property.propertyType != SerializedPropertyType.Character)
+                        throw new InvalidOperationException("Source char requires one UTF-16 code unit and native Character storage");
+                    row.expected = field.intValue.ToString(Invariant);
+                    row.actual = property.intValue.ToString(Invariant);
+                    row.passed = property.intValue == field.intValue;
+                }
                 else if (field.kind == "integer" || field.kind == "byte")
                 {
                     if (property.propertyType != SerializedPropertyType.Integer &&
@@ -1355,7 +1363,7 @@ namespace MonkeyUnitySource
                         {
                             totalFields++;
                             if (field == null || String.IsNullOrEmpty(field.path) ||
-                                !(field.kind == "integer" || field.kind == "byte" || field.kind == "float" || field.kind == "boolean" || field.kind == "string" || field.kind == "reference"))
+                                !(field.kind == "integer" || field.kind == "character" || field.kind == "byte" || field.kind == "float" || field.kind == "boolean" || field.kind == "string" || field.kind == "reference"))
                                 throw new InvalidOperationException("Malformed/unsupported serialized field in component " + component.sourceId);
                             if (field.kind == "reference" && field.isNull &&
                                 (!String.IsNullOrEmpty(field.refSourceId) || !String.IsNullOrEmpty(field.refGuid) ||

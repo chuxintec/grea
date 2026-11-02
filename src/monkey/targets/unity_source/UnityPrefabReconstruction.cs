@@ -189,7 +189,7 @@ namespace MonkeyUnitySource
                     {
                         if (field == null || String.IsNullOrEmpty(field.path))
                             throw new InvalidOperationException("Source serialized field is incomplete on " + component.sourceId);
-                        if (!(field.kind == "integer" || field.kind == "byte" || field.kind == "float" ||
+                        if (!(field.kind == "integer" || field.kind == "character" || field.kind == "byte" || field.kind == "float" ||
                               field.kind == "boolean" || field.kind == "string" || field.kind == "reference"))
                             throw new InvalidOperationException("Unsupported source serialized field kind " + field.kind + " at " + component.sourceId + "." + field.path);
                         if (field.path == "m_Script" && (field.kind != "reference" || field.isNull))
@@ -301,7 +301,13 @@ namespace MonkeyUnitySource
                     ValidateNativeScript(component, field);
                     continue;
                 }
-                if (field.kind == "integer")
+                if (field.kind == "character")
+                {
+                    if (field.intValue < 0 || field.intValue > 65535 || property.propertyType != SerializedPropertyType.Character)
+                        throw PropertyTypeError(plan, field, "Character/UTF-16 code unit", property);
+                    property.intValue = checked((int)field.intValue);
+                }
+                else if (field.kind == "integer")
                 {
                     if (property.propertyType != SerializedPropertyType.Integer && property.propertyType != SerializedPropertyType.Enum &&
                         property.propertyType != SerializedPropertyType.ArraySize)

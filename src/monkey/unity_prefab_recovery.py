@@ -158,7 +158,8 @@ def script_proposals(inputs, parsed, allow_disabled, selected_objects=None):
                 emitted["enums"] = []
                 code = emit_schema(emitted)
                 state = "native-base-schema-only"
-                if proposal["base"] in ("UnityEngine.MonoBehaviour", "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.UI.Graphic", "UnityEngine.UI.GridLayoutGroup"):
+                if proposal["base"] in ("UnityEngine.MonoBehaviour", "UnityEngine.EventSystems.UIBehaviour", "UnityEngine.UI.Graphic", "UnityEngine.UI.GridLayoutGroup",
+                                        "UnityEngine.UI.InputField", "UnityEngine.UI.Selectable"):
                     state = "disabled-unavailable-carrier"
                     proposal = dict(proposal, disabledCarrier=dict(sourceBaseRestored=True, behavior="disabled-required",
                         staticPresentation="unverified-source-custom-component", methodsRecovered=0))
@@ -267,6 +268,7 @@ def recover(request_path, expected_request, output):
     proposals = script_proposals(inputs, parsed, request.get("allowDisabledUnavailableCarriers") is True, selected_objects)
     provider = request["providerExport"]
     lineage = provider_lineage(provider, source_evidence)
+    request_evidence["providerHydration"] = {k: provider[k] for k in ("prepared", "prepareJob")}
     export_root = safe(provider["root"])
     _, inventory_raw = pinned(provider["inventory"])
     inventory = load(inventory_raw, max_nodes=8_000_000)
@@ -428,6 +430,38 @@ def recover(request_path, expected_request, output):
     write_json(project / "Analysis/Evidence/type-evidence.json", type_evidence)
     write_json(project / "Analysis/Evidence/provider-lineage.json", lineage)
     write_json(project / "Analysis/Evidence/request-evidence.json", request_evidence)
+    native_asset_mappings = []
+    for supplement in request.get("nativeAssetEvidence", []):
+        from .unity_prefab_asset_rebuild import load_supplement
+        source_root, asset_manifest, mappings = load_supplement(supplement, graph, lineage)
+        for mapping in mappings:
+            for relative in (mapping["path"], mapping["path"] + ".meta"):
+                dest = inside(project, relative)
+                if dest.exists():
+                    fail("UNITY_PREFAB_ASSET_DESTINATION", relative, "Native supplement cannot overwrite a candidate asset")
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(read(inside(source_root, relative), max_bytes=128 * 1024 * 1024))
+        supplement_sha = sha(read(safe(supplement["path"])))
+        for row in asset_manifest["files"]:
+            if row["path"].startswith("Analysis/"):
+                dest = inside(project, "Analysis/Evidence/native-asset-supplements/" + supplement_sha + "/" + row["path"])
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(read(inside(source_root, row["path"]), max_bytes=128 * 1024 * 1024))
+        native_asset_mappings.extend(mappings)
+    if native_asset_mappings:
+        ids = [r["sourceObjectId"] for r in native_asset_mappings]
+        guids = [r["guid"] for r in native_asset_mappings]
+        if len(set(ids)) != len(ids) or len(set(guids)) != len(guids):
+            fail("UNITY_PREFAB_ASSET_MAPPING_COLLISION", "$", "Native supplemental source identities and GUIDs must be unique")
+        existing_guids = {}
+        for meta in (project / "Assets").rglob("*.meta"):
+            match = re.findall(rb"(?m)^guid: ([0-9a-f]{32})\s*$", read(meta))
+            if len(match) == 1:
+                guid = match[0].decode()
+                if guid in existing_guids:
+                    fail("UNITY_PREFAB_ASSET_GUID_COLLISION", guid, "Native supplement collides with an owned candidate GUID")
+                existing_guids[guid] = str(meta)
+        write_json(project / "Analysis/Mappings/native-source-assets.json", native_asset_mappings)
     if builtin_receipts:
         write_json(project / "Analysis/Evidence/builtin-schemas.json", builtin_receipts)
     if sdk_plan is not None:
