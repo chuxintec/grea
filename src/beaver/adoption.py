@@ -22,7 +22,7 @@ GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$',re.M)
 
 def algorithm_id():
     root=Path(__file__).parent
-    names=['__init__.py','native_environment.py','adoption.py','adoption_native.py','adoption_dependencies.py','adoption_assemblies.py','adoption_sdk.py','managed_metadata.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
+    names=['__init__.py','native_environment.py','adoption.py','process_identity.py','adoption_native.py','adoption_dependencies.py','adoption_assemblies.py','adoption_sdk.py','managed_metadata.py','candidate_snapshot.py','output_limits.py','owned_fs.py','io.py','errors.py','transaction_fs.py','targets/BeaverAdoption.cs']
     return sha(encoded({name:digest_file(root/name) for name in names}))
 
 
@@ -86,18 +86,63 @@ def same_payload(left,right):
     return shape(left)==shape(right)
 
 
+def _editor_kind(executable):
+    # Exact executable suffixes, never a substring of flattened argv.
+    name=executable.replace('\\','/')
+    if name.endswith('/Unity.app/Contents/MacOS/Unity') or name.endswith('/Unity.exe') or name.endswith('/Editor/Unity'):
+        return 'unity'
+    if name.endswith('/CocosCreator.app/Contents/MacOS/CocosCreator') or name.endswith('/CocosCreator.exe'):
+        return 'creator'
+    return None
+
+
+def _editor_project(arguments,kind):
+    flags={'-projectpath'} if kind=='unity' else {'--path','--project','-project'}
+    projects=[]
+    for i,arg in enumerate(arguments[1:],1):
+        key,sep,value=arg.partition('=')
+        if key.lower() not in flags:continue
+        if not sep:
+            if i+1>=len(arguments):return None
+            value=arguments[i+1]
+        if not value or not Path(value).is_absolute():return None
+        projects.append(Path(value).resolve())
+    if not projects or len(set(projects))!=1:return None
+    return projects[0]
+
+
 def native_lock(root):
     markers=[name for name in ('Temp/UnityLockfile','temp/editor.lock') if inside(root,name).exists()]
     if not markers:return
-    # Some Editor failure exits retain their marker. Never delete it: check
-    # the real process inventory, then let the Editor acquire its own OS lock.
+    # Retain stale markers. The Editor acquires its own OS lock; this check
+    # only rejects an observed live Editor or an unresolved Editor identity.
     import subprocess
+    from .process_identity import snapshot as process_snapshot
     try:
-        processes=subprocess.run(['ps','-axo','command='],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,timeout=10,check=True).stdout.splitlines()
-    except (OSError,subprocess.SubprocessError):
+        rows=subprocess.run(['ps','-ww','-axo','pid=,comm='],stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL,text=True,timeout=10,check=True).stdout.splitlines()
+        candidates=[]
+        for row in rows:
+            if not row.strip():continue
+            parts=row.strip().split(None,1)
+            if len(parts)!=2 or not parts[0].isdigit() or int(parts[0])<=0:
+                raise ValueError('invalid process inventory')
+            pid,executable=int(parts[0]),parts[1]
+            if _editor_kind(executable):candidates.append((pid,executable))
+    except (OSError,subprocess.SubprocessError,ValueError):
         fail('ADOPT_EDITOR_STATE_UNKNOWN',str(root),'Cannot verify an existing Editor marker; preserve it and inspect the target')
-    if any(str(root) in command and any(token in command for token in ('Unity.app/Contents/MacOS/Unity','Unity.exe','CocosCreator.app/Contents/MacOS/CocosCreator')) for command in processes):
-        fail('ADOPT_EDITOR_BUSY',str(root),'Target is open in an Editor; close it normally before adoption')
+    for pid,executable in candidates:
+        observed=process_snapshot(pid)
+        if observed['status']=='missing':continue
+        if observed['status']!='verified' or observed['executablePath']!=executable:
+            fail('ADOPT_EDITOR_STATE_UNKNOWN',str(root),'Cannot verify a possible Editor process; preserve the marker')
+        kind=_editor_kind(observed['executablePath'])
+        arguments=observed.get('arguments')
+        project=_editor_project(arguments,kind) if isinstance(arguments,list) and all(isinstance(a,str) for a in arguments) else None
+        if project is None:
+            fail('ADOPT_EDITOR_STATE_UNKNOWN',str(root),'Cannot verify the open project of an Editor process; preserve the marker')
+        if project==Path(root).resolve():
+            fail('ADOPT_EDITOR_BUSY',str(root),'Target is open in an Editor; close it normally before adoption')
 
 
 def project_requirements(incoming,target,profile):

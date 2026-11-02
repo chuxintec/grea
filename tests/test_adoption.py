@@ -93,16 +93,43 @@ class AdoptionTests(unittest.TestCase):
             write_json(a/'manifest.json',manifest)
             self.assertEqual(build_plan(a,t,b)['conflicts'][0]['reason'],'non-generated-owner')
 
-    def test_busy_editor_markers_are_preserved_and_real_processes_block(self):
+    def test_editor_lock_uses_executable_and_exact_project_arguments(self):
         from beaver.adoption import native_lock
         import subprocess
+        unity='/Applications/Unity Hub/Editor/6000.6.2f1/Unity.app/Contents/MacOS/Unity'
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp).resolve();(root/'Temp').mkdir();marker=root/'Temp/UnityLockfile';marker.write_text('marker')
-            with patch('subprocess.run',return_value=subprocess.CompletedProcess([],0,stdout='')):native_lock(root)
-            self.assertTrue(marker.exists())
-            process='/Applications/Unity/Hub/Editor/6000.6.2f1/Unity.app/Contents/MacOS/Unity -projectPath '+str(root)
-            with patch('subprocess.run',return_value=subprocess.CompletedProcess([],0,stdout=process)):
-                with self.assertRaises(ParseError):native_lock(root)
+            root=Path(temp).resolve()/'Target with spaces';(root/'Temp').mkdir(parents=True)
+            marker=root/'Temp/UnityLockfile';marker.write_text('marker')
+            def run(rows,observed=None):
+                with patch('subprocess.run',return_value=subprocess.CompletedProcess([],0,stdout=rows)), \
+                     patch('beaver.process_identity.snapshot',return_value=observed) as snapshot:
+                    native_lock(root)
+                    return snapshot.call_count
+            # The caller, shell and launcher can all carry --project/editor-path.
+            rows='12 /usr/bin/python3\n13 /bin/zsh\n14 /usr/bin/env\n'
+            self.assertEqual(run(rows),0)
+            observed={'status':'verified','executablePath':unity,'arguments':[unity,'-projectPath',str(root)]}
+            with self.assertRaises(ParseError) as error:run('20 '+unity,observed)
+            self.assertEqual(error.exception.code,'ADOPT_EDITOR_BUSY')
+            # A path in an unrelated flag, or a prefix-sharing project, is not this project.
+            observed['arguments']=[unity,'-projectPath',str(root)+'-other','-logFile',str(root)+'/Editor.log']
+            self.assertEqual(run('20 '+unity,observed),1)
+            observed['arguments']=[unity,'-projectPath='+str(root)]
+            with self.assertRaises(ParseError) as error:run('20 '+unity,observed)
+            self.assertEqual(error.exception.code,'ADOPT_EDITOR_BUSY')
+            for args in [[unity],[unity,'-projectPath','relative'],[unity,'-projectPath',str(root),'-projectPath',str(root)+'-other']]:
+                observed['arguments']=args
+                with self.assertRaises(ParseError) as error:run('20 '+unity,observed)
+                self.assertEqual(error.exception.code,'ADOPT_EDITOR_STATE_UNKNOWN')
+            for status in ['unknown','missing']:
+                observed={'status':status}
+                if status=='missing':run('20 '+unity,observed)
+                else:
+                    with self.assertRaises(ParseError) as error:run('20 '+unity,observed)
+                    self.assertEqual(error.exception.code,'ADOPT_EDITOR_STATE_UNKNOWN')
+            # PID reuse or executable mismatch remains unknown, never a stale marker clearance.
+            with self.assertRaises(ParseError):run('20 '+unity,{'status':'verified','executablePath':'/usr/bin/python3'})
+            with self.assertRaises(ParseError):run('malformed')
             self.assertEqual(marker.read_text(),'marker')
 
     def test_dependencies_and_settings_drift_block_before_an_editor_launch(self):

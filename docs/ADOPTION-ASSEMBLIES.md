@@ -68,3 +68,9 @@ explicit integer `buildErrors=0`, both in the native helper and independently
 in the waiting parent. Missing, malformed or nonzero counts cannot produce a
 certified artifact manifest. Font source protection and post-exit verification
 remain in force on failure as well as success.
+
+## Editor marker process identity (fixed22)
+
+A retained Unity/Creator lock marker is never deleted by beaver. Marker preflight reads separate PID/executable columns, then verifies each possible Editor against the kernel executable and birth-consistent argv snapshot. Only an actual Editor executable with an exact resolved project-path argument blocks as busy; the beaver caller, shells and wrappers carrying an Editor path in their arguments are not Editors. Paths containing spaces and project-prefix neighbours are distinguished. An inaccessible/reused possible Editor, missing/relative/ambiguous project argument, or failed process inventory remains state-unknown and refuses the operation. This is a point-in-time preflight; the Editor must still acquire its own OS lock. No process is signalled, no marker removed, and no GUI binding or input authorization is added.
+
+Fixed22 requires a fresh plan for subsequent writes; old fixed candidates, failed receipts and in-flight plans remain bound to their own implementation. Full-catalog readback may use the new fixed candidate without replaying prior migrations. Native/static observation and product acceptance remain separate.
