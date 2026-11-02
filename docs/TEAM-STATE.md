@@ -2,7 +2,7 @@
 
 ## Active fixed25 — 2026-11-02
 
-Primary sole writer for narrow BeaverIntake.cs scalar-array traversal, shared version/docs and isolated native font/complex-array fixtures. No additional subagent for this single critical path. Real formal font only copied read-only; formal project/old fixed24 transaction stays owner-controlled. Existing primitive/reference limits, exact references, cold/rollback and source-partial boundaries remain. Fixed candidate verification pending.
+Primary sole writer for narrow BeaverIntake.cs scalar-array traversal, shared version/docs and isolated native font/complex-array fixtures. No additional subagent for this single critical path. Real formal font only copied read-only; formal project/old fixed24 transaction stays owner-controlled. Existing primitive/reference limits, exact references, cold/rollback and source-partial boundaries remain. Fixed25 source43adf74/producer3c342593 sealed:137 runtime files match source/wheel/install;81 installed checks without skips. Final real-font/full-oracle/cold/rollback and reference/complex-array budget refusals passed, font later-edit protection preserved. Three necessary recipient deliveries succeeded after fresh explicit human fix25 approval; initial automatic-review refusal retained. GREA public binding and owner new-plan native consumption pending.
 
 ## Active fixed24 module — 2026-11-02
 
