@@ -132,3 +132,5 @@ The finite capture command currently returns not_supported; it never captures
 another app or changes focus. Neutral rendered frames were produced through the
 test consumer's own camera, not an OS desktop screenshot. No game-specific page,
 coordinate, identity or callback is embedded in the companion.
+
+Scene replacement retires Unity-destroyed modules without treating them as live restoration failures. Any failed restoration of a still-live module is remembered across route clearing and ends the companion safely with partial cleanup; it cannot later become a successful cleanup just because the old route list is empty.

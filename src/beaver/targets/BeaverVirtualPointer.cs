@@ -79,7 +79,7 @@ namespace Beaver.VirtualPointer
         string lastCommandState = "none";
         Dictionary<string, object> lastCommandReceipt;
         long lastActivityTicks;
-        bool isDown, plannedDown, stopping, stopReserved, cleanupDone, physicalTakeover;
+        bool isDown, plannedDown, stopping, stopReserved, cleanupDone, physicalTakeover, routeRestoreFailed;
         Vector2 devicePosition, plannedPosition;
         volatile bool alive;
         volatile bool listenerFailed;
@@ -571,7 +571,8 @@ namespace Beaver.VirtualPointer
             }
             else if (isDown) ReleaseNow();
             lock (queueLock) while (pending.Count > 0) CompleteInterrupted(pending.Dequeue(), "blocked", "SCENE_CHANGED", 0);
-            BindRoutes();
+            try { BindRoutes(); }
+            catch { routeRestoreFailed = true; Shutdown("ui_route_restore_failed"); }
         }
         void BindRoutes()
         {
@@ -647,7 +648,7 @@ namespace Beaver.VirtualPointer
                     var expected = new[] { r.OldPoint, r.OldClick, r.OldMiddleClick, r.OldRightClick, r.OldScroll, r.OldMove, r.OldSubmit, r.OldCancel, r.OldTrackedOrientation, r.OldTrackedPosition };
                     for (int i = 0; i < actual.Length; i++) if (actual[i] != expected[i] || IsEnabled(expected[i]) != r.OldEnabled[i]) restored = false;
                 }
-                else restored = false;
+                // A Unity-destroyed module has no live route left to restore.
                 if (r.NewPoint != null) Destroy(r.NewPoint); if (r.NewClick != null) Destroy(r.NewClick); if (r.NewMiddleClick != null) Destroy(r.NewMiddleClick); if (r.NewRightClick != null) Destroy(r.NewRightClick);
                 if (r.NewScroll != null) Destroy(r.NewScroll); if (r.NewMove != null) Destroy(r.NewMove); if (r.NewSubmit != null) Destroy(r.NewSubmit); if (r.NewCancel != null) Destroy(r.NewCancel);
                 if (r.NewTrackedOrientation != null) Destroy(r.NewTrackedOrientation); if (r.NewTrackedPosition != null) Destroy(r.NewTrackedPosition);
@@ -657,6 +658,7 @@ namespace Beaver.VirtualPointer
             routes.Clear();
             try { if (virtualActionsAsset != null) { virtualActionsAsset.Disable(); Destroy(virtualActionsAsset); virtualActionsAsset = null; } }
             catch { restored = false; }
+            if (!restored) routeRestoreFailed = true;
             return restored;
         }
 
@@ -694,9 +696,9 @@ namespace Beaver.VirtualPointer
             if (cleanupDone) return; cleanupDone = true; alive = false; shutdownAfterRelease = false; safetyReleasePending = false; safetyReleaseAwaitingAck = false;
             terminalScreenWidth = screenWidth; terminalScreenHeight = screenHeight;
             InputSystem.onBeforeUpdate -= BeforeInputUpdate; InputSystem.onEvent -= ObservePhysicalMouse; SceneManager.sceneLoaded -= SceneLoaded;
-            int routesToRestore = routes.Count; terminalUiRouteCount = 0;
+            terminalUiRouteCount = 0;
             foreach (var route in routes) if (route.Module != null) terminalUiRouteCount++;
-            terminalActionsRestored = RestoreRoutes() && terminalUiRouteCount == routesToRestore;
+            terminalActionsRestored = RestoreRoutes() && !routeRestoreFailed;
             try { if (listener != null) listener.Stop(); terminalListenerStopped = true; } catch { }
             try { if (device != null && device.added) InputSystem.RemoveDevice(device); terminalDeviceRemoved = device == null || !device.added; } catch { }
             // Restore the prior application background setting; do not change global InputSettings.
