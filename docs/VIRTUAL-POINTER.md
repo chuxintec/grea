@@ -95,9 +95,11 @@ the normal UI route. It can complete a click/drop/select/produce action; it is
 not a business rollback or a guarantee that gameplay state did not change.
 Judge business outcomes independently. The archived clean-exit retirement path
 is strictly local: it checks the archived QA run and pinned lifecycle receipt,
-then deletes only that channel's private config and client state. It makes no
-socket request and does not touch Player saves, copied QA configs, the app,
-owner record, or archived run.
+then writes a mode `0600` prepared retirement receipt pinning the original state
+SHA and the validated sequence/unknown flags before deleting only that
+channel's private config and client state. Retirement does not resolve a
+pending input or business outcome. It makes no socket request and does not
+touch Player saves, copied QA configs, the app, owner record, or archived run.
 
 ## Evidence boundary
 

@@ -498,15 +498,39 @@ class VirtualPointerTests(unittest.TestCase):
 
     def test_archived_clean_exit_retires_only_original_private_files_without_dispatch(self):
         case = self.make_retirement_case()
+        case["state"]["blockedUnknown"] = True
+        vp._write_private(case["statePath"], case["state"], create=False)
         lifecycle_sha = digest_file(case["lifecyclePath"])
         typed_copy = Path(case["typedConfigPath"])
-        output = self.call_archived_stop(case)
+        evidence_path = case["out"] / "retirement-evidence.json"
+        original_unlink = os.unlink
+
+        def assert_evidence_before_unlink(name, *args, **kwargs):
+            if name in ("config.json", "client-state.json"):
+                self.assertTrue(evidence_path.is_file())
+                self.assertEqual(os.stat(evidence_path).st_mode & 0o777, 0o600)
+                evidence = json.loads(evidence_path.read_text())
+                self.assertEqual(evidence["phase"], "prepared")
+                self.assertFalse(evidence["cleanupPerformed"])
+                self.assertTrue(evidence["blockedUnknown"])
+                self.assertEqual(evidence["nextSequence"], case["state"]["nextSequence"])
+                self.assertEqual(evidence["stateBeforeSha256"], digest_file(case["statePath"]))
+                self.assertFalse(evidence["cleanupResolvesBusinessOutcome"])
+            return original_unlink(name, *args, **kwargs)
+
+        contexts = self.archived_stop_context(case)
+        contexts.append(patch.object(vp.os, "unlink", side_effect=assert_evidence_before_unlink))
+        output = self.call_archived_stop(case, contexts)
         data = json.loads(Path(output["receipt"]).read_text())
         self.assertEqual(output["status"], "stopped")
         self.assertTrue(output["retiredAfterCleanExit"])
         self.assertFalse(output["dispatchPerformed"])
         self.assertEqual(data["cleanupEvidence"], "lifecycle-receipt")
         self.assertEqual(data["lifecycleReceiptSha256"], lifecycle_sha)
+        evidence = json.loads(evidence_path.read_text())
+        self.assertEqual(evidence["blockedUnknown"], True)
+        self.assertEqual(data["retirementEvidenceSha256"], digest_file(evidence_path))
+        self.assertFalse(data["cleanupResolvesBusinessOutcome"])
         self.assertFalse(Path(case["channel"]["configPath"]).exists())
         self.assertFalse(case["statePath"].exists())
         self.assertTrue(case["lifecyclePath"].exists())
@@ -524,9 +548,9 @@ class VirtualPointerTests(unittest.TestCase):
 
         @contextmanager
         def traced_lock(path):
-            with original_lock(path):
+            with original_lock(path) as channel_fd:
                 active["held"] = True
-                try: yield
+                try: yield channel_fd
                 finally: active["held"] = False
 
         def traced_retire(*args):
@@ -539,6 +563,73 @@ class VirtualPointerTests(unittest.TestCase):
         result = self.call_archived_stop(case, contexts)
         self.assertTrue(result["retiredAfterCleanExit"])
         self.assertFalse(active["held"])
+
+    def test_state_lock_rejects_symlink_parent_without_touching_outside_lock(self):
+        channels = vp._private_root()
+        channels.mkdir(mode=0o700, parents=True, exist_ok=True)
+        channel_id = "a" * 32
+        outside = self.root / "outside-lock-target"; outside.mkdir(mode=0o750)
+        before_mode = os.stat(outside).st_mode & 0o777
+        link = channels / channel_id; os.symlink(outside, link)
+        with self.assertRaises(BeaverError):
+            with vp._state_lock(link / "client-state.json"):
+                self.fail("symlink parent must never be locked")
+        self.assertFalse((outside / "client.lock").exists())
+        self.assertEqual(os.stat(outside).st_mode & 0o777, before_mode)
+
+    def test_state_lock_directory_swap_before_open_does_not_create_outside_lock(self):
+        channels = vp._private_root()
+        channels.mkdir(mode=0o700, parents=True, exist_ok=True)
+        channel_id = "b" * 32
+        channel = channels / channel_id; channel.mkdir(mode=0o700)
+        held = channels / (channel_id + ".held-test")
+        outside = self.root / "outside-lock-race"; outside.mkdir(mode=0o750)
+        before_mode = os.stat(outside).st_mode & 0o777
+        original_open = os.open
+
+        def swap_then_open(path, flags, *args, **kwargs):
+            if Path(path) == channel and flags & getattr(os, "O_DIRECTORY", 0):
+                os.rename(channel, held)
+                os.symlink(outside, channel)
+            return original_open(path, flags, *args, **kwargs)
+
+        with patch.object(vp.os, "open", side_effect=swap_then_open):
+            with self.assertRaises(BeaverError):
+                with vp._state_lock(channel / "client-state.json"):
+                    self.fail("directory swap must be rejected before opening/creating the lock")
+        self.assertFalse((outside / "client.lock").exists())
+        self.assertEqual(os.stat(outside).st_mode & 0o777, before_mode)
+        self.assertTrue(held.is_dir())
+
+    def test_archived_parent_swap_race_never_unlinks_outside_channel_files(self):
+        import shutil
+        case = self.make_retirement_case()
+        channel_root = Path(case["config"]["endpointPath"]).parent
+        channels_root = channel_root.parent
+        held_root = channels_root / (channel_root.name + ".held-test")
+        outside = self.root / "replacement-channel-copy"
+        outside_mode = 0o700
+        from beaver import qa_virtual_pointer as virtual_module
+        original_snapshot = virtual_module._archive_snapshot
+
+        def swap_after_snapshot(*args):
+            result = original_snapshot(*args)
+            shutil.copytree(channel_root, outside, copy_function=shutil.copy2)
+            os.chmod(outside, outside_mode)
+            os.rename(channel_root, held_root)
+            os.symlink(outside, channel_root)
+            return result
+
+        contexts = self.archived_stop_context(case)
+        contexts.append(patch.object(vp, "_archive_snapshot", side_effect=swap_after_snapshot))
+        with self.assertRaises(BeaverError):
+            self.call_archived_stop(case, contexts)
+        self.assertTrue((outside / "config.json").exists())
+        self.assertTrue((outside / "client-state.json").exists())
+        self.assertEqual(os.stat(outside).st_mode & 0o777, outside_mode)
+        self.assertTrue((held_root / "config.json").exists())
+        self.assertTrue((held_root / "client-state.json").exists())
+        self.assertTrue((outside / "client.lock").exists())  # copied lock only; no path-based external creation
 
     def test_sandbox_exec_birth_phase_must_match_exact_owned_launch_mode(self):
         accepted = self.make_retirement_case()

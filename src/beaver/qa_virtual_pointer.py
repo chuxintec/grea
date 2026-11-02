@@ -237,17 +237,53 @@ def _identity(receipt, config, discovery, sequence=None):
 
 @contextmanager
 def _state_lock(path):
-    lock_path = Path(path).with_name("client.lock")
-    try: fd = os.open(lock_path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
-    except OSError as exc: fail("QA_VP_STATE", "client", f"Private client lock unavailable ({type(exc).__name__})")
+    path = Path(os.path.abspath(path)); parent = path.parent
+    expected_parent = _private_root() / parent.name
+    if path.name != "client-state.json" or parent != expected_parent or not HEX32.fullmatch(parent.name):
+        fail("QA_VP_STATE_PARENT", "client", "State lock must be inside its exact private channel directory")
     try:
-        st = os.fstat(fd)
-        if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1 or st.st_uid != os.getuid(): fail("QA_VP_STATE", "client", "Client lock is not a private regular file")
-        os.fchmod(fd, 0o600)
-        with os.fdopen(fd, "r+b", closefd=False) as stream:
-            fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
-            yield
-    finally: os.close(fd)
+        for item in (parent, *parent.parents):
+            info = os.lstat(item)
+            if stat.S_ISLNK(info.st_mode): fail("QA_VP_STATE_PARENT", "client", "Private channel parent chain cannot contain symlinks")
+        parent_info = os.lstat(parent)
+    except OSError as exc: fail("QA_VP_STATE_PARENT", "client", f"Private channel parent cannot be inspected ({type(exc).__name__})")
+    if not stat.S_ISDIR(parent_info.st_mode) or parent_info.st_uid != os.getuid() or stat.S_IMODE(parent_info.st_mode) != 0o700:
+        fail("QA_VP_STATE_PARENT", "client", "Private channel directory must be user-owned mode 0700")
+    dir_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | os.O_NOFOLLOW
+    try: dir_fd = os.open(parent, dir_flags)
+    except OSError as exc: fail("QA_VP_STATE_PARENT", "client", f"Private channel directory cannot be safely opened ({type(exc).__name__})")
+    try:
+        _verify_channel_fd(path, dir_fd, expected_parent_info=parent_info)
+        try: lock_fd = os.open("client.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600, dir_fd=dir_fd)
+        except OSError as exc: fail("QA_VP_STATE", "client", f"Private client lock unavailable ({type(exc).__name__})")
+        try:
+            st = os.fstat(lock_fd)
+            if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1 or st.st_uid != os.getuid(): fail("QA_VP_STATE", "client", "Client lock is not a private regular file")
+            _verify_channel_fd(path, dir_fd, expected_parent_info=parent_info)
+            os.fchmod(lock_fd, 0o600)
+            with os.fdopen(lock_fd, "r+b", closefd=False) as stream:
+                fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
+                yield dir_fd
+        finally: os.close(lock_fd)
+    finally: os.close(dir_fd)
+
+
+def _verify_channel_fd(state_path, dir_fd, expected_parent_info=None):
+    state_path = Path(os.path.abspath(state_path)); parent = state_path.parent
+    if state_path.name != "client-state.json" or parent != _private_root() / parent.name or not HEX32.fullmatch(parent.name):
+        fail("QA_VP_STATE_PARENT", "client", "State path no longer identifies its original private channel")
+    try:
+        for item in (parent, *parent.parents):
+            info = os.lstat(item)
+            if stat.S_ISLNK(info.st_mode): fail("QA_VP_STATE_PARENT", "client", "Private channel parent chain changed to a symlink")
+        path_info = os.lstat(parent); fd_info = os.fstat(dir_fd)
+    except OSError as exc: fail("QA_VP_STATE_PARENT", "client", f"Private channel identity cannot be rechecked ({type(exc).__name__})")
+    expected = expected_parent_info or fd_info
+    if (not stat.S_ISDIR(path_info.st_mode) or path_info.st_uid != os.getuid() or stat.S_IMODE(path_info.st_mode) != 0o700
+            or (path_info.st_dev, path_info.st_ino) != (fd_info.st_dev, fd_info.st_ino)
+            or expected.st_uid != os.getuid() or stat.S_IMODE(expected.st_mode) != 0o700
+            or (expected.st_dev, expected.st_ino) != (fd_info.st_dev, fd_info.st_ino)):
+        fail("QA_VP_STATE_PARENT", "client", "Private channel path no longer matches its held directory descriptor")
 
 
 def _session(path, expected):
@@ -765,7 +801,7 @@ def _archive_snapshot(envelope, config, discovery, state_path, record_path, expe
     return record, lifecycle, state
 
 
-def _retire_clean_exit(session_path, envelope, config, out):
+def _retire_clean_exit(session_path, envelope, config, out, channel_fd):
     discovery = envelope["discovery"]
     if (config["channelId"], config["projectId"], config["buildId"], config["profileId"]) != (envelope["channelId"], envelope["instance"]["projectId"], envelope["instance"]["buildId"], envelope["instance"]["profileId"]):
         fail("QA_VP_ARCHIVE_CONFIG_BINDING", "config", "Channel config/session owner identities do not match")
@@ -788,6 +824,7 @@ def _retire_clean_exit(session_path, envelope, config, out):
     root, profile_root, data, record_path, record, owner, app, exe, log = _retirement_paths(envelope, config)
     from .qa_runtime import _read_owner, _hash_tree
     state_path = Path(envelope["statePath"])
+    _verify_channel_fd(state_path, channel_fd)
     if state_path != Path(envelope["configPath"]).with_name("client-state.json"):
         fail("QA_VP_STATE_PATH", "client-state", "Client state is not the original channel state file")
     state = _read_private(state_path)
@@ -807,6 +844,19 @@ def _retire_clean_exit(session_path, envelope, config, out):
     if _hash_tree(app, max_file_bytes=owner["artifactMaxFileBytes"], max_total_bytes=owner["artifactMaxTotalBytes"], max_files=owner["artifactMaxFiles"]) != owner["bundle"]["treeSha256"]:
         fail("QA_VP_ARCHIVE_BUNDLE_DRIFT", envelope["runId"], "Owned app bundle changed before retirement")
     output = new_output(out, [safe(session_path), safe(envelope["configPath"]).parent, safe(record_path).parent, safe(app), safe(lifecycle_path)])
+    evidence_path = output / "retirement-evidence.json"
+    retirement_evidence = {"schemaVersion": 1, "contract": "beaver-virtual-pointer-retirement-evidence/1", "phase": "prepared",
+                           "cleanupPerformed": False, "channelId": envelope["channelId"], "instanceId": discovery["instanceId"],
+                           "runId": envelope["runId"], "pid": discovery["pid"], "archivedRunPath": str(record_path),
+                           "archivedRunSha256": record_sha, "lifecycleReceiptPath": str(lifecycle_path),
+                           "lifecycleReceiptSha256": lifecycle_sha, "configPath": envelope["configPath"],
+                           "configSha256": envelope["configSha256"], "statePath": str(state_path),
+                           "stateBeforeSha256": state_sha, "nextSequence": state["nextSequence"],
+                           "blockedUnknown": state["blockedUnknown"], "stopped": state["stopped"],
+                           "gameBusinessOutcome": "not_evaluated", "cleanupResolvesBusinessOutcome": False,
+                           "processIdentity": "kernel-pid-missing"}
+    _write_private(evidence_path, retirement_evidence)
+    evidence_sha = digest_file(evidence_path)
     _archive_snapshot(envelope, config, discovery, state_path, record_path, record_sha, lifecycle_path, lifecycle_sha, state_sha)
     # Re-read owner as well as the archived process file after the last evidence
     # pass; no subprocess is launched, signaled, or queried through ps.
@@ -820,11 +870,14 @@ def _retire_clean_exit(session_path, envelope, config, out):
         fail("QA_VP_LIFECYCLE_CHANGED", lifecycle_path.name, "Lifecycle receipt changed immediately before retirement")
     if digest_file(envelope["configPath"]) != envelope["configSha256"] or digest_file(state_path) != state_sha or not _endpoint_is_absent(config):
         fail("QA_VP_RETIREMENT_RACE", envelope["channelId"], "Channel evidence changed immediately before retirement")
+    _verify_channel_fd(state_path, channel_fd)
+    if _read_private(evidence_path) != retirement_evidence or digest_file(evidence_path) != evidence_sha:
+        fail("QA_VP_RETIREMENT_EVIDENCE", envelope["channelId"], "Prepared retirement evidence changed before channel cleanup")
     # Retire only these two files belonging to the exact channel. Pin receipts,
     # QA config copies, app bundle, build owner and archived run remain untouched.
     try:
-        os.unlink(envelope["configPath"])
-        os.unlink(state_path)
+        os.unlink("config.json", dir_fd=channel_fd)
+        os.unlink("client-state.json", dir_fd=channel_fd)
     except OSError as error:
         fail("QA_VP_RETIREMENT_DELETE", envelope["channelId"], f"Private channel files could not be retired ({type(error).__name__})")
     receipt_path = output / "virtual-pointer-stop.json"
@@ -834,11 +887,19 @@ def _retire_clean_exit(session_path, envelope, config, out):
               "cleanupEvidence": "lifecycle-receipt", "lifecycleReceipt": str(lifecycle_path),
               "lifecycleReceiptSha256": lifecycle_sha, "lifecycleReason": lifecycle["reason"],
               "archivedRun": str(record_path), "archivedRunSha256": record_sha,
+              "retirementEvidence": str(evidence_path), "retirementEvidenceSha256": evidence_sha,
+              "stateBeforeSha256": state_sha, "nextSequence": state["nextSequence"],
+              "blockedUnknown": state["blockedUnknown"], "stopped": state["stopped"],
+              "gameBusinessOutcome": "not_evaluated", "cleanupResolvesBusinessOutcome": False,
               "processIdentity": "kernel-pid-missing", "launchPerformed": False}
     write_json(receipt_path, result)
     return {"status": "stopped", "receipt": str(receipt_path), "cleanupPerformed": True,
             "retiredAfterCleanExit": True, "dispatchPerformed": False, "cleanupEvidence": "lifecycle-receipt",
-            "lifecycleReceiptSha256": lifecycle_sha, "launchPerformed": False}
+            "lifecycleReceiptSha256": lifecycle_sha, "retirementEvidence": str(evidence_path),
+            "retirementEvidenceSha256": evidence_sha, "stateBeforeSha256": state_sha,
+            "nextSequence": state["nextSequence"], "blockedUnknown": state["blockedUnknown"],
+            "stopped": state["stopped"], "gameBusinessOutcome": "not_evaluated",
+            "cleanupResolvesBusinessOutcome": False, "launchPerformed": False}
 
 
 def stop(session, expected_session, out):
@@ -846,8 +907,8 @@ def stop(session, expected_session, out):
     try: _owned_live(envelope)
     except BeaverError as error:
         if error.code == "QA_BIND_NOT_RUNNING":
-            with _state_lock(envelope["statePath"]):
-                return _retire_clean_exit(path, envelope, config, out)
+            with _state_lock(envelope["statePath"]) as channel_fd:
+                return _retire_clean_exit(path, envelope, config, out, channel_fd)
         raise
     output = new_output(out, [path, safe(envelope["configPath"]).parent, safe(config["endpointPath"]), Path(config["receiptRoot"])])
     state_path = Path(envelope["statePath"])
