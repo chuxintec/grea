@@ -1,3 +1,17 @@
+# monkey v0.8.0 — Unity-source static Prefab recovery
+
+## Current scope — 2026-11-02
+
+The user has approved a new local Unity-source static Prefab increment driven by an existing consumer project. Source Unity 2021.3.30f1 IL2CPP/WASM and target 6000.6.2f1 are separate pinned identities; source code is not executed and no Cocos recovery gate applies. The current fixed v0.7 dev9 and all earlier native/consumer successes stay immutable. No v0.8 implementation or candidate has yet passed acceptance.
+
+A consumer-owned frozen selection supplies twelve distinct actual source roots with source bundle, serialized-file and strict typed-object hashes. The preferred first adopted module is an enemy-health-bar Prefab. Reuse existing reader/provider, inspection/export and texture/schema caches before adding missing general source/target semantics. Do not hand-code page/character answers, mix colleague source versions, erase Missing Scripts or discard unknown fields. Original script identity, serialized fields/references and disabled unavailable behavior must survive. Native resources, subasset GUID/localID/type, font/material, cross-bundle and actual nested-instance evidence require exact mapping.
+
+The primary owns shared CLI/schema/version, candidate export/native checks and Editor coordination. A bounded source-graph module owns only its new helper/tests. Main consumer development/WIP and migration remain with the current consumer maintainer; beaver owns adoption and SDK/native identity preflight; GREA owns fixed public dispatch. Background work starts without interrupting the other active consumer's Editor/desktop. No source/project writes, remote push/release, global install or new source-service/player-data permission is implied. Consumer-specific native AX/CGEvent authority is not transferred.
+
+Exit: at least ten distinct frozen roots and their dependency closure have per-root source/target mappings, actual native import/compile/load/static display/save/independent reopen evidence; representative text/image/transform edits visibly work. At least one useful complete module must be adopted through fixed public tools and verified by the actual consumer. Static, Player, business and visual/source-version limits stay separate. A graph/field count, local unit tests or provider export alone does not close this version. Continue approved ready work without ordinary ACKs; report fixed/public/actual consumer groups or specific severe blockers.
+
+## Preserved v0.7 history and accepted consumer scopes
+
 # monkey v0.7.0 — complete core Prefab recovery
 
 Latest fixed development implementation: **0.7.0.dev9**, `735a87ebbc194590c39a6ecd3984b74c4c23c029`. The prior dev7 remains the fixed native-selection producer. Formal **0.6.0** and all earlier frozen consumer candidates retain their original identities. The dated sections below preserve history; this current summary supersedes their pending-state wording.

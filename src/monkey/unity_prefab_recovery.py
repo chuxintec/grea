@@ -1,0 +1,374 @@
+"""Selected Unity Prefabs from immutable reader/provider caches, never game code.
+
+The request pins every reused inventory.  This stage copies native provider
+assets without editing their YAML and replaces only exact type-proven script
+declarations.  Native loading, field verification and presentation are separate.
+"""
+from collections import deque
+from pathlib import Path
+import copy
+import re
+
+from . import __version__
+from .io import inside, load, new_output, read, safe, sha, write_json
+from .sources.compiled import fail
+from .unity_payloads import validate_payloads
+from .unity_prefab_graph import build
+from .unity_prefab_types import parse_declarations, propose_schema, emit_schema, emit_disabled_carrier
+from .unity_code_model import identifier
+
+
+CONTRACT = "monkey-unity-prefab-recovery-request/1"
+_GUID = re.compile(rb"\bguid: ([0-9a-f]{32})\b")
+_ENGINE_GUID = re.compile(r"(?:0{32}|0{16}[ef]0{15})")
+
+
+def pinned(row, limit=128 * 1024 * 1024):
+    if not isinstance(row, dict) or not isinstance(row.get("sha256"), str):
+        fail("UNITY_PREFAB_INPUT_PIN", "$", "Expected explicit path/SHA input")
+    path = safe(row["path"])
+    raw = read(path, max_bytes=limit)
+    if sha(raw) != row["sha256"] or ("bytes" in row and len(raw) != row["bytes"]):
+        fail("UNITY_PREFAB_INPUT_DRIFT", str(path), "Frozen input changed")
+    return path, raw
+
+
+def source_inputs(index_pin, roots):
+    _, raw = pinned(index_pin)
+    index = load(raw, max_nodes=8_000_000)
+    combined = safe(index["indexFromPinnedExistingCombinedSource"]) / "typed-objects.json"
+    combined_raw = read(combined, max_bytes=128 * 1024 * 1024)
+    if sha(combined_raw) != index["combinedTypedSha256"]:
+        fail("UNITY_PREFAB_SOURCE_INDEX_DRIFT", str(combined), "Combined reader cache changed")
+    combined_doc = load(combined_raw, max_nodes=8_000_000)
+    owners = {}
+    for f in combined_doc["files"]:
+        owners.setdefault(f["name"], set()).add(f["containerSha256"])
+    rows = {r["source"]["sha256"]: r for r in index["sourceInputs"]}
+    if len(rows) != len(index["sourceInputs"]):
+        fail("UNITY_PREFAB_SOURCE_INDEX_DUPLICATE", "$", "Duplicate container SHA")
+    pending, docs, evidence = deque(r["sourceSha256"] for r in roots), {}, []
+    while pending:
+        digest = pending.popleft()
+        if digest in docs:
+            continue
+        if len(docs) >= 2000 or digest not in rows:
+            fail("UNITY_PREFAB_SOURCE_INPUT_MISSING", digest, "No exact cached container")
+        row = rows[digest]
+        source_path, _ = pinned(row["source"], 1024 * 1024 * 1024)
+        inspection_path, inspection_raw = pinned(dict(path=row["inspection"], sha256=row["inspectionSha256"]))
+        receipt = load(inspection_raw)
+        if (receipt.get("source", {}).get("sha256") != digest or receipt.get("sourceUnchanged") is not True
+                or receipt.get("sourceCodeExecuted") is not False or receipt.get("processExited") is not True
+                or receipt.get("status") not in ("inspected", "partial")):
+            fail("UNITY_PREFAB_INSPECTION_LINEAGE", str(inspection_path), "Reader receipt source differs")
+        typed_pin = dict(path=row["typedObjects"], sha256=row["typedObjectsSha256"])
+        if receipt.get("typedObjectsSha256") != typed_pin["sha256"]:
+            fail("UNITY_PREFAB_INSPECTION_LINEAGE", str(inspection_path), "Reader receipt typed SHA differs")
+        typed_path, typed_raw = pinned(typed_pin)
+        doc = load(typed_raw, max_nodes=8_000_000)
+        if doc.get("source", {}).get("sha256") != digest or doc.get("sourceCodeExecuted") is not False:
+            fail("UNITY_PREFAB_INSPECTION_LINEAGE", str(typed_path), "Not a nonexecuting source snapshot")
+        validate_payloads(typed_path.parent, doc)
+        docs[digest] = dict(sourceSha256=digest, document=doc)
+        evidence.append(dict(sourcePath=str(source_path), sourceSha256=digest,
+                             inspectionPath=str(inspection_path), inspectionSha256=row["inspectionSha256"],
+                             typedObjectsPath=str(typed_path), typedObjectsSha256=typed_pin["sha256"],
+                             cacheReaderContractSha256=receipt.get("readerContractSha256"),
+                             cacheScope="hash-pinned-prior-reader-output;not-a-new-reader-run-or-equivalence-claim"))
+        for f in doc["files"]:
+            for external in f["externals"]:
+                name = external["path"].rsplit("/", 1)[-1]
+                choices = owners.get(name, set())
+                if len(choices) > 1:
+                    fail("UNITY_PREFAB_EXTERNAL_AMBIGUOUS", name, "Different containers claim the same serialized file")
+                pending.extend(choices)
+    return list(docs.values()), evidence
+
+
+def type_models(evidence):
+    parsed = dict(declarations=[])
+    proofs = []
+    for row in evidence:
+        dll, dll_raw = pinned(row["dummyDll"], 64 * 1024 * 1024)
+        # Dummy assemblies are structural evidence only; they are not imported.
+        assembly = row["assembly"]
+        if dll.name != assembly or not assembly.endswith(".dll"):
+            fail("UNITY_PREFAB_TYPE_ASSEMBLY", str(dll), "Dummy DLL/assembly identity differs")
+        for source in row["declarations"]:
+            path, raw = pinned(source, 8 * 1024 * 1024)
+            model = parse_declarations(raw.decode("utf-8"), assembly=assembly,
+                                       source_path=str(path), source_sha256=sha(raw))
+            parsed["declarations"].extend(model["declarations"])
+            proofs.append(dict(path=str(path), sha256=sha(raw), assembly=assembly,
+                               dummyDllSha256=sha(dll_raw), methodsRecovered=0))
+    keys = [(r["identity"]["assembly"], r["identity"]["namespace"], r["identity"]["name"])
+            for r in parsed["declarations"]]
+    if len(set(keys)) != len(keys):
+        fail("UNITY_PREFAB_TYPE_DUPLICATE", "$", "Ambiguous decompiler declaration")
+    return parsed, proofs
+
+
+def script_proposals(inputs, parsed, allow_disabled):
+    output = {}
+    for entry in inputs:
+        doc = entry["document"]
+        objects = {(o["file"], o["pathId"]): o for o in doc["objects"]}
+        for obj in doc["objects"]:
+            if obj["type"] != "MonoBehaviour" or obj.get("status") != "parsed":
+                continue
+            ptr = obj["data"].get("m_Script", {})
+            if ptr.get("fileId") != "0":
+                continue  # Cross-file script evidence remains an explicit gap.
+            script = objects.get((obj["file"], ptr.get("pathId")))
+            if not script or script.get("type") != "MonoScript" or script.get("status") != "parsed":
+                continue
+            info = script["data"]
+            identity = dict(assembly=info["m_AssemblyName"], namespace=info.get("m_Namespace") or "", name=info["m_ClassName"])
+            if identity["assembly"].startswith(("UnityEngine", "UnityEditor", "Unity.")):
+                continue
+            schema = doc.get("embeddedSchemas", {}).get(obj.get("embeddedSchemaId"))
+            if schema is None:
+                schema = doc.get("borrowedSchemas", {}).get(obj.get("borrowedSchemaId"))
+            if schema is None:
+                continue
+            proposal = propose_schema(parsed, identity, schema)
+            key = (identity["assembly"], identity["namespace"], identity["name"])
+            if proposal.get("status") == "schema_only":
+                emitted = copy.deepcopy(proposal)
+                emitted["enums"] = []
+                code = emit_schema(emitted)
+                state = "native-base-schema-only"
+            elif allow_disabled:
+                try:
+                    fallback = emit_disabled_carrier(proposal)
+                except ValueError:
+                    continue
+                code, state = fallback["source"], "disabled-unavailable-carrier"
+                proposal = dict(proposal, disabledCarrier=fallback["metadata"])
+            else:
+                continue
+            previous = output.get(key)
+            if previous and (previous["code"] != code or previous["proposal"].get("fields") != proposal.get("fields")):
+                fail("UNITY_PREFAB_SCHEMA_CONFLICT", identity["name"], "Instances disagree on their type/schema")
+            if not previous:
+                output[key] = dict(identity=identity, proposal=proposal, code=code, state=state, sourceInstances=[])
+            output[key]["sourceInstances"].append(dict(containerSha256=entry["sourceSha256"], file=obj["file"], pathId=obj["pathId"],
+                sourceScriptPathId=script["pathId"], sourceScriptRawSha256=script["rawSha256"],
+                sourceEnabled=obj["data"].get("m_Enabled"), sourceFields=sorted(obj["data"])))
+    return output
+
+
+def provider_lineage(provider, source_evidence):
+    """Verify the existing whole-export binding, rehash only selected sources.
+
+    Full inventory metadata stays pinned, while unchanged unrelated original
+    bundles and texture payloads are not reparsed or exported again.
+    """
+    _, raw = pinned(provider["receipt"])
+    exported = load(raw)
+    _, binding_raw = pinned(provider["binding"])
+    binding = load(binding_raw)
+    prepared_path, prepared_raw = pinned(provider["prepared"])
+    prepared = load(prepared_raw, max_nodes=8_000_000)
+    _, job_raw = pinned(provider["prepareJob"])
+    job = load(job_raw, max_nodes=8_000_000)
+    if (binding.get("preparedJobSha256") != sha(job_raw) or binding.get("preparedSha256") != sha(prepared_raw)
+            or prepared.get("jobSha256") != sha(job_raw) or prepared.get("status") != "prepared"
+            or exported.get("status") != "exported_partial" or exported.get("targetVersion") != "6000.6.2f1"
+            or exported.get("processExited") is not True or exported.get("sourceUnchanged") is not True
+            or binding.get("sourceCodeExecuted") is not False):
+        fail("UNITY_PREFAB_PROVIDER_LINEAGE", str(prepared_path), "Frozen provider/preparation binding differs")
+    records = prepared.get("rows", [])
+    if len(records) != len(job["sources"]) or prepared.get("prepared") != len(records):
+        fail("UNITY_PREFAB_PROVIDER_LINEAGE", str(prepared_path), "Incomplete preparation source denominator")
+    for expected, row in zip(job["sources"], records):
+        if row.get("source") != expected or row.get("index") != expected["index"]:
+            fail("UNITY_PREFAB_PROVIDER_LINEAGE", str(prepared_path), "Preparation source rows differ")
+    exported_hashes = {exported["source"]["sha256"]} | {r["sha256"] for r in exported["dependencies"]}
+    original_rows = {r["source"]["sha256"]: r for r in records}
+    checked = []
+    for source in source_evidence:
+        row = original_rows.get(source["sourceSha256"])
+        if row is None:
+            fail("UNITY_PREFAB_PROVIDER_SOURCE_MISSING", source["sourceSha256"], "Selected original absent from provider preparation")
+        derived = row.get("derived")
+        digest = row.get("derivedSha256") if derived else source["sourceSha256"]
+        if digest not in exported_hashes:
+            fail("UNITY_PREFAB_PROVIDER_SOURCE_MISSING", digest, "Selected prepared source absent from completed export")
+        if derived:
+            path, _ = pinned(dict(path=derived, sha256=digest, bytes=row["derivedBytes"]), 1024 * 1024 * 1024)
+            if not path.is_relative_to(prepared_path.parent / "containers"):
+                fail("UNITY_PREFAB_PROVIDER_DERIVED_PATH", str(path), "Prepared derivative escaped its owner")
+            if row.get("retainedNonTextureObjectsUnchanged") is not True or row.get("pixelsFabricated") is not False:
+                fail("UNITY_PREFAB_PROVIDER_DERIVED_SCOPE", str(path), "Texture preparation lacks nontexture/source-pixel preservation proof")
+        checked.append(dict(originalSha256=source["sourceSha256"], exportedInputSha256=digest,
+                            textureHydration=row.get("resolved", []), textureRemovals=row.get("removed", [])))
+    return dict(exportReceiptSha256=sha(raw), bindingSha256=sha(binding_raw), preparedSha256=sha(prepared_raw),
+                prepareJobSha256=sha(job_raw), selectedSourceInputs=checked, sourceCodeExecuted=False,
+                scope="selected-original-and-derived-bytes-rehashed;complete-metadata-binding-pinned;no-full-reexport")
+
+
+def recover(request_path, expected_request, output):
+    request_path, raw = pinned(dict(path=str(request_path), sha256=expected_request))
+    request = load(raw, max_nodes=8_000_000)
+    if request.get("contract") != CONTRACT or request.get("schemaVersion") != 1 or request.get("targetUnityVersion") != "6000.6.2f1":
+        fail("UNITY_PREFAB_REQUEST", str(request_path), "Exact versioned Unity Prefab request required")
+    request_evidence = {}
+    for name in ("selectionEvidence", "sourceMetadata"):
+        if name in request:
+            pinned(request[name], 128 * 1024 * 1024)
+            request_evidence[name] = request[name]
+    roots = request["roots"]
+    inputs, source_evidence = source_inputs(request["inputIndex"], roots)
+    graph = build(inputs, roots)
+    if graph["sourceUnityVersions"] != ["2021.3.30f1"]:
+        fail("UNITY_PREFAB_SOURCE_VERSION", "$", "This fixed profile requires exact source Unity 2021.3.30f1")
+    parsed, type_evidence = type_models(request.get("typeEvidence", []))
+    proposals = script_proposals(inputs, parsed, request.get("allowDisabledUnavailableCarriers") is True)
+    provider = request["providerExport"]
+    lineage = provider_lineage(provider, source_evidence)
+    export_root = safe(provider["root"])
+    _, inventory_raw = pinned(provider["inventory"])
+    inventory = load(inventory_raw, max_nodes=8_000_000)
+    rows = {r["path"]: r for r in inventory["files"]}
+    if len(rows) != len(inventory["files"]):
+        fail("UNITY_PREFAB_EXPORT_DUPLICATE", str(export_root), "Duplicate provider inventory path")
+
+    def payload(path):
+        if path not in rows:
+            fail("UNITY_PREFAB_EXPORT_UNOWNED", path, "Provider inventory does not own this dependency")
+        return pinned(dict(rows[path], path=str(inside(export_root, path))), 256 * 1024 * 1024)[1]
+
+    by_guid = {}
+    for path in rows:
+        if not path.startswith("ExportedProject/Assets/") or not path.endswith(".meta"):
+            continue
+        meta = payload(path)
+        matches = re.findall(rb"(?m)^guid: ([0-9a-f]{32})\s*$", meta)
+        if len(matches) != 1:
+            continue
+        guid = matches[0].decode()
+        if _ENGINE_GUID.fullmatch(guid):
+            continue
+        asset = path[:-5]
+        if asset not in rows:  # Folder metadata is not a referenced asset.
+            continue
+        if guid in by_guid:
+            fail("UNITY_PREFAB_EXPORT_GUID_COLLISION", guid, "Two provider assets share one GUID")
+        by_guid[guid] = asset
+
+    selected_roots = []
+    for root in roots:
+        doc = next(x["document"] for x in inputs if x["sourceSha256"] == root["sourceSha256"])
+        matches = []
+        for obj in doc["objects"]:
+            if obj["type"] != "AssetBundle" or obj.get("status") != "parsed" or obj["file"] != root["file"]:
+                continue
+            for logical, value in obj["data"].get("m_Container", []):
+                ptr = value.get("asset", {})
+                if ptr.get("fileId") == "0" and ptr.get("pathId") == root["pathId"]:
+                    matches.append(logical)
+        if len(matches) != 1 or not matches[0].lower().endswith(".prefab"):
+            fail("UNITY_PREFAB_CONTAINER_ROOT", str(root), "One exact original Prefab container path required")
+        original = matches[0]
+        matches = [path for path in rows if path.startswith("ExportedProject/") and path[len("ExportedProject/"):].casefold() == original.casefold()]
+        if len(matches) != 1:
+            fail("UNITY_PREFAB_EXPORT_ROOT", original, "Original logical path has no unique provider asset")
+        selected_roots.append(dict(source=root, logicalPath=original, providerPath=matches[0]))
+
+    pending, selected, gaps = deque(r["providerPath"] for r in selected_roots), {}, []
+    while pending:
+        path = pending.popleft()
+        if path in selected:
+            continue
+        if len(selected) >= 100_000:
+            fail("UNITY_PREFAB_CLOSURE_BUDGET", path, "Selected native closure exceeds budget")
+        data = payload(path)
+        selected[path] = data
+        if path + ".meta" in rows:
+            selected[path + ".meta"] = payload(path + ".meta")
+        if data.startswith(b"%YAML"):
+            for guid in sorted(set(x.decode() for x in _GUID.findall(data))):
+                if _ENGINE_GUID.fullmatch(guid):
+                    continue
+                target = by_guid.get(guid)
+                if target is None:
+                    gaps.append(dict(code="UNITY_PREFAB_TARGET_GUID_UNRESOLVED", path=path, guid=guid))
+                else:
+                    pending.append(target)
+
+    out = new_output(output, [request_path, export_root, *[safe(r["typedObjectsPath"]).parent for r in source_evidence]])
+    project = out / "UnityProject"
+    project.mkdir()
+    code_records, enums = [], {}
+    for path, data in sorted(selected.items()):
+        relative = path.removeprefix("ExportedProject/")
+        if relative.endswith(".cs"):
+            prefix = "Assets/Scripts/"
+            parts = relative[len(prefix):].split("/") if relative.startswith(prefix) else []
+            key = (parts[0] + ".dll", ".".join(parts[1:-1]), Path(parts[-1]).stem) if len(parts) >= 2 else None
+            model = proposals.get(key)
+            if model is None:
+                gaps.append(dict(code="UNITY_PREFAB_SCRIPT_SCHEMA_UNSUPPORTED", path=relative))
+                dest = inside(project, "SourceRecovery/UnsupportedProviderCode/" + relative)
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(data)
+                continue
+            data = model["code"].encode()
+            code_records.append(dict(path=relative, **{k: v for k, v in model.items() if k != "code"}))
+            for enum in model["proposal"].get("enums", []):
+                enum_key = (key[0], enum["namespace"], enum["name"])
+                if enum_key in enums and enums[enum_key] != enum:
+                    fail("UNITY_PREFAB_ENUM_CONFLICT", enum["name"], "Exact enum declarations differ")
+                enums[enum_key] = enum
+        elif Path(relative).suffix.lower() in (".dll", ".js", ".wasm", ".asmdef", ".asmref"):
+            fail("UNITY_PREFAB_UNVERIFIED_CODE", relative, "No original executable/provider assembly is admitted")
+        dest = inside(project, relative)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(data)
+    for (assembly, namespace, name), enum in enums.items():
+        text = "namespace " + namespace + " {\n" if namespace else ""
+        text += "public enum " + identifier(name) + " : " + enum["underlyingType"] + " {\n"
+        text += "".join("  " + identifier(v["name"]) + " = " + str(v["value"]) + ",\n" for v in enum["values"])
+        text += "}\n" + ("}\n" if namespace else "")
+        dest = project / "Assets/Scripts" / assembly.removesuffix(".dll") / Path(*namespace.split(".")) / (name + ".cs")
+        if dest.exists():
+            fail("UNITY_PREFAB_ENUM_PATH_COLLISION", str(dest), "Enum would overwrite a selected file")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text)
+    for assembly in sorted({r["identity"]["assembly"] for r in code_records}):
+        if assembly == "Assembly-CSharp.dll":
+            continue
+        path = project / "Assets/Scripts" / assembly.removesuffix(".dll") / (assembly.removesuffix(".dll") + ".asmdef")
+        write_json(path, dict(name=assembly.removesuffix(".dll"), references=["UnityEngine.UI"], autoReferenced=True))
+    (project / "ProjectSettings").mkdir()
+    (project / "ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: 6000.6.2f1\n")
+    write_json(project / "Packages/manifest.json", dict(dependencies={"com.unity.ugui": "2.6.0"}))
+    write_json(project / "Analysis/Evidence/source-graph.json", graph)
+    write_json(project / "Analysis/Evidence/source-inputs.json", source_evidence)
+    write_json(project / "Analysis/Evidence/type-evidence.json", type_evidence)
+    write_json(project / "Analysis/Evidence/provider-lineage.json", lineage)
+    write_json(project / "Analysis/Evidence/request-evidence.json", request_evidence)
+    write_json(project / "Analysis/Code/schema-carriers.json", code_records)
+    for r in code_records:
+        if r["state"] == "disabled-unavailable-carrier":
+            gaps.append(dict(code="UNITY_PREFAB_UNAVAILABLE_PRESENTATION", path=r["path"], sourceBase=r["proposal"]["base"],
+                             behavior="must-disable-before-native-save", staticPresentation="unsupported"))
+    # Reuse the existing source-native layout transformation, preserving GUIDs.
+    from .unity_layout import relocate
+    relocation = relocate(project)
+    report = dict(schemaVersion=1, contract="monkey-unity-prefab-recovery/1", toolVersion=__version__,
+        requestSha256=expected_request, sourceUnityVersions=graph["sourceUnityVersions"], targetVersion="6000.6.2f1",
+        roots=selected_roots, codeCarriers=code_records, sourceGraphGaps=graph["gaps"], diagnostics=gaps,
+        providerInventorySha256=sha(inventory_raw), reusedProvider=True, relocation=relocation,
+        sourceCodeExecuted=False, methodsRecovered=0, native="not_run", staticPresentation="not_run", business="not_run",
+        status="needs_action", boundary="Generated selected candidate; native/static/edit/reopen and consumer adoption are separate.")
+    write_json(project / "Analysis/Tasks/unity-prefab-recovery.json", report)
+    files = [dict(path=p.relative_to(project).as_posix(), sha256=sha(read(p, max_bytes=256 * 1024 * 1024)), bytes=p.stat().st_size)
+             for p in sorted(project.rglob("*")) if p.is_file()]
+    write_json(project / "manifest.json", dict(schemaVersion=1, contract=report["contract"], toolVersion=__version__,
+        targetProfile="unity-6000.6.2f1-ugui", sourceFamily="unity", requestSha256=expected_request,
+        selectedSourceRoots=roots, files=files, diagnostics=gaps, native="not_run", business="not_run"))
+    write_json(out / "result.json", report)
+    return report

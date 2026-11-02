@@ -399,6 +399,16 @@ def main(argv=None):
     p.add_argument('--candidate', required=True)
     p.add_argument('--expected-manifest', required=True)
     p.add_argument('--out', required=True)
+    p = sub.add_parser('recover-unity-prefabs', help='Recover selected Unity-source Prefabs from exact reader/provider caches and structural type evidence')
+    p.add_argument('--request', required=True)
+    p.add_argument('--expected-request', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('verify-unity-prefabs', help='Verify a selected Unity-source candidate in a fresh owned native Editor project')
+    p.add_argument('--candidate', required=True)
+    p.add_argument('--expected-manifest', required=True)
+    p.add_argument('--unity-editor', required=True)
+    p.add_argument('--budget-seconds', type=int, default=600)
+    p.add_argument('--out', required=True)
     p = sub.add_parser('audit-native-code-dependencies', help='Supplement a frozen selection with exact producer code proofs without changing its warnings')
     p.add_argument('--candidate', required=True)
     p.add_argument('--expected-manifest', required=True)
@@ -476,10 +486,21 @@ def main(argv=None):
             except (zipfile.BadZipFile,EOFError) as error:fail('EVIDENCE_ARCHIVE',args.source or args.manifest,str(error))
             print(json.dumps(dict(status=result['status'],operation=result['operation'],report=str(args.out)+'/inspection.json'),ensure_ascii=False))
             return 0
+        if args.command == 'recover-unity-prefabs':
+            from .unity_prefab_recovery import recover
+            result = recover(args.request, args.expected_request, args.out)
+            print(json.dumps(dict(status=result['status'], report=str(args.out)+'/result.json', native=result['native']), ensure_ascii=False))
+            return 1 if result['status'] == 'needs_action' else 0
+        if args.command == 'verify-unity-prefabs':
+            from .unity_prefab_native import execute
+            result = execute(args.candidate, args.expected_manifest, args.out, args.unity_editor, args.budget_seconds)
+            print(json.dumps(result, ensure_ascii=False))
+            return 0 if result['status'] == 'native-verified-subset' else 1
         if args.command == 'capabilities':
             from .output_limits import policy
             print(json.dumps(dict(version=__version__, profiles=[PROFILE,PROJECT_PROFILE,'cocos-2.4.11-bundle','cocos-3.8.7-bundle','cocos-3.4.1-bundle','cocos-2.1.2-resource','generic-image-resources-v1','egret-custom-resource-plist-v1'], targetProfiles=[UNITY_PROFILE,cocos.PROFILE],
                 ownership=dict(recoveryCandidates='monkey',developmentProjectOperations='beaver',workflow='GREA'),
+                unityPrefabRecovery=dict(command='recover-unity-prefabs',requestContract='monkey-unity-prefab-recovery-request/1',scope='selected-source-roots-and-provider-GUID-closure',nativeCommand='verify-unity-prefabs',native='implemented-acceptance-pending',sourceCodeExecuted=False),
                 nativeSdkDeclarations=dict(command='audit-native-code-dependencies',contract='monkey-native-sdk-declaration/1',schemaVersion=1,coverage='manifest-pinned-Spine-stage-and-literal-script-reference-tuples',assemblyInspectionOwner='beaver',migration='not-performed'),
                 codeRecovery=dict(status='partial',sourceExecution=False,lexicalGraph='complete-source-static-binding-and-utf8-spans',typedModules='explicit-source-class-method-hashes-and-call-domain',moduleProfiles=['foodstreet-demand-health-v1','foodstreet-motion-math-v1'],selection='optional-strict-typed-dependency-closure-and-lowering',methods='default-full-source-best-effort-CSharp-bodies;unknown-fragments-retained',fullDrafts=dict(commands=['code-draft','convert'],typeContractRequired=False,sourceMethods='all-indexed-plus-auxiliary-functions',fields='known-class-or-unresolved-owner-binding',diagnostics='source-linked-bounded-shards',compilation='excluded;syntax-and-API-errors-allowed'),projectPostprocess=dict(commands=['code-project-prepare','code-project-run','code-project-status','code-project-resume','code-project-pause','code-project-configure','code-project-recheck'],scope='all-manifest-owned-CSharp-files',execution='single-CLI-continuous-batches;per-batch-limits;exact-session',status='legacy-file-repair;active-run-superseded'),nativeArchitecture=dict(commands=['code-architecture-prepare','code-architecture-run','code-architecture-status','code-architecture-recheck','code-architecture-refine','code-native-prepare','code-native-run','code-native-status','code-native-continue','code-native-reassemble','code-native-revise','code-native-add-json','code-architecture-module-prepare','code-architecture-module-run','code-architecture-module-status','code-architecture-module-recheck','code-architecture-module-recover'],scope='complete-frozen-source-modules-members-and-resources',layers=['Bootstrap','Domain','Gameplay','Presentation','Services'],execution='single-existing-Codex-CLI;versioned-source-and-target-ownership',status='architecture-design-stage-available;native-implementation-in-progress'),optionalPostprocess=dict(commands=['code-postprocess','code-postprocess-resume'],defaultEnabled=False,provider='existing-local-Codex-CLI',workspace='independent-selected-code-copy',sourceCandidate='immutable',budgets='total-idle-output',resume='exact-recorded-session-only'),packageComposition='exact-frozen-resource-reuse;one-manifest-with-Scene-Prefab-JSON-and-CSharp',incremental='owned-candidate-fingerprints-and-hash-verified-reuse',mono='static-decompiler-drafts;legal-fixture-target-compiled',il2cpp='v29-exact-WASM-body-evidence;8-pure-i64-operator-fragments;caller-map-assumption;stateful-bodies-not-lifted',native='separate-probe-required;not-implied-by-emission'),
                 recoveryOperations=dict(commands=['acquire-resources','diagnose','doctor','space-preview','resource-probe'],

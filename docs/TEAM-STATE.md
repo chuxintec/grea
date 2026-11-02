@@ -1,3 +1,11 @@
+# Current v0.8 ownership — 2026-11-02
+
+The primary owns integration, CLI/contracts, candidate output and all native Editor/desktop operations. A new independent `unity_prefab_graph` module (requested gpt-6-luna/high, actual model not independently observed) owns only `src/monkey/unity_prefab_graph.py` and `tests/test_unity_prefab_graph.py`; its API preserves exact source identities/hierarchy/components/fields/reference closure with explicit gaps. It does not parse bundles again, write the product, spawn agents or operate Editors. Prior module instances were unavailable; no other module is active. Source inputs are read-only and sample identity/coordination details stay in ignored evidence.
+
+The graph and type modules have delivered and released their files. No module agent remains active. The primary now owns their integration and the source-derived native readback helper. The current user-approved scope and exit are in PLAN.md. The twelve frozen source roots and first health-bar module are source evidence, not native acceptance. The consumer remains sole product writer; adoption and fixed SDK/native transaction checks remain beaver-owned; fixed public dispatch remains GREA-owned. Shared desktop is not claimed or occupied by monkey. v0.7 fixed artifacts and successful consumer evidence are preserved without rerun. The additive public request and evidence boundaries are documented in UNITY-PREFAB-RECOVERY.md.
+
+# Preserved v0.7 ownership and history
+
 # Current ownership and checkpoint — 2026-11-01
 
 The primary is the sole current monkey contract/source/version/delivery writer. Earlier renderer, resource, Creator teardown and selected-runtime modules have delivered and stopped writing. No monkey Editor/desktop window is active or reserved. SDK migration and App-instance binding execution belong to beaver; product integration belongs to its maintainer, with shared desktop ownership coordinated before any actual native work. No product files are assigned to monkey.
