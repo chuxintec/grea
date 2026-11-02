@@ -77,7 +77,7 @@ def _guard(plan, current):
 
 
 def _native_plan(plan):
-    return dict(targetRoot=plan['targetRoot'], targetProfile=plan['targetProfile'], targetFiles=plan['targetBefore'], intakeNewScripts=plan.get('newScripts',[]), operations=[
+    return dict(targetRoot=plan['targetRoot'], targetProfile=plan['targetProfile'], targetFiles=plan['targetBefore'], intakeNewScripts=plan.get('newScripts',[]), intakeEngineObjects=plan.get('engineObjects',[]), operations=[
         dict(action='add', source=None, target=r['target'], guid=r['guid'], before=None,
              after=dict(path=r['target'], guid=r['guid'], file=r['file'], meta=r['meta'])) for r in plan['additions']])
 
@@ -100,7 +100,7 @@ def _job(stage, plan, journal, mode):
     return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],
                 additions=[dict(target=r['target'],guid=r['guid'],fileHash=r['file']['sha256'],metaHash=r['meta']['sha256']) for r in plan['additions']],
                 externalScripts=plan['externalScripts'],externalAssets=[dict(r,objects=owners_for(r['objects'])) for r in plan.get('externalAssets',[])],
-                packageScripts=plan.get('packageScripts',[]),newScripts=plan.get('newScripts',[]),watcherBeforeSha256=journal.get('watcherBeforeSha256'),watcherCompiledSha256=journal.get('watcherCompiledSha256'),verifications=checks)
+                engineObjects=plan.get('engineObjects',[]),packageScripts=plan.get('packageScripts',[]),newScripts=plan.get('newScripts',[]),watcherBeforeSha256=journal.get('watcherBeforeSha256'),watcherCompiledSha256=journal.get('watcherCompiledSha256'),verifications=checks)
 
 
 def _gate(stage, plan, journal, editor, mode, budget):
@@ -136,6 +136,12 @@ def _gate(stage, plan, journal, editor, mode, budget):
     return result
 
 
+def _engine_stage(before, native, target):
+    expected=before.get('engineObjects',[])
+    if any(native.get(key,[]) != expected for key in ('engineObjectsBefore','engineObjectsAfter')):
+        fail('INTAKE_ENGINE_DRIFT',str(target),'Native built-in identity differs during the importer stage')
+
+
 def _bind_watcher_before(stage, journal):
     """Bind the original native compiler checkpoint, never learn a later baseline."""
     code=load(read(stage/'native-code.json',max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
@@ -167,15 +173,19 @@ def execute(plan_path, output, editor, expected, budget=600):
             if _files(target)!=plan['targetBefore']:fail('INTAKE_PREFLIGHT_CHANGED',str(target),'Preflight changed project inputs before import')
             recheck_packages(plan)
             if plan.get('newScripts'):
-                run_child(stage,_native_plan(plan),journal,editor,'code',budget)
+                staged_code=run_child(stage,_native_plan(plan),journal,editor,'code',budget)
+                _engine_stage(before,staged_code,target)
                 _bind_watcher_before(stage,journal)
                 _guard(plan,_files(target))
                 code_checked=_gate(stage,plan,journal,editor,'code-check',budget)
                 _guard(plan,_files(target))
             # Same native importer/identity-preserving payload and rollback code as adoption.
             imported=run_child(stage,_native_plan(plan),journal,editor,'apply',budget)
+            _engine_stage(before,imported,target)
             _guard(plan,_files(target))
             reopened=_gate(stage,plan,journal,editor,'verify',budget)
+            if before.get('engineObjects',[]) != reopened.get('engineObjects',[]):
+                fail('INTAKE_ENGINE_DRIFT',str(target),'Native built-in identities differ across preflight and independent cold reopen')
             if before['scripts']!=reopened['scripts']:fail('INTAKE_SCRIPT_BINDING_DRIFT',str(target),'Retained script identities changed across independent Editor processes')
             if any(before.get(key,[])!=reopened.get(key,[]) for key in ('externalObjects','externalReferences','packageScripts')):
                 fail('INTAKE_EXTERNAL_BINDING_DRIFT',str(target),'Retained resource/reference/package identities changed across independent Editor processes')
@@ -193,10 +203,12 @@ def execute(plan_path, output, editor, expected, budget=600):
             result=dict(status='partial' if partial else 'verified',intakeStatus='verified',sourceCandidateValidation=provenance,transaction=str(stage),report=str(stage/'journal.json'),additions=len(plan['additions']),externalScripts=len(plan['externalScripts']),existingBytesUnchanged=True,independentReopen=True,fieldsChecked=reopened['fieldsChecked'],native='verified-declared-intake-subset',visual='not_run',business='not_run')
             if plan['schemaVersion']>=2:
                 result.update(externalAssets=len(plan['externalAssets']),packageScripts=len(plan['packageScripts']),externalObjects=len(reopened['externalObjects']),externalReferences=len(reopened['externalReferences']))
-            if plan['schemaVersion']==3:
+            if plan['schemaVersion']>=3:
                 result.update(newScripts=len(plan['newScripts']),compilationBoundary='separate-editor-code-check-before-assets' if plan['newScripts'] else 'no-new-compiler-inputs')
                 if plan['newScripts']:
                     result.update(watcherPolicy=reopened['watcherCheck']['policy'],watchersChecked=reopened['watcherCheck']['watchersChecked'],watcherResolutions=reopened['watcherCheck']['resolutions'])
+            if plan['schemaVersion']==4:
+                result.update(engineObjects=len(reopened['engineObjects']),engineObjectPolicy='declared-native-builtins/1')
             write_json(stage/'intake-result.json',result);return result
         except BaseException:
             journal['state']='recovery-required'
@@ -236,7 +248,7 @@ def recover(transaction, editor, expected, budget=600):
             native=run_child(stage,_native_plan(plan),journal,editor,'rollback',budget)
             checked=_gate(stage,plan,journal,editor,'rollback-check',budget)
             before=load(read(stage/'native-intake-preflight.json',max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
-            if any(before.get(key,[])!=checked.get(key,[]) for key in ('scripts','externalObjects','externalReferences','packageScripts')):
+            if any(before.get(key,[])!=checked.get(key,[]) for key in ('scripts','externalObjects','externalReferences','packageScripts','engineObjects')):
                 fail('INTAKE_EXTERNAL_BINDING_DRIFT',str(target),'Retained dependency identities/references changed during rollback')
             _cleanup(target,owned);owned=None
             if _files(target)!=plan['targetBefore'] or _directories(target)!=plan['targetDirectoriesBefore']:

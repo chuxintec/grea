@@ -43,6 +43,23 @@ def spec_v3():
     return value
 
 
+def spec_v4():
+    value = spec_v3()
+    value["schemaVersion"] = 4
+    value["engineObjects"] = []
+    return value
+
+
+def engine_object(**changes):
+    item = {
+        "guid": "0000000000000000e000000000000000", "localId": 10210,
+        "type": "UnityEngine.Mesh", "assembly": "UnityEngine.CoreModule",
+        "name": "Quad", "assetPath": "Library/unity default resources",
+    }
+    item.update(changes)
+    return item
+
+
 def external_script(**changes):
     item = {
         "source": "Assets/Candidate/Widget.cs", "sourceGuid": GUID,
@@ -489,6 +506,105 @@ class AdditiveIntakeContractTests(unittest.TestCase):
             "coveredByExternalScript": "Assets/Candidate/Creature.cs",
         }]
         self.assertIs(validate_spec(value), value)
+
+    def test_v4_inherits_v3_and_accepts_explicit_builtin_mesh_and_character(self):
+        value = spec_v4(); value["engineObjects"] = [engine_object()]
+        value["newScripts"] = [new_script()]
+        value["verifications"][0]["objects"][0]["fields"] = [
+            {"propertyPath": "glyph", "kind": "character", "value": 0xD800}
+        ]
+        value["externalAssets"] = [external_asset(objects=[{
+            "localId": 1, "type": "CharacterAsset", "assembly": "Game", "name": "glyphs", "fields": [
+                {"propertyPath": "glyph", "kind": "character", "value": 65535}
+            ]
+        }])]
+        self.assertIs(validate_spec(value), value)
+        same_guid_distinct_local_ids = spec_v4()
+        same_guid_distinct_local_ids["engineObjects"] = [engine_object(), engine_object(localId=10211, name="Other")]
+        self.assertIs(validate_spec(same_guid_distinct_local_ids), same_guid_distinct_local_ids)
+
+    def test_v4_engine_object_array_is_required_bounded_and_exact(self):
+        value = spec_v4(); del value["engineObjects"]
+        self.assert_invalid(value, "FIELDS")
+        for missing in ("externalAssets", "packageScripts", "newScripts"):
+            value = spec_v4(); del value[missing]
+            self.assert_invalid(value, "FIELDS")
+        value = spec_v4(); value["engineObjects"] = [engine_object()] * 65
+        self.assert_invalid(value, "BOUNDS")
+        value = spec_v4(); value["engineObjects"] = [{**engine_object(), "extra": True}]
+        self.assert_invalid(value, "FIELDS")
+        value = spec_v4(); value["engineObjects"] = [{k: v for k, v in engine_object().items() if k != "assetPath"}]
+        self.assert_invalid(value, "FIELDS")
+
+    def test_v1_v2_v3_remain_closed_to_engine_objects_and_v4_keeps_field_object_shape(self):
+        for value in (spec(), spec_v2(), spec_v3()):
+            value["engineObjects"] = []
+            self.assert_invalid(value, "FIELDS")
+        value = spec_v4()
+        value["verifications"][0]["objects"][0]["fields"] = [{
+            "propertyPath": "m_Mesh", "kind": "object",
+            "value": {"guid": "", "localId": 0, "type": "", "assembly": ""},
+        }]
+        self.assertIs(validate_spec(value), value)
+        value["verifications"][0]["objects"][0]["fields"][0]["value"]["name"] = "Mesh"
+        self.assert_invalid(value, "FIELDS")
+
+    def test_v4_engine_object_identity_and_builtin_paths_are_closed(self):
+        invalid = (
+            {"guid": "0" * 32},
+            {"guid": "d" * 32},
+            {"guid": "0000000000000000E000000000000000"},
+            {"localId": 0}, {"localId": None}, {"localId": True},
+            {"localId": 1 << 63}, {"localId": -(1 << 63) - 1},
+            {"type": ""}, {"type": "MonoBehaviour"}, {"type": "UnityEngine."},
+            {"assembly": ""}, {"assembly": "UnityEngine.CoreModule.dll"},
+            {"name": ""}, {"assetPath": "Assets/Quad.asset"},
+            {"assetPath": "Resources/unity_builtin_extra"},
+        )
+        for changes in invalid:
+            with self.subTest(changes=changes):
+                value = spec_v4(); value["engineObjects"] = [engine_object(**changes)]
+                self.assert_invalid(value)
+        f_builtin = engine_object(guid="0000000000000000f000000000000000", localId=10001,
+                                  type="UnityEngine.Texture2D", assembly="UnityEngine.CoreModule",
+                                  name="Default-Particle", assetPath="Resources/unity_builtin_extra")
+        value = spec_v4(); value["engineObjects"] = [f_builtin]
+        self.assertIs(validate_spec(value), value)
+
+    def test_v4_rejects_duplicate_guid_localid_even_when_metadata_differs(self):
+        value = spec_v4()
+        value["engineObjects"] = [engine_object(), engine_object(type="UnityEngine.MeshFilter", name="Different")]
+        self.assert_invalid(value, "DUPLICATE")
+
+    def test_v4_schema_is_closed_and_describes_engine_object_domains(self):
+        path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-4.schema.json"
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
+        self.assertEqual(schema["properties"]["schemaVersion"], {"const": 4})
+        self.assertIs(schema["additionalProperties"], False)
+        self.assertIn("engineObjects", schema["required"])
+        self.assertEqual(schema["properties"]["engineObjects"]["maxItems"], 64)
+        self.assertIs(schema["$defs"]["engineObject"]["additionalProperties"], False)
+        self.assertEqual(schema["$defs"]["engineObject"]["properties"]["guid"]["enum"], [
+            "0000000000000000e000000000000000", "0000000000000000f000000000000000"])
+
+    def test_v4_schema_examples_when_optional_jsonschema_is_available(self):
+        try:
+            from jsonschema import Draft202012Validator
+        except ImportError:
+            self.skipTest("optional jsonschema package is not installed")
+        path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-4.schema.json"
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        valid = spec_v4(); valid["engineObjects"] = [engine_object()]
+        self.assertTrue(validator.is_valid(valid))
+        for invalid in (
+            {**valid, "unexpected": True},
+            {**valid, "engineObjects": [engine_object(guid="d" * 32)]},
+            {**valid, "engineObjects": [engine_object(assetPath="Resources/unity_builtin_extra")]},
+        ):
+            self.assertFalse(validator.is_valid(invalid))
 
     def test_schema3_is_closed_and_adds_character_and_new_script_definitions(self):
         path = Path(__file__).resolve().parents[1] / "docs/schemas/additive-intake-3.schema.json"

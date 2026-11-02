@@ -1,4 +1,4 @@
-# Additive Unity intake specifications v1 and v2
+# Additive Unity intake specifications v1 through v4
 
 `beaver.intake_contract.validate_spec(doc)` checks the closed, declarative input
 contract for additive asset intake. It returns the original dictionary on
@@ -8,7 +8,7 @@ discovery. Plan, apply, rollback, native readback, and prefab-context coverage
 belong to separate workflow stages; passing this validator alone is not
 evidence that any of those stages ran or that a product works.
 
-The [v1 JSON Schema](schemas/additive-intake-1.schema.json), [v2 JSON Schema](schemas/additive-intake-2.schema.json), and [v3 JSON Schema](schemas/additive-intake-3.schema.json)
+The [v1 JSON Schema](schemas/additive-intake-1.schema.json), [v2 JSON Schema](schemas/additive-intake-2.schema.json), [v3 JSON Schema](schemas/additive-intake-3.schema.json), and [v4 JSON Schema](schemas/additive-intake-4.schema.json)
 use draft 2020-12 to describe each version's static closed-object shape,
 required fields, array limits, scalar types, hashes, and typed field-value
 union. They are useful for editors and early structural checks.
@@ -129,6 +129,36 @@ previous runtime contract.
 The v3 `character` value is an integer UTF-16 code unit from 0 through 65535,
 including surrogate values. It is preserved as the supplied code unit; it is
 not converted to or normalized as a Unicode code point.
+
+## Schema version 4: explicit Unity built-in object references
+
+Version 4 preserves all v3 fields and rules and requires one additional closed
+`engineObjects` array with 0–64 rows. Versions 1–3 keep their existing closed
+shapes and do not accept this field. Each row declares exactly `guid`,
+`localId`, `type`, `assembly`, `name`, and `assetPath`. Only these two built-in
+identity pairs are supported:
+
+| GUID | Exact built-in asset path |
+| --- | --- |
+| `0000000000000000e000000000000000` | `Library/unity default resources` |
+| `0000000000000000f000000000000000` | `Resources/unity_builtin_extra` |
+
+`localId` is a nonzero signed 64-bit integer. `type` must be a nonempty
+`UnityEngine.*` name, `assembly` a simple assembly name, and `name` nonempty.
+The same GUID/localId pair cannot be repeated even with different type/name
+metadata; one GUID may declare different local IDs. Ordinary asset GUIDs,
+external assets, path aliases, null/default references and additional row
+fields are rejected. The four-field `Field.kind="object"` representation in
+serialized owner observations is unchanged.
+
+This is a declaration contract; it does not establish native source fidelity.
+Provider capability and a successful plan do not establish that an engine
+reference resolves natively. Until native verification matches each declared
+GUID/localId/type/assembly/name/path, source evidence remains
+`engine-reference-unverified` or `partial`; do not promote it from the schema
+declaration alone. Native closure of a shader or built-in asset identity also
+does not establish shader semantics or visual parity. Those remain separate
+verification results.
 
 Paths reject traversal, empty components, backslashes, colons, control
 characters, non-NFC spellings, Windows-invalid/reserved names, and trailing
@@ -261,3 +291,5 @@ A spec3 newScripts transaction may make a missing script reference in an unchang
 Original and compiled snapshots are separate, bound to the plan and native compiler checkpoint, with SHA pins persisted in the transaction journal. The compiled checkpoint records every watcher's before/after/added sets. Later consumption verifies those same pins and delta invariants; it never learns a replacement baseline. Resource import start/end and independent cold verify must match the compiled snapshot exactly and retain source/meta hashes. Offline compiler restoration plus native rollback compares the original dependency snapshot, not the compiled one. Native reports expose watcherCheck and the successful CLI subset result adds watcherPolicy, watchersChecked and watcherResolutions. The existing up-to128 unchanged watcher selection is retained; this is not a claim of exhaustive project-wide native watcher coverage. Full original source preservation remains independently guarded.
 
 Ordinary adoption and spec1/2 have no intakeNewScripts opt-in and keep their existing strict watcher behavior. Spec3 with no newScripts also retains the old path. Contract3, request argv, newScripts/Character rules, five apply/two rollback phases and outer budget formulas are unchanged. Old fixed26 transactions require their original runtime; a new fixed producer requires a fresh reviewed plan. Unknown behaviors, gameplay and visuals remain unavailable.
+
+Spec4 serialized reference scanning rejects noncanonical GUID spelling, including uppercase and malformed tokens. A full zero-GUID PPtr is allowed only as canonical fileID0/type0 null; nonzero-ID zero-GUID tuples do not bypass closure. Versions1–3 retain their original scanner rules. Engine importer-meta references remain unsupported. Each declared engine identity must occur in an exact selected PPtr; GUID-only or unused declarations are refused.

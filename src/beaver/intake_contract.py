@@ -22,6 +22,10 @@ _COMPILER_EXTENSIONS = {".cs", ".asmdef", ".asmref", ".rsp"}
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
 _GUID = re.compile(r"[0-9a-f]{32}\Z")
 _INT64_MIN, _INT64_MAX = -(1 << 63), (1 << 63) - 1
+_ENGINE_OBJECT_PATHS = {
+    "0000000000000000e000000000000000": "Library/unity default resources",
+    "0000000000000000f000000000000000": "Resources/unity_builtin_extra",
+}
 _WIN_BAD = set('<>:"|?*')
 _WIN_RESERVED = re.compile(r"(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?\Z", re.IGNORECASE)
 _SEMVER = re.compile(
@@ -173,7 +177,7 @@ def _owner_rows(objects, where, total_fields=None, allow_character=False):
             property_paths.append(_string(field["propertyPath"], field_where + ".propertyPath"))
             kind = _string(field["kind"], field_where + ".kind")
             if kind == "character" and not allow_character:
-                _bad(field_where + ".kind", "character kind is available only in schemaVersion 3", "ENUM")
+                _bad(field_where + ".kind", "character kind requires schemaVersion 3 or later", "ENUM")
             _field_value(kind, field["value"], field_where + ".value")
         _unique(property_paths, obj_where + ".fields.propertyPath")
     _unique([str(v) for v in local_ids], where + ".localId")
@@ -195,16 +199,44 @@ def _csharp_identifier(value, where):
     return value
 
 
+def _engine_object_rows(rows):
+    rows = _array(rows, "engineObjects", maximum=64)
+    seen = set()
+    for index, item in enumerate(rows):
+        where = f"engineObjects[{index}]"
+        _exact(item, {"guid", "localId", "type", "assembly", "name", "assetPath"}, where)
+        guid = item["guid"]
+        _guid(guid, where + ".guid")
+        if guid not in _ENGINE_OBJECT_PATHS:
+            _bad(where + ".guid", "Only the two declared Unity built-in GUID domains are supported", "GUID")
+        local_id = item["localId"]
+        _int64(local_id, where + ".localId", nonzero=True)
+        key = (guid, local_id)
+        if key in seen:
+            _bad(where, "Duplicate built-in GUID/localId identity", "DUPLICATE")
+        seen.add(key)
+        obj_type = _string(item["type"], where + ".type")
+        if not obj_type.startswith("UnityEngine.") or len(obj_type) == len("UnityEngine."):
+            _bad(where + ".type", "Built-in object type must begin with UnityEngine.", "TYPE")
+        _simple_assembly(item["assembly"], where + ".assembly")
+        _string(item["name"], where + ".name")
+        asset_path = _string(item["assetPath"], where + ".assetPath")
+        if asset_path != _ENGINE_OBJECT_PATHS[guid]:
+            _bad(where + ".assetPath", "Built-in GUID must use its exact native asset path", "PATH")
+
+
 def validate_spec(doc):
-    """Validate and return a v1, v2 or v3 additive intake spec without normalization."""
+    """Validate and return a v1, v2, v3 or v4 additive intake spec without normalization."""
     if not isinstance(doc, dict):
         _bad("$", "Object required")
     version = doc.get("schemaVersion")
-    if type(version) is not int or version not in (1, 2, 3):
-        _bad("schemaVersion", "schemaVersion 1, 2, or 3 required", "VERSION")
+    if type(version) is not int or version not in (1, 2, 3, 4):
+        _bad("schemaVersion", "schemaVersion 1, 2, 3, or 4 required", "VERSION")
     keys = _TOP_KEYS if version == 1 else _TOP_KEYS | {"externalAssets", "packageScripts"}
-    if version == 3:
+    if version in (3, 4):
         keys = keys | {"newScripts"}
+    if version == 4:
+        keys = keys | {"engineObjects"}
     _exact(doc, keys, "$")
     if doc["operation"] != "additive-intake":
         _bad("operation", "operation must be additive-intake", "OPERATION")
@@ -270,13 +302,13 @@ def validate_spec(doc):
             _bad(where + ".asset", "Verification asset must match an additions.source prefab", "REFERENCE")
         verified_assets.append(asset)
         objects = _array(item["objects"], where + ".objects", 1, 4096)
-        total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version == 3))
+        total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version in (3, 4)))
     _unique(verified_assets, "verifications.asset")
 
     external_asset_sources, external_asset_targets, external_asset_guids = [], [], []
     external_asset_paths = set()
     package_guids = []
-    if version in (2, 3):
+    if version in (2, 3, 4):
         external_assets = _array(doc["externalAssets"], "externalAssets", maximum=256)
         total_asset_objects = 0
         for index, item in enumerate(external_assets):
@@ -294,7 +326,7 @@ def validate_spec(doc):
             total_asset_objects += len(objects)
             if total_asset_objects > 4096:
                 _bad("externalAssets", "Combined object count exceeds 4096", "BOUNDS")
-            total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version == 3))
+            total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version in (3, 4)))
             external_asset_sources.append(source)
             external_asset_targets.append(target)
             external_asset_guids.append(item["guid"])
@@ -346,7 +378,7 @@ def validate_spec(doc):
 
     new_script_sources, new_script_targets, new_script_guids, new_script_types = [], [], [], []
     new_script_paths = set()
-    if version == 3:
+    if version in (3, 4):
         new_scripts = _array(doc["newScripts"], "newScripts", maximum=16)
         keys = {"source", "target", "guid", "sha256", "metaSha256", "sourceType", "sourceAssembly", "targetType", "targetAssembly", "baseType", "baseAssembly", "localId", "fields", "reason"}
         for index, item in enumerate(new_scripts):
@@ -402,6 +434,9 @@ def validate_spec(doc):
             _bad("newScripts", "New script paths cannot overlap additions, external scripts, or external assets", "OVERLAP")
         if set(new_script_guids) & (set(ext_guids) | set(external_asset_guids) | set(package_guids)):
             _bad("newScripts", "New script GUID cannot overlap external script, external asset, or package script GUID", "OVERLAP")
+
+    if version == 4:
+        _engine_object_rows(doc["engineObjects"])
 
     omitted_paths = []
     add_source_keys = {p.casefold() for p in addition_sources}

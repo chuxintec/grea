@@ -14,6 +14,7 @@ from .implementation import identity
 CONTRACT = 'beaver-additive-intake/1'
 CONTRACT_V2 = 'beaver-additive-intake/2'
 CONTRACT_V3 = 'beaver-additive-intake/3'
+CONTRACT_V4 = 'beaver-additive-intake/4'
 GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$', re.M)
 REFERENCES = re.compile(rb'\bguid:\s*([a-f0-9]{32})\b')
 COMPILER = {'.cs', '.asmdef', '.asmref', '.rsp', '.dll'}
@@ -141,18 +142,16 @@ def build_plan(candidate, target, spec_path):
     if compiler_inputs != covered or any(p.endswith('.dll') for p in compiler_inputs):
         fail('INTAKE_COMPILER_COVERAGE', str(incoming), 'Every compiler input must be explicitly reused or covered; DLL intake unsupported')
     selected_guids = new_guids | {r['sourceGuid'] for r in externals} | {r['guid'] for r in external_assets + packages}
+    from .intake_engine import declarations, text_references, expected_reference
+    engine_objects = spec.get('engineObjects', [])
+    engine = declarations(engine_objects, selected_guids)
+    engine_used = set()
     for row in additions + external_assets:
-        # V1 supports GUID-serialized text assets and opaque raw image/font inputs.
         if Path(row['source']).suffix.lower() not in {'.png', '.ttf', '.otf'}:
-            raw = read(incoming/row['source'], max_bytes=MANIFEST_BYTES)
-            for g in REFERENCES.findall(raw):
-                value = g.decode()
-                if value != '0'*32 and value not in selected_guids:
-                    fail('INTAKE_DEPENDENCY_CLOSURE', row['source'], 'Unselected or undeclared serialized GUID reference: '+value)
-        for g in REFERENCES.findall(read(incoming/(row['source']+'.meta'))):
-            value = g.decode()
-            if value not in selected_guids | {'0'*32}:
-                fail('INTAKE_IMPORTER_REFERENCE', row['source'], 'Importer reference outside selected closure')
+            engine_used |= text_references(read(incoming/row['source'], max_bytes=MANIFEST_BYTES), row['source'], selected_guids, engine, strict=spec['schemaVersion']==4)
+        text_references(read(incoming/(row['source']+'.meta')), row['source'], selected_guids, engine, importer=True, strict=spec['schemaVersion']==4)
+    if set(engine) != engine_used:
+        fail('INTAKE_ENGINE_UNUSED', 'engineObjects', 'Every declared engine identity must occur as an exact selected serialized PPtr')
     verifications = {v['asset']: v for v in spec['verifications']}
     prefabs = {r['source'] for r in additions if r['source'].endswith('.prefab')}
     if set(verifications) != prefabs:
@@ -160,13 +159,13 @@ def build_plan(candidate, target, spec_path):
     for v in verifications.values():
         for obj in v['objects']:
             for field in obj['fields']:
-                if field['kind'] == 'object' and field['value']['guid'] not in selected_guids | {''}:
-                    fail('INTAKE_EXPECTATION_REFERENCE', v['asset'], 'Object expectation references outside selected closure')
+                if field['kind'] == 'object':
+                    expected_reference(field['value'], v['asset'], selected_guids, engine)
     for row in external_assets:
         for obj in row['objects']:
             for field in obj['fields']:
-                if field['kind'] == 'object' and field['value']['guid'] not in selected_guids | {''}:
-                    fail('INTAKE_EXPECTATION_REFERENCE', row['source'], 'External resource expectation is outside selected closure')
+                if field['kind'] == 'object':
+                    expected_reference(field['value'], row['source'], selected_guids, engine, strict=spec['schemaVersion']==4)
     for r in spec['protectedAssets']:
         for path, expected in [(r['path'], r['sha256']), (r['path']+'.meta', r['metaSha256'])]:
             if before.get(path, {}).get('sha256') != expected:
@@ -178,7 +177,7 @@ def build_plan(candidate, target, spec_path):
         while p.as_posix() != 'Assets':
             if not inside(target, p.as_posix()).exists(): parents.add(p.as_posix())
             p = p.parent
-    plan = dict(schemaVersion=spec['schemaVersion'], contract={1:CONTRACT,2:CONTRACT_V2,3:CONTRACT_V3}[spec['schemaVersion']], implementationSha256=identity(),
+    plan = dict(schemaVersion=spec['schemaVersion'], contract={1:CONTRACT,2:CONTRACT_V2,3:CONTRACT_V3,4:CONTRACT_V4}[spec['schemaVersion']], implementationSha256=identity(),
                 candidateRoot=str(incoming), candidateManifestSha256=manifest_hash, namespace=manifest['namespace'],
                 targetRoot=str(target), targetProfile=manifest['targetProfile'], targetBefore=before,
                 targetDirectoriesBefore=directories,targetAuxiliary=auxiliary,
@@ -191,8 +190,10 @@ def build_plan(candidate, target, spec_path):
     if spec['schemaVersion']>=2:
         from .intake_external import package_inputs
         plan.update(externalAssets=external_assets, packageScripts=packages, packageInputs=package_inputs(packages))
-    if spec['schemaVersion']==3:
+    if spec['schemaVersion']>=3:
         plan['newScripts'] = new_scripts
+    if spec['schemaVersion']==4:
+        plan['engineObjects'] = engine_objects
     return plan
 
 
@@ -206,8 +207,10 @@ def preview(candidate, target, spec, output):
                   additions=len(plan['additions']), externalScripts=len(plan['externalScripts']), native='not_run')
     if plan['schemaVersion']>=2:
         result.update(externalAssets=len(plan['externalAssets']), packageScripts=len(plan['packageScripts']))
-    if plan['schemaVersion']==3:
+    if plan['schemaVersion']>=3:
         result.update(newScripts=len(plan['newScripts']),maximumNativePhases=5 if plan['newScripts'] else 3)
+    if plan['schemaVersion']==4:
+        result.update(engineObjects=len(plan['engineObjects']))
     return result
 
 
@@ -216,7 +219,7 @@ def checked_plan(path, expected):
     if not expected or digest_file(path) != expected:
         fail('INTAKE_PLAN_CHANGED', str(path), 'Explicit exact plan hash required')
     plan = load(read(path, max_bytes=MANIFEST_BYTES), max_nodes=MANIFEST_NODES)
-    if plan.get('contract') not in (CONTRACT, CONTRACT_V2, CONTRACT_V3) or plan.get('implementationSha256') != identity():
+    if plan.get('contract') not in (CONTRACT, CONTRACT_V2, CONTRACT_V3, CONTRACT_V4) or plan.get('implementationSha256') != identity():
         fail('INTAKE_IMPLEMENTATION', str(path), 'Original exact intake implementation required')
     if digest_file(path) != load(read(path.parent/'plan-identity.json')).get('sha256'):
         fail('INTAKE_PLAN_CHANGED', str(path), 'Saved plan identity differs')

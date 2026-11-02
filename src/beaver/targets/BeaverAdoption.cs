@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using UnityEditor;
@@ -29,8 +30,27 @@ public static class BeaverAdoption {
         public Op[] operations;
         public string[] watch;
         public IntakeScript[] intakeNewScripts;
+        public IntakeEngineObject[] intakeEngineObjects;
         public bool codeRestored, sdkMigrationEnabled;
         public SdkMigration sdkMigration;
+    }
+    [Serializable] public class IntakeEngineObject { public string guid,type,assembly,name,assetPath; public long localId; }
+    public static List<IntakeEngineObject> CheckIntakeEngineObjects(IntakeEngineObject[] rows) {
+        var found=new List<IntakeEngineObject>();var keys=new HashSet<string>(StringComparer.Ordinal);
+        foreach(var row in rows??new IntakeEngineObject[0]) {
+            if(row==null)throw new Exception("Null declared engine object");
+            string path=row.guid=="0000000000000000e000000000000000"?"Library/unity default resources":row.guid=="0000000000000000f000000000000000"?"Resources/unity_builtin_extra":null;
+            if(Application.unityVersion!="6000.6.2f1"||path==null||path!=row.assetPath||row.localId==0||String.IsNullOrEmpty(row.type)||!row.type.StartsWith("UnityEngine.",StringComparison.Ordinal)||String.IsNullOrEmpty(row.assembly)||String.IsNullOrEmpty(row.name)||!keys.Add(row.guid+"/"+row.localId.ToString(CultureInfo.InvariantCulture)))throw new Exception("Invalid/duplicate declared engine identity");
+            if(AssetDatabase.GUIDToAssetPath(row.guid)!=path)throw new Exception("Declared engine GUID/path mismatch");
+            var values=AssetDatabase.LoadAllAssetsAtPath(path).Concat(new[]{AssetDatabase.LoadMainAssetAtPath(path)}).Where(v=>v!=null).Distinct();
+            var matches=new List<UnityEngine.Object>();
+            foreach(var v in values){string g;long id;if(EditorUtility.IsPersistent(v)&&AssetDatabase.TryGetGUIDAndLocalFileIdentifier(v,out g,out id)&&g==row.guid&&id==row.localId)matches.Add(v);}
+            if(matches.Count!=1)throw new Exception("Declared engine GUID/localID missing or ambiguous");
+            var value=matches[0];var type=value.GetType();var actualPath=AssetDatabase.GetAssetPath(value);
+            if(actualPath!=path||type.FullName!=row.type||type.Assembly.GetName().Name!=row.assembly||value.name!=row.name)throw new Exception("Declared engine type/assembly/name/path mismatch");
+            found.Add(new IntakeEngineObject{guid=row.guid,localId=row.localId,type=type.FullName,assembly=type.Assembly.GetName().Name,name=value.name,assetPath=actualPath});
+        }
+        return found;
     }
     [Serializable] public class SdkMigration {
         public string path, sha256, candidateManifestSha256, targetAssetsSha256, referenceCoverage;
@@ -87,6 +107,8 @@ public static class BeaverAdoption {
         public List<SdkRetainedInactiveSnapshot> sdkAfterInactiveAssemblies=new List<SdkRetainedInactiveSnapshot>();
         public List<Observed> observedAfter=new List<Observed>();
         public IntakeWatcherReport watcherCheck;
+        public List<IntakeEngineObject> engineObjectsBefore=new List<IntakeEngineObject>();
+        public List<IntakeEngineObject> engineObjectsAfter=new List<IntakeEngineObject>();
     }
     [Serializable] public class Observed { public int index; public string path,fileHash,metaHash; }
     [Serializable] public class IntakeScript { public string target,guid,sha256,metaSha256; public long localId; }
@@ -676,6 +698,7 @@ public static class BeaverAdoption {
             deadline=DateTime.UtcNow.AddSeconds(job.budgetSeconds);
             var outer=DateTime.Parse(job.deadlineUtc,null,System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime();if(outer<deadline)deadline=outer;
             report=new Progress{status="running",mode=job.mode,planSha256=job.planSha256};Save();
+            report.engineObjectsBefore=CheckIntakeEngineObjects(job.intakeEngineObjects);Save();
             if(job.mode=="rollback") {
                 var priorPath=Path.Combine(job.stage,"native-apply.json");
                 if(!File.Exists(priorPath))priorPath=Path.Combine(job.stage,"native-code.json");
@@ -739,7 +762,7 @@ public static class BeaverAdoption {
                 }
                 var refs=Path.Combine(job.stage,"reference-signatures.json");
                 if(File.Exists(refs))foreach(var line in File.ReadAllLines(refs)){var parts=line.Split('\t');if(parts.Length!=2||RefSignature(parts[0])!=parts[1])throw new Exception("Restored watcher dependencies differ");}
-                report.status="rolled-back";report.referencesPreserved=true;
+                report.engineObjectsAfter=CheckIntakeEngineObjects(job.intakeEngineObjects);report.status="rolled-back";report.referencesPreserved=true;
             } else {
                 var signatures=new Dictionary<string,string>();
                 if(job.mode=="code" || job.mode=="apply") {
@@ -800,6 +823,7 @@ public static class BeaverAdoption {
                     if(applyReport.assets.Count!=report.assets.Count)throw new Exception("Readback count differs");
                     for(int i=0;i<applyReport.assets.Count;i++)if(!applyReport.assets[i].localIds.SequenceEqual(report.assets[i].localIds))throw new Exception("Reopened local IDs differ");
                 } else throw new Exception("Unknown adoption mode");
+                report.engineObjectsAfter=CheckIntakeEngineObjects(job.intakeEngineObjects);
                 report.status=job.mode=="code"?"staged":"verified";report.referencesPreserved=job.mode!="code";
             }
             Save();code=0;
