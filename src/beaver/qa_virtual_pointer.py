@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .errors import fail
+from .errors import BeaverError, fail
 from .io import encoded, load, new_output, read, safe, sha, write_json
 from .output_limits import digest_file
 
@@ -576,9 +576,279 @@ def _stop_cleanup(config, envelope, discovery, state_path):
     return True, None
 
 
+def _read_private_receipt(path, parent):
+    path = Path(path); parent = Path(parent)
+    for item in (path, *path.parents):
+        if item.is_symlink(): fail("QA_VP_LIFECYCLE_PATH", item.name, "Lifecycle evidence cannot contain symlink paths")
+    try: info = parent.stat()
+    except OSError as error: fail("QA_VP_LIFECYCLE_ROOT", "receiptRoot", f"Lifecycle receipt root cannot be read ({type(error).__name__})")
+    if not parent.is_dir() or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:
+        fail("QA_VP_LIFECYCLE_ROOT", "receiptRoot", "Lifecycle evidence must be inside a user-owned 0700 receipt directory")
+    try: fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError as error: fail("QA_VP_LIFECYCLE_MISSING", path.name, f"Pinned lifecycle evidence cannot be opened ({type(error).__name__})")
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.getuid():
+            fail("QA_VP_LIFECYCLE_FILE", path.name, "Lifecycle evidence must be a user-owned regular file")
+        raw = os.read(fd, 64 * 1024 + 1)
+    finally: os.close(fd)
+    if len(raw) > 64 * 1024: fail("QA_VP_LIFECYCLE_FILE", path.name, "Lifecycle evidence exceeds its byte budget")
+    try: value = load(raw, max_nodes=3000)
+    except Exception: fail("QA_VP_LIFECYCLE_JSON", path.name, "Lifecycle evidence is malformed")
+    return value, sha(raw)
+
+
+def _retirement_paths(envelope, config):
+    from .qa_runtime import _read_owner, _read_control_json, _guard_root, _app_executable, _hash_tree, _bundle_identifier, _id
+    from .qa_binding import _same
+    old = envelope["instance"]
+    root, profile_root, owner = _read_owner(old["projectId"], old["buildId"], old["profileId"], envelope["ownerSha256"])
+    run = _id(envelope["runId"], "runId")
+    data = root.parent.parent / "data"
+    record_path = _guard_root(data / "runs" / (run + ".json"))
+    record = _read_control_json(record_path, 128 * 1024)
+    if (record.get("schemaVersion"), record.get("contract"), record.get("runId"), record.get("projectId"), record.get("buildId"), record.get("profileId"), record.get("expectedOwnerSha256")) != (
+            1, "beaver-unity-qa-process/1", run, old["projectId"], old["buildId"], old["profileId"], envelope["ownerSha256"]):
+        fail("QA_VP_ARCHIVE_IDENTITY", run, "Archived QA record does not match the explicit session owner/run identity")
+    if (record.get("owned") is not True or record.get("pid") != old.get("pid") or record.get("status") != "exited" or type(record.get("exitCode")) is not int or record["exitCode"] != 0
+            or record.get("stoppedByBudget") is not False or not isinstance(record.get("exitedUtc"), str)):
+        fail("QA_VP_ARCHIVE_EXIT", run, "Retirement requires an owned zero-exit, non-budget archived run")
+    sandbox_record = record.get("documentsSandbox")
+    sandbox_keys = {"requested", "profilePath", "profileSha256", "launchCompleted", "enforcementIndependentlyVerified"}
+    if (not isinstance(sandbox_record, dict) or set(sandbox_record) != sandbox_keys
+            or sandbox_record.get("launchCompleted") is not True or sandbox_record.get("enforcementIndependentlyVerified") is not False):
+        fail("QA_VP_ARCHIVE_HISTORY", run, "Archived run does not match the expected completed launch record")
+    running_record = dict(record)
+    running_record["status"] = "running"
+    for key in ("exitCode", "exitedUtc", "stoppedByBudget"): running_record.pop(key, None)
+    running_sandbox = dict(sandbox_record); running_sandbox["launchCompleted"] = False
+    running_record["documentsSandbox"] = running_sandbox
+    if sha(encoded(running_record)) != old.get("processRecordSha256"):
+        fail("QA_VP_ARCHIVE_HISTORY", run, "Archived record does not reverse-project to the session's pinned running record")
+    try:
+        exited_at = datetime.fromisoformat(record["exitedUtc"].replace("Z", "+00:00"))
+        if exited_at.tzinfo is None or exited_at.utcoffset() is None: raise ValueError("timezone required")
+    except Exception: fail("QA_VP_ARCHIVE_EXIT", run, "Archived exit time is malformed")
+    app = root / "App.app"; exe = _app_executable(app); log = _guard_root(data / "logs" / old["profileId"] / (run + ".log"))
+    if (record.get("cwd") != str(app) or record.get("executablePath") != str(exe) or record.get("logPath") != str(log)
+            or owner.get("bundle", {}).get("path") != str(app) or not _same(record.get("executablePath"), exe)):
+        fail("QA_VP_ARCHIVE_PATH", run, "Archived executable, app cwd or log path differs from the owned build")
+    try: log_info = os.lstat(log)
+    except OSError: fail("QA_VP_ARCHIVE_LOG", run, "Archived run log is missing or unreadable")
+    if not stat.S_ISREG(log_info.st_mode) or stat.S_ISLNK(log_info.st_mode) or log_info.st_nlink != 1 or log_info.st_uid != os.getuid():
+        fail("QA_VP_ARCHIVE_LOG", run, "Archived run log is not an independent regular file")
+    bundle_hash = _hash_tree(app, max_file_bytes=owner["artifactMaxFileBytes"], max_total_bytes=owner["artifactMaxTotalBytes"], max_files=owner["artifactMaxFiles"])
+    if bundle_hash != owner.get("bundle", {}).get("treeSha256"):
+        fail("QA_VP_ARCHIVE_BUNDLE_DRIFT", run, "Owned app bundle differs from its immutable owner pin")
+    if _bundle_identifier(app) != owner.get("bundleIdentifier"):
+        fail("QA_VP_ARCHIVE_BUNDLE_ID", run, "Owned app bundle identifier differs from its owner")
+    exe_sha = digest_file(exe, max_bytes=owner["artifactMaxFileBytes"])
+    if exe_sha != record.get("executableSha256") or exe_sha != old.get("executableSha256"):
+        fail("QA_VP_ARCHIVE_EXE_DRIFT", run, "Archived executable differs from the session/owner identity")
+
+    if record.get("mode") != owner.get("testMode") or record.get("mode") not in ("normal", "denyDocuments"):
+        fail("QA_VP_ARCHIVE_MODE", run, "Archived launch mode differs from its owner")
+    expected_args = [str(exe), *owner.get("arguments", []), "-logFile", str(log)]
+    sandbox = record.get("documentsSandbox")
+    if not isinstance(sandbox, dict): fail("QA_VP_ARCHIVE_SANDBOX", run, "Archived sandbox record is incomplete")
+    if record["mode"] == "denyDocuments":
+        docs = (Path.home() / "Documents").resolve()
+        escaped = str(docs).replace("\\", "\\\\").replace('"', '\\"')
+        policy = f'(version 1)\n(allow default)\n(deny file-read* (subpath "{escaped}"))\n(deny file-write* (subpath "{escaped}"))\n'
+        policy_path = _guard_root(data / "receipts" / ("deny-documents-" + run + ".sb"))
+        if (sandbox.get("requested") is not True or sandbox.get("profilePath") != str(policy_path)
+                or sandbox.get("profileSha256") != sha(policy.encode("utf-8")) or not policy_path.is_file()
+                or read(policy_path, 64 * 1024).decode("utf-8") != policy):
+            fail("QA_VP_ARCHIVE_SANDBOX", run, "Archived denyDocuments policy differs from the launch receipt")
+        expected_command = ["/usr/bin/sandbox-exec", "-p", policy, *expected_args]
+    else:
+        if sandbox.get("requested") is not False: fail("QA_VP_ARCHIVE_SANDBOX", run, "Unexpected sandbox wrapper in the archived run")
+        expected_command = expected_args
+    if record.get("command") != expected_command:
+        fail("QA_VP_ARCHIVE_ARGUMENTS", run, "Archived command differs from the owner/profile/executable/log contract")
+
+    origin = record.get("instanceOrigin")
+    if not isinstance(origin, dict) or origin.get("status") != "verified" or origin.get("pid") != old.get("pid") or origin.get("uniqueId") != old.get("uniqueId") or origin.get("startTime") != old.get("startTime"):
+        fail("QA_VP_ARCHIVE_BIRTH", run, "Archived process birth identity differs from the immutable bound session")
+    child_args = expected_args
+    if origin.get("expectedArgumentsSha256") != sha(encoded(child_args)):
+        fail("QA_VP_ARCHIVE_ARGUMENTS", run, "Archived birth argument pin differs from the owned run command")
+    initial_phase = origin.get("initialPhase")
+    if initial_phase == "player":
+        initial_executable_ok = _same(origin.get("initialExecutablePath"), exe)
+    elif initial_phase == "sandbox-exec" and record.get("mode") == "denyDocuments":
+        initial_executable_ok = _same(origin.get("initialExecutablePath"), "/usr/bin/sandbox-exec")
+    else:
+        initial_executable_ok = False
+    if not initial_executable_ok:
+        fail("QA_VP_ARCHIVE_BIRTH", run, "Archived initial executable/phase differs from the explicit Player launch mode")
+
+    expected_env = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "HOME": str(Path.home()),
+                    "TMPDIR": str(data / "tmp" / old["profileId"]), "LANG": "en_US.UTF-8"}
+    bindings = owner.get("environmentBindings")
+    inputs = owner.get("configInputs")
+    if not isinstance(bindings, dict) or not isinstance(inputs, dict): fail("QA_VP_ARCHIVE_BINDINGS", run, "Owner typed environment/config bindings are incomplete")
+    pointer_binding = bindings.get(ENV_NAME)
+    if not isinstance(pointer_binding, dict) or pointer_binding.get("kind") != "config" or pointer_binding.get("id") not in inputs:
+        fail("QA_VP_ARCHIVE_BINDINGS", ENV_NAME, "Original build owner lacks its explicit virtual-pointer typed config binding")
+    for name, binding in bindings.items():
+        if binding.get("kind") == "profile":
+            value = str(profile_root)
+        else:
+            row = inputs.get(binding.get("id"))
+            if not isinstance(row, dict) or not isinstance(row.get("path"), str) or not isinstance(row.get("sha256"), str):
+                fail("QA_VP_ARCHIVE_BINDINGS", name, "Owner config binding is incomplete")
+            path = _guard_root(row["path"])
+            if not path.is_file() or digest_file(path) != row["sha256"]:
+                fail("QA_VP_ARCHIVE_CONFIG_DRIFT", name, "Owned typed config copy differs from its pin")
+            value = str(path)
+        expected_env[name] = value
+    pointer_row = inputs[pointer_binding["id"]]
+    if pointer_row.get("sha256") != envelope["configSha256"] or pointer_row.get("path") != record.get("cleanEnvironment", {}).get(ENV_NAME):
+        fail("QA_VP_ARCHIVE_CONFIG_BINDING", ENV_NAME, "Archived live environment/config-copy binding differs from the session")
+    if record.get("cleanEnvironment") != expected_env:
+        fail("QA_VP_ARCHIVE_ENVIRONMENT", run, "Archived profile or typed config environment differs from owner bindings")
+    if (config.get("projectId"), config.get("buildId"), config.get("profileId")) != (old["projectId"], old["buildId"], old["profileId"]):
+        fail("QA_VP_ARCHIVE_CONFIG_BINDING", "config", "Private channel config belongs to a different owner identity")
+    return root, profile_root, data, record_path, record, owner, app, exe, log
+
+
+def _validate_lifecycle(envelope, config, discovery):
+    receipt_root = Path(config["receiptRoot"]); channel_root = Path(config["endpointPath"]).parent
+    if not receipt_root.is_relative_to(channel_root): fail("QA_VP_LIFECYCLE_PATH", "receiptRoot", "Lifecycle receipt escaped the private channel")
+    path = receipt_root / ("lifecycle-" + discovery["instanceId"] + ".json")
+    lifecycle, lifecycle_sha = _read_private_receipt(path, receipt_root)
+    expected_keys = {"schemaVersion", "contract", "status", "reason", "channelId", "instanceId", "pid", "physicalTakeover", "unityFocused", "applicationBatchMode", "osForeground", "osFrontmostAvailable", "osFrontmostPid", "screenWidth", "screenHeight", "observedScreenWidth", "observedScreenHeight", "frame", "framesQueued", "framesConsumed", "inputEventsQueued", "ackFrame", "lastEventFrame", "buttonDown", "deviceCreated", "listenerStarted", "endpointPublished", "cleanupPerformed", "actionRoutesRestored", "uiRoutesRestored", "deviceRemoved", "listenerStopped", "endpointRemoved", "backgroundRestored"}
+    if not isinstance(lifecycle, dict) or set(lifecycle) != expected_keys:
+        fail("QA_VP_LIFECYCLE_SCHEMA", path.name, "Lifecycle receipt does not match the archived lifecycle contract")
+    if (lifecycle.get("schemaVersion"), lifecycle.get("contract"), lifecycle.get("status"), lifecycle.get("reason")) != (1, "beaver-virtual-pointer-lifecycle/1", "stopped", "application_quit"):
+        fail("QA_VP_LIFECYCLE_REASON", path.name, "Only a clean application_quit lifecycle receipt can retire this channel")
+    if (lifecycle.get("channelId"), lifecycle.get("instanceId"), lifecycle.get("pid"), lifecycle.get("screenWidth"), lifecycle.get("screenHeight"), lifecycle.get("observedScreenWidth"), lifecycle.get("observedScreenHeight")) != (config["channelId"], discovery["instanceId"], discovery["pid"], discovery["screenWidth"], discovery["screenHeight"], discovery["screenWidth"], discovery["screenHeight"]):
+        fail("QA_VP_LIFECYCLE_IDENTITY", path.name, "Lifecycle channel/instance/PID/dimensions differ from the original discovery")
+    if any(lifecycle.get(k) is not True for k in ("deviceCreated", "listenerStarted", "endpointPublished")):
+        fail("QA_VP_LIFECYCLE_STARTUP", path.name, "Lifecycle receipt does not prove the bound companion fully started")
+    if (lifecycle.get("cleanupPerformed") is not True or lifecycle.get("buttonDown") is not False
+            or lifecycle.get("physicalTakeover") is not False):
+        fail("QA_VP_LIFECYCLE_CLEANUP", path.name, "Lifecycle receipt does not prove clean input release and shutdown")
+    if any(lifecycle.get(k) is not True for k in ("actionRoutesRestored", "deviceRemoved", "listenerStopped", "endpointRemoved", "backgroundRestored")):
+        fail("QA_VP_LIFECYCLE_CLEANUP", path.name, "One or more required Unity cleanup flags are not true")
+    if type(lifecycle.get("uiRoutesRestored")) is not int or lifecycle["uiRoutesRestored"] < 1:
+        fail("QA_VP_LIFECYCLE_CLEANUP", path.name, "Lifecycle receipt does not prove UI routes were restored")
+    return path, lifecycle_sha, lifecycle
+
+
+def _endpoint_is_absent(config):
+    try: os.lstat(config["endpointPath"])
+    except FileNotFoundError: return True
+    except OSError: return False
+    return False
+
+
+def _archive_snapshot(envelope, config, discovery, state_path, record_path, expected_record_sha, lifecycle_path, lifecycle_sha, state_sha):
+    from .qa_runtime import _read_control_json
+    record = _read_control_json(record_path, 128 * 1024)
+    record_sha = digest_file(record_path)
+    if record_sha != expected_record_sha:
+        fail("QA_VP_ARCHIVE_CHANGED", envelope["runId"], "Archived QA process receipt changed before retirement")
+    lifecycle, current_lifecycle_sha = _read_private_receipt(lifecycle_path, Path(config["receiptRoot"]))
+    if current_lifecycle_sha != lifecycle_sha:
+        fail("QA_VP_LIFECYCLE_CHANGED", lifecycle_path.name, "Lifecycle receipt changed before retirement")
+    private_config = _read_private(envelope["configPath"])
+    if digest_file(envelope["configPath"]) != envelope["configSha256"] or private_config["channelId"] != config["channelId"]:
+        fail("QA_VP_CONFIG_DRIFT", "config", "Private channel config changed before retirement")
+    state = _read_private(state_path)
+    if digest_file(state_path) != state_sha or (state.get("channelId"), state.get("instanceId"), state.get("deviceId")) != (config["channelId"], discovery["instanceId"], discovery["deviceId"]):
+        fail("QA_VP_STATE_CHANGED", "client-state", "Private client state changed before retirement")
+    if process_identity_snapshot(discovery["pid"]).get("status") != "missing":
+        fail("QA_VP_PID_PRESENT", "pid", "Original Player PID is not proven absent at retirement")
+    if not _endpoint_is_absent(config): fail("QA_VP_ENDPOINT_PRESENT", "endpoint", "Channel endpoint is present or cannot be proven absent")
+    return record, lifecycle, state
+
+
+def _retire_clean_exit(session_path, envelope, config, out):
+    discovery = envelope["discovery"]
+    if (config["channelId"], config["projectId"], config["buildId"], config["profileId"]) != (envelope["channelId"], envelope["instance"]["projectId"], envelope["instance"]["buildId"], envelope["instance"]["profileId"]):
+        fail("QA_VP_ARCHIVE_CONFIG_BINDING", "config", "Channel config/session owner identities do not match")
+    if (not HEX32.fullmatch(str(envelope.get("sessionId", ""))) or discovery.get("backend") != BACKEND
+            or discovery.get("channelId") != config["channelId"] or not HEX32.fullmatch(str(discovery.get("instanceId", "")))
+            or discovery.get("pid") != envelope["instance"].get("pid") or not isinstance(discovery.get("deviceId"), str)
+            or not IDENT.fullmatch(discovery["deviceId"]) or type(discovery.get("screenWidth")) is not int or discovery["screenWidth"] <= 0
+            or type(discovery.get("screenHeight")) is not int or discovery["screenHeight"] <= 0
+            or discovery.get("unityVersion") != config["unityVersion"] or discovery.get("inputSystemVersion") != config["inputSystemVersion"]
+            or discovery.get("host") != "127.0.0.1" or type(discovery.get("port")) is not int or not 1 <= discovery["port"] <= 65535
+            or not HEX32.fullmatch(str(discovery.get("nonce", ""))) or not HEX32.fullmatch(str(discovery.get("buildGUID", "")))
+            or envelope["instance"].get("runId") != envelope.get("runId")):
+        fail("QA_VP_ARCHIVE_SESSION", "session", "Archive session, process, discovery or device identity is incomplete/mismatched")
+    channel_root = _private_root() / config["channelId"]
+    if (Path(envelope["configPath"]) != channel_root / "config.json"
+            or Path(config["endpointPath"]) != channel_root / "endpoint.json"
+            or Path(config["receiptRoot"]) != channel_root / "receipts"
+            or Path(envelope["statePath"]) != channel_root / "client-state.json"):
+        fail("QA_VP_ARCHIVE_CHANNEL_PATH", config["channelId"], "Only the original private channel config/state paths may be retired")
+    root, profile_root, data, record_path, record, owner, app, exe, log = _retirement_paths(envelope, config)
+    from .qa_runtime import _read_owner, _hash_tree
+    state_path = Path(envelope["statePath"])
+    if state_path != Path(envelope["configPath"]).with_name("client-state.json"):
+        fail("QA_VP_STATE_PATH", "client-state", "Client state is not the original channel state file")
+    state = _read_private(state_path)
+    if (state.get("schemaVersion"), state.get("channelId"), state.get("instanceId"), state.get("deviceId")) != (1, config["channelId"], discovery["instanceId"], discovery["deviceId"]):
+        fail("QA_VP_STATE_IDENTITY", "client-state", "Client state is not bound to the original channel/device")
+    if type(state.get("nextSequence")) is not int or state["nextSequence"] < 1 or type(state.get("blockedUnknown")) is not bool or type(state.get("stopped")) is not bool:
+        fail("QA_VP_STATE_SCHEMA", "client-state", "Client state fields are malformed")
+    state_sha = digest_file(state_path)
+    lifecycle_path, lifecycle_sha, lifecycle = _validate_lifecycle(envelope, config, discovery)
+    if not _endpoint_is_absent(config): fail("QA_VP_ENDPOINT_PRESENT", "endpoint", "Original channel endpoint or another object is present")
+    pid_before = process_identity_snapshot(discovery["pid"])
+    if pid_before.get("status") != "missing":
+        fail("QA_VP_PID_PRESENT", "pid", "Original Player PID must be strictly missing before retirement")
+    record_sha = digest_file(record_path)
+    # Re-read immutable owner/profile pins and the bundle at the retirement boundary.
+    _read_owner(envelope["instance"]["projectId"], envelope["instance"]["buildId"], envelope["instance"]["profileId"], envelope["ownerSha256"])
+    if _hash_tree(app, max_file_bytes=owner["artifactMaxFileBytes"], max_total_bytes=owner["artifactMaxTotalBytes"], max_files=owner["artifactMaxFiles"]) != owner["bundle"]["treeSha256"]:
+        fail("QA_VP_ARCHIVE_BUNDLE_DRIFT", envelope["runId"], "Owned app bundle changed before retirement")
+    output = new_output(out, [safe(session_path), safe(envelope["configPath"]).parent, safe(record_path).parent, safe(app), safe(lifecycle_path)])
+    _archive_snapshot(envelope, config, discovery, state_path, record_path, record_sha, lifecycle_path, lifecycle_sha, state_sha)
+    # Re-read owner as well as the archived process file after the last evidence
+    # pass; no subprocess is launched, signaled, or queried through ps.
+    _read_owner(envelope["instance"]["projectId"], envelope["instance"]["buildId"], envelope["instance"]["profileId"], envelope["ownerSha256"])
+    if process_identity_snapshot(discovery["pid"]).get("status") != "missing":
+        fail("QA_VP_PID_PRESENT", "pid", "Original Player PID is not proven absent immediately before retirement")
+    if digest_file(record_path) != record_sha:
+        fail("QA_VP_ARCHIVE_CHANGED", envelope["runId"], "Archived QA process receipt changed immediately before retirement")
+    _, final_lifecycle_sha = _read_private_receipt(lifecycle_path, Path(config["receiptRoot"]))
+    if final_lifecycle_sha != lifecycle_sha:
+        fail("QA_VP_LIFECYCLE_CHANGED", lifecycle_path.name, "Lifecycle receipt changed immediately before retirement")
+    if digest_file(envelope["configPath"]) != envelope["configSha256"] or digest_file(state_path) != state_sha or not _endpoint_is_absent(config):
+        fail("QA_VP_RETIREMENT_RACE", envelope["channelId"], "Channel evidence changed immediately before retirement")
+    # Retire only these two files belonging to the exact channel. Pin receipts,
+    # QA config copies, app bundle, build owner and archived run remain untouched.
+    try:
+        os.unlink(envelope["configPath"])
+        os.unlink(state_path)
+    except OSError as error:
+        fail("QA_VP_RETIREMENT_DELETE", envelope["channelId"], f"Private channel files could not be retired ({type(error).__name__})")
+    receipt_path = output / "virtual-pointer-stop.json"
+    result = {"schemaVersion": 1, "contract": "beaver-virtual-pointer-stop-result/1", "status": "stopped",
+              "backend": BACKEND, "channelId": envelope["channelId"], "instanceId": discovery["instanceId"],
+              "retiredAfterCleanExit": True, "dispatchPerformed": False, "cleanupPerformed": True,
+              "cleanupEvidence": "lifecycle-receipt", "lifecycleReceipt": str(lifecycle_path),
+              "lifecycleReceiptSha256": lifecycle_sha, "lifecycleReason": lifecycle["reason"],
+              "archivedRun": str(record_path), "archivedRunSha256": record_sha,
+              "processIdentity": "kernel-pid-missing", "launchPerformed": False}
+    write_json(receipt_path, result)
+    return {"status": "stopped", "receipt": str(receipt_path), "cleanupPerformed": True,
+            "retiredAfterCleanExit": True, "dispatchPerformed": False, "cleanupEvidence": "lifecycle-receipt",
+            "lifecycleReceiptSha256": lifecycle_sha, "launchPerformed": False}
+
+
 def stop(session, expected_session, out):
     path, envelope, config = _session(session, expected_session); discovery = envelope["discovery"]
-    _owned_live(envelope)
+    try: _owned_live(envelope)
+    except BeaverError as error:
+        if error.code == "QA_BIND_NOT_RUNNING":
+            with _state_lock(envelope["statePath"]):
+                return _retire_clean_exit(path, envelope, config, out)
+        raise
     output = new_output(out, [path, safe(envelope["configPath"]).parent, safe(config["endpointPath"]), Path(config["receiptRoot"])])
     state_path = Path(envelope["statePath"])
     with _state_lock(state_path):

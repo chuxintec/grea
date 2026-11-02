@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import socketserver
 import tempfile
 import threading
@@ -9,7 +10,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from beaver import qa_virtual_pointer as vp
+from beaver.errors import BeaverError
 from beaver.io import encoded, sha, write_json
+from beaver.output_limits import digest_file
 
 READONLY_REQUEST_KEYS = {"schemaVersion", "contract", "backend", "channelId", "token", "operation", "sequence"}
 
@@ -100,6 +103,134 @@ class VirtualPointerTests(unittest.TestCase):
         return (patch.object(qa_binding, "_resolve", return_value={**self.instance, "launchBundlePath": str(self.fake_app), "processRecord": str(self.fake_app / "run.json")}),
                 patch.object(qa_runtime, "_read_owner", return_value=(self.root, self.root, owner)),
                 patch.object(process_identity, "snapshot", return_value=self.snapshot))
+
+    def make_retirement_case(self):
+        from beaver import qa_runtime
+        from tests.test_qa_runtime import QaRuntimePrepareTests
+
+        fixture = QaRuntimePrepareTests(); fixture.setUp(); self.addCleanup(fixture.tearDown)
+        prepare_spec = {"schemaVersion": 1, "contract": vp.PREPARE_CONTRACT, "projectId": "fixture-project", "buildId": "build-a",
+                        "profileId": "profile-a", "unityVersion": "6000.6.2f1", "inputSystemVersion": "1.20.1",
+                        "leaseSeconds": 300, "idleReleaseSeconds": 10, "commandMaxSeconds": 3, "stopOnTakeover": True}
+        vp_spec = self.root / ("retire-prepare-" + uuid.uuid4().hex + ".json")
+        write_json(vp_spec, prepare_spec)
+        vp_prepared = vp.prepare(vp_spec, sha(encoded(prepare_spec)), self.root / ("retire-vp-prepared-" + uuid.uuid4().hex))
+        channel = json.loads(Path(vp_prepared["channel"]).read_text())
+        private_config = vp._read_private(channel["configPath"])
+
+        qa_spec, _ = fixture.make_spec(profile="profile-a", test_mode="denyDocuments")
+        qa_doc = json.loads(Path(qa_spec).read_text())
+        qa_doc["configInputs"]["virtualPointer"] = {"path": channel["configPath"], "sha256": channel["configSha256"]}
+        qa_doc["environmentBindings"][vp.ENV_NAME] = {"kind": "config", "id": "virtualPointer"}
+        write_json(qa_spec, qa_doc)
+        prepared = fixture.call_prepare((qa_spec, digest_file(qa_spec)))
+        owner = prepared["owner"]; owner_sha = prepared["ownerSha256"]
+        build_root = fixture.mock_home / "Library/Application Support/beaver/unity-qa/fixture-project/builds/build-a"
+        app = build_root / "App.app"; exe = app / "Contents/MacOS/Fixture"
+        data = build_root.parent.parent / "data"
+        run_id = "archived-run-a"; pid = 4321; unique = "4321:100:7"; start = [100, 7]
+        log = data / "logs/profile-a" / (run_id + ".log"); log.parent.mkdir(parents=True, exist_ok=True); log.write_bytes(b"safe test log\n")
+        console_log = log.with_name(run_id + ".console.log"); console_log.write_bytes(b"safe console log\n")
+        expected_args = [str(exe), *owner["arguments"], "-logFile", str(log)]
+        docs = (Path.home() / "Documents").resolve()
+        escaped = str(docs).replace("\\", "\\\\").replace('"', '\\"')
+        policy = f'(version 1)\n(allow default)\n(deny file-read* (subpath "{escaped}"))\n(deny file-write* (subpath "{escaped}"))\n'
+        policy_path = data / "receipts" / ("deny-documents-" + run_id + ".sb")
+        policy_path.parent.mkdir(parents=True, exist_ok=True); policy_path.write_text(policy, encoding="utf-8")
+        sandbox = {"requested": True, "profilePath": str(policy_path), "profileSha256": sha(policy.encode()),
+                   "launchCompleted": True, "enforcementIndependentlyVerified": False}
+        command = ["/usr/bin/sandbox-exec", "-p", policy, *expected_args]
+        env = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "HOME": str(Path.home()),
+               "TMPDIR": str(data / "tmp/profile-a"), "LANG": "en_US.UTF-8"}
+        profile_root = prepared["profileRoot"]
+        for name, binding in owner["environmentBindings"].items():
+            env[name] = str(profile_root) if binding["kind"] == "profile" else owner["configInputs"][binding["id"]]["path"]
+        origin = {"status": "verified", "pid": pid, "parentPid": 123, "uniqueId": unique, "startTime": start,
+                  "initialExecutablePath": str(exe), "initialPhase": "player", "expectedArgumentsSha256": sha(encoded(expected_args)),
+                  "environmentMatched": True, "birthIdentitySource": "PROC_PIDTBSDINFO"}
+        record = {"schemaVersion": 1, "contract": "beaver-unity-qa-process/1", "runId": run_id,
+                  "projectId": "fixture-project", "buildId": "build-a", "profileId": "profile-a", "expectedOwnerSha256": owner_sha,
+                  "pid": pid, "owned": True, "status": "exited", "exitCode": 0, "stoppedByBudget": False,
+                  "startedUtc": "2026-11-02T12:10:00+00:00", "budgetSeconds": 120,
+                  "exitedUtc": "2026-11-02T12:17:42.692185+00:00", "cwd": str(app), "executablePath": str(exe),
+                  "executableSha256": digest_file(exe), "command": command, "logPath": str(log), "mode": "denyDocuments",
+                  "consoleLogPath": str(console_log), "documentsSandbox": sandbox, "cleanEnvironment": env,
+                  "pidIdentity": {"status": "verified", "pid": pid, "uniqueId": unique, "startTime": start},
+                  "instanceOrigin": origin}
+        run_path = data / "runs" / (run_id + ".json"); run_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        qa_runtime._write_control_json(run_path, record, create=True)
+        running_record = dict(record); running_record["status"] = "running"
+        for key in ("exitCode", "exitedUtc", "stoppedByBudget"): running_record.pop(key, None)
+        running_sandbox = dict(sandbox); running_sandbox["launchCompleted"] = False
+        running_record["documentsSandbox"] = running_sandbox
+        running_record_sha = sha(encoded(running_record))
+
+        instance_id = "5" * 32; nonce = "6" * 32; build_guid = "7" * 32; device_id = "42"
+        discovery = {"schemaVersion": 1, "backend": vp.BACKEND, "channelId": private_config["channelId"], "host": "127.0.0.1", "port": 45678,
+                     "pid": pid, "instanceId": instance_id, "nonce": nonce, "buildGUID": build_guid, "deviceId": device_id,
+                     "unityVersion": private_config["unityVersion"], "inputSystemVersion": private_config["inputSystemVersion"],
+                     "coordinateSpace": "unity-screen-pixels", "screenWidth": 640, "screenHeight": 480}
+        lifecycle = {"schemaVersion": 1, "contract": "beaver-virtual-pointer-lifecycle/1", "status": "stopped", "reason": "application_quit",
+                     "channelId": private_config["channelId"], "instanceId": instance_id, "pid": pid, "physicalTakeover": False,
+                     "unityFocused": True, "applicationBatchMode": True, "osForeground": False, "osFrontmostAvailable": True,
+                     "osFrontmostPid": 420, "screenWidth": 640, "screenHeight": 480, "observedScreenWidth": 640,
+                     "observedScreenHeight": 480, "frame": 1000, "framesQueued": 4, "framesConsumed": 4,
+                     "inputEventsQueued": 4, "ackFrame": 998, "lastEventFrame": 998, "buttonDown": False,
+                     "deviceCreated": True, "listenerStarted": True, "endpointPublished": True, "cleanupPerformed": True,
+                     "actionRoutesRestored": True, "uiRoutesRestored": 1, "deviceRemoved": True, "listenerStopped": True,
+                     "endpointRemoved": True, "backgroundRestored": True}
+        receipt_root = Path(private_config["receiptRoot"])
+        lifecycle_path = receipt_root / ("lifecycle-" + instance_id + ".json")
+        write_json(lifecycle_path, lifecycle); os.chmod(lifecycle_path, 0o644)
+        state_path = Path(private_config["endpointPath"]).parent / "client-state.json"
+        state = {"schemaVersion": 1, "channelId": private_config["channelId"], "instanceId": instance_id,
+                 "deviceId": device_id, "nextSequence": 5, "blockedUnknown": False, "stopped": False,
+                 "lastReceipt": {"status": "consumed"}}
+        vp._write_private(state_path, state)
+        instance = {"projectId": "fixture-project", "buildId": "build-a", "profileId": "profile-a", "runId": run_id,
+                    "pid": pid, "uniqueId": unique, "startTime": start, "executableSha256": digest_file(exe),
+                    "processRecordSha256": running_record_sha}
+        session = {"schemaVersion": 1, "contract": vp.SESSION_CONTRACT, "sessionId": uuid.uuid4().hex, "backend": vp.BACKEND,
+                   "channelId": private_config["channelId"], "configPath": channel["configPath"],
+                   "configSha256": channel["configSha256"], "statePath": str(state_path), "discovery": discovery,
+                   "instance": instance, "ownerSha256": owner_sha, "runId": run_id,
+                   "createdUtc": "2026-11-02T12:00:00+00:00", "launchPerformed": False}
+        session_path = self.root / ("retire-session-" + uuid.uuid4().hex + ".json"); write_json(session_path, session)
+        return {"fixture": fixture, "homeRoot": fixture.mock_home / "Library/Application Support/beaver/unity-qa",
+                "owner": owner, "ownerSha": owner_sha, "runPath": run_path, "record": record, "app": app,
+                "config": private_config, "channel": channel, "lifecyclePath": lifecycle_path, "lifecycle": lifecycle,
+                "statePath": state_path, "state": state, "session": session, "sessionPath": session_path,
+                "sessionSha": digest_file(session_path), "policyPath": policy_path, "typedConfigPath": owner["configInputs"]["virtualPointer"]["path"],
+                "out": self.root / ("retire-out-" + uuid.uuid4().hex)}
+
+    def archived_stop_context(self, case):
+        from beaver import process_identity, qa_binding, qa_runtime
+        resolve_error = BeaverError("QA_BIND_NOT_RUNNING", case["session"]["runId"], "Only running records use live binding")
+        stack = [patch.object(qa_binding, "_resolve", side_effect=resolve_error),
+                 patch.object(qa_runtime, "_home_root", return_value=case["homeRoot"]),
+                 patch.object(process_identity, "snapshot", return_value={"status": "missing", "pid": case["session"]["instance"]["pid"]}),
+                 patch.object(vp, "_exchange", side_effect=AssertionError("retired stop must not dispatch"))]
+        return stack
+
+    def call_archived_stop(self, case, patches=None):
+        contexts = self.archived_stop_context(case) if patches is None else patches
+        for p in contexts: p.__enter__()
+        try:
+            return vp.stop(case["sessionPath"], case["sessionSha"], case["out"])
+        finally:
+            for p in reversed(contexts): p.__exit__(None, None, None)
+
+    def repin_archived_run(self, case, record):
+        from beaver import qa_runtime
+        qa_runtime._write_control_json(case["runPath"], record, create=False)
+        case["record"] = record
+        running = dict(record); running["status"] = "running"
+        for key in ("exitCode", "exitedUtc", "stoppedByBudget"): running.pop(key, None)
+        sandbox = dict(record["documentsSandbox"]); sandbox["launchCompleted"] = False
+        running["documentsSandbox"] = sandbox
+        case["session"]["instance"]["processRecordSha256"] = sha(encoded(running))
+        write_json(case["sessionPath"], case["session"])
+        case["sessionSha"] = digest_file(case["sessionPath"])
 
     def receipt(self, request, status="consumed", **extra):
         base = {"schemaVersion": 1, "contract": vp.RECEIPT_CONTRACT, "backend": vp.BACKEND, "status": status,
@@ -364,6 +495,179 @@ class VirtualPointerTests(unittest.TestCase):
         receipt = self.receipt({"sequence": 0}, "pending")
         with self.assertRaises(Exception):
             vp._public_receipt(receipt, "a" * 64)
+
+    def test_archived_clean_exit_retires_only_original_private_files_without_dispatch(self):
+        case = self.make_retirement_case()
+        lifecycle_sha = digest_file(case["lifecyclePath"])
+        typed_copy = Path(case["typedConfigPath"])
+        output = self.call_archived_stop(case)
+        data = json.loads(Path(output["receipt"]).read_text())
+        self.assertEqual(output["status"], "stopped")
+        self.assertTrue(output["retiredAfterCleanExit"])
+        self.assertFalse(output["dispatchPerformed"])
+        self.assertEqual(data["cleanupEvidence"], "lifecycle-receipt")
+        self.assertEqual(data["lifecycleReceiptSha256"], lifecycle_sha)
+        self.assertFalse(Path(case["channel"]["configPath"]).exists())
+        self.assertFalse(case["statePath"].exists())
+        self.assertTrue(case["lifecyclePath"].exists())
+        self.assertEqual(digest_file(case["lifecyclePath"]), lifecycle_sha)
+        self.assertTrue(typed_copy.exists())
+        self.assertTrue(case["app"].exists())
+        self.assertTrue(case["runPath"].exists())
+
+    def test_archived_retirement_holds_state_lock_for_full_validation_and_delete(self):
+        from contextlib import contextmanager
+        case = self.make_retirement_case()
+        active = {"held": False}
+        original_lock = vp._state_lock
+        original_retire = vp._retire_clean_exit
+
+        @contextmanager
+        def traced_lock(path):
+            with original_lock(path):
+                active["held"] = True
+                try: yield
+                finally: active["held"] = False
+
+        def traced_retire(*args):
+            self.assertTrue(active["held"], "archived validation/deletion must run under the private state lock")
+            return original_retire(*args)
+
+        contexts = self.archived_stop_context(case)
+        contexts.extend((patch.object(vp, "_state_lock", side_effect=traced_lock),
+                         patch.object(vp, "_retire_clean_exit", side_effect=traced_retire)))
+        result = self.call_archived_stop(case, contexts)
+        self.assertTrue(result["retiredAfterCleanExit"])
+        self.assertFalse(active["held"])
+
+    def test_sandbox_exec_birth_phase_must_match_exact_owned_launch_mode(self):
+        accepted = self.make_retirement_case()
+        origin = dict(accepted["record"]["instanceOrigin"], initialPhase="sandbox-exec", initialExecutablePath="/usr/bin/sandbox-exec")
+        self.repin_archived_run(accepted, dict(accepted["record"], instanceOrigin=origin))
+        self.assertTrue(self.call_archived_stop(accepted)["retiredAfterCleanExit"])
+
+        rejected = self.make_retirement_case()
+        origin = dict(rejected["record"]["instanceOrigin"], initialPhase="player", initialExecutablePath="/usr/bin/sandbox-exec")
+        self.repin_archived_run(rejected, dict(rejected["record"], instanceOrigin=origin))
+        with self.assertRaises(BeaverError): self.call_archived_stop(rejected)
+        self.assertTrue(Path(rejected["channel"]["configPath"]).exists())
+        self.assertTrue(rejected["statePath"].exists())
+
+    def test_archived_retirement_requires_kernel_proven_missing_pid(self):
+        from beaver import process_identity
+        snapshots = [
+            {"status": "verified", "pid": 4321, "uniqueId": "4321:100:7"},
+            {"status": "verified", "pid": 4321, "uniqueId": "4321:999:1"},
+            {"status": "unknown", "pid": 4321},
+        ]
+        for i, snapshot in enumerate(snapshots):
+            with self.subTest(snapshot=snapshot["status"], unique=snapshot.get("uniqueId")):
+                case = self.make_retirement_case()
+                contexts = self.archived_stop_context(case)
+                contexts[2] = patch.object(process_identity, "snapshot", return_value=snapshot)
+                with self.assertRaises(BeaverError): self.call_archived_stop(case, contexts)
+                self.assertTrue(Path(case["channel"]["configPath"]).exists())
+                self.assertTrue(case["statePath"].exists())
+
+    def test_archived_retirement_requires_owned_zero_exit_nonbudget_record(self):
+        from beaver import qa_runtime
+        changes = (("status", "running"), ("status", "failed"), ("exitCode", 7), ("stoppedByBudget", True), ("owned", False))
+        for i, (key, value) in enumerate(changes):
+            with self.subTest(field=key, value=value):
+                case = self.make_retirement_case()
+                changed = dict(case["record"]); changed[key] = value
+                qa_runtime._write_control_json(case["runPath"], changed, create=False)
+                with self.assertRaises(BeaverError): self.call_archived_stop(case)
+                self.assertTrue(Path(case["channel"]["configPath"]).exists())
+                self.assertTrue(case["statePath"].exists())
+
+    def test_archived_record_origin_owner_typed_copy_and_bundle_drift_refuse_retirement(self):
+        from beaver import qa_runtime
+        cases = ("origin", "archive-args", "archive-unrelated-field", "owner", "typed-copy", "bundle", "profile")
+        for kind in cases:
+            with self.subTest(kind=kind):
+                case = self.make_retirement_case()
+                if kind == "origin":
+                    changed = dict(case["record"]); changed["instanceOrigin"] = dict(changed["instanceOrigin"], uniqueId="4321:999:1")
+                    qa_runtime._write_control_json(case["runPath"], changed, create=False)
+                elif kind == "archive-args":
+                    changed = dict(case["record"]); changed["command"] = list(changed["command"]); changed["command"][-1] = "foreign.log"
+                    qa_runtime._write_control_json(case["runPath"], changed, create=False)
+                elif kind == "archive-unrelated-field":
+                    changed = dict(case["record"]); changed["budgetSeconds"] = 121
+                    qa_runtime._write_control_json(case["runPath"], changed, create=False)
+                elif kind == "owner":
+                    owner_path = case["app"].parent / "qa-owner.json"
+                    owner = json.loads(owner_path.read_text()); owner["arguments"] = ["foreign"]
+                    write_json(owner_path, owner)
+                elif kind == "typed-copy":
+                    Path(case["typedConfigPath"]).write_text("{}", encoding="utf-8")
+                elif kind == "bundle":
+                    (case["app"] / "Contents/Resources/extra.txt").write_text("drift", encoding="utf-8")
+                elif kind == "profile":
+                    changed = dict(case["record"]); changed["cleanEnvironment"] = dict(changed["cleanEnvironment"], FOODSTREET_PROFILE_DIRECTORY="/foreign/profile")
+                    qa_runtime._write_control_json(case["runPath"], changed, create=False)
+                with self.assertRaises(BeaverError): self.call_archived_stop(case)
+                self.assertTrue(Path(case["channel"]["configPath"]).exists())
+                self.assertTrue(case["statePath"].exists())
+
+    def test_lifecycle_receipt_must_match_exact_identity_reason_and_all_cleanup_flags(self):
+        corruptions = (("reason", "object_destroyed"), ("channelId", "f" * 32), ("instanceId", "f" * 32),
+                       ("pid", 9999), ("screenWidth", 800), ("buttonDown", True), ("deviceCreated", False),
+                       ("listenerStarted", False), ("endpointPublished", False), ("actionRoutesRestored", False),
+                       ("uiRoutesRestored", 0), ("deviceRemoved", False), ("listenerStopped", False),
+                       ("endpointRemoved", False), ("backgroundRestored", False), ("cleanupPerformed", False),
+                       ("deviceCreated", 1), ("listenerStarted", 1), ("endpointPublished", 1),
+                       ("cleanupPerformed", 1), ("buttonDown", 0), ("physicalTakeover", 0))
+        for key, value in corruptions:
+            with self.subTest(field=key):
+                case = self.make_retirement_case()
+                altered = dict(case["lifecycle"]); altered[key] = value
+                write_json(case["lifecyclePath"], altered); os.chmod(case["lifecyclePath"], 0o644)
+                with self.assertRaises(BeaverError): self.call_archived_stop(case)
+                self.assertTrue(Path(case["channel"]["configPath"]).exists())
+                self.assertTrue(case["statePath"].exists())
+
+    def test_existing_replacement_endpoint_refuses_and_preserves_channel_files(self):
+        case = self.make_retirement_case()
+        endpoint = Path(case["config"]["endpointPath"])
+        write_json(endpoint, dict(case["session"]["discovery"], instanceId="f" * 32, nonce="e" * 32, pid=9876))
+        with self.assertRaises(BeaverError): self.call_archived_stop(case)
+        self.assertTrue(Path(case["channel"]["configPath"]).exists())
+        self.assertTrue(case["statePath"].exists())
+        self.assertEqual(json.loads(endpoint.read_text())["instanceId"], "f" * 32)
+
+    def test_predelete_race_rechecks_endpoint_lifecycle_config_state_and_archive(self):
+        from beaver import process_identity
+        for target in ("endpoint", "lifecycle", "config", "state", "archive"):
+            with self.subTest(target=target):
+                case = self.make_retirement_case()
+                contexts = self.archived_stop_context(case)
+                calls = {"n": 0}
+
+                def snapshot(pid):
+                    calls["n"] += 1
+                    if calls["n"] == 3:
+                        if target == "endpoint":
+                            write_json(Path(case["config"]["endpointPath"]), dict(case["session"]["discovery"], instanceId="f" * 32))
+                        elif target == "lifecycle":
+                            changed = dict(case["lifecycle"]); changed["frame"] += 1
+                            write_json(case["lifecyclePath"], changed); os.chmod(case["lifecyclePath"], 0o644)
+                        elif target == "config":
+                            Path(case["channel"]["configPath"]).write_text("{}", encoding="utf-8")
+                        elif target == "state":
+                            changed = dict(case["state"], nextSequence=case["state"]["nextSequence"] + 1)
+                            vp._write_private(case["statePath"], changed, create=False)
+                        elif target == "archive":
+                            changed = dict(case["record"], exitedUtc="2026-11-03T00:00:00+00:00")
+                            from beaver import qa_runtime
+                            qa_runtime._write_control_json(case["runPath"], changed, create=False)
+                    return {"status": "missing", "pid": pid}
+
+                contexts[2] = patch.object(process_identity, "snapshot", side_effect=snapshot)
+                with self.assertRaises(BeaverError): self.call_archived_stop(case, contexts)
+                self.assertTrue(Path(case["channel"]["configPath"]).exists())
+                self.assertTrue(case["statePath"].exists())
 
 
 if __name__ == "__main__":

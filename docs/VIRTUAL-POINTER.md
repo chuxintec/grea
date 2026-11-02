@@ -90,6 +90,15 @@ Receipts are value-redacted against the channel token, including nested command
 receipts and string values inside lists. A blocked/unknown stop remains visible
 as such and keeps local credentials for a deliberate status/stop follow-up.
 
+An in-session `release` or `stop` may finish a pending pointer release through
+the normal UI route. It can complete a click/drop/select/produce action; it is
+not a business rollback or a guarantee that gameplay state did not change.
+Judge business outcomes independently. The archived clean-exit retirement path
+is strictly local: it checks the archived QA run and pinned lifecycle receipt,
+then deletes only that channel's private config and client state. It makes no
+socket request and does not touch Player saves, copied QA configs, the app,
+owner record, or archived run.
+
 ## Evidence boundary
 
 The server receipt distinguishes accepted/consumed events, frames, partial
