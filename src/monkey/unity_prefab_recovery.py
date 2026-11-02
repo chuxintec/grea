@@ -435,9 +435,21 @@ def recover(request_path, expected_request, output):
         from .unity_prefab_asset_rebuild import load_supplement
         source_root, asset_manifest, mappings = load_supplement(supplement, graph, lineage)
         for mapping in mappings:
+            replacement = mapping.get("replacesProviderAsset")
+            destination = mapping["path"]
+            if replacement:
+                destination = replacement["providerPath"]
+                for relative, expected in [(destination, replacement["assetSha256"]),
+                                           (destination + ".meta", replacement["metaSha256"])]:
+                    dest = inside(project, relative)
+                    if not dest.is_file() or sha(read(dest, max_bytes=128 * 1024 * 1024)) != expected:
+                        fail("UNITY_PREFAB_ASSET_BEFORE_DRIFT", relative, "Exact provider before bytes required for isolated native repair")
+                if replacement["guid"] != mapping["guid"] or str(replacement["localId"]) != str(mapping["localId"]):
+                    fail("UNITY_PREFAB_ASSET_PRESERVED_IDENTITY", destination, "Native repair must retain provider GUID/localID")
             for relative in (mapping["path"], mapping["path"] + ".meta"):
-                dest = inside(project, relative)
-                if dest.exists():
+                dest_relative = destination + (".meta" if relative.endswith(".meta") else "")
+                dest = inside(project, dest_relative)
+                if dest.exists() and not replacement:
                     fail("UNITY_PREFAB_ASSET_DESTINATION", relative, "Native supplement cannot overwrite a candidate asset")
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(read(inside(source_root, relative), max_bytes=128 * 1024 * 1024))
@@ -447,7 +459,7 @@ def recover(request_path, expected_request, output):
                 dest = inside(project, "Analysis/Evidence/native-asset-supplements/" + supplement_sha + "/" + row["path"])
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(read(inside(source_root, row["path"]), max_bytes=128 * 1024 * 1024))
-        native_asset_mappings.extend(mappings)
+        native_asset_mappings.extend(dict(m, path=m["replacesProviderAsset"]["providerPath"]) if m.get("replacesProviderAsset") else m for m in mappings)
     if native_asset_mappings:
         ids = [r["sourceObjectId"] for r in native_asset_mappings]
         guids = [r["guid"] for r in native_asset_mappings]

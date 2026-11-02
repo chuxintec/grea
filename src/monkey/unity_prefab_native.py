@@ -250,7 +250,9 @@ def prepare(project, expected_manifest):
         obj = objects.get(sid)
         if obj is None or obj["rawSha256"] != row["rawSha256"] or obj["type"] != row["type"]:
             fail("UNITY_PREFAB_NATIVE_ASSET_SOURCE", sid, "Exact source identity for native resource differs")
-        if sid in resource_bindings:
+        preserved = row.get("replacesProviderAsset")
+        if sid in resource_bindings and (not preserved or resource_bindings[sid]["guid"] != row["guid"]
+                                          or resource_bindings[sid]["sourceType"] != row["type"]):
             fail("UNITY_PREFAB_NATIVE_ASSET_CONFLICT", sid, "Do not replace an already mapped original native resource")
         target_path = moved.get(row["path"], row["path"])
         if _guid_meta(project / (target_path + ".meta")) != row["guid"]:

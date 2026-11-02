@@ -64,3 +64,53 @@ def test_native_asset_request_wrong_sha_never_creates_an_output(tmp_path):
     with pytest.raises(ParseError, match='UNITY_PREFAB_INPUT_DRIFT'):
         execute(request, '0' * 64, tmp_path / 'output', tmp_path / 'Unity')
     assert not (tmp_path / 'output').exists()
+
+
+def test_atlas_preserves_before_identity_and_joins_shared_texture_once(tmp_path):
+    from pathlib import Path
+    from monkey.io import read, load
+    pin, graph, lineage = fixture_supplement(tmp_path)
+    path = Path(pin['path'])
+    root = path.parent
+    result = load(read(path))
+    result['assetProfile'] = 'preserved-rectangle-atlas'
+    second = copy.deepcopy(graph['reachableObjects'][0])
+    second.update(sourceObjectId='second-sprite', rawSha256='f' * 64, data=dict(value=3))
+    second['identity']['pathId'] = '3'
+    graph['reachableObjects'].append(second)
+    second_mapping = dict(result['mappings'][0], sourceObjectId='second-sprite', rawSha256=second['rawSha256'],
+        sourceDataSha256=sha(encoded(second['data'])), path='Assets/Generated/second.asset', guid='3' * 32)
+    result['mappings'].append(second_mapping)
+    (root / second_mapping['path']).write_text('second-fixture-payload')
+    (root / (second_mapping['path'] + '.meta')).write_text('guid: ' + '3' * 32 + '\n')
+    planned = []
+    for mapping in [result['mappings'][0], second_mapping]:
+        before = dict(path=mapping['path'], providerPath='Assets/Original/' + mapping['sourceObjectId'] + '.asset',
+            guid=mapping['guid'], localId=21300000, assetSha256='8' * 64, metaSha256='9' * 64)
+        mapping['replacesProviderAsset'] = before
+        planned.append(dict(sourceSpriteId=mapping['sourceObjectId'], providerAsset=dict(originalPath=before['providerPath'],
+            assetSha256=before['assetSha256'], metaSha256=before['metaSha256'])))
+    pixel = root / 'Analysis/Evidence/selected-atlas-pixels/manifest.json'
+    write_json(pixel, dict(contract='unity-selected-texture-export/1', status='exported', inputPins=dict(source='a' * 64),
+        textures=[dict(source=dict(file='CAB-fixture', pathId='2', sourceRawSha256='d' * 64), hydration=dict(rgbaRawSha256='e' * 64))]))
+    write_json(root / 'Analysis/Evidence/rebuild-plans.json', [dict(selectedPixelManifestSha256=sha(read(pixel)), assets=planned)])
+    for label in ['first', 'cold']:
+        report = root / ('Analysis/Evidence/native-' + label + '.json')
+        first = load(read(report))['assets'][0]
+        second_actual = dict(first, sourceId='second-sprite', spriteGuid='3' * 32, spritePath=second_mapping['path'])
+        for actual in [first, second_actual]:
+            actual.update(spriteIdentityDisposition='preserved-existing-provider', sourceBeforeAssetSha256='8' * 64, sourceBeforeMetaSha256='9' * 64)
+        write_json(report, dict(status='completed', error='', assets=[first, second_actual]))
+        result[label + 'Process']['readback'] = dict(sha256=sha(read(report)), bytes=report.stat().st_size)
+    result['files'] = [dict(path=p.relative_to(root).as_posix(), sha256=sha(read(p)), bytes=p.stat().st_size)
+                       for p in sorted(root.rglob('*')) if p.is_file() and p != path]
+    write_json(path, result)
+    pin['sha256'] = sha(read(path))
+    _, _, mappings = load_supplement(pin, graph, dict(selectedSourceInputs=[]))
+    assert len(mappings) == 3
+    assert sum(r['type'] == 'Texture2D' for r in mappings) == 1
+    result['mappings'][0]['replacesProviderAsset']['providerPath'] = 'Assets/Unrelated.asset'
+    write_json(path, result)
+    pin['sha256'] = sha(read(path))
+    with pytest.raises(ParseError, match='UNITY_PREFAB_ASSET_PRESERVED_IDENTITY'):
+        load_supplement(pin, graph, lineage)

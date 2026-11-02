@@ -107,3 +107,47 @@ def unpacked_tight_geometry(data,width,height,pixels_to_units,settings_raw=64,*,
         meshVertices=[dict(x=x,y=y) for x,y,_ in vertices],triangleIndices=triangles,meshUv=coords,verifyMesh=True)
     descriptor['geometrySha256']=sha(encoded(descriptor))
     return descriptor
+
+
+def rectangle_atlas_geometry(data,atlas,width,height):
+    """Source-proven unrotated rectangle atlas region, without trimmed offsets.
+
+    Native standalone Sprite.rect uses the atlas region rather than the source
+    local zero-origin rect. Sizes, pivot, source unit vertices and UVs are proven
+    explicitly; the source packed flag is not asserted native-equivalent.
+    """
+    def check(ok,message):
+        if not ok:raise ValueError(message)
+    settings=atlas_settings(atlas['settingsRaw'])
+    check(settings['packingMode']=='Rectangle' and settings['packingRotation']=='None',
+          'Only unrotated rectangle atlas regions are supported')
+    check(type(width)is int and type(height)is int and width>0 and height>0 and width*height<=16*1024*1024,
+          'Exact bounded atlas dimensions required')
+    check(atlas.get('downscaleMultiplier')==1 and atlas.get('alphaTexture',{}).get('pathId')=='0'
+          and not atlas.get('secondaryTextures'),'Separate alpha/secondary/downscaled atlas requires another profile')
+    rect=atlas['textureRect'];local=data['m_Rect'];pivot=data['m_Pivot'];ppu=data['m_PixelsToUnits']
+    check(set(rect)=={'x','y','width','height'} and all(type(v)in(int,float) and math.isfinite(v)for v in rect.values())
+          and min(rect['x'],rect['y'])>=0 and rect['width']>0 and rect['height']>0
+          and rect['x']+rect['width']<=width and rect['y']+rect['height']<=height,'Bounded exact atlas region required')
+    check(local==dict(x=0,y=0,width=rect['width'],height=rect['height'])
+          and atlas['textureRectOffset']==dict(x=0,y=0),'Trimmed/local-offset atlas Sprite requires another profile')
+    check(set(pivot)=={'x','y'} and all(type(v)in(int,float) and math.isfinite(v) and 0<=v<=1 for v in pivot.values())
+          and type(ppu)in(int,float) and math.isfinite(ppu) and ppu>0,'Exact finite pivot/PPU required')
+    uv=atlas['uvTransform']
+    check(uv==dict(x=ppu,y=rect['x']+rect['width']*pivot['x'],z=ppu,w=rect['y']+rect['height']*pivot['y']),
+          'Atlas UV transform does not prove the standalone region representation')
+    vertices,triangles=_tight_mesh(data)
+    # Serialized positions and atlas transforms are float32. Preserve that
+    # arithmetic at each operation; widening first creates false negative UVs
+    # at exact atlas edges. No clipping or epsilon expansion is applied.
+    def f32(value):return struct.unpack('<f',struct.pack('<f',value))[0]
+    def coord(value,scale,offset,size):return f32(f32(f32(value*scale)+offset)/size)
+    coords=[dict(x=coord(x,uv['x'],uv['y'],width),y=coord(y,uv['z'],uv['w'],height))for x,y,_ in vertices]
+    check(all(math.isfinite(v) and 0<=v<=1 for row in coords for v in row.values()),'Atlas UV outside texture')
+    result=dict(geometryProfile='unity-2021.3-unrotated-rectangle-atlas-v1',sourceSpriteDataSha256=sha(encoded(data)),
+        sourcePackedSettingsRaw=atlas['settingsRaw'],sourceRect=local,targetRect=rect,
+        uvArithmetic='float32-multiply-add-divide-separate-operations-no-clamp',
+        meshVertices=[dict(x=x,y=y)for x,y,_ in vertices],triangleIndices=triangles,meshUv=coords,verifyMesh=True,
+        representation='native-unpacked-atlas-region;source-packed-flags-not-equated')
+    result['geometrySha256']=sha(encoded(result))
+    return result

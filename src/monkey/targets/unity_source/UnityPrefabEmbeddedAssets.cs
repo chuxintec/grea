@@ -32,6 +32,7 @@ namespace MonkeyUnitySource
             public string targetUnityVersion;
             public string outputAbsolute;
             public bool reopenOnly;
+            public bool allowSharedTextures;
             public AssetSpec[] assets;
         }
 
@@ -40,6 +41,13 @@ namespace MonkeyUnitySource
         {
             public string sourceId;
             public string textureSourceId;
+            public bool preserveExistingSprite;
+            public string expectedSpriteGuid;
+            public string expectedSpriteLocalId;
+            public string sourceBeforeAssetSha256;
+            public string sourceBeforeMetaSha256;
+            public int expectedNativeSpriteSettingsRaw;
+            public int sourcePackedSettingsRaw;
             public string texturePath;
             public string spritePath;
             public string rgbaPath;
@@ -72,10 +80,12 @@ namespace MonkeyUnitySource
             public Vector2Dto[] meshVertices;
             public int[] triangleIndices;
             public Vector2Dto[] meshUv;
+            public PhysicsShapeDto[] physicsShapes;
         }
 
         [Serializable] public sealed class RectDto { public float x, y, width, height; }
         [Serializable] public sealed class Vector2Dto { public float x, y; }
+        [Serializable] public sealed class PhysicsShapeDto { public Vector2Dto[] vertices; }
         [Serializable] public sealed class Vector3Dto { public float x, y, z; }
         [Serializable] public sealed class Vector4Dto { public float x, y, z, w; }
         [Serializable] public sealed class ChannelDto { public int stream, offset, format, dimension; }
@@ -105,15 +115,20 @@ namespace MonkeyUnitySource
         {
             public string sourceId, textureSourceId;
             public string spritePath, spriteGuid, spriteLocalId, spriteType, spriteName;
+            public string spriteIdentityDisposition, beforeSpriteGuid, beforeSpriteLocalId;
+            public string sourceBeforeAssetSha256, sourceBeforeMetaSha256;
             public string texturePath, textureGuid, textureLocalId, textureType, textureName;
             public string pixelSha256, vertexBytesSha256, sourceVertexBytesSha256, atlasVertexBytesSha256, indexBytesSha256;
+            public int originalPackedSettingsRaw, targetRenderCacheSettingsRaw;
             public bool verified;
             public int width, height, sourceColorSpace, nativeTextureFormat, mipmapCount;
             public int sourceRenderSettingsRaw, targetAtlasCacheSettingsRaw;
             public bool textureIsReadable, textureIsDataSRGB, packed;
             public int filterMode, anisoLevel, wrapModeU, wrapModeV, wrapModeW;
             public float mipBias, pixelsToUnits;
-            public Rect rect, textureRect;
+            public int spriteSettingsRaw, atlasSettingsRaw;
+            public float spriteDownscaleMultiplier, atlasDownscaleMultiplier;
+            public Rect rect, atlasRegion, textureRect;
             public Vector2 pivotPixels, pivotNormalized, textureRectOffset, atlasRectOffset, offset;
             public Vector4 border, uvTransform;
             public Vector2[] vertices = new Vector2[0];
@@ -128,6 +143,9 @@ namespace MonkeyUnitySource
             public string rgbaAbsolute, spriteAssetPath, textureAssetPath;
             public byte[] rgba, vertexBytes, indexBytes;
             public bool hasSerializedIsPolygon;
+            public string beforeSpriteGuid, beforeSpriteLocalId;
+            public int beforeRenderSettingsRaw, beforeAtlasSettingsRaw;
+            public float beforeRenderDownscale, beforeAtlasDownscale;
             public AssetResult result;
         }
 
@@ -172,10 +190,13 @@ namespace MonkeyUnitySource
                 if (!String.Equals(plan.targetUnityVersion, RequiredUnityVersion, StringComparison.Ordinal))
                     throw new InvalidOperationException("Plan targetUnityVersion differs from the required Editor");
                 ValidateOutputPath(plan.outputAbsolute, paths);
-            result.staticProfile = "Input Texture2D: decoded RGBA32, CPU-readable, no mipmaps; embedded Sprite: source geometry/refs verified; source compression/atlas metadata not claimed";
+                bool hasPreservedSprite = plan.assets != null && plan.assets.Any(item => item != null && item.preserveExistingSprite);
+                result.staticProfile = hasPreservedSprite
+                    ? "Texture2D: decoded CPU-readable RGBA32/no-mipmap derived texture; preserved Sprite identity with source-verified full unrotated atlas-region geometry; only m_RD.texture and m_AtlasRD.texture rebound"
+                    : "Texture2D: decoded RGBA32, CPU-readable, no mipmaps; new embedded Sprite asset; source compression/atlas metadata not claimed";
 
                 List<PreparedAsset> assets = PreflightAssets(paths.projectRoot, plan, plan.reopenOnly);
-                result.assets = assets.Select(a => NewAssetResult(a.spec)).ToArray();
+                result.assets = assets.Select(NewAssetResult).ToArray();
                 for (int i = 0; i < assets.Count; i++) assets[i].result = result.assets[i];
 
                 if (!plan.reopenOnly)
@@ -266,7 +287,8 @@ namespace MonkeyUnitySource
             var spritePaths = new HashSet<string>(StringComparer.Ordinal);
             var texturePathsBySource = new Dictionary<string, string>(StringComparer.Ordinal);
             var textureSourcesByPath = new Dictionary<string, string>(StringComparer.Ordinal);
-            var textureSourceIds = new HashSet<string>(StringComparer.Ordinal);
+            var texturesBySource = new Dictionary<string, PreparedTexture>(StringComparer.Ordinal);
+            var newTexturePathsChecked = new HashSet<string>(StringComparer.Ordinal);
             long totalPixels = 0;
             foreach (AssetSpec spec in plan.assets)
             {
@@ -276,6 +298,10 @@ namespace MonkeyUnitySource
                 string textureAssetPath = ValidateAssetOutputPath(projectRoot, spec.texturePath, "texturePath");
                 if (String.Equals(spriteAssetPath, textureAssetPath, StringComparison.Ordinal))
                     throw new InvalidOperationException("Sprite and Texture asset paths must differ: " + spec.sourceId);
+                if (textureSourcesByPath.ContainsKey(spriteAssetPath))
+                    throw new InvalidOperationException("Sprite path collides with another planned Texture path: " + spriteAssetPath);
+                if (spritePaths.Contains(textureAssetPath))
+                    throw new InvalidOperationException("Texture path collides with another planned Sprite path: " + textureAssetPath);
                 if (!spritePaths.Add(spriteAssetPath)) throw new InvalidOperationException("Duplicate spritePath: " + spriteAssetPath);
                 string existingTextureSource;
                 if (textureSourcesByPath.TryGetValue(textureAssetPath, out existingTextureSource) && existingTextureSource != spec.textureSourceId)
@@ -288,10 +314,6 @@ namespace MonkeyUnitySource
 
                 if (spec.width <= 0 || spec.height <= 0) throw new InvalidOperationException("Texture dimensions must be positive: " + spec.sourceId);
                 long pixels = checked((long)spec.width * spec.height);
-                if (!textureSourceIds.Add(spec.textureSourceId))
-                    throw new InvalidOperationException("This execution profile accepts one Sprite per independent textureSourceId; select each source texture once: " + spec.textureSourceId);
-                totalPixels = checked(totalPixels + pixels);
-                if (totalPixels > MaxPixels) throw new InvalidOperationException("Aggregate texture pixels exceed 16,000,000");
                 string rgbaAbsolute = ValidateAnalysisInputPath(projectRoot, spec.rgbaPath, "rgbaPath");
                 byte[] rgba = ReadBounded(rgbaAbsolute, checked((int)(pixels * 4L)));
                 if (rgba.LongLength != pixels * 4L) throw new InvalidOperationException("RGBA byte count differs from width*height*4: " + spec.sourceId);
@@ -305,16 +327,57 @@ namespace MonkeyUnitySource
                     sourceColorSpace = spec.sourceColorSpace, filterMode = spec.filterMode, aniso = spec.aniso,
                     wrapU = spec.wrapU, wrapV = spec.wrapV, wrapW = spec.wrapW, mipBias = spec.mipBias, rgba = rgba
                 };
+                PreparedTexture priorTexture;
+                bool firstTextureUse = !texturesBySource.TryGetValue(spec.textureSourceId, out priorTexture);
+                if (!firstTextureUse)
+                {
+                    if (!plan.allowSharedTextures)
+                        throw new InvalidOperationException("Repeated textureSourceId requires Plan.allowSharedTextures=true: " + spec.textureSourceId);
+                    VerifySameTextureSpec(priorTexture, spec, textureAssetPath, rgbaAbsolute, rgbaSha, rgba);
+                    rgba = priorTexture.rgba;
+                }
+                else
+                {
+                    totalPixels = checked(totalPixels + pixels);
+                    if (totalPixels > MaxPixels) throw new InvalidOperationException("Aggregate texture pixels exceed 16,000,000");
+                    texturesBySource.Add(spec.textureSourceId, texture);
+                }
                 if (!reopenOnly)
                 {
-                    EnsureNewAssetPath(projectRoot, spec.spritePath, spriteAssetPath);
-                    EnsureNewAssetPath(projectRoot, spec.texturePath, textureAssetPath);
+                    if (spec.preserveExistingSprite) VerifyPreservedSpriteProvenance(projectRoot, spec, spriteAssetPath, reopenOnly);
+                    else EnsureNewAssetPath(projectRoot, spec.spritePath, spriteAssetPath);
+                    if (firstTextureUse && newTexturePathsChecked.Add(textureAssetPath))
+                        EnsureNewAssetPath(projectRoot, spec.texturePath, textureAssetPath);
+                }
+                else if (spec.preserveExistingSprite)
+                {
+                    VerifyPreservedSpriteProvenance(projectRoot, spec, spriteAssetPath, reopenOnly);
+                }
+                else
+                {
+                    if (String.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(spriteAssetPath)))
+                        throw new InvalidOperationException("Read-only reopen Sprite is absent: " + spriteAssetPath);
                 }
                 byte[] vertexBytes, indexBytes;
                 ValidateAndDecodeMesh(spec, out vertexBytes, out indexBytes);
-                result.Add(new PreparedAsset { spec = spec, rgbaAbsolute = rgbaAbsolute,
+                ValidateAtlasRegionProfile(spec);
+                var prepared = new PreparedAsset { spec = spec, rgbaAbsolute = rgbaAbsolute,
                     spriteAssetPath = spriteAssetPath, textureAssetPath = textureAssetPath,
-                    rgba = rgba, vertexBytes = vertexBytes, indexBytes = indexBytes });
+                    rgba = rgba, vertexBytes = vertexBytes, indexBytes = indexBytes };
+                if (spec.preserveExistingSprite)
+                {
+                    if (reopenOnly) VerifyPreservedSpriteProvenance(projectRoot, spec, spriteAssetPath, true);
+                    Sprite preserved = AssetDatabase.LoadAssetAtPath<Sprite>(spriteAssetPath);
+                    if (preserved == null) throw new InvalidOperationException("Preserved Sprite asset is absent/not a Sprite: " + spriteAssetPath);
+                    ReadNativeIdentity(preserved, spriteAssetPath, out prepared.beforeSpriteGuid, out prepared.beforeSpriteLocalId, out _);
+                    VerifyPreservedSpriteIdentity(spec, prepared.beforeSpriteGuid, prepared.beforeSpriteLocalId);
+                    VerifyPreservedSpriteGeometryBeforeBind(preserved, prepared);
+                }
+                else if (reopenOnly && AssetDatabase.LoadAssetAtPath<Sprite>(spriteAssetPath) == null)
+                {
+                    throw new InvalidOperationException("Read-only reopen Sprite is absent/not a Sprite: " + spriteAssetPath);
+                }
+                result.Add(prepared);
             }
             if (!String.IsNullOrEmpty(plan.outputAbsolute))
             {
@@ -325,6 +388,143 @@ namespace MonkeyUnitySource
                         throw new InvalidOperationException("Result output cannot overwrite a candidate asset");
             }
             return result;
+        }
+
+        static bool IsGuid32(string value)
+        {
+            if (String.IsNullOrEmpty(value) || value.Length != 32) return false;
+            for (int i = 0; i < value.Length; i++)
+                if (!((value[i] >= '0' && value[i] <= '9') || (value[i] >= 'a' && value[i] <= 'f'))) return false;
+            return true;
+        }
+
+        static string HashFile(string path)
+        {
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (SHA256 sha = SHA256.Create())
+                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", String.Empty).ToLowerInvariant();
+        }
+
+        static void VerifySameTextureSpec(PreparedTexture previous, AssetSpec current, string assetPath,
+                                          string rgbaPath, string rgbaSha, byte[] rgba)
+        {
+            if (!String.Equals(previous.assetPath, assetPath, StringComparison.Ordinal) ||
+                !String.Equals(previous.rgbaPath, rgbaPath, StringComparison.Ordinal) ||
+                !String.Equals(previous.rgbaSha256, rgbaSha, StringComparison.Ordinal) ||
+                !String.Equals(previous.textureName, current.textureName, StringComparison.Ordinal) ||
+                previous.width != current.width || previous.height != current.height ||
+                previous.sourceColorSpace != current.sourceColorSpace || previous.filterMode != current.filterMode ||
+                previous.aniso != current.aniso || previous.wrapU != current.wrapU || previous.wrapV != current.wrapV ||
+                previous.wrapW != current.wrapW || !previous.mipBias.Equals(current.mipBias) ||
+                !BytesEqual(previous.rgba, rgba))
+                throw new InvalidOperationException("Shared textureSourceId has inconsistent texture path, bytes, identity, or sampler fields: " + current.textureSourceId);
+        }
+
+        static void VerifyPreservedSpriteProvenance(string projectRoot, AssetSpec spec, string assetPath, bool reopenOnly)
+        {
+            string absolute = Path.GetFullPath(Path.Combine(projectRoot, assetPath.Replace('/', Path.DirectorySeparatorChar)));
+            string meta = absolute + ".meta";
+            EnsureNoSymlink(projectRoot, absolute, "Preserved Sprite asset");
+            EnsureNoSymlink(projectRoot, meta, "Preserved Sprite meta");
+            if (!File.Exists(absolute) || !File.Exists(meta))
+                throw new InvalidOperationException("Preserved Sprite asset and meta must both exist: " + assetPath);
+            if (!reopenOnly && !String.Equals(HashFile(absolute), spec.sourceBeforeAssetSha256, StringComparison.Ordinal))
+                throw new InvalidOperationException("Pre-copied Sprite asset SHA256 differs from sourceBeforeAssetSha256: " + spec.sourceId);
+            if (!String.Equals(HashFile(meta), spec.sourceBeforeMetaSha256, StringComparison.Ordinal))
+                throw new InvalidOperationException("Preserved Sprite meta SHA256 differs from sourceBeforeMetaSha256: " + spec.sourceId);
+            string guid = AssetDatabase.AssetPathToGUID(assetPath);
+            if (!String.Equals(guid, spec.expectedSpriteGuid, StringComparison.Ordinal))
+                throw new InvalidOperationException("Preserved Sprite GUID differs from pinned expectedSpriteGuid: " + spec.sourceId);
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            if (sprite == null) throw new InvalidOperationException("Preserved Sprite path does not load as UnityEngine.Sprite: " + assetPath);
+            string actualGuid, actualLocalId, actualType;
+            ReadNativeIdentity(sprite, assetPath, out actualGuid, out actualLocalId, out actualType);
+            VerifyPreservedSpriteIdentity(spec, actualGuid, actualLocalId);
+            if (!String.Equals(actualType, "UnityEngine.Sprite", StringComparison.Ordinal))
+                throw new InvalidOperationException("Preserved asset type is not UnityEngine.Sprite: " + spec.sourceId);
+        }
+
+        static void VerifyPreservedSpriteIdentity(AssetSpec spec, string guid, string localId)
+        {
+            if (!String.Equals(guid, spec.expectedSpriteGuid, StringComparison.Ordinal) ||
+                !String.Equals(localId, spec.expectedSpriteLocalId, StringComparison.Ordinal))
+                throw new InvalidOperationException("Preserved Sprite GUID/localID differs from pinned identity: " + spec.sourceId);
+        }
+
+        static void VerifyPreservedSpriteGeometryBeforeBind(Sprite sprite, PreparedAsset asset)
+        {
+            AssetSpec spec = asset.spec;
+            Rect sourceRect = ToRect(spec.rect);
+            if (!String.Equals(sprite.name, spec.spriteName, StringComparison.Ordinal) ||
+                !Close(sprite.rect, sourceRect, GeometryTolerance) ||
+                !Close(sprite.pixelsPerUnit, spec.pixelsToUnits, GeometryTolerance) ||
+                !Close(sprite.pivot, new Vector2(spec.pivot.x * spec.rect.width, spec.pivot.y * spec.rect.height), GeometryTolerance) ||
+                !Close(sprite.border, ToVector4(spec.border), GeometryTolerance) ||
+                !Close(sprite.textureRectOffset, Vector2.zero, GeometryTolerance))
+                throw new InvalidOperationException("Preserved Sprite public source geometry/name differs before texture repair: " + spec.sourceId);
+            Vector2[] vertices = sprite.vertices;
+            Vector2[] uv = sprite.uv;
+            int[] triangles = sprite.triangles.Select(value => (int)value).ToArray();
+            if (vertices.Length != spec.meshVertices.Length || uv.Length != spec.meshUv.Length || !triangles.SequenceEqual(spec.triangleIndices))
+                throw new InvalidOperationException("Preserved Sprite public mesh counts differ before texture repair: " + spec.sourceId);
+            for (int i = 0; i < vertices.Length; i++)
+                if (!vertices[i].Equals(ToVector2(spec.meshVertices[i])))
+                    throw new InvalidOperationException("Preserved Sprite source vertex differs before texture repair at " + i + ": " + spec.sourceId);
+            for (int i = 0; i < uv.Length; i++)
+                // A missing source texture makes Unity's public UV getter
+                // return the empty cache. Source serialized mesh/transform is
+                // still checked below; repaired/save/cold UVs are mandatory.
+                if (sprite.texture == null ? uv[i] != Vector2.zero : !Close(uv[i], ToVector2(spec.meshUv[i]), GeometryTolerance))
+                    throw new InvalidOperationException("Preserved Sprite source UV differs before texture repair at " + i + ": actual=" + uv[i].ToString("R") +
+                        " expected=" + ToVector2(spec.meshUv[i]).ToString("R") + " texture=" +
+                        (sprite.texture == null ? "null" : sprite.texture.name + " " + sprite.texture.width + "x" + sprite.texture.height) + ": " + spec.sourceId);
+
+            var so = new SerializedObject(sprite);
+            so.UpdateIfRequiredOrScript();
+            if (!Close(FindRequired(so, "m_Rect").rectValue, sourceRect, GeometryTolerance) ||
+                !Close(FindRequired(so, "m_Pivot").vector2Value, ToVector2(spec.pivot), GeometryTolerance) ||
+                !Close(FindRequired(so, "m_Offset").vector2Value, Vector2.zero, GeometryTolerance) ||
+                !Close(FindRequired(so, "m_Border").vector4Value, ToVector4(spec.border), GeometryTolerance) ||
+                !Close(FindRequired(so, "m_PixelsToUnits").floatValue, spec.pixelsToUnits, GeometryTolerance) ||
+                !Close(FindRequired(so, "m_RD.textureRect").rectValue, ToRect(spec.rect), GeometryTolerance) ||
+                !Close(FindRequired(so, "m_RD.textureRectOffset").vector2Value, Vector2.zero, GeometryTolerance) ||
+                !Close(FindRequired(so, "m_RD.atlasRectOffset").vector2Value, ToVector2(spec.atlasRectOffset), GeometryTolerance) ||
+                !Close(FindRequired(so, "m_RD.uvTransform").vector4Value, ToVector4(spec.uvTransform), GeometryTolerance))
+                throw new InvalidOperationException("Preserved Sprite serialized geometry differs before texture repair: " + spec.sourceId);
+            asset.beforeRenderSettingsRaw = FindRequired(so, "m_RD.settingsRaw").intValue;
+            asset.beforeAtlasSettingsRaw = FindRequired(so, "m_AtlasRD.settingsRaw").intValue;
+            int expectedBeforeSettings = sprite.texture == null ? spec.expectedNativeSpriteSettingsRaw : spec.sourcePackedSettingsRaw;
+            if (asset.beforeRenderSettingsRaw != expectedBeforeSettings)
+                throw new InvalidOperationException("Preserved Sprite native m_RD.settingsRaw=" + asset.beforeRenderSettingsRaw +
+                    " m_AtlasRD.settingsRaw=" + asset.beforeAtlasSettingsRaw + " expected=" + expectedBeforeSettings + ": " + spec.sourceId);
+            asset.beforeRenderDownscale = FindRequired(so, "m_RD.downscaleMultiplier").floatValue;
+            asset.beforeAtlasDownscale = FindRequired(so, "m_AtlasRD.downscaleMultiplier").floatValue;
+            if (!Finite(asset.beforeRenderDownscale) || !Finite(asset.beforeAtlasDownscale))
+                throw new InvalidOperationException("Preserved Sprite downscale multiplier is non-finite: " + spec.sourceId);
+            VerifyRenderData(so, "m_RD", null, asset, false);
+            VerifyRenderData(so, "m_AtlasRD", null, asset, false);
+            VerifyPreservedPhysicsShapes(sprite, spec);
+        }
+
+        static void VerifyPreservedPhysicsShapes(Sprite sprite, AssetSpec spec)
+        {
+            if (spec.physicsShapes == null || spec.physicsShapes.Length > 64 || sprite.GetPhysicsShapeCount() != spec.physicsShapes.Length)
+                throw new InvalidOperationException("Preserved source physics shape count differs: " + spec.sourceId);
+            int total = 0;
+            for (int i = 0; i < spec.physicsShapes.Length; i++)
+            {
+                var expected = spec.physicsShapes[i];
+                if (expected == null || expected.vertices == null || (total += expected.vertices.Length) > 10000)
+                    throw new InvalidOperationException("Preserved source physics shape budget/layout differs: " + spec.sourceId);
+                var actual = new List<Vector2>();
+                sprite.GetPhysicsShape(i, actual);
+                if (actual.Count != expected.vertices.Length)
+                    throw new InvalidOperationException("Preserved source physics vertex count differs: " + spec.sourceId);
+                for (int j = 0; j < actual.Count; j++)
+                    if (expected.vertices[j] == null || !Finite(expected.vertices[j].x) || !Finite(expected.vertices[j].y) ||
+                        !actual[j].Equals(ToVector2(expected.vertices[j])))
+                        throw new InvalidOperationException("Preserved source physics vertex differs: " + spec.sourceId + "[" + i + "][" + j + "]");
+            }
         }
 
         static void ValidateSpecPresence(AssetSpec spec)
@@ -359,6 +559,20 @@ namespace MonkeyUnitySource
                 throw new InvalidOperationException("Sprite rect/textureRect escapes the source texture bounds: " + spec.sourceId);
             if (spec.border.x + spec.border.z > spec.rect.width || spec.border.y + spec.border.w > spec.rect.height)
                 throw new InvalidOperationException("Sprite border exceeds the source rect: " + spec.sourceId);
+            if (spec.preserveExistingSprite)
+            {
+                if (!IsGuid32(spec.expectedSpriteGuid) || String.IsNullOrWhiteSpace(spec.expectedSpriteLocalId) ||
+                    !IsSha256(spec.sourceBeforeAssetSha256) || !IsSha256(spec.sourceBeforeMetaSha256))
+                    throw new InvalidOperationException("Preserved Sprite requires pinned expected identity and pre-copy asset/meta SHA256 values: " + spec.sourceId);
+                long localId;
+                if (!Int64.TryParse(spec.expectedSpriteLocalId, NumberStyles.Integer, CultureInfo.InvariantCulture, out localId))
+                    throw new InvalidOperationException("expectedSpriteLocalId is not an invariant integer: " + spec.sourceId);
+            }
+            else if (!String.IsNullOrEmpty(spec.expectedSpriteGuid) || !String.IsNullOrEmpty(spec.expectedSpriteLocalId) ||
+                     !String.IsNullOrEmpty(spec.sourceBeforeAssetSha256) || !String.IsNullOrEmpty(spec.sourceBeforeMetaSha256))
+            {
+                throw new InvalidOperationException("New Sprite creation cannot carry preserved-existing Sprite identity fields: " + spec.sourceId);
+            }
             if (spec.meshVertices == null || spec.meshUv == null || spec.triangleIndices == null || spec.indexBytes == null ||
                 spec.channels == null || spec.subMeshes == null)
                 throw new InvalidOperationException("Sprite native mesh DTO arrays must be present (empty arrays are allowed): " + spec.sourceId);
@@ -367,6 +581,33 @@ namespace MonkeyUnitySource
             if (spec.indexBytes.Length > MaxIndexBytesPerSprite) throw new InvalidOperationException("Sprite index bytes exceed 60,000: " + spec.sourceId);
             if ((spec.indexBytes.Length & 1) != 0) throw new InvalidOperationException("Sprite index buffer must be 16-bit aligned: " + spec.sourceId);
             if (spec.triangleIndices.Length % 3 != 0) throw new InvalidOperationException("Sprite triangleIndices count must be divisible by 3: " + spec.sourceId);
+        }
+
+        static void ValidateAtlasRegionProfile(AssetSpec spec)
+        {
+            if (spec.preserveExistingSprite && (spec.sourcePackedSettingsRaw != 67 || spec.expectedNativeSpriteSettingsRaw != 3139))
+                throw new InvalidOperationException("Only source packed flags 67 and observed Unity 6000.6 native cache flags 3139 are verified: " + spec.sourceId);
+            if (!spec.preserveExistingSprite) return;
+            if (!Close(spec.rect.x, spec.textureRect.x, GeometryTolerance) ||
+                !Close(spec.rect.y, spec.textureRect.y, GeometryTolerance) ||
+                !Close(spec.rect.width, spec.textureRect.width, GeometryTolerance) ||
+                !Close(spec.rect.height, spec.textureRect.height, GeometryTolerance))
+                throw new InvalidOperationException("Atlas-region profile requires rect and RD.textureRect to be the same full unrotated region: " + spec.sourceId);
+            if (!Close(spec.textureRect.width, spec.rect.width, GeometryTolerance) ||
+                !Close(spec.textureRect.height, spec.rect.height, GeometryTolerance))
+                throw new InvalidOperationException("Atlas-region profile does not support trimmed Sprite dimensions: " + spec.sourceId);
+            if (!Close(spec.textureRectOffset.x, 0f, GeometryTolerance) || !Close(spec.textureRectOffset.y, 0f, GeometryTolerance) ||
+                !Close(spec.offset.x, 0f, GeometryTolerance) || !Close(spec.offset.y, 0f, GeometryTolerance))
+                throw new InvalidOperationException("Atlas-region profile requires zero trim/offset: " + spec.sourceId);
+            if (spec.uvTransform.x <= 0f || spec.uvTransform.z <= 0f)
+                throw new InvalidOperationException("Atlas-region profile requires unrotated positive-axis UV scale: " + spec.sourceId);
+            for (int i = 0; i < spec.meshVertices.Length; i++)
+            {
+                double u = (spec.meshVertices[i].x * spec.uvTransform.x + spec.uvTransform.y) / spec.width;
+                double v = (spec.meshVertices[i].y * spec.uvTransform.z + spec.uvTransform.w) / spec.height;
+                if (!Close(spec.meshUv[i].x, (float)u, GeometryTolerance) || !Close(spec.meshUv[i].y, (float)v, GeometryTolerance))
+                    throw new InvalidOperationException("Atlas-region profile UVs are not the exact unrotated RD transform of source vertices: " + spec.sourceId + "[" + i + "]");
+            }
         }
 
         static void ValidateAndDecodeMesh(AssetSpec spec, out byte[] vertexBytes, out byte[] indexBytes)
@@ -583,6 +824,27 @@ namespace MonkeyUnitySource
                 AssetSpec spec = asset.spec;
                 Texture2D texture = textureBySource[spec.textureSourceId];
                 if (texture == null) throw new InvalidOperationException("Created Texture2D asset could not be loaded: " + spec.textureSourceId);
+                if (spec.preserveExistingSprite)
+                {
+                    Sprite preserved = AssetDatabase.LoadAssetAtPath<Sprite>(asset.spriteAssetPath);
+                    if (preserved == null) throw new InvalidOperationException("Preserved Sprite disappeared before texture repair: " + spec.sourceId);
+                    string guid, localId, type;
+                    ReadNativeIdentity(preserved, asset.spriteAssetPath, out guid, out localId, out type);
+                    VerifyPreservedSpriteIdentity(spec, guid, localId);
+                    if (!String.Equals(type, "UnityEngine.Sprite", StringComparison.Ordinal))
+                        throw new InvalidOperationException("Preserved Sprite runtime type changed before binding: " + spec.sourceId);
+                    var serialized = new SerializedObject(preserved);
+                    serialized.UpdateIfRequiredOrScript();
+                    SetRequiredReference(serialized, "m_RD.texture", texture);
+                    SetRequiredReference(serialized, "m_AtlasRD.texture", texture);
+                    if (!serialized.ApplyModifiedPropertiesWithoutUndo()) serialized.UpdateIfRequiredOrScript();
+                    EditorUtility.SetDirty(preserved);
+                    asset.result.spritePath = asset.spriteAssetPath;
+                    asset.result.spriteName = preserved.name;
+                    asset.result.spriteType = "UnityEngine.Sprite";
+                    asset.result.spriteIdentityDisposition = "preserved-existing-provider";
+                    continue;
+                }
                 var sprite = Sprite.Create(texture, ToRect(spec.rect), ToVector2(spec.pivot), spec.pixelsToUnits,
                     (uint)spec.extrude, SpriteMeshType.Tight, ToVector4(spec.border), false);
                 if (sprite == null) throw new InvalidOperationException("Sprite.Create returned null: " + spec.sourceId);
@@ -594,6 +856,7 @@ namespace MonkeyUnitySource
                 asset.result.spritePath = asset.spriteAssetPath;
                 asset.result.spriteName = spec.spriteName;
                 asset.result.spriteType = "UnityEngine.Sprite";
+                asset.result.spriteIdentityDisposition = "new-native-derived";
             }
         }
 
@@ -723,6 +986,13 @@ namespace MonkeyUnitySource
                 VerifySprite(asset, texture, sprite);
                 ReadNativeIdentity(sprite, asset.spriteAssetPath, out asset.result.spriteGuid, out asset.result.spriteLocalId, out asset.result.spriteType);
                 ReadNativeIdentity(texture, asset.textureAssetPath, out asset.result.textureGuid, out asset.result.textureLocalId, out asset.result.textureType);
+                if (asset.spec.preserveExistingSprite)
+                {
+                    VerifyPreservedSpriteIdentity(asset.spec, asset.result.spriteGuid, asset.result.spriteLocalId);
+                    string meta = Path.GetFullPath(Path.Combine(projectRoot, asset.spriteAssetPath.Replace('/', Path.DirectorySeparatorChar))) + ".meta";
+                    if (!File.Exists(meta) || !String.Equals(HashFile(meta), asset.spec.sourceBeforeMetaSha256, StringComparison.Ordinal))
+                        throw new InvalidOperationException("Preserved Sprite .meta changed during repair/reopen: " + asset.spec.sourceId);
+                }
                 asset.result.verified = true;
             }
         }
@@ -775,7 +1045,8 @@ namespace MonkeyUnitySource
                 throw new InvalidOperationException("Sprite name differs after CreateAsset/save/reload: " + spec.sourceId);
             if (sprite.texture != texture || !String.Equals(AssetDatabase.GetAssetPath(sprite.texture), asset.textureAssetPath, StringComparison.Ordinal))
                 throw new InvalidOperationException("Sprite.texture does not resolve to the planned texture asset: " + spec.sourceId);
-            if (sprite.packed) throw new InvalidOperationException("Candidate Sprite unexpectedly packed into an atlas: " + spec.sourceId);
+            if (!spec.preserveExistingSprite && sprite.packed)
+                throw new InvalidOperationException("Candidate Sprite unexpectedly packed into an atlas: " + spec.sourceId);
             if (!Close(sprite.pixelsPerUnit, spec.pixelsToUnits, GeometryTolerance))
                 throw new InvalidOperationException("Sprite pixelsPerUnit differs: " + spec.sourceId);
             Rect expectedRect = ToRect(spec.rect);
@@ -830,7 +1101,8 @@ namespace MonkeyUnitySource
                 if (polygon.boolValue) throw new InvalidOperationException("Target Sprite m_IsPolygon must be false for the normalized tight-mesh profile: " + spec.sourceId);
             }
             VerifyEmptyArrayIfPresent(so, "m_Bones");
-            VerifyEmptyArrayIfPresent(so, "m_PhysicsShape");
+            if (spec.preserveExistingSprite) VerifyPreservedPhysicsShapes(sprite, spec);
+            else VerifyEmptyArrayIfPresent(so, "m_PhysicsShape");
             VerifyEmptyArrayIfPresent(so, "m_ScriptableObjects");
             VerifyNullReferenceIfPresent(so, "m_SpriteAtlas");
             VerifyRenderData(so, "m_RD", texture, asset);
@@ -844,6 +1116,7 @@ namespace MonkeyUnitySource
             asset.result.pivotNormalized = ToVector2(spec.pivot);
             asset.result.textureRectOffset = sprite.textureRectOffset;
             asset.result.atlasRectOffset = ToVector2(spec.atlasRectOffset);
+            asset.result.atlasRegion = ToRect(spec.rect);
             asset.result.offset = ToVector2(spec.offset);
             asset.result.border = sprite.border;
             asset.result.pixelsToUnits = sprite.pixelsPerUnit;
@@ -855,19 +1128,33 @@ namespace MonkeyUnitySource
             asset.result.vertexBytesSha256 = Sha256(ReadByteArray(FindRequired(so, "m_RD.m_VertexData.m_DataSize")));
             asset.result.atlasVertexBytesSha256 = Sha256(ReadByteArray(FindRequired(so, "m_AtlasRD.m_VertexData.m_DataSize")));
             asset.result.sourceRenderSettingsRaw = FindRequired(so, "m_RD.settingsRaw").intValue;
+            asset.result.originalPackedSettingsRaw = spec.preserveExistingSprite ? spec.sourcePackedSettingsRaw : 64;
+            asset.result.targetRenderCacheSettingsRaw = asset.result.sourceRenderSettingsRaw;
             asset.result.targetAtlasCacheSettingsRaw = FindRequired(so, "m_AtlasRD.settingsRaw").intValue;
+            asset.result.spriteSettingsRaw = asset.result.sourceRenderSettingsRaw;
+            asset.result.atlasSettingsRaw = asset.result.targetAtlasCacheSettingsRaw;
+            asset.result.spriteDownscaleMultiplier = FindRequired(so, "m_RD.downscaleMultiplier").floatValue;
+            asset.result.atlasDownscaleMultiplier = FindRequired(so, "m_AtlasRD.downscaleMultiplier").floatValue;
             asset.result.indexBytesSha256 = Sha256(asset.indexBytes);
-            asset.result.normalization = new[] {
-                "Texture bytes normalized to native Texture2D RGBA32, CPU-readable, no mipmaps; original compressed source storage/import flags are not preserved.",
-                "The empty source UV cache may materialize source-derived UVs; source position/index bytes and padding remain exact.",
-                "m_AtlasRD is target-only cache metadata: its native flags are recorded, not asserted source-equivalent. Source m_RD.settingsRaw remains exactly 64.",
-                "Source-origin readable=false is normalized to a CPU-readable derived RGBA32 asset so exact pixel verification can run.",
-                "Sprite and Texture asset GUID/localID values are newly generated by Unity; original source object identities are retained separately by sourceId.",
-                "Sprite settingsRaw is normalized to 64; downscaleMultiplier is 1; " +
-                    (asset.hasSerializedIsPolygon ? "m_IsPolygon is normalized false." : "target Sprite serializer has no m_IsPolygon property."),
-                "Empty source bones, bindpose, blend-shapes, physics shapes, alpha texture and secondary textures remain empty.",
-                "Unity-generated RenderDataKey and asset metadata are target-native; original SpriteAtlas packing identity is not claimed."
-            };
+            asset.result.normalization = spec.preserveExistingSprite
+                ? new[] {
+                    "Texture bytes are a decoded, CPU-readable derived RGBA32/no-mipmap asset; a source unreadable flag is normalized for exact pixel verification, and source compressed storage is not preserved.",
+                    "Existing provider Sprite .asset and .meta identity are preserved; only m_RD.texture and m_AtlasRD.texture references are rebound.",
+                    "Atlas-region representation is limited to a full, unrotated rectangle with zero trim offsets; source public packed state is not claimed equivalent.",
+                    "Original packed settingsRaw 67 is retained separately from observed missing-texture cache flags 3139; repaired m_RD must return to 67 and m_AtlasRD target cache is checked independently. Legacy sourceRenderSettingsRaw reports native m_RD.",
+                    "Source position/index bytes and vertex padding remain exact; only an empty source UV cache may materialize source-derived UV values."
+                }
+                : new[] {
+                    "Texture bytes normalized to native Texture2D RGBA32, CPU-readable, no mipmaps; original compressed source storage/import flags are not preserved.",
+                    "The empty source UV cache may materialize source-derived UVs; source position/index bytes and padding remain exact.",
+                    "m_AtlasRD is target-only cache metadata: its native flags are recorded, not asserted source-equivalent. Source m_RD.settingsRaw remains exactly 64.",
+                    "Source-origin readable=false is normalized to a CPU-readable derived RGBA32 asset so exact pixel verification can run.",
+                    "Sprite and Texture asset GUID/localID values are newly generated by Unity; original source object identities are retained separately by sourceId.",
+                    "Sprite settingsRaw is normalized to 64; downscaleMultiplier is 1; " +
+                        (asset.hasSerializedIsPolygon ? "m_IsPolygon is normalized false." : "target Sprite serializer has no m_IsPolygon property."),
+                    "Empty source bones, bindpose, blend-shapes, physics shapes, alpha texture and secondary textures remain empty.",
+                    "Unity-generated RenderDataKey and asset metadata are target-native; original SpriteAtlas packing identity is not claimed."
+                };
         }
 
         static void VerifySpriteSerializedData(Sprite sprite, Texture2D texture, PreparedAsset asset, string phase)
@@ -881,10 +1168,11 @@ namespace MonkeyUnitySource
                 throw new InvalidOperationException("Sprite source geometry differs " + phase + ": " + asset.spec.sourceId);
         }
 
-        static void VerifyRenderData(SerializedObject so, string prefix, Texture2D texture, PreparedAsset asset)
+        static void VerifyRenderData(SerializedObject so, string prefix, Texture2D texture, PreparedAsset asset,
+                                     bool verifyTextureReference = true)
         {
             AssetSpec spec = asset.spec;
-            if (FindRequired(so, prefix + ".texture").objectReferenceValue != texture)
+            if (verifyTextureReference && FindRequired(so, prefix + ".texture").objectReferenceValue != texture)
                 throw new InvalidOperationException(prefix + ".texture differs: " + spec.sourceId);
             if (FindRequired(so, prefix + ".alphaTexture").objectReferenceValue != null)
                 throw new InvalidOperationException(prefix + ".alphaTexture must be null: " + spec.sourceId);
@@ -893,11 +1181,24 @@ namespace MonkeyUnitySource
                 !Close(FindRequired(so, prefix + ".atlasRectOffset").vector2Value, ToVector2(spec.atlasRectOffset), GeometryTolerance) ||
                 !Close(FindRequired(so, prefix + ".uvTransform").vector4Value, ToVector4(spec.uvTransform), GeometryTolerance))
                 throw new InvalidOperationException(prefix + " crop/offset/UV transform differs: " + spec.sourceId);
-            if (prefix == "m_RD" && FindRequired(so, prefix + ".settingsRaw").intValue != NormalizedSpriteSettingsRaw)
-                throw new InvalidOperationException(prefix + ".settingsRaw differs from normalized value 64; actual=" +
-                    FindRequired(so, prefix + ".settingsRaw").intValue + ": " + spec.sourceId);
-            if (!Close(FindRequired(so, prefix + ".downscaleMultiplier").floatValue, 1f, GeometryTolerance))
-                throw new InvalidOperationException(prefix + ".downscaleMultiplier differs from normalized 1: " + spec.sourceId);
+            int settingsRaw = FindRequired(so, prefix + ".settingsRaw").intValue;
+            if (spec.preserveExistingSprite)
+            {
+                int expectedSettings = prefix == "m_RD" ? (verifyTextureReference ? spec.sourcePackedSettingsRaw : asset.beforeRenderSettingsRaw) : asset.beforeAtlasSettingsRaw;
+                if (settingsRaw != expectedSettings)
+                    throw new InvalidOperationException(prefix + ".settingsRaw=" + settingsRaw + " expected=" + expectedSettings +
+                        " phaseTextureVerified=" + verifyTextureReference + ": " + spec.sourceId);
+                float expectedDownscale = prefix == "m_RD" ? asset.beforeRenderDownscale : asset.beforeAtlasDownscale;
+                if (!Close(FindRequired(so, prefix + ".downscaleMultiplier").floatValue, expectedDownscale, GeometryTolerance))
+                    throw new InvalidOperationException(prefix + ".downscaleMultiplier changed from the preserved native value: " + spec.sourceId);
+            }
+            else
+            {
+                if (prefix == "m_RD" && settingsRaw != NormalizedSpriteSettingsRaw)
+                    throw new InvalidOperationException(prefix + ".settingsRaw differs from normalized value 64; actual=" + settingsRaw + ": " + spec.sourceId);
+                if (!Close(FindRequired(so, prefix + ".downscaleMultiplier").floatValue, 1f, GeometryTolerance))
+                    throw new InvalidOperationException(prefix + ".downscaleMultiplier differs from normalized 1: " + spec.sourceId);
+            }
             VerifyEmptyArray(FindRequired(so, prefix + ".secondaryTextures"), prefix + ".secondaryTextures");
             VerifyChannels(FindRequired(so, prefix + ".m_VertexData.m_Channels"), spec.channels, prefix);
             if (FindRequired(so, prefix + ".m_VertexData.m_VertexCount").intValue != spec.meshVertices.Length)
@@ -1265,11 +1566,15 @@ namespace MonkeyUnitySource
                 throw new InvalidOperationException("Native object asset path differs from its planned path: " + expectedAssetPath);
         }
 
-        static AssetResult NewAssetResult(AssetSpec spec)
+        static AssetResult NewAssetResult(PreparedAsset asset)
         {
+            AssetSpec spec = asset.spec;
             return new AssetResult { sourceId = spec.sourceId, textureSourceId = spec.textureSourceId,
                 spritePath = spec.spritePath, texturePath = spec.texturePath,
-                spriteName = spec.spriteName, textureName = spec.textureName };
+                spriteName = spec.spriteName, textureName = spec.textureName,
+                spriteIdentityDisposition = spec.preserveExistingSprite ? "preserved-existing-provider" : "new-native-derived",
+                beforeSpriteGuid = asset.beforeSpriteGuid, beforeSpriteLocalId = asset.beforeSpriteLocalId,
+                sourceBeforeAssetSha256 = spec.sourceBeforeAssetSha256, sourceBeforeMetaSha256 = spec.sourceBeforeMetaSha256 };
         }
 
         static void WriteResult(string outputAbsolute, ExecutionResult result)
