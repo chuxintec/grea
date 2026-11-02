@@ -1,5 +1,9 @@
 # beaver development
 
+## Current implementation — 2026-11-02: guarded additive intake fixed23 preparation
+
+The actual missing-baseline/external-script gap is implemented as a separate create-only contract, preserving old adopt behavior. It pins full current source/directory/state inputs, exact source selection and external same-GUID/type C# declarations; no compiler input or existing asset is imported/overwritten. The established native importer is reused, with new GetClass/domain and exact owner/typed-field/reference gates plus independent headless reopen. Transactions are independent by source namespace, with no synthetic prior export or global adoption-state override. Native rollback removes only owned new unchanged assets/folders, verifies exact original state, and refuses later edits. CLI/schema/capabilities are implemented; 130 affected checks passed. Neutral source/default-domain mapping, successful12-field two-asset intake/cold reopen/rollback, failed unreviewed basename expectation/rollback and later-edit refusal have actual private receipts. Source is being sealed for final installed candidate verification; formal product intake, unsupported source presentation and visual/Player/business remain pending. Screen remains FoodStreet-only.
+
 ## Current work — 2026-11-02: Zombie Unity static Prefab adoption
 
 Human `01a199fe-c1cb-7280-a012-302f9b7da911` approved the project-driven Unity static Prefab chain; takeover human `01a199ff-4025-73b1-a8ae-cf5411526c14` and governing Manager decision were verified. New product owner `01a19a01-63bf-7823-af9f-e1daed5ec385` alone writes the formal Unity project and operates its Editor. Beaver owns tools and isolated candidate preflight; monkey owns source parsing/export, GREA owns thin routing. No FoodStreet AX authorization expansion.

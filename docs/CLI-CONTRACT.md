@@ -16,6 +16,9 @@
 | `adopt plan` | `--candidate --target --out`，首次 `--baseline`，可选 `--lineage` | 输出独立计划；目标/候选只读 |
 | `adopt apply` | `--plan --expected-plan --out --editor-path`，可选 `--timeout` | 原生应用、独立重开、状态记录 |
 | `adopt rollback` | `--transaction --editor-path`，可选 `--timeout` | 仅恢复事务仍拥有的改动；后续变更拒绝 |
+| `intake plan` | `--candidate --target --spec --out` | 独立只增合同；核精确当前前态与外部脚本，不伪造旧baseline |
+| `intake apply` | `--plan --expected-plan --out --editor-path`；可选`--timeout` | 仅新资产，原生导入及独立无窗口重开，旧代码/meta不变 |
+| `intake rollback` | `--transaction --expected-plan --editor-path`；可选`--timeout` | 仅本事务新增且后态未变的资源/空目录；任何后续修改拒绝 |
 | `image inspect` | `--input` | PNG/静态图片尺寸、alpha、RGBA 与文件 hash |
 | `image compress` | `--input --output`；执行另加 `--apply --expected-source` | 默认预览；PNG 无损重压缩，输出新文件 |
 | `config validate` | `--schema --input` | 严格标量 JSON、重复键/ID、范围与字段检查 |
@@ -168,3 +171,5 @@ Managed SDK preflight for Unity adoption is documented in [ADOPTION-ASSEMBLIES.m
 Explicit `adopt plan --sdk-migration FILE --expected-sdk-migration SHA256` uses the existing immutable adoption transaction. See [SDK-MIGRATION.md](SDK-MIGRATION.md) for complete byte/MVID/native MonoScript/role/reference requirements, rollback, and unsupported cases. The default collision guard above remains unchanged; only this explicit policy permits the supported canonical migration.
 
 `qa inspect-instance`, `qa bind`, and `qa input` are documented in [QA-BINDING.md](QA-BINDING.md). They require a strongly captured owned launch, explicit run and owner hash, and existing host AX permissions. Binding/input never launches an App or falls back to name/BundleID/global input. Kernel guards plus PID-directed posting are not atomic and do not establish business acceptance. Fixed/runtime and consumer validation status is recorded in PLAN.
+
+Additive intake has a separate `beaver-additive-intake/1` contract and closed [specification](ADDITIVE-INTAKE.md). It does not relax `beaver-adopt/1` or replace the exact prior baseline required by that operation.

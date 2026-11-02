@@ -71,6 +71,7 @@ def capabilities():
         dict(id="adoption.plan", state="implemented", effects="plan-output", engines=["unity-6000.6.2f1", "creator-3.8.8"], verification="python; large isolated Unity manifest preview"),
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
         dict(id="adoption.rollback", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native normal/failed transaction restore; later-edit rejection"),
+        dict(id='intake.plan/apply/rollback',state='requires_provider',provider='Unity 6000.6.2f1 for native phases',effects='create-only-reviewed-assets-and-guarded-owned-removal',verification='independent contract; exact before-state, explicit retained scripts, declared native fields; no existing adoption baseline override'),
         dict(id="unity.plan", state="implemented", effects="plan-output", verification="python; exact source and implementation identity"),
         dict(id="unity.ui.create", state="requires_provider", provider="Unity 6000.6.2f1 + uGUI/TMP Essentials + explicit font", effects="project-write", verification="native save/reopen/source audit"),
         dict(id="unity.prefab.inspect", state="requires_provider", provider="Unity 6000.6.2f1", effects="temporary-editor-helper", verification="native hierarchy/localID/component/importer readback"),
@@ -100,7 +101,7 @@ def capabilities():
         dict(id="creator.build", state="not_supported", effects="none", verification="not_run")
     ]
     return dict(contract="beaver-capabilities/1", capabilities=capabilities, requiredProviders=[],
-                nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",
+                nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",additiveIntakeContract='beaver-additive-intake/1',
                 productionOperationContract='beaver-production/3',productionTransactionContract='beaver-production-transaction/3',projectProfileContract='beaver-project/1',
                 limitations=["Provider readiness is not Editor connection or gameplay", "Native tests cover Unity 6000.6.2f1 only", "No source package parser; candidates are produced by monkey", "No global install, release, account/service/savegame writes", "Native receipts do not prove physical input, visual parity or game business acceptance"])
 
@@ -140,6 +141,15 @@ def parser():
     recover.add_argument("--transaction", required=True)
     recover.add_argument("--editor-path", required=True)
     recover.add_argument("--timeout", type=int, default=600)
+    intake = sub.add_parser('intake').add_subparsers(dest='action',required=True)
+    intake_plan = intake.add_parser('plan')
+    for option in ('candidate','target','spec','out'):intake_plan.add_argument('--'+option,required=True)
+    intake_apply = intake.add_parser('apply')
+    for option in ('plan','expected-plan','out','editor-path'):intake_apply.add_argument('--'+option,required=True)
+    intake_apply.add_argument('--timeout',type=int,default=600)
+    intake_rollback = intake.add_parser('rollback')
+    for option in ('transaction','expected-plan','editor-path'):intake_rollback.add_argument('--'+option,required=True)
+    intake_rollback.add_argument('--timeout',type=int,default=600)
     image = sub.add_parser("image").add_subparsers(dest="action", required=True)
     image_inspect = image.add_parser("inspect")
     image_inspect.add_argument("--input", required=True)
@@ -374,6 +384,13 @@ def dispatch(a):
             return execute(a.plan, a.out, a.editor_path, a.timeout, a.expected_plan)
         from .adoption_native import recover
         return recover(a.transaction, a.editor_path, a.timeout)
+    if a.command=='intake':
+        if a.action=='plan':
+            from .intake import preview
+            return preview(a.candidate,a.target,a.spec,a.out)
+        from .intake_native import execute,recover
+        if a.action=='apply':return execute(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
+        return recover(a.transaction,a.editor_path,a.expected_plan,a.timeout)
     if a.command == "image":
         from .images import inspect, compress
         return inspect(a.input) if a.action == "inspect" else compress(a.input, a.output, a.apply, a.expected_source)
@@ -510,6 +527,9 @@ def main(argv=None):
             base["verification"]["native"] = data["nativeReadback"]
         if a.command == "adopt" and a.action == "apply":
             base["actualChanges"] = [dict(operation='adoption.apply',transaction=data['transaction'],counts=data.get('counts',{}))]
+        if a.command=='intake' and a.action in ('apply','rollback'):
+            base['actualChanges']=[dict(operation='intake.'+a.action,transaction=data.get('transaction',a.transaction if a.action=='rollback' else a.out),additions=data.get('additions'),restored=data.get('restored'))]
+            base['verification']['native']=data.get('native','rolled_back' if a.action=='rollback' else 'verified-declared-intake-subset')
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
         if a.command=='unity' and a.action=='recover':
@@ -571,6 +591,15 @@ def main(argv=None):
         if getattr(a,'command',None)=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
             base['actualChanges']=[dict(status='inspect_recovery_receipt',report=str(Path(a.out,'recovery-result.json')),reason='Recovery can fail after partial writes; inspect the separate receipt')]
         if isinstance(error,BeaverError):
+            if getattr(a,'command',None)=='intake' and a.action in ('apply','rollback'):
+                stage=Path(a.out if a.action=='apply' else a.transaction)
+                if (stage/'journal.json').is_file():
+                    base['actualChanges']=[dict(status='inspect_intake_transaction',transaction=str(stage),reason='Failure may follow temporary helper or native writes; inspect the owned journal, never automatically replay')]
+                    base['artifacts'].append(dict(path=str(stage/'journal.json'),sha256=sha((stage/'journal.json').read_bytes())))
+                    if error.code=='INTAKE_NATIVE_FAILED':
+                        base['verification']['native']='failed; inspect partial transaction'
+                    elif any(stage.glob('native-*.json')) and error.code not in ('INTAKE_ROLLBACK_CONFLICT','INTAKE_RECOVERY_STATE','INTAKE_IMPLEMENTATION','INTAKE_PLAN_CHANGED'):
+                        base['verification']['native']='unknown for this call; inspect recorded transaction'
             if error.code=='READBACK_PROJECT_MODIFIED':
                 base['actualChanges']=[dict(status='inspect_source_guard',guard=error.location,reason='Read-only guard failed; inspect witnessed paths and helper before retry')]
             location=Path(error.location)
