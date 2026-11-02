@@ -482,4 +482,3 @@ def validate(spec, incoming, files, target, before, existing_guids):
     if unused:
         _retained_error("UNUSED", "retainedAssemblies", "Every retained assembly declaration must be used by a named newScript")
     return rows
-
