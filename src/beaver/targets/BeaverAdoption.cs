@@ -31,10 +31,29 @@ public static class BeaverAdoption {
         public string[] watch;
         public IntakeScript[] intakeNewScripts;
         public IntakeEngineObject[] intakeEngineObjects;
+        public RetainedAssembly[] intakeRetainedAssemblies;
         public bool codeRestored, sdkMigrationEnabled;
         public SdkMigration sdkMigration;
     }
     [Serializable] public class IntakeEngineObject { public string guid,type,assembly,name,assetPath; public long localId; }
+    [Serializable] public class RetainedAssembly { public string target,guid,sha256,metaSha256,name; }
+    [Serializable] class AssemblyDefinitionName { public string name; }
+    public static List<RetainedAssembly> CheckIntakeRetainedAssemblies(RetainedAssembly[] rows,string targetRoot) {
+        var result=new List<RetainedAssembly>();var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if(rows==null)return result;if(rows.Length>16)throw new Exception("Retained assembly limit");
+        var project=Path.GetFullPath(targetRoot);
+        foreach(var r in rows) {
+            if(r==null || String.IsNullOrEmpty(r.target) || !r.target.StartsWith("Assets/",StringComparison.Ordinal) || !r.target.EndsWith(".asmdef",StringComparison.Ordinal) || r.target.Contains("\\") || r.target.Split('/').Any(v=>v==""||v=="."||v==".."||v.Equals("Editor",StringComparison.OrdinalIgnoreCase)) || String.IsNullOrEmpty(r.name) || !seen.Add(r.name) || r.name.Equals("Assembly-CSharp",StringComparison.OrdinalIgnoreCase) || r.name.Equals("Assembly-CSharp-Editor",StringComparison.OrdinalIgnoreCase))throw new Exception("Invalid/duplicate retained assembly");
+            var path=Path.GetFullPath(Path.Combine(project,r.target));
+            if(!path.StartsWith(project+Path.DirectorySeparatorChar,StringComparison.Ordinal) || Hash(path)!=r.sha256 || Hash(path+".meta")!=r.metaSha256 || AssetDatabase.GUIDToAssetPath(r.guid)!=r.target)throw new Exception("Retained assembly source/GUID drift");
+            var def=JsonUtility.FromJson<AssemblyDefinitionName>(File.ReadAllText(path));
+            if(def==null || def.name!=r.name || UnityEditor.Compilation.CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(r.name)!=r.target)throw new Exception("Retained assembly native name/path mismatch");
+            var asset=AssetDatabase.LoadMainAssetAtPath(r.target);string guid;long id;
+            if(asset==null || !EditorUtility.IsPersistent(asset) || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(asset,out guid,out id) || guid!=r.guid || id==0 || AssetDatabase.GetAssetPath(asset)!=r.target)throw new Exception("Retained assembly native asset identity mismatch");
+            result.Add(new RetainedAssembly{target=r.target,guid=r.guid,sha256=r.sha256,metaSha256=r.metaSha256,name=r.name});
+        }
+        return result;
+    }
     public static List<IntakeEngineObject> CheckIntakeEngineObjects(IntakeEngineObject[] rows) {
         var found=new List<IntakeEngineObject>();var keys=new HashSet<string>(StringComparer.Ordinal);
         foreach(var row in rows??new IntakeEngineObject[0]) {
@@ -109,6 +128,8 @@ public static class BeaverAdoption {
         public IntakeWatcherReport watcherCheck;
         public List<IntakeEngineObject> engineObjectsBefore=new List<IntakeEngineObject>();
         public List<IntakeEngineObject> engineObjectsAfter=new List<IntakeEngineObject>();
+        public List<RetainedAssembly> retainedAssembliesBefore=new List<RetainedAssembly>();
+        public List<RetainedAssembly> retainedAssembliesAfter=new List<RetainedAssembly>();
     }
     [Serializable] public class Observed { public int index; public string path,fileHash,metaHash; }
     [Serializable] public class IntakeScript { public string target,guid,sha256,metaSha256; public long localId; }
@@ -698,7 +719,7 @@ public static class BeaverAdoption {
             deadline=DateTime.UtcNow.AddSeconds(job.budgetSeconds);
             var outer=DateTime.Parse(job.deadlineUtc,null,System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime();if(outer<deadline)deadline=outer;
             report=new Progress{status="running",mode=job.mode,planSha256=job.planSha256};Save();
-            report.engineObjectsBefore=CheckIntakeEngineObjects(job.intakeEngineObjects);Save();
+            report.retainedAssembliesBefore=CheckIntakeRetainedAssemblies(job.intakeRetainedAssemblies,job.targetRoot);report.engineObjectsBefore=CheckIntakeEngineObjects(job.intakeEngineObjects);Save();
             if(job.mode=="rollback") {
                 var priorPath=Path.Combine(job.stage,"native-apply.json");
                 if(!File.Exists(priorPath))priorPath=Path.Combine(job.stage,"native-code.json");
@@ -762,7 +783,7 @@ public static class BeaverAdoption {
                 }
                 var refs=Path.Combine(job.stage,"reference-signatures.json");
                 if(File.Exists(refs))foreach(var line in File.ReadAllLines(refs)){var parts=line.Split('\t');if(parts.Length!=2||RefSignature(parts[0])!=parts[1])throw new Exception("Restored watcher dependencies differ");}
-                report.engineObjectsAfter=CheckIntakeEngineObjects(job.intakeEngineObjects);report.status="rolled-back";report.referencesPreserved=true;
+                report.retainedAssembliesAfter=CheckIntakeRetainedAssemblies(job.intakeRetainedAssemblies,job.targetRoot);report.engineObjectsAfter=CheckIntakeEngineObjects(job.intakeEngineObjects);report.status="rolled-back";report.referencesPreserved=true;
             } else {
                 var signatures=new Dictionary<string,string>();
                 if(job.mode=="code" || job.mode=="apply") {
@@ -823,7 +844,7 @@ public static class BeaverAdoption {
                     if(applyReport.assets.Count!=report.assets.Count)throw new Exception("Readback count differs");
                     for(int i=0;i<applyReport.assets.Count;i++)if(!applyReport.assets[i].localIds.SequenceEqual(report.assets[i].localIds))throw new Exception("Reopened local IDs differ");
                 } else throw new Exception("Unknown adoption mode");
-                report.engineObjectsAfter=CheckIntakeEngineObjects(job.intakeEngineObjects);
+                report.retainedAssembliesAfter=CheckIntakeRetainedAssemblies(job.intakeRetainedAssemblies,job.targetRoot);report.engineObjectsAfter=CheckIntakeEngineObjects(job.intakeEngineObjects);
                 report.status=job.mode=="code"?"staged":"verified";report.referencesPreserved=job.mode!="code";
             }
             Save();code=0;

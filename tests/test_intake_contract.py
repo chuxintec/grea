@@ -50,6 +50,16 @@ def spec_v4():
     return value
 
 
+def spec_v5():
+    value = spec_v4(); value['schemaVersion'] = 5; value['retainedAssemblies'] = []
+    return value
+
+
+def retained_assembly(**changes):
+    value = dict(target='Assets/Game/Scope.asmdef',guid='8'*32,sha256=HASH,metaSha256=HASH,name='GameScope')
+    value.update(changes); return value
+
+
 def engine_object(**changes):
     item = {
         "guid": "0000000000000000e000000000000000", "localId": 10210,
@@ -691,3 +701,29 @@ class AdditiveIntakeContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IntakeV5ContractTests(unittest.TestCase):
+    def test_existing_named_assembly_is_explicit_and_used(self):
+        value=spec_v5(); value['newScripts']=[new_script(targetAssembly='GameScope')]; value['retainedAssemblies']=[retained_assembly()]
+        self.assertEqual(validate_spec(value),value)
+    def test_closed_assembly_identity_and_version_boundary(self):
+        value=spec_v5(); value['newScripts']=[new_script(targetAssembly='GameScope')]; value['retainedAssemblies']=[retained_assembly()]
+        for field,bad in [('target','Assets/Game/Scope.asmref'),('guid','bad'),('sha256','bad'),('name','Assembly-CSharp')]:
+            import copy
+            invalid=copy.deepcopy(value);invalid['retainedAssemblies'][0][field]=bad
+            with self.assertRaises(BeaverError):validate_spec(invalid)
+        for rows in [[],[retained_assembly(),retained_assembly()],[dict(retained_assembly(),extra=True)]]:
+            invalid={**value,'retainedAssemblies':rows}
+            with self.assertRaises(BeaverError):validate_spec(invalid)
+        old=spec_v4();old['newScripts']=[new_script(targetAssembly='GameScope')]
+        with self.assertRaises(BeaverError):validate_spec(old)
+    def test_empty_default_and_published_schema(self):
+        from jsonschema import Draft202012Validator
+        schema=json.loads((Path(__file__).resolve().parents[1]/'docs/schemas/additive-intake-5.schema.json').read_text())
+        Draft202012Validator.check_schema(schema);validator=Draft202012Validator(schema)
+        self.assertTrue(validator.is_valid(spec_v5()));self.assertEqual(validate_spec(spec_v5()),spec_v5())
+        char=spec_v5();char['verifications'][0]['objects'][0]['fields']=[dict(propertyPath='glyph',kind='character',value=0xD800)];self.assertTrue(validator.is_valid(char));self.assertEqual(validate_spec(char),char)
+        value=spec_v5();value['newScripts']=[new_script(targetAssembly='GameScope')];value['retainedAssemblies']=[retained_assembly()]
+        self.assertTrue(validator.is_valid(value))
+        self.assertFalse(validator.is_valid({**value,'extra':True}))

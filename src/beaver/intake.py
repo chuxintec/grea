@@ -15,6 +15,7 @@ CONTRACT = 'beaver-additive-intake/1'
 CONTRACT_V2 = 'beaver-additive-intake/2'
 CONTRACT_V3 = 'beaver-additive-intake/3'
 CONTRACT_V4 = 'beaver-additive-intake/4'
+CONTRACT_V5 = 'beaver-additive-intake/5'
 GUID = re.compile(rb'^guid:\s*([a-f0-9]{32})\s*$', re.M)
 REFERENCES = re.compile(rb'\bguid:\s*([a-f0-9]{32})\b')
 COMPILER = {'.cs', '.asmdef', '.asmref', '.rsp', '.dll'}
@@ -87,6 +88,8 @@ def build_plan(candidate, target, spec_path):
     targets = set()
     keys = {resource_key(p) for p in before if not p.endswith('.meta') and resource_key(p)}
     new_scripts = spec.get('newScripts', [])
+    from .intake_assemblies import validate as validate_assemblies
+    retained_assemblies = validate_assemblies(spec, incoming, files, target, before, existing_guids) if spec['schemaVersion'] >= 5 else []
     for row in spec['additions'] + new_scripts:
         src, dest = row['source'], row['target']
         if src not in files or src+'.meta' not in files:
@@ -95,7 +98,7 @@ def build_plan(candidate, target, spec_path):
         if row in new_scripts:
             if g != row['guid'] or files[src]['sha256'] != row['sha256'] or files[src+'.meta']['sha256'] != row['metaSha256']:
                 fail('INTAKE_NEW_SCRIPT_PIN', src, 'Reviewed exact compiler source/meta/GUID required')
-            for path in before:
+            for path in before if spec['schemaVersion'] < 5 else []:
                 if path.endswith(('.asmdef','.asmref')) and dest.startswith(str(Path(path).parent)+'/'):
                     fail('INTAKE_NEW_SCRIPT_DOMAIN', dest, 'New scripts require default Assembly-CSharp, not an existing assembly scope')
         if g in existing_guids or g in new_guids:
@@ -148,8 +151,8 @@ def build_plan(candidate, target, spec_path):
     engine_used = set()
     for row in additions + external_assets:
         if Path(row['source']).suffix.lower() not in {'.png', '.ttf', '.otf'}:
-            engine_used |= text_references(read(incoming/row['source'], max_bytes=MANIFEST_BYTES), row['source'], selected_guids, engine, strict=spec['schemaVersion']==4)
-        text_references(read(incoming/(row['source']+'.meta')), row['source'], selected_guids, engine, importer=True, strict=spec['schemaVersion']==4)
+            engine_used |= text_references(read(incoming/row['source'], max_bytes=MANIFEST_BYTES), row['source'], selected_guids, engine, strict=spec['schemaVersion']>=4)
+        text_references(read(incoming/(row['source']+'.meta')), row['source'], selected_guids, engine, importer=True, strict=spec['schemaVersion']>=4)
     if set(engine) != engine_used:
         fail('INTAKE_ENGINE_UNUSED', 'engineObjects', 'Every declared engine identity must occur as an exact selected serialized PPtr')
     verifications = {v['asset']: v for v in spec['verifications']}
@@ -165,7 +168,7 @@ def build_plan(candidate, target, spec_path):
         for obj in row['objects']:
             for field in obj['fields']:
                 if field['kind'] == 'object':
-                    expected_reference(field['value'], row['source'], selected_guids, engine, strict=spec['schemaVersion']==4)
+                    expected_reference(field['value'], row['source'], selected_guids, engine, strict=spec['schemaVersion']>=4)
     for r in spec['protectedAssets']:
         for path, expected in [(r['path'], r['sha256']), (r['path']+'.meta', r['metaSha256'])]:
             if before.get(path, {}).get('sha256') != expected:
@@ -177,7 +180,7 @@ def build_plan(candidate, target, spec_path):
         while p.as_posix() != 'Assets':
             if not inside(target, p.as_posix()).exists(): parents.add(p.as_posix())
             p = p.parent
-    plan = dict(schemaVersion=spec['schemaVersion'], contract={1:CONTRACT,2:CONTRACT_V2,3:CONTRACT_V3,4:CONTRACT_V4}[spec['schemaVersion']], implementationSha256=identity(),
+    plan = dict(schemaVersion=spec['schemaVersion'], contract={1:CONTRACT,2:CONTRACT_V2,3:CONTRACT_V3,4:CONTRACT_V4,5:CONTRACT_V5}[spec['schemaVersion']], implementationSha256=identity(),
                 candidateRoot=str(incoming), candidateManifestSha256=manifest_hash, namespace=manifest['namespace'],
                 targetRoot=str(target), targetProfile=manifest['targetProfile'], targetBefore=before,
                 targetDirectoriesBefore=directories,targetAuxiliary=auxiliary,
@@ -192,8 +195,10 @@ def build_plan(candidate, target, spec_path):
         plan.update(externalAssets=external_assets, packageScripts=packages, packageInputs=package_inputs(packages))
     if spec['schemaVersion']>=3:
         plan['newScripts'] = new_scripts
-    if spec['schemaVersion']==4:
+    if spec['schemaVersion']>=4:
         plan['engineObjects'] = engine_objects
+    if spec['schemaVersion']>=5:
+        plan['retainedAssemblies'] = retained_assemblies
     return plan
 
 
@@ -209,8 +214,10 @@ def preview(candidate, target, spec, output):
         result.update(externalAssets=len(plan['externalAssets']), packageScripts=len(plan['packageScripts']))
     if plan['schemaVersion']>=3:
         result.update(newScripts=len(plan['newScripts']),maximumNativePhases=5 if plan['newScripts'] else 3)
-    if plan['schemaVersion']==4:
+    if plan['schemaVersion']>=4:
         result.update(engineObjects=len(plan['engineObjects']))
+    if plan['schemaVersion']>=5:
+        result.update(retainedAssemblies=len(plan['retainedAssemblies']),scriptPolicy='schema-only-retained-assembly/1')
     return result
 
 
@@ -219,7 +226,7 @@ def checked_plan(path, expected):
     if not expected or digest_file(path) != expected:
         fail('INTAKE_PLAN_CHANGED', str(path), 'Explicit exact plan hash required')
     plan = load(read(path, max_bytes=MANIFEST_BYTES), max_nodes=MANIFEST_NODES)
-    if plan.get('contract') not in (CONTRACT, CONTRACT_V2, CONTRACT_V3, CONTRACT_V4) or plan.get('implementationSha256') != identity():
+    if plan.get('contract') not in (CONTRACT, CONTRACT_V2, CONTRACT_V3, CONTRACT_V4, CONTRACT_V5) or plan.get('implementationSha256') != identity():
         fail('INTAKE_IMPLEMENTATION', str(path), 'Original exact intake implementation required')
     if digest_file(path) != load(read(path.parent/'plan-identity.json')).get('sha256'):
         fail('INTAKE_PLAN_CHANGED', str(path), 'Saved plan identity differs')

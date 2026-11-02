@@ -230,13 +230,15 @@ def validate_spec(doc):
     if not isinstance(doc, dict):
         _bad("$", "Object required")
     version = doc.get("schemaVersion")
-    if type(version) is not int or version not in (1, 2, 3, 4):
-        _bad("schemaVersion", "schemaVersion 1, 2, 3, or 4 required", "VERSION")
+    if type(version) is not int or version not in (1, 2, 3, 4, 5):
+        _bad("schemaVersion", "schemaVersion 1, 2, 3, 4, or 5 required", "VERSION")
     keys = _TOP_KEYS if version == 1 else _TOP_KEYS | {"externalAssets", "packageScripts"}
-    if version in (3, 4):
+    if version >= 3:
         keys = keys | {"newScripts"}
-    if version == 4:
+    if version >= 4:
         keys = keys | {"engineObjects"}
+    if version == 5:
+        keys = keys | {"retainedAssemblies"}
     _exact(doc, keys, "$")
     if doc["operation"] != "additive-intake":
         _bad("operation", "operation must be additive-intake", "OPERATION")
@@ -302,7 +304,7 @@ def validate_spec(doc):
             _bad(where + ".asset", "Verification asset must match an additions.source prefab", "REFERENCE")
         verified_assets.append(asset)
         objects = _array(item["objects"], where + ".objects", 1, 4096)
-        total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version in (3, 4)))
+        total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version >= 3))
     _unique(verified_assets, "verifications.asset")
 
     external_asset_sources, external_asset_targets, external_asset_guids = [], [], []
@@ -326,7 +328,7 @@ def validate_spec(doc):
             total_asset_objects += len(objects)
             if total_asset_objects > 4096:
                 _bad("externalAssets", "Combined object count exceeds 4096", "BOUNDS")
-            total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version in (3, 4)))
+            total_fields = _owner_rows(objects, where + ".objects", total_fields, allow_character=(version >= 3))
             external_asset_sources.append(source)
             external_asset_targets.append(target)
             external_asset_guids.append(item["guid"])
@@ -378,7 +380,7 @@ def validate_spec(doc):
 
     new_script_sources, new_script_targets, new_script_guids, new_script_types = [], [], [], []
     new_script_paths = set()
-    if version in (3, 4):
+    if version >= 3:
         new_scripts = _array(doc["newScripts"], "newScripts", maximum=16)
         keys = {"source", "target", "guid", "sha256", "metaSha256", "sourceType", "sourceAssembly", "targetType", "targetAssembly", "baseType", "baseAssembly", "localId", "fields", "reason"}
         for index, item in enumerate(new_scripts):
@@ -401,7 +403,8 @@ def validate_spec(doc):
             if target_stem != class_name:
                 _bad(where + ".target", "Target filename must match the target type's final class name", "TYPE")
             _simple_assembly(item["sourceAssembly"], where + ".sourceAssembly")
-            if item["targetAssembly"] != "Assembly-CSharp":
+            _simple_assembly(item["targetAssembly"], where + ".targetAssembly")
+            if version < 5 and item["targetAssembly"] != "Assembly-CSharp":
                 _bad(where + ".targetAssembly", "New scripts must target Assembly-CSharp", "ASSEMBLY")
             _string(item["baseType"], where + ".baseType")
             _simple_assembly(item["baseAssembly"], where + ".baseAssembly")
@@ -435,8 +438,33 @@ def validate_spec(doc):
         if set(new_script_guids) & (set(ext_guids) | set(external_asset_guids) | set(package_guids)):
             _bad("newScripts", "New script GUID cannot overlap external script, external asset, or package script GUID", "OVERLAP")
 
-    if version == 4:
+    if version >= 4:
         _engine_object_rows(doc["engineObjects"])
+
+    if version == 5:
+        rows = _array(doc["retainedAssemblies"], "retainedAssemblies", maximum=16)
+        paths, guids, names = [], [], []
+        for index, row in enumerate(rows):
+            where = f"retainedAssemblies[{index}]"
+            _exact(row, {"target", "guid", "sha256", "metaSha256", "name"}, where)
+            path = _asset_path(row["target"], where + ".target", {".asmdef"})
+            if any(part.casefold() == "editor" for part in path.split("/")[1:-1]):
+                _bad(where + ".target", "Retained assembly cannot be in an Editor directory", "PATH")
+            _guid(row["guid"], where + ".guid")
+            _hash(row["sha256"], where + ".sha256")
+            _hash(row["metaSha256"], where + ".metaSha256")
+            _simple_assembly(row["name"], where + ".name")
+            if row["name"].casefold() in {"assembly-csharp", "assembly-csharp-editor"}:
+                _bad(where + ".name", "A retained assembly must be explicitly named", "ASSEMBLY")
+            paths.append(path); guids.append(row["guid"]); names.append(row["name"].casefold())
+        _unique(paths, "retainedAssemblies.target")
+        _unique(guids, "retainedAssemblies.guid")
+        _unique_exact(names, "retainedAssemblies.name")
+        named = {r["targetAssembly"] for r in doc["newScripts"] if r["targetAssembly"] != "Assembly-CSharp"}
+        if named != {r["name"] for r in rows}:
+            _bad("retainedAssemblies", "Every named new script assembly must be declared and every declaration used", "ASSEMBLY")
+        if set(guids) & (set(new_script_guids) | set(ext_guids) | set(external_asset_guids) | set(package_guids)):
+            _bad("retainedAssemblies", "Retained assembly GUID overlaps an asset or script", "OVERLAP")
 
     omitted_paths = []
     add_source_keys = {p.casefold() for p in addition_sources}

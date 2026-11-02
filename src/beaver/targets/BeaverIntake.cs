@@ -22,12 +22,12 @@ public static class BeaverIntake {
     [Serializable] public class Member { public string name,type,assembly; }
     [Serializable] public class NewScript { public string target,guid,sha256,metaSha256,targetType,targetAssembly,baseType,baseAssembly; public long localId; public Member[] fields; }
     [Serializable] public class NewObserved { public Observed identity; public string baseType,baseAssembly; public Member[] fields; }
-    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256,watcherBeforeSha256,watcherCompiledSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public NewScript[] newScripts; public BeaverAdoption.IntakeEngineObject[] engineObjects; public Check[] verifications; }
+    [Serializable] public class Job { public string targetRoot,stage,mode,planSha256,watcherBeforeSha256,watcherCompiledSha256; public Addition[] additions; public Script[] externalScripts; public External[] externalAssets; public PackageScript[] packageScripts; public NewScript[] newScripts; public bool strictNewScriptSchema; public BeaverAdoption.RetainedAssembly[] retainedAssemblies; public BeaverAdoption.IntakeEngineObject[] engineObjects; public Check[] verifications; }
     [Serializable] public class Observed { public string path,guid,type,assembly,name; public long localId; }
     [Serializable] public class Reference { public string asset,propertyPath; public long ownerLocalId; public Observed value; }
     [Serializable] public class SkippedArray { public string propertyPath,elementType,scalarPropertyType; public int length; }
     [Serializable] public class Traversal { public string asset; public long ownerLocalId; public int visited; public List<SkippedArray> scalarArrays=new List<SkippedArray>(); }
-    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); public List<Traversal> referenceTraversals=new List<Traversal>(); public List<NewObserved> newScripts=new List<NewObserved>(); public BeaverAdoption.IntakeWatcherReport watcherCheck; public List<BeaverAdoption.IntakeEngineObject> engineObjects=new List<BeaverAdoption.IntakeEngineObject>(); }
+    [Serializable] public class Report { public string status,mode,planSha256,error; public int fieldsChecked; public List<Observed> scripts=new List<Observed>(); public List<Observed> objects=new List<Observed>(); public List<Observed> externalObjects=new List<Observed>(); public List<Reference> externalReferences=new List<Reference>(); public List<Observed> packageScripts=new List<Observed>(); public List<Traversal> referenceTraversals=new List<Traversal>(); public List<NewObserved> newScripts=new List<NewObserved>(); public BeaverAdoption.IntakeWatcherReport watcherCheck; public List<BeaverAdoption.IntakeEngineObject> engineObjects=new List<BeaverAdoption.IntakeEngineObject>(); public List<BeaverAdoption.RetainedAssembly> retainedAssemblies=new List<BeaverAdoption.RetainedAssembly>(); }
     static Job job; static Report report; static string root;
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(p=>p==""||p=="."||p==".."))throw new Exception("Unsafe intake path");
@@ -71,6 +71,31 @@ public static class BeaverIntake {
         }
         return true;
     }
+    public static void CheckSchemaOnlyType(Type type,Member[] fields) {
+        var flags=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.Static|BindingFlags.DeclaredOnly;
+        if(!type.IsClass || type.IsAbstract || type.IsGenericType || type.IsNested || type.TypeInitializer!=null || type.GetInterfaces().Length!=0 || type.GetMethods(flags).Length!=0 || type.GetProperties(flags).Length!=0 || type.GetEvents(flags).Length!=0 || type.GetNestedTypes(flags).Length!=0)throw new Exception("New script must be schema-only without methods/initializers");
+        var members=type.GetFields(flags);fields=fields??new Member[0];
+        if(members.Length!=fields.Length || members.Any(f=>!f.IsPublic||f.IsStatic||f.IsInitOnly||f.IsLiteral) || !members.Select(f=>f.Name).OrderBy(v=>v,StringComparer.Ordinal).SequenceEqual(fields.Select(f=>f.name).OrderBy(v=>v,StringComparer.Ordinal)))throw new Exception("New script declared schema fields mismatch");
+        var ctors=type.GetConstructors(flags);
+        if(ctors.Length!=1 || !ctors[0].IsPublic || ctors[0].GetParameters().Length!=0)throw new Exception("New script constructor is not implicit default");
+        var body=ctors[0].GetMethodBody();var il=body==null?null:body.GetILAsByteArray();
+        // The only accepted body is ldarg.0; call immediate-base .ctor(); ret,
+        // with optional compiler debug nops. Token bytes are never filtered.
+        int i=0;if(il==null)throw new Exception("New script constructor body unavailable");
+        while(i<il.Length&&il[i]==0)i++;if(i>=il.Length||il[i++]!=2)throw new Exception("New script constructor initializer rejected");
+        while(i<il.Length&&il[i]==0)i++;if(i+5>il.Length||il[i++]!=0x28)throw new Exception("New script constructor initializer rejected");
+        int token=BitConverter.ToInt32(il,i);i+=4;var called=type.Module.ResolveMethod(token);
+        if(!(called is ConstructorInfo)||called.DeclaringType!=type.BaseType||called.GetParameters().Length!=0)throw new Exception("New script constructor base call mismatch");
+        while(i<il.Length&&il[i]==0)i++;if(i>=il.Length||il[i++]!=0x2a)throw new Exception("New script constructor initializer rejected");
+        while(i<il.Length&&il[i]==0)i++;if(i!=il.Length)throw new Exception("New script constructor initializer rejected");
+    }
+    static void NewScriptAssembly(NewScript s) {
+        var definition=UnityEditor.Compilation.CompilationPipeline.GetAssemblyDefinitionFilePathFromScriptPath(s.target);
+        var compiled=UnityEditor.Compilation.CompilationPipeline.GetAssemblyNameFromScriptPath(s.target);
+        if(compiled!=null&&compiled.EndsWith(".dll",StringComparison.Ordinal))compiled=compiled.Substring(0,compiled.Length-4);
+        var expected=(job.retainedAssemblies??new BeaverAdoption.RetainedAssembly[0]).Where(r=>r.name==s.targetAssembly).ToArray();
+        if(compiled!=s.targetAssembly || (s.targetAssembly=="Assembly-CSharp" ? !String.IsNullOrEmpty(definition) : expected.Length!=1||definition!=expected[0].target))throw new Exception("New script actual compilation scope mismatch "+s.target);
+    }
     static void NewScripts() {
         foreach(var s in job.newScripts??new NewScript[0]) {
             var types=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType(s.targetType,false)).Where(t=>t!=null).ToArray();
@@ -81,6 +106,7 @@ public static class BeaverIntake {
             if(Hash(Full(s.target))!=s.sha256||Hash(Full(s.target+".meta"))!=s.metaSha256||AssetDatabase.GUIDToAssetPath(s.guid)!=s.target)throw new Exception("New script source/GUID drift "+s.target);
             var script=AssetDatabase.LoadAssetAtPath<MonoScript>(s.target);var type=script==null?null:script.GetClass();var found=Identity(script,s.target);
             if(type==null||types.Length!=1||types[0]!=type||type.FullName!=s.targetType||type.Assembly.GetName().Name!=s.targetAssembly||type.BaseType==null||type.BaseType.FullName!=s.baseType||type.BaseType.Assembly.GetName().Name!=s.baseAssembly||found.guid!=s.guid||found.localId!=s.localId)throw new Exception("New script GetClass/domain/base/unique type mismatch "+s.target);
+            if(job.strictNewScriptSchema){NewScriptAssembly(s);CheckSchemaOnlyType(type,s.fields);}
             foreach(var field in s.fields) {
                 var member=type.GetField(field.name,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);
                 if(member==null||member.FieldType.FullName!=field.type||member.FieldType.Assembly.GetName().Name!=field.assembly)throw new Exception("New script field mismatch "+s.target+":"+field.name);
@@ -171,7 +197,7 @@ public static class BeaverIntake {
             var path=new System.Text.UTF8Encoding(false,true).GetString(Convert.FromBase64String(encoded));job=JsonUtility.FromJson<Job>(File.ReadAllText(path));
             root=Path.GetFullPath(job.targetRoot).TrimEnd(Path.DirectorySeparatorChar);
             if(Application.unityVersion!="6000.6.2f1"||root!=Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName).TrimEnd(Path.DirectorySeparatorChar))throw new Exception("Wrong Editor/project");
-            report=new Report{status="running",mode=job.mode,planSha256=job.planSha256};report.engineObjects=BeaverAdoption.CheckIntakeEngineObjects(job.engineObjects);Scripts();Dependencies();NewScripts();
+            report=new Report{status="running",mode=job.mode,planSha256=job.planSha256};report.retainedAssemblies=BeaverAdoption.CheckIntakeRetainedAssemblies(job.retainedAssemblies,job.targetRoot);report.engineObjects=BeaverAdoption.CheckIntakeEngineObjects(job.engineObjects);Scripts();Dependencies();NewScripts();
             if((job.newScripts??new NewScript[0]).Length>0 && job.mode!="preflight" && (job.mode!="rollback-check" || File.Exists(Path.Combine(job.stage,"intake-watchers-before.json"))))report.watcherCheck=BeaverAdoption.CheckIntakeWatcherBoundary(job.stage,job.planSha256,job.mode,job.watcherBeforeSha256,job.watcherCompiledSha256);
             if(job.mode!="preflight"&&job.mode!="verify"&&job.mode!="rollback-check"&&job.mode!="code-check")throw new Exception("Unknown intake gate");
             foreach(var a in job.additions) {
@@ -185,7 +211,7 @@ public static class BeaverIntake {
                 }
             }
             if(job.mode=="verify")foreach(var c in job.verifications)Prefab(c,job.additions.Single(a=>a.target==c.asset));
-            report.engineObjects=BeaverAdoption.CheckIntakeEngineObjects(job.engineObjects);
+            report.retainedAssemblies=BeaverAdoption.CheckIntakeRetainedAssemblies(job.retainedAssemblies,job.targetRoot);report.engineObjects=BeaverAdoption.CheckIntakeEngineObjects(job.engineObjects);
             report.status="verified";exit=0;
         } catch(Exception e) { if(report==null)report=new Report();report.status="failed";report.error=e.ToString(); }
         finally {
