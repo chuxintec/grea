@@ -367,7 +367,9 @@ def recover(request_path, expected_request, output):
     write_json(project / "Analysis/Tasks/unity-prefab-recovery.json", report)
     files = [dict(path=p.relative_to(project).as_posix(), sha256=sha(read(p, max_bytes=256 * 1024 * 1024)), bytes=p.stat().st_size)
              for p in sorted(project.rglob("*")) if p.is_file()]
-    write_json(project / "manifest.json", dict(schemaVersion=1, contract=report["contract"], toolVersion=__version__,
+    from .io import encoded
+    source_namespace = "unity-source/" + sha(encoded(sorted(roots, key=lambda r: (r["sourceSha256"], r["file"], r["pathId"]))))[:24]
+    write_json(project / "manifest.json", dict(schemaVersion=1, contract=report["contract"], toolVersion=__version__, namespace=source_namespace,
         targetProfile="unity-6000.6.2f1-ugui", sourceFamily="unity", requestSha256=expected_request,
         selectedSourceRoots=roots, files=files, diagnostics=gaps, native="not_run", business="not_run"))
     write_json(out / "result.json", report)

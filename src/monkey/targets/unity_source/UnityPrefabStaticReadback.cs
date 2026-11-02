@@ -23,6 +23,8 @@ namespace MonkeyUnitySource
             public int schemaVersion;
             public string targetUnityVersion;
             public string outputRelative;
+            public bool headless;
+            public bool reopenOnly;
             public RootPlan[] roots;
         }
 
@@ -280,7 +282,7 @@ namespace MonkeyUnitySource
                         representative = true;
                         implicitRepresentativeSelected = true;
                     }
-                    report.roots[i] = VerifyRoot(projectRoot, root, representative);
+                    report.roots[i] = plan.reopenOnly ? VerifyColdRoot(projectRoot, root) : VerifyRoot(projectRoot, root, representative, plan.headless);
                 }
                 bool allPassed = report.roots.All(r => r != null && r.status == "passed");
                 bool anyFailed = report.roots.Any(r => r == null || r.status == "failed");
@@ -303,10 +305,54 @@ namespace MonkeyUnitySource
             finally
             {
                 Debug.Log("UNITY_PREFAB_STATIC_READBACK_EXIT=" + exit.ToString(Invariant));
+                if (Application.isBatchMode) EditorApplication.Exit(exit);
             }
         }
 
-        static RootResult VerifyRoot(string projectRoot, RootPlan plan, bool representative)
+        static RootResult VerifyColdRoot(string projectRoot, RootPlan plan)
+        {
+            var result = new RootResult { sourceId = plan.sourceId, sourcePrefabPath = plan.path, status = "failed" };
+            var failures = new List<Failure>();
+            GameObject contents = null;
+            try
+            {
+                ValidateAssetPrefabPath(projectRoot, plan.path);
+                PreflightPlanCallbacks(plan);
+                GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(plan.path);
+                if (asset == null) throw new InvalidOperationException("Cold-reopen Prefab is absent");
+                MappedTree mapped = CheckTree(plan, asset, "independent-cold-asset", false, true, result, failures);
+                contents = PrefabUtility.LoadPrefabContents(plan.path);
+                if (contents == null) throw new InvalidOperationException("Cold LoadPrefabContents returned null");
+                CheckTree(plan, contents, "independent-cold-contents", false, false, result, failures);
+                result.sourceNodes = plan.nodes.Length;
+                result.sourceComponents = mapped.componentCount;
+                result.fieldsExpected = mapped.fieldsExpected;
+                result.fieldsCheckedAfterReopen = mapped.fieldsChecked;
+                result.fieldResultsAfter = mapped.fields.ToArray();
+                result.nativeIdentitiesAfter = mapped.identities.ToArray();
+                result.assetReferencesAfter = mapped.references.ToArray();
+                result.reopened = true;
+                result.readbackPrefabPath = plan.path;
+                result.readbackPrefabGuid = AssetDatabase.AssetPathToGUID(plan.path);
+                result.visualCompleteness = "not_run_independent_cold_reopen";
+                result.limitations = new string[] { "static-render-deferred-no-graphics", "unavailable-source-behavior-remains-disabled" };
+                result.status = "partial";
+            }
+            catch (Exception error)
+            {
+                failures.Add(new Failure { phase = "independent-cold-reopen", message = error.ToString() });
+                result.status = "failed";
+                Debug.LogError(error);
+            }
+            finally
+            {
+                if (contents != null) PrefabUtility.UnloadPrefabContents(contents);
+            }
+            result.failures = failures.ToArray();
+            return result;
+        }
+
+        static RootResult VerifyRoot(string projectRoot, RootPlan plan, bool representative, bool headless)
         {
             RootResult result = new RootResult {
                 sourceId = plan.sourceId, sourcePrefabPath = plan.path, status = "failed",
@@ -405,7 +451,13 @@ namespace MonkeyUnitySource
                 CompareReferenceTables(before.references, after.references);
 
                 bool hasUi = IsUiPlan(plan);
-                if (hasUi)
+                if (headless)
+                {
+                    result.image = new ImageResult { status = "not_run_headless", error = "Rendering and visible edits deferred; no graphics device requested" };
+                    result.visualCompleteness = "not_run_headless";
+                    limitations.Add("static-render-deferred-no-graphics");
+                }
+                else if (hasUi)
                 {
                     result.image = RenderPrefab(projectRoot, imported, result.readbackPrefabGuid, plan, out EditResult[] edits, representative);
                     result.editability = edits;
@@ -428,6 +480,7 @@ namespace MonkeyUnitySource
                 }
 
                 bool incomplete = limitations.Any(v => v.StartsWith("disabled-unavailable:", StringComparison.Ordinal) ||
+                    v == "static-render-deferred-no-graphics" ||
                     v == "sprite-renderer-or-non-UI-scene-preview-not-implemented" ||
                     v.StartsWith("representative-editability-", StringComparison.Ordinal));
                 result.status = failures.Count > 0 ? "failed" : (incomplete ? "partial" : "passed");

@@ -7,9 +7,13 @@ Development profile: source Unity 2021.3.30f1, target Unity 6000.6.2f1 and uGUI 
 ```
 monkey recover-unity-prefabs --request REQUEST.json --expected-request SHA256 --out NEW_DIRECTORY
 monkey verify-unity-prefabs --candidate CANDIDATE/UnityProject --expected-manifest SHA256 --unity-editor EXACT_EDITOR --out NEW_DIRECTORY --budget-seconds 600
+monkey verify-unity-prefabs --candidate CANDIDATE/UnityProject --expected-manifest SHA256 --unity-editor EXACT_EDITOR --out NEW_DIRECTORY --headless
+monkey freeze-unity-prefabs --native-output NATIVE_DIRECTORY --expected-execution SHA256 --out NEW_DIRECTORY
 ```
 
 Generation returns exit 1 with `needs_action`: generated output is not native acceptance. Verification runs only a fresh owned copy, refuses concurrent main Unity/Creator Editors, pins its plan/helper, retains logs and readback, and stops only its own child when its budget expires. `native-verified-subset` requires readback `completed` and child exit 0. `native-partial` retains explicit unsupported presentation with exit 1. Neither status proves Player, business, visual parity or consumer adoption. A timed-out or failed child is not accepted from counts or an old readback.
+
+`--headless` runs with `-batchmode -nographics`, defers rendering/visible edits and preserves partial status. A second independent headless process verifies the saved state without saving again and compares all native identity/reference tables across processes. Freeze requires both exited processes, exact original/source and readback hashes, and unchanged post-exit file bytes. It excludes Library and the Editor verifier and produces the existing target-profile/namespace/file-ownership manifest for adoption preflight. Source namespace is derived from the complete selected root identities; it does not imply compatibility with an existing consumer assembly or Resources key.
 
 ## Request contract
 
@@ -24,3 +28,5 @@ Provider selection uses exact original AssetBundle container paths and GUID clos
 `UnityProject/manifest.json` owns exact generated files. Source graph, prior input receipts, declaration evidence, provider lineage, schema/carrier dispositions and relocation mappings live under Analysis. The generation report separates native, static and business status. Native expectations derive hierarchy/component order/fields/references from source evidence and target resource GUIDs from retained metadata. Native readback records actual class/assembly, GUID/localID/type, field storage types, saved/reopened identity and representative text/image/transform edit renders. Source enabled values are checked before unavailable behaviors are explicitly disabled; persisted disabled state is checked afterward.
 
 The first development profile remains acceptance-pending. Compiled source shaders, unsupported source effects, target-native script mapping and non-UI render scope can require further work. Do not infer a complete module, ten-root exit or all-Unity support from generation, local tests or successful SDK compilation alone. Fixed producer/package identities and actual consumer receipts are separate handoff requirements.
+
+Source RectTransform stored Transform XY may be stale relative to anchoredPosition. Native expectations retain those stored source values as evidence and derive actual XY from the source parent size, anchors and pivots; all authoritative Rect fields remain checked. Source UInt8 fields become bool expectations only with proven declaration/native field profiles, including the bounded UI.FontData bool fields. Integers, enum storage and array lengths remain distinct from bool and float fields in actual readback.

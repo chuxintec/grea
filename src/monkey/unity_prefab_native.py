@@ -20,6 +20,99 @@ _ASSEMBLIES = {
 }
 
 
+def rect_layout_expectations(graph):
+    """RectTransform XY is derived from anchors/pivots, not stale Transform XY."""
+    nodes = {n["sourceObjectId"]: n for n in graph["gameObjects"]}
+    objects = {o["sourceObjectId"]: o for o in graph["reachableObjects"]}
+    result = {}
+
+    def visit(sid, parent=None):
+        node = nodes[sid]
+        rect = next((objects[c["sourceObjectId"]] for c in node["orderedComponents"] if c["type"] == "RectTransform"), None)
+        layout = None
+        if rect:
+            data = rect["data"]
+            size, position = {}, {}
+            for axis in ("x", "y"):
+                span = data["m_AnchorMax"][axis] - data["m_AnchorMin"][axis]
+                parent_size = parent["size"][axis] if parent else 0
+                size[axis] = parent_size * span + data["m_SizeDelta"][axis]
+                anchor = data["m_AnchorMin"][axis] + span * data["m_Pivot"][axis]
+                position[axis] = data["m_AnchoredPosition"][axis] + parent_size * (anchor - parent["pivot"][axis]) if parent else data["m_AnchoredPosition"][axis]
+            layout = dict(size=size, pivot=data["m_Pivot"], position=position)
+            result[rect["sourceObjectId"]] = layout
+        for child in node["childSourceObjectIds"]:
+            visit(child, layout)
+    for root in graph["roots"]:
+        visit(root["sourceObjectId"])
+    return result
+
+
+def cold_reopen(native_output, editor, budget_seconds=600):
+    """Read the saved candidate in a different headless process; never save again."""
+    from .native import now, stamp
+    out, editor = safe(native_output), safe(editor)
+    receipt = load(read(out / "execution-result.json"))
+    if receipt.get("processExited") is not True or receipt.get("status") not in ("native-partial", "native-verified-subset"):
+        fail("UNITY_PREFAB_COLD_PRECONDITION", str(out), "Prior owned native save must have completed")
+    work = out / "UnityProject"
+    plan = load(read(work / "Analysis/Tasks/native-prefab-plan.json"))
+    if sha(read(work / "Assets/Editor/MonkeyUnitySource/UnityPrefabStaticReadback.cs")) != receipt["helperSha256"]:
+        fail("UNITY_PREFAB_COLD_HELPER_DRIFT", str(out), "Use the exact first-process helper")
+    first = load(read(receipt["readbackPath"], max_bytes=128 * 1024 * 1024), max_nodes=8_000_000)
+    if sha(read(receipt["readbackPath"], max_bytes=128 * 1024 * 1024)) != receipt["readbackSha256"]:
+        fail("UNITY_PREFAB_COLD_RECEIPT_DRIFT", str(out), "First readback changed")
+    if any(not r.get("saved") or not r.get("reopened") or r.get("failures") for r in first["roots"]):
+        fail("UNITY_PREFAB_COLD_ROOT_UNSAVED", str(out), "All roots require actual save/reload with no field failure")
+    processes = subprocess.check_output(["ps", "-axo", "pid=,comm="], text=True).splitlines()
+    if any(r.strip().endswith(("/Contents/MacOS/Unity", "/Contents/MacOS/CocosCreator", "/Unity.exe", "/CocosCreator.exe")) for r in processes):
+        fail("UNITY_PREFAB_EDITOR_BUSY", "$", "Another main Editor is running")
+    plan.update(headless=True, reopenOnly=True, outputRelative="Analysis/Readback/unity-prefab-cold.json")
+    stage = new_output(out / "ColdReopen", [editor])
+    plan_path = stage / "plan.json"
+    write_json(plan_path, plan)
+    env = dict(os.environ, MONKEY_UNITY_PREFAB_PLAN=str(plan_path), MONKEY_UNITY_PREFAB_PLAN_SHA256=sha(read(plan_path)))
+    result = dict(schemaVersion=1, status="started", firstReadbackSha256=receipt["readbackSha256"],
+                  firstPid=receipt["pid"], startedUtc=stamp(now()), graphics="not_run_headless", savedAgain=False)
+    child = None
+    try:
+        with (stage / "console.log").open("wb") as log:
+            child = subprocess.Popen([str(editor), "-batchmode", "-nographics", "-quit", "-projectPath", str(work),
+                "-executeMethod", "MonkeyUnitySource.UnityPrefabStaticReadback.Run", "-logFile", str(stage / "editor.log")],
+                cwd=work, env=env, stdout=log, stderr=subprocess.STDOUT)
+            result["pid"] = child.pid
+            try:
+                child.wait(timeout=budget_seconds)
+            except subprocess.TimeoutExpired:
+                result["stopReason"] = "fixed-cold-budget"
+    finally:
+        if child is not None and child.poll() is None:
+            child.terminate()
+            try:
+                child.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                pass
+        result.update(processExited=child is not None and child.poll() is not None,
+                      exitCode=child.poll() if child is not None else None, endedUtc=stamp(now()))
+        result["status"] = "pending_child_exit" if child is not None and child.poll() is None else "failed"
+        rb = work / plan["outputRelative"]
+        if rb.is_file():
+            raw = read(rb, max_bytes=128 * 1024 * 1024)
+            second = load(raw, max_nodes=8_000_000)
+            result.update(readbackPath=str(rb), readbackSha256=sha(raw))
+            stable = len(first["roots"]) == len(second.get("roots", []))
+            for before, after in zip(first["roots"], second.get("roots", [])):
+                stable = stable and before["sourceId"] == after["sourceId"] and after.get("reopened") and not after.get("failures")
+                stable = stable and before["nativeIdentitiesAfter"] == after.get("nativeIdentitiesAfter")
+                stable = stable and before["assetReferencesAfter"] == after.get("assetReferencesAfter")
+                stable = stable and before["fieldsExpected"] == after.get("fieldsCheckedAfterReopen")
+            result["nativeIdentityAndReferencesStable"] = bool(stable)
+            if stable and child is not None and child.poll() in (0, 1) and second.get("status") in ("completed", "partial"):
+                result["status"] = "cold-reopen-verified-subset"
+        write_json(stage / "result.json", result)
+    return result
+
+
 def prepare(project, expected_manifest):
     project = safe(project)
     raw = read(project / "manifest.json", max_bytes=128 * 1024 * 1024)
@@ -93,9 +186,25 @@ def prepare(project, expected_manifest):
                                                         sourceLogicalPath=logical, sourceType=source_type)
 
     code = load(read(project / "Analysis/Code/schema-carriers.json"))
+    boolean_paths = {}
+    for carrier in code:
+        proposal = carrier["proposal"]
+        paths = {f["name"] for f in proposal.get("fields", []) + proposal.get("inheritedFields", []) if f["csType"] == "bool"}
+        # Bounded 2021.3 UI.FontData declaration profile, checked against source
+        # DummyDLL declaration and target uGUI. UInt8 alone is not a bool proof.
+        if any(f["csType"] == "UnityEngine.UI.FontData" for f in proposal.get("inheritedFields", [])):
+            paths.update("m_FontData." + n for n in ("m_BestFit", "m_AlignByGeometry", "m_RichText"))
+        for source in carrier["sourceInstances"]:
+            matches = [s for s, o in objects.items() if o["identity"]["containerSha256"] == source["containerSha256"]
+                       and o["identity"]["pathId"] == source["pathId"]]
+            if len(matches) > 1:
+                fail("UNITY_PREFAB_BOOLEAN_IDENTITY_AMBIGUOUS", str(source), "Do not choose one serialized file by path ID alone")
+            if matches:
+                boolean_paths[matches[0]] = paths
     disabled = {(c["identity"]["assembly"].removesuffix(".dll"), c["identity"]["namespace"], c["identity"]["name"])
                 for c in code if c["state"] == "disabled-unavailable-carrier"}
     exclusions = []
+    rect_geometry = rect_layout_expectations(graph)
 
     def flatten(sid, value, prop, loc, schema=None):
         if isinstance(value, dict) and value.get("$type") == "UnityPPtr":
@@ -135,7 +244,7 @@ def prepare(project, expected_manifest):
             for i, child in enumerate(value):
                 result.extend(flatten(sid, child, prop + ".Array.data[" + str(i) + "]", loc + "/" + str(i), child_schema))
             return result
-        if isinstance(value, bool) or (schema or {}).get("type") == "bool":
+        if isinstance(value, bool) or (schema or {}).get("type") == "bool" or prop in boolean_paths.get(sid, ()):
             if value not in (True, False, 0, 1):
                 fail("UNITY_PREFAB_NATIVE_BOOLEAN", loc, "Not a source boolean")
             return [dict(path=prop, kind="boolean", boolValue=bool(value))]
@@ -175,10 +284,18 @@ def prepare(project, expected_manifest):
                 fields = []
                 children = {c["name"]: c for c in shapes.get(cid, {}).get("children", [])}
                 for key, value in obj["data"].items():
+                    if key == "m_LocalPosition" and cid in rect_geometry:
+                        for axis in ("x", "y"):
+                            fields.append(dict(path=key + "." + axis, kind="float", floatValue=rect_geometry[cid]["position"][axis],
+                                               sourceStoredValue=value[axis], mapping="RectTransform-anchor-pivot-derived-XY"))
+                        fields.extend(flatten(cid, value["z"], key + ".z", "$/" + key + "/z"))
+                        continue
                     if key == "m_Name" and obj["type"] == "MonoBehaviour" and value == "":
                         exclusions.append(dict(sourceObjectId=cid, field=key, reason="source-empty-MonoBehaviour-header;class-identity-verified-separately"))
                         continue
                     if key == "m_Enabled" and obj["type"] == "MonoBehaviour":
+                        if value not in (True, False, 0, 1):
+                            fail("UNITY_PREFAB_NATIVE_BOOLEAN", cid, "Invalid source enabled byte")
                         fields.append(dict(path=key, kind="boolean", boolValue=bool(value)))
                         continue
                     fields.extend(flatten(cid, value, key, "$/" + key, children.get(key)))
@@ -197,7 +314,7 @@ def prepare(project, expected_manifest):
                 sourceBusiness="not_run", unavailablePresentation="not-accepted")
 
 
-def execute(project, expected_manifest, output, editor, budget_seconds=600):
+def execute(project, expected_manifest, output, editor, budget_seconds=600, headless=False):
     """Run only a fresh owned candidate; never bind to an existing Editor."""
     from .native import now, stamp, redact_log
     project, editor = safe(project), safe(editor)
@@ -206,6 +323,7 @@ def execute(project, expected_manifest, output, editor, budget_seconds=600):
     if type(budget_seconds) is not int or not 1 <= budget_seconds <= 1200:
         fail("UNITY_PREFAB_EDITOR_BUDGET", "$", "Expected 1..1200 seconds")
     plan = prepare(project, expected_manifest)
+    plan["headless"] = headless
     processes = subprocess.check_output(["ps", "-axo", "pid=,comm="], text=True).splitlines()
     conflicts = [r for r in processes if r.strip().split(maxsplit=1)[-1].endswith(
         ("/Contents/MacOS/Unity", "/Contents/MacOS/CocosCreator", "/Unity.exe", "/CocosCreator.exe"))]
@@ -228,12 +346,13 @@ def execute(project, expected_manifest, output, editor, budget_seconds=600):
     result = dict(schemaVersion=1, status="started", sourceCandidateManifestSha256=expected_manifest,
                   nativePlanSha256=sha(read(plan_path)), helperSha256=sha(read(helper)),
                   startedUtc=stamp(now()), sourceCodeExecuted=False, business="not_run", player="not_run")
+    result["graphics"] = "not_run_headless" if headless else "requested"
     receipt = out / "execution-result.json"
     log, console = out / "editor.log", out / "console.log"
     child = None
     try:
         with console.open("wb") as stream:
-            child = subprocess.Popen([str(editor), "-batchmode", "-quit", "-projectPath", str(work),
+            child = subprocess.Popen([str(editor), "-batchmode", *( ["-nographics"] if headless else []), "-quit", "-projectPath", str(work),
                 "-executeMethod", "MonkeyUnitySource.UnityPrefabStaticReadback.Run", "-logFile", str(log)],
                 env=env, cwd=work, stdout=stream, stderr=subprocess.STDOUT)
             result["pid"] = child.pid
@@ -271,4 +390,57 @@ def execute(project, expected_manifest, output, editor, budget_seconds=600):
                 result["status"] = "native-partial"
         result["redactedLog"] = redact_log(log) if log.exists() else None
         write_json(receipt, result)
+    if result["status"] in ("native-partial", "native-verified-subset"):
+        result["independentReopen"] = cold_reopen(out, editor, budget_seconds)
+        if result["independentReopen"]["status"] != "cold-reopen-verified-subset":
+            result["status"] = "failed-independent-reopen"
+        result["savedFiles"] = [dict(path=p.relative_to(work).as_posix(), sha256=sha(read(p, max_bytes=256 * 1024 * 1024)), bytes=p.stat().st_size)
+            for folder in ("Assets", "Packages", "ProjectSettings", "Analysis")
+            for p in sorted((work / folder).rglob("*")) if p.is_file()
+            and not p.relative_to(work).as_posix().startswith("Assets/Editor/MonkeyUnitySource")]
+        write_json(receipt, result)
     return result
+
+
+def freeze(native_output, expected_execution, output):
+    """Select exact native-saved bytes, excluding Library and verifier code."""
+    from . import __version__
+    from .io import encoded
+    out = safe(native_output)
+    raw = read(out / "execution-result.json", max_bytes=128 * 1024 * 1024)
+    if sha(raw) != expected_execution:
+        fail("UNITY_PREFAB_NATIVE_RECEIPT_DRIFT", str(out), "Exact completed execution receipt required")
+    receipt = load(raw, max_nodes=8_000_000)
+    if receipt.get("status") not in ("native-partial", "native-verified-subset") or receipt.get("processExited") is not True:
+        fail("UNITY_PREFAB_NATIVE_NOT_COMPLETE", str(out), "A failed or pending native run cannot be selected")
+    cold = receipt.get("independentReopen", {})
+    if cold.get("status") != "cold-reopen-verified-subset" or cold.get("processExited") is not True:
+        fail("UNITY_PREFAB_COLD_NOT_COMPLETE", str(out), "Actual independent reopen is required")
+    work = out / "UnityProject"
+    manifest = load(read(work / "manifest.json"))
+    if sha(read(work / "manifest.json")) != receipt["sourceCandidateManifestSha256"]:
+        fail("UNITY_PREFAB_NATIVE_SOURCE_MANIFEST", str(work), "Original generated manifest changed")
+    for row in receipt["savedFiles"]:
+        data = read(inside(work, row["path"]), max_bytes=256 * 1024 * 1024)
+        if len(data) != row["bytes"] or sha(data) != row["sha256"]:
+            fail("UNITY_PREFAB_SAVED_DRIFT", row["path"], "Native-saved candidate changed after process exit")
+    for r in (receipt, cold):
+        path = safe(r["readbackPath"])
+        if not path.is_relative_to(work) or sha(read(path, max_bytes=128 * 1024 * 1024)) != r["readbackSha256"]:
+            fail("UNITY_PREFAB_NATIVE_READBACK_DRIFT", str(path), "Readback does not match completed receipt")
+    selected = new_output(output, [out])
+    for row in receipt["savedFiles"]:
+        dest = inside(selected, row["path"])
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(inside(work, row["path"]), dest)
+    write_json(selected / "Analysis/Native/execution-result.json", receipt)
+    files = [dict(path=p.relative_to(selected).as_posix(), sha256=sha(read(p, max_bytes=256 * 1024 * 1024)), bytes=p.stat().st_size)
+             for p in sorted(selected.rglob("*")) if p.is_file()]
+    namespace = manifest.get("namespace") or "unity-source/" + sha(encoded(sorted(manifest["selectedSourceRoots"], key=lambda r: (r["sourceSha256"], r["file"], r["pathId"]))))[:24]
+    result = dict(manifest, files=files, namespace=namespace, toolVersion=__version__, native=receipt["status"],
+                  independentReopen=cold["status"], sourceCandidateManifestSha256=receipt["sourceCandidateManifestSha256"],
+                  executionReceiptSha256=expected_execution, staticPresentation="not_run_headless" if receipt.get("graphics") == "not_run_headless" else "see-native-readback",
+                  business="not_run", player="not_run")
+    write_json(selected / "manifest.json", result)
+    return dict(status="needs_action", candidate=str(selected), manifestSha256=sha(read(selected / "manifest.json")),
+                native=receipt["status"], independentReopen=cold["status"], staticPresentation=result["staticPresentation"])
