@@ -145,3 +145,12 @@ test consumer's own camera, not an OS desktop screenshot. No game-specific page,
 coordinate, identity or callback is embedded in the companion.
 
 Scene replacement retires Unity-destroyed modules without treating them as live restoration failures. Any failed restoration of a still-live module is remembered across route clearing and ends the companion safely with partial cleanup; it cannot later become a successful cleanup just because the old route list is empty.
+
+
+## Physical takeover diagnostics
+
+The companion records `takeoverDiagnostic` in its terminal `lifecycle-*.json` evidence. Contract `beaver-physical-takeover-diagnostic/1` retains up to four changed native-device state events, up to six changed controls per event, and eight device/focus context entries. It records Input System event/current time, update type, source device ID/layout, cached and freshly observed OS frontmost PID, Unity focus and background policy. A foreground target trigger also records bounded control paths and before/event values. Outside the target, control paths and values are omitted. No raw text, serial number or event stream is recorded. This is lifecycle evidence, not a new command/receipt API.
+
+`onEvent` refreshes the OS frontmost PID even when the ordinary per-frame observer has already run. This prevents a stale same-frame target PID from classifying a currently background target as foreground. Eligible native devices, State/Delta events, actual changed controls and the takeover stop condition remain in place; there is no initialization grace period or reset-event exemption. Read-only focus and device-change context helps investigate sync/reset events but does not suppress them.
+
+An Input System state event on a native device does not prove that a human generated it or identify the foreground app when it was originally queued. Event-time and focus context are evidence for investigation. Historical receipts without these fields cannot be retroactively attributed. The App68 incidents remain unresolved until a fresh diagnostic Player supplies evidence. A new companion requires a newly built QA Player; updating only the CLI cannot patch an existing Player. Normal release/stop may complete a click or drop and does not undo business state.

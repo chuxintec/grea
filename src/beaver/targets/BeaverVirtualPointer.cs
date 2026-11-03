@@ -101,6 +101,11 @@ namespace Beaver.VirtualPointer
         int frontmostRefreshFrame = -1;
         bool osFrontmostAvailable, listenerStarted, endpointPublished, deviceCreated, configPathsValidated, shutdownLifecycleWritten;
         string shutdownReason;
+        readonly Queue<Dictionary<string, object>> physicalEventHistory = new Queue<Dictionary<string, object>>();
+        readonly Queue<Dictionary<string, object>> physicalContextHistory = new Queue<Dictionary<string, object>>();
+        Dictionary<string, object> physicalTrigger;
+        long physicalChangedEvents, physicalBackgroundEvents;
+
         int terminalScreenWidth, terminalScreenHeight, terminalUiRouteCount;
         bool terminalDeviceRemoved, terminalActionsRestored, terminalListenerStopped, terminalEndpointRemoved, terminalBackgroundRestored;
         IntPtr nsWorkspaceClass, sharedWorkspaceSelector, frontmostApplicationSelector, processIdentifierSelector;
@@ -235,6 +240,7 @@ namespace Beaver.VirtualPointer
             deviceId = device.deviceId.ToString(CultureInfo.InvariantCulture);
             InputSystem.onBeforeUpdate += BeforeInputUpdate;
             InputSystem.onEvent += ObservePhysicalMouse;
+            InputSystem.onDeviceChange += ObservePhysicalDeviceChange;
             SceneManager.sceneLoaded += SceneLoaded;
             BindRoutes();
             listener = new TcpListener(IPAddress.Loopback, 0); listener.Start(8); listenerStarted = true;
@@ -288,11 +294,11 @@ namespace Beaver.VirtualPointer
             catch { osFrontmostAvailable = false; osFrontmostPid = -1; }
 #endif
         }
-        void RefreshFrontmostPid()
+        void RefreshFrontmostPid(bool force = false)
         {
 #if UNITY_STANDALONE_OSX
             if (!osFrontmostAvailable) { osFrontmostPid = -1; return; }
-            if (frontmostRefreshFrame == Time.frameCount) return;
+            if (!force && frontmostRefreshFrame == Time.frameCount) return;
             frontmostRefreshFrame = Time.frameCount;
             try
             {
@@ -303,11 +309,66 @@ namespace Beaver.VirtualPointer
             catch { osFrontmostAvailable = false; osFrontmostPid = -1; }
 #endif
         }
-        static bool HasActualStateChange(InputEventPtr evt, InputDevice source)
+        static string DiagnosticText(string value, int maximum = 96)
         {
-            try { foreach (var control in evt.EnumerateChangedControls(source, 0.0001f)) if (control != null) return true; }
-            catch { }
-            return false;
+            if (value == null) return "";
+            return value.Length > maximum ? value.Substring(0, maximum) : value;
+        }
+        static object DiagnosticValue(object value)
+        {
+            if (value == null) return "null";
+            if (value is Vector2) return ((Vector2)value).ToString("R", CultureInfo.InvariantCulture);
+            if (value is Vector3) return ((Vector3)value).ToString("R", CultureInfo.InvariantCulture);
+            if (value is Quaternion) return ((Quaternion)value).ToString("R", CultureInfo.InvariantCulture);
+            if (value is float) return ((float)value).ToString("R", CultureInfo.InvariantCulture);
+            if (value is double) return ((double)value).ToString("R", CultureInfo.InvariantCulture);
+            if (value is bool || value is byte || value is sbyte || value is short || value is ushort || value is int || value is uint || value is long || value is ulong || value is float || value is double || value is Vector2 || value is Vector3 || value is Quaternion)
+                return DiagnosticText(Convert.ToString(value, CultureInfo.InvariantCulture));
+            return "unsupported-value-type";
+        }
+        static List<Dictionary<string, object>> ChangedControlEvidence(InputEventPtr evt, InputDevice source, bool includeValues, out bool truncated)
+        {
+            var changed = new List<Dictionary<string, object>>(); truncated = false;
+            foreach (var control in evt.EnumerateChangedControls(source, 0.0001f))
+            {
+                if (control == null) continue;
+                if (changed.Count == 6) { truncated = true; break; }
+                var row = new Dictionary<string, object> { { "layout", DiagnosticText(control.layout, 64) } };
+                // Outside this target, keep no key/control paths or values.
+                if (includeValues)
+                {
+                    row["path"] = DiagnosticText(control.path, 160);
+                    try { row["before"] = DiagnosticValue(control.ReadValueAsObject()); row["event"] = DiagnosticValue(control.ReadValueFromEventAsObject(evt)); }
+                    catch (Exception error) { row["valueReadError"] = error.GetType().Name; }
+                }
+                changed.Add(row);
+            }
+            return changed;
+        }
+        static bool IsPhysicalTakeover(bool observerAvailable, int observedFrontmost, int targetPid, bool changed)
+        {
+            return observerAvailable && observedFrontmost > 0 && observedFrontmost == targetPid && changed;
+        }
+        void RecordPhysicalContext(string reason, InputDevice source = null)
+        {
+            var row = new Dictionary<string, object> { { "reason", reason }, { "frame", Time.frameCount }, { "inputTime", InputState.currentTime }, { "unityFocused", Application.isFocused }, { "frontmostPid", osFrontmostPid }, { "sourceDeviceId", source == null ? -1 : source.deviceId }, { "sourceLayout", source == null ? "" : DiagnosticText(source.layout, 64) } };
+            if (physicalContextHistory.Count == 8) physicalContextHistory.Dequeue();
+            physicalContextHistory.Enqueue(row);
+        }
+        void ObservePhysicalDeviceChange(InputDevice source, InputDeviceChange change)
+        {
+            if (alive && source != null && source != device && source.native) RecordPhysicalContext("device_" + change, source);
+        }
+        void OnApplicationFocus(bool focused)
+        {
+            if (!alive) return;
+            runtimeFocused = focused;
+            RefreshFrontmostPid(true);
+            RecordPhysicalContext(focused ? "focus_gained" : "focus_lost");
+        }
+        Dictionary<string, object> TakeoverDiagnostic()
+        {
+            return new Dictionary<string, object> { { "contract", "beaver-physical-takeover-diagnostic/1" }, { "policy", "fresh-foreground-state-change/1" }, { "origin", "InputSystem state event; native device does not prove human origin" }, { "changedEvents", physicalChangedEvents }, { "backgroundChangedEvents", physicalBackgroundEvents }, { "trigger", physicalTrigger }, { "recentEvents", physicalEventHistory.ToArray() }, { "context", physicalContextHistory.ToArray() } };
         }
         static void AtomicWrite(string path, string content) { string tmp = path + ".tmp-" + Guid.NewGuid().ToString("N"); File.WriteAllText(tmp, content, new UTF8Encoding(false)); if (File.Exists(path)) throw new IOException("Owned output path changed"); File.Move(tmp, path); }
 
@@ -557,9 +618,30 @@ namespace Beaver.VirtualPointer
 
         void ObservePhysicalMouse(InputEventPtr evt, InputDevice source)
         {
-            if (!alive || !osFrontmostAvailable || osFrontmostPid != processId || device == null || source == device || source == null || !source.native || !config.stopOnTakeover) return;
+            if (!alive || device == null || source == device || source == null || !source.native || !config.stopOnTakeover) return;
             bool userDevice = source is Mouse || source is Keyboard || source is Touchscreen || source is Gamepad || source is Joystick || source is Pen;
-            if (userDevice && (evt.type == StateEvent.Type || evt.type == DeltaStateEvent.Type) && HasActualStateChange(evt, source)) { physicalTakeover = true; Shutdown("physical_takeover"); }
+            if (!userDevice || (evt.type != StateEvent.Type && evt.type != DeltaStateEvent.Type)) return;
+            int cachedPid = osFrontmostPid;
+            // onEvent can run after a same-frame OS focus change; never use the frame cache here.
+            RefreshFrontmostPid(true);
+            runtimeFocused = Application.isFocused;
+            bool atTarget = osFrontmostAvailable && osFrontmostPid == processId;
+            bool truncated; List<Dictionary<string, object>> changed;
+            try { changed = ChangedControlEvidence(evt, source, atTarget, out truncated); }
+            catch { return; } // Preserve the previous unreadable-event behavior.
+            if (changed.Count == 0) return;
+            physicalChangedEvents++;
+            if (!atTarget) physicalBackgroundEvents++;
+            var evidence = new Dictionary<string, object> {
+                { "eventId", evt.id }, { "eventType", evt.type.ToString() }, { "eventTime", evt.time }, { "inputTime", InputState.currentTime }, { "eventBytes", evt.sizeInBytes },
+                { "frame", Time.frameCount }, { "updateType", InputState.currentUpdateType.ToString() }, { "sourceDeviceId", source.deviceId }, { "sourceLayout", DiagnosticText(source.layout, 64) }, { "sourceNative", source.native },
+                { "cachedFrontmostPid", cachedPid }, { "freshFrontmostPid", osFrontmostPid }, { "observerAvailable", osFrontmostAvailable }, { "unityFocused", runtimeFocused },
+                { "backgroundBehavior", InputSystem.settings.backgroundBehavior.ToString() }, { "controlsRedactedOutsideTarget", !atTarget }, { "changedControls", changed.ToArray() }, { "controlsTruncated", truncated },
+                { "decision", atTarget ? "stop_physical_takeover" : "ignore_not_target_foreground" }
+            };
+            if (physicalEventHistory.Count == 4) physicalEventHistory.Dequeue(); physicalEventHistory.Enqueue(evidence);
+            if (!osFrontmostAvailable || osFrontmostPid <= 0) { Shutdown("frontmost_observer_unavailable"); return; }
+            if (IsPhysicalTakeover(osFrontmostAvailable, osFrontmostPid, processId, changed.Count != 0)) { physicalTrigger = evidence; physicalTakeover = true; Shutdown("physical_takeover"); }
         }
 
         void SceneLoaded(Scene scene, LoadSceneMode mode)
@@ -697,7 +779,7 @@ namespace Beaver.VirtualPointer
         {
             if (cleanupDone) return; cleanupDone = true; alive = false; shutdownAfterRelease = false; safetyReleasePending = false; safetyReleaseAwaitingAck = false;
             terminalScreenWidth = screenWidth; terminalScreenHeight = screenHeight;
-            InputSystem.onBeforeUpdate -= BeforeInputUpdate; InputSystem.onEvent -= ObservePhysicalMouse; SceneManager.sceneLoaded -= SceneLoaded;
+            InputSystem.onBeforeUpdate -= BeforeInputUpdate; InputSystem.onEvent -= ObservePhysicalMouse; InputSystem.onDeviceChange -= ObservePhysicalDeviceChange; SceneManager.sceneLoaded -= SceneLoaded;
             terminalUiRouteCount = 0;
             foreach (var route in routes) if (route.Module != null) terminalUiRouteCount++;
             terminalActionsRestored = RestoreRoutes() && !routeRestoreFailed;
@@ -731,7 +813,7 @@ namespace Beaver.VirtualPointer
                 { "schemaVersion", 1 }, { "contract", "beaver-virtual-pointer-lifecycle/1" },
                 { "status", (shutdownReason != null && shutdownReason.StartsWith("not_supported_", StringComparison.Ordinal)) ? "not_supported" : (shutdownReason == "viewport_unavailable" ? "blocked" : (CleanupConfirmed ? "stopped" : "partial")) },
                 { "reason", shutdownReason ?? "unspecified" }, { "channelId", config.channelId }, { "instanceId", instanceId ?? "" },
-                { "pid", processId }, { "physicalTakeover", physicalTakeover }, { "unityFocused", runtimeFocused },
+                { "pid", processId }, { "physicalTakeover", physicalTakeover }, { "takeoverDiagnostic", TakeoverDiagnostic() }, { "unityFocused", runtimeFocused },
                 { "applicationBatchMode", runtimeBatchMode }, { "osForeground", osFrontmostAvailable && osFrontmostPid == processId },
                 { "osFrontmostAvailable", osFrontmostAvailable }, { "osFrontmostPid", osFrontmostPid },
                 { "screenWidth", terminalScreenWidth }, { "screenHeight", terminalScreenHeight },

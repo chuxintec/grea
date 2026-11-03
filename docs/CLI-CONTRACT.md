@@ -182,3 +182,6 @@ Spec4/`beaver-additive-intake/4` adds explicit `engineObjects` identities (GUID/
 
 
 Spec5 additive intake extends spec4 with explicit retained runtime assembly identities (`retainedAssemblies` rows: target/guid/sha256/metaSha256/name), strict schema-only new C# sources and native compilation-scope checks. It never imports or rewrites asmdef/asmref files. See ADDITIVE-INTAKE.md and schemas/additive-intake-5.schema.json. Argv and native phase budgets remain unchanged; specs1–4 keep their prior boundaries.
+
+
+Physical takeover diagnostic companion update adds bounded `takeoverDiagnostic` only to terminal lifecycle evidence (`beaver-physical-takeover-diagnostic/1`) and forces a fresh OS foreground query in native input callbacks. Public QA config, commands, receipts, argv and budgets are unchanged. Existing Players keep their compiled companion; consumer must build a fresh QA Player to receive the diagnostic update. Historical events without device/control evidence remain unknown.
