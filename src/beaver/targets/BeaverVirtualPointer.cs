@@ -104,7 +104,7 @@ namespace Beaver.VirtualPointer
         readonly Queue<Dictionary<string, object>> physicalEventHistory = new Queue<Dictionary<string, object>>();
         readonly Queue<Dictionary<string, object>> physicalContextHistory = new Queue<Dictionary<string, object>>();
         Dictionary<string, object> physicalTrigger;
-        long physicalChangedEvents, physicalBackgroundEvents;
+        long physicalChangedEvents, physicalBackgroundEvents, physicalOutsideMotionEvents;
 
         int terminalScreenWidth, terminalScreenHeight, terminalUiRouteCount;
         bool terminalDeviceRemoved, terminalActionsRestored, terminalListenerStopped, terminalEndpointRemoved, terminalBackgroundRestored;
@@ -349,6 +349,64 @@ namespace Beaver.VirtualPointer
         {
             return observerAvailable && observedFrontmost > 0 && observedFrontmost == targetPid && changed;
         }
+        static bool MouseMotionControl(InputControl control, Mouse mouse)
+        {
+            for (var at = control; at != null && at != mouse; at = at.parent)
+                if (at == mouse.position || at == mouse.delta) return true;
+            return false;
+        }
+        static bool FinitePosition(Vector2 value)
+        {
+            return !Single.IsNaN(value.x) && !Single.IsInfinity(value.x) && !Single.IsNaN(value.y) && !Single.IsInfinity(value.y);
+        }
+        static Dictionary<string, object> MouseMotionOwnership(InputEventPtr evt, InputDevice source, int width, int height, CursorLockMode lockMode)
+        {
+            var result = new Dictionary<string, object> { { "policy", "unpressed-mouse-motion-outside-primary-viewport/1" }, { "ignoreOutsideMotion", false }, { "reason", "not_mouse_preserve_stop" } };
+            var mouse = source as Mouse;
+            if (mouse == null) return result;
+            result["viewportWidth"] = width; result["viewportHeight"] = height; result["cursorLockState"] = lockMode.ToString();
+            try
+            {
+                bool pureMotion = true; int count = 0;
+                // Inspect all changes, independently of the six-control diagnostic sample.
+                foreach (var control in evt.EnumerateChangedControls(mouse, 0.0001f))
+                {
+                    if (control == null) continue;
+                    if (++count > 128) { result["reason"] = "change_scan_limit_preserve_stop"; return result; }
+                    if (!MouseMotionControl(control, mouse)) pureMotion = false;
+                }
+                result["pureMotion"] = pureMotion && count != 0;
+                var before = mouse.position.ReadValue(); Vector2 position;
+                bool positionFromEvent = mouse.position.ReadValueFromEvent(evt, out position);
+                if (!positionFromEvent) position = before; // Diagnostic only; never use pre-event position to grant an exemption.
+                result["positionBefore"] = DiagnosticValue(before); result["positionEvent"] = DiagnosticValue(position); result["positionFromEvent"] = positionFromEvent;
+                if (!positionFromEvent) { result["reason"] = "event_position_missing_preserve_stop"; return result; }
+                int display;
+                if (!mouse.displayIndex.ReadValueFromEvent(evt, out display)) display = mouse.displayIndex.ReadValue();
+                result["displayIndex"] = display;
+                bool heldBefore = false, heldInEvent = false;
+                foreach (var control in mouse.allControls)
+                {
+                    var button = control as UnityEngine.InputSystem.Controls.ButtonControl;
+                    if (button == null) continue;
+                    float current = button.ReadValue(); float eventValue;
+                    if (!button.ReadValueFromEvent(evt, out eventValue)) eventValue = current;
+                    if (current > 0.0001f) heldBefore = true;
+                    if (eventValue > 0.0001f) heldInEvent = true;
+                }
+                result["buttonHeldBefore"] = heldBefore; result["buttonHeldInEvent"] = heldInEvent;
+                if (!pureMotion || count == 0) { result["reason"] = "non_motion_change_preserve_stop"; return result; }
+                if (heldBefore || heldInEvent) { result["reason"] = "held_button_drag_preserve_stop"; return result; }
+                if (lockMode != CursorLockMode.None) { result["reason"] = "locked_or_confined_cursor_preserve_stop"; return result; }
+                if (width <= 0 || height <= 0 || display != 0 || !FinitePosition(before) || !FinitePosition(position)) { result["reason"] = "unknown_position_scope_preserve_stop"; return result; }
+                bool inside = position.x >= 0 && position.y >= 0 && position.x < width && position.y < height;
+                result["eventInsideViewport"] = inside;
+                result["ignoreOutsideMotion"] = !inside;
+                result["reason"] = inside ? "motion_in_target_viewport_preserve_stop" : "unpressed_motion_outside_viewport";
+            }
+            catch (Exception error) { result["reason"] = "unreadable_mouse_state_preserve_stop"; result["errorType"] = error.GetType().Name; }
+            return result;
+        }
         void RecordPhysicalContext(string reason, InputDevice source = null)
         {
             var row = new Dictionary<string, object> { { "reason", reason }, { "frame", Time.frameCount }, { "inputTime", InputState.currentTime }, { "unityFocused", Application.isFocused }, { "frontmostPid", osFrontmostPid }, { "sourceDeviceId", source == null ? -1 : source.deviceId }, { "sourceLayout", source == null ? "" : DiagnosticText(source.layout, 64) } };
@@ -368,7 +426,7 @@ namespace Beaver.VirtualPointer
         }
         Dictionary<string, object> TakeoverDiagnostic()
         {
-            return new Dictionary<string, object> { { "contract", "beaver-physical-takeover-diagnostic/1" }, { "policy", "fresh-foreground-state-change/1" }, { "origin", "InputSystem state event; native device does not prove human origin" }, { "changedEvents", physicalChangedEvents }, { "backgroundChangedEvents", physicalBackgroundEvents }, { "trigger", physicalTrigger }, { "recentEvents", physicalEventHistory.ToArray() }, { "context", physicalContextHistory.ToArray() } };
+            return new Dictionary<string, object> { { "contract", "beaver-physical-takeover-diagnostic/1" }, { "policy", "fresh-foreground-and-mouse-viewport/2" }, { "origin", "InputSystem state event; native device does not prove human origin" }, { "changedEvents", physicalChangedEvents }, { "backgroundChangedEvents", physicalBackgroundEvents }, { "outsideMouseMotionEvents", physicalOutsideMotionEvents }, { "trigger", physicalTrigger }, { "recentEvents", physicalEventHistory.ToArray() }, { "context", physicalContextHistory.ToArray() } };
         }
         static void AtomicWrite(string path, string content) { string tmp = path + ".tmp-" + Guid.NewGuid().ToString("N"); File.WriteAllText(tmp, content, new UTF8Encoding(false)); if (File.Exists(path)) throw new IOException("Owned output path changed"); File.Move(tmp, path); }
 
@@ -632,16 +690,23 @@ namespace Beaver.VirtualPointer
             if (changed.Count == 0) return;
             physicalChangedEvents++;
             if (!atTarget) physicalBackgroundEvents++;
+            Dictionary<string, object> mouseOwnership = null;
+            if (atTarget)
+                mouseOwnership = screenWidth == Screen.width && screenHeight == Screen.height
+                    ? MouseMotionOwnership(evt, source, screenWidth, screenHeight, Cursor.lockState)
+                    : new Dictionary<string, object> { { "ignoreOutsideMotion", false }, { "reason", "viewport_changed_preserve_stop" } };
+            bool ignoreOutsideMotion = mouseOwnership != null && (bool)mouseOwnership["ignoreOutsideMotion"];
+            if (ignoreOutsideMotion) physicalOutsideMotionEvents++;
             var evidence = new Dictionary<string, object> {
                 { "eventId", evt.id }, { "eventType", evt.type.ToString() }, { "eventTime", evt.time }, { "inputTime", InputState.currentTime }, { "eventBytes", evt.sizeInBytes },
                 { "frame", Time.frameCount }, { "updateType", InputState.currentUpdateType.ToString() }, { "sourceDeviceId", source.deviceId }, { "sourceLayout", DiagnosticText(source.layout, 64) }, { "sourceNative", source.native },
                 { "cachedFrontmostPid", cachedPid }, { "freshFrontmostPid", osFrontmostPid }, { "observerAvailable", osFrontmostAvailable }, { "unityFocused", runtimeFocused },
                 { "backgroundBehavior", InputSystem.settings.backgroundBehavior.ToString() }, { "controlsRedactedOutsideTarget", !atTarget }, { "changedControls", changed.ToArray() }, { "controlsTruncated", truncated },
-                { "decision", atTarget ? "stop_physical_takeover" : "ignore_not_target_foreground" }
+                { "mouseOwnership", mouseOwnership }, { "decision", !atTarget ? "ignore_not_target_foreground" : (ignoreOutsideMotion ? "ignore_mouse_motion_outside_viewport" : "stop_physical_takeover") }
             };
             if (physicalEventHistory.Count == 4) physicalEventHistory.Dequeue(); physicalEventHistory.Enqueue(evidence);
             if (!osFrontmostAvailable || osFrontmostPid <= 0) { Shutdown("frontmost_observer_unavailable"); return; }
-            if (IsPhysicalTakeover(osFrontmostAvailable, osFrontmostPid, processId, changed.Count != 0)) { physicalTrigger = evidence; physicalTakeover = true; Shutdown("physical_takeover"); }
+            if (!ignoreOutsideMotion && IsPhysicalTakeover(osFrontmostAvailable, osFrontmostPid, processId, changed.Count != 0)) { physicalTrigger = evidence; physicalTakeover = true; Shutdown("physical_takeover"); }
         }
 
         void SceneLoaded(Scene scene, LoadSceneMode mode)

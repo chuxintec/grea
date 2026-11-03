@@ -185,3 +185,6 @@ Spec5 additive intake extends spec4 with explicit retained runtime assembly iden
 
 
 Physical takeover diagnostic companion update adds bounded `takeoverDiagnostic` only to terminal lifecycle evidence (`beaver-physical-takeover-diagnostic/1`) and forces a fresh OS foreground query in native input callbacks. Public QA config, commands, receipts, argv and budgets are unchanged. Existing Players keep their compiled companion; consumer must build a fresh QA Player to receive the diagnostic update. Historical events without device/control evidence remain unknown.
+
+
+Virtual pointer Mouse ownership update retains existing QA APIs/config/budgets. Only explicitly unpressed, unlocked, primary-display mouse motion with an event-supplied position outside the unchanged target viewport is ignored. Partial events without position, button/scroll changes, held drags, keyboard/other devices and unknown state preserve takeover stopping. Lifecycle ownership evidence explains the decision; a new Player companion build is required.
