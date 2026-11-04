@@ -2,6 +2,7 @@ import copy
 import contextlib
 import io
 import json
+import math
 from pathlib import Path
 import tempfile
 import unittest
@@ -36,6 +37,18 @@ class NativeProgressTests(unittest.TestCase):
         self.assertIsNone(row['progress']);self.assertIsNone(row['totalLength'])
         self.assertIsNone(row['progressMode']);self.assertIsNone(row['progressReverse'])
         self.assertTrue(gaps)
+
+    def test_exact_engine_profile_restores_omitted_serialized_defaults(self):
+        source={'__type__':'cc.ProgressBar','_N$barSprite':{'__id__':2}}
+        row,gaps=component_ir('a',0,source,source_profile='cocos-2.4.15-bundle')
+        self.assertEqual(gaps,[])
+        self.assertEqual([row['progress'],row['totalLength'],row['progressMode'],row['progressReverse']],[1,1,0,False])
+        self.assertEqual(row['engineDefaults']['version'],'2.4.15')
+        other,_=component_ir('a',0,source,source_profile='cocos-2.4.11-bundle')
+        self.assertIsNone(other['progress']);self.assertNotIn('engineDefaults',other)
+        explicit,_=component_ir('a',0,dict(source,**{'_N$progress':0}),source_profile='cocos-2.4.15-bundle')
+        self.assertEqual(explicit['progress'],0)
+        self.assertNotIn('progress',explicit['engineDefaults']['fields'])
 
     def test_invalid_or_unproven_cases_preserve_geometry_and_handoff(self):
         mutations=[
@@ -77,6 +90,50 @@ class NativeProgressTests(unittest.TestCase):
         rows.append({'sourceId':'widget','node':'asset#1','type':'cc.Widget','enabled':False})
         self.assertEqual(configure_progress(rows,nodes),[])
 
+    def test_static_fields_keep_typed_sprite_reference_for_vertical_reverse_case(self):
+        rows,nodes=fixture()
+        rows[0].update(progress=.35,totalLength=200,progressMode=1,progressReverse=True)
+        nodes['asset#1']['size']=[34,70]
+        # This is a neutral parameter change from the old horizontal+tiled
+        # profile. It must retain source values without claiming that profile.
+        rows[1].update(mode=1)
+        gaps=configure_progress(rows,nodes)
+        binding=rows[0]['staticProgressBinding']
+        self.assertTrue(gaps)
+        self.assertFalse(rows[0]['convertible'])
+        self.assertEqual(binding['policy'],'native-static-progress-v1')
+        self.assertEqual(binding['barSpriteSourceId'],'asset#6')
+        self.assertEqual(binding['barNodeSourceId'],'asset#1')
+        self.assertEqual([binding['progress'],binding['totalLength'],binding['mode'],binding['reverse']],
+                         [.35,200.0,1,True])
+        self.assertEqual(binding['displayGeometryEvidence'],'source-bar-axis-matches-progress')
+
+    def test_static_fields_reject_missing_or_unsupported_reference_without_nulling(self):
+        for mutation in (
+            lambda rows,nodes: rows[0].update(barSprite=None),
+            lambda rows,nodes: rows[1].update(convertible=False),
+            lambda rows,nodes: rows[0].update(progressMode=3),
+            lambda rows,nodes: rows[0].update(progress=math.nan),
+        ):
+            with self.subTest(mutation=mutation):
+                rows,nodes=fixture();mutation(rows,nodes)
+                original=rows[0].get('barSprite')
+                configure_progress(rows,nodes)
+                self.assertNotIn('staticProgressBinding',rows[0])
+                if original is not None:
+                    self.assertEqual(rows[0]['barSprite'],original)
+
+    def test_native_static_progress_carriers_declare_typed_references_and_persistence(self):
+        from pathlib import Path
+        targets=Path(__file__).resolve().parents[1]/'src/monkey/targets'
+        unity=(targets/'UnityStaticProgress.cs').read_text()
+        creator=(targets/'CreatorStaticProgress.js').read_text()
+        self.assertIn('Image barSprite;',unity)
+        self.assertIn('SerializeField] float progress',unity)
+        self.assertIn('component._barSprite = sprite;',creator)
+        self.assertIn('component._progress = spec.progress;',creator)
+        self.assertIn('component.enabled = false;',creator)
+
     def test_public_cli_inspects_and_exports_typed_progress_references(self):
         from monkey.cli import main
         from monkey.io import write_json
@@ -104,6 +161,15 @@ class NativeProgressTests(unittest.TestCase):
             self.assertTrue(progress['convertible']);self.assertEqual(progress['totalLength'],360)
             self.assertEqual(progress['barNode'],'synthetic:'+PREFAB+'#2')
             self.assertTrue((root/'Candidate/Assets/Game/Presentation/Common/Layout/NativeHorizontalProgressFill.cs').is_file())
+            for command in [
+                ['plan','--ir',str(root/'IR/ir.json'),'--namespace','progress-test','--target-profile','cocos-3.8.8','--out',str(root/'CreatorPlan')],
+                ['export','--plan',str(root/'CreatorPlan/plan.json'),'--out',str(root/'CreatorCandidate')]]:
+                with contextlib.redirect_stdout(io.StringIO()):self.assertEqual(main(command),0)
+            creator=json.loads((root/'CreatorPlan/plan.json').read_text())
+            progress=next(c for c in creator['components']if c['type']=='cc.ProgressBar')
+            self.assertTrue(progress['convertible']);self.assertEqual(progress['nativeType'],'cc.ProgressBar')
+            self.assertEqual(progress['barNode'],'synthetic:'+PREFAB+'#2')
+            self.assertTrue((root/'CreatorCandidate/extensions/monkey-import/progress.js').is_file())
 
 
 if __name__=='__main__':unittest.main()

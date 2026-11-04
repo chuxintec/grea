@@ -59,3 +59,16 @@ const state=jobs.status(begun.jobId);assert.strictEqual(state.status,'failed');a
 assert.throws(()=>jobs.take(begun.jobId),/missing original font/);
 })().catch(e=>{console.error(e);process.exitCode=1;});
 ''')
+
+    def test_native_comparison_details_are_retained_with_a_bounded_error(self):
+        self.run_js(r'''
+const jobs=require(process.argv[1]),assert=require('assert');
+(async()=>{
+const details='STATIC_REFERENCE_COMPARISON:'+JSON.stringify({expected:'a'.repeat(1800),actual:'b'.repeat(1800)});
+const begun=jobs.begin('readSaved',['scene',{}],{readSaved:async()=>{throw Error(details+'x'.repeat(20000)+'\nprivate argument dump');}});
+await new Promise(r=>setImmediate(r));
+const message=jobs.status(begun.jobId).error;
+assert(message.startsWith(details));assert.strictEqual(message.length,16*1024);
+assert(!message.includes('private argument dump'));
+})().catch(e=>{console.error(e);process.exitCode=1;});
+''')

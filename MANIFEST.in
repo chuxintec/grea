@@ -1,7 +1,7 @@
 include LICENSE
 include README.md
 include THIRD-PARTY-NOTICES.md
-recursive-include docs *.md
+recursive-include docs *.md *.json
 recursive-include src/monkey/licenses *.txt
 recursive-include src/monkey/targets *.cs *.js
 recursive-include src/monkey/sources *.cjs
@@ -12,3 +12,6 @@ recursive-include src/monkey *.cjs
 recursive-include src/monkey/code_profiles *.json
 
 include scripts/install_release.py
+
+include scripts/smoke_cli.py
+include scripts/release_neutral_fixture.py

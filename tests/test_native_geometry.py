@@ -120,23 +120,34 @@ assert.strictEqual(rejected,true);assert.deepStrictEqual(started,[0,1]);
         adapter=Path(__file__).resolve().parents[1]/'src/monkey/targets/CreatorPrefab.js'
         script=r'''
 const Module=require('module'),load=Module._load;
-Module._load=function(name,...args){if(name==='cc')return {instantiate:x=>x,UITransform:class {},Widget:class {}};if(name==='./jobs.js')name=process.argv[2];if(name==='./dynamic-ui.js')name=require('path').join(require('path').dirname(process.argv[1]),'CreatorDynamicUi.js');if(name==='./prefab-instances.js')name=require('path').join(require('path').dirname(process.argv[1]),'CreatorPrefabInstances.js');return load.call(this,name,...args);};
+class ReadNode {
+constructor(name){this.name=name;this.children=[];this.parent=null;this.active=true;}
+get activeInHierarchy(){return this.active && !!this.parent && this.parent.activeInHierarchy;}
+addComponent(Type){if(Type===ReadUI)return new ReadUI();return new Type();}
+setPosition(){} destroy(){this.parent=null;}
+}
+class ReadScene extends ReadNode {_load(){} _activate(value){this._active=value;} get activeInHierarchy(){return this._active;}}
+class ReadUI {setContentSize(){} setAnchorPoint(){}}
+class ReadCanvas {constructor(){this.enabledInHierarchy=true;}}
+class ReadCamera {} ReadCamera.ProjectionType={ORTHO:0};
+
+Module._load=function(name,...args){const aliases={'./static-richtext.js':'CreatorStaticRichText.js','./owned-import-undo.js':'CreatorOwnedImportUndo.js','./spine-ui-transform.js':'spine/CreatorSpineUITransformBindings.js'};if(aliases[name])name=require('path').join(require('path').dirname(process.argv[1]),aliases[name]);if(name==='cc')return {instantiate:x=>x.data,UITransform:ReadUI,Widget:class {},Node:ReadNode,Scene:ReadScene,Canvas:ReadCanvas,Camera:ReadCamera,Layers:{Enum:{UI_2D:1}}};if(name==='./spine-bindings.js')name=require('path').join(require('path').dirname(process.argv[1]),'spine/creator_spine_binding.js');if(name==='./jobs.js')name=process.argv[2];if(name==='./dynamic-ui.js')name=require('path').join(require('path').dirname(process.argv[1]),'CreatorDynamicUi.js');if(name==='./prefab-instances.js')name=require('path').join(require('path').dirname(process.argv[1]),'CreatorPrefabInstances.js');return load.call(this,name,...args);};
 const adapter=require(process.argv[1]);
-const make=(name,width)=>({name,parent:null,children:[],position:{x:0,y:0,z:0},scale:{x:1,y:1,z:1},rotation:{x:0,y:0,z:0,w:1},active:true,
-getComponent:()=>({width,height:32,anchorX:.5,anchorY:.5}),destroy(){}});
+const make=(name,width)=>({name,parent:null,children:[],position:{x:0,y:0,z:0},scale:{x:1,y:1,z:1},rotation:{x:0,y:0,z:0,w:1},active:true,get activeInHierarchy(){return this.active && !!this.parent && this.parent.activeInHierarchy;},
+getComponent:()=>({width,height:32,anchorX:.5,anchorY:.5}),setSiblingIndex(){},destroy(){this.parent=null;}});
 const root=make('root',100),child=make('label',85.63);root.children=[child];child.parent=root;
 const spec=(sourceId,name,size,children)=>({sourceId,name,size,children,position:[0,0,0],scale:[1,1,1],rotation:[0,0,0,1],anchor:[.5,.5],active:true});
-const plan={nodes:[spec('root','root',[90,32],['child']),spec('child','label',[44.17,32],[])],assets:[],components:[]};
-const result=adapter.read(root,{root:'root',nodes:['root','child'],nodeCount:2},plan,{});
+const plan={designSize:[100,32],nodes:[spec('root','root',[90,32],['child']),spec('child','label',[44.17,32],[])],assets:[],components:[]};
+const result=adapter.read({data:root},{root:'root',nodes:['root','child'],nodeCount:2},plan,{});
 if(result.geometryVerified!==false||result.geometryMismatches.length!==2||!result.savedReloaded)throw Error('Geometry differences hidden');
 plan.nodes[0].size=[100,32];plan.nodes[1].size=[85.63,32];
-const clean=adapter.read(root,{root:'root',nodes:['root','child'],nodeCount:2},plan,{});
+const clean=adapter.read({data:root},{root:'root',nodes:['root','child'],nodeCount:2},plan,{});
 if(!clean.geometryVerified||clean.geometryMismatches.length)throw Error('Exact geometry rejected');
 const named={root:'root',nodes:['root','child'],nodeCount:2,path:'assets/prefabs/NativeRoot.prefab',rootNamePolicy:'creator-asset-basename-v1',sourceRootName:'root',nativeRootName:'NativeRoot'};
 root.name='NativeRoot';
-const normalized=adapter.read(root,named,plan,{});
+const normalized=adapter.read({data:root},named,plan,{});
 if(normalized.sourceRootName!=='root'||normalized.nativeRootName!=='NativeRoot')throw Error('Root-name evidence absent');
-child.name='tampered';let rejected=false;try{adapter.read(root,named,plan,{})}catch(e){rejected=/hierarchy differs: child/.test(e.message)};
+child.name='tampered';let rejected=false;try{adapter.read({data:root},named,plan,{})}catch(e){rejected=/hierarchy differs: child/.test(e.message)};
 if(!rejected)throw Error('Root policy hid a child rename');child.name='label';
 process.stdout.write(JSON.stringify(result));
 '''

@@ -33,6 +33,7 @@ public static partial class MonkeyImporter
         while(property.Next(enter)) {
             enter=false;
             if(PrefabInternalProperties.Contains(property.propertyPath))continue;
+            bool derived=false;SkipOptionalSpineDerivedProperty(source,property.propertyPath,ref derived);if(derived)continue;
             if(to.FindProperty(property.propertyPath)==null)throw new InvalidOperationException("Native serialized property unavailable: "+property.propertyPath);
             to.CopyFromSerializedPropertyIfDifferent(property);
         }
@@ -75,6 +76,7 @@ public static partial class MonkeyImporter
                     var counters=new Dictionary<Type,int>();
                     foreach(var component in old.GetComponents<Component>().Where(c=>!(c is Transform))) {
                         if(component==null)throw new InvalidOperationException("Missing component in native instance source");
+                        bool derived=false;IdentifyOptionalSpineDerivedComponent(component,ref derived);if(derived)continue;
                         var type=component.GetType();int index=counters.TryGetValue(type,out var count)?count:0;counters[type]=index+1;
                         var candidates=target.GetComponents(type);
                         var destination=index<candidates.Length?candidates[index]:target.AddComponent(type);
@@ -83,6 +85,7 @@ public static partial class MonkeyImporter
                     }
                     foreach(var component in target.GetComponents<Component>().Where(c=>!(c is Transform))) {
                         if(component is CanvasGroup)continue;
+                        bool derived=false;IdentifyOptionalSpineDerivedComponent(component,ref derived);if(derived)continue;
                         if(!pairs.Any(p=>p.Value==component))throw new InvalidOperationException("Native template component has no supported instance counterpart: "+component.GetType().Name);
                     }
                 }
@@ -112,6 +115,7 @@ public static partial class MonkeyImporter
                     foreach(var component in item.Value.GetComponents<Component>())if(component!=null)RemapNativeReferences(component,replacements);
                 if(firstEngineError!=null)throw new InvalidOperationException("NATIVE_ENGINE_ERROR_RECORDED during native reference transfer");
                 UnityEngine.Object.DestroyImmediate(previousRoot);
+                InitializeSavedStaticSpine(root);
                 if(Hash(template.path)!=prefabTemplateHashes[instance.template])throw new InvalidOperationException("Instance override mutated shared template");
             } catch { if(root!=null)UnityEngine.Object.DestroyImmediate(root);throw; }
         }
@@ -123,6 +127,7 @@ public static partial class MonkeyImporter
             case "cc.Label":return typeof(TMPro.TextMeshProUGUI);
             case "cc.Button":return typeof(UnityEngine.UI.Button);
             case "cc.ScrollView":return typeof(UnityEngine.UI.ScrollRect);
+            case "cc.BlockInputEvents":return typeof(NativeInputBlocker);
             case "cc.Mask":return typeof(UnityEngine.UI.RectMask2D);
             default:throw new InvalidOperationException("Mounted native component proof requires a typed adapter: "+sourceType);
         }

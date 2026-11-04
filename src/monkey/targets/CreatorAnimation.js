@@ -8,7 +8,7 @@ function create(spec,nodes) {
     for(const channel of spec.tracks) {
         const property=channel.property.split('.')[0],key=channel.path+'|'+property;
         if(!groups.has(key))groups.set(key,{path:channel.path,property,channels:[]});groups.get(key).channels.push(channel);
-        if(property==='opacity'&&!nodes.get(channel.node).getComponent(cc.UIOpacity))nodes.get(channel.node).addComponent(cc.UIOpacity);
+        if(!spec.assetOnly&&property==='opacity'&&!nodes.get(channel.node).getComponent(cc.UIOpacity))nodes.get(channel.node).addComponent(cc.UIOpacity);
     }
     for(const group of groups.values()) {
         const track=group.property==='opacity'?new cc.animation.RealTrack():new cc.animation.VectorTrack();

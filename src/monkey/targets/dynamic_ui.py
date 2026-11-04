@@ -24,13 +24,44 @@ def probe_sources(plan):
 def driven_fields(plan):
     nodes={n['sourceId']:n for n in plan['nodes']};result={}
     def allow(sid,key,axes):result.setdefault(sid,{}).setdefault(key,set()).update(axes)
-    for c in plan['components']:
-        if not c.get('convertible')or not c.get('enabled'):continue
+    components=list(plan['components'])
+    if plan.get('targetProfile')=='cocos-3.8.8':
+        for owner in (plan.get('layoutCompletion')or{}).get('nodes',[]):
+            for slot in owner.get('layouts',[]):
+                if slot.get('status')=='native_algorithm_supported':
+                    components.append(dict(slot,**{'type':'cc.Layout','node':owner['sourceNodeId'],'convertible':True,'enabled':slot['sourceEnabled']}))
+            for slot in owner.get('widgets',[]):
+                if slot.get('status')=='native_constraint_supported':
+                    components.append(dict(slot,**{'type':'cc.Widget','node':owner['sourceNodeId'],'flags':slot['alignFlags'],'convertible':True,'enabled':slot['sourceEnabled']}))
+    for c in components:
+        if not c.get('convertible'):continue
         sid=c['node'];typ=c['type']
-        if typ=='cc.Label':
+        if (typ=='cc.ScrollView' and plan.get('targetProfile')=='cocos-3.8.8' and
+              c.get('content') in nodes):
+            # Creator's ScrollView.content setter synchronously recalculates
+            # bounds and repositions its content, even when the component is
+            # disabled. The source-enabled axis flags still gate the move.
+            axes=[]
+            if c.get('horizontal') is True:axes.append(0)
+            if c.get('vertical') is True:axes.append(1)
+            if axes:allow(c['content'],'position',axes)
+        if not c.get('enabled'):continue
+        if typ=='cc.RichText' and plan.get('targetProfile')=='cocos-3.8.8':
+            # Creator 2.4 and 3.8 RichText recompute the owning node's size:
+            # width is intrinsic when maxWidth is zero (otherwise maxWidth),
+            # and height is line-count/lineHeight based. Keep both source
+            # constraints intact while accepting only this native size output.
+            allow(sid,'size',[0,1])
+        elif typ=='cc.Label':
             if c['overflow']==0:allow(sid,'size',[0,1])
             elif c['overflow']==3:allow(sid,'size',[1])
         elif typ=='cc.Sprite'and c.get('spriteFrame')and c.get('sizeMode',0)!=0:allow(sid,'size',[0,1])
+        elif (typ=='cc.ProgressBar' and plan.get('targetProfile')=='cocos-3.8.8' and
+              c.get('presentationPolicy')=='native-horizontal-tiled-progress-v1' and c.get('barNode') in nodes):
+            # Creator's native ProgressBar owns the horizontal bar position and
+            # width after initialization. Keep this declaration target/profile
+            # bound; Unity's Slider adapter drives the fill width differently.
+            allow(c['barNode'],'position',[0]);allow(c['barNode'],'size',[0])
         elif typ=='cc.Widget':
             flags=c['flags']
             if flags&56:allow(sid,'position',[0])

@@ -121,7 +121,7 @@ def normalize(manifest_path, output, *, audio_provider=None):
     result = dict(schemaVersion=1, toolVersion=__version__, sourceProfile=m['sourceProfile'],
                   sourceManifestSha256=sha(stage_bytes(manifest_path)),sourceManifestPath=str(manifest_path),sourceRoots=m.get('sourceRoots',{m['bundle']:m['sourceRoot']}),
                   sourceNames=source_names(m),sourceLocations={a['sourceId']:dict(bundle=a.get('bundle',m['bundle']),importPath=a.get('importPath'),nativePath=a.get('native')) for a in m['assets']}, evidenceFiles=m.get('evidenceFiles',[]),aliases=aliases, assets=[], spriteFrames=[], bitmapFonts=[],materials=[], nodes=[],
-                  components=[], quarantinedAssets=[],prefabInstances=[],prefabOverrideGaps=[],animationSchemaVersion=1,animationClips=[],diagnostics=diagnostics,
+                  components=[], sourceValueObjects=[], quarantinedAssets=[],prefabInstances=[],prefabOverrideGaps=[],animationSchemaVersion=1,animationClips=[],diagnostics=diagnostics,
                   scopeMode='whole-input' if m.get('packageSelection') else 'asset-selection',
                   coordinateConvention=dict(origin='center anchor', x='right', y='up', units='pixels'))
     prefab_resolver=None
@@ -138,7 +138,7 @@ def normalize(manifest_path, output, *, audio_provider=None):
             kind = value.get('__type__', asset.get('kind'))
         else:
             objects, value, kind = [], {}, asset.get('kind')
-        lengths={k:len(result[k]) for k in ('assets','spriteFrames','bitmapFonts','materials','nodes','components','animationClips')}
+        lengths={k:len(result[k]) for k in ('assets','spriteFrames','bitmapFonts','materials','nodes','components','sourceValueObjects','animationClips')}
         try:
             cocos38=m.get('sourceProfile')=='cocos-3.8.7-bundle'
             cocos34=m.get('sourceProfile')=='cocos-3.4.1-bundle'
@@ -252,7 +252,11 @@ def normalize(manifest_path, output, *, audio_provider=None):
                 node_start=len(result['nodes']);component_start=len(result['components'])
                 try:
                     # Nodes/components remain conversion-time data; unknown fields reported downstream.
-                    for index, obj in expand_nodes(objects,sid):
+                    expanded = list(expand_nodes(objects,sid))
+                    component_indices = {v.get('__id__') for _, n in expanded
+                        if isinstance(n,dict) and n.get('__type__') in ('cc.Node','cc.Scene')
+                        for v in n.get('_components',[]) if isinstance(v,dict) and type(v.get('__id__')) is int}
+                    for index, obj in expanded:
                         typ = obj.get('__type__') if isinstance(obj, dict) else None
                         location = f"{asset.get('importPath')}#instances/{index}"
                         if typ in ('cc.Node','cc.Scene'):
@@ -262,7 +266,7 @@ def normalize(manifest_path, output, *, audio_provider=None):
                                 if isinstance(value, dict) and '__type__' in value:
                                     inline_index = f'{index}/components/{ordinal}'
                                     inline_id = sid+'#'+inline_index
-                                    component, component_gaps = component_ir(sid, inline_index, value)
+                                    component, component_gaps = component_ir(sid, inline_index, value, source_profile=m['sourceProfile'])
                                     result['components'].append(component)
                                     diagnostics.extend(diagnostic('UNSUPPORTED_COMPONENT_SEMANTIC',location+f'/_components/{ordinal}',g,inline_id) for g in component_gaps)
                                     refs.append({'__sourceId__':inline_id})
@@ -276,7 +280,15 @@ def normalize(manifest_path, output, *, audio_provider=None):
                             result['nodes'].append(node)
                             diagnostics.extend(diagnostic('UNSUPPORTED_NODE_FIELD', location, g, node['sourceId']) for g in gaps)
                         elif typ not in ('cc.Prefab', 'cc.PrefabInfo', 'cc.SceneAsset', None):
-                            component, gaps = component_ir(sid, index, obj)
+                            if index not in component_indices and 'node' not in obj:
+                                # Referenced serializable values (e.g. ClickEvent)
+                                # are not node components. Preserve their complete
+                                # source payload and identity without inventing a node.
+                                import copy
+                                result['sourceValueObjects'].append(dict(sourceId=sid+'#'+str(index),
+                                    type=typ, sourceData=copy.deepcopy(obj), native='not_run'))
+                                continue
+                            component, gaps = component_ir(sid, index, obj, source_profile=m['sourceProfile'])
                             result['components'].append(component)
                             diagnostics.extend(diagnostic('UNSUPPORTED_COMPONENT_SEMANTIC', location, g, component['sourceId']) for g in gaps)
                 except (ParseError,KeyError,TypeError,ValueError,IndexError,AttributeError) as error:
@@ -310,6 +322,21 @@ def normalize(manifest_path, output, *, audio_provider=None):
         except (ParseError,KeyError,ValueError) as error:
             diagnostics.append(diagnostic(getattr(error,'code','INVALID_BITMAP_FONT'),asset.get('importPath',''),str(error),asset['sourceId']))
     quarantine_graphs(result)
+    from .prefab_completeness import audit, SUPPORTED
+    if m['sourceProfile'] in SUPPORTED:
+        selected = [a['sourceId'] for a in m['assets']
+                    if a.get('kind') in ('cc.Prefab', 'cc.SceneAsset')]
+        ledger = audit(m, result, selected)
+        write_json(out / 'prefab-completeness.json', ledger)
+        result['prefabCompleteness'] = dict(
+            report='prefab-completeness.json',
+            **{key: ledger[key] for key in ('status', 'sourceNodes', 'sourceComponents',
+                                          'mapped', 'unmapped', 'unknown')},
+            fieldSemantics='unverified', native='not_run', runtime='not_run',
+            visual='not_run', complete=False)
+    if m['sourceProfile'] in SUPPORTED:
+        from .prefab_static_pipeline import attach_static_fields
+        write_json(out / 'prefab-static-fields.json', attach_static_fields(m, result))
     write_json(out / 'ir.json', result)
     return finish(out, result)
 
@@ -415,7 +442,7 @@ def node_ir(namespace, index, obj):
                 opacity=obj.get('_opacity',255), components=[ref(v,namespace) for v in obj.get('_components',[])]), gaps
 
 
-def component_ir(namespace, index, obj):
+def component_ir(namespace, index, obj, *, source_profile=None):
     typ = obj.get('__type__')
     base = dict(sourceId=namespace+'#'+str(index), type=typ, node=ref(obj.get('node'),namespace), enabled=obj.get('_enabled',True),materials=[ref(v,namespace) for v in obj.get('_materials',[]) if v])
     gaps = []
@@ -425,6 +452,13 @@ def component_ir(namespace, index, obj):
         if base['mode'] not in (0,1,2): gaps.append('sprite mode '+str(base['mode']))
         known = {'_materials','_spriteFrame','_type','_sizeMode','_isTrimmedMode','_fillType','_fillCenter','_fillStart','_fillRange','_atlas'}
     elif typ == 'cc.Label':
+        family_values = [obj[key] for key in ('fontFamily', '_fontFamily', '_N$fontFamily') if key in obj]
+        if any(not isinstance(value, str) or not value.strip() for value in family_values):
+            fail('LABEL_FONT_FAMILY_INVALID', base['sourceId'], 'Expected a nonempty system font family')
+        if len(set(family_values)) > 1:
+            fail('LABEL_FONT_FAMILY_ALIAS_CONFLICT', base['sourceId'], 'Conflicting font family aliases')
+        base['fontFamily'] = family_values[0] if family_values else 'Arial'
+        base['fontFamilyEvidence'] = 'serialized' if family_values else 'creator-label-default-Arial'
         if '_overflow' in obj and '_N$overflow' in obj and obj['_overflow'] != obj['_N$overflow']:
             fail('LABEL_OVERFLOW_ALIAS_CONFLICT',base['sourceId'],'Conflicting serialized Label overflow aliases')
         base.update(text=obj.get('_string',obj.get('_N$string','')),font=ref(obj.get('_N$file'),namespace),
@@ -433,7 +467,7 @@ def component_ir(namespace, index, obj):
                     bold=bool(obj.get('_styleFlags',0)&1),italic=bool(obj.get('_styleFlags',0)&2),underline=bool(obj.get('_styleFlags',0)&4),
                     spacing=obj.get('_spacingX',0),systemFont=obj.get('_isSystemFontUsed',True),
                     overflow=obj.get('_overflow',obj.get('_N$overflow',0)),wrap=obj.get('_enableWrapText',True))
-        known = {'_string','_N$string','_N$file','_fontSize','_lineHeight','_horizontalAlign','_verticalAlign',
+        known = {'fontFamily','_string','_N$string','_N$file','_fontSize','_lineHeight','_horizontalAlign','_verticalAlign',
                  '_N$horizontalAlign','_N$verticalAlign','_materials','_overflow','_N$overflow','_enableWrapText','_isSystemFontUsed','_fontFamily','_N$fontFamily','_cacheMode','_styleFlags','_spacingX'}
         if not base['font']: gaps.append('system font requires source-backed explicit matching font binding')
         if base['overflow'] not in (0,1,2,3): gaps.append('unknown label overflow mode')
@@ -451,13 +485,21 @@ def component_ir(namespace, index, obj):
         known={'_N$content','horizontal','vertical','_N$horizontalScrollBar','_N$verticalScrollBar','bounceDuration','brake','elastic','inertia','scrollEvents','cancelInnerEvents'}
         if obj.get('scrollEvents'):gaps.append('scroll events need business binding')
     elif typ == 'cc.ProgressBar':
-        # Do not supply direction or progress defaults: omitted aliases require
-        # the target planner to prove the supported geometry independently.
+        # Exact 2.4.15 engine declarations define omitted serialized values.
+        # Other versions and direct unversioned callers retain unknowns.
         base.update(barSprite=ref(obj.get('_N$barSprite'),namespace),
                     progress=obj.get('_N$progress'),totalLength=obj.get('_N$totalLength'),
                     progressMode=obj.get('_N$mode'),progressReverse=obj.get('_N$reverse'))
         known={'_N$barSprite','_N$progress','_N$totalLength','_N$mode','_N$reverse','_materials'}
-        if any(key not in obj for key in ('_N$barSprite','_N$progress','_N$totalLength')):
+        if source_profile in ('cocos-2.4.15-bundle','cocos-2.4.15-project'):
+            defaults={}
+            for source_key,field,value in [('_N$progress','progress',1),('_N$totalLength','totalLength',1),
+                                          ('_N$mode','progressMode',0),('_N$reverse','progressReverse',False)]:
+                if source_key not in obj:
+                    base[field]=value;defaults[field]=dict(sourceField=source_key,value=value)
+            if defaults:base['engineDefaults']=dict(version='2.4.15',fields=defaults,
+                source='https://github.com/cocos/cocos-engine/blob/v2.4.15/cocos2d/core/components/CCProgressBar.js')
+        if base['barSprite'] is None or base['progress'] is None or base['totalLength'] is None:
             gaps.append('progress needs explicit source bar, progress and total length')
     elif typ == 'cc.Layout':
         if '_N$cellSize'in obj and '_cellSize'in obj and vector(obj['_N$cellSize'],['width','height'],[40,40])!=vector(obj['_cellSize'],['width','height'],[40,40]):
@@ -486,6 +528,8 @@ def component_ir(namespace, index, obj):
         base.update(clips=[ref(c,namespace) for c in obj.get('_clips',[]) if c is not None],
                     defaultClip=ref(obj.get('_defaultClip'),namespace),playOnLoad=obj.get('playOnLoad',False))
         known={'_clips','_defaultClip','playOnLoad'}
+    elif typ == 'cc.BlockInputEvents':
+        known = set()
     elif typ == 'cc.LabelOutline':
         base.update(width=obj.get('_width',1),outlineColor=vector(obj.get('_color'),['r','g','b','a'],[255]*4))
         known={'_width','_color'}

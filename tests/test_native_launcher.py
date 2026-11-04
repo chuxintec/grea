@@ -35,6 +35,32 @@ class NativeLauncherTests(unittest.TestCase):
                 self.assertEqual(error.exception.code,'NATIVE_SOURCE_DRIFT')
                 self.assertFalse((out/'UnityProject').exists())
 
+    def test_cli_passes_render_preview_to_launcher(self):
+        with patch('monkey.native.native_import',return_value={'status':'planned'}) as launch, contextlib.redirect_stdout(io.StringIO()):
+            code=main(['native-import','--candidate','candidate','--out','output','--editor-path','Unity',
+                '--expected-manifest','a'*64,'--deadline-utc','2026-10-29T10:00:00Z',
+                '--window-end-utc','2026-10-29T10:10:00Z','--render-preview'])
+        self.assertEqual(code,0)
+        self.assertTrue(launch.call_args.kwargs['render_preview'])
+
+    def test_render_preview_explicitly_uses_graphics_and_pins_plan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();options=self.prepare(root);out=root/'graphics'
+            class Child:
+                pid=31418
+                returncode=1
+                def poll(self):return self.returncode
+                def wait(self,timeout=None):return self.returncode
+            def launch(args,**kwargs):
+                self.assertIn('-batchmode',args)
+                self.assertNotIn('-nographics',args)
+                return Child()
+            with patch.object(native.subprocess,'Popen',side_effect=launch):
+                native.native_import(output=out,execute=True,render_preview=True,**options)
+            plan=json.loads((out/'native-plan.json').read_text())
+            self.assertFalse(plan['noGraphics']);self.assertTrue(plan['renderPreview'])
+            self.assertEqual(fingerprint(options['candidate']/'manifest.json'),options['expected_manifest'])
+
     def test_outer_deadline_terminates_only_owned_child_without_kill(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp).resolve();options=self.prepare(root);out=root/'native';clock=[datetime.now(timezone.utc)]

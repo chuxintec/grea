@@ -79,7 +79,7 @@ def main(argv=None):
     p.add_argument('--provider-budget-seconds', type=int, default=600)
     p.add_argument('--unity-object-value-limit',type=int,help='Unity inline value limit per object; default 250000, maximum 1000000; streamed payloads have separate byte limits')
     p.add_argument('--unity-container-value-limit',type=int,help='Unity inline value limit per input container; default 8000000, maximum 16000000')
-    p.add_argument('--unity-texture-cache',help='Explicit local ASTC cache pool for supported Unity texture-key hydration')
+    p.add_argument('--unity-texture-cache',help='Explicit local ASTC or single-level DDS/DXT5 cache pool for supported Unity texture-key hydration')
     p.add_argument('--unity-quarantine-invalid-textures',action='store_true',help='Explicit partial export excluding exact invalid ETC1 objects; originals and unresolved references retained')
     p.add_argument('--unity-dependency-manifest',help='Frozen Unity bundle lookup pool; export only exact reachable serialized-file closure')
     p.add_argument('--unity-export-scope',choices=['reachable','all'],default='reachable',help='all exports every unique container in the explicit Unity bundle manifest')
@@ -125,11 +125,15 @@ def main(argv=None):
     p = sub.add_parser('acquire-unity-textures',help='Capture exact serialized ASTC keys under a literal original DATA_CDN')
     for name in ('inspection','cache-manifest','cdn-source','cdn-root','out'):p.add_argument('--'+name,required=True)
     p.add_argument('--cache-root');p.add_argument('--budget-seconds',type=int,default=1200);p.add_argument('--workers',type=int,default=8);p.add_argument('--resume',action='store_true')
-    p = sub.add_parser('hydrate-unity', help='Resolve explicit WeChat texture keys against a pinned local ASTC cache pool')
+    p = sub.add_parser('hydrate-unity', help='Resolve explicit WeChat texture keys against a pinned local ASTC or DDS/DXT5 cache pool')
     p.add_argument('--source',required=True)
     p.add_argument('--texture-cache',required=True)
+    p.add_argument('--selection-manifest',help='Frozen source SHA and exact Texture2D file/pathId/rawSha256/logicalPath selection; unselected objects stay unchanged and pending')
     p.add_argument('--provider-python',required=True)
     p.add_argument('--out',required=True)
+    p.add_argument('--budget-seconds',type=int,default=120)
+    p = sub.add_parser('export-unity-textures',help='Export exact selected hydrated Texture2D pixels as PNG candidates without whole-container AssetRipper export')
+    for name in ('source','derivative','hydration-report','expected-hydration-sha256','selection-manifest','provider-python','out'):p.add_argument('--'+name,required=True)
     p.add_argument('--budget-seconds',type=int,default=120)
     p = sub.add_parser('index-unity', help='Index exact serialized files and PPtr IDs from an explicit frozen bundle list')
     p.add_argument('--manifest', required=True)
@@ -148,6 +152,9 @@ def main(argv=None):
     p.add_argument('--asset-ripper', required=True)
     p.add_argument('--out', required=True)
     p.add_argument('--budget-seconds', type=int, default=600)
+    p = sub.add_parser('classify-unity-shaders',help='Classify frozen recovered Shader evidence without compiling, moving or re-exporting assets')
+    for name in ('project','manifest','expected-manifest','out'):p.add_argument('--'+name,required=True)
+    p.add_argument('--source-mapping');p.add_argument('--expected-source-mapping')
     p = sub.add_parser('inspect-unity', help='Strict typed inspection of an explicit Unity serialized file or AssetBundle')
     p.add_argument('--source', required=True)
     p.add_argument('--schema-manifest', help='Explicit frozen bundle pool; borrow only identical version/platform/script/type hashes')
@@ -332,6 +339,7 @@ def main(argv=None):
     p.add_argument('--editor-path',required=True);p.add_argument('--expected-manifest',required=True)
     p.add_argument('--budget-seconds',type=int,default=600);p.add_argument('--deadline-utc',required=True)
     p.add_argument('--window-end-utc',required=True);p.add_argument('--execute',action='store_true')
+    p.add_argument('--render-preview',action='store_true',help='Unity: use a real graphics device for diagnostic previews')
     p = sub.add_parser('preflight',help='Check frozen candidate and classify startup logs without launching an Editor')
     p.add_argument('--candidate',required=True);p.add_argument('--out',required=True);p.add_argument('--log');p.add_argument('--progress')
     p = sub.add_parser('inspect')
@@ -348,8 +356,27 @@ def main(argv=None):
     p = sub.add_parser('normalize')
     p.add_argument('--manifest', required=True)
     p.add_argument('--out', required=True)
+    p = sub.add_parser('prefab-static-fields', help='Preserve serialized custom fields in a fresh IR stage without rerunning resources')
+    p.add_argument('--manifest', required=True)
+    p.add_argument('--ir', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('prefab-behavior-ir', help='Generate source-bound native behavior scripts in an independent IR stage')
+    p.add_argument('--manifest', required=True)
+    p.add_argument('--ir', required=True)
+    p.add_argument('--source-bundle', required=True)
+    p.add_argument('--expected-source-bundle', required=True)
+    p.add_argument('--out', required=True)
     p = sub.add_parser('plan')
     p.add_argument('--ir',required=True)
+    p.add_argument('--static-source-bundle',help='Original JS bundle, parsed only for static constructor fields')
+    p.add_argument('--expected-static-source-bundle',help='Expected source bundle SHA-256')
+    p.add_argument('--system-font-resolution',help='Explicit macOS CoreText resolution receipt for source system-font Labels')
+    p.add_argument('--expected-system-font-resolution',help='Expected resolution receipt SHA-256')
+    p.add_argument('--static-font-generation',help='Pinned generated CoreText SDF receipt for an explicitly resolved static face')
+    p.add_argument('--expected-static-font-generation',help='Expected generated SDF receipt SHA-256')
+    p.add_argument('--spine-bindings',help='Pinned source component and resource emission receipt for Creator')
+    p.add_argument('--expected-spine-bindings',help='Expected Spine emission receipt SHA-256')
+    p.add_argument('--spine-resources',help='Frozen monkey Creator Spine resource candidate')
     p.add_argument('--namespace',required=True)
     p.add_argument('--bindings')
     p.add_argument('--animation',action='append',help='Select a source AnimationClip ID; default all normalized clips')
@@ -362,6 +389,38 @@ def main(argv=None):
     p.add_argument('--candidate',required=True)
     p.add_argument('--level',choices=['static','editor'],default='static')
     p.add_argument('--out',required=True)
+    p = sub.add_parser('freeze-native-selection', help='Freeze selected saved Unity Prefabs with native identities and producer-declared compile dependencies')
+    p.add_argument('--candidate', required=True)
+    p.add_argument('--prefab', action='append', required=True, help='Exact candidate-relative Assets Prefab path; repeat to select more than one')
+    p.add_argument('--expected-manifest', required=True)
+    p.add_argument('--expected-readback', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('upgrade-native-runtime', help='Copy a frozen selection and upgrade only exact known native presentation templates')
+    p.add_argument('--candidate', required=True)
+    p.add_argument('--expected-manifest', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('audit-native-code-dependencies', help='Supplement a frozen selection with exact producer code proofs without changing its warnings')
+    p.add_argument('--candidate', required=True)
+    p.add_argument('--expected-manifest', required=True)
+    p.add_argument('--producer-candidate', required=True)
+    p.add_argument('--expected-producer-manifest', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('complete-native-font', help='Append an explicitly pinned consumer text corpus using the same static font face and preserved glyphs')
+    p.add_argument('--request', required=True)
+    p.add_argument('--expected-request', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('stage-native-font', help='Prepare a separate native Unity project to apply a pinned static-font completion')
+    p.add_argument('--candidate', required=True)
+    p.add_argument('--expected-manifest', required=True)
+    p.add_argument('--completion', required=True)
+    p.add_argument('--expected-completion', required=True)
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('finish-native-font', help='Freeze the actually saved font candidate after native identity and glyph checks')
+    p.add_argument('--project', required=True)
+    p.add_argument('--expected-stage-manifest', required=True)
+    p.add_argument('--readback', required=True)
+    p.add_argument('--expected-readback', required=True)
+    p.add_argument('--out', required=True)
     p = sub.add_parser('handoff')
     p.add_argument('--candidate',required=True)
     p.add_argument('--out',required=True)
@@ -421,6 +480,7 @@ def main(argv=None):
             from .output_limits import policy
             print(json.dumps(dict(version=__version__, profiles=[PROFILE,PROJECT_PROFILE,'cocos-2.4.11-bundle','cocos-3.8.7-bundle','cocos-3.4.1-bundle','cocos-2.1.2-resource','generic-image-resources-v1','egret-custom-resource-plist-v1'], targetProfiles=[UNITY_PROFILE,cocos.PROFILE],
                 ownership=dict(recoveryCandidates='monkey',developmentProjectOperations='beaver',workflow='GREA'),
+                nativeSdkDeclarations=dict(command='audit-native-code-dependencies',contract='monkey-native-sdk-declaration/1',schemaVersion=1,coverage='manifest-pinned-Spine-stage-and-literal-script-reference-tuples',assemblyInspectionOwner='beaver',migration='not-performed'),
                 codeRecovery=dict(status='partial',sourceExecution=False,lexicalGraph='complete-source-static-binding-and-utf8-spans',typedModules='explicit-source-class-method-hashes-and-call-domain',moduleProfiles=['foodstreet-demand-health-v1','foodstreet-motion-math-v1'],selection='optional-strict-typed-dependency-closure-and-lowering',methods='default-full-source-best-effort-CSharp-bodies;unknown-fragments-retained',fullDrafts=dict(commands=['code-draft','convert'],typeContractRequired=False,sourceMethods='all-indexed-plus-auxiliary-functions',fields='known-class-or-unresolved-owner-binding',diagnostics='source-linked-bounded-shards',compilation='excluded;syntax-and-API-errors-allowed'),projectPostprocess=dict(commands=['code-project-prepare','code-project-run','code-project-status','code-project-resume','code-project-pause','code-project-configure','code-project-recheck'],scope='all-manifest-owned-CSharp-files',execution='single-CLI-continuous-batches;per-batch-limits;exact-session',status='legacy-file-repair;active-run-superseded'),nativeArchitecture=dict(commands=['code-architecture-prepare','code-architecture-run','code-architecture-status','code-architecture-recheck','code-architecture-refine','code-native-prepare','code-native-run','code-native-status','code-native-continue','code-native-reassemble','code-native-revise','code-native-add-json','code-architecture-module-prepare','code-architecture-module-run','code-architecture-module-status','code-architecture-module-recheck','code-architecture-module-recover'],scope='complete-frozen-source-modules-members-and-resources',layers=['Bootstrap','Domain','Gameplay','Presentation','Services'],execution='single-existing-Codex-CLI;versioned-source-and-target-ownership',status='architecture-design-stage-available;native-implementation-in-progress'),optionalPostprocess=dict(commands=['code-postprocess','code-postprocess-resume'],defaultEnabled=False,provider='existing-local-Codex-CLI',workspace='independent-selected-code-copy',sourceCandidate='immutable',budgets='total-idle-output',resume='exact-recorded-session-only'),packageComposition='exact-frozen-resource-reuse;one-manifest-with-Scene-Prefab-JSON-and-CSharp',incremental='owned-candidate-fingerprints-and-hash-verified-reuse',mono='static-decompiler-drafts;legal-fixture-target-compiled',il2cpp='v29-exact-WASM-body-evidence;8-pure-i64-operator-fragments;caller-map-assumption;stateful-bodies-not-lifted',native='separate-probe-required;not-implied-by-emission'),
                 recoveryOperations=dict(commands=['acquire-resources','diagnose','doctor','space-preview','resource-probe'],
                     resume='same-manifest-and-input-set; completed-partial-receipt-to-fresh-layer; rehash-selected-payloads',
@@ -432,7 +492,7 @@ def main(argv=None):
                 outputPolicy=dict(wholeInput=policy({'scopeMode':'whole-input'}),selection=policy({}),hashChunkBytes=1048576,sourceDecoderBudgets='independent'),
                 additionalPackageProfiles={'cocos-3.4.1-bundle':dict(scope='version-proven-node-ui-prefab-and-resource-subset',graphs='856-of-857-source-graphs;22503-nodes;52-instances;one-null-quaternion-rejected',native='5-source-frames-plus-6-prefabs-331-nodes-8-instances-7-mounted-nodes-1-mounted-widget-both-targets-verified',operations=['package-convert']), 'egret-custom-resource-plist-v1':dict(scope='reviewed-custom-resource-manifest-plist-binjson-v2',targets=['unity6'],sourceSkins='typed-data-only-native-layout-pending',remoteAcquisition='explicit-manifest-cache-and-bounded-fetch',native='132-source-frames-verified; expanded-atlas-set-pending',operations=['package-convert']), 'cocos-2.1.2-resource':dict(scope='version-proven-resource-subset',native='211-source-frames-both-targets-verified',graphs='pending',operations=['package-convert']), 'generic-image-resources-v1':dict(scope='derived-original-image-gallery-only',families=['laya','layaair','egret','eraget','custom','other'],targets=['unity6'],native='Egret-16-derived-images-verified',sourceGraphs='not-restored',operations=['package-convert']), 'cocos-2.4.11-bundle':dict(scope='version-proven-published-bundle-subset',native='91-source-graphs-both-targets-verified',operations=['package-convert']), 'cocos-3.8.7-bundle':dict(scope='version-proven-node-ui-template-and-resource-subset',native='83-static-graphs-plus-4-prefab-5-native-relations-and-16-node-dynamic-ui-representatives-both-targets-verified',graphs='114-root-closures-static;5-graphs-missing-6-exact-templates;not-all-native-validated',operations=['package-convert'])},
                 toolkit=dict(contract='grea-toolkit/1',runner='monkey tool <id>',tools=list(__import__('monkey.toolkit',fromlist=['TOOLS']).TOOLS)),
-                 schemaVersion=1, dynamicUi=dict(probeVersion=2,verifiedLayoutGroups=6,verifiedLayoutStates=54,native='historical-v02-grid-scale-constraints-child-resize-and-linear-scale-representatives',timing='Editor-native-forced-update;Player-not_run',unityFlowReplacement=dict(status='verified-subset',sourcePrefabs=48,sourceComponents=63,aggregateAssets=50,representatives=6,scope='horizontal-flexible-unscaled-uniform-grid-or-proven-single-row',otherLayouts='review-required;no-source-flow-runtime-fallback',sourceText='questionnaire-Label-not-recovered;Rect-resize-only')), formatting=dict(implemented=['unity-creator-unimported-owned-grea-v1','fresh-package-convert-none-grea'],pending=['unity-general-scene-native-format','unity-source-positive-native-move-sample'],rejected=['materialized-native-assets-require-a-future-native-move-adapter']), unitySourceProfile=dict(inspectionPolicy=dict(defaultObjectValues=250000,defaultContainerValues=8000000,maxObjectValues=1000000,maxContainerValues=16000000,maxDepth=96,streamedFields=['Font.m_FontData','AssetBundle.m_PreloadTable'],chunkElements=8192,maxPayloadBytes=268435456),name='unityfs-unitypy-1.25.3-assetripper-2.0.0',status='partial',inputs='explicit-unity-bundle-or-webdata-files-and-exact-local-texture-cache',additionalContainers=['UnityWebData1.0'],invalidTexturePolicy='block-default-explicit-quarantine-retains-original',dependencyClosure='explicit-frozen-pool-exact-serialized-file-closure',editor='one-prefab-schema-reference-save-reload-verified',publicNative=True,nativeProfile='unity-leaf-prefab-sprite-array-v1',nativeFormatting='typed-resource-moves-with-dynamic-path-pins; real sample pinned all 134 assets',methodsRecovered=0), implemented=['code-draft','code-types','freeze-resource-candidate','acquire-resources','diagnose','doctor','space-preview','resource-probe','query-methods','query-tables','inspect-aliases','adopt','adopt-recover','unity-field-plan','convert','catalog','inspect','normalize','plan','export','verify','handoff','diff','register','apply','preflight','native-import','research-matrix','code-model','code-emit','code-select','wasm-code-source','wasm-code-candidate','unity-code-source','unity-code-candidate','code-native-probe','format-project','project-model','inspect-unity','export-unity','unity-code-model','index-unity','hydrate-unity','code-handoff','native-finish-plan','native-finish','acquire-unity-textures','prepare-unity-bulk','export-unity-bulk','freeze-handoff','freeze-unity-handoff','native-layout-audit','native-layout-prepare','native-layout-patch','native-layout-finish','native-layout-bundle'], planned=[],
+                 schemaVersion=1, dynamicUi=dict(probeVersion=2,verifiedLayoutGroups=6,verifiedLayoutStates=54,native='historical-v02-grid-scale-constraints-child-resize-and-linear-scale-representatives',timing='Editor-native-forced-update;Player-not_run',unityFlowReplacement=dict(status='verified-subset',sourcePrefabs=48,sourceComponents=63,aggregateAssets=50,representatives=6,scope='horizontal-flexible-unscaled-uniform-grid-or-proven-single-row',otherLayouts='review-required;no-source-flow-runtime-fallback',sourceText='questionnaire-Label-not-recovered;Rect-resize-only')), formatting=dict(implemented=['unity-creator-unimported-owned-grea-v1','fresh-package-convert-none-grea'],pending=['unity-general-scene-native-format','unity-source-positive-native-move-sample'],rejected=['materialized-native-assets-require-a-future-native-move-adapter']), unitySourceProfile=dict(inspectionPolicy=dict(defaultObjectValues=250000,defaultContainerValues=8000000,maxObjectValues=1000000,maxContainerValues=16000000,maxDepth=96,streamedFields=['Font.m_FontData','AssetBundle.m_PreloadTable'],chunkElements=8192,maxPayloadBytes=268435456),name='unityfs-unitypy-1.25.3-assetripper-2.0.0',status='partial',inputs='explicit-unity-bundle-or-webdata-files-and-exact-local-texture-cache',additionalContainers=['UnityWebData1.0'],invalidTexturePolicy='block-default-explicit-quarantine-retains-original',dependencyClosure='explicit-frozen-pool-exact-serialized-file-closure',editor='one-prefab-schema-reference-save-reload-verified',publicNative=True,nativeProfile='unity-leaf-prefab-sprite-array-v1',textureHydration=dict(selectionManifest='unity-texture-selection/1',scopes=['container','selected-texture-set'],cachePaths='exact-frozen-literal-bucket-and-token-filename',partialDerivative=True,partialExitCode=1,selectedPngExport='unity-selected-texture-export/1'),shaderHandoff='monkey-shader-handoff/1',nativeFormatting='typed-resource-moves-with-dynamic-path-pins; real sample pinned all 134 assets',methodsRecovered=0), implemented=['audit-native-code-dependencies','stage-native-font','finish-native-font','complete-native-font','upgrade-native-runtime','freeze-native-selection','prefab-static-fields','prefab-behavior-ir','code-draft','code-types','freeze-resource-candidate','acquire-resources','diagnose','doctor','space-preview','resource-probe','query-methods','query-tables','inspect-aliases','adopt','adopt-recover','unity-field-plan','convert','catalog','inspect','normalize','plan','export','verify','handoff','diff','register','apply','preflight','native-import','research-matrix','code-model','code-emit','code-select','wasm-code-source','wasm-code-candidate','unity-code-source','unity-code-candidate','code-native-probe','format-project','project-model','inspect-unity','export-unity','unity-code-model','index-unity','hydrate-unity','export-unity-textures','classify-unity-shaders','code-handoff','native-finish-plan','native-finish','acquire-unity-textures','prepare-unity-bulk','export-unity-bulk','freeze-handoff','freeze-unity-handoff','native-layout-audit','native-layout-prepare','native-layout-patch','native-layout-finish','native-layout-bundle'], planned=[],
                 targetValidation={UNITY_PROFILE:dict(static='implemented',editor='representative-subset-verified',visual='not_run'),cocos.PROFILE:dict(static='implemented',editor='representative-subset-verified',visual='not_run')},
                 compiledFormats=['compiled-v1','pack-v1','texture-pack-v1'],
                 containerFormats=['plain-wxapkg','APK-ZIP','Cocos-resource-directory'],
@@ -608,9 +668,17 @@ def main(argv=None):
             print(json.dumps(result,ensure_ascii=False));return 0 if result['status']=='captured'else 1
         if args.command == 'hydrate-unity':
             from .unity_textures import hydrate
-            result=hydrate(args.source,args.texture_cache,args.provider_python,args.out,args.budget_seconds)
+            result=hydrate(args.source,args.texture_cache,args.provider_python,args.out,args.budget_seconds,args.selection_manifest)
             print(json.dumps(result,ensure_ascii=False))
             return 0 if result['status']=='hydrated' else 1
+        if args.command == 'export-unity-textures':
+            from .unity_texture_export import export as export_textures
+            result=export_textures(args.source,args.derivative,args.hydration_report,args.expected_hydration_sha256,args.selection_manifest,args.provider_python,args.out,args.budget_seconds)
+            print(json.dumps(result,ensure_ascii=False));return 0 if result['status']=='exported'else 1
+        if args.command == 'classify-unity-shaders':
+            from .shader_handoff import classify_project
+            result=classify_project(args.project,args.manifest,args.expected_manifest,args.out,args.source_mapping,args.expected_source_mapping)
+            print(json.dumps(result,ensure_ascii=False));return 0
         if args.command == 'index-unity':
             from .unity_index import catalog as index_unity
             result=index_unity(args.manifest,args.provider_python,args.out,args.budget_seconds)
@@ -939,8 +1007,19 @@ def main(argv=None):
             result=catalog(args.source,args.out)
         elif args.command == 'normalize':
             result = normalize(args.manifest, args.out)
+        elif args.command == 'prefab-static-fields':
+            from .prefab_static_pipeline import project_ir
+            result=project_ir(args.manifest,args.ir,args.out)
+        elif args.command == 'prefab-behavior-ir':
+            from .prefab_behavior_pipeline import project_ir as prefab_behavior_ir
+            result=prefab_behavior_ir(args.manifest,args.ir,args.source_bundle,args.expected_source_bundle,args.out)['manifest']
         elif args.command == 'plan':
-            result = (cocos.plan if args.target_profile==cocos.PROFILE else plan)(args.ir,args.namespace,args.out,args.bindings,args.animation)
+            if args.target_profile==cocos.PROFILE:
+                if args.system_font_resolution or args.expected_system_font_resolution or args.static_font_generation or args.expected_static_font_generation:parser.error('Explicit TMP system-font resolution applies only to Unity')
+                result=cocos.plan(args.ir,args.namespace,args.out,args.bindings,args.animation,spine_bindings=args.spine_bindings,expected_spine_bindings=args.expected_spine_bindings,spine_resources=args.spine_resources,static_source_bundle=args.static_source_bundle,expected_static_source_bundle=args.expected_static_source_bundle)
+            else:
+                if args.spine_bindings or args.expected_spine_bindings or args.spine_resources:parser.error('Spine component receipt currently requires Creator; Unity runtime binding is pending')
+                result=plan(args.ir,args.namespace,args.out,args.bindings,args.animation,system_font_resolution=args.system_font_resolution,expected_system_font_resolution=args.expected_system_font_resolution,static_font_generation=args.static_font_generation,expected_static_font_generation=args.expected_static_font_generation,static_source_bundle=args.static_source_bundle,expected_static_source_bundle=args.expected_static_source_bundle)
         elif args.command == 'diff':
             result=incremental.diff(args.before,args.after,args.out)
         elif args.command == 'apply':
@@ -959,12 +1038,64 @@ def main(argv=None):
                 incremental.register(output_path,Path.cwd())
         elif args.command == 'native-import':
             from .native import native_import
-            result=native_import(args.candidate,args.out,args.editor_path,args.expected_manifest,args.budget_seconds,args.deadline_utc,args.window_end_utc,args.execute)
+            result=native_import(args.candidate,args.out,args.editor_path,args.expected_manifest,args.budget_seconds,args.deadline_utc,args.window_end_utc,args.execute,render_preview=args.render_preview)
             print(json.dumps({k:result.get(k) for k in ('status','processStarted','processExited','pid','reason','report')},ensure_ascii=False))
             return 0 if result['status'] in ('planned','candidate') else 1
         elif args.command == 'preflight':
             from .preflight import preflight
             result=preflight(args.candidate,args.out,args.log,args.progress)
+        elif args.command in ('stage-native-font', 'finish-native-font'):
+            from .native_font_stage import stage, finish_stage, NativeFontStageError
+            try:
+                if args.command == 'stage-native-font':
+                    result = stage(args.candidate, args.expected_manifest, args.completion, args.expected_completion, args.out)
+                else:
+                    result = finish_stage(args.project, args.expected_stage_manifest, args.readback, args.expected_readback, args.out)
+            except NativeFontStageError as exc:
+                fail('NATIVE_FONT_STAGE_REJECTED', args.out, str(exc))
+            print(json.dumps(result, ensure_ascii=False))
+            return 0
+        elif args.command == 'complete-native-font':
+            from .io import read, load, sha
+            from .native_font_completion import complete_native_font_from_corpus, NativeFontCompletionError
+            raw_request = read(args.request)
+            if sha(raw_request) != args.expected_request:
+                fail('FONT_REQUEST_SHA_MISMATCH', args.request, 'Consumer font request differs from its pin')
+            request = load(raw_request)
+            allowed = {'corpus_path','expected_corpus_sha256','base_binding_path','expected_base_binding_sha256',
+                'base_generation_receipt_path','expected_base_generation_receipt_sha256','base_static_plan_path',
+                'expected_base_static_plan_sha256','static_font_asset_id','requested_primary_family',
+                'expected_primary_style','watch_files'}
+            required = allowed - {'requested_primary_family','expected_primary_style','watch_files'}
+            if not isinstance(request, dict) or set(request) - allowed or required - set(request):
+                fail('FONT_REQUEST_INVALID', args.request, 'Expected the documented pinned consumer font request fields')
+            try:
+                result = complete_native_font_from_corpus(**request,
+                    generator_path=Path(__file__).parent / 'targets' / 'GenerateCoreTextSdf.swift', output_dir=args.out)
+            except NativeFontCompletionError as exc:
+                fail('FONT_COMPLETION_REJECTED', args.request, str(exc))
+            print(json.dumps(result, ensure_ascii=False))
+            return 0
+        elif args.command == 'audit-native-code-dependencies':
+            from .native_code_dependencies import audit
+            result = audit(args.candidate, args.expected_manifest, args.producer_candidate,
+                args.expected_producer_manifest, args.out)
+            print(json.dumps(dict(status=result['status'], scripts=len(result['scripts']),
+                uncovered=result['uncovered'], report=str(Path(args.out) / 'code-dependency-supplement.json'))))
+            return 0
+        elif args.command == 'upgrade-native-runtime':
+            from .native_runtime_update import upgrade
+            updated = upgrade(args.candidate, args.expected_manifest, args.out)
+            print(json.dumps(dict(status='prepared', manifest=str(Path(args.out) / 'manifest.json'),
+                runtimeUpdate=updated['runtimeUpdate']), ensure_ascii=False))
+            return 0
+        elif args.command == 'freeze-native-selection':
+            from .native_selection import freeze
+            frozen = freeze(args.candidate, args.prefab, args.out, args.expected_manifest, args.expected_readback)
+            print(json.dumps(dict(status='frozen', manifest=str(Path(args.out) / 'manifest.json'),
+                files=len(frozen['files']), selection=frozen['selection'],
+                diagnostics=frozen.get('diagnostics', [])), ensure_ascii=False))
+            return 0
         elif args.command == 'verify':
             from .io import safe, read, load
             from .io import stage_manifest

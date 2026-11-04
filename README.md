@@ -1,12 +1,16 @@
 # monkey
 
-[MIT License](LICENSE) · [Source](https://github.com/chuxintec/monkey) · [v0.6.0 Release](https://github.com/chuxintec/monkey/releases/tag/v0.6.0)
+[MIT License](LICENSE) · [Source](https://github.com/chuxintec/monkey) · [v0.7.0 Release](https://github.com/chuxintec/monkey/releases/tag/v0.7.0)
 
-monkey 是 Python 驱动的原包恢复命令行工具，将已授权取得的包体、资源和源码证据整理为独立候选工程。正式版本 **0.6.0** 同时包含 C# 恢复流程和七个来源侧工具；工程规范为 [`monkey-project/2.0.0`](docs/PROJECT-SPEC.md)。
+monkey 是 Python 驱动的原包恢复命令行工具，将已授权取得的包体、资源和源码证据整理为独立候选工程。正式版本 **0.7.0** 在既有 C# 恢复及七个来源侧工具上加入 Cocos 来源静态 Prefab、保存选取与依赖声明流程；工程规范为 [`monkey-project/2.0.0`](docs/PROJECT-SPEC.md)。
 
 Unity 目标使用 Unity 6，采用 `Assets/Game/Content/<Type>/<Module>/`；Creator 资源目标使用 `assets/resources/<Type>/<Module>/`。图片统一放在 Textures，保留 Sprite 导入设置与引用。中文输出名转拼音，保留源名映射及冲突消歧。原始数值配置以 UTF-8 JSON 为维护源。
 
-## 0.6.0 的主要能力
+## 0.7.0 的主要能力
+
+- Cocos 来源的静态 Prefab 恢复支持有据字段、资源、布局、固定状态和双目标保存重开；未知业务、动画曲线和不可用行为仍保留具体缺口。
+- `freeze-native-selection` 按冻结源与原生读回选取依赖；`audit-native-code-dependencies` 补充 C# 证明和 SDK 声明，保留未知 MonoScript 表为 `not_run`。
+- 字体补齐、Spine 静态资源和运行时展示均按精确源身份与代表样本验证；引擎、字体、SDK、完整业务和第三方许可不随版本号自动保证。
 
 - 包级 `convert` 可生成全部已取得 JS 方法的 C# 初稿，并保留资源、JSON、Scene/Prefab、源码映射及具体未恢复项。支持核验后复用冻结资源候选，避免重复解码。
 - 原生架构流程按 Bootstrap/Domain/Gameplay/Presentation/Services 组织完整模块，支持单进程有界生成、断点接续、只读重分类、哈希固定的候选修订和显式本地测试 JSON。
@@ -21,7 +25,7 @@ Unity 目标使用 Unity 6，采用 `Assets/Game/Content/<Type>/<Module>/`；Cre
 
 ```sh
 python3 -m venv .monkey-env
-.monkey-env/bin/python -m pip install monkey_native-0.6.0-py3-none-any.whl
+.monkey-env/bin/python -m pip install monkey_native-0.7.0-py3-none-any.whl
 .monkey-env/bin/monkey --version
 .monkey-env/bin/monkey capabilities
 .monkey-env/bin/monkey convert --help
@@ -30,9 +34,11 @@ python3 -m venv .monkey-env
 
 Windows 使用环境目录下的 `Scripts/python.exe` 和 `Scripts/monkey.exe`。安装仅提供工具，不包含游戏原包、引擎或私有素材。现有 GREA 集成应使用对应正式版本、精确下载 SHA 和 producer 合同。
 
-完整调用方式见[用法](docs/USAGE.md)、[C# 初稿](docs/CODE-DRAFTS.md)、[架构恢复](docs/CODE-ARCHITECTURE.md)、[候选修订](docs/CODE-ARCHITECTURE-REVISION.md)及[正式发布说明](docs/RELEASE-v0.6.0.md)。
+完整调用方式见[用法](docs/USAGE.md)、[C# 初稿](docs/CODE-DRAFTS.md)、[架构恢复](docs/CODE-ARCHITECTURE.md)、[候选修订](docs/CODE-ARCHITECTURE-REVISION.md)及[正式发布说明](docs/RELEASE-v0.7.0.md)。
 
 ## 验证与限制
+
+本版稳定源码来自已固定的 0.7.0.dev9。Unity 来源静态 Prefab 的新增 0.8.0 开发流程独立保留，不包含在本版增量承诺中。公开使用须固定制品 SHA 并单独检查实际原生/视觉/Player证据；不以工具版本或安装成功推断游戏完成。
 
 一个代表性私有来源的完整候选曾以 1,555 份 C#、五个真实程序集完成编译：0 error、3,249 warning。受影响原生核心验证覆盖 348 格、24 个 Sprite 身份、生产点击、持久化重开及视口外输入拒绝。该历史证据不作为发行包内的公开复现素材，也不等于完整游戏恢复。原始证据保留在本地私有档案，公开摘要见版本说明。
 

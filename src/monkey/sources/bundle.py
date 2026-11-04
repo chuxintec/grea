@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from .. import __version__
 from ..io import safe, inside, read, load, sha, new_output, write_json, finish, diagnostic
-from .compiled import asset_key, decode_document, ADAPTERS, fail, at, array, ParseError
+from .compiled import asset_key, source_asset_key, safe_source_asset_identity, decode_document, ADAPTERS, fail, at, array, ParseError
 
 PROFILE = 'cocos-2.4.15-bundle'
 
@@ -56,7 +56,7 @@ class Bundle:
                 self.keys.append(asset_key(v,f'$.uuids[{i}]'))
             except ParseError as error:
                 # An unrelated malformed identity must not erase the selected slice.
-                if not isinstance(v,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,128}',v):
+                if not safe_source_asset_identity(v):
                     raise
                 self.keys.append(v)
                 self.invalid_keys[i] = str(error)
@@ -189,8 +189,6 @@ class Bundle:
         # envelope already read for members, not an additional compiled object.
         if self.source_profile=='cocos-3.4.1-bundle'and key in self.config.get('packs',{})and index not in self.members and str(index)not in self.config.get('paths',{}):
             return dict(sourceId=self.config['name']+':'+key,key=key,index=index,kind='source-pack-container',document=None,references=[],native=None,packContainer=key)
-        if index in self.invalid_keys:
-            fail('INVALID_SELECTED_IDENTITY', f'$.uuids[{index}]', self.invalid_keys[index])
         source_id = self.config['name'] + ':' + key
         paths = self.config.get('paths', {}).get(str(index))
         kind = at(self.config.get('types', []), paths[1], '$.paths.type') if paths else None
@@ -198,6 +196,8 @@ class Bundle:
             fail('INVALID_PATH_TABLE','$.paths','Expected [logicalPath,typeIndex]')
         entry = dict(sourceId=source_id, key=key, index=index, kind=kind,
                      logicalPath=paths[0] if paths else None, references=[], native=None)
+        if index in self.invalid_keys:
+            entry['sourceIdentityEncoding'] = 'config-declared-opaque'
         if index in self.redirects:
             entry.update(kind='redirect', document=None,redirectBundle=self.redirects[index],
                          redirectTarget=self.redirects[index]+':'+key)
@@ -237,9 +237,10 @@ class Bundle:
             if not isinstance(raw,list) or len(raw)!=6 or not isinstance(raw[5],list) or len(raw[5])!=count:
                 fail('PACK_MEMBERSHIP_MISMATCH',str(path),'Pack shape/count differs from config')
             # Decode selected section only: unrelated scripts do not expand this scope.
-            decoded = decode_document(raw[:5]+array(raw[5][ordinal],f'$.sections[{ordinal}]'),ADAPTERS[0])
+            decoded = decode_document(raw[:5]+array(raw[5][ordinal],f'$.sections[{ordinal}]'),
+                                      ADAPTERS[0], declared_source_ids=self.keys)
         else:
-            decoded = decode_document(raw,ADAPTERS[0])
+            decoded = decode_document(raw,ADAPTERS[0], declared_source_ids=self.keys)
         entry.update(document=decoded, importPath=path.relative_to(self.root).as_posix(),
                      pack=identity if member else None, packOrdinal=ordinal)
         if kind is None:
@@ -253,7 +254,7 @@ class Bundle:
             value = pending.pop()
             if isinstance(value, dict):
                 if '__uuid__' in value:
-                    refs.add(asset_key(value['__uuid__']))
+                    refs.add(source_asset_key(value['__uuid__'], '$.references', self.keys))
                 pending.extend(value.values())
             elif isinstance(value, list):
                 pending.extend(value)
@@ -287,7 +288,9 @@ def inspect(config, selection, output, dependency_sources=(), evidence_sources=(
         for key in b.keys: provided.setdefault(key,[]).append(name)
     aliases_seen=set()
     seen = set()
-    assets, diagnostics = [], [diagnostic('INVALID_CONFIG_IDENTITY', name+f':$.uuids[{i}]',message) for name,b in bundles.items() for i,message in b.invalid_keys.items()]
+    assets, diagnostics = [], [diagnostic('OPAQUE_SOURCE_ID_PRESERVED', name+f':$.uuids[{i}]',
+        'Config-declared safe opaque source identity retained byte-for-byte', name+':'+b.keys[i])
+        for name,b in bundles.items() for i in b.invalid_keys]
     while pending:
         name,index = pending.pop(0)
         bundle = bundles[name]

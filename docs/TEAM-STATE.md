@@ -1,7 +1,3 @@
 # Release ownership
 
-The primary maintainer owns shared contracts, integration, main/tag/Release publication and the final artifact identity. Independent bounded modules may review documentation, fixtures and source-side compatibility. Shared files have one writer; agents do not recursively delegate.
-
-Global cleanup/reinstallation is coordinated by the integration maintainer after verified formal releases. No game project, player data, shared service, model configuration or unrelated application is modified by release preparation.
-
-Internal coordination identities, personal paths and private validation logs are not part of the public source or distributions.
+The primary maintainer owns version metadata, package manifests, shared contracts, release commits, tags and publication. GREA owns combined orchestration verification and beaver owns consumer adoption. Engine and game-project validation remain separate and require explicit ownership. Stable release preparation does not replace active game installations or mutate frozen candidate evidence.

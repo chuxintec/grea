@@ -90,6 +90,73 @@ def verify(plan,readback):
     return True
 
 
+def verify_static_resource_probe(plan, readback, execution_result, *, expected_import_plan_sha256: str,
+                                 expected_candidate_manifest_sha256: str) -> dict:
+    """Verify resource identity and saved references without claiming animation motion.
+
+    This deliberately does not call ``verify``: a static resource may load and
+    save correctly while the sampled animation has no observed bone motion.
+    Only the known NO_OBSERVED_BONE_MOTION diagnostic is tolerated; dynamic pose
+    behavior remains partial in the returned proof.
+    """
+    spec = plan.get("resourceProbes") or {}
+    expected = spec.get("spines", [])
+    actual_rows = (readback.get("resourceProbes") or {}).get("spines", [])
+    if spec.get("profile") != PROFILE or not isinstance(expected, list) or not expected:
+        raise ValueError("static resource probe profile or expected Spine rows are missing")
+    if readback.get("creatorVersion") != "3.8.8" or readback.get("manifestSha256") != expected_candidate_manifest_sha256:
+        raise ValueError("static resource probe readback candidate identity differs")
+    progress = execution_result.get("nativeProgress") or {}
+    if (execution_result.get("sourceManifestSha256") != expected_candidate_manifest_sha256
+            or execution_result.get("processStarted") is not True
+            or execution_result.get("processExited") is not True
+            or execution_result.get("stopReason") != "native_completed"
+            or execution_result.get("importPlanSha256") != expected_import_plan_sha256
+            or progress.get("planSha256") != expected_import_plan_sha256
+            or progress.get("status") != "completed" or progress.get("phase") != "complete"
+            or progress.get("processed") != progress.get("total") or progress.get("total") != 1):
+        raise ValueError("static resource probe native import did not complete for the pinned plan")
+    actual = {row.get("sourceId"): row for row in actual_rows if isinstance(row, dict)}
+    wanted = {row.get("sourceId"): row for row in expected if isinstance(row, dict)}
+    if len(actual) != len(actual_rows) or len(wanted) != len(expected) or set(actual) != set(wanted):
+        raise ValueError("static resource probe source ID denominator differs")
+    proof_rows = []
+    for source_id, source in wanted.items():
+        row = actual[source_id]
+        textures = row.get("textures", [])
+        if (row.get("skeletonUuid") != source.get("skeletonUuid")
+                or row.get("sourceSkeletonSha256") != source.get("sourceSkeletonSha256")
+                or row.get("version") != source.get("version")
+                or row.get("savedReferenceVerified") is not True
+                or row.get("nativeStateAdvanced") is not True
+                or type(row.get("bones")) is not int or row["bones"] < 1
+                or type(row.get("slots")) is not int or row["slots"] < 0
+                or len(textures) != len(source.get("pages", []))):
+            raise ValueError(f"static resource identity or saved native reference mismatch: {source_id}")
+        for wanted_page, got in zip(source.get("pages", []), textures):
+            native_uuid = got.get("nativeUuid")
+            if (got.get("name") != wanted_page.get("name")
+                    or got.get("imageUuid") != wanted_page.get("imageUuid")
+                    or not isinstance(native_uuid, str)
+                    or not native_uuid.startswith(str(wanted_page.get("imageUuid")) + "@")
+                    or got.get("textureUuid") != native_uuid):
+                raise ValueError(f"static Spine atlas page identity mismatch: {source_id}")
+        diagnostics = row.get("diagnostics", [])
+        if any(not isinstance(item, dict) or item.get("code") != "NO_OBSERVED_BONE_MOTION" for item in diagnostics):
+            raise ValueError(f"static Spine readback has an unrecognized diagnostic: {source_id}")
+        proof_rows.append({"sourceId": source_id, "skeletonUuid": row["skeletonUuid"],
+                           "sourceSkeletonSha256": row["sourceSkeletonSha256"], "version": row["version"],
+                           "savedReferenceVerified": True, "bones": row["bones"], "slots": row["slots"],
+                           "textureIdentitiesVerified": True,
+                           "dynamicPoseStatus": "partial_no_observed_bone_motion" if diagnostics else "not_assessed_by_static_proof",
+                           "diagnostics": diagnostics})
+    return {"schemaVersion": 1, "profile": PROFILE, "status": "static_resource_identity_verified",
+            "candidateManifestSha256": expected_candidate_manifest_sha256,
+            "importPlanSha256": expected_import_plan_sha256,
+            "nativeImportCompleted": True, "sourceCodeExecuted": False,
+            "dynamicAnimationComplete": False, "spines": proof_rows}
+
+
 def prepare_shader(candidate,expected_manifest,source_id,output):
     """Select an exact preserved Effect from a frozen candidate; no game adoption."""
     from .shader_profiles import describe,export_profile,prepare_probe

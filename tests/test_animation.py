@@ -1,4 +1,6 @@
 import copy
+import hashlib
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,11 +18,56 @@ def base():
 
 
 def ir_for(clip):
-    def node(sid,name,parent,children):return dict(sourceId=sid,name=name,parent=parent,children=children,components=[],position=[0,0,0],scale=[1,1,1],rotation=[0,0,0,1],size=[100,100],anchor=[.5,.5],active=True,color=[255]*4,opacity=255)
+    owner='fixture:scene';root=f'{owner}#2';child=f'{owner}#3';anim=f'{root}/components/0'
+    def node(sid,name,parent,children,components=None):return dict(sourceId=sid,name=name,parent=parent,children=children,components=components or [],position=[0,0,0],scale=[1,1,1],rotation=[0,0,0,1],size=[100,100],anchor=[.5,.5],active=True,color=[255]*4,opacity=255)
     c,g=normalize_clip(clip,'source:clip','fixture.anim#instances/0')
-    return dict(schemaVersion=1,sourceProfile='cocos-2.4.15-project',sourceManifestSha256='0'*64,sourceRoots={},sourceLocations={},aliases={},
-        nodes=[node('root','Root',None,['child']),node('child','child','root',[])],assets=[],spriteFrames=[],bitmapFonts=[],materials=[],diagnostics=g,
-        animationSchemaVersion=1,animationClips=[c],components=[dict(sourceId='root#anim',node='root',type='cc.Animation',clips=['source:clip'],enabled=True,materials=[])])
+    return dict(schemaVersion=1,sourceProfile='cocos-2.4.15-project',sourceRoots={},sourceLocations={},aliases={},
+        nodes=[node(root,'Root',None,[child],[anim]),node(child,'child',root,[])],assets=[],spriteFrames=[],bitmapFonts=[],materials=[],diagnostics=g,
+        animationSchemaVersion=1,animationClips=[c],components=[dict(sourceId=anim,node=root,type='cc.Animation',clips=['source:clip'],enabled=True,materials=[])])
+
+
+def write_ir_fixture(root, ir, source_clip):
+    """Write an owning stage manifest and a source-pinned Cocos 2.4 fixture manifest."""
+    ir_dir = Path(root) / 'ir'
+    ir_dir.mkdir(parents=True, exist_ok=True)
+    source_root = ir_dir / 'synthetic-source'
+    source_root.mkdir(exist_ok=True)
+    bundle_root = str(source_root.resolve())
+    clip_source = ir.setdefault('sourceNames', {}).setdefault(
+        'source:clip', {'bundle': 'fixture', 'logicalPath': 'Anim/Synthetic'})
+    ir['sourceRoots'] = {'fixture': bundle_root, clip_source['bundle']: bundle_root}
+    scene_objects = [
+        {'__type__': 'cc.SceneAsset', '_name': 'SyntheticScene', 'scene': {'__id__': 1}},
+        {'__type__': 'cc.Scene', '_name': 'SyntheticScene', 'children': [{'__id__': 2}], '_active': True},
+        {'__type__': 'cc.Node', '_name': 'Root', '_parent': {'__id__': 1}, '_children': [{'__id__': 3}],
+         '_components': [{'__id__': 4}], '_trs': [0, 0, 0, 0, 0, 0, 1, 1, 1, 1], '_active': True},
+        {'__type__': 'cc.Node', '_name': 'child', '_parent': {'__id__': 2}, '_children': [], '_components': [],
+         '_trs': [0, 0, 0, 0, 0, 0, 1, 1, 1, 1], '_active': True},
+        {'__type__': 'cc.Animation', '_clips': [{'__uuid__': 'synthetic-animation-uuid'}],
+         '_defaultClip': None, '_playOnLoad': False, 'node': {'__id__': 2}},
+    ]
+    source_manifest = {
+        'schemaVersion': 1, 'sourceProfile': ir['sourceProfile'], 'sourceVersion': '2.4.15',
+        'sourceRoots': ir['sourceRoots'], 'bundle': 'fixture', 'sourceRoot': bundle_root,
+        'assets': [
+            {'sourceId': 'fixture:scene', 'bundle': 'fixture', 'key': 'synthetic-scene-uuid',
+             'kind': 'cc.SceneAsset', 'logicalPath': 'Scenes/Synthetic',
+             'document': {'instances': scene_objects, 'root': 0}},
+            {'sourceId': 'source:clip', 'bundle': clip_source['bundle'], 'key': 'synthetic-animation-uuid',
+             'kind': 'cc.AnimationClip', 'logicalPath': clip_source['logicalPath'],
+             'document': {'instances': [copy.deepcopy(source_clip)], 'root': 0}},
+        ],
+        'selection': ['fixture:scene', 'source:clip'], 'inputs': [], 'evidenceFiles': [],
+    }
+    source_path = ir_dir / 'source-manifest.json'
+    write_json(source_path, source_manifest)
+    ir['sourceManifestPath'] = str(source_path.resolve())
+    ir['sourceManifestSha256'] = hashlib.sha256(read(source_path)).hexdigest()
+    ir_path = ir_dir / 'ir.json'
+    write_json(ir_path, ir)
+    finish(ir_dir, dict(schemaVersion=1, diagnostics=[]))
+    return ir_path
+
 
 
 class AnimationTests(unittest.TestCase):
@@ -49,11 +96,13 @@ class AnimationTests(unittest.TestCase):
         empty,gaps=plan_clips(ownerless,'fixture',unity.PROFILE)
         self.assertEqual(empty,[]);self.assertEqual(handoff_task(empty,gaps)['sourceRefs'],['source:clip'])
         ir=ir_for(base());ir['nodes'][1]['name']='different';a,g=plan_clips(ir,'fixture',unity.PROFILE);self.assertFalse(a[0]['convertible']);self.assertTrue(g)
-        ir=ir_for(base());ir['nodes'][0]['children']=['child','other'];n=dict(ir['nodes'][1],sourceId='other');ir['nodes'].append(n)
+        ir=ir_for(base());owner=ir['nodes'][0]['sourceId'].split('#',1)[0];other=f'{owner}#4'
+        ir['nodes'][0]['children']=[ir['nodes'][1]['sourceId'],other]
+        n=dict(ir['nodes'][1],sourceId=other);ir['nodes'].append(n)
         a,g=plan_clips(ir,'fixture',unity.PROFILE);self.assertFalse(a[0]['convertible'])
         doc=base();doc['curveData']['paths']['child']['props']['position']=[dict(frame=0,value=[0,0,0]),dict(frame=1,value=[1,1,0])]
         a,g=plan_clips(ir_for(doc),'fixture',unity.PROFILE);self.assertTrue(any(d['code']=='ANIMATION_CHANNEL_COLLISION' for d in g))
-        ir=ir_for(base());ir['components'].append(dict(type='cc.Layout',node='root',enabled=True))
+        ir=ir_for(base());ir['components'].append(dict(sourceId='fixture:scene#2/components/1',type='cc.Layout',node=ir['nodes'][0]['sourceId'],enabled=True))
         a,g=plan_clips(ir,'fixture',unity.PROFILE);self.assertFalse(any(t['property']=='position.x' for t in a[0]['tracks']))
 
     def test_native_wrong_binding_midpoint_or_callback_rejected(self):
@@ -67,6 +116,65 @@ class AnimationTests(unittest.TestCase):
             else:wrong['tracks'][0]['probeValues'][1]+=10
             self.assertTrue(verify_native(a,[wrong],{s['path']:'hash'}))
 
+    def test_probe_readback_accepts_only_local_float32_curve_quantization(self):
+        keys=[dict(time=0.6740740999999999,value=44.28028530506723,interpolation='linear'),
+              dict(time=0.6777778,value=65.99885650114278,interpolation='linear')]
+        probe=dict(time=0.6759259499999999,value=55.13957090310468)
+        track=dict(path='Label',nativeType='UIOpacity',nativeProperty='opacity',keys=keys,probes=[probe])
+        spec=dict(id='source:curve@source:owner',path='assets/manual/float32.anim',duration=1.5,convertible=True,
+                  wrap='normal',events=[],tracks=[track])
+        f32=lambda value:struct.unpack('<f',struct.pack('<f',value))[0]
+        q=(probe['time']-f32(keys[0]['time']))/(f32(keys[1]['time'])-f32(keys[0]['time']))
+        quantized_probe=f32(f32(keys[0]['value'])+(f32(keys[1]['value'])-f32(keys[0]['value']))*q)
+        actual=dict(id=spec['id'],path=spec['path'],guid='native-guid',duration=spec['duration'],wrap='normal',
+                    eventCount=0,curveCount=1,tracks=[dict(path='Label',nativeType='UIOpacity',property='opacity',
+                    times=[k['time'] for k in keys],values=[k['value'] for k in keys],interpolations=['linear','linear'],
+                    probeTimes=[probe['time']],probeValues=[quantized_probe])])
+        native={spec['path']:'hash'}
+        self.assertEqual(verify_native([spec],[actual],native),[])
+
+        large_error=copy.deepcopy(actual);large_error['tracks'][0]['probeValues'][0]+=0.001
+        self.assertTrue(verify_native([spec],[large_error],native))
+        wrong_binding=copy.deepcopy(actual);wrong_binding['tracks'][0]['property']='position.x'
+        self.assertTrue(verify_native([spec],[wrong_binding],native))
+
+    def test_unity_linear_tangent_float32_evaluation_gets_only_local_probe_ulp_margin(self):
+        f32=lambda value:struct.unpack('<f',struct.pack('<f',value))[0]
+        def unity_linear_tangent_evaluate(t0,y0,t1,y1,time):
+            dt=f32(t1-t0);slope=f32(f32(y1-y0)/dt);q=f32(f32(time-t0)/dt)
+            q2=f32(q*q);q3=f32(q2*q)
+            h00=f32(f32(2*q3)-f32(3*q2)+1)
+            h10=f32(q3-f32(2*q2)+q)
+            h01=f32(-2*q3+3*q2)
+            h11=f32(q3-q2)
+            tangent=f32(slope*dt)
+            terms=[f32(h00*y0),f32(h10*tangent),f32(h01*y1),f32(h11*tangent)]
+            return f32(f32(f32(terms[0]+terms[1])+terms[2])+terms[3])
+
+        keys=[dict(time=6.142565465487603,value=21.73685487282046,interpolation='linear'),
+              dict(time=6.297160435754579,value=283.86945838762233,interpolation='linear')]
+        probeTime=6.204840571145944
+        probeValue=sample(keys,probeTime)
+        track=dict(path='Panel',nativeType='RectTransform',nativeProperty='m_AnchoredPosition.x',keys=keys,
+                   probes=[dict(time=probeTime,value=probeValue)])
+        spec=dict(id='fixture:clip@fixture:owner',path='Assets/Manual/native-float32.anim',duration=2,
+                  convertible=True,wrap='normal',events=[],tracks=[track])
+        actualValue=unity_linear_tangent_evaluate(f32(keys[0]['time']),f32(keys[0]['value']),
+            f32(keys[1]['time']),f32(keys[1]['value']),f32(probeTime))
+        row=dict(id=spec['id'],path=spec['path'],guid='native-guid',duration=spec['duration'],wrap='normal',
+            eventCount=0,curveCount=1,tracks=[dict(path='Panel',nativeType='RectTransform',
+            property='m_AnchoredPosition.x',times=[key['time'] for key in keys],values=[key['value'] for key in keys],
+            interpolations=['linear','linear'],probeTimes=[probeTime],probeValues=[actualValue])])
+        native={spec['path']:'hash'}
+        self.assertEqual(verify_native([spec],[row],native),[])
+
+        wrongProbe=copy.deepcopy(row);wrongProbe['tracks'][0]['probeValues'][0]+=0.01
+        self.assertTrue(verify_native([spec],[wrongProbe],native))
+        wrongKey=copy.deepcopy(row);wrongKey['tracks'][0]['values'][1]+=0.001
+        self.assertTrue(verify_native([spec],[wrongKey],native))
+        wrongBinding=copy.deepcopy(row);wrongBinding['tracks'][0]['property']='position.x'
+        self.assertTrue(verify_native([spec],[wrongBinding],native))
+
     def test_invalid_opacity_vectors_and_future_animation_schema_rejected(self):
         for prop,value in [('opacity',256),('scale',[1,float('nan'),1]),('position',[1])]:
             doc=base();doc['curveData']['paths']['child']['props'][prop]=[dict(frame=0,value=value)]
@@ -79,10 +187,10 @@ class AnimationTests(unittest.TestCase):
     def test_minigame_animation_is_inside_declared_native_import_root(self):
         from monkey.layout import standard
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp).resolve();ir=ir_for(base())
+            root=Path(temp).resolve();source_clip=base();ir=ir_for(source_clip)
             ir['sourceNames']={'source:clip':dict(bundle='miniGameRes',logicalPath='Anim/Rope3d/fly')}
-            (root/'ir').mkdir();write_json(root/'ir/ir.json',ir);finish(root/'ir',dict(schemaVersion=1,diagnostics=[]))
-            unity.plan(root/'ir/ir.json','minigame',root/'plan');unity.export(root/'plan/plan.json',root/'project')
+            ir_path=write_ir_fixture(root,ir,source_clip)
+            unity.plan(ir_path,'minigame',root/'plan');unity.export(root/'plan/plan.json',root/'project')
             paths=load(read(root/'project'/standard.unity('outputPaths')))
             plan=load(read(root/'project'/standard.unity('importPlan')))
             clip=next(a for a in plan['animations'] if a['convertible'])
@@ -91,10 +199,10 @@ class AnimationTests(unittest.TestCase):
 
     def test_shared_ir_dual_export_no_native_files_or_callback_stubs_and_create_only(self):
         with tempfile.TemporaryDirectory() as temp:
-            r=Path(temp).resolve();ir=ir_for(base());(r/'ir').mkdir();write_json(r/'ir/ir.json',ir);finish(r/'ir',dict(schemaVersion=1,diagnostics=[]))
+            r=Path(temp).resolve();source_clip=base();ir=ir_for(source_clip);ir_path=write_ir_fixture(r,ir,source_clip)
             for target in [unity,cocos]:
                 prefix='unity' if target is unity else 'creator'
-                target.plan(r/'ir/ir.json','fixture',r/(prefix+'-plan'));target.export(r/(prefix+'-plan/plan.json'),r/prefix)
+                target.plan(ir_path,'fixture',r/(prefix+'-plan'));target.export(r/(prefix+'-plan/plan.json'),r/prefix)
                 if target is unity:
                     from monkey.layout import standard
                     helper=(r/prefix/standard.unity('importer')).with_name('NativeButtonAnimations.cs')

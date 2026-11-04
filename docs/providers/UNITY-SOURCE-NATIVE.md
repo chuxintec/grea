@@ -12,6 +12,8 @@ monkey convert --source <original.bundle> --target unity6 --out <fresh-output> \
 
 本期 `unity-leaf-prefab-sprite-array-v1` 只接受一份原生叶 Prefab、一个嵌入结构的组件/字段类、名称保持的 Sprite[] 字段与精确水合的非变体图集。场景、多组件、借取字段尚未落入实例、缺依赖、null 数组元素、未证明的图集状态、同名资源歧义等，在启动 Editor 前阻断原生段，成功的基础导出保留。null 数组与空数组长度独立核对，不补空资源或猜像素。
 
+未发布的本地维护补充了受限 FlipVertical 紧密网格、显式 DDS/DXT5 缓存和逐帧真实身份读回。位域、原生像素验证策略及不支持边界见 [Unity atlas subset](UNITY-ATLAS-SUBSET.md)。正式 0.6.0 制品不因此改变。
+
 原 PPtr 沿 container/serialized-file 的原 external 表精确解析，decimal pathID 与目标 localID 分列。目标通过唯一源资源名和真实类型匹配，再核原生 GUID/localID、逐项引用顺序、图集 rect、纹理 GUID。PNG 像素按固定纵向方向转换，与源水合 RGBA SHA 比较。Root 名称、active 与 Transform 值保存重开后保持；实际 MonoScript 绑定与声明字段类型/长度、缺脚本均核对。方法不恢复，也不调用源游戏代码。
 
 下述 v0.2 历史格式验证只为已证明的 Sprite/Texture 生成资源移动，保留文件名；当前布局以 PROJECT-SPEC.md 为准。全部既有 meta GUID 在 Editor 前后封存。真实《武侠》样本 134 项全部固定，**实际移动 0 项**；当前正向 native 移动仅有实现与定向计划反例，不能称已用真实游戏证明了资源搬移。

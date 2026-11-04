@@ -9,6 +9,8 @@ monkey is a Python command-line tool for evidence-traceable recovery into indepe
 - Numeric configuration remains UTF-8 JSON. Native object references may use native assets, but do not duplicate editable numeric truth.
 - CLI/MCP contracts, versions, shared schemas and Editor ownership have one writer. Delegate only independent modules; do not recursively spawn agents or mutate another product's repository.
 - Prefer bounded, relevant unit and integration checks. Generation, compilation, native import, runtime, visual comparison, publication and installation are separate evidence layers.
-- Current release version is 0.6.0. Preserve the compatibility toolkit IDs and public provider contracts. A formal release does not imply all source versions or complete game behavior are restored.
+- Stable release target is 0.7.0; independent 0.8 development candidates remain separate. Preserve the compatibility toolkit IDs and public provider contracts. A formal release does not imply all source versions or complete game behavior are restored.
 - Release only within current explicit user authorization. Stage exact reviewed paths, verify package contents, preserve licenses and private evidence, and use normal fast-forward-compatible remote updates.
 - Global installations, other applications, credentials, game projects and shared services are outside ordinary repository maintenance. Coordinate an explicitly authorized native window before using shared Editor resources.
+
+- Use three-component numeric release versions and .devN for development candidates; preserve immutable published/fixed candidate identities.

@@ -1,0 +1,81 @@
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: ui-color-vs:vert
+      frag: ui-color-fs:frag
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      rasterizerState:
+        cullMode: none
+      properties:
+        brightness: { value: 1.0 }
+        saturation: { value: 1.0 }
+        constrast: { value: 1.0 }
+        gray: { value: 0.0 }
+        silhouette: { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+}%
+
+CCProgram ui-color-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #if USE_LOCAL
+    #include <builtin/uniforms/cc-local>
+  #endif
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+  out vec4 v_color;
+  out vec2 v_uv;
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1.0);
+    #if USE_LOCAL
+      pos = cc_matWorld * pos;
+    #endif
+    v_uv = a_texCoord;
+    v_color = a_color;
+    return cc_matViewProj * pos;
+  }
+}%
+
+CCProgram ui-color-fs %{
+  precision highp float;
+  in vec4 v_color;
+  in vec2 v_uv;
+  #pragma builtin(local)
+  layout(set = 2, binding = 11) uniform sampler2D cc_spriteTexture;
+  uniform Constant {
+    float brightness;
+    float saturation;
+    float constrast;
+    float gray;
+    vec4 silhouette;
+  };
+  vec3 lerp3 (vec3 a, vec3 b, float w) { return a + w * (b - a); }
+  vec4 frag () {
+    vec4 o = texture(cc_spriteTexture, v_uv);
+    if (silhouette.r * silhouette.g * silhouette.b * silhouette.a != 1.0)
+      o = vec4(silhouette.rgb, o.a * silhouette.a);
+    if (gray > 0.0) {
+      float grayValue = dot(o.rgb, vec3(0.2126, 0.7152, 0.0722));
+      grayValue *= 1.0 - gray;
+      o.rgb = vec3(grayValue);
+    }
+    vec3 finalColor = o.rgb;
+    if (brightness != 1.0) finalColor *= brightness;
+    if (saturation != 1.0) {
+      float luminance = dot(o.rgb, vec3(0.2125, 0.7154, 0.0721));
+      finalColor = lerp3(vec3(luminance), finalColor, saturation);
+    }
+    if (constrast != 1.0) finalColor = lerp3(vec3(0.5), finalColor, constrast);
+    o.rgb = finalColor;
+    o *= v_color;
+    return o;
+  }
+}%

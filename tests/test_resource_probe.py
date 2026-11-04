@@ -6,7 +6,7 @@ import unittest
 import uuid
 
 from monkey.io import finish,sha,write_json
-from monkey.resource_probe import PROFILE,prepare,prepare_shader,verify
+from monkey.resource_probe import PROFILE,prepare,prepare_shader,verify,verify_static_resource_probe
 from monkey.sources.compiled import ParseError
 
 
@@ -28,6 +28,37 @@ class ResourceProbeTests(unittest.TestCase):
         bad=copy.deepcopy(readback);bad['resourceProbes']['spines'][0]['textures'][0]['nativeUuid']='other@native'
         self.assertFalse(verify(plan,bad))
         bad=copy.deepcopy(readback);bad['resourceProbes']['spines']*=2;self.assertFalse(verify(plan,bad))
+
+    def test_static_resource_proof_allows_no_bone_motion_but_not_identity_gaps(self):
+        plan, readback = self.binding()
+        readback["creatorVersion"] = "3.8.8"
+        readback["manifestSha256"] = "b" * 64
+        row = readback["resourceProbes"]["spines"][0]
+        row["slots"] = 1
+        row["poseChanged"] = False
+        row["diagnostics"] = [{"code": "NO_OBSERVED_BONE_MOTION"}]
+        execution = {"sourceManifestSha256": "b" * 64, "processStarted": True,
+                     "processExited": True, "stopReason": "native_completed", "importPlanSha256": "c" * 64,
+                     "nativeProgress": {"planSha256": "c" * 64, "status": "completed", "phase": "complete",
+                                        "processed": 1, "total": 1}}
+        proof = verify_static_resource_probe(plan, readback, execution,
+                                             expected_import_plan_sha256="c" * 64,
+                                             expected_candidate_manifest_sha256="b" * 64)
+        self.assertEqual(proof["status"], "static_resource_identity_verified")
+        self.assertFalse(proof["dynamicAnimationComplete"])
+        self.assertEqual(proof["spines"][0]["dynamicPoseStatus"], "partial_no_observed_bone_motion")
+        bad = copy.deepcopy(readback)
+        bad["resourceProbes"]["spines"][0]["savedReferenceVerified"] = False
+        with self.assertRaisesRegex(ValueError, "identity or saved native reference"):
+            verify_static_resource_probe(plan, bad, execution,
+                                         expected_import_plan_sha256="c" * 64,
+                                         expected_candidate_manifest_sha256="b" * 64)
+        bad_execution = copy.deepcopy(execution)
+        bad_execution["sourceManifestSha256"] = "d" * 64
+        with self.assertRaisesRegex(ValueError, "native import did not complete"):
+            verify_static_resource_probe(plan, readback, bad_execution,
+                                         expected_import_plan_sha256="c" * 64,
+                                         expected_candidate_manifest_sha256="b" * 64)
 
     def candidate(self,root,version='3.8.99'):
         project=root/'source';folder=project/'assets/resources/Spine/Fixture';folder.mkdir(parents=True)

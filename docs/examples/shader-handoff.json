@@ -1,0 +1,25 @@
+{
+  "schema": "monkey-shader-handoff/1",
+  "items": [
+    {
+      "path": "Assets/Game/Content/Shaders/Example/Recovered.asset",
+      "bytes": 128,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "classification": "platform-compiled",
+      "source": {
+        "exampleOnly": true,
+        "mappingStatus": "unmapped",
+        "entries": [],
+        "metaSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "targetIdentityEvidence": "serialized-declaration-only",
+        "nativeReadback": "not_run"
+      },
+      "target": {"guid": "11111111111111111111111111111111", "localFileID": 4800000},
+      "dialect": null,
+      "platformEvidence": [{"kind": "raw-serialized-platform-ids", "values": [5, 9], "compatibilityVerified": false}],
+      "nativeCompilation": "not_run",
+      "runtimeDisposition": "evidence-only",
+      "evidenceId": "neutral-example-not-an-asset-or-validation-receipt"
+    }
+  ]
+}

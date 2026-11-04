@@ -1,9 +1,111 @@
 """Finite conversion-time AnimationClip subset. No source callbacks or runtime evaluation."""
 import math
+import struct
+import sys
 from ..io import diagnostic
 from ..sources.compiled import fail, ParseError
 
 SCHEMA=1
+
+# Values fixed before reading per-clip error results. Source-unit tolerances are
+# intentionally strict for transform scale/opacity and sub-pixel for position.
+CHANNEL_TOLERANCE={'position':0.25,'scale':0.001,'opacity':0.25}
+MAX_APPROXIMATION_KEYS=256
+APPROXIMATION_PROBE_INTERVALS=2048
+SUPPORTED_EASING={'sineIn','sineOut','sineInOut'}
+
+
+def _source_progress(curve, time):
+    """Cocos Creator 2.4.15 easing/Bezier semantics for normalized time."""
+    if curve=='sineIn':return 1-math.cos(time*math.pi/2)
+    if curve=='sineOut':return math.sin(time*math.pi/2)
+    if curve=='sineInOut':return 0.5*(1-math.cos(math.pi*time))
+    if isinstance(curve,list) and len(curve)==4:
+        x1,y1,x2,y2=curve
+        # Restrict the cubic x control polygon to a monotonic interval so time
+        # has one inverse. Cocos accepts broader Cardano roots; those are held.
+        if not (0<=x1<=x2<=1):raise ValueError('Bezier time controls must satisfy 0 <= x1 <= x2 <= 1')
+        lo,hi=0.0,1.0
+        for _ in range(56):
+            u=(lo+hi)/2
+            inv=1-u
+            x=3*inv*inv*u*x1+3*inv*u*u*x2+u*u*u
+            if x<time:lo=u
+            else:hi=u
+        u=(lo+hi)/2
+        inv=1-u
+        return 3*inv*inv*u*y1+3*inv*u*u*y2+u*u*u
+    raise ValueError('Unsupported easing/Bezier curve')
+
+
+def _segment_source_value(curve,a,b,u):
+    return a+(b-a)*_source_progress(curve,u)
+
+
+def _linear_value(a,b,u):return a+(b-a)*u
+
+
+def _adaptive_segment(curve,a,b,tolerance):
+    """Linearize a bounded segment; return interior samples and measured error."""
+    if curve in ('sineIn','sineOut','sineInOut'):
+        # For sine easing, |f''| <= pi^2/2. The interpolation-error bound
+        # |delta|*M*h^2/8 is conservative for each normalized subinterval.
+        second_bound={'sineIn':math.pi**2/4,'sineOut':math.pi**2/4,'sineInOut':math.pi**2/2}[curve]
+        steps=max(1,math.ceil(math.sqrt(abs(b-a)*second_bound/(8*tolerance))))
+    else:
+        steps=1
+    while True:
+        if steps>MAX_APPROXIMATION_KEYS:raise ValueError('Approximation key budget exceeded')
+        worst=0.0
+        for i in range(steps):
+            u0=i/steps;u1=(i+1)/steps
+            y0=_segment_source_value(curve,a,b,u0);y1=_segment_source_value(curve,a,b,u1)
+            for q in (0.25,0.5,0.75):
+                u=u0+(u1-u0)*q
+                worst=max(worst,abs(_segment_source_value(curve,a,b,u)-_linear_value(y0,y1,q)))
+        if worst>tolerance:
+            steps*=2;continue
+        # Independent dense readback guards the adaptive criterion and records
+        # a repeatable error bound for the generated native linear keys.
+        max_error=0.0
+        for j in range(APPROXIMATION_PROBE_INTERVALS+1):
+            u=j/APPROXIMATION_PROBE_INTERVALS
+            scaled=u*steps;idx=min(steps-1,int(scaled));local=scaled-idx
+            y0=_segment_source_value(curve,a,b,idx/steps)
+            y1=_segment_source_value(curve,a,b,(idx+1)/steps)
+            max_error=max(max_error,abs(_segment_source_value(curve,a,b,u)-_linear_value(y0,y1,local)))
+        if max_error<=tolerance+1e-12:break
+        steps*=2
+    interior=[dict(u=i/steps,value=_segment_source_value(curve,a,b,i/steps)) for i in range(1,steps)]
+    return interior,max_error,steps
+
+
+def _expand_scalar_keys(frames,values,curve_modes,duration,prop,tloc,source_property):
+    tolerance=CHANNEL_TOLERANCE['position' if prop.startswith('position.') else 'scale' if prop.startswith('scale.') else 'opacity']
+    result=[];max_error=0.0;generated=0;approximated=[]
+    for i,(frame,value) in enumerate(zip(frames,values)):
+        result.append(dict(time=frame,value=value,interpolation='linear',sourceLocation=f'{tloc}/{i}'))
+        if i+1>=len(frames):continue
+        mode=curve_modes[i];next_time=frames[i+1];next_value=values[i+1]
+        if mode in (None,'linear'):
+            continue
+        if mode=='constant':
+            result[-1]['interpolation']='step';continue
+        if source_property in ('position','scale','opacity'):
+            pass
+        else:
+            raise ValueError('Easing approximation is restricted to position, scale and opacity channels')
+        interior,error,steps=_adaptive_segment(mode,value,next_value,tolerance)
+        span=next_time-frame
+        for point in interior:
+            result.append(dict(time=frame+span*point['u'],value=point['value'],interpolation='linear',sourceLocation=f'{tloc}/{i}',generated=True))
+        max_error=max(max_error,error);generated+=len(interior)
+        approximated.append(dict(segment=i,mode=mode,keys=steps+1,maxAbsoluteProbeError=error))
+    if not result:raise ValueError('No scalar keyframes')
+    if result[-1]['time']<duration:result.append(dict(time=duration,value=result[-1]['value'],interpolation='linear',sourceLocation=tloc,generated=True))
+    if len(result)>MAX_APPROXIMATION_KEYS+len(frames)+1:raise ValueError('Per-channel approximation key budget exceeded')
+    return result,dict(method='adaptive-source-curve-to-linear',tolerance=tolerance,maxAbsoluteProbeError=max_error,
+                       probeIntervals=APPROXIMATION_PROBE_INTERVALS,generatedKeyCount=generated,segments=approximated)
 
 
 def finite(value,location):
@@ -53,9 +155,13 @@ def normalize_clip(value,sid,location):
                     if time<=last or time<0 or time>duration+1e-9:fail('ANIMATION_TIME_ORDER',kloc,'Times must strictly increase within duration')
                     if i==0 and time!=0:fail('ANIMATION_START_UNSUPPORTED',kloc,'First subset requires key at time zero')
                     last=time;mode=f.get('curve')
-                    if mode in (None,'linear'):interpolation='linear'
-                    elif mode=='constant':interpolation='step'
-                    else:fail('ANIMATION_INTERPOLATION_UNSUPPORTED',kloc+'/curve','Only linear and constant(step) are verified; no easing approximation')
+                    if mode is not None and not (isinstance(mode,str) or isinstance(mode,list)):
+                        fail('ANIMATION_INTERPOLATION_UNSUPPORTED',kloc+'/curve','Expected a Cocos easing name or four-control Bezier array')
+                    if isinstance(mode,list) and (len(mode)!=4 or any(type(v) not in (int,float) or not math.isfinite(v) for v in mode)):
+                        fail('ANIMATION_BEZIER_INVALID',kloc+'/curve','Expected four finite [x1,y1,x2,y2] control values')
+                    if isinstance(mode,list) and mode[0]==mode[1] and mode[2]==mode[3]:mode='linear'
+                    if isinstance(mode,str) and mode not in ('linear','constant') and mode not in SUPPORTED_EASING:
+                        fail('ANIMATION_INTERPOLATION_UNSUPPORTED',kloc+'/curve','Unsupported Cocos easing '+mode)
                     raw=f.get('value')
                     if prop in ('position','scale'):
                         if isinstance(raw,dict) and raw.get('__value_type__') in (0,1):raw=raw.get('values')
@@ -65,12 +171,19 @@ def normalize_clip(value,sid,location):
                     if dimensions is not None and dimensions!=len(vals):fail('ANIMATION_VECTOR_UNSUPPORTED',kloc,'Vector dimensions changed')
                     dimensions=len(vals)
                     if prop=='opacity' and not 0<=vals[0]<=255:fail('ANIMATION_OPACITY_BOUNDS',kloc,'Opacity must be 0..255')
-                    keys.append(dict(time=time,values=vals,interpolation=interpolation,sourceLocation=kloc))
+                    keys.append(dict(time=time,values=vals,curve=mode,sourceLocation=kloc))
+                if prop not in ('position','scale','opacity') and any(k['curve'] not in (None,'linear','constant') for k in keys[:-1]):
+                    fail('ANIMATION_INTERPOLATION_UNSUPPORTED',tloc,'Nonlinear interpolation is limited to canonical position, scale and opacity channels')
                 names=[prop+'.'+axis for axis in 'xyz'[:dimensions]] if prop in ('position','scale') else channels
                 for axis,name in enumerate(names):
-                    scalar=[dict(time=k['time'],value=k['values'][axis],interpolation=k['interpolation']) for k in keys]
-                    if scalar[-1]['time']<duration:scalar.append(dict(time=duration,value=scalar[-1]['value'],interpolation='linear'))
-                    tracks.append(dict(sourceId=sid+'@'+path+'/'+name,nodePath=path,property=name,keys=scalar,sourceLocation=tloc))
+                    try:
+                        scalar,approximation=_expand_scalar_keys([k['time'] for k in keys],[k['values'][axis] for k in keys],[k['curve'] for k in keys],duration,name,tloc,prop)
+                    except ValueError as e:
+                        code='ANIMATION_APPROXIMATION_BUDGET' if 'budget' in str(e).lower() else 'ANIMATION_APPROXIMATION_UNVERIFIED'
+                        gap(code,tloc,str(e));continue
+                    track=dict(sourceId=sid+'@'+path+'/'+name,nodePath=path,property=name,keys=scalar,sourceLocation=tloc)
+                    if approximation['segments']:track['curveApproximation']=approximation
+                    tracks.append(track)
             except ParseError as e:gap(e.code,e.location,e.message)
     if len(tracks)>256:fail('ANIMATION_TRACK_BUDGET',location,'Too many scalar channels')
     raw_events=value.get('events',[])
@@ -94,6 +207,69 @@ def sample(keys,time):
         if time<b['time']:
             return a['value'] if a['interpolation']=='step' else a['value']+(b['value']-a['value'])*(time-a['time'])/(b['time']-a['time'])
     return keys[-1]['value']
+
+
+def _float32_value(value):
+    """Return the exact value stored by Creator's Float32Array curve data."""
+    try:return struct.unpack('<f',struct.pack('<f',value))[0]
+    except (OverflowError,struct.error):return math.inf if value>0 else -math.inf
+
+
+def _float32_ulp(value):
+    """Return the positive Float32 spacing at value's magnitude."""
+    rounded=abs(_float32_value(value))
+    if not math.isfinite(rounded):return 0.0
+    bits=struct.unpack('<I',struct.pack('<f',rounded))[0]
+    if bits>=0x7f7fffff:return 0.0
+    following=struct.unpack('<f',struct.pack('<I',bits+1))[0]
+    return following-rounded
+
+
+def _native_probe_float32_bound(track,probe):
+    """Bound probe drift from Float32 storage and native curve evaluation.
+
+    Creator stores RealCurve key times and values in Float32Arrays. Probe input
+    and evaluated values can also cross a Float32 boundary in the native curve
+    path. Re-sampling the quantized local segment for both double and Float32
+    probe/output forms bounds endpoint value rounding, local-slope time error,
+    and output rounding without a global epsilon. Unity's linear tangent mode
+    evaluates a tangent-defined curve; its native Float32 Hermite arithmetic
+    adds a few local ULPs beyond the quantized linear reference. The four-ULP
+    allowance is measured at this probe's adjacent key/value scale, not clip
+    or channel scale. This applies only to probe values; native key arrays,
+    bindings and interpolation modes remain independently checked.
+    """
+    keys=track.get('keys',[]);time=probe.get('time')
+    if len(keys)<2 or type(time) not in (int,float) or not math.isfinite(time):return 0.0
+    rounded=[]
+    for key in keys:
+        kt=key.get('time');kv=key.get('value')
+        if type(kt) not in (int,float) or type(kv) not in (int,float):return 0.0
+        rt,rv=_float32_value(kt),_float32_value(kv)
+        if not math.isfinite(rt) or not math.isfinite(rv):return 0.0
+        rounded.append(dict(time=rt,value=rv,interpolation=key.get('interpolation')))
+    if any(a['time']>=b['time'] for a,b in zip(rounded,rounded[1:])):return 0.0
+    expected=probe.get('value')
+    if type(expected) not in (int,float) or not math.isfinite(expected):return 0.0
+    candidates=[]
+    for query_time in {time,_float32_value(time)}:
+        if not math.isfinite(query_time):return 0.0
+        value=sample(rounded,query_time)
+        if not math.isfinite(value):return 0.0
+        candidates.extend((value,_float32_value(value)))
+    candidates=[value for value in candidates if math.isfinite(value)]
+    if not candidates:return 0.0
+    # Double arithmetic contributes only a tiny relative allowance; native
+    # interpolation arithmetic is bounded separately at local Float32 scale.
+    arithmetic=16*sys.float_info.epsilon*max(1.0,abs(expected),*(abs(x) for x in candidates))
+    query=_float32_value(time)
+    nearby=[abs(expected),*(abs(value) for value in candidates)]
+    for left,right in zip(rounded,rounded[1:]):
+        if left['time']<=query<=right['time']:
+            nearby.extend((abs(left['value']),abs(right['value'])))
+            break
+    local_ulp=max((_float32_ulp(value) for value in nearby),default=0.0)
+    return max(abs(value-expected) for value in candidates)+arithmetic+4*local_ulp
 
 
 def plan_clips(ir,namespace,profile,selection=None,naming=None):
@@ -156,8 +332,14 @@ def plan_clips(ir,namespace,profile,selection=None,naming=None):
 
 
 def module_report(animations):
+    approximations=[t.get('curveApproximation',{}) for a in animations for t in a.get('tracks',[]) if t.get('curveApproximation')]
     return dict(schemaVersion=SCHEMA,module='finite-ui-animation',nativeValidation='not_run',callbacksGenerated=False,
-        clips=animations,allowedPaths=['Assets/Manual/','assets/manual/'],requirements=['Bind playback explicitly in native code','Review unsupported source channels','Wire events only after business implementation'])
+        approximationPolicy=dict(channels=CHANNEL_TOLERANCE,maxKeysPerSegment=MAX_APPROXIMATION_KEYS,
+            probeIntervals=APPROXIMATION_PROBE_INTERVALS,supportedEasing=sorted(SUPPORTED_EASING),
+            bezierControlOrder='[x1,y1,x2,y2]',bezierTimeControls='0<=x1<=x2<=1'),
+        approximationSummary=dict(tracks=len(approximations),generatedKeys=sum(a.get('generatedKeyCount',0) for a in approximations),
+            maximumObservedError=max([a.get('maxAbsoluteProbeError',0) for a in approximations] or [0])),
+        clips=animations,allowedPaths=['Assets/Manual/','assets/manual/'],requirements=['Bind playback explicitly in native code','Review unsupported source channels and Bezier time controls','Wire events only after business implementation'])
 
 
 def handoff_task(animations,diagnostics):
@@ -183,6 +365,12 @@ def verify_native(specs,actual,native_files):
             n=observed.get(key,{})
             good=good and numbers_equal(n.get('times'),[k['time'] for k in t['keys']]) and numbers_equal(n.get('values'),[k['value'] for k in t['keys']])
             good=good and n.get('interpolations')==[k['interpolation'] for k in t['keys']]
-            good=good and numbers_equal(n.get('probeTimes'),[p['time'] for p in t['probes']]) and numbers_equal(n.get('probeValues'),[p['value'] for p in t['probes']])
+            good=good and numbers_equal(n.get('probeTimes'),[p['time'] for p in t['probes']])
+            actual_probes=n.get('probeValues')
+            expected_probes=t['probes']
+            good=good and isinstance(actual_probes,list) and len(actual_probes)==len(expected_probes) and all(
+                type(actual) in (int,float) and math.isfinite(actual)
+                and abs(actual-probe['value'])<=_native_probe_float32_bound(t,probe)
+                for probe,actual in zip(expected_probes,actual_probes))
         if not good:gaps.append(diagnostic('ANIMATION_READBACK_MISMATCH',spec['path'],'Saved binding/time/value/interpolation/probes/events differ',sid))
     return gaps

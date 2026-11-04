@@ -84,6 +84,26 @@ class ResourceCorrectnessTests(unittest.TestCase):
         result=tight_geometry(data,atlas,8,8)
         self.assertEqual(result['meshVertices'][2],dict(x=0,y=0));self.assertEqual(result['triangleIndices'],[0,1,2,0,2,3])
         self.assertEqual(result['meshUv'][0],dict(x=.25,y=.25))
+        flipped=tight_geometry(data,dict(atlas,settingsRaw=73,textureRect=dict(x=2,y=1,width=4,height=5)),8,8)
+        self.assertEqual(flipped['meshVertices'],result['meshVertices'])
+        self.assertEqual(flipped['triangleIndices'],result['triangleIndices'])
+        self.assertEqual(flipped['meshUv'],[dict(x=.25,y=.625),dict(x=.75,y=.625),dict(x=.5,y=.375),dict(x=.25,y=.125)])
+        from monkey.unity_sprite import atlas_settings
+        self.assertEqual(atlas_settings(73)['packingRotation'],'FlipVertical')
+        rect=dict(x=2,y=1,width=4,height=5)
+        horizontal=tight_geometry(data,dict(atlas,settingsRaw=69,textureRect=rect),8,8)
+        half_turn=tight_geometry(data,dict(atlas,settingsRaw=77,textureRect=rect),8,8)
+        self.assertEqual(horizontal['meshUv'],[dict(x=.75,y=.25),dict(x=.25,y=.25),dict(x=.5,y=.5),dict(x=.75,y=.75)])
+        self.assertEqual(half_turn['meshUv'],[dict(x=.75,y=.625),dict(x=.25,y=.625),dict(x=.5,y=.375),dict(x=.75,y=.125)])
+        for geometry in [horizontal,half_turn]:
+            self.assertEqual(geometry['meshVertices'],result['meshVertices'])
+            self.assertEqual(geometry['triangleIndices'],result['triangleIndices'])
+        self.assertEqual(atlas_settings(69)['packingRotation'],'FlipHorizontal')
+        self.assertEqual(atlas_settings(77)['packingRotation'],'Rotate180')
+        for raw in (True,64,71,75,79,81,125,129,-1,73.0):
+            with self.subTest(settings=raw),self.assertRaises(ValueError):atlas_settings(raw)
+        with self.assertRaises(ValueError):tight_geometry(data,dict(atlas,settingsRaw=67),8,8)
+
         for key,value in [('m_IndexBuffer',list(struct.pack('<6H',0,1,8,0,2,3))),('m_SubMeshes',[dict(firstByte=2)])]:
             wrong=copy.deepcopy(data);wrong['m_RD'][key]=value
             with self.assertRaises(ValueError):tight_geometry(wrong,atlas,8,8)

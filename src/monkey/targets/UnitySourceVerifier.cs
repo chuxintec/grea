@@ -2,24 +2,29 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 
 namespace Monkey.UnityRecovery {
 public static class SourceVerifier {
-    [Serializable] public class Spec { public string prefabPath; public string className; public string scriptPath; public string[] fields; public int[] expectedArrayLengths; public string deadlineUtc; public int budgetSeconds; public bool saveRoundtrip; public int expectedSpriteReferences; public bool verifySourceDescriptors; public string expectedScriptGuid; public string expectedPrefabGuid; public string expectedRootName; public Vector3 expectedPosition, expectedScale; public Quaternion expectedRotation; public bool expectedActive; public SpriteSpec[] expectedSprites; public Move[] formatMoves; }
-    [Serializable] public class SpriteSpec { public string name,guid,fileId,textureGuid; public float x,y,width,height; public bool verifyMesh; public Vector2[] meshVertices,meshUv; public int[] triangleIndices; }
+    [Serializable] public class Spec { public string prefabPath; public string className; public string scriptPath; public string[] fields; public int[] expectedArrayLengths; public string deadlineUtc; public int budgetSeconds; public bool saveRoundtrip; public int expectedSpriteReferences; public bool verifySourceDescriptors; public string expectedScriptGuid; public string expectedPrefabGuid; public string expectedRootName; public Vector3 expectedPosition, expectedScale; public Quaternion expectedRotation; public bool expectedActive; public SpriteSpec[] expectedSprites; public TextureSpec[] expectedTextures; public Move[] formatMoves; }
+    [Serializable] public class TextureSpec { public string path,guid,rgbaRawSha256; public int width,height; }
+    [Serializable] public class TextureReadback { public string path,guid,rgbaRawSha256,previousCompression,compression; public int width,height; public bool readableRestored,alphaDilationDisabled; }
+    [Serializable] public class SpriteSpec { public string name,guid,fileId,textureGuid,sourceFile,sourcePathId,sourceRawSha256; public float x,y,width,height; public bool verifyMesh; public Vector2[] meshVertices,meshUv; public int[] triangleIndices; }
     [Serializable] public class Move { public string from,to,guid,kind; }
     [Serializable] public class Field { public string name; public string type; public int arrayLength; public int nullElements; }
-    [Serializable] public class Result { public string status; public string unityVersion; public string prefabPath; public string guid; public string rootFileId; public string componentFileId; public string scriptGuid; public string scriptFileId; public string scriptClass; public string[] componentTypes; public Vector3 localPosition; public Vector3 localScale; public Quaternion localRotation; public bool active; public int nodeCount; public int missingScripts; public bool classFound; public Field[] fields; public bool saved; public bool prefabReloaded; public bool referencesPreserved; public int spriteReferences; public Move[] movedAssets; public bool sourceDescriptorsVerified; public bool geometryPreserved; public string error; }
-    static string ReferenceSignature(MonoBehaviour component,string[] names,out int count,SpriteSpec[] expected=null) {
+    [Serializable] public class SpriteReference { public string field,sourceFile,sourcePathId,sourceRawSha256,name,guid,localFileId,textureGuid; public int index,vertexCount,triangleIndexCount; public bool sourceGeometryVerified; public Vector2[] vertices,uv; public int[] triangles; }
+    [Serializable] public class Result { public string status; public string unityVersion; public string prefabPath; public string guid; public string rootFileId; public string componentFileId; public string scriptGuid; public string scriptFileId; public string scriptClass; public string[] componentTypes; public Vector3 localPosition; public Vector3 localScale; public Quaternion localRotation; public bool active; public int nodeCount; public int missingScripts; public bool classFound; public Field[] fields; public bool saved; public bool prefabReloaded; public bool referencesPreserved; public int spriteReferences; public SpriteReference[] spriteReadback; public TextureReadback[] textureReadback; public Move[] movedAssets; public bool sourceDescriptorsVerified; public bool geometryPreserved; public string error; }
+    static string ReferenceSignature(MonoBehaviour component,string[] names,out int count,SpriteSpec[] expected=null,List<SpriteReference> records=null) {
         int found=0;
         var signature=string.Join("|",names.Select(name=>{
             var field=component.GetType().GetField(name,BindingFlags.Instance|BindingFlags.Public|BindingFlags.DeclaredOnly);
             if(field==null)throw new Exception("Missing schema field: "+name);
             var array=field.GetValue(component) as Array;
-            return name+":"+(array==null?"null":array.Length.ToString())+":"+(array==null?"":string.Join(",",array.Cast<object>().Select(value=>{
+            return name+":"+(array==null?"null":array.Length.ToString())+":"+(array==null?"":string.Join(",",array.Cast<object>().Select((value,index)=>{
                 var asset=value as UnityEngine.Object;
                 if(asset==null)throw new Exception("Unresolved dependency; save blocked");
                 string guid;long id;
@@ -37,6 +42,12 @@ public static class SourceVerifier {
                             for(var i=0;i<vertices.Length;i++)if(!vertices[i].Equals(match.meshVertices[i])||!(Math.Abs(uv[i].x-match.meshUv[i].x)<=0.000001f)||!(Math.Abs(uv[i].y-match.meshUv[i].y)<=0.000001f))throw new Exception("Source tight Sprite vertex/UV differs: "+match.name);
                             for(var i=0;i<triangles.Length;i++)if(triangles[i]!=match.triangleIndices[i])throw new Exception("Source tight Sprite triangle differs: "+match.name);
                         }
+                    }
+                    if(records!=null) {
+                        var evidence=expected!=null&&found<expected.Length?expected[found]:null;
+                        var sprite=(Sprite)asset;string actualTextureGuid;long actualTextureId;
+                        if(sprite.texture==null||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sprite.texture,out actualTextureGuid,out actualTextureId))throw new Exception("Sprite texture identity missing");
+                        records.Add(new SpriteReference {field=name,index=index,sourceFile=evidence?.sourceFile,sourcePathId=evidence?.sourcePathId,sourceRawSha256=evidence?.sourceRawSha256,name=sprite.name,guid=guid,localFileId=id.ToString(System.Globalization.CultureInfo.InvariantCulture),textureGuid=actualTextureGuid,vertexCount=sprite.vertices.Length,triangleIndexCount=sprite.triangles.Length,sourceGeometryVerified=evidence!=null&&evidence.verifyMesh,vertices=sprite.vertices,uv=sprite.uv,triangles=sprite.triangles.Select(v=>(int)v).ToArray()});
                     }
                     found++;
                 }
@@ -57,6 +68,27 @@ public static class SourceVerifier {
             var deadline=DateTime.Parse(spec.deadlineUtc,null,System.Globalization.DateTimeStyles.AdjustToUniversal);
             Action checkpoint=()=>{if(DateTime.UtcNow>=deadline || (DateTime.UtcNow-started).TotalSeconds>spec.budgetSeconds)throw new TimeoutException("Native readback deadline");};
             checkpoint();
+            var textureReadback=new List<TextureReadback>();
+            foreach(var expected in spec.expectedTextures??new TextureSpec[0]) {
+                checkpoint();
+                if(!expected.path.StartsWith("Assets/",StringComparison.Ordinal)||expected.path.Contains(".."))throw new Exception("Unsafe texture path");
+                var importer=AssetImporter.GetAtPath(expected.path)as TextureImporter;
+                if(importer==null||AssetDatabase.AssetPathToGUID(expected.path)!=expected.guid)throw new Exception("Texture importer identity differs");
+                if(importer.GetPlatformTextureSettings("Standalone").overridden)throw new Exception("Explicit platform texture override requires a separate profile");
+                bool readable=importer.isReadable;var previous=importer.textureCompression.ToString();
+                string pixelsSha="";int width=0,height=0;
+                try {
+                    importer.textureCompression=TextureImporterCompression.Uncompressed;importer.alphaIsTransparency=false;importer.isReadable=true;importer.SaveAndReimport();
+                    var texture=AssetDatabase.LoadAssetAtPath<Texture2D>(expected.path);width=texture.width;height=texture.height;
+                    if(width!=expected.width||height!=expected.height||texture.mipmapCount!=1)throw new Exception("Native texture dimensions/mips differ");
+                    var pixels=texture.GetPixels32();var bytes=new byte[pixels.Length*4];
+                    for(int i=0;i<pixels.Length;i++){bytes[i*4]=pixels[i].r;bytes[i*4+1]=pixels[i].g;bytes[i*4+2]=pixels[i].b;bytes[i*4+3]=pixels[i].a;}
+                    using(var hash=SHA256.Create())pixelsSha=BitConverter.ToString(hash.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();
+                    if(pixelsSha!=expected.rgbaRawSha256)throw new Exception("Native imported pixels differ from the exact cache decode: "+pixelsSha);
+                } finally {importer.isReadable=readable;importer.SaveAndReimport();}
+                textureReadback.Add(new TextureReadback{path=expected.path,guid=AssetDatabase.AssetPathToGUID(expected.path),rgbaRawSha256=pixelsSha,width=width,height=height,readableRestored=importer.isReadable==readable,alphaDilationDisabled=!importer.alphaIsTransparency,previousCompression=previous,compression=importer.textureCompression.ToString()});
+            }
+            result.textureReadback=textureReadback.ToArray();
             var moves=spec.formatMoves??new Move[0];
             foreach(var move in moves) {
                 checkpoint();
@@ -127,11 +159,11 @@ public static class SourceVerifier {
                 try {
                     checkpoint();var typed=reopened.GetComponentsInChildren<MonoBehaviour>(true).FirstOrDefault(c=>c!=null&&c.GetType().FullName==spec.className);
                     if(typed==null || reopened.GetComponentsInChildren<Transform>(true).Sum(t=>GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject))!=0)throw new Exception("Saved prefab component missing");
-                    int reopenedCount;var after=ReferenceSignature(typed,spec.fields,out reopenedCount,spec.verifySourceDescriptors?spec.expectedSprites:null);
+                    var spriteReadback=new List<SpriteReference>();int reopenedCount;var after=ReferenceSignature(typed,spec.fields,out reopenedCount,spec.verifySourceDescriptors?spec.expectedSprites:null,spriteReadback);
                     if(before!=after || references!=reopenedCount)throw new Exception("Saved prefab references changed");
                     if(reopened.name!=prefab.name||reopened.activeSelf!=prefab.activeSelf||!reopened.transform.localPosition.Equals(prefab.transform.localPosition)||!reopened.transform.localScale.Equals(prefab.transform.localScale)||!reopened.transform.localRotation.Equals(prefab.transform.localRotation))throw new Exception("Saved root geometry changed");
                     result.geometryPreserved=true;result.sourceDescriptorsVerified=spec.verifySourceDescriptors;
-                    result.prefabReloaded=true;result.referencesPreserved=true;result.spriteReferences=reopenedCount;
+                    result.prefabReloaded=true;result.referencesPreserved=true;result.spriteReferences=reopenedCount;result.spriteReadback=spriteReadback.ToArray();
                 } finally { PrefabUtility.UnloadPrefabContents(reopened); }
                 result.status="resource_subset_verified";
             } else result.status="read_only_partial";

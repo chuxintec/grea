@@ -20,6 +20,6 @@ def parse_limits(value=None):
 
 def reader_fingerprint():
     root=Path(__file__).parent;h=hashlib.sha256()
-    for name in ('sources/unity_worker.py','unity_parse_limits.py','unity_payloads.py','unity_semantics.py'):
+    for name in ('sources/unity_worker.py','sources/unity_dds.py','unity_texture_selection.py','unity_parse_limits.py','unity_payloads.py','unity_semantics.py'):
         h.update(name.encode()+b'\0');h.update((root/name).read_bytes())
     return h.hexdigest()

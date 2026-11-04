@@ -127,7 +127,7 @@ def convert(source,output,provider_python,asset_ripper,budget_seconds=600,depend
                     working=out/('DerivedBundle-'+str(index))/path.name;working.parent.mkdir();shutil.copy2(hydrated['derivedBundle'],working)
                 else:
                     report.update(status='blocked',textureHydration=hydrations)
-                    report['diagnostics'].append(dict(code='UNITY_TEXTURE_HYDRATION_PENDING',sourceIndex=index,details=details.get('missing',[])));save();return report
+                    report['diagnostics'].append(dict(code='UNITY_TEXTURE_HYDRATION_PENDING',sourceIndex=index,details=details.get('diagnostics',[])+details.get('missing',[])));save();return report
             else:
                 report['status']='blocked'
                 report['diagnostics'].append(dict(code='UNITY_EXTERNAL_TEXTURE_PAYLOAD',sourceIndex=index,count=inspection['summary']['externalTextureTokens'],message='Exact cached payload resolution/hydration required; no guessed pixels'))

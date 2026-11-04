@@ -13,6 +13,7 @@ import re
 
 VERSION = '0.1.0'
 ADAPTERS = ('cocos-2.4-compiled-v1', 'cocos-2.4-pack-v1', 'cocos-2.4-texture-pack-v1')
+_SAFE_DECLARED_SOURCE_ID = re.compile(r'^[A-Za-z0-9_-]{1,128}(?:@[0-9a-f]{5})?$')
 
 
 class ParseError(ValueError):
@@ -67,12 +68,18 @@ def budget(document, max_depth=96, max_nodes=500000):
 
 
 class CompiledV1:
-    def __init__(self, document):
+    def __init__(self, document, declared_source_ids=()):
         d=array(document,'$')
         if not d or type(d[0]) is not int or d[0]!=1: fail('UNSUPPORTED_VERSION','$[0]','Only compiled serialization header 1 is supported')
         if len(d)!=11: fail('INVALID_SHAPE','$','Compiled-v1 requires eleven sections')
         self.uuids,self.strings,self.classes,self.masks,self.values,self.types,self.refs,self.owners,self.keys,self.deps = [
             [] if type(v) is int and v==0 else array(v,f'$[{i}]') for i,v in enumerate(d[1:],1)]
+        if (not isinstance(declared_source_ids, (list, tuple, set, frozenset))
+                or len(declared_source_ids) > 50000
+                or any(not isinstance(value, str) or not _SAFE_DECLARED_SOURCE_ID.fullmatch(value)
+                       for value in declared_source_ids)):
+            fail('INVALID_DECLARED_SOURCE_IDS', '$.declaredSourceIds', 'Expected at most 50,000 safe opaque source IDs')
+        self.declared_source_ids = frozenset(declared_source_ids)
         if not all(isinstance(v,str) for v in self.strings): fail('INVALID_SHAPE','$[2]','String table must contain strings')
         if len(self.owners)!=len(self.keys) or len(self.owners)!=len(self.deps): fail('INVALID_SHAPE','$[8:11]','Dependency tables have different lengths')
         self.ref_owners={}; self.dep_owners={}; self.instances=[]; self.total=0
@@ -182,19 +189,22 @@ class CompiledV1:
         for i,(owner,key,uid) in enumerate(zip(self.owners,self.keys,self.deps)):
             owner=self.dep_owners.get(i) if i in self.dep_owners else at(self.instances,owner,f'$[8][{i}]')
             uid=at(self.uuids,uid,f'$[10][{i}]') if type(uid) is int else uid
-            self.assign(owner,self.reference_key(key,f'$[9][{i}]'),{'__uuid__':asset_key(uid,f'$[10][{i}]')},f'$.dependency[{i}]')
+            self.assign(owner,self.reference_key(key,f'$[9][{i}]'),
+                        {'__uuid__':source_asset_key(uid,f'$[10][{i}]',self.declared_source_ids)},
+                        f'$.dependency[{i}]')
         return dict(root=root,instances=self.instances)
 
 
-def decode_document(document, adapter=ADAPTERS[0], max_depth=96):
+def decode_document(document, adapter=ADAPTERS[0], max_depth=96, *, declared_source_ids=()):
     budget(document,max_depth=max_depth)
-    if adapter==ADAPTERS[0]: return CompiledV1(document).decode()
+    if adapter==ADAPTERS[0]: return CompiledV1(document, declared_source_ids).decode()
     if adapter==ADAPTERS[1]:
         array(document,'$')
         if len(document)!=6: fail('INVALID_SHAPE','$','Pack requires shared header and sections')
         sections=array(document[5],'$[5]')
         if not sections: fail('EMPTY_INPUT','$[5]','Pack contains no sections')
-        return {'sections':[dict(pack_section_ordinal=i,document=CompiledV1(document[:5]+array(section,f'$[5][{i}]')).decode()) for i,section in enumerate(sections)]}
+        return {'sections':[dict(pack_section_ordinal=i,document=CompiledV1(
+            document[:5]+array(section,f'$[5][{i}]'), declared_source_ids).decode()) for i,section in enumerate(sections)]}
     if adapter==ADAPTERS[2]:
         if not isinstance(document,dict) or set(document)!= {'type','data'} or document['type']!='cc.Texture2D' or not isinstance(document['data'],str): fail('INVALID_SHAPE','$','Expected the explicit Texture2D pack encoding')
         if not document['data'] or any(not x for x in document['data'].split('|')): fail('EMPTY_INPUT','$.data','Empty texture section')
@@ -212,3 +222,31 @@ def asset_key(value, location='$'):
     if isinstance(value, str) and re.fullmatch(r'[0-9a-f]{8,16}', value):
         return value
     return uuid_full(value, location)
+
+
+def source_asset_key(value, location='$', declared_source_ids=()):
+    """Preserve a safe opaque ID only when the source bundle declared it."""
+    try:
+        return asset_key(value, location)
+    except ParseError:
+        if (value in declared_source_ids and safe_source_asset_identity(value)):
+            return value
+        fail('INVALID_UUID', location, 'Unsupported UUID encoding and not a safe config-declared opaque source ID')
+
+
+def safe_source_asset_identity(value):
+    """Return whether an opaque config identity is a bounded path-safe token."""
+    return isinstance(value, str) and _SAFE_DECLARED_SOURCE_ID.fullmatch(value) is not None
+
+
+def decode_pack_section(document, ordinal, *, declared_source_ids=(), max_depth=96):
+    """Decode one selected packed member without expanding sibling members."""
+    d = array(document, '$')
+    if len(d) != 6 or type(d[0]) is not int or d[0] != 1:
+        fail('INVALID_SHAPE', '$', 'Pack requires version-1 shared header and sections')
+    sections = array(d[5], '$[5]')
+    integer(ordinal, '$.packSectionOrdinal')
+    section = at(sections, ordinal, '$[5].selected')
+    selected = d[:5] + array(section, f'$[5][{ordinal}]')
+    budget(selected, max_depth=max_depth)
+    return CompiledV1(selected, declared_source_ids).decode()

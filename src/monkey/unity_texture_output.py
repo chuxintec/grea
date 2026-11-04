@@ -31,8 +31,13 @@ def lossless_textures(project):
         proof=matches[0];cache=inside(root,'SourceRecovery/TextureCache/'+proof['logicalPath']);raw=read(cache,max_bytes=128*1024**2)
         if len(raw)!=proof['cacheBytes'] or sha(raw)!=proof['cacheSha256']:
             fail('UNITY_TEXTURE_OUTPUT_IDENTITY',relative,'Retained original texture differs from hydration proof')
-        with open_texture(raw,'.astc') as im:
-            if im.size!=(proof['astc']['width'],proof['astc']['height']) or sha(im.tobytes())!=proof['rgbaRawSha256']:
+        if 'dds'in proof:
+            from .sources.unity_dds import decode_dds_dxt5
+            header=proof['dds'];rgba,_=decode_dds_dxt5(raw,header['width'],header['height']);decoded=Image.frombytes('RGBA',(header['width'],header['height']),rgba)
+        else:
+            header=proof['astc'];decoded=open_texture(raw,'.astc')
+        with decoded as im:
+            if im.size!=(header['width'],header['height']) or sha(im.tobytes())!=proof['rgbaRawSha256']:
                 fail('UNITY_TEXTURE_OUTPUT_PIXELS',relative,'Source decode differs from canonical hydrated pixels')
             buffer=BytesIO();im.transpose(Image.Transpose.FLIP_TOP_BOTTOM).save(buffer,format='PNG');png=buffer.getvalue()
         old=inside(root,relative);new=old.with_suffix('.png');old_meta=Path(str(old)+'.meta');new_meta=Path(str(new)+'.meta')
@@ -42,7 +47,7 @@ def lossless_textures(project):
         new.write_bytes(png);old_meta.rename(new_meta);old.unlink()
         normalized.append(dict(source=rows[0]['source'],previousPath=relative,path=new.relative_to(root).as_posix(),
             providerSha256=old_hash,sha256=sha(png),metaSha256=meta_hash,guid=rows[0]['target']['guid'],
-            logicalPath=proof['logicalPath'],rgbaRawSha256=proof['rgbaRawSha256'],encoding='PNG',pixels='exact-source-BGRA-to-RGBA-flipped-for-Unity'))
+            logicalPath=proof['logicalPath'],rgbaRawSha256=proof['rgbaRawSha256'],encoding='PNG',pixels='exact-source-DDS-DXT5-to-RGBA-flipped-for-Unity'if'dds'in proof else'exact-source-BGRA-to-RGBA-flipped-for-Unity'))
     if normalized:
         path=find_analysis(root,'unity-relocation.json');relocation=load(read(path,max_bytes=128*1024**2),max_nodes=16_000_000)
         changes={r['previousPath']:r['path'] for r in normalized}

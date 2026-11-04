@@ -19,7 +19,7 @@ function within(root, relative) {
     if (!dest.startsWith(root + path.sep)) throw Error('Path escapes candidate');
     return dest;
 }
-async function sceneJob(method,args,phase) {
+async function sceneJob(method,args,phase,trackExecution=true) {
     const call=async(name,values)=>{
         try{return await Editor.Message.request('scene','execute-scene-script',{name:'monkey-import',method:name,args:values});}
         catch(error){throw Error('NATIVE_SCENE_RPC_FAILED '+name+': '+String(error&&error.message||error).split('\n')[0].slice(0,512));}
@@ -29,7 +29,7 @@ async function sceneJob(method,args,phase) {
     while(true) {
         const state=await call('jobStatus',[started.jobId]);
         if(!state||state.jobId!==started.jobId)throw Error('NATIVE_JOB_STATUS_INVALID');
-        execution.checkpoint(state.phase||phase,state.processed,state.total);
+        if(trackExecution)execution.checkpoint(state.phase||phase,state.processed,state.total);
         if(state.status==='failed')throw Error('Native '+method+' failed: '+state.error);
         if(state.status==='completed')return call('takeJob',[started.jobId]);
         if(state.status!=='running')throw Error('NATIVE_JOB_STATUS_INVALID');
@@ -39,7 +39,72 @@ async function sceneJob(method,args,phase) {
 module.exports = {
     load() {execution.start(()=>module.exports.methods.importCandidate()).catch(error=>console.error('MONKEY_NATIVE_BOOTSTRAP_FAILED: '+String(error.message||error).slice(0,1024)));}, unload() {execution.stop();},
     methods: {
+        async revalidateSavedCandidate() {
+            const root=path.resolve(Editor.Project.path);
+            const manifestRaw=fs.readFileSync(within(root,'manifest.json'));
+            const planRaw=fs.readFileSync(path.join(__dirname,'import-plan.json'));
+            const manifest=JSON.parse(manifestRaw),plan=JSON.parse(planRaw);
+            const contextRaw=fs.readFileSync(within(root,'Analysis/Readback/native-readback-context.json'));
+            const context=JSON.parse(contextRaw);
+            const original=JSON.parse(fs.readFileSync(within(root,'Analysis/Readback/editor-readback.json'),'utf8'));
+            if(hash(contextRaw)!==original.nativeReadbackContextSha256||context.manifestSha256!==hash(manifestRaw)||context.sourcePlanSha256!==hash(planRaw)||
+                context.projectUuid!==manifest.projectUuid||context.projectUuid!==plan.projectUuid||
+                context.sceneUuid!==original.sceneUuid||context.nativePlan.nativeProjectRoot!==root)
+                throw Error('CREATOR_REOPEN_NATIVE_CONTEXT_IDENTITY_MISMATCH');
+            const savedPrefabs=context.nativePlan.savedPrefabs.map(info=>({...info,
+                sha256:hash(fs.readFileSync(within(root,info.path)))}));
+            const nativePlan={...context.nativePlan,savedPrefabs,nativeDeadlineMs:Date.now()+1200000,readbackReloadSavedAssets:true};
+            await Editor.Message.request('scene','execute-scene-script',
+                {name:'monkey-import',method:'beginOwnedImportUndo',args:[]});
+            try {
+                const revision=await require('./reopen-verification.js').createRevision({
+                    projectRoot:root,projectUuid:context.projectUuid,sceneUuid:context.sceneUuid,
+                    creatorVersion:Editor.App.version,nativeRoots:plan.outputPaths.nativeRoots,
+                    readbackContext:{...original,sourcePlanSha256:hash(planRaw)},
+                    runReadSaved:()=>sceneJob('readSaved',[context.sceneUuid,nativePlan],'native-readback',false)});
+                console.info('MONKEY_EDITOR_REOPEN_READBACK '+JSON.stringify(revision));
+                return revision;
+            } finally {
+                await Editor.Message.request('scene','execute-scene-script',
+                    {name:'monkey-import',method:'finishOwnedImportUndo',args:[]});
+            }
+        },
+        async inspectOrdinarySaveApi() {
+            const root=path.resolve(Editor.Project.path);
+            const planRaw=fs.readFileSync(path.join(__dirname,'import-plan.json'));
+            const result=await Editor.Message.request('scene','execute-scene-script',
+                {name:'monkey-import',method:'inspectOrdinarySaveApi',args:[]});
+            const directory=within(root,'Analysis/Readback/EditorSerialization');
+            fs.mkdirSync(directory,{recursive:true});
+            let sequence=1;
+            while(fs.existsSync(path.join(directory,'save-api-'+sequence+'.json')))sequence++;
+            const file=path.join(directory,'save-api-'+sequence+'.json');
+            fs.writeFileSync(file,JSON.stringify({schemaVersion:1,planSha256:hash(planRaw),
+                capturedAtUtc:new Date().toISOString(),...result},null,2)+'\n',{flag:'wx'});
+            console.info('MONKEY_EDITOR_SAVE_API_RECEIPT '+file);
+            return file;
+        },
+        async stopOrdinarySaveProbe() {
+            return Editor.Message.request('scene','execute-scene-script',
+                {name:'monkey-import',method:'stopOrdinarySaveProbe',args:[]});
+        },
         async importCandidate() {
+            await Editor.Message.request('scene','execute-scene-script',
+                {name:'monkey-import',method:'beginOwnedImportUndo',args:[]});
+            try { return await module.exports.methods.importCandidateOwned(); }
+            finally {
+                const evidence=await Editor.Message.request('scene','execute-scene-script',
+                    {name:'monkey-import',method:'finishOwnedImportUndo',args:[]});
+                const root=path.resolve(Editor.Project.path);
+                const directory=within(root,'Analysis/Readback');
+                fs.mkdirSync(directory,{recursive:true});
+                let sequence=1;
+                while(fs.existsSync(path.join(directory,'owned-import-undo-'+sequence+'.json')))sequence++;
+                fs.writeFileSync(path.join(directory,'owned-import-undo-'+sequence+'.json'),
+                    JSON.stringify(evidence,null,2)+'\n',{flag:'wx'});
+            }
+        },
+        async importCandidateOwned() {
             const root = path.resolve(Editor.Project.path);
             const manifestRaw = fs.readFileSync(within(root, 'manifest.json'));
             const manifest = JSON.parse(manifestRaw);
@@ -135,7 +200,7 @@ module.exports = {
                     // another metadata write. Observe this one import until its
                     // actual generated payload matches the requested meta.
                     const library=within(root,'library/'+sf.uuid.slice(0,2)+'/'+sf.uuid+'.json');
-                    const readyEnd=Math.min(Date.now()+10000,execution.deadlineMs());
+                    const readyEnd=Math.min(Date.now()+10000,execution.deadlineMs()??Infinity);
                     while(true){
                         let data=null;try{data=JSON.parse(fs.readFileSync(library,'utf8'));}catch(error){if(error.code&&error.code!=='ENOENT')throw error;}
                         if(spriteMetadata.libraryMatches(a,data))break;
@@ -149,7 +214,7 @@ module.exports = {
             });
             fs.mkdirSync(within(root,'Analysis/Readback'),{recursive:true});fs.writeFileSync(within(root,'Analysis/Readback/native-api-timing.json'),JSON.stringify({stage:'assets',apiTiming},null,2)+'\n',{flag:'wx'});
             execution.checkpoint('hierarchy',0,plan.nodes.length);
-            const nativeDeadlineMs=execution.deadlineMs();
+            const nativeDeadlineMs=execution.deadlineMs()??Date.now()+1200000;
             const resourceProbes=plan.resourceProbes?JSON.parse(JSON.stringify(plan.resourceProbes)):null;
             if(resourceProbes) {
                 if(resourceProbes.profile!=='creator-spine-3.8-v1'||resourceProbes.spines.length>16)throw Error('Unsupported resource probe scope');
@@ -165,7 +230,80 @@ module.exports = {
                     }
                 }
             }
-            const nativePlan={...plan,resourceProbes,assets,nativeDeadlineMs,components:plan.components.filter(c=>c.convertible),animations:(plan.animations||[]).filter(a=>a.convertible)};
+            let materialReadback=null;
+            if(plan.materialBinding) {
+                const spec=plan.materialBinding,materialPath=within(root,spec.creator.materialPath);
+                const metaPath=within(root,spec.creator.materialMetaPath);
+                if(fs.existsSync(materialPath))throw Error('Native material output already exists');
+                const serialized=await sceneJob('prepareMaterial',[{...spec,nativeDeadlineMs}],'materials');
+                fs.mkdirSync(path.dirname(materialPath),{recursive:true});
+                if(fs.existsSync(metaPath)) {
+                    if(JSON.parse(fs.readFileSync(metaPath,'utf8')).uuid!==spec.creator.materialUuid)throw Error('Native material metadata UUID conflict');
+                } else fs.writeFileSync(metaPath,JSON.stringify({ver:'1.0.5',importer:'material',imported:false,uuid:spec.creator.materialUuid,files:[],subMetas:{},userData:{}},null,2),{flag:'wx'});
+                fs.writeFileSync(materialPath,serialized,{flag:'wx'});
+                await timedReq('refresh-asset','db://'+path.dirname(spec.creator.materialPath));
+                const info=await timedReq('query-asset-info','db://'+spec.creator.materialPath);
+                const meta=JSON.parse(fs.readFileSync(metaPath,'utf8'));
+                if(!info||info.invalid||info.uuid!==spec.creator.materialUuid||meta.uuid!==spec.creator.materialUuid)throw Error('Native material import UUID differs');
+                materialReadback=await sceneJob('readMaterial',[{...spec,nativeDeadlineMs}],'materials');
+                materialReadback.metaUuid=meta.uuid;materialReadback.metaUuidVerified=true;
+            }
+            let spriteOutlineReadback=null;
+            if(plan.spriteOutlineBinding) {
+                const spec=plan.spriteOutlineBinding,materialPath=within(root,spec.creator.materialPath),metaPath=within(root,spec.creator.materialMetaPath);
+                if(fs.existsSync(materialPath))throw Error('Outline material output already exists');
+                const serialized=await sceneJob('prepareOutlineMaterial',[{...spec,nativeDeadlineMs}],'materials');
+                fs.mkdirSync(path.dirname(materialPath),{recursive:true});
+                if(fs.existsSync(metaPath)){
+                    if(JSON.parse(fs.readFileSync(metaPath,'utf8')).uuid!==spec.creator.materialUuid)throw Error('Outline material metadata UUID conflict');
+                }else fs.writeFileSync(metaPath,JSON.stringify({ver:'1.0.5',importer:'material',imported:false,uuid:spec.creator.materialUuid,files:[],subMetas:{},userData:{}},null,2),{flag:'wx'});
+                fs.writeFileSync(materialPath,serialized,{flag:'wx'});
+                await timedReq('refresh-asset','db://'+path.dirname(spec.creator.materialPath));
+                const info=await timedReq('query-asset-info','db://'+spec.creator.materialPath),meta=JSON.parse(fs.readFileSync(metaPath,'utf8'));
+                if(!info||info.invalid||info.uuid!==spec.creator.materialUuid||meta.uuid!==spec.creator.materialUuid)throw Error('Outline material import UUID differs');
+                spriteOutlineReadback=await sceneJob('readOutlineMaterial',[{...spec,nativeDeadlineMs}],'materials');
+                spriteOutlineReadback.metaUuid=meta.uuid;spriteOutlineReadback.metaUuidVerified=true;
+            }
+            if(plan.staticTimeMaterials)for(const row of plan.staticTimeMaterials.materials) {
+                const materialPath=within(root,row.creator.materialPath),metaPath=within(root,row.creator.materialMetaPath);
+                if(fs.existsSync(materialPath))throw Error('Static-time material output already exists');
+                const serialized=await sceneJob('prepareStaticTimeMaterial',[{...plan.staticTimeMaterials,nativeDeadlineMs},row.sourceMaterialId],'materials');
+                fs.mkdirSync(path.dirname(materialPath),{recursive:true});
+                if(fs.existsSync(metaPath)) {
+                    if(JSON.parse(fs.readFileSync(metaPath,'utf8')).uuid!==row.creator.materialUuid)throw Error('Static-time material metadata UUID conflict');
+                } else fs.writeFileSync(metaPath,JSON.stringify({ver:'1.0.5',importer:'material',imported:false,uuid:row.creator.materialUuid,files:[],subMetas:{},userData:{}},null,2),{flag:'wx'});
+                fs.writeFileSync(materialPath,serialized,{flag:'wx'});
+                await timedReq('refresh-asset','db://'+path.dirname(row.creator.materialPath));
+                const info=await timedReq('query-asset-info','db://'+row.creator.materialPath);
+                if(!info||info.invalid||info.uuid!==row.creator.materialUuid||JSON.parse(fs.readFileSync(metaPath,'utf8')).uuid!==row.creator.materialUuid)
+                    throw Error('Static-time material import identity differs');
+                await sceneJob('readStaticTimeMaterial',[{...plan.staticTimeMaterials,nativeDeadlineMs},row.sourceMaterialId],'materials');
+            }
+            for(const entry of plan.staticRetainedAssets?.assets||[])if(entry.retentionKind==='builtin-default-material') {
+                const dest=within(root,entry.creator.path);
+                if(fs.existsSync(dest))throw Error('Retained builtin material already exists');
+                const serialized=await sceneJob('prepareRetainedBuiltin',[entry],'materials');
+                fs.mkdirSync(path.dirname(dest),{recursive:true});
+                fs.writeFileSync(dest+'.meta',JSON.stringify({ver:'1.0.21',importer:'material',imported:false,uuid:entry.creator.uuid,files:[],subMetas:{},userData:{}}));
+                fs.writeFileSync(dest,serialized,{flag:'wx'});
+                await timedReq('refresh-asset','db://'+path.dirname(entry.creator.path));
+                const info=await timedReq('query-asset-info','db://'+entry.creator.path);
+                if(!info||info.invalid||info.uuid!==entry.creator.uuid)throw Error('Retained builtin material identity differs');
+            }
+            const nativePlan={...plan,nativeProjectRoot:root,resourceProbes,assets,nativeDeadlineMs,components:plan.components.filter(c=>c.convertible||c.staticFieldBinding||c.staticProgressBinding||c.staticControlBinding||(plan.staticAnimationEvidence&&c.type==='cc.Animation')),animations:(plan.animations||[]).filter(a=>a.convertible)};
+            const earlyAnimationAssets=[];
+            if(plan.staticAnimationEvidence) {
+                const prepared=await sceneJob('prepareStaticAnimationAssets',[nativePlan],'animations');
+                for(const a of prepared) {
+                    if(!a.path.startsWith(outputPaths.animations+'/')||!a.path.endsWith('.anim'))throw Error('Unsafe animation path');
+                    fs.mkdirSync(path.dirname(within(root,a.path)),{recursive:true});
+                    await timedReq('refresh-asset','db://'+path.dirname(a.path));
+                    const info=await timedReq('create-asset','db://'+a.path,a.serialized,{overwrite:false,rename:false});
+                    if(!info||info.invalid)throw Error('Static animation asset import failed');
+                    earlyAnimationAssets.push({id:a.id,path:a.path,uuid:info.uuid,sha256:hash(fs.readFileSync(within(root,a.path)))});
+                }
+                nativePlan.animationAssets=earlyAnimationAssets;
+            }
             let result = await sceneJob('assemble',[nativePlan],'hierarchy');
             if (!result || (typeof result.serialized !== 'string'&&!result.assemblyId)) throw Error('No native scene serialization');
             const assemblyId=result.assemblyId;const savedPrefabs=[];
@@ -178,14 +316,14 @@ module.exports = {
                         if(!p||p.path!==spec.path||p.sourceId!==spec.sourceId||typeof p.serialized!=='string')throw Error('Native prefab serialization differs');
                         const info=await timedReq('create-asset','db://'+p.path,p.serialized,{overwrite:false,rename:false});
                         if(!info||info.invalid)throw Error('Native prefab save failed');
-                        savedPrefabs.push({sourceId:p.sourceId,path:p.path,uuid:info.uuid,nativeInitialNodes:p.nativeInitialNodes,sha256:hash(fs.readFileSync(dest))});
+                        savedPrefabs.push({sourceId:p.sourceId,path:p.path,uuid:info.uuid,nativeInitialNodes:p.nativeInitialNodes,spineUITransformReceipt:p.spineUITransformReceipt,sha256:hash(fs.readFileSync(dest))});
                     }
                     result=await sceneJob('finishAssembly',[assemblyId,savedPrefabs,nativePlan],'candidate-save');
                 }finally{
                     await Editor.Message.request('scene','execute-scene-script',{name:'monkey-import',method:'releaseAssembly',args:[assemblyId]});
                 }
             }
-            const animationAssets=[];
+            const animationAssets=[...earlyAnimationAssets];
             for(const a of result.animationAssets||[]) {
                 if(!a.path.startsWith(outputPaths.animations+'/')||!a.path.endsWith('.anim'))throw Error('Unsafe animation path');
                 within(root,a.path);
@@ -208,14 +346,44 @@ module.exports = {
                 execution.checkpoint('source-prefabs',savedPrefabs.length,(plan.sourcePrefabs||[]).length);
                 const info=await timedReq('create-asset','db://'+p.path,p.serialized,{overwrite:false,rename:false});
                 if(!info||info.invalid)throw Error('Native prefab save failed: '+p.sourceId);
-                savedPrefabs.push({sourceId:p.sourceId,path:p.path,uuid:info.uuid,nativeInitialNodes:p.nativeInitialNodes});expectedPrefabs.delete(p.sourceId);
+                savedPrefabs.push({sourceId:p.sourceId,path:p.path,uuid:info.uuid,nativeInitialNodes:p.nativeInitialNodes,spineUITransformReceipt:p.spineUITransformReceipt,sha256:hash(fs.readFileSync(within(root,p.path)))});expectedPrefabs.delete(p.sourceId);
             });
             execution.checkpoint('candidate-save');
             const scene = await req('create-asset', 'db://'+outputPaths.scene, result.serialized, {overwrite: false, rename: false});
             if (!scene || scene.invalid) throw Error('Native scene save failed');
             // Re-load saved/imported scene through the engine asset manager, not the in-memory tree.
             execution.checkpoint('native-readback');
-            const saved = await sceneJob('readSaved',[scene.uuid,{...nativePlan,animationAssets,savedPrefabs,nativeInitialNodes:result.nativeInitialNodes}],'native-readback');
+            const readbackPlan={...nativePlan,animationAssets,savedPrefabs,nativeInitialNodes:result.nativeInitialNodes};
+            fs.mkdirSync(within(root,'Analysis/Readback'),{recursive:true});
+            fs.writeFileSync(within(root,'Analysis/Readback/native-readback-context.json'),JSON.stringify({
+                schemaVersion:1,sceneUuid:scene.uuid,projectUuid:project.uuid,
+                sourcePlanSha256:hash(planRaw),manifestSha256:hash(manifestRaw),nativePlan:readbackPlan},null,2)+'\n',{flag:'wx'});
+            const nativeReadbackContextSha256=hash(fs.readFileSync(within(root,'Analysis/Readback/native-readback-context.json')));
+            const saved = await sceneJob('readSaved',[scene.uuid,readbackPlan],'native-readback');
+            saved.materialBinding=materialReadback;
+            saved.spriteOutlineBinding=spriteOutlineReadback;
+            fs.mkdirSync(within(root,'Analysis/Readback'),{recursive:true});
+            fs.writeFileSync(within(root,'Analysis/Readback/source-prefabs-readback.json'),JSON.stringify(saved,null,2)+'\n');
+            saved.staticPreviews=[];
+            for(const state of nativePlan.previewStates||(nativePlan.previewState?[nativePlan.previewState]:[])) {
+                const statePlan={...nativePlan,savedPrefabs,previewState:state};
+                const source=savedPrefabs.find(p=>p.sourceId===state.sourcePrefabId);
+                if(!source)throw Error('STATIC_PREVIEW_SOURCE_MISSING');
+                const body=await sceneJob('createStaticPreview',[source.uuid,statePlan],'candidate-save');
+                const stem='assets/Game/Preview/States/State_'+state.stateSha256.slice(0,16);
+                fs.mkdirSync(path.dirname(within(root,stem)),{recursive:true});
+                await timedReq('refresh-asset','db://assets/Game/Preview');
+                const prefab=await timedReq('create-asset','db://'+stem+'.prefab',body.prefabSerialized,{overwrite:false,rename:false});
+                const preview=await timedReq('create-asset','db://'+stem+'.scene',body.sceneSerialized,{overwrite:false,rename:false});
+                if(!prefab||!preview||prefab.invalid||preview.invalid)throw Error('STATIC_PREVIEW_SAVE_FAILED');
+                saved.staticPreview=await sceneJob('readStaticPreview',[preview.uuid,statePlan],'native-readback');
+                saved.staticPreview.prefabPath=stem+'.prefab';saved.staticPreview.scenePath=stem+'.scene';
+                saved.staticPreview.prefabUuid=prefab.uuid;
+                fs.mkdirSync(within(root,'Analysis/Readback'),{recursive:true});fs.writeFileSync(within(root,'Analysis/Readback/static-preview-attempt.json'),JSON.stringify(saved.staticPreview,null,2)+'\n');
+                if(!saved.staticPreview.state.verified||(saved.staticPreview.clones||[]).some(x=>!x.verified)||(saved.staticPreview.spriteProjections&&!saved.staticPreview.spriteProjections.verified))throw Error('STATIC_PREVIEW_READBACK_FAILED');
+                saved.staticPreviews.push(saved.staticPreview);
+            }
+
             for(const p of savedPrefabs)if(p.sha256&&hash(fs.readFileSync(within(root,p.path)))!==p.sha256)throw Error('Shared native template changed: '+p.sourceId);
             const nativeFiles = [];
             function collect(relative) {
@@ -228,7 +396,7 @@ module.exports = {
             }
             for(const folder of outputPaths.nativeRoots)if(fs.existsSync(within(root,folder)))collect(folder);
             const rb = {...saved, assets, sceneUuid:scene.uuid, creatorVersion:Editor.App.version, projectUuid:project.uuid,
-                manifestSha256:hash(manifestRaw), nativeFiles,apiTiming,codeEmission,numericCodeExercise:result.numericCodeExercise||[]};
+                manifestSha256:hash(manifestRaw),nativeReadbackContextSha256, nativeFiles,apiTiming,codeEmission,numericCodeExercise:result.numericCodeExercise||[]};
             fs.mkdirSync(within(root,'Analysis/Readback'),{recursive:true});fs.writeFileSync(within(root,'Analysis/Readback/editor-readback.json'),JSON.stringify(rb,null,2)+'\n',{flag:'wx'});
             return {sceneUuid:scene.uuid,nodeCount:rb.nodeCount,editorValidation:'readback-recorded'};
         }

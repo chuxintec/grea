@@ -176,8 +176,11 @@ def plan(project, format_profile='none'):
             matches = [value for original_key,value in atlas['data']['m_RenderDataMap'] if original_key == data['m_RenderDataKey']]
             require(len(matches) == 1, 'Exact Sprite atlas render key is missing or ambiguous')
             rd = matches[0]
-            require(rd['settingsRaw'] in (65,67) and rd['downscaleMultiplier'] == 1 and rd['alphaTexture']['pathId'] == '0' and not rd['secondaryTextures'],
-                    'Atlas rotation/alpha/downscale variant is not proven')
+            from .unity_sprite import atlas_settings
+            try:packing=atlas_settings(rd['settingsRaw'])
+            except (ValueError,KeyError,TypeError) as error:require(False,'Unproven Sprite atlas settings: '+str(error))
+            require(rd['downscaleMultiplier'] == 1 and rd['alphaTexture']['pathId'] == '0' and not rd['secondaryTextures'],
+                    'Atlas alpha/downscale variant is not proven')
             texture_key, texture = objects.resolve(atlas_key, rd['texture'], 'Texture2D')
             asset, asset_guid = native_asset(key, '.asset')
             ids = re.findall(rb'^--- !u!213 &(-?[0-9]+)$', read(project/asset), re.M)
@@ -186,22 +189,22 @@ def plan(project, format_profile='none'):
             if texture_key not in textures:
                 source_file = objects.files[texture_key[:2]]['name']
                 resolved = [r for r in hydration['consumed'] if r['file'] == source_file and r['pathId'] == texture_key[2]]
-                require(len(resolved) == 1 and resolved[0]['normalization'] == 'BGRA-to-RGBA-no-flip-v1', 'Canonical texture hydration proof required')
+                require(len(resolved) == 1 and resolved[0]['normalization'] in ('BGRA-to-RGBA-no-flip-v1','DDS-DXT5-to-RGBA-no-flip-v1'), 'Canonical texture hydration proof required')
                 with Image.open(project/texture_path) as im:
                     require(im.size == (texture['data']['m_Width'],texture['data']['m_Height']) and im.width*im.height <= 16*1024*1024, 'Native texture dimensions differ')
                     pixel_hash = sha(im.convert('RGBA').transpose(Image.Transpose.FLIP_TOP_BOTTOM).tobytes())
                 require(pixel_hash == resolved[0]['rgbaRawSha256'], 'Native PNG pixels differ from exact source hydration')
-                textures[texture_key] = dict(path=texture_path, guid=texture_guid, sourceFile=source_file, sourcePathId=texture_key[2], rgbaRawSha256=pixel_hash)
+                textures[texture_key] = dict(path=texture_path, guid=texture_guid, sourceFile=source_file, sourcePathId=texture_key[2], width=texture['data']['m_Width'],height=texture['data']['m_Height'],rgbaRawSha256=pixel_hash)
             rect = rd['textureRect']
             require(set(rect) == {'x','y','width','height'}, 'Unsupported atlas rect')
             mesh={}
-            if rd['settingsRaw']==65:
+            if packing['packingMode']=='Tight':
                 source_file=objects.files[key[:2]]
                 require(source_file.get('unityVersion')=='2021.3.30f1' and source_file.get('targetPlatform')=='20','Tight Sprite source version/platform requires a verified profile')
                 from .unity_sprite import tight_geometry
                 try:mesh=tight_geometry(data,rd,texture['data']['m_Width'],texture['data']['m_Height'])
                 except (ValueError,KeyError,TypeError) as error:require(False,'Unsupported exact tight geometry: '+str(error))
-            sprite_specs.append(dict(name=objects.unique_name(key),guid=asset_guid,fileId=ids[0].decode(),textureGuid=texture_guid,**rect,**mesh))
+            sprite_specs.append(dict(name=objects.unique_name(key),guid=asset_guid,fileId=ids[0].decode(),textureGuid=texture_guid,sourceFile=objects.files[key[:2]]['name'],sourcePathId=key[2],sourceRawSha256=sprite.get('rawSha256'),packingSettings=packing,**rect,**mesh))
             asset_paths[asset] = (asset_guid,'sprite')
             asset_paths[texture_path] = (texture_guid,'texture')
     require(sprite_specs, 'At least one resolved Sprite reference required')
@@ -217,7 +220,7 @@ def plan(project, format_profile='none'):
                 fields=[f['name'] for f in fields],expectedArrayLengths=lengths,saveRoundtrip=True,expectedSpriteReferences=len(sprite_specs),
                 verifySourceDescriptors=True,expectedScriptGuid=script_guid,expectedPrefabGuid=guid(project,prefab),expectedRootName=root['data']['m_Name'],
                 expectedPosition=transform['data']['m_LocalPosition'],expectedScale=transform['data']['m_LocalScale'],expectedRotation=transform['data']['m_LocalRotation'],
-                expectedActive=root['data']['m_IsActive'],expectedSprites=sprite_specs,formatMoves=moves)
+                expectedActive=root['data']['m_IsActive'],expectedSprites=sprite_specs,expectedTextures=list(textures.values()),formatMoves=moves)
     seals = [dict(path=r['path'],guid=guid(project,r['path'][:-5])) for r in files if r['path'].startswith('Assets/') and r['path'].endswith('.meta')]
     return dict(schemaVersion=1,profile=PROFILE,candidateManifestSha256=identity,format=format_profile,spec=spec,sourceScript=cls['sourceScript'],
                 textures=list(textures.values()),nativeIdentitySeals=seals,pinned=pins,scope='one original leaf Prefab, embedded Sprite[] fields, exact hydrated atlas references; methods/visual/gameplay pending')
@@ -306,6 +309,10 @@ def execute(project, output, editor, budget_seconds=1200, format_profile='none')
                               fields=[(r['name'],r['type'],r['arrayLength'],r['nullElements'])for r in data.get('fields',[])] ==
                                      [(name,'UnityEngine.Sprite[]',length,0)for name,length in zip(spec['fields'],spec['expectedArrayLengths'])],
                               typedMoves=data.get('movedAssets',[])==spec['formatMoves'])
+                texture_rows=data.get('textureReadback')or[]
+                checks['texturePixels']=len(texture_rows)==len(spec['expectedTextures'])and all(
+                    actual.get('guid')==expected['guid']and actual.get('rgbaRawSha256')==expected['rgbaRawSha256']and actual.get('width')==expected['width']and actual.get('height')==expected['height']and actual.get('readableRestored')is True and actual.get('alphaDilationDisabled')is True and actual.get('compression')=='Uncompressed'
+                    for actual,expected in zip(texture_rows,spec['expectedTextures']))
                 moved = {r['from']:r['to'] for r in spec['formatMoves']}
                 checks['allOriginalMetaGuids'] = all(guid(work,moved.get(r['path'][:-5],r['path'][:-5]))==r['guid'] for r in prepared['nativeIdentitySeals'])
                 checks['sourceUnchanged'] = owned(project)[0] == prepared['candidateManifestSha256']

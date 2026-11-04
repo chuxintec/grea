@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import re
 from pathlib import Path
 from PIL import Image
 from monkey.io import write_json, read, load
@@ -34,6 +35,23 @@ class EditableProjectTests(unittest.TestCase):
             self.assertEqual(ir['spriteFrames'][0]['trimOrigin'],[1,1])
             plan(root/'ir/ir.json','editable-test',root/'plan');out=export(root/'plan/plan.json',root/'unity')
             self.assertEqual(out['diagnostics'],[])
+            empty_slot_script=root/'unity/Assets/Game/Scripts/Presentation/StaticSort/NativeStaticSortTextSlotEnumerationIdentity.cs'
+            empty_slot_meta=Path(str(empty_slot_script)+'.meta')
+            self.assertTrue(empty_slot_script.is_file())
+            self.assertIn('public sealed class NativeStaticSortTextSlotEnumerationIdentity',empty_slot_script.read_text())
+            self.assertTrue(empty_slot_meta.is_file())
+            emitted_guid=re.search(r'^guid: ([0-9a-f]{32})$',empty_slot_meta.read_text(),re.M)
+            self.assertIsNotNone(emitted_guid)
+            self.assertIn('NativeStaticSortTextSlotEnumerationIdentity',empty_slot_script.read_text())
+            self.assertNotIn('class NativeStaticSortTextSlotEnumerationIdentity',
+                             (root/'unity/Assets/Game/Scripts/Presentation/StaticSort/NativeStaticSortTextSource.cs').read_text())
+            for runtime_name in ('NativeInputBlocker.cs','NativeInputBlockerSurface.cs'):
+                runtime_script=root/'unity/Assets/Game/Presentation/Common/Layout'/runtime_name
+                self.assertTrue(runtime_script.is_file())
+                self.assertIn('class '+runtime_name[:-3],runtime_script.read_text())
+                runtime_meta=Path(str(runtime_script)+'.meta')
+                self.assertTrue(runtime_meta.is_file())
+                self.assertRegex(runtime_meta.read_text(),r'(?m)^guid: [0-9a-f]{32}$')
             write_json(source/'project.json',dict(version='3.8.8',id='wrong-version'))
             with self.assertRaises(ParseError):catalog(source,root/'wrong')
 

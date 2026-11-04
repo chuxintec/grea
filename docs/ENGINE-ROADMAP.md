@@ -1,3 +1,7 @@
+# Active v0.7 priority: complete core Prefab recovery
+
+The active scope is [PLAN](PLAN.md): at least ten distinct core Prefabs independently accepted in Creator 3.8.8 and Unity 6000.6.2f1. Phase one requires source identity, hierarchy, static components/fields/references, fixed-state render, native persistence and regeneration. Phase two covers dynamic scripts, events, changing layouts and physical input; these no longer block static acceptance. Broader source-profile/CDN expansion below is retained as historical backlog and does not compete with this version.
+
 > 2026-10-26最新用户裁定：默认全量C#初稿导出，允许类型/语法/API缺口；本文的严格typed/profile子集为可选增强，不再作为其他有源方法导出的门槛。现行进度和完整候选链见 [PLAN](PLAN.md)。
 ## 2026-10-27 当前出口：五层架构、功能类、归入源码与跨层集成
 
@@ -81,7 +85,7 @@ CLI继续convert --source/--input-set --target unity6|cocos38|both。加入真�
 
 ## U：指定Unity来源样本
 
-用户指定最新打开《样例项目》。旧source archive身份wx31a9c726536cdacc/本地修订273/Unity2021.3.30f1 IL2CPP-Wasm仅作线索。2026-10-23本轮只读检查已知对应账号的当前可见包目录，仅发现修订273，内有__WITHOUT_MULTI_PLUGINCODE__.wxapkg、_wasmcode_.wxapkg、_wasmcode1_.wxapkg；这还不是当前Unity版本/后端正文核验，不能只凭旧记录或mtime宣称已验证最新运行内容。本轮已通过固定本机grea:wxapkg-decrypt在monkey私有目录重新解密这3个当前包，明文SHA全部与冻结证据一致；分别3/2/48条目，game.js实际出现2021.3.30f1版本字符串，Wasm条目可枚举。初始仅为当前包体静态证据；后续只读调用本机UnityPy1.25.3，已解析source archive同源data.unity3d（2637008字节、SHA [private fingerprint omitted]）1603对象，包括76 GameObject/76 Transform与RectTransform/1173 MonoScript。8个serialized file均关闭源TypeTree，UnityPy按版本内置类型模板对1326个所选对象有严格正文读数，全部106 MonoBehaviour因类型正文不足严格报长度不符，不使用check_read=false掩盖；这是样本探查，不是通用reader或原生工程通过。证据monkey/.private/unity-sample-project-current-01/typed-inspection-01，未执行源代码。原件/玩家档不写。当前721个已枚举缓存路径均存在，data archive SHA与冻结证据一致；patchFuncIndexList.json从94变111字节单独记漂移，不宣称所有当前缓存与旧版相同。12个TextAsset逐项身份已核：DodGameLib.dll实际为CODEPHPY头、不是普通PE，不能按文件名当可反编译业务DLL；其余5个PE仅观察头部，未执行程序集。
+用户指定最新打开《样例项目》。旧source archive身份[private source identity]/本地修订273/Unity2021.3.30f1 IL2CPP-Wasm仅作线索。2026-10-23本轮只读检查已知对应账号的当前可见包目录，仅发现修订273，内有__WITHOUT_MULTI_PLUGINCODE__.wxapkg、_wasmcode_.wxapkg、_wasmcode1_.wxapkg；这还不是当前Unity版本/后端正文核验，不能只凭旧记录或mtime宣称已验证最新运行内容。本轮已通过固定本机grea:wxapkg-decrypt在monkey私有目录重新解密这3个当前包，明文SHA全部与冻结证据一致；分别3/2/48条目，game.js实际出现2021.3.30f1版本字符串，Wasm条目可枚举。初始仅为当前包体静态证据；后续只读调用本机UnityPy1.25.3，已解析source archive同源data.unity3d（2637008字节、SHA [private fingerprint omitted]）1603对象，包括76 GameObject/76 Transform与RectTransform/1173 MonoScript。8个serialized file均关闭源TypeTree，UnityPy按版本内置类型模板对1326个所选对象有严格正文读数，全部106 MonoBehaviour因类型正文不足严格报长度不符，不使用check_read=false掩盖；这是样本探查，不是通用reader或原生工程通过。证据monkey/.private/unity-sample-project-current-01/typed-inspection-01，未执行源代码。原件/玩家档不写。当前721个已枚举缓存路径均存在，data archive SHA与冻结证据一致；patchFuncIndexList.json从94变111字节单独记漂移，不宣称所有当前缓存与旧版相同。12个TextAsset逐项身份已核：DodGameLib.dll实际为CODEPHPY头、不是普通PE，不能按文件名当可反编译业务DLL；其余5个PE仅观察头部，未执行程序集。
 
 先发现本机可用且版本固定的AssetRipper/UnityPy/提取provider和GREA既有合同，只读复用、固定参数/输出schema，不重写Unity二进制生态。缺工具/TypeTree/元数据列条件，不自动安装。未知DLL/JS/Wasm从不执行。枚举Unity数据目录/AssetBundle/serializedFile及显式容器解包关系，保留GUID/fileID/PPtr、原名/路径、Prefab/Scene、Transform/材质/Shader/字体/模型/音频/配置。
 
