@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "dev11固定0223060实际continuation与export产772文件；native07在3/11处因NativeStaticSpineReference缺少嵌套实例对应而失败，PID63308已退出。dev10的165静态差异尚未获新原生证据关闭。beaver dev5单项两原生门通过，dev6修复signed64导出并由模块实际只读导出933文件；full11保存/冷重开/拥有导出已实际通过，939文件且原始partial保留。正式采用/视觉未完成。",
+      "description": "monkey dev12/fd78d14已实际续接/export/native08，11Prefab/668节点、missingScripts0、保存重开true，嵌套崩溃解决。全源验证仍fail：覆盖消费者对接差异、Spine保留身份缺口及53可见Spine未渲染；Player/runtime not_run。beaver11批次保存重开拥有导出已过，实际intake.plan待解析包身份/类型分类修复。正式采用/视觉未完成。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -423,7 +423,8 @@
         ".private/development/foodstreet-activity-bulk-20261104/critical-path-astc-resume.json"
       ],
       "evidence": [
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-03-toggle-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-03-toggle-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-08-dev12-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -456,7 +457,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey修嵌套实例及审计验收合同；beaver修requested/resolved包身份核验，按编译/序列化依赖生成101输入分类与有序采用批次，实跑intake.plan。原生准备门复用；源partial/视觉缺口仍阻塞最终采用。",
+      "nextAction": "monkey修全源回读消费者/持久身份并通过通用工具恢复可见Spine静态呈现，保未知业务边界；beaver修resolved包核验与自动类型批次。不能以retained-only或诊断减少代替完整静态/视觉验收。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
@@ -757,10 +758,11 @@
         "grea:T-zombie-bulk-static-prefabs"
       ],
       "owner": "monkey implementation; GREA acceptance",
-      "description": "双审A1/A2/A4在固定dev11源复核仍存在：原生诊断未完整传播，partial可汇总nativeStatic/runtime pass；imported被freeze早拒；Spine非渲染载体只保留数据，不能证明完整静态呈现。A3通用Creator分母路径同列修复，不恢复Cocos项目。",
+      "description": "dev12已实现审计主链修复并实际运行：全源诊断现在导致nativeStatic/presentation fail，Player/runtime正确not_run；发现coverage消费者把已有持久身份的disabled组件判missing及Spine独立sidecar身份缺口，仍未完成合同验收。A2真实冻结未执行，A3 Creator仅源测试；A4可见Spine未渲染，不能签完整恢复。",
       "releaseCondition": "源组件全分母处置与原生诊断贯通；生成/保留/静态呈现/Player独立，未知非pass；freeze接受合法imported同时保完整门；retained-only不关闭可见源缺图。受影响集成反例与真实候选验证通过，仍需视觉验收。",
       "sourceRefs": [
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-08-dev12-index.json"
       ],
       "workflowStatus": "blocked",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
