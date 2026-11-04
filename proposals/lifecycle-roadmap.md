@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "dev17/5e53289通用排序9/布局Widget6/文字119组已实际增量转换导出；native12在排序代理与Spine数据绑定处失败（PID97462退出，dataGuid f8496c01f09df4a9ea1a0129cf2ee16a），尚无新UI原生验收。dev15只读native10的903分母/retention pass证据保留，不能代替新组件族验收。119文字源Canvas/OS/raster参考待明确采集边界；正式采用未跑。",
+      "description": "dev18/1cad1fd实际补齐75Spine/18data候选，复用16PNG仅新解码2；native13仍在排序→Cocos静态Spine绑定失败，原因进一步定位Factory规格无效SPINE_NATIVE_DATA_ASSET_SPEC_INVALID（PID2301退出）。尚未完成新UI原生验收。旧native10/12证据保留，正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -429,7 +429,8 @@
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-09-dev13-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-10-dev14-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-11-dev15-index.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-12-dev17-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-12-dev17-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-13-dev18-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -462,7 +463,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey修排序与Spine数据/实例身份交接，复用16PNG和字体；提供同版本源文字参考采集路径，区分实际可观察证据与不可恢复历史状态，不能目标自证或无端无限阻塞。固定增量实际验证通过后继续完整源/视觉与beaver采用。",
+      "nextAction": "monkey以实际native13序列化输入复现排序→绑定adapter→Factory生产调用链，逐字段定位并补75组件/18data合同集成验证，避免再凭编译交版。固定刷新入口复用18PNG/字体，GREA再实跑；源文字参照/完整视觉门保留。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
