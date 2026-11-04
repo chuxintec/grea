@@ -71,6 +71,7 @@ def capabilities():
         dict(id="adoption.plan", state="implemented", effects="plan-output", engines=["unity-6000.6.2f1", "creator-3.8.8"], verification="python; large isolated Unity manifest preview"),
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
         dict(id="adoption.rollback", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native normal/failed transaction restore; later-edit rejection"),
+        dict(id='intake.plan/apply/rollback',state='requires_provider',provider='Unity 6000.6.2f1 for native phases',effects='create-only-reviewed-assets-and-guarded-owned-removal',verification='independent contract; exact before-state, explicit retained scripts, declared native fields; no existing adoption baseline override'),
         dict(id="unity.plan", state="implemented", effects="plan-output", verification="python; exact source and implementation identity"),
         dict(id="unity.ui.create", state="requires_provider", provider="Unity 6000.6.2f1 + uGUI/TMP Essentials + explicit font", effects="project-write", verification="native save/reopen/source audit"),
         dict(id="unity.prefab.inspect", state="requires_provider", provider="Unity 6000.6.2f1", effects="temporary-editor-helper", verification="native hierarchy/localID/component/importer readback"),
@@ -86,6 +87,11 @@ def capabilities():
         dict(id='qa.launch',state='requires_provider',provider='macOS GUI session and explicitly prepared runtime',effects='owned-player-and-controlled-test-data',verification='bounded owned GUI process; optional restrictive Documents denial; actual access and save-resume require consumer evidence'),
         dict(id='qa.collect',state='implemented',effects='owned-run-evidence-report',verification='exact project/build/profile/run identities; process and artifact evidence; no inferred gameplay or TCC verdict'),
         dict(id='qa.inspect-instance',state='implemented',effects='read-owned-run; fresh-output-only',verification='kernel birth/executable/argv/profile binding; no app launch or GUI input'),
+        dict(id='qa.virtual-prepare',state='implemented',effects='private-local-test-channel-config',verification='explicit development companion only; credentials excluded from reports; no launch'),
+        dict(id='qa.virtual-bind',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
+        dict(id='qa.virtual-input',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
+        dict(id='qa.virtual-status',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
+        dict(id='qa.virtual-stop',state='requires_provider',provider='macOS Unity6000.6.2f1/InputSystem1.20.1 explicit development companion',effects='owned-application-internal-virtual-device-only',verification='neutral real Player click/drag/scroll/idle/disconnect/stop verified; natural human parallel and formal consumer separate; no native fallback'),
         dict(id='qa.bind',state='requires_provider',provider='macOS native AX with existing permissions and a strongly owned running run',effects='attach-only-session-output',verification='exact PID/birth/Bundle/run/profile/window-owner; no fallback launch'),
         dict(id='qa.input',state='requires_provider',provider='hash-bound current native AX/PID session and existing permissions',effects='explicit guarded PID-directed input; opt-in owned-window system-cursor positioning; window-only observation/capture',verification='per-event identity/window guards; event posting is not atomic or business acceptance'),
         dict(id="image.inspect", state="requires_provider", provider="Pillow", effects="read", verification="exact RGBA/alpha fixture"),
@@ -100,7 +106,7 @@ def capabilities():
         dict(id="creator.build", state="not_supported", effects="none", verification="not_run")
     ]
     return dict(contract="beaver-capabilities/1", capabilities=capabilities, requiredProviders=[],
-                nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",
+                nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",additiveIntakeContract='beaver-additive-intake/5',additiveIntakeSpecVersions=[1,2,3,4,5],
                 productionOperationContract='beaver-production/3',productionTransactionContract='beaver-production-transaction/3',projectProfileContract='beaver-project/1',
                 limitations=["Provider readiness is not Editor connection or gameplay", "Native tests cover Unity 6000.6.2f1 only", "No source package parser; candidates are produced by monkey", "No global install, release, account/service/savegame writes", "Native receipts do not prove physical input, visual parity or game business acceptance"])
 
@@ -140,6 +146,15 @@ def parser():
     recover.add_argument("--transaction", required=True)
     recover.add_argument("--editor-path", required=True)
     recover.add_argument("--timeout", type=int, default=600)
+    intake = sub.add_parser('intake').add_subparsers(dest='action',required=True)
+    intake_plan = intake.add_parser('plan')
+    for option in ('candidate','target','spec','out'):intake_plan.add_argument('--'+option,required=True)
+    intake_apply = intake.add_parser('apply')
+    for option in ('plan','expected-plan','out','editor-path'):intake_apply.add_argument('--'+option,required=True)
+    intake_apply.add_argument('--timeout',type=int,default=600)
+    intake_rollback = intake.add_parser('rollback')
+    for option in ('transaction','expected-plan','editor-path'):intake_rollback.add_argument('--'+option,required=True)
+    intake_rollback.add_argument('--timeout',type=int,default=600)
     image = sub.add_parser("image").add_subparsers(dest="action", required=True)
     image_inspect = image.add_parser("inspect")
     image_inspect.add_argument("--input", required=True)
@@ -247,6 +262,15 @@ def parser():
             q.add_argument('--window',type=int)
     qi=qa.add_parser('input')
     for field in ('session','expected-session','spec','expected-spec','out'):qi.add_argument('--'+field,required=True)
+    qvp=qa.add_parser('virtual-prepare')
+    for field in ('spec','expected-spec','out'):qvp.add_argument('--'+field,required=True)
+    qvb=qa.add_parser('virtual-bind')
+    for field in ('project','build','profile','expected-owner','run','channel','expected-channel','out'):qvb.add_argument('--'+field,required=True)
+    for action in ('virtual-input','virtual-status','virtual-stop'):
+        qv=qa.add_parser(action)
+        for field in ('session','expected-session','out'):qv.add_argument('--'+field,required=True)
+        if action=='virtual-input':
+            for field in ('spec','expected-spec'):qv.add_argument('--'+field,required=True)
     payload=sub.add_parser('payload').add_subparsers(dest='action',required=True)
     payload_verify=payload.add_parser('verify')
     payload_verify.add_argument('--root',required=True)
@@ -374,6 +398,13 @@ def dispatch(a):
             return execute(a.plan, a.out, a.editor_path, a.timeout, a.expected_plan)
         from .adoption_native import recover
         return recover(a.transaction, a.editor_path, a.timeout)
+    if a.command=='intake':
+        if a.action=='plan':
+            from .intake import preview
+            return preview(a.candidate,a.target,a.spec,a.out)
+        from .intake_native import execute,recover
+        if a.action=='apply':return execute(a.plan,a.out,a.editor_path,a.expected_plan,a.timeout)
+        return recover(a.transaction,a.editor_path,a.expected_plan,a.timeout)
     if a.command == "image":
         from .images import inspect, compress
         return inspect(a.input) if a.action == "inspect" else compress(a.input, a.output, a.apply, a.expected_source)
@@ -462,6 +493,13 @@ def dispatch(a):
         from .player import run
         return run(a.manifest,a.out,a.duration,a.expected_manifest)
     if a.command=='qa':
+        if a.action.startswith('virtual-'):
+            from . import qa_virtual_pointer as virtual
+            if a.action=='virtual-prepare':return virtual.prepare(a.spec,a.expected_spec,a.out)
+            if a.action=='virtual-bind':return virtual.bind(a.project,a.build,a.profile,a.expected_owner,a.run,a.channel,a.expected_channel,a.out)
+            if a.action=='virtual-input':return virtual.input_event(a.session,a.expected_session,a.spec,a.expected_spec,a.out)
+            if a.action=='virtual-status':return virtual.status(a.session,a.expected_session,a.out)
+            if a.action=='virtual-stop':return virtual.stop(a.session,a.expected_session,a.out)
         from .qa_runtime import prepare,launch,collect
         from .qa_binding import inspect_instance,bind,input_event
         if a.action=='prepare':return prepare(a.spec,a.expected_spec,a.out)
@@ -501,15 +539,24 @@ def main(argv=None):
         if data.get('status')=='failed_or_needs_action':status='failed'
         if data.get('status') in ('execution_unknown_or_failed','execution_unknown_or_partial'):status='partial'
         if a.command=='qa' and data.get('status') in ('recovery_required','observed_running','stopped_by_budget','interrupted'):status='partial'
+        if a.command=='qa' and a.action.startswith('virtual-'):
+            if data.get('status')=='unknown':status='partial'
+            if data.get('status')=='not_supported':status='blocked'
+            data.update(inputMode='virtual-pointer',backend='unity-inputsystem-virtual-pointer/1')
         if a.command=='build-filter' and a.action=='plan' and data.get('execution',{}).get('status')=='blocked':status='blocked'
         base.update(status=status, data=data)
         result_path = data.get("report")
+        if a.command=='qa' and a.action.startswith('virtual-') and not result_path:
+            result_path=next((data[k] for k in ('receipt','session','channel') if isinstance(data.get(k),str)),None)
         if result_path and Path(result_path).is_file():
             base["artifacts"].append(dict(path=result_path, sha256=sha(Path(result_path).read_bytes())))
         if data.get("nativeReadback"):
             base["verification"]["native"] = data["nativeReadback"]
         if a.command == "adopt" and a.action == "apply":
             base["actualChanges"] = [dict(operation='adoption.apply',transaction=data['transaction'],counts=data.get('counts',{}))]
+        if a.command=='intake' and a.action in ('apply','rollback'):
+            base['actualChanges']=[dict(operation='intake.'+a.action,transaction=data.get('transaction',a.transaction if a.action=='rollback' else a.out),additions=data.get('additions'),restored=data.get('restored'))]
+            base['verification']['native']=data.get('native','rolled_back' if a.action=='rollback' else 'verified-declared-intake-subset')
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
         if a.command=='unity' and a.action=='recover':
@@ -531,7 +578,10 @@ def main(argv=None):
         if a.command=='player':
             base['verification']['player']='launched_and_exited' if not data.get('stoppedByBudget') else 'launched_and_stopped_by_budget'
         if a.command=='qa':
-            if a.action=='prepare':
+            if a.action.startswith('virtual-'):
+                base['verification']['virtualInput']=('application-device-consumed' if data.get('status') in ('verified','consumed') else 'not_verified') if a.action=='virtual-input' else ('device-cleanup-receipt' if a.action=='virtual-stop' else 'not_dispatched')
+                base['actualChanges']=[dict(operation='qa.'+a.action,inputMode='virtual-pointer',backend=data['backend'],receipt=data.get('receipt'),status=data.get('status'))]
+            elif a.action=='prepare':
                 base['actualChanges']=[dict(operation='qa.prepare',project=data.get('projectId'),build=data.get('buildId'),profile=data.get('profileId'),receipt=data.get('receipt'))]
             elif a.action=='launch':
                 base['actualChanges']=[dict(operation='qa.launch',runId=data.get('runId'),pid=data.get('pid'),processRecord=data.get('processRecord'))]
@@ -571,6 +621,15 @@ def main(argv=None):
         if getattr(a,'command',None)=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
             base['actualChanges']=[dict(status='inspect_recovery_receipt',report=str(Path(a.out,'recovery-result.json')),reason='Recovery can fail after partial writes; inspect the separate receipt')]
         if isinstance(error,BeaverError):
+            if getattr(a,'command',None)=='intake' and a.action in ('apply','rollback'):
+                stage=Path(a.out if a.action=='apply' else a.transaction)
+                if (stage/'journal.json').is_file():
+                    base['actualChanges']=[dict(status='inspect_intake_transaction',transaction=str(stage),reason='Failure may follow temporary helper or native writes; inspect the owned journal, never automatically replay')]
+                    base['artifacts'].append(dict(path=str(stage/'journal.json'),sha256=sha((stage/'journal.json').read_bytes())))
+                    if error.code=='INTAKE_NATIVE_FAILED':
+                        base['verification']['native']='failed; inspect partial transaction'
+                    elif any(stage.glob('native-*.json')) and error.code not in ('INTAKE_ROLLBACK_CONFLICT','INTAKE_RECOVERY_STATE','INTAKE_IMPLEMENTATION','INTAKE_PLAN_CHANGED'):
+                        base['verification']['native']='unknown for this call; inspect recorded transaction'
             if error.code=='READBACK_PROJECT_MODIFIED':
                 base['actualChanges']=[dict(status='inspect_source_guard',guard=error.location,reason='Read-only guard failed; inspect witnessed paths and helper before retry')]
             location=Path(error.location)

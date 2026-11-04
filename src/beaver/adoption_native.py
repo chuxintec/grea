@@ -53,7 +53,7 @@ def job_spec(stage,plan,journal,mode,budget):
     changed={p for op in plan['operations'] for p in (op['source'],op['target'])}
     watch=sorted(p for p in plan['targetFiles'] if p.endswith(('.prefab','.unity')) and p not in changed)[:128]
     sdk_migration=plan.get('managedAssemblyMigration')
-    return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],operations=operations,watch=watch,codeRestored=journal.get('codeRestored',False),sdkMigrationEnabled=sdk_migration is not None,sdkMigration=sdk_migration,
+    return dict(targetRoot=plan['targetRoot'],stage=str(stage),mode=mode,planSha256=journal['planSha256'],operations=operations,watch=watch,intakeNewScripts=plan.get('intakeNewScripts',[]),intakeEngineObjects=plan.get('intakeEngineObjects',[]),intakeRetainedAssemblies=plan.get('intakeRetainedAssemblies',[]),watcherBeforeSha256=journal.get('watcherBeforeSha256'),watcherCompiledSha256=journal.get('watcherCompiledSha256'),codeRestored=journal.get('codeRestored',False),sdkMigrationEnabled=sdk_migration is not None,sdkMigration=sdk_migration,
                 budgetSeconds=budget,deadlineUtc=(datetime.now(timezone.utc)+timedelta(seconds=budget)).isoformat())
 
 

@@ -1,6 +1,6 @@
 # CLI contract v1
 
-当前固定候选见 [PLAN.md](PLAN.md)（正式基线 0.5.0），沿用 `beaver-result/1`。除保留原始输出和退出码的 `tool <id>` 子命令外，业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
+当前版本范围见 [RELEASE-v0.6.0.md](RELEASE-v0.6.0.md)，沿用 `beaver-result/1`。除保留原始输出和退出码的 `tool <id>` 子命令外，业务命令 stdout 为单个 JSON，包含 operationId、producer/version/implementationSha256、status、data、artifacts、actualChanges、diagnostics、limitations、verification。
 退出 0=ok；1=partial；3=blocked/not_run（包括无效参数与前置条件未满足）；2=failed（执行/读回失败）。帮助为 argparse 文本；没有任意 shell 透传。
 
 `actualChanges` 是数组，每项为**非空路径字符串或对象摘要**，消费者须保留类型、顺序及原值。`batch/production apply` 通常返回已变资源相对路径字符串，`unity apply` 沿用原生变化记录；工程绑定、迁移、采用/恢复和失败检查点可返回操作/数量/身份或待核写入对象。对象内部字段由操作定义，不能将整个数组限定为对象，也不能把字符串强转为对象后丢失原值；数字、布尔、null 和嵌套数组不是合法变更项。对应 JSON Schema 项合同为 `{"oneOf":[{"type":"string","minLength":1},{"type":"object"}]}`。这是既有固定 producer 的合同澄清，不改变其输出或身份。
@@ -16,6 +16,9 @@
 | `adopt plan` | `--candidate --target --out`，首次 `--baseline`，可选 `--lineage` | 输出独立计划；目标/候选只读 |
 | `adopt apply` | `--plan --expected-plan --out --editor-path`，可选 `--timeout` | 原生应用、独立重开、状态记录 |
 | `adopt rollback` | `--transaction --editor-path`，可选 `--timeout` | 仅恢复事务仍拥有的改动；后续变更拒绝 |
+| `intake plan` | `--candidate --target --spec --out` | 独立只增合同；核精确当前前态与外部脚本，不伪造旧baseline |
+| `intake apply` | `--plan --expected-plan --out --editor-path`；可选`--timeout` | 仅新资产，原生导入及独立无窗口重开，旧代码/meta不变 |
+| `intake rollback` | `--transaction --expected-plan --editor-path`；可选`--timeout` | 仅本事务新增且后态未变的资源/空目录；任何后续修改拒绝 |
 | `image inspect` | `--input` | PNG/静态图片尺寸、alpha、RGBA 与文件 hash |
 | `image compress` | `--input --output`；执行另加 `--apply --expected-source` | 默认预览；PNG 无损重压缩，输出新文件 |
 | `config validate` | `--schema --input` | 严格标量 JSON、重复键/ID、范围与字段检查 |
@@ -168,3 +171,20 @@ Managed SDK preflight for Unity adoption is documented in [ADOPTION-ASSEMBLIES.m
 Explicit `adopt plan --sdk-migration FILE --expected-sdk-migration SHA256` uses the existing immutable adoption transaction. See [SDK-MIGRATION.md](SDK-MIGRATION.md) for complete byte/MVID/native MonoScript/role/reference requirements, rollback, and unsupported cases. The default collision guard above remains unchanged; only this explicit policy permits the supported canonical migration.
 
 `qa inspect-instance`, `qa bind`, and `qa input` are documented in [QA-BINDING.md](QA-BINDING.md). They require a strongly captured owned launch, explicit run and owner hash, and existing host AX permissions. Binding/input never launches an App or falls back to name/BundleID/global input. Kernel guards plus PID-directed posting are not atomic and do not establish business acceptance. Fixed/runtime and consumer validation status is recorded in PLAN.
+
+Additive intake has separate `beaver-additive-intake/1` (spec1), `beaver-additive-intake/2` (spec2) and `beaver-additive-intake/3` (spec3) contracts and closed [specification](ADDITIVE-INTAKE.md). It does not relax `beaver-adopt/1` or replace the exact prior baseline required by that operation.
+
+Fixed26 newScripts may use five native phases (preflight, code staging, independent code-check, asset import, independent verify). Set the outer apply budget to at least 5*inner+310 seconds and rollback to at least 2*inner+160; if an 1800-second outer cap applies, inner<=280 is conservative. No-script operations retain their smaller actual phase count but cannot relax the caller budget for a declared newScripts plan. Old transactions require the exact original implementation.
+
+Fixed27 keeps contract3/spec1,2,3 and the same phase budgets. Successful newScripts intake also reports watcherPolicy=declared-new-script-resolution/1, watchersChecked and watcherResolutions. These are bounded static compiler-reference observations; source partial/exit1 and old transaction runtime requirements remain unchanged.
+
+Spec4/`beaver-additive-intake/4` adds explicit `engineObjects` identities (GUID/localID/type/assembly/name/native asset path) with native preflight, importer boundary and independent cold/rollback checks. It inherits spec3/newScripts/Character and the existing phase count/budgets; argv is unchanged. Raw serialized built-in references must be exact declared PPtrs with type0; no GUID-domain exemption or importer-meta engine references. Plan/apply add engineObjects count and apply engineObjectPolicy=declared-native-builtins/1. This verifies declared target-engine identities, not original-source mesh/Shader semantic or visual equivalence; source partial remains. Old plans/transactions require their original implementation.
+
+
+Spec5 additive intake extends spec4 with explicit retained runtime assembly identities (`retainedAssemblies` rows: target/guid/sha256/metaSha256/name), strict schema-only new C# sources and native compilation-scope checks. It never imports or rewrites asmdef/asmref files. See ADDITIVE-INTAKE.md and schemas/additive-intake-5.schema.json. Argv and native phase budgets remain unchanged; specs1–4 keep their prior boundaries.
+
+
+Physical takeover diagnostic companion update adds bounded `takeoverDiagnostic` only to terminal lifecycle evidence (`beaver-physical-takeover-diagnostic/1`) and forces a fresh OS foreground query in native input callbacks. Public QA config, commands, receipts, argv and budgets are unchanged. Existing Players keep their compiled companion; consumer must build a fresh QA Player to receive the diagnostic update. Historical events without device/control evidence remain unknown.
+
+
+Virtual pointer Mouse ownership update retains existing QA APIs/config/budgets. Only explicitly unpressed, unlocked, primary-display mouse motion with an event-supplied position outside the unchanged target viewport is ignored. Partial events without position, button/scroll changes, held drags, keyboard/other devices and unknown state preserve takeover stopping. Lifecycle ownership evidence explains the decision; a new Player companion build is required.

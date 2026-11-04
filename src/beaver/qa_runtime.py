@@ -73,9 +73,10 @@ def _load_spec(spec_path, expected_spec_sha256):
             fail("QA_CONFIG_INPUT", key, "Expected explicit path and SHA256")
         _hash(row["sha256"], f"configInputs.{key}.sha256")
     for env_name, binding in doc["environmentBindings"].items():
+        virtual_config = env_name=='BEAVER_VIRTUAL_POINTER_CONFIG' and isinstance(binding,dict) and binding.get('kind')=='config'
         if (not isinstance(env_name, str) or not ENV_NAME.fullmatch(env_name) or env_name in CONTROL_ENV
                 or env_name in {"HOME", "PATH", "TMPDIR", "LANG"}
-                or env_name.startswith(("LC_", "DYLD_", "LD_", "BEAVER_", "MONKEY_"))):
+                or env_name.startswith(("LC_", "DYLD_", "LD_", "BEAVER_", "MONKEY_")) and not virtual_config):
             fail("QA_ENV_NAME", str(env_name), "Unsafe or reserved environment binding")
         if not isinstance(binding, dict) or set(binding) != {"kind", "id"} or binding["kind"] not in ("config", "profile"):
             fail("QA_ENV_BINDING", env_name, "Expected a config/profile binding with declared id")
@@ -89,7 +90,8 @@ def _load_spec(spec_path, expected_spec_sha256):
     if not isinstance(args, list) or len(args) > 32:
         fail("QA_ARGUMENTS", "arguments", "Expected at most 32 explicitly approved literal arguments")
     for token in args:
-        if not isinstance(token, str) or not (SAFE_FLAGS.fullmatch(token) or SAFE_VALUES.fullmatch(token)) or any(ord(c) < 32 for c in token) or any(c in token for c in "$`\\;|&<>\n\r"):
+        virtual_batch = token=='-batchmode' and doc['environmentBindings'].get('BEAVER_VIRTUAL_POINTER_CONFIG',{}).get('kind')=='config'
+        if not isinstance(token, str) or not (virtual_batch or SAFE_FLAGS.fullmatch(token) or SAFE_VALUES.fullmatch(token)) or any(ord(c) < 32 for c in token) or any(c in token for c in "$`\\;|&<>\n\r"):
             fail("QA_ARGUMENTS", repr(token), "Argument is outside the closed literal allowlist")
     return path, doc, digest
 

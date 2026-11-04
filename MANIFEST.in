@@ -1,7 +1,38 @@
 include LICENSE README.md pyproject.toml
-recursive-include docs *.md *.json
+include docs/ADDITIVE-INTAKE.md
+include docs/ADOPTION-ASSEMBLIES.md
+include docs/ADOPTION-DEPENDENCIES.md
+include docs/BUILD-FILTER.md
+include docs/BUILD-POLICY.md
+include docs/CLI-CONTRACT.md
+include docs/CONFIGURATION-v3.md
+include docs/CSHARP-MAINTENANCE.md
+include docs/DEBUG-SESSIONS.md
+include docs/DIAGNOSTICS.md
+include docs/EMPTY-FOLDERS.md
+include docs/FOLDER-MOVES.md
+include docs/LOADING-KEYS.md
+include docs/MONKEY-THIRD-PARTY-NOTICES.md
+include docs/MOVE-CHECKPOINTS.md
+include docs/NATIVE-READBACK.md
+include docs/NATIVE-UI.md
+include docs/PROVENANCE.md
+include docs/QA-BINDING.md
+include docs/QA-RUNTIME.md
+include docs/REFERENCE-GRAPH.md
+include docs/RELEASE-v0.6.0.md
+include docs/RESOURCE-PRODUCTION.md
+include docs/RETIREMENT.md
+include docs/SCENE-MOVES.md
+include docs/SDK-MIGRATION.md
+include docs/SERVER-GO.md
+include docs/STRUCTURE-AUDIT.md
+include docs/STRUCTURE-CONSUMERS.md
+include docs/UI-INSPECTION.md
+include docs/VIRTUAL-POINTER.md
+recursive-include docs/schemas *.json
 recursive-include tests *.py
-recursive-include src/beaver/targets *.cs *.template
+recursive-include src/beaver/targets *.cs *.m *.md *.template
 recursive-include src/beaver/licenses *.txt
 recursive-include src/beaver/server_templates *
 prune .private
