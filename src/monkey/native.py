@@ -12,6 +12,12 @@ from .preflight import validate_progress
 from .layout.standard import find_analysis
 
 
+def recover_execution(request_path,expected_request_sha256,out):
+    """Create a read-only, hash-bound recovery receipt for a stale native journal."""
+    from .native_execution_recovery import recover_execution as recover
+    return recover(request_path,expected_request_sha256,out)
+
+
 def now():return datetime.now(timezone.utc)
 def stamp(value):return value.isoformat().replace('+00:00','Z')
 def utc(value):
@@ -130,22 +136,80 @@ def native_import(candidate,output,editor,expected_manifest,budget_seconds,deadl
             try:process.wait(timeout=min(30,max(0.01,(end-now()).total_seconds())))
             except subprocess.TimeoutExpired:pass
         result.update(processExited=process is None or process.poll() is not None,processExitCode=process.poll() if process else None)
+    except Exception as error:
+        result.update(status='partial',reason='NATIVE_HOST_EXCEPTION',error=f'{type(error).__name__}: {error}')
+        if process is not None and process.poll() is None:
+            process.terminate()
+            try:process.wait(timeout=min(30,max(0.01,(end-now()).total_seconds())))
+            except subprocess.TimeoutExpired:pass
+        result.update(processExited=process is None or process.poll() is not None,
+                      processExitCode=process.poll() if process else None)
     finally:
         for signum,handler in old_handlers.items():signal.signal(signum,handler)
-    progress=find_analysis(project,'native-progress.json')
-    if progress.exists():
-        try:result['nativeProgress']=validate_progress(load(read(progress,max_bytes=65536)),plan_hash)
-        except (ValueError,OSError) as error:result.update(reason='NATIVE_PROGRESS_INVALID',error=str(error))
-    if not result['processExited']:
-        result.update(reason='NATIVE_EXIT_PENDING',requiresAttention=True)
-    elif not stopped and result.get('processExitCode')==0 and result.get('nativeProgress',{}).get('status') in ('completed','completed_partial'):
-        try:
+    phase='native-progress';control_exception=None;finalization_exception=None
+    try:
+        progress=find_analysis(project,'native-progress.json')
+        if progress.exists():
+            try:result['nativeProgress']=validate_progress(load(read(progress,max_bytes=65536)),plan_hash)
+            except (ValueError,OSError) as error:result.update(reason='NATIVE_PROGRESS_INVALID',error=str(error))
+        if not result['processExited']:
+            result.update(reason='NATIVE_EXIT_PENDING',requiresAttention=True)
+        elif not stopped and result.get('processExitCode')==0 and result.get('nativeProgress',{}).get('status') in ('completed','completed_partial'):
+            phase='verification'
             checked=unity.verify(project,out/'Verification','editor')
             result.update(verification=dict(editor=checked.get('editorValidation'),diagnostics=len(checked['diagnostics'])))
             if not checked['diagnostics'] and result['nativeProgress']['status']=='completed':result['status']='candidate'
             else:result['reason']='NATIVE_ACCEPTANCE_PARTIAL'
-        except (ValueError,OSError,KeyError,TypeError) as error:result.update(reason='NATIVE_VERIFICATION_FAILED',error=str(error))
-    else:result.setdefault('reason','NATIVE_STOPPED' if stopped else 'NATIVE_IMPORT_FAILED')
-    result.update(endedUtc=stamp(now()),redactedLog=redact_log(out/'import.log'))
-    write_json(out/'execution-result.json',result)
+        else:result.setdefault('reason','NATIVE_STOPPED' if stopped else 'NATIVE_IMPORT_FAILED')
+    except Exception as error:
+        result.update(status='partial',reason='NATIVE_VERIFICATION_EXCEPTION' if phase=='verification' else 'NATIVE_POST_IMPORT_EXCEPTION',
+                      error=f'{type(error).__name__}: {error}',verification=dict(status='failed' if phase=='verification' else 'not_run',
+                      exceptionType=type(error).__name__) if phase=='verification' else result.get('verification'))
+        if process is not None and process.poll() is None:
+            process.terminate()
+            try:process.wait(timeout=min(30,max(0.01,(end-now()).total_seconds())))
+            except subprocess.TimeoutExpired:pass
+        result.update(processExited=process is None or process.poll() is not None,
+                      processExitCode=process.poll() if process else None)
+    except BaseException as error:
+        # Preserve control-flow exceptions, but persist the best observed child
+        # exit and a structured partial receipt before re-raising below.
+        control_exception=error
+        result.update(status='partial',reason='NATIVE_HOST_INTERRUPTED',
+                      error=f'{type(error).__name__}: {error}',
+                      verification=dict(status='interrupted' if phase=='verification' else 'not_run',
+                                        exceptionType=type(error).__name__) if phase=='verification' else result.get('verification'))
+        if process is not None and process.poll() is None:
+            process.terminate()
+            try:process.wait(timeout=min(30,max(0.01,(end-now()).total_seconds())))
+            except subprocess.TimeoutExpired:pass
+        result.update(processExited=process is None or process.poll() is not None,
+                      processExitCode=process.poll() if process else None)
+    finally:
+        # This post-import finalizer runs for ordinary verifier exceptions and
+        # BaseException control flow. It records only the actual owned process
+        # status; it never converts an unknown exit code into success.
+        if process is not None:
+            actual_code=process.poll()
+            result.update(processExited=actual_code is not None,processExitCode=actual_code)
+        try:result['redactedLog']=redact_log(out/'import.log')
+        except Exception as error:
+            result.update(status='partial',reason=result.get('reason') or 'NATIVE_FINALIZATION_EXCEPTION',
+                          redactionError=f'{type(error).__name__}: {error}')
+        result.update(endedUtc=stamp(now()))
+        result_path=out/'execution-result.json';journal_path=out/'execution-journal.json'
+        try:
+            write_json(result_path,result)
+            if journal_path.exists():
+                from .io import encoded
+                final_journal=dict(result,journalState='finalized',executionResultSha256=sha(encoded(result)))
+                write_json(journal_path,final_journal)
+        except Exception as error:
+            finalization_exception=error
+            result.update(status='partial',journalFinalized=False,
+                          journalFinalizationError=f'{type(error).__name__}: {error}')
+            try:write_json(result_path,result)
+            except Exception:pass
+    if control_exception is not None:raise control_exception
+    if finalization_exception is not None:raise finalization_exception
     return dict(result,report=str(out/'execution-result.json'))

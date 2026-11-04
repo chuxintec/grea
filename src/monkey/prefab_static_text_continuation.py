@@ -667,8 +667,23 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
             issue("STATIC_TEXT_GROUP_ID_INVALID", group.get("sourceLabelId"), "Group identities are incomplete")
             continue
         by_prefab.setdefault(prefab_id, []).append(group)
+    source_prefab_rows = plan.get("sourcePrefabs")
+    if not isinstance(source_prefab_rows, list):
+        source_prefab_rows = []
+    source_prefab_ids = []
+    for row in source_prefab_rows:
+        if not isinstance(row, dict) or not isinstance(row.get("sourceId"), str) or not row["sourceId"]:
+            issue("STATIC_TEXT_SOURCE_PREFAB_ID_INVALID", message="Plan sourcePrefabs contains a malformed identity")
+            continue
+        source_prefab_ids.append(row["sourceId"])
+    if len(source_prefab_ids) != len(set(source_prefab_ids)):
+        issue("STATIC_TEXT_SOURCE_PREFAB_ID_DUPLICATE", message="Plan sourcePrefabs contains duplicate IDs")
+    missing_source_prefabs = sorted(set(by_prefab) - set(source_prefab_ids))
+    for prefab_id in missing_source_prefabs:
+        issue("STATIC_TEXT_GROUP_PREFAB_NOT_IN_SOURCE_PREFABS", by_prefab[prefab_id][0].get("sourceLabelId"),
+              "Text group prefab is absent from the plan sourcePrefabs inventory")
     expected_files = {}
-    for prefab_id in sorted(by_prefab):
+    for prefab_id in sorted(set(source_prefab_ids) | set(by_prefab)):
         relative = "Analysis/Readback/TextMetrics/" + _sha(prefab_id.encode("utf-8")) + ".json"
         expected_files[relative] = prefab_id
     descriptors = main_readback.get("staticTextReadbackFiles")
@@ -698,39 +713,45 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
               message="Text sidecar directory contains missing or unbound JSON files")
     proofs = []
     for relative, prefab_id in expected_files.items():
-        groups_for_prefab = by_prefab[prefab_id]
+        groups_for_prefab = by_prefab.get(prefab_id, [])
+        report_source_id = groups_for_prefab[0].get("sourceLabelId") if groups_for_prefab else prefab_id
         descriptor = descriptor_by_path.get(relative)
         if not isinstance(descriptor, dict):
-            issue("STATIC_TEXT_READBACK_SIDECAR_MISSING", groups_for_prefab[0].get("sourceLabelId"),
+            issue("STATIC_TEXT_READBACK_SIDECAR_MISSING", report_source_id,
                   "No main-readback-bound text sidecar exists for this prefab", relative)
             continue
         expected_sha = descriptor.get("sha256")
         if not isinstance(expected_sha, str) or not _SHA256.fullmatch(expected_sha):
-            issue("STATIC_TEXT_READBACK_SIDECAR_PIN_INVALID", groups_for_prefab[0].get("sourceLabelId"),
+            issue("STATIC_TEXT_READBACK_SIDECAR_PIN_INVALID", report_source_id,
                   "Sidecar descriptor does not contain a lowercase SHA-256", relative)
             continue
         try:
             sidecar = io.inside(root, relative)
             raw = io.read(sidecar, max_bytes=16 * 1024 * 1024)
             if _sha(raw) != expected_sha:
-                issue("STATIC_TEXT_READBACK_SIDECAR_BYTES_CHANGED", groups_for_prefab[0].get("sourceLabelId"),
+                issue("STATIC_TEXT_READBACK_SIDECAR_BYTES_CHANGED", report_source_id,
                       "Sidecar bytes differ from the main readback pin", relative)
                 continue
             report = io.load(raw, max_nodes=500_000)
         except Exception as error:
-            issue("STATIC_TEXT_READBACK_SIDECAR_UNREADABLE", groups_for_prefab[0].get("sourceLabelId"), str(error), relative)
+            issue("STATIC_TEXT_READBACK_SIDECAR_UNREADABLE", report_source_id, str(error), relative)
             continue
         if (not isinstance(report, dict) or report.get("contract") != "monkey-static-text-metrics-readback/1" or
                 report.get("phase") != "saved-prefab-reopen" or report.get("sourcePrefabId") != prefab_id or
                 report.get("sourceManifestSha256") != plan.get("sourceManifestSha256") or
                 report.get("continuationJsonSha256") != config_sha):
-            issue("STATIC_TEXT_READBACK_ENVELOPE_MISMATCH", groups_for_prefab[0].get("sourceLabelId"),
+            issue("STATIC_TEXT_READBACK_ENVELOPE_MISMATCH", report_source_id,
                   "Sidecar contract, prefab, manifest, or configuration pin differs", relative)
             continue
         actual_rows = report.get("components")
         if not isinstance(actual_rows, list):
-            issue("STATIC_TEXT_READBACK_COMPONENTS_MISSING", groups_for_prefab[0].get("sourceLabelId"),
+            issue("STATIC_TEXT_READBACK_COMPONENTS_MISSING", report_source_id,
                   "Sidecar has no component rows", relative)
+            continue
+        if not groups_for_prefab:
+            if actual_rows or report.get("status") != "no-groups-for-prefab":
+                issue("STATIC_TEXT_EMPTY_PREFAB_SIDECAR_NOT_EMPTY", prefab_id,
+                      "Source prefab has no planned text groups, so its bound sidecar must be explicitly empty", relative)
             continue
         by_label = {}
         for row in actual_rows:
@@ -738,7 +759,7 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                 by_label.setdefault(row["sourceLabelId"], []).append(row)
         expected_ids = {group["sourceLabelId"] for group in groups_for_prefab}
         if set(by_label) != expected_ids:
-            issue("STATIC_TEXT_READBACK_COMPONENT_SET_MISMATCH", groups_for_prefab[0].get("sourceLabelId"),
+            issue("STATIC_TEXT_READBACK_COMPONENT_SET_MISMATCH", report_source_id,
                   "Saved-prefab rows do not exactly cover the source Label IDs", relative)
         for group in groups_for_prefab:
             sid = group["sourceLabelId"]
@@ -762,7 +783,9 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                 (2 if group.get("sourceItalic") else 0) |
                 (4 if group.get("sourceUnderline") else 0))
             expected_overflow = 2 if group.get("sourceOverflow") == 1 else 0
-            expected_wrapping = 0 if group.get("sourceWrap") is True and group.get("sourceOverflow") != 0 else 1
+            # TMP's saved enum is NoWrap=0, Normal=1. Creator's TTF assembler
+            # disables wrapping for NONE overflow even if enableWrapText=true.
+            expected_wrapping = 1 if group.get("sourceWrap") is True and group.get("sourceOverflow") != 0 else 0
             def file_id_valid(value):
                 return type(value) is int and value != 0 and -(1 << 63) <= value < (1 << 63)
             configured=row.get('configuredFontAssets')
@@ -770,6 +793,9 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                 and all(isinstance(item,dict)and item.get('assetPath')==path
                     and isinstance(item.get('guid'),str)and _GUID.fullmatch(item['guid'])
                     and file_id_valid(item.get('localFileId'))for item,path in zip(configured,expected_paths)))
+            configured_primary_identity=(configured_valid and bool(configured) and
+                configured[0].get('assetPath')==actual_path and configured[0].get('guid')==row.get('fontGuid') and
+                configured[0].get('localFileId')==row.get('fontLocalFileId'))
             expected_line_spacing = None
             point_size = row.get("nativeFontPointSize")
             face_line_height = row.get("nativeFaceLineHeight")
@@ -785,7 +811,9 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                  float(row["nativeFontSizeMin"]) <= float(font_size) <= float(row["nativeFontSizeMax"])) and
                 (auto_size_expected or abs(float(font_size) - float(group["sourceFontSize"])) <= 0.01))
             checks = {
-                "sourceOutlineIdentity": row.get("sourceOutlineId") == group["sourceOutlineId"],
+                "sourceOutlineIdentity": (
+                    row.get("sourceOutlineId") in (None, "") if group.get("sourceOutlineId") is None
+                    else row.get("sourceOutlineId") == group.get("sourceOutlineId")),
                 "sourceNodeIdentity": row.get("sourceNodeId") == group["sourceNodeId"],
                 "persistentLabelIdentity": row.get("persistentLabel") is True and isinstance(row.get("labelGuid"), str) and bool(_GUID.fullmatch(row["labelGuid"])) and file_id_valid(row.get("labelLocalFileId")),
                 "sourceText": row.get("sourceTextMatches") is True and row.get("nativeText") == group.get("sourceText") and row.get("sourceTextSha256") == group.get("sourceTextSha256") and row.get("nativeTextSha256") == group.get("sourceTextSha256"),
@@ -794,7 +822,8 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                 "autosizing": row.get("autoSizingConfigVerified") is True and font_size_bounds_ok and
                     (not auto_size_expected or abs(float(row["nativeFontSizeMin"]) - float(group["layoutPolicy"]["targetAutoSizeMin"])) <= 0.001 and
                      abs(float(row["nativeFontSizeMax"]) - float(group["layoutPolicy"]["targetAutoSizeMax"])) <= 0.001),
-                "primaryFontBinding": row.get("fontBindingVerified") is True and isinstance(actual_path, str) and actual_path == expected_primary_path,
+                "primaryFontBinding": isinstance(actual_path, str) and actual_path == expected_primary_path and (
+                    row.get("fontBindingVerified") is True if group.get("fontKind") == "system-font" else configured_primary_identity),
                 "persistentFontIdentity": isinstance(row.get("fontGuid"), str) and bool(_GUID.fullmatch(row["fontGuid"])) and
                     file_id_valid(row.get("fontLocalFileId")),
                 "glyphFallbackChain": row.get("glyphFontChainVerified") is True and configured_valid and bool(glyph_rows) and

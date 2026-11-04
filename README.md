@@ -1,6 +1,6 @@
 # monkey
 
-当前开发统一在 **0.8.0.dev19** 单线，包含 Unity 来源恢复、Cocos 静态 Prefab、
+当前开发统一在 **0.8.0.dev20** 单线，包含 Unity 来源恢复、Cocos 静态 Prefab、
 Toggle 空配置桥接、显式 CoreText 静态回退字体及严格静态引用恢复。
 monkey 由 GREA 统一调度和分发；旧 0.7.0 发布与固定消费者只作兼容保留，
 不再继续 0.7 开发。字体入口见 [系统字体工具](docs/SOURCE-SYSTEM-FONTS.md)，
@@ -55,3 +55,5 @@ Windows 使用环境目录下的 `Scripts/python.exe` 和 `Scripts/monkey.exe`�
 ## 许可与来源
 
 monkey 自有代码采用 [MIT License](LICENSE)。第三方代码与必要版权声明见 [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES.md)。游戏原包、素材、引擎及第三方工具不属于本项目的开源授权范围，不随源码发行或安装包提供。
+
+旧原生事务的独立回执与只读复验入口见 [Native execution recovery](docs/NATIVE-EXECUTION-RECOVERY.md)。恢复回执不改写原日志，也不代表候选验收通过。

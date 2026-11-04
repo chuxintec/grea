@@ -1427,6 +1427,19 @@ class StaticSortReadbackTests(unittest.TestCase):
         binding, errors = _load_spine_binding_contract(plan, plan["staticSpineRenderingJson"].encode())
         self.assertEqual([], errors)
         self.assertTrue(binding["components"][source_id]["targetFieldBindings"])
+        defaults_stage = copy.deepcopy(rendering)
+        defaults_stage["moduleStage"] = "spine_static_defaults_rendering"
+        defaults_plan = copy.deepcopy(plan)
+        defaults_plan["staticSpineRenderingJson"] = json.dumps(defaults_stage, ensure_ascii=False, indent=2)
+        _, defaults_errors = _load_spine_binding_contract(
+            defaults_plan, defaults_plan["staticSpineRenderingJson"].encode())
+        self.assertEqual([], defaults_errors)
+        unsupported_stage = copy.deepcopy(defaults_stage)
+        unsupported_stage["moduleStage"] = "spine_static_defaults_rendering_untrusted"
+        unsupported_plan = copy.deepcopy(plan)
+        unsupported_plan["staticSpineRenderingJson"] = json.dumps(unsupported_stage, ensure_ascii=False, indent=2)
+        self.assertTrue(any("module stage differs" in error for error in _load_spine_binding_contract(
+            unsupported_plan, unsupported_plan["staticSpineRenderingJson"].encode())[1]))
         without_defaults = copy.deepcopy(rendering)
         without_defaults.pop("sourceComponentDefaults")
         wrong_plan = copy.deepcopy(plan)
@@ -2052,3 +2065,68 @@ class StaticSortReadbackTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_null_mask_contract_requires_source_denominator_and_never_drops_required_masks():
+    plan, _ = fixture()
+    spec = plan["staticSortQueue"][0]
+    row = {"sourceMaskIdentities": [], "sourceMaskIdentitiesVerified": True}
+    plan["staticMasks"] = None
+    assert _check_source_mask_identities(spec, row, "persistent", plan) == []
+    plan["components"] = [{"type": "cc.Mask", "sourceId": "mask-required", "node": "icon"}]
+    errors = _check_source_mask_identities(spec, row, "persistent", plan)
+    assert len(errors) == 1 and "required source masks: mask-required" in errors[0]
+    plan["components"] = []
+    spec["masks"] = [{"sourceId": "queue-mask"}]
+    assert "required source masks: queue-mask" in _check_source_mask_identities(spec, row, "loaded", plan)[0]
+    spec["masks"] = []
+    del plan["components"]
+    assert "requirement denominator is absent" in _check_source_mask_identities(spec, row, "loaded", plan)[0]
+
+
+def test_null_mask_contract_cannot_accept_extra_native_masks_or_malformed_contract():
+    plan, _ = fixture()
+    spec = plan["staticSortQueue"][0]
+    plan["staticMasks"] = None
+    row = {"sourceMaskIdentities": [{"sourceId": "unplanned-mask"}], "sourceMaskIdentitiesVerified": True}
+    assert any("denominator" in error for error in _check_source_mask_identities(spec, row, "persistent", plan))
+    plan["staticMasks"] = []
+    assert "contract is malformed" in _check_source_mask_identities(spec, row, "loaded", plan)[0]
+
+
+def test_explicit_mask_contract_cannot_be_empty_or_incomplete_when_source_masks_are_scoped():
+    plan, _ = fixture()
+    spec = plan["staticSortQueue"][0]
+    row = {"sourceMaskIdentities": [], "sourceMaskIdentitiesVerified": True}
+    mask = {"type": "cc.Mask", "sourceId": "mask-required", "node": "icon"}
+    plan["components"] = [mask]
+    plan["staticMasks"] = {"masks": []}
+    errors = _check_source_mask_identities(spec, row, "persistent", plan)
+    assert any("contract omits required source IDs: mask-required" in error for error in errors)
+
+    plan["components"] = []
+    spec["masks"] = [{"sourceId": "queue-mask", "node": "icon"}]
+    errors = _check_source_mask_identities(spec, row, "persistent", plan)
+    assert any("contract omits required source IDs: queue-mask" in error for error in errors)
+
+    # An explicit out-of-scope contract row is not incorrectly required to
+    # appear in this Prefab's identity readback.
+    spec["masks"] = []
+    plan["staticMasks"] = {"masks": [{"sourceId": "other-mask", "node": "elsewhere"}]}
+    assert _check_source_mask_identities(spec, row, "persistent", plan) == []
+
+
+def test_mask_component_and_queue_reference_share_one_required_source_id():
+    plan, _ = fixture()
+    spec = plan["staticSortQueue"][0]
+    spec["masks"] = [{"sourceId": "mask-shared"}]
+    plan["components"] = [{"type": "cc.Mask", "sourceId": "mask-shared", "node": "icon"}]
+    plan["staticMasks"] = {"masks": [{"sourceId": "mask-shared", "node": "icon"}]}
+    row = {"sourceMaskIdentities": [{"sourceId": "mask-shared"}],
+           "sourceMaskIdentitiesVerified": True}
+    errors = _check_source_mask_identities(spec, row, "persistent", plan)
+    assert not any("duplicate IDs" in error for error in errors)
+
+    spec["masks"].append({"sourceId": "mask-shared"})
+    errors = _check_source_mask_identities(spec, row, "persistent", plan)
+    assert any("queue source Mask specification contains duplicate IDs" in error for error in errors)

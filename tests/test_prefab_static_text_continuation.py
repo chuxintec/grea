@@ -97,6 +97,7 @@ def fixture_documents(*, font_kind="system-font", overflow=2, wrap=False):
     plan = {
         "projectLayout": "monkey-project/2.0.0", "sourceProfile": text_module.SOURCE_PROFILE,
         "sourceManifestSha256": "a" * 64, "sourceIrSha256": "b" * 64,
+        "sourcePrefabs": [{"sourceId": "fixture:root"}],
         "components": [plan_label, outline],
         "nodes": [{"sourceId": NODE_ID, "size": [200, 80], "anchor": [0.5, 0.5],
                    "color": [255, 255, 255, 255], "position": [0, 0], "scale": [1, 1, 1]}],
@@ -251,7 +252,7 @@ def test_verifies_bound_saved_prefab_metrics_without_claiming_source_visual_pari
         "sourceTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(),
         "nativeText": TEXT, "nativeTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(),
         "sourceTextMatches": True, "sourceStyleMatches": True,
-        "nativeFontStyle": 1, "nativeOverflowMode": 0, "nativeWrappingMode": 1,
+        "nativeFontStyle": 1, "nativeOverflowMode": 0, "nativeWrappingMode": 0,
         "autoSizingConfigVerified": True, "fontBindingVerified": True,
         "glyphFontChainVerified": True, "lineHeightConfigVerified": True,
         "nativeFontAssetPath": PRIMARY_PATH, "nativeFontPointSize": 44,
@@ -309,3 +310,109 @@ def test_verifier_rejects_sidecar_pin_change_and_never_resolves_source_gaps(tmp_
     })
     assert result["status"] == "partial"
     assert any(row["code"] == "STATIC_TEXT_READBACK_SIDECAR_BYTES_CHANGED" for row in result["diagnostics"])
+
+
+def test_verifier_accepts_exact_empty_text_prefab_sidecar_and_optional_outline_identity(tmp_path, engine_evidence):
+    # Cocos overflow=NONE forces TTF no-wrap even when enableWrapText is true.
+    plan, ir, manifest = fixture_documents(overflow=0, wrap=True)
+    plan["components"] = plan["components"][:1]
+    ir["components"] = ir["components"][:1]
+    manifest["assets"][0]["document"]["instances"][0]["_components"] = \
+        manifest["assets"][0]["document"]["instances"][0]["_components"][:1]
+    plan["sourcePrefabs"].append({"sourceId": "fixture:empty-prefab"})
+    prepared = text_module.prepare(plan, ir, manifest, tmp_path, source_evidence=engine_evidence)
+    candidate = tmp_path / "candidate"
+    sidecar_dir = candidate / "Analysis/Readback/TextMetrics"
+    sidecar_dir.mkdir(parents=True)
+    group = prepared["continuation"]["components"][0]
+    config_sha = hashlib.sha256(prepared["plan"]["staticTextContinuationJson"].encode()).hexdigest()
+    row = {
+        "sourceLabelId": TEXT_ID, "sourceOutlineId": "", "sourceNodeId": NODE_ID,
+        "sourceTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(),
+        "nativeTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(), "nativeText": TEXT,
+        "sourceTextMatches": True, "sourceStyleMatches": True, "nativeFontStyle": 1,
+        "nativeOverflowMode": 0, "nativeWrappingMode": 0,
+        "persistentLabel": True, "labelGuid": "a" * 32, "labelLocalFileId": 10,
+        "fontGuid": "c" * 32, "fontLocalFileId": 12,
+        "nativeFontAssetPath": PRIMARY_PATH, "nativeFontPointSize": 44, "nativeFaceLineHeight": 44,
+        "nativeLineSpacing": 0, "actualFontSize": 44, "nativeFontSizeMin": 0, "nativeFontSizeMax": 44,
+        "autoSizingConfigVerified": True, "fontBindingVerified": True, "glyphFontChainVerified": True,
+        "lineHeightConfigVerified": True, "nativeMeshMeasured": True,
+        "inkBounds": {"hasVisibleGeometry": True}, "nativeBoundsKind": "tmp-character-quad-local-bounds-not-pixel-ink",
+        "glyphFontAssets": [{"guid": "c" * 32, "localFileId": 12, "assetPath": PRIMARY_PATH}],
+        "configuredFontAssets": [{"guid": "c" * 32, "localFileId": 12, "assetPath": PRIMARY_PATH},
+                                 {"guid": "d" * 32, "localFileId": -13, "assetPath": FALLBACK_PATH}],
+        "outlineConfigVerified": True,
+    }
+
+    def write_report(prefab_id, components, status="verified"):
+        report = {"schemaVersion": 1, "contract": "monkey-static-text-metrics-readback/1",
+                  "phase": "saved-prefab-reopen", "sourceManifestSha256": prepared["plan"]["sourceManifestSha256"],
+                  "sourcePrefabId": prefab_id, "continuationJsonSha256": config_sha,
+                  "status": status, "components": components}
+        raw = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+        path = sidecar_dir / (hashlib.sha256(prefab_id.encode()).hexdigest() + ".json")
+        path.write_bytes(raw)
+        return {"path": path.relative_to(candidate).as_posix(), "sha256": hashlib.sha256(raw).hexdigest()}, path
+
+    group_descriptor, _ = write_report("fixture:root", [row])
+    empty_descriptor, empty_path = write_report("fixture:empty-prefab", [], "no-groups-for-prefab")
+    main = {"staticTextReadbackFiles": [group_descriptor, empty_descriptor]}
+    result = text_module.verify(prepared["plan"], candidate, main)
+    assert result["status"] == "verified-native-configuration-only"
+    assert not any(item["code"] in ("STATIC_TEXT_READBACK_FILE_SET_MISMATCH",
+                                    "STATIC_TEXT_SIDECAR_DIRECTORY_SET_MISMATCH",
+                                    "STATIC_TEXT_NATIVE_METRIC_OR_IDENTITY_UNVERIFIED")
+                   for item in result["diagnostics"])
+
+    # The same path/hash is not enough if a prefab that should be empty contains rows.
+    empty_descriptor, _ = write_report("fixture:empty-prefab", [{"sourceLabelId": "unplanned-label"}], "verified")
+    result = text_module.verify(prepared["plan"], candidate, {"staticTextReadbackFiles": [group_descriptor, empty_descriptor]})
+    assert any(item["code"] == "STATIC_TEXT_EMPTY_PREFAB_SIDECAR_NOT_EMPTY" for item in result["diagnostics"])
+
+    # An unlisted source prefab's empty sidecar is rejected when it is not in the plan inventory.
+    prepared["plan"]["sourcePrefabs"] = prepared["plan"]["sourcePrefabs"][:1]
+    result = text_module.verify(prepared["plan"], candidate, {"staticTextReadbackFiles": [group_descriptor, empty_descriptor]})
+    assert any(item["code"] == "STATIC_TEXT_READBACK_FILE_SET_MISMATCH" for item in result["diagnostics"])
+
+
+def test_verifier_uses_persistent_font_asset_identity_for_bitmap_font_binding(tmp_path, engine_evidence):
+    plan, ir, manifest = fixture_documents(font_kind="bitmap", overflow=0, wrap=True)
+    prepared = text_module.prepare(plan, ir, manifest, tmp_path, source_evidence=engine_evidence)
+    candidate = tmp_path / "bitmap-candidate"
+    group = prepared["continuation"]["components"][0]
+    relative = "Analysis/Readback/TextMetrics/" + hashlib.sha256(b"fixture:root").hexdigest() + ".json"
+    sidecar_path = candidate / relative
+    sidecar_path.parent.mkdir(parents=True)
+    font_path = group["nativeFontBinding"]["assetPaths"][0]
+    font_id = "e" * 32
+    row = {
+        "sourceLabelId": TEXT_ID, "sourceOutlineId": OUTLINE_ID, "sourceNodeId": NODE_ID,
+        "sourceTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(),
+        "nativeTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(), "nativeText": TEXT,
+        "sourceTextMatches": True, "sourceStyleMatches": True, "nativeFontStyle": 0,
+        "nativeOverflowMode": 0, "nativeWrappingMode": 0,
+        "persistentLabel": True, "labelGuid": "a" * 32, "labelLocalFileId": 10,
+        "fontGuid": font_id, "fontLocalFileId": -12, "nativeFontAssetPath": font_path,
+        "nativeFontPointSize": 44, "nativeFaceLineHeight": 44, "nativeLineSpacing": 0,
+        "actualFontSize": 44, "nativeFontSizeMin": 0.1, "nativeFontSizeMax": 44,
+        "autoSizingConfigVerified": True, "fontBindingVerified": False,
+        "glyphFontChainVerified": True, "lineHeightConfigVerified": True,
+        "nativeMeshMeasured": True, "inkBounds": {"hasVisibleGeometry": True},
+        "nativeBoundsKind": "tmp-character-quad-local-bounds-not-pixel-ink",
+        "glyphFontAssets": [{"guid": font_id, "localFileId": -12, "assetPath": font_path}],
+        "configuredFontAssets": [{"guid": font_id, "localFileId": -12, "assetPath": font_path}],
+        "outlineConfigVerified": True,
+    }
+    config_raw = prepared["plan"]["staticTextContinuationJson"].encode()
+    report = {"schemaVersion": 1, "contract": "monkey-static-text-metrics-readback/1",
+              "phase": "saved-prefab-reopen", "sourceManifestSha256": plan["sourceManifestSha256"],
+              "sourcePrefabId": "fixture:root", "continuationJsonSha256": hashlib.sha256(config_raw).hexdigest(),
+              "status": "partial", "components": [row]}
+    raw = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+    sidecar_path.write_bytes(raw)
+    result = text_module.verify(prepared["plan"], candidate, {"staticTextReadbackFiles": [
+        {"path": relative, "sha256": hashlib.sha256(raw).hexdigest()}]})
+    assert result["status"] == "verified-native-configuration-only"
+    assert not any("primaryFontBinding" in item["message"] or "glyphFallbackChain" in item["message"]
+                   for item in result["diagnostics"])

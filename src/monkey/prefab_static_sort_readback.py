@@ -294,7 +294,7 @@ def _load_cocos_static_spine_binding(plan, raw_bytes):
             not _sha256_text(config["sourceEngine"].get("sha256"))):
         errors.append("Cocos static Spine render contract or manifest/continuation pins differ")
     path = "Assets/Game/Editor/Conversion/spine-static-rendering.json"
-    if config.get("moduleStage") != "spine_static_rendering":
+    if config.get("moduleStage") not in ("spine_static_rendering", "spine_static_defaults_rendering"):
         errors.append("Cocos static Spine render module stage differs")
     components = config.get("components")
     data_assets = config.get("dataAssets")
@@ -2043,15 +2043,65 @@ def _check_block_input_events(spec, row, mode, plan):
 
 def _check_source_mask_identities(spec, row, mode, plan):
     failures = []
-    all_masks = plan.get("staticMasks", {}).get("masks") if isinstance(plan, dict) else None
-    actual = row.get("sourceMaskIdentities")
-    if not isinstance(all_masks, list) or not isinstance(actual, list):
-        return [f"{mode} source Mask identity evidence is absent"]
     scope_nodes = {spec.get("rootScope")}
     for item in spec.get("sourceChildOrder") or []:
         if isinstance(item, dict):
             scope_nodes.add(item.get("node"))
             scope_nodes.update(item.get("children") or [])
+    component_rows = plan.get("components") if isinstance(plan, dict) else None
+    if not isinstance(component_rows, list):
+        return [f"{mode} source Mask requirement denominator is absent"]
+    component_required_ids = []
+    for component in component_rows:
+        if not isinstance(component, dict) or component.get("type") != "cc.Mask" or component.get("node") not in scope_nodes:
+            continue
+        source_id = component.get("sourceId")
+        if not isinstance(source_id, str) or not source_id:
+            failures.append(f"{mode} scoped source Mask has no stable source ID")
+        else:
+            component_required_ids.append(source_id)
+    if len(component_required_ids) != len(set(component_required_ids)):
+        failures.append(f"{mode} scoped source Mask component denominator contains duplicate IDs")
+    queue_masks = spec.get("masks")
+    if not isinstance(queue_masks, list):
+        return [f"{mode} queue source Mask specification is malformed"]
+    queue_required_ids = []
+    for mask in queue_masks:
+        source_id = mask.get("sourceId") if isinstance(mask, dict) else None
+        if not isinstance(source_id, str) or not source_id:
+            failures.append(f"{mode} queue source Mask row has no stable source ID")
+        else:
+            queue_required_ids.append(source_id)
+    if len(queue_required_ids) != len(set(queue_required_ids)):
+        failures.append(f"{mode} queue source Mask specification contains duplicate IDs")
+    # A queue mask row and its matching cc.Mask component are two independent
+    # references to the same source identity, not duplicate denominator rows.
+    required_ids = sorted(set(component_required_ids) | set(queue_required_ids))
+    mask_contract = plan.get("staticMasks") if isinstance(plan, dict) else None
+    if mask_contract is None:
+        if required_ids:
+            identities = ", ".join(required_ids)
+            return [f"{mode} source Mask conversion contract is absent for required source masks: {identities}"]
+        all_masks = []
+    else:
+        all_masks = mask_contract.get("masks") if isinstance(mask_contract, dict) else None
+        if not isinstance(all_masks, list):
+            return [f"{mode} source Mask conversion contract is malformed"]
+        contract_ids = []
+        for mask in all_masks:
+            source_id = mask.get("sourceId") if isinstance(mask, dict) else None
+            if not isinstance(source_id, str) or not source_id:
+                failures.append(f"{mode} source Mask contract row has no stable source ID")
+            else:
+                contract_ids.append(source_id)
+        if len(contract_ids) != len(set(contract_ids)):
+            failures.append(f"{mode} source Mask contract has duplicate IDs")
+        missing_contract_ids = sorted(set(required_ids) - set(contract_ids))
+        if missing_contract_ids:
+            failures.append(f"{mode} source Mask contract omits required source IDs: " + ", ".join(missing_contract_ids))
+    actual = row.get("sourceMaskIdentities")
+    if not isinstance(all_masks, list) or not isinstance(actual, list):
+        return [f"{mode} source Mask identity evidence is absent"]
     expected_rows = [item for item in all_masks if isinstance(item, dict) and item.get("node") in scope_nodes]
     expected_ids = [item.get("sourceId") for item in expected_rows]
     actual_by_id = {item.get("sourceId"): item for item in actual if isinstance(item, dict)}
