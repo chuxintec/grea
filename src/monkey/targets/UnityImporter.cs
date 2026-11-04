@@ -12,6 +12,7 @@ public static partial class MonkeyImporter
 {
     [Serializable] public class Plan {
         public UnityStaticToggle.Spec toggleBinding;
+        public bool toggleBindingPresent;
         public StaticLayoutCompletionContract layoutCompletion; public StaticMaskContract staticMasks; public Monkey.StaticSortQueueProxy.ProxyQueueSpec[] staticSortQueue;
         public BitmapMissingGlyphContract bitmapMissingGlyphs;
         public string spriteOutlineBindingJson;
@@ -831,7 +832,7 @@ public static partial class MonkeyImporter
             colors.pressedColor=ButtonColor(s.pressedColor);colors.disabledColor=ButtonColor(s.disabledColor);colors.fadeDuration=spec.duration;colors.colorMultiplier=1;
             button.colors=colors;button.transition=spec.transition==1?UnityEngine.UI.Selectable.Transition.ColorTint:UnityEngine.UI.Selectable.Transition.None;
         }
-        if(plan.toggleBinding!=null){
+        if(HasStaticToggles(plan)){
             var gaps=UnityStaticToggle.Create(plan.toggleBinding,id=>nodeMap.TryGetValue(id,out var n)?n:null,id=>StaticReference(plan,nodeMap,id));
             if(gaps.Length>0)throw new InvalidOperationException("STATIC_TOGGLE_BINDING_FAILED: "+string.Join(",",gaps));
         }

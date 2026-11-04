@@ -619,6 +619,9 @@ def export(plan_path, output):
     instruction['previewState']=p.get('previewState')
     instruction['previewStates']=p.get('previewStates')
     instruction['toggleBinding']=p.get('toggleBinding')
+    # Unity JsonUtility can materialize a null nested serializable object with
+    # null fields. Object non-nullness therefore cannot enable this feature.
+    instruction['toggleBindingPresent']=p.get('toggleBinding') is not None
     instruction['behaviorBindingReadback']='persistent-source-fields-v1'
     instruction['transformReadback']='full-local-v1'
     instruction['sourceDiagnosticCount']=len(p['diagnostics'])

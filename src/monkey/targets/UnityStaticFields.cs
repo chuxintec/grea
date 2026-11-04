@@ -63,6 +63,15 @@ public static class UnityStaticFields
         foreach (var gap in operational) Gap(all, gap);
         return all.ToArray();
     }
+    public static bool HasStaticRetainedAsset<T>(string schema, IEnumerable<T> assets,
+                                                  Func<T, string> sourceId, string id)
+    {
+        if (schema != "monkey-prefab-static-retained-assets/1") return false;
+        // A recognized contract with a null assets array is malformed. Let
+        // LINQ throw so ResolveOne records a strict resolver failure instead
+        // of treating corrupt retained-asset evidence as an empty index.
+        return assets.Any(entry => sourceId(entry) == id);
+    }
     static Type Resolve(Spec spec)
     {
         if (spec == null || String.IsNullOrEmpty(spec.typeName) || String.IsNullOrEmpty(spec.scriptGuid))

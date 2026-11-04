@@ -1,16 +1,18 @@
 import hashlib
 import json
 from pathlib import Path
-import sys
 from tempfile import TemporaryDirectory
 import unittest
 
 from monkey.native_font_stage import NativeFontStageError, finish_stage, stage
 from monkey.native_font_stage import _classify_final_files, _validate_dependency_endpoints
 
-BEAVER_SRC = Path(__file__).resolve().parents[3] / "tools/beaver/src"
-sys.path.insert(0, str(BEAVER_SRC))
-from beaver.candidate_snapshot import snapshot as beaver_snapshot, verify as beaver_verify
+try:
+    from beaver.candidate_snapshot import snapshot as beaver_snapshot, verify as beaver_verify
+except ModuleNotFoundError as error:
+    if error.name != "beaver":
+        raise
+    beaver_snapshot = beaver_verify = None
 
 
 def digest(raw):
@@ -141,6 +143,7 @@ class NativeFontStageTests(unittest.TestCase):
         manifest_sha = write(candidate / "manifest.json", json_bytes(manifest))
         return candidate, completion, manifest_sha, completion_sha, static_path, static_sha, primary_sha, static_guid
 
+    @unittest.skipUnless(beaver_snapshot is not None, "External beaver integration requires its separately installed package")
     def test_stage_copies_verified_selection_and_emits_request_without_launching_editor(self):
         with TemporaryDirectory() as temp:
             root = Path(temp)

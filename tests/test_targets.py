@@ -10,12 +10,40 @@ from fixtures import fixture, FRAME, PREFAB, normal
 
 
 class TargetTests(unittest.TestCase):
+    def test_toggle_presence_survives_plan_export_and_bad_source_still_refuses(self):
+        for malformed in (False, True):
+            with self.subTest(malformed=malformed), tempfile.TemporaryDirectory() as temp:
+                root=Path(temp).resolve();config=fixture(root/'source')
+                path=root/'source/import/00'/(PREFAB+'.a.json')
+                node=dict(__type__='cc.Node',_name='toggle',_parent=None,_children=[],_active=True,
+                          _components=[{'__id__':2}],_contentSize={'width':20,'height':20})
+                toggle=dict(__type__='cc.Toggle',node={'__id__':1},checkMark={'__id__':99} if malformed else None,
+                            **{'_N$isChecked':False,'_N$interactable':True,'_N$target':None})
+                write_json(path,normal([{'__type__':'cc.Prefab','data':{'__id__':1}},node,toggle]))
+                inspect(config,[2],root/'inspect');normalize(root/'inspect/source-manifest.json',root/'ir')
+                if malformed:
+                    from monkey.prefab_static_toggle import StaticToggleError
+                    with self.assertRaises(StaticToggleError):
+                        plan(root/'ir/ir.json','toggle-case',root/'plan')
+                    continue
+                plan(root/'ir/ir.json','toggle-case',root/'plan')
+                export(root/'plan/plan.json',root/'unity')
+                instruction=load(read(root/'unity/Assets/Game/Editor/Conversion/import-plan.json'))
+                self.assertIs(instruction['toggleBindingPresent'],True)
+                rows=instruction['toggleBinding']['bindings']
+                self.assertEqual(len(rows),1)
+                self.assertEqual(rows[0]['kind'],'cc.Toggle')
+                self.assertIs(rows[0]['checkedValue'],False)
+
     def test_native_candidate_determinism_conflicts_and_missing_editor(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp).resolve();config=fixture(root/'source')
             inspect(config,[0],root/'inspect');normalize(root/'inspect/source-manifest.json',root/'ir')
             plan(root/'ir/ir.json','project-a',root/'plan')
             a=export(root/'plan/plan.json',root/'unity');b=export(root/'plan/plan.json',root/'repeat')
+            instruction=load(read(root/'unity/Assets/Game/Editor/Conversion/import-plan.json'))
+            self.assertIsNone(instruction['toggleBinding'])
+            self.assertIs(instruction['toggleBindingPresent'],False)
             self.assertEqual(a['files'],b['files'])
             self.assertTrue(any(f['path']=='Packages/manifest.json' for f in a['files']))
             result=verify(root/'unity',root/'verified');self.assertEqual(result['staticValidation'],'pass')
