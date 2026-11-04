@@ -6,10 +6,10 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-04T12:51:01.876604+00:00",
-  "authority": "original-plan-owner; read-only projection, not canonical cutover",
+  "updatedAt": "2026-11-04T13:11:45.507072+00:00",
+  "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "三仓库版本分支整改已实际执行回读：本地51→5，远端14→5。monkey已合并为唯一v0.8.0.dev9/265a123；GREA根目录旧120文件已收口，当前v1.1.0.dev2、工作区干净。四页下一步仅使用统一0.8工具继续真实字体/引用及采用核验；binary暂停。",
+  "currentStage": "GREA v1.1统一任务源已实际迁移，模块6个未完任务及旧两根待办归并；两批优先级1，先肥鹅四页、后僵尸有源全量，均总监验收。统一monkey0.8dev10实际字体已通过，11业务Prefab/668节点保存重开，尚165静态引用差异待通用修复；beaver正在实现既有采用链脚本GUID重绑定。binary暂停。",
   "activeImplementationTask": "grea:T-foodstreet-four-activity-bulk",
   "releases": [
     {
@@ -49,11 +49,14 @@
     },
     {
       "id": "grea:R1.1.0",
-      "title": "GREA1.1条件开发：双项目工具调用闭环",
+      "title": "GREA v1.1.0：肥鹅四页与僵尸全量静态Prefab工具交付",
       "version": "1.1.0",
       "workflowStatus": "in_progress",
-      "description": "已交观测dev1本地候选；新增已授权二进制分发主线，稳定模块输入先Mac后Windows。当前无新公开版；源码wheel迁移改造已停止/私有保留patch，新公开包不带内部实现源码。",
+      "description": "本版必交两批实际工具恢复与消费者采用，先肥鹅四活动收口，再僵尸全部有源静态Prefab；全部状态只在GREA维护，总监实际验收。未达到两批出口不得标v1.1完成。既有公共能力及二进制任务保留真实状态；binary仍暂停后置。",
       "acceptanceCriteria": [
+        "肥鹅四活动完整页及必要子Prefab由monkey程序成组恢复；字体/布局/组件/图片/引用共因修入工具，beaver实际采用，四页同版本画面对照和相关既有绑定通过。",
+        "肥鹅收口后，monkey程序核僵尸完整有源分母/嵌套根/依赖，批量产真实Prefab并全量原生静态检查；代表视觉单列，beaver采用，缺源/纯动态缺口明确。",
+        "两批均由总监独立验收；IR/报告/文件数量/源测试/保存单项通过不能替代采用与完整验收。",
         "消费者固定交付/采用/结束条件与运行时责任一致",
         "仅适配已交且确有缺口的有限公开合同",
         "相关消费者有限验证通过，未验/无适用性明确",
@@ -61,9 +64,14 @@
         "新GREA公开源码及完整包只含已审模块二进制和明确helper白名单，旧历史保持"
       ],
       "sourceRefs": [
-        "Manager/decisions/20261104-product-driven-tooling/PLAN.md"
+        "Manager/decisions/20261104-product-driven-tooling/PLAN.md",
+        "../../Manager/decisions/20261104-grea-unified-v110-tasks/PLAN.md"
       ],
-      "candidateVersion": "1.1.0.dev1"
+      "candidateVersion": "1.1.0.dev2",
+      "requiredTaskIds": [
+        "grea:T-foodstreet-four-activity-bulk",
+        "grea:T-zombie-bulk-static-prefabs"
+      ]
     }
   ],
   "tasks": [
@@ -83,7 +91,8 @@
       "sourceRefs": [
         ".private/coordination/myprojects-migration-20261103/migration-verification.json",
         ".private/coordination/myprojects-migration-20261103/post-restart-executor-check.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-qa8-fixed31-binding",
@@ -100,7 +109,8 @@
       "sourceRefs": [
         "validation/development/beaver-fix31-qa8-integration-20261103.json",
         ".private/coordination/myprojects-migration-20261103/migration-verification.json:bindings"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-compatibility-retirement-handoff",
@@ -117,7 +127,8 @@
       ],
       "sourceRefs": [
         ".private/coordination/myprojects-migration-20261103/migration-verification.json:remaining_old_consumers"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-build-provider-readiness-20261103",
@@ -133,7 +144,8 @@
       "blockerIds": [],
       "sourceRefs": [
         ".private/build-provider-repair-20261103/delivery-index.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-stable-release-pack",
@@ -149,7 +161,8 @@
       "blockerIds": [],
       "sourceRefs": [
         "Manager/decisions/20261104-toolchain-stable-release/PLAN.md"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-stable-combination-acceptance",
@@ -165,7 +178,8 @@
       "blockerIds": [],
       "sourceRefs": [
         "Manager/decisions/20261104-toolchain-stable-release/PLAN.md"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-stable-release-publish",
@@ -182,7 +196,8 @@
       "sourceRefs": [
         "Manager/decisions/20261104-toolchain-stable-release/PLAN.md",
         ".private/releases/v1.0.0/published-readback-index.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-zombie-build-runtime-20261104",
@@ -198,7 +213,8 @@
       "blockerIds": [],
       "sourceRefs": [
         "../../Games/projects/21-zombie-cannon/Analysis/v010-development-20261104/build-runtime-repair-grea-01/delivery-index.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-product-tooling-methods",
@@ -214,7 +230,8 @@
       "blockerIds": [],
       "sourceRefs": [
         ".private/development/product-driven-20261104/first-batch-index.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-runtime-ownership",
@@ -230,14 +247,15 @@
       "blockerIds": [],
       "sourceRefs": [
         ".private/development/product-driven-20261104/first-batch-index.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     },
     {
       "id": "grea:T-player-observation-adapter",
       "title": "接收beaver公开观测合同并做最小适配",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
-      "description": "GREA1.1dev1/beaver0.7dev1已被僵尸真实单次启动/观测/STOP/回收/168制品后验部分采用；真实normal quit/deadline/completed cold及旧生命周期退役未完。肥鹅相关QA/profile已接受且新模式不适用；不复派工具、不重复实玩。",
+      "workflowStatus": "verification",
+      "description": "固定beaver0.7dev1与GREA保管运行时已交；僵尸实际公开normal/STOP/deadline三类结果、全部自有进程关闭及168文件after-check已回读。肥鹅相关QA合同兼容，新debug模式不适用。尚不扩大整版游戏视觉/性能；旧重复脚本退为薄调用按消费者自然安全点收口。",
       "acceptanceCriteria": [
         "绑定真实消费者及固定交付身份",
         "无第二执行器、全局切换或游戏重验",
@@ -249,7 +267,32 @@
         ".private/development/product-driven-20261104/beaver070dev1-handoff-index.json",
         "../../Tools/beaver/.private/product-driven-v0.7.0-20261104/lead-handoff.json",
         ".private/development/product-driven-20261104/beaver070dev1-consumer-adoption-supplement.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModules": [
+        {
+          "module": "beaver",
+          "legacyTaskId": "beaver:T-0.7.0-player-observation",
+          "descriptionAtMigration": "先取僵尸46行封装和肥鹅现成QA约定，映射0.6 player.run/debug/qa.prepare-launch-collect。确有缺口才最小扩既有公开入口，使项目仅保留观测配置与业务断言。",
+          "verificationAtMigration": null,
+          "fixedDeliveryAtMigration": {
+            "index": "../../Tools/beaver/.private/product-driven-v0.7.0-20261104/candidate-delivery.json",
+            "version": "0.7.0.dev1",
+            "producer": "5a4d5599c7e37f373d31290e150d3ac2048b82a91aa7904a2adfe38a7572bb88",
+            "wheelSha256": "706f2a5c35c6fd5d4ac5cee6c750932f49037ff1c1142d662b282c20a51cee30",
+            "retainedRuntimeIndex": ".private/development/product-driven-20261104/beaver070dev1-handoff-index.json"
+          },
+          "sourceRefs": [
+            {
+              "path": "../beaver/.private/product-driven-v0.7.0-20261104/first-batch-index.json",
+              "selector": "$"
+            }
+          ],
+          "independentTaskAuthority": "removed; GREA task only",
+          "sourceModuleRoot": "../beaver"
+        }
+      ],
+      "nextAction": "复用已交真实采用证据，由GREA统一收口剩余薄封装退役/总监验收，不再复制一份模块待办。"
     },
     {
       "id": "grea:T-monkey-bounce-ruling-v2",
@@ -263,13 +306,15 @@
       ],
       "sourceRefs": [
         ".private/development/product-driven-20261104/particle-constant-ruling-v2.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "blockerIds": []
     },
     {
       "id": "grea:T-binary-provider-macos",
       "title": "GREA二进制模块身份与Mac独立分发验收",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "todo",
       "description": "用户最新先四页真实Prefab及采用，binary在安全点暂停新编译/打包/兼容扩展/Windows，保留已有源码/WIP/候选。两ownerMac任务已实际派发；beaver稳定源首probe ARM64已编译/基础隔离CLI通过但不可安装，发现身份空map、worker、runpy、helper及cap envelope operationId波动5项，已由GREA有界裁定；GREA独立binary安装/pin WIP、稳定投影与拒源码fallback护栏，不代表Mac组合完成。 GREA适配源码1.1.0.dev2/ecbdd2a已本地提交，237相关检查通过；新完整包主动拒源码fallback。",
       "acceptanceCriteria": [
         "monkey0.7/beaver0.6稳定源码编译，非源码归档fallback",
@@ -282,13 +327,51 @@
         ".private/development/binary-distribution-20261104/binary-provider-contract-v1.json",
         ".private/development/binary-distribution-20261104/first-batch-index.json"
       ],
-      "executionStatus": "paused_by_user"
+      "executionStatus": "paused_by_user",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModules": [
+        {
+          "module": "monkey",
+          "legacyTaskId": "monkey:binary-macos-standalone",
+          "descriptionAtMigration": "用户已批准二进制分发，覆盖同日完整模块源码包选择；专用稳定工作树86d47f，模块子Agent只写隔离环境。Nuitka standalone实际Mach-O、可搬迁验证与嵌套源码审计；只本地候选交GREA。",
+          "verificationAtMigration": null,
+          "fixedDeliveryAtMigration": null,
+          "sourceRefs": [
+            ".private/development/binary-distribution-20261104/binary-provider-contract-v1.json"
+          ],
+          "independentTaskAuthority": "removed; GREA task only",
+          "sourceModuleRoot": "../monkey"
+        },
+        {
+          "module": "beaver",
+          "legacyTaskId": "beaver:T-mac-binary-distribution",
+          "descriptionAtMigration": "按最新用户优先级在无编译/Editor/Player的安全点暂停。适配源码未提交，未生成新二进制；旧Unity DLL缺UNITY_EDITOR只含BuildFilter，不可分发，全部保留待明确恢复。",
+          "verificationAtMigration": null,
+          "fixedDeliveryAtMigration": null,
+          "sourceRefs": [
+            {
+              "path": "../../Manager/decisions/20261104-grea-binary-distribution/PLAN.md",
+              "selector": "MacARM64首包与源码分发边界"
+            }
+          ],
+          "independentTaskAuthority": "removed; GREA task only",
+          "sourceModuleRoot": "../beaver"
+        }
+      ],
+      "nextAction": "按用户先两批Prefab工具交付，binary保WIP暂停；不新增编译或打包。技术probe及helper/身份/worker等原缺口保留待明确恢复。",
+      "blockerIds": [
+        "grea:B-beaver-B-binary-implementation-identity",
+        "grea:B-beaver-B-binary-worker",
+        "grea:B-beaver-B-binary-toolkit-runpy",
+        "grea:B-beaver-B-binary-helper-boundary",
+        "grea:B-beaver-B-binary-capabilities-hash"
+      ]
     },
     {
       "id": "grea:T-binary-provider-windows",
       "title": "Mac通过后Windows x64原生编译及调用",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "planned",
+      "workflowStatus": "todo",
       "description": "用户最新先四页真实Prefab及采用，binary在安全点暂停新编译/打包/兼容扩展/Windows，保留已有源码/WIP/候选。待Mac组合通过；仅允许无资源占用设计准备，不先并行构建。",
       "acceptanceCriteria": [
         "原生Windows构建/调用/搬迁身份与受影响代表链实际通过",
@@ -297,13 +380,15 @@
       "sourceRefs": [
         "Manager/decisions/20261104-grea-binary-distribution/PLAN.md"
       ],
-      "executionStatus": "paused_by_user"
+      "executionStatus": "paused_by_user",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "blockerIds": []
     },
     {
       "id": "grea:T-binary-unified-publication",
       "title": "公开GREA源码与内部模块二进制统一发行",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "planned",
+      "workflowStatus": "todo",
       "description": "用户最新先四页真实Prefab及采用，binary在安全点暂停新编译/打包/兼容扩展/Windows，保留已有源码/WIP/候选。已有用户按序验后发布授权；须先精确双平台候选/CI受控制品与新源码边界通过，不覆盖历史tag或当前固定链。",
       "acceptanceCriteria": [
         "公开树/全部嵌套制品无模块当前实现源码/pyc/生成C源或fallback",
@@ -313,14 +398,16 @@
       "sourceRefs": [
         "Manager/decisions/20261104-grea-binary-distribution/PLAN.md"
       ],
-      "executionStatus": "paused_by_user"
+      "executionStatus": "paused_by_user",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "blockerIds": []
     },
     {
       "id": "grea:T-foodstreet-four-activity-bulk",
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "此前经公开run-tool实际产11业务Prefab/668节点并保存重开，missingScripts0。按用户单线要求，monkey已将字体、Toggle及静态引用共因修复统一到v0.8.0.dev9/265a123；下一工具实际验证只用该线，旧0.7快照作历史复现。字体静态生成、引用实际核验与beaver采用仍未完成，不以源测试/分支合并代替真实出口。",
+      "description": "统一monkey0.8.0.dev10/84d3451已实际导出与Unity保存重开11业务Prefab/668节点，无Missing Script。字体136静态字形及52系统标签已有原生产物；311→165静态字段/引用差异（39载体/63对象/63持久引用）仍阻塞native静态验收与freeze。beaver扩既有采用工具的受控脚本GUID重绑定；正式项目采用和视觉未完成。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -336,29 +423,58 @@
       ],
       "evidence": [
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-03-toggle-index.json"
-      ]
-    },
-    {
-      "id": "grea:T-monkey-dev8-consumer-handoff",
-      "title": "僵尸dev8两完整根固定候选的增量采用交接",
-      "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "planned",
-      "executionStatus": "queued_after_foodstreet_safe_point",
-      "description": "已收内部Python0.8dev8/203161f双根native-partial固定包，未做GREA新绑定/采用；保护既有59对和业务覆盖，不抢四页关键路径，不当binary包。",
-      "sourceRefs": [
-        "../../Tools/monkey/.private/unity-prefab-v080-20261104/dev8-fixed-two-root-handoff-index.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModules": [
+        {
+          "module": "monkey",
+          "legacyTaskId": "monkey:foodstreet-four-activity-closure",
+          "descriptionAtMigration": "由独立模块核最新固定Cocos链路，四根和已证动态源计算完整闭包，经GREA公开请求生成独立Analysis输出；8项不是分母。仅离线，原生由负责人另交资源，不写产品/WIP。",
+          "verificationAtMigration": null,
+          "fixedDeliveryAtMigration": null,
+          "sourceRefs": [
+            "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/FOUR-ACTIVITY-RECOVERY-CONSUMER-INPUTS.json"
+          ],
+          "independentTaskAuthority": "removed; GREA task only",
+          "sourceModuleRoot": "../monkey"
+        },
+        {
+          "module": "beaver",
+          "legacyTaskId": "beaver:T-foodstreet-four-root-adoption",
+          "descriptionAtMigration": "真实native03的11 Prefab SHA全匹配；固定0.6公开adoption.plan实际阻塞CANDIDATE_UNOWNED（ProjectSettings.asset），未执行native/apply。205资产/53序列化脚本图已核，10同路径碰撞、4同码不同GUID辅助类型需支持绑定；源候选仍partial。修正前份合同：spec3/4可exact generated newScripts，schema-only仅spec5。现已整理一次性GREA→monkey保存态/绑定/闭包输入请求；游戏仅产品root单写，binary继续paused_by_user。",
+          "verificationAtMigration": null,
+          "fixedDeliveryAtMigration": null,
+          "sourceRefs": [
+            {
+              "path": ".private/development/foodstreet-activity-bulk-20261104/critical-path-astc-resume.json",
+              "selector": "actual four-root recovery/adoption latest priority"
+            }
+          ],
+          "independentTaskAuthority": "removed; GREA task only",
+          "currentAction": "现有采用工具核4同码不同GUID脚本；能运行即交plan，缺机制则扩既有工具，不只交缺口报告。",
+          "sourceModuleRoot": "../beaver"
+        }
+      ],
+      "nextAction": "monkey按源组件族修165静态引用表达/映射共因，不以动态动画/Spine/全业务为前置；过静态后用既有freeze-native-selection交保存态。beaver交已验证固定重绑定入口及输入，肥鹅唯一writer采用。",
+      "blockerIds": [
+        "grea:B-beaver-B-native03-owned-export",
+        "grea:B-beaver-B-native03-runtime-bindings",
+        "grea:B-foodstreet-static-reference-materialization"
+      ],
+      "priority": 1
     },
     {
       "id": "grea:T-zombie-first-level-source-gap",
       "title": "首关1001必要升级链有界静态补证",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "planned",
+      "workflowStatus": "todo",
       "executionStatus": "queued_after_foodstreet_safe_point",
       "description": "按僵尸明确请求排在四页自然安全点后；只复用工具补方法体/加载族/Pool2必要配置映射，可证与UNKNOWN分开，不执行原JS/WASM/DLL、不全量重导、不扩大v0.2构筑；尚未派新执行。",
       "sourceRefs": [
         "../../Games/projects/21-zombie-cannon/Analysis/v010-development-20261104/first-level-upgrade/source-gap-index.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "blockerIds": []
     },
     {
       "id": "grea:T-repository-version-branches",
@@ -369,7 +485,9 @@
       "sourceRefs": [
         "../../Manager/decisions/20261104-grea-repository-cleanup/PLAN.md",
         ".private/development/repository-cleanup-20261104/branch-migration.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "blockerIds": []
     },
     {
       "id": "grea:T-repository-root-wip",
@@ -379,18 +497,57 @@
       "description": "根目录120文件已逐项处理：19已跟踪修改和13旧测试由新版覆盖；49消费者历史记录脱敏入Git 1c7e677后退休当前树；36无调用方维护脚本/日志直接删除；其余已在dev。现行计划由159KB收敛25KB并纳入开发线，根目录切到v1.1.0.dev2，git status无未提交文件。无全局安装或运行时修改。",
       "sourceRefs": [
         ".private/development/repository-cleanup-20261104/root-wip-classification.json"
-      ]
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "blockerIds": []
     },
     {
       "id": "grea:T-zombie-bulk-static-prefabs",
       "title": "monkey统一0.8线僵尸有源Prefab全量静态批处理与采用",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "planned",
+      "workflowStatus": "todo",
       "executionStatus": "queued_after_foodstreet_critical_path",
       "description": "已原生核验human01a1a696-898d-7d42-8b1c-b50f44dea54e。起始161唯一地址根/601缓存来源，10已采用静态子集、151仅解析；原游戏全部包完整性未知，527目标文件不是源分母。由monkey程序核完整有源/嵌套根和依赖后直接批量生成原生Prefab，复用dev8/已验子集，beaver采用；不逐根人工恢复，不把动态代码当全静态前置。肥鹅四页优先、二进制暂停。",
       "sourceRefs": [
         "../../Manager/decisions/20261104-zombie-bulk-prefab-recovery/PLAN.md",
         "../monkey/.private/unity-prefab-v080-20261104/source-prefab-inventory-with-adoption-02.json"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModules": [
+        {
+          "module": "monkey",
+          "legacyTaskId": "monkey:battlemain-uv-empty-curve",
+          "descriptionAtMigration": "完整BattleMain491节点1380组件59291字段及独立根4节点8组件4297字段原型save/cold通过；身份引用稳定。负向实际native目标12拒绝、捕获签名28拒绝；14次被引擎归一未形成漂移不计拒绝。固定dev8入口验证/消费未闭环。",
+          "verificationAtMigration": {
+            "result": "partial",
+            "scope": "实际双源复制保存/冷读与完整根失败证据；通用修复未过完整根，不可采用"
+          },
+          "fixedDeliveryAtMigration": null,
+          "sourceRefs": [
+            "../monkey/docs/PLAN.md#current-consumer-milestone--2026-11-02",
+            "../monkey/.private/unity-prefab-v080-20261102/UVRepresentationProbe01/summary.json"
+          ],
+          "independentTaskAuthority": "removed; GREA task only",
+          "sourceModuleRoot": "../monkey"
+        }
+      ],
+      "dependsOnTaskIds": [
+        "grea:T-foodstreet-four-activity-bulk"
+      ],
+      "nextAction": "肥鹅四活动实际恢复/采用并交验后，由monkey统一0.8公开工具核全有源分母并直接批量恢复，保已验dev8与10子集，不逐根人工拼装。",
+      "supersededTaskIds": [
+        "grea:T-monkey-dev8-consumer-handoff"
+      ],
+      "retainedPendingScope": "dev8完整BattleMain491节点1380组件59291字段及独立根4/8/4297原生保存冷读通过，仍须固定身份/采用；归入本批，不计已经全量恢复。",
+      "blockerIds": [],
+      "priority": 1,
+      "acceptanceCriteria": [
+        "monkey程序核清全部已取得且可识别源Prefab根、嵌套根及静态依赖，逐项区分缺源/未解析；161仅起始已知根，不以527目标文件充当源分母。",
+        "统一0.8公开批处理生成范围内全部真实Unity Prefab及必要依赖，保来源→目标身份、静态组件字段与序列化引用；复用已验子集，不人工逐根拼装。",
+        "全批次实际Unity6000.6.2f1导入、保存/重开和静态层级/字段/引用检查；每根生成/原生/静态状态可回读，失败共因修工具后重跑受影响批次。",
+        "按组件族及首关实际消费者做代表视觉对照，未覆盖视觉明确，不从少量样本推全量一致；纯动态缺口与静态完整性分开。",
+        "beaver实际采用通过的固定候选，保原业务/GUID/JSON/存档/WIP，明确采用结果；缺源和纯动态未恢复如实保留。",
+        "在肥鹅四活动实际收口后推进本批，工具产物与消费者采用由总监验收；两批缺任一项不得将GREA v1.1.0标完成。"
       ]
     }
   ],
@@ -407,7 +564,172 @@
         ".private/coordination/myprojects-migration-20261103/migration-verification.json:alias_retirement",
         ".private/coordination/myprojects-migration-20261103/post-restart-executor-check.json"
       ],
-      "workflowStatus": "blocked"
+      "workflowStatus": "blocked",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
+    },
+    {
+      "id": "grea:B-monkey-blocker-uv-empty-native-representation",
+      "title": "两真实完整根的Bounce与SDK保存表示技术缺口已过原型门",
+      "workflowStatus": "done",
+      "taskIds": [
+        "grea:T-zombie-bulk-static-prefabs"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "monkey",
+      "legacyBlockerId": "monkey:blocker-uv-empty-native-representation",
+      "description": "Native19及独立Native03全静态字段/引用保存/冷读通过；NativeRefusal15共40拒绝，14未形成漂移的尝试单列。固定dev8/消费仍是后续工作，非整版/视觉/业务验收。",
+      "releaseCondition": "完整BattleMain与独立真实根保存/冷读及目标全签名/负向变异拒绝通过，固定候选交GREA，再由消费者采用验收。",
+      "sourceRefs": [
+        "../monkey/.private/unity-prefab-v080-20261104/BattleRendererNative19/execution-result.json",
+        "../monkey/.private/unity-prefab-v080-20261104/IndependentProgressEffectNative03/execution-result.json",
+        "../monkey/.private/unity-prefab-v080-20261104/ParticleProfileRefusal15/UnityProject/native-refusal-report.json"
+      ],
+      "sourceModuleRoot": "../monkey"
+    },
+    {
+      "id": "grea:B-beaver-B-binary-implementation-identity",
+      "title": "beaver:B-binary-implementation-identity",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-binary-provider-macos"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "beaver",
+      "legacyBlockerId": "beaver:B-binary-implementation-identity",
+      "description": "Binary producer ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356 equals exact beaver.io.encoded({}) empty-file-map SHA256, unlike stable source producer; compiled __file__ scan does not bind code.",
+      "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
+      "sourceRefs": [
+        "../beaver/.private/binary-distribution-20261104/first-probe-index.json"
+      ],
+      "sourceModuleRoot": "../beaver"
+    },
+    {
+      "id": "grea:B-beaver-B-binary-worker",
+      "title": "beaver:B-binary-worker",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-binary-provider-macos"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "beaver",
+      "legacyBlockerId": "beaver:B-binary-worker",
+      "description": "debug.start exits2 DEBUG_WORKER_FAILED: tries packageRoot/python (absent); source invokes sys.executable -c. No target process started.",
+      "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
+      "sourceRefs": [
+        "../beaver/.private/binary-distribution-20261104/first-probe-index.json"
+      ],
+      "sourceModuleRoot": "../beaver"
+    },
+    {
+      "id": "grea:B-beaver-B-binary-toolkit-runpy",
+      "title": "beaver:B-binary-toolkit-runpy",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-binary-provider-macos"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "beaver",
+      "legacyBlockerId": "beaver:B-binary-toolkit-runpy",
+      "description": "tool evidence_manifest --help exits2 AttributeError nuitka_module_loader has no get_code; same source command exits0.",
+      "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
+      "sourceRefs": [
+        "../beaver/.private/binary-distribution-20261104/first-probe-index.json"
+      ],
+      "sourceModuleRoot": "../beaver"
+    },
+    {
+      "id": "grea:B-beaver-B-binary-helper-boundary",
+      "title": "beaver:B-binary-helper-boundary",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-binary-provider-macos"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "beaver",
+      "legacyBlockerId": "beaver:B-binary-helper-boundary",
+      "description": "48 nonPython resources audited. Internal Editor C# and semantic/ObjC runtime compilers require raw helper source today; omitted in probe. Public SDK/user-template suggestions are not approved wholesale. Native operation/build not_run.",
+      "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
+      "sourceRefs": [
+        "../beaver/.private/binary-distribution-20261104/first-probe-index.json"
+      ],
+      "sourceModuleRoot": "../beaver"
+    },
+    {
+      "id": "grea:B-beaver-B-binary-capabilities-hash",
+      "title": "beaver:B-binary-capabilities-hash",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-binary-provider-macos"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "beaver",
+      "legacyBlockerId": "beaver:B-binary-capabilities-hash",
+      "description": "Two canonical entire capability envelopes differ only in operationId; data equal. Contract v1 currently says canonical JSON without naming stable projection.",
+      "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
+      "sourceRefs": [
+        "../beaver/.private/binary-distribution-20261104/first-probe-index.json"
+      ],
+      "sourceModuleRoot": "../beaver"
+    },
+    {
+      "id": "grea:B-beaver-B-native03-owned-export",
+      "title": "beaver:B-native03-owned-export",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-foodstreet-four-activity-bulk"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "beaver",
+      "legacyBlockerId": "beaver:B-native03-owned-export",
+      "description": "Actual native03 generated manifest does not own saved state; fixed0.6 public adoption.plan returns CANDIDATE_UNOWNED at ProjectSettings/ProjectSettings.asset. Fresh supported saved-state export with lineage required.",
+      "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
+      "sourceRefs": [],
+      "sourceModuleRoot": "../beaver"
+    },
+    {
+      "id": "grea:B-beaver-B-native03-runtime-bindings",
+      "title": "beaver:B-native03-runtime-bindings",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-foodstreet-four-activity-bulk"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "beaver",
+      "legacyBlockerId": "beaver:B-native03-runtime-bindings",
+      "description": "Four byte-identical helper full types use different source/target GUIDs; existing externalScripts equal-GUID contract prevents declaring reuse. Need supported binding resolution plus finite runtime compile closure/native oracle; no full original behavior recovery prerequisite.",
+      "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
+      "sourceRefs": [],
+      "sourceModuleRoot": "../beaver"
+    },
+    {
+      "id": "grea:B-foodstreet-static-font-native",
+      "title": "统一0.8静态字体实际原生合同冲突",
+      "workflowStatus": "done",
+      "taskIds": [
+        "grea:T-foodstreet-four-activity-bulk"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "monkey",
+      "description": "dev10已修静态SDF合同前置，实际native06字体阶段与136字形原生资产通过。整体native静态仍被另165字段/引用差异阻塞，不能扩大为四页完成。",
+      "releaseCondition": "统一0.8工具重生成并实际Unity字体/字段/引用检查通过，禁止手改纯输出。",
+      "sourceRefs": [
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-06-dev10-index.json"
+      ]
+    },
+    {
+      "id": "grea:B-foodstreet-static-reference-materialization",
+      "title": "四活动源静态组件字段与持久引用尚165项差异",
+      "workflowStatus": "blocked",
+      "taskIds": [
+        "grea:T-foodstreet-four-activity-bulk"
+      ],
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "implementationModule": "monkey",
+      "description": "native06实际311→165：39载体/63对象引用/63持久身份；源Animation/Spine等组件族目标表达/映射需核共因。不静默null/替身，不扩全动态业务。",
+      "releaseCondition": "通用静态组件/引用修复经本批真实原生回读及严格静态验证通过，缺输入以具体sourceID说明。",
+      "sourceRefs": [
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-06-dev10-index.json"
+      ]
     }
   ],
   "currentVersionKind": "published_stable",
@@ -445,6 +767,32 @@
     "status": "paused_by_user",
     "scope": "new binary compilation/packaging/compatibility expansion/Windows; preserve WIP/candidates",
     "resumeCondition": "Four actual restored/adopted pages delivered for director acceptance; unresolved acceptance fixes retain priority, no unrelated automatic restart"
+  },
+  "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+  "currentReleaseId": "grea:R1.1.0",
+  "taskMigration": {
+    "authorityHumanMessageId": "01a1a69d-7cb3-7093-8ac0-0a8beb3b7203",
+    "sourceSnapshots": "../../Manager/decisions/20261104-grea-unified-v110-tasks/sources-before.json",
+    "oldToNew": {
+      "monkey:foodstreet-four-activity-closure": "grea:T-foodstreet-four-activity-bulk",
+      "beaver:T-foodstreet-four-root-adoption": "grea:T-foodstreet-four-activity-bulk",
+      "monkey:battlemain-uv-empty-curve": "grea:T-zombie-bulk-static-prefabs",
+      "monkey:binary-macos-standalone": "grea:T-binary-provider-macos",
+      "beaver:T-mac-binary-distribution": "grea:T-binary-provider-macos",
+      "beaver:T-0.7.0-player-observation": "grea:T-player-observation-adapter",
+      "grea:T-monkey-dev8-consumer-handoff": "grea:T-zombie-bulk-static-prefabs"
+    },
+    "moduleActiveTaskRemoval": "verified_removed_in_both_source_files",
+    "finalPluginReadback": "grea/monkey/beaver current reads pass; default display scope awaits director update",
+    "sourceFiles": {
+      "grea": "proposals/lifecycle-roadmap.md",
+      "monkey": "../monkey/docs/PLAN.md",
+      "beaver": "../beaver/docs/PLAN.md"
+    },
+    "moduleRemainingUnfinishedTasks": {
+      "monkey": 0,
+      "beaver": 0
+    }
   }
 }
 ```
@@ -459,3 +807,6 @@
 ## 历史与本轮整理
 
 旧计划的逐次过程和 49 份继承验收记录已从当前源码树退休，保存在 [继承记录提交](https://github.com/chuxintec/grea/commit/1c7e6778c278812cf7cef2651090c65e122e696a) 中。公开历史副本已去除本机用户目录，各 JSON 记录原件 SHA256 和字节数，不能将脱敏副本的字节身份冒充原件。现行能力、合同、回归与失败边界继续保留；36 份无调用方的一次性维护脚本/日志直接删除，不建立新的 archive 或备份目录。
+
+
+统一任务管理：monkey、beaver保留内部实现、源码版本和已完成技术历史；六个未完任务归并到上方GREA任务，移除模块活动条目及重复两根采用待办，旧新ID见taskMigration。v1.1.0必须先交肥鹅四页、再交僵尸有源Prefab全量恢复与采用，并经总监验收。
