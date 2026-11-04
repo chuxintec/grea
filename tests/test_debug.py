@@ -1,5 +1,10 @@
 from pathlib import Path
 import hashlib
+import json
+import os
+import signal
+import subprocess
+from datetime import datetime, timezone, timedelta
 import plistlib
 import sys
 import tempfile
@@ -28,7 +33,7 @@ class DebugSessionTests(unittest.TestCase):
         return session
 
     def test_inspect_pid_identity_mismatch_never_signals_process(self):
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             session = self.make_session(Path(temp))
             with patch('beaver.debug._ps', side_effect=lambda pid, field: 'foreign-process' if field == 'command' else 'today'), \
                  patch('beaver.debug._exe', return_value='/different/executable'), \
@@ -42,7 +47,7 @@ class DebugSessionTests(unittest.TestCase):
                 kill.assert_not_called()
 
     def test_tail_redacts_secrets_and_screenshot_requires_exact_hash(self):
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             root = Path(temp)
             session = self.make_session(root)
             lines = tail(session)['lines']
@@ -57,7 +62,7 @@ class DebugSessionTests(unittest.TestCase):
             self.assertIn('not_verified', result['evidence']['originClaim'])
 
     def test_tail_reads_only_bounded_suffix_of_sparse_huge_log(self):
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             root = Path(temp)
             session = self.make_session(root)
             log = root/'player.log'
@@ -111,14 +116,16 @@ class DebugSessionTests(unittest.TestCase):
             with self.assertRaisesRegex(BeaverError, 'DEBUG_VIEWPORT'):
                 _app_arguments('/candidate/Game', '/tmp/game.log', 'session-marker', width, height)
 
-    def build_mock_candidate(self, root, body):
+    def build_mock_candidate(self, root, body, bundle_id=None):
         app = root/'candidate/player/Mock.app'
         exe = app/'Contents/MacOS/Mock'
         exe.parent.mkdir(parents=True)
         exe.write_text('#!'+sys.executable+'\n'+body, encoding='utf-8')
         exe.chmod(0o755)
         info = app/'Contents/Info.plist'
-        info.write_bytes(plistlib.dumps({'CFBundleExecutable':'Mock'}))
+        metadata = {'CFBundleExecutable':'Mock'}
+        if bundle_id is not None: metadata['CFBundleIdentifier'] = bundle_id
+        info.write_bytes(plistlib.dumps(metadata))
         manifest = root/'candidate/artifact-manifest.json'
         rows = []
         for file in (exe, info):
@@ -148,7 +155,7 @@ class DebugSessionTests(unittest.TestCase):
         self.fail('debug worker status did not reach expected state: '+str(status_path))
 
     def test_detached_worker_records_mock_exit_and_stop_without_session_write_race(self):
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             root = Path(temp)
             manifest = self.build_mock_candidate(root, 'raise SystemExit(0)\n')
             launched = start(manifest, root/'normal-run', digest_file(manifest), duration=10)
@@ -174,6 +181,132 @@ class DebugSessionTests(unittest.TestCase):
             ended = inspect_session(launched['session'])
             self.assertEqual(ended['status'], 'stopped')
             self.assertEqual(len(ended['screenshotEvidence']), 1)
+
+    def observation_spec(self, directory, **changes):
+        doc = dict(schemaVersion=1, contract='beaver-debug-observation/1',
+                   rootArgument='-sampleObservationRoot', expectedBundleIdentifier='com.example.neutral')
+        doc.update(changes)
+        path = directory/'observation.json'
+        write_json(path, doc)
+        return path, digest_file(path)
+
+    def test_closed_observation_and_expired_deadline_refuse_before_creating_output_or_worker(self):
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
+            root = Path(temp).resolve()
+            manifest = self.build_mock_candidate(root, 'raise SystemExit(0)\n', 'com.example.neutral')
+            for i, changes in enumerate([dict(rootArgument='-logFile'), dict(rootArgument='--sampleEvidenceRoot'),
+                    dict(rootArgument='-sampleEvidenceRoot;bad'), dict(rootArgument='../sampleEvidenceRoot'),
+                    dict(root='/outside'), dict(arguments=['-quit']), dict(environment={'HOME':'/outside'}),
+                    dict(expectedBundleIdentifier=True), dict(expectedBundleIdentifier='wrong.bundle'),
+                    dict(schemaVersion=True), dict(contract='wrong')]):
+                spec, expected = self.observation_spec(root, **changes)
+                output = root/('rejected-'+str(i))
+                with self.subTest(changes=changes), patch('beaver.debug.subprocess.Popen') as popen:
+                    with self.assertRaises(BeaverError):
+                        start(manifest, output, digest_file(manifest), observation_spec=spec, expected_observation=expected)
+                    self.assertFalse(output.exists()); popen.assert_not_called()
+            spec, expected = self.observation_spec(root)
+            for args in [dict(observation_spec=spec), dict(expected_observation=expected),
+                         dict(observation_spec=spec, expected_observation='0'*64),
+                         dict(deadline_utc='2000-01-01T00:00:00Z'), dict(deadline_utc='tomorrow'),
+                         dict(deadline_utc='2030-01-01T00:00:00+08:00')]:
+                with self.subTest(args=args), patch('beaver.debug.subprocess.Popen') as popen:
+                    with self.assertRaises(BeaverError): start(manifest, root/'no-worker', digest_file(manifest), **args)
+                    self.assertFalse((root/'no-worker').exists()); popen.assert_not_called()
+
+    def test_observation_reaches_exact_new_root_and_cold_start_keeps_artifact(self):
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
+            root = Path(temp).resolve()
+            body = ('import sys,json,os\nfrom pathlib import Path\n'
+                    'out=Path(sys.argv[sys.argv.index("-sampleObservationRoot")+1])\n'
+                    '(out/"observer.json").write_text(json.dumps(dict(root=str(out),cwd=os.getcwd(),args=sys.argv)))\n'
+                    'Path(sys.argv[sys.argv.index("-logFile")+1]).write_text("native-log-marker")\n'
+                    'print("console-marker",flush=True)\n')
+            manifest = self.build_mock_candidate(root, body, 'com.example.neutral')
+            original = digest_file(manifest); spec, expected = self.observation_spec(root)
+            pids = []
+            for name in ['first cold run', 'second cold run']:
+                run = root/name
+                launched = start(manifest, run, original, duration=10, observation_spec=spec, expected_observation=expected)
+                ended = self.wait_worker_status(launched['session'], {'exited','failed'})
+                self.assertEqual(ended['status'], 'exited'); self.assertEqual(ended['exitCode'], 0)
+                self.assertTrue(ended['childReaped']); self.assertTrue(ended['owned'])
+                observed = json.loads((run/'observer.json').read_text())
+                self.assertEqual(observed['root'], str(run)); self.assertEqual(observed['cwd'], str(manifest.parent/'player/Mock.app'))
+                self.assertEqual((run/'observation-spec.json').read_bytes(), spec.read_bytes())
+                self.assertIn('console-marker', (run/'console.log').read_text())
+                self.assertEqual((run/'player.log').read_text(), 'native-log-marker')
+                self.assertIsInstance(ended['artifactVerificationAfter'], dict)
+                self.assertEqual(digest_file(manifest), original)
+                absent = subprocess.run(['ps','-p',str(ended['pid']),'-o','pid='], capture_output=True, text=True)
+                self.assertEqual(absent.stdout.strip(), '')
+                pids.append(ended['pid'])
+            self.assertNotEqual(*pids)
+            with self.assertRaises(BeaverError):
+                start(manifest, root/'first cold run', original, observation_spec=spec, expected_observation=expected)
+
+    def test_legacy_stop_file_reaps_only_owned_child_and_deadline_shortens_budget(self):
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
+            root = Path(temp).resolve()
+            manifest = self.build_mock_candidate(root, 'import time\ntime.sleep(60)\n', 'com.example.neutral')
+            spec, expected = self.observation_spec(root)
+            foreign = subprocess.Popen([sys.executable, '-c', 'import time;time.sleep(60)'])
+            try:
+                launched = start(manifest, root/'stop-file', digest_file(manifest), duration=30,
+                                 observation_spec=spec, expected_observation=expected)
+                self.wait_worker_status(launched['session'], {'running'})
+                (root/'stop-file/STOP').write_text('')
+                ended = self.wait_worker_status(launched['session'], {'stopped','failed'})
+                self.assertEqual(ended['status'], 'stopped'); self.assertEqual(ended['stopReason'], 'requested')
+                self.assertTrue(ended['childReaped']); self.assertIsNone(foreign.poll())
+                deadline = (datetime.now(timezone.utc)+timedelta(seconds=3)).isoformat()
+                launched = start(manifest, root/'external-deadline', digest_file(manifest), duration=30,
+                                 observation_spec=spec, expected_observation=expected, deadline_utc=deadline)
+                ended = self.wait_worker_status(launched['session'], {'failed'}, timeout=10)
+                self.assertEqual(ended['stopReason'], 'external_deadline_expired')
+                self.assertTrue(ended['stoppedByBudget']); self.assertTrue(ended['childReaped'])
+                self.assertIsNone(foreign.poll())
+            finally:
+                foreign.terminate(); foreign.wait(timeout=10)
+
+    def test_async_handoff_rechecks_frozen_spec_artifact_and_deadline(self):
+        from beaver.debug import _worker
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
+            root = Path(temp).resolve()
+            for kind in ['artifact', 'spec', 'deadline']:
+                case = root/kind; case.mkdir()
+                manifest = self.build_mock_candidate(case, 'raise SystemExit(0)\n', 'com.example.neutral')
+                spec, expected = self.observation_spec(case)
+                with patch('beaver.debug.subprocess.Popen'):
+                    launched = start(manifest, case/'run', digest_file(manifest), duration=30,
+                                     observation_spec=spec, expected_observation=expected)
+                session = Path(launched['session'])
+                if kind == 'artifact':
+                    (manifest.parent/'player/Mock.app/Contents/MacOS/Mock').write_text('later manual edit')
+                if kind == 'spec': session.with_name('observation-spec.json').write_text('{}')
+                epoch = load(read(session))['deadlineEpoch']+1 if kind == 'deadline' else time.time()
+                with patch('beaver.debug.time.time', return_value=epoch), patch('beaver.debug.subprocess.Popen') as popen:
+                    _worker(session); popen.assert_not_called()
+                ended = load(read(session.with_name('status.json')))
+                self.assertEqual(ended['status'], 'failed'); self.assertFalse(ended['childStarted'])
+
+    def test_worker_error_after_spawn_still_reaps_owned_child(self):
+        import beaver.debug as debug
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
+            root = Path(temp).resolve()
+            manifest = self.build_mock_candidate(root, 'import time\ntime.sleep(60)\n', 'com.example.neutral')
+            spec, expected = self.observation_spec(root)
+            with patch('beaver.debug.subprocess.Popen'):
+                launched = start(manifest, root/'run', digest_file(manifest), observation_spec=spec, expected_observation=expected)
+            original = debug._write_status
+            def injected(path, status, **fields):
+                if status == 'running': raise OSError('simulated status write failure after spawn')
+                return original(path, status, **fields)
+            with patch('beaver.debug._write_status', side_effect=injected): debug._worker(launched['session'])
+            ended = load(read(Path(launched['session']).with_name('status.json')))
+            self.assertEqual(ended['status'], 'failed'); self.assertTrue(ended['childReaped'])
+            absent = subprocess.run(['ps','-p',str(ended['pid']),'-o','pid='],capture_output=True,text=True)
+            self.assertEqual(absent.stdout.strip(), '')
 
     def transaction(self, root, unity=False, operation='validate.play', play_frames=None,
                     report_status='verified', report_plan_override=None, exited=True):
@@ -209,7 +342,7 @@ class DebugSessionTests(unittest.TestCase):
         return root
 
     def test_native_inspector_blocks_plan_identity_mismatch(self):
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             root = Path(temp)
             self.transaction(root, report_plan_override='0'*64)
             result = inspect_native(root)
@@ -217,7 +350,7 @@ class DebugSessionTests(unittest.TestCase):
             self.assertIn('native report plan identity mismatch', result['diagnostics'])
 
     def test_play_mode_requires_native_frames_and_running_editor_is_unverified(self):
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             root = Path(temp)
             self.transaction(root, unity=True, play_frames=None)
             result = inspect_native(root)
@@ -225,7 +358,7 @@ class DebugSessionTests(unittest.TestCase):
             self.assertEqual(result['playModeStatus'], 'plannedPlayMode_unverified')
             self.assertEqual(result['status'], 'partial')  # v1 process record has no executable path
 
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             root = Path(temp)
             self.transaction(root, unity=True, play_frames=7, exited=False, report_status='running')
             result = inspect_native(root)
@@ -235,7 +368,7 @@ class DebugSessionTests(unittest.TestCase):
             self.assertEqual(result['status'], 'partial')
 
     def test_batch_recorded_exit_and_verified_native_are_reported_separately(self):
-        with tempfile.TemporaryDirectory(dir='/private/tmp') as temp:
+        with tempfile.TemporaryDirectory(dir=os.environ.get('BEAVER_TEST_TMPDIR')) as temp:
             root = Path(temp)
             self.transaction(root)
             result = inspect_native(root)

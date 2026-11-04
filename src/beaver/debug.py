@@ -20,6 +20,8 @@ from .output_limits import digest_file
 from .payload import verify_manifest
 
 MAX_DURATION = 3600
+OBSERVATION_CONTRACT = 'beaver-debug-observation/1'
+_OBSERVATION_FLAG = re.compile(r'^-(?:evidenceRoot|observationRoot|[A-Za-z][A-Za-z0-9_]{0,47}(?:EvidenceRoot|ObservationRoot))$')
 _SECRET = re.compile(r"(?i)(bearer\s+|(?:token|password|secret|api[_-]?key)=)[^\s\"']+")
 
 
@@ -106,22 +108,73 @@ def _viewport(width, height):
     return dict(width=width, height=height)
 
 
-def _app_arguments(executable, log_path, marker, width=None, height=None):
+def _observation(spec, expected):
+    if spec is None and expected is None:
+        return None, None, None
+    if spec is None or not isinstance(expected, str) or not re.fullmatch(r'[a-f0-9]{64}', expected):
+        fail('DEBUG_OBSERVATION_SPEC', 'observation', 'Supply both the spec and its exact lowercase SHA256')
+    path = safe(spec)
+    raw = read(path, max_bytes=64*1024)
+    if sha(raw) != expected:
+        fail('DEBUG_OBSERVATION_DRIFT', str(path), 'Observation spec differs from its reviewed SHA256')
+    doc = load(raw, max_nodes=32)
+    required = {'schemaVersion', 'contract', 'rootArgument'}
+    if (not isinstance(doc, dict) or not required <= set(doc) or
+            set(doc) - required - {'expectedBundleIdentifier'} or
+            type(doc.get('schemaVersion')) is not int or doc['schemaVersion'] != 1 or
+            doc.get('contract') != OBSERVATION_CONTRACT or
+            not isinstance(doc.get('rootArgument'), str) or not _OBSERVATION_FLAG.fullmatch(doc['rootArgument'])):
+        fail('DEBUG_OBSERVATION_SPEC', str(path), 'Expected the closed observation-root contract; no raw argv, environment or input')
+    if 'expectedBundleIdentifier' in doc and (not isinstance(doc['expectedBundleIdentifier'], str) or
+            not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]{0,254}', doc['expectedBundleIdentifier'])):
+        fail('DEBUG_OBSERVATION_SPEC', str(path), 'Expected a literal bundle identifier')
+    return path, raw, doc
+
+
+def _deadline(duration, deadline_utc):
+    if type(duration) is not int or not 1 <= duration <= MAX_DURATION:
+        fail('DEBUG_DURATION', str(duration), 'Explicit process budget must be 1..3600 seconds')
+    now = time.time()
+    effective = now + duration
+    normalized = None
+    reason = 'duration_budget_expired'
+    if deadline_utc is not None:
+        if not isinstance(deadline_utc, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|\+00:00)', deadline_utc):
+            fail('DEBUG_DEADLINE', 'deadline-utc', 'Expected an explicit UTC timestamp, with seconds and Z or +00:00')
+        try:
+            requested = datetime.fromisoformat(deadline_utc.replace('Z', '+00:00'))
+        except ValueError:
+            fail('DEBUG_DEADLINE', 'deadline-utc', 'Invalid UTC deadline')
+        if requested.timestamp() <= now:
+            fail('DEBUG_DEADLINE', 'deadline-utc', 'External deadline has already expired')
+        normalized = requested.isoformat()
+        if requested.timestamp() < effective:
+            effective = requested.timestamp()
+            reason = 'external_deadline_expired'
+    return effective, normalized, reason
+
+
+def _app_arguments(executable, log_path, marker, width=None, height=None, observation=None, run_directory=None):
     viewport = _viewport(width, height)
     args = [str(executable), '-screen-fullscreen', '0']
     if viewport is not None:
         args.extend(['-screen-width', str(viewport['width']), '-screen-height', str(viewport['height'])])
+    if observation is not None:
+        if run_directory is None:
+            fail('DEBUG_OBSERVATION_ROOT', 'observation', 'Observation root must be this newly created session directory')
+        args.extend([observation['rootArgument'], str(run_directory)])
     args.extend(['-logFile', str(log_path), '-beaver-session='+marker])
     return args
 
 
-def start(manifest, output, expected, duration=MAX_DURATION, width=None, height=None):
+def start(manifest, output, expected, duration=MAX_DURATION, width=None, height=None,
+          observation_spec=None, expected_observation=None, deadline_utc=None):
     viewport = _viewport(width, height)
+    deadline, external_deadline, deadline_reason = _deadline(duration, deadline_utc)
+    observation_path, observation_raw, observation = _observation(observation_spec, expected_observation)
     path = safe(manifest)
     if expected != digest_file(path):
         fail('DEBUG_MANIFEST_DRIFT', str(path), 'Explicit --expected must match the artifact manifest SHA256')
-    if type(duration) is not int or not 1 <= duration <= MAX_DURATION:
-        fail('DEBUG_DURATION', str(duration), 'Explicit process budget must be 1..3600 seconds')
     doc = load(read(path, max_bytes=128 * 1024**2), max_nodes=8_000_000)
     if doc.get('schemaVersion') != 1 or not doc.get('sourceSha256') or not isinstance(doc.get('files'), list):
         fail('DEBUG_MANIFEST', str(path), 'Expected a beaver build artifact manifest')
@@ -141,6 +194,8 @@ def start(manifest, output, expected, duration=MAX_DURATION, width=None, height=
     name = info.get('CFBundleExecutable')
     if not isinstance(name, str) or Path(name).name != name:
         fail('DEBUG_EXECUTABLE', str(app), 'Invalid CFBundleExecutable')
+    if observation and observation.get('expectedBundleIdentifier') is not None and info.get('CFBundleIdentifier') != observation['expectedBundleIdentifier']:
+        fail('DEBUG_BUNDLE_ID', str(app), 'Candidate bundle identifier differs from the reviewed observation spec')
     executable = safe(app / 'Contents/MacOS' / name)
     rel = executable.relative_to(root).as_posix()
     rows = {row.get('path'): row for row in doc['files'] if isinstance(row, dict)}
@@ -148,17 +203,29 @@ def start(manifest, output, expected, duration=MAX_DURATION, width=None, height=
         fail('DEBUG_EXECUTABLE', str(executable), 'Executable is not an executable listed in the artifact manifest')
     session_id = str(uuid.uuid4())
     marker = 'beaver-debug-session-' + session_id
+    if deadline <= time.time():
+        fail('DEBUG_DEADLINE', 'deadline-utc', 'Effective deadline expired during preparation')
     stage = new_output(output, [root])
+    observation_snapshot = None
+    if observation_raw is not None:
+        observation_snapshot = stage/'observation-spec.json'
+        observation_snapshot.write_bytes(observation_raw)
+        observation_snapshot.chmod(0o600)
     record = dict(schemaVersion=1, sessionId=session_id, sessionMarker=marker, status='starting',
                   pid=None, executable=str(executable), executableSha256=rows[rel]['sha256'],
                   artifactRoot=str(root), artifactManifest=str(path), artifactManifestSha256=expected,
                   sourceSha256=doc['sourceSha256'], startedUtc=datetime.now(timezone.utc).isoformat(),
-                  durationBudgetSeconds=duration, deadlineEpoch=time.time()+duration,
+                  durationBudgetSeconds=duration, deadlineEpoch=deadline,
+                  externalDeadlineUtc=external_deadline, deadlineReason=deadline_reason,
                   requestedViewport=viewport,
                   runDirectory=str(stage), logPath=str(stage/'player.log'), screenshotEvidence=[],
+                  consolePath=str(stage/'console.log'),
+                  observationSpec=str(observation_snapshot) if observation_snapshot else None,
+                  observationSpecSha256=expected_observation,
+                  observationRoot=str(stage) if observation else None,
                   targetInspection=dict(status='candidate_app', kind='App', note='This API launches a fixed app candidate; it does not assert gameplay success'),
                   artifactVerificationBefore=before,
-                  scope='fixed candidate only; no real project, backend or player saves')
+                  scope='explicit fixed candidate only; no Editor/backend attachment or inferred save/gameplay isolation')
     write_json(stage/'session.json', record)
     _write_status(stage/'session.json', 'starting')
     # The worker writes status.json separately; the immutable session record
@@ -183,56 +250,108 @@ def start(manifest, output, expected, duration=MAX_DURATION, width=None, height=
                 artifactVerification=before, note='Worker launch is asynchronous; inspect_session reports process state, not game success')
 
 
+def _worker_candidate(record):
+    root = safe(record['artifactRoot'])
+    manifest = safe(record['artifactManifest'])
+    if manifest.parent != root or digest_file(manifest) != record['artifactManifestSha256']:
+        fail('DEBUG_MANIFEST_DRIFT', str(manifest), 'Candidate manifest changed before worker launch')
+    verified = verify_manifest(root, manifest, scope='player', allow_links=True, artifact=True)
+    apps = list((root/'player').glob('*.app'))
+    if len(apps) != 1:
+        fail('DEBUG_APP', str(root), 'Expected exactly one fixed app at worker launch')
+    info = plistlib.loads(read(apps[0]/'Contents/Info.plist'))
+    name = info.get('CFBundleExecutable')
+    if not isinstance(name, str) or Path(name).name != name:
+        fail('DEBUG_EXECUTABLE', str(apps[0]), 'Invalid frozen executable name')
+    executable = safe(apps[0]/'Contents/MacOS'/name)
+    if (str(executable) != record['executable'] or not os.access(executable, os.X_OK) or
+            digest_file(executable) != record['executableSha256']):
+        fail('DEBUG_EXECUTABLE', str(executable), 'Candidate executable changed before worker launch')
+    return verified, info
+
+
 def _worker(session_path):
-    path = Path(session_path)
+    path = _session_path(session_path)
     record = load(read(path, max_bytes=2*1024*1024))
-    marker = record['sessionMarker']
-    viewport = record.get('requestedViewport') or {}
-    args = _app_arguments(record['executable'], record['logPath'], marker,
-                          viewport.get('width'), viewport.get('height'))
-    # Keep only non-secret launch essentials; stale control-job variables are removed.
-    env = {k: v for k, v in os.environ.items() if k in ('PATH','HOME','TMPDIR','LANG','LC_ALL')}
+    process = None
+    launched = {}
+    final_status = 'failed'
+    final_fields = {}
     try:
-        with open(record['logPath'], 'ab') as log:
-            process = subprocess.Popen(args, cwd=Path(record['executable']).parent, env=env,
+        # Recheck after the asynchronous handoff, before invoking any candidate.
+        before, info = _worker_candidate(record)
+        observation = None
+        if record.get('observationSpec') is not None:
+            snapshot = safe(record['observationSpec'])
+            if snapshot != path.parent/'observation-spec.json' or record.get('observationRoot') != str(path.parent):
+                fail('DEBUG_OBSERVATION_ROOT', str(snapshot), 'Observation belongs only to this fresh session')
+            _, _, observation = _observation(snapshot, record.get('observationSpecSha256'))
+            if observation.get('expectedBundleIdentifier') is not None and info.get('CFBundleIdentifier') != observation['expectedBundleIdentifier']:
+                fail('DEBUG_BUNDLE_ID', record['executable'], 'Frozen bundle identifier changed')
+        remaining = min(record['deadlineEpoch'] - time.time(), record['durationBudgetSeconds'])
+        if remaining <= 0:
+            fail('DEBUG_DEADLINE', str(path), 'Deadline expired before owned child launch')
+        monotonic_deadline = time.monotonic() + remaining
+        viewport = record.get('requestedViewport') or {}
+        args = _app_arguments(record['executable'], record['logPath'], record['sessionMarker'],
+                              viewport.get('width'), viewport.get('height'), observation, path.parent)
+        env = {k: v for k, v in os.environ.items() if k in ('PATH','HOME','TMPDIR','LANG','LC_ALL')}
+        cwd = Path(record['executable']).parents[2] if observation is not None else Path(record['executable']).parent
+        with open(record.get('consolePath', record['logPath']), 'ab') as log:
+            process = subprocess.Popen(args, cwd=cwd, env=env,
                                        stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                                        close_fds=True, start_new_session=True)
-        launched = dict(pid=process.pid, processStarted=_ps(process.pid, 'lstart'),
+        launched = dict(pid=process.pid, owned=True, launchCwd=str(cwd), processStarted=_ps(process.pid, 'lstart'),
                         executable=record['executable'], executableSha256=record['executableSha256'],
-                        sessionMarker=marker, launchArguments=args,
-                        launchedUtc=datetime.now(timezone.utc).isoformat())
+                        sessionMarker=record['sessionMarker'], launchArguments=args,
+                        launchedUtc=datetime.now(timezone.utc).isoformat(),
+                        artifactVerificationAtLaunch=before)
         _write_status(path, 'running', **launched)
         while process.poll() is None:
-            request = path.parent/'stop-request.json'
-            if time.time() >= record['deadlineEpoch']:
+            if time.time() >= record['deadlineEpoch'] or time.monotonic() >= monotonic_deadline:
                 _terminate_owned(process)
-                final_status = 'failed'
-                final_fields = dict(**launched, stopReason='duration_budget_expired', exitCode=process.poll())
+                final_status = 'failed'  # Preserve the existing debug budget-expiry contract.
+                final_fields.update(stopReason=record.get('deadlineReason', 'duration_budget_expired'),
+                                    stoppedByBudget=True)
                 break
-            if request.exists():
+            if (path.parent/'stop-request.json').exists() or (observation is not None and (path.parent/'STOP').is_file()):
                 _terminate_owned(process)
                 code = process.poll()
                 final_status = 'stopped' if code == -signal.SIGTERM else ('exited' if code == 0 else 'failed')
-                final_fields = dict(**launched, stopResult='stop_request_processed', exitCode=code,
-                                    exitedUtc=datetime.now(timezone.utc).isoformat())
+                final_fields.update(stopResult='stop_request_processed', stopReason='requested', stoppedByBudget=False)
                 break
             time.sleep(0.25)
         else:
             code = process.returncode
             final_status = 'stopped' if code == -signal.SIGTERM else ('exited' if code == 0 else 'failed')
-            final_fields = dict(**launched, exitCode=code, exitedUtc=datetime.now(timezone.utc).isoformat(),
-                                result='process lifecycle only; gameplay success is not established')
-        try:
-            after = verify_manifest(record['artifactRoot'], record['artifactManifest'], scope='player', allow_links=True,artifact=True)
-        except BeaverError as error:
-            final_status = 'failed'
-            final_fields['artifactVerificationAfter'] = 'failed'
-            final_fields['artifactDiagnostic'] = error.as_dict()
+            final_fields.update(result='process lifecycle only; gameplay success is not established', stoppedByBudget=False)
+    except BaseException as error:
+        final_status = 'failed'
+        final_fields['diagnostic'] = type(error).__name__ + ': ' + str(error)
+    finally:
+        # Never substitute a recorded PID: cleanup uses only this worker's Popen child.
+        if process is not None:
+            try:
+                if process.poll() is None:
+                    _terminate_owned(process)
+                code = process.wait(timeout=0)
+                final_fields.update(exitCode=code, childReaped=True)
+            except BaseException as error:
+                final_status = 'failed'
+                final_fields.update(childReaped=False, cleanupDiagnostic=type(error).__name__ + ': ' + str(error))
         else:
-            final_fields['artifactVerificationAfter'] = after
-        _write_status(path, final_status, **final_fields)
-    except Exception as error:
-        _write_status(path, 'failed', diagnostic=type(error).__name__ + ': ' + str(error))
+            final_fields['childReaped'] = False
+            final_fields['childStarted'] = False
+        try:
+            if digest_file(record['artifactManifest']) != record['artifactManifestSha256']:
+                fail('DEBUG_MANIFEST_DRIFT', record['artifactManifest'], 'Candidate manifest changed during the session')
+            final_fields['artifactVerificationAfter'] = verify_manifest(record['artifactRoot'], record['artifactManifest'], scope='player', allow_links=True, artifact=True)
+        except BaseException as error:
+            final_status = 'failed'
+            final_fields.update(artifactVerificationAfter='failed', artifactDiagnostic=type(error).__name__ + ': ' + str(error))
+        final_fields['exitedUtc'] = datetime.now(timezone.utc).isoformat()
+        final_fields['independentPidAbsence'] = 'not_checked; childReaped records only Popen wait/reap'
+        _write_status(path, final_status, **launched, **final_fields)
 
 
 def _terminate_owned(process):

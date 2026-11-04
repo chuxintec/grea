@@ -61,7 +61,7 @@ def capabilities():
         dict(id='batch.apply',state='requires_provider',provider='Unity 6000.6.2f1 + project uGUI/TMP',effects='declared-project-write',verification='one Editor process; native checkpoint and serialized save/reload checks'),
         dict(id='batch.recover',state='requires_provider',provider='same pinned beaver + Unity 6000.6.2f1',effects='hash-owned-restore',verification='exact witnessed after state required; later edits and missing checkpoints block'),
         dict(id='references',state='implemented',effects='read-and-index-output',verification='static GUID graph, literal spans, unknown dynamic keys; incremental cache'),
-        dict(id='debug.start',state='implemented',effects='owned-budgeted-process',verification='fixed candidate manifest; asynchronous worker'),
+        dict(id='debug.start',state='implemented',effects='owned-budgeted-process',verification='fixed candidate manifest; existing asynchronous worker; optional closed observation-root and UTC deadline'),
         dict(id='debug.inspect',state='implemented',effects='read',verification='PID/executable/start/marker identity; unknown probes remain partial'),
         dict(id='debug.target',state='implemented',effects='read',verification='pinned Editor/PlayMode transaction evidence; no external attachment'),
         dict(id='debug.stop',state='implemented',effects='own-worker-stop-request',verification='worker Popen child ownership; no arbitrary PID signals'),
@@ -234,6 +234,7 @@ def parser():
     refs=sub.add_parser('references');refs.add_argument('--project',required=True);refs.add_argument('--out',required=True);refs.add_argument('--cache')
     debug=sub.add_parser('debug').add_subparsers(dest='action',required=True)
     ds=debug.add_parser('start');ds.add_argument('--manifest',required=True);ds.add_argument('--expected',required=True);ds.add_argument('--out',required=True);ds.add_argument('--duration',type=int,default=3600);ds.add_argument('--width',type=int);ds.add_argument('--height',type=int)
+    ds.add_argument('--observation-spec');ds.add_argument('--expected-observation');ds.add_argument('--deadline-utc')
     for name in ('inspect','stop','tail','screenshot'):
         d=debug.add_parser(name);d.add_argument('--session',required=True)
         if name=='tail':d.add_argument('--lines',type=int,default=80)
@@ -481,7 +482,9 @@ def dispatch(a):
     if a.command=='debug':
         from .debug import start,inspect_session,stop,tail,screenshot_record,inspect_native
         if a.action=='target':return inspect_native(a.transaction)
-        if a.action=='start':return start(a.manifest,a.out,a.expected,a.duration,a.width,a.height)
+        if a.action=='start':return start(a.manifest,a.out,a.expected,a.duration,a.width,a.height,
+                                        observation_spec=a.observation_spec, expected_observation=a.expected_observation,
+                                        deadline_utc=a.deadline_utc)
         if a.action=='inspect':return inspect_session(a.session)
         if a.action=='stop':return stop(a.session)
         if a.action=='tail':return tail(a.session,a.lines)

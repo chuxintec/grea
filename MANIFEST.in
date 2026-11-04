@@ -8,6 +8,7 @@ include docs/CLI-CONTRACT.md
 include docs/CONFIGURATION-v3.md
 include docs/CSHARP-MAINTENANCE.md
 include docs/DEBUG-SESSIONS.md
+include docs/DEVELOPMENT-v0.7.md
 include docs/DIAGNOSTICS.md
 include docs/EMPTY-FOLDERS.md
 include docs/FOLDER-MOVES.md
