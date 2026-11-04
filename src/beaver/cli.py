@@ -642,6 +642,14 @@ def main(argv=None):
         if isinstance(error,BeaverError):
             if getattr(a,'command',None)=='intake' and a.action=='prepare-bindings' and Path(a.out).is_dir():
                 base['actualChanges']=[dict(status='inspect_isolated_preparation_copy',preparationDirectory=a.out,targetProjectWrites=False,reason='Native preparation may have failed after isolated writes; preserve evidence; output is not adoptable')]
+                from .intake_bindings import failed_native_attempts
+                try:
+                    attempts=failed_native_attempts(a.out)
+                    if attempts:
+                        base['verification']['native']='failed' if all(p['exited'] for p in attempts) else 'attempted_exit_pending'
+                        base['actualChanges'][0]['nativeProcesses']=attempts
+                except (BeaverError,OSError,ValueError):
+                    base['verification']['native']='unknown_process_receipt'
             if getattr(a,'command',None)=='intake' and a.action in ('apply','rollback'):
                 stage=Path(a.out if a.action=='apply' else a.transaction)
                 if (stage/'journal.json').is_file():

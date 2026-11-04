@@ -106,6 +106,17 @@ public static class BeaverIntakeBindings {
             }
         }
     }
+    static UnityEngine.Object ResolveOwner(string path,string guid,long localId) {
+        // Replacing m_Script destroys the old managed component wrapper. Never
+        // retain that wrapper across ApplyModifiedPropertiesWithoutUndo.
+        var found=new List<UnityEngine.Object>();
+        foreach(var candidate in Objects(Load(path))) {
+            string currentGuid;long currentLocal;
+            if(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(candidate,out currentGuid,out currentLocal)&&currentGuid==guid&&currentLocal==localId)found.Add(candidate);
+        }
+        if(found.Count!=1)throw new Exception("Exact persistent owner was lost/duplicated after native script replacement "+path+"#"+guid+":"+localId);
+        return found[0];
+    }
     static Snapshot Capture(bool cold) {
         var snap=new Snapshot{planSha256=job.planSha256};int count=0;
         foreach(var path in job.prefabs.OrderBy(x=>x,StringComparer.Ordinal)) {
@@ -140,10 +151,12 @@ public static class BeaverIntakeBindings {
     }
     static void Apply() {
         foreach(var path in job.prefabs) {
-            var asset=Load(path);bool changed=false;
-            foreach(var value in Objects(asset).ToArray()) {
+            bool changed=false;
+            var keys=Objects(Load(path)).Select(value=>{string g;long id;if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out g,out id)||id==0)throw new Exception("Missing persistent owner before native binding");return new Owner{guid=g,localId=id};}).ToArray();
+            foreach(var key in keys) {
+                var value=ResolveOwner(path,key.guid,key.localId);bool edit=false;
                 using(var so=new SerializedObject(value)) {
-                    so.UpdateIfRequiredOrScript();var p=so.GetIterator();bool edit=false;
+                    so.UpdateIfRequiredOrScript();var p=so.GetIterator();
                     while(p.Next(true)) {
                         if(p.propertyType!=SerializedPropertyType.ObjectReference||!(p.objectReferenceValue is MonoScript))continue;
                         var script=(MonoScript)p.objectReferenceValue;string guid;long local;
@@ -153,10 +166,11 @@ public static class BeaverIntakeBindings {
                         if(local!=b.sourceLocalId)throw new Exception("Source MonoScript reference localID differs");
                         p.objectReferenceValue=replacement;report.referencesMapped++;report.mappedSourceGuids.Add(guid);edit=true;
                     }
-                    if(edit) { if(!so.ApplyModifiedPropertiesWithoutUndo())throw new Exception("Native serialized binding was not applied");EditorUtility.SetDirty(value);changed=true; }
+                    if(edit&&!so.ApplyModifiedPropertiesWithoutUndo())throw new Exception("Native serialized binding was not applied");
                 }
+                if(edit) { EditorUtility.SetDirty(ResolveOwner(path,key.guid,key.localId));changed=true; }
             }
-            if(changed)PrefabUtility.SavePrefabAsset(asset);
+            if(changed)PrefabUtility.SavePrefabAsset(Load(path));
         }
         AssetDatabase.SaveAssets();
         if(!report.mappedSourceGuids.Distinct(StringComparer.Ordinal).OrderBy(x=>x,StringComparer.Ordinal).SequenceEqual(job.bindings.Select(b=>b.sourceGuid).OrderBy(x=>x,StringComparer.Ordinal)))throw new Exception("At least one declared binding had no native serialized reference");

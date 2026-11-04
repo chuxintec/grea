@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "beaver",
-  "updatedAt": "2026-11-04T21:09:25+08:00",
+  "updatedAt": "2026-11-04T21:25:25.001562+08:00",
   "sourceOfTruth": "/Users/wangmeng/MyProjects/Tools/beaver/docs/PLAN.md",
   "projectionPolicy": "This block records Beaver module identity and completed local history only. GREA lifecycle roadmap is the sole source for current task status and assignment; handoff maps preserved inputs without duplicating task state.",
   "currentVersion": "0.6.0",
@@ -100,7 +100,7 @@
     "nextTarget": "No Beaver-local target; await GREA task assignment."
   },
   "releasedVersion": "0.6.0",
-  "developmentCheckoutVersion": "0.7.0.dev1",
+  "developmentCheckoutVersion": "0.7.0.dev3",
   "governance": {
     "effectiveAt": "2026-11-04T18:35:00.866278+08:00",
     "moduleOf": "grea",
@@ -329,7 +329,6 @@
     {
       "id": "beaver:T-version-branch-cleanup-20261104",
       "title": "实际版本分支归并与远端默认迁移",
-      "primaryReleaseId": "beaver:R-0.7.0",
       "workflowStatus": "done",
       "description": "本地/远端仅保留v0.6.0与v0.7.0.dev1；默认v0.6.0。10旧本地heads都由本地history-only merge保留祖先后退役，2旧远端heads删除。5树/33 WIP字节、全部tag、已固定制品不变；私有旧历史未上传，source tree与固定dev1完全相同。",
       "sourceRefs": [
@@ -338,9 +337,16 @@
           "selector": "localHeads/remoteHeads/default/worktreeChecks/tags"
         }
       ],
-      "blockerIds": []
+      "blockerIds": [],
+      "historicalReleaseId": "beaver:R-0.7.0"
     }
-  ]
+  ],
+  "moduleTechnicalEvidence": {
+    "intakeBindingCandidate": "/Users/wangmeng/MyProjects/Tools/beaver/.private/intake-bindings-20261104/dev3/candidate-delivery.json",
+    "version": "0.7.0.dev3",
+    "greaTaskId": "grea:T-foodstreet-four-activity-bulk",
+    "note": "Fixed implementation identity is in candidate index. GREA owns live native/consumer acceptance; dev2 failed native copy retained unchanged. No independent development task authority."
+  }
 }
 ```
 

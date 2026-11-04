@@ -1,5 +1,8 @@
 """Preparation planning and immutable-input guards; native gates are separate."""
 import copy
+import contextlib
+import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,7 +10,7 @@ from unittest.mock import patch
 
 from beaver.errors import BeaverError
 from beaver.io import sha, write_json
-from beaver.intake_bindings import build_plan, preview, validate_spec, execute, BRIDGE
+from beaver.intake_bindings import build_plan, preview, validate_spec, execute, failed_native_attempts, BRIDGE
 from test_intake import _project, _write_asset
 
 
@@ -98,6 +101,27 @@ class BindingTests(unittest.TestCase):
                 self.error('INJECTED_NATIVE_FAILURE',execute,result['report'],result['planSha256'],root/'prepared','unused')
             self.assertTrue((root/'prepared/UnityProject'/BRIDGE/'Widget.cs').is_file())
             self.assertEqual(before,{str(x):x.read_bytes() for r in (s,t) for x in r.rglob('*') if x.is_file()})
+
+    def test_failed_native_process_is_reported_even_when_preparation_raises(self):
+        from beaver.cli import main
+        from beaver.errors import fail
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d).resolve()/'isolated'
+            def failed(*args):
+                out.mkdir();write_json(out/'apply-process.json',dict(pid=12345,exited=True,exitCode=1,interrupted=False))
+                fail('INTAKE_BINDING_NATIVE_FAILED',str(out),'native gate failed')
+            stdout=io.StringIO()
+            with patch('beaver.intake_bindings.execute',side_effect=failed),contextlib.redirect_stdout(stdout):
+                code=main(['intake','prepare-bindings','--plan','unused','--expected-plan','a'*64,'--out',str(out),'--editor-path','unused'])
+            data=json.loads(stdout.getvalue());self.assertEqual(code,2);self.assertEqual(data['verification']['native'],'failed')
+            self.assertEqual(data['actualChanges'][0]['nativeProcesses'][0]['pid'],12345)
+            self.assertFalse(data['actualChanges'][0]['targetProjectWrites'])
+
+    def test_no_native_attempt_inferred_from_preparation_directory_alone(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(failed_native_attempts(Path(d).resolve()),[])
+            write_json(Path(d)/'apply-process.json',dict(pid=True,exited=True))
+            self.error('INTAKE_BINDING_PROCESS_RECEIPT',failed_native_attempts,Path(d).resolve())
 
 
 if __name__=='__main__': unittest.main()

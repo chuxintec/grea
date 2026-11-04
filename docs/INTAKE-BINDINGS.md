@@ -37,6 +37,11 @@ MonoScript GetClass, assembly, GUID and localID. It uses SerializedObject object
 references, including m_Script, to map to the retained GUIDs and saves with
 PrefabUtility. It never edits serialized YAML or metadata text.
 
+Changing m_Script may destroy Unity's old managed component wrapper. The helper
+captures persistent owner GUID/localID keys and reacquires the exact current
+object after applying a binding before dirtying or saving. Lost or duplicate
+owner IDs fail the gate; exceptions and field comparisons are never skipped.
+
 The helper records every serialized property, persistent reference GUID/localID,
 object identity and property type before the change. Only the declared script
 identities and their matching Editor class identifier may differ. Unsupported
@@ -65,3 +70,7 @@ failure, retain that disposable directory and logs; no successful preparation
 receipt is emitted and no formal target rollback is needed. Never apply a failed
 copy or repeat a successful target intake transaction. Product/visual/business
 acceptance and full original behavior recovery are outside this operation.
+
+Failure envelopes distinguish a prelaunch failure (`native: not_run`) from a
+started Editor gate (`native: failed`, with owned PID/exit receipts) and an
+unreaped Editor (`native: attempted_exit_pending`). Preserve those receipts.

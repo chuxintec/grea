@@ -180,6 +180,20 @@ def _run(stage, project, editor, mode, budget):
     return result
 
 
+def failed_native_attempts(stage):
+    """Report only bounded owned process receipts; never infer Editor from files."""
+    stage = safe(stage)
+    attempts = []
+    for mode in ('apply', 'verify'):
+        path = stage/(mode+'-process.json')
+        if not path.is_file(): continue
+        row = load(read(path, max_bytes=4096))
+        if type(row.get('pid')) is not int or row['pid'] <= 0 or type(row.get('exited')) is not bool:
+            fail('INTAKE_BINDING_PROCESS_RECEIPT', str(path), 'Malformed owned native process receipt')
+        attempts.append(dict(mode=mode, processReceipt=str(path), pid=row['pid'], exited=row['exited'], exitCode=row.get('exitCode'), interrupted=row.get('interrupted', False)))
+    return attempts
+
+
 def execute(plan_path, expected, output, editor, budget=600):
     if threading.current_thread() is not threading.main_thread() or type(budget) is not int or not 1 <= budget <= 1200:
         fail('INTAKE_BINDING_BUDGET', str(budget), 'Main-thread owner and 1..1200 seconds per Editor phase required')
