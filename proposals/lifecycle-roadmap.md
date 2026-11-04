@@ -456,7 +456,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey修嵌套实例共因并贯通审计结果合同；beaver用真实939文件拥有候选核既有intake.plan及剩余编译覆盖，不写正式目标。非渲染Spine保中间态，源可见内容必须另经工具实际恢复/验证。",
+      "nextAction": "monkey修嵌套实例及审计验收合同；beaver修requested/resolved包身份核验，按编译/序列化依赖生成101输入分类与有序采用批次，实跑intake.plan。原生准备门复用；源partial/视觉缺口仍阻塞最终采用。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
@@ -472,9 +472,11 @@
         "formalAdoption": "not_run",
         "sourceInputScope": "native03 partial source used only for binding tool verification; final adoption must use fresh complete source",
         "sourceRefs": [
-          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/beaver-native-bindings-four-02-dev6/provider-output/preparation-receipt.json"
+          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/beaver-native-bindings-four-02-dev6/provider-output/preparation-receipt.json",
+          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/ugui-resolved-identity-dev7.json"
         ],
-        "consumerExport": "939 owned files; sourceNative and typedCoverage remain partial; intake apply not_run"
+        "consumerExport": "939 owned files; sourceNative and typedCoverage remain partial; intake apply not_run",
+        "consumerPlan": "dev7工具生成spec4(152资产/4复用)实跑intake.plan；manifest声明UGUI2.0/2.6触发阻塞，但GREA只读核实双方lock/cache均builtin2.6，1395文件哈希全等。工具需完善声明/解析身份合同及101编译输入分类；不改正式包配置。"
       }
     },
     {
