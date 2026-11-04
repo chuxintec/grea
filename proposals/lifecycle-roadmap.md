@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-04T13:11:45.507072+00:00",
+  "updatedAt": "2026-11-04T13:51:33.053496+00:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "GREA v1.1统一任务源已实际迁移，模块6个未完任务及旧两根待办归并；两批优先级1，先肥鹅四页、后僵尸有源全量，均总监验收。统一monkey0.8dev10实际字体已通过，11业务Prefab/668节点保存重开，尚165静态引用差异待通用修复；beaver正在实现既有采用链脚本GUID重绑定。binary暂停。",
@@ -455,13 +455,25 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey按源组件族修165静态引用表达/映射共因，不以动态动画/Spine/全业务为前置；过静态后用既有freeze-native-selection交保存态。beaver交已验证固定重绑定入口及输入，肥鹅唯一writer采用。",
+      "nextAction": "monkey交三族增量续接固定入口，实际闭合Animation/Spine/材质剩余165静态引用；beaver修11批次报告预算并交消费者拥有导出接口后实际冷重开。单PrefabGUID重绑定两门已过；正式项目采用未运行。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
         "grea:B-foodstreet-static-reference-materialization"
       ],
-      "priority": 1
+      "priority": 1,
+      "bindingToolActual": {
+        "version": "beaver 0.7.0.dev4",
+        "sourceCommit": "f724c60",
+        "singlePrefab": "actual native apply + independent reopen passed; field/reference/object IDs preserved; source/target unchanged",
+        "elevenPrefabBatch": "actual apply verified 60 script references, Unity exit0; 36572825-byte report exceeded reader budget; cold reopen not_run",
+        "formalAdoption": "not_run",
+        "sourceInputScope": "native03 partial source used only for binding tool verification; final adoption must use fresh complete source",
+        "sourceRefs": [
+          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/beaver-native-bindings-single-03-dev4/provider-output/preparation-receipt.json",
+          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/beaver-native-bindings-four-01-dev4/provider-output/apply-report.json"
+        ]
+      }
     },
     {
       "id": "grea:T-zombie-first-level-source-gap",
@@ -681,7 +693,7 @@
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModule": "beaver",
       "legacyBlockerId": "beaver:B-native03-owned-export",
-      "description": "Actual native03 generated manifest does not own saved state; fixed0.6 public adoption.plan returns CANDIDATE_UNOWNED at ProjectSettings/ProjectSettings.asset. Fresh supported saved-state export with lineage required.",
+      "description": "monkey纯候选应先用其既有freeze生成拥有选择。beaver重绑后的准备副本当前无manifest及原source editor-readback，不能直接交monkey原freeze；准备工具需受支持消费者拥有导出及原始→保存→重绑谱系/更新oracle，不手工造拥有清单。",
       "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
       "sourceRefs": [],
       "sourceModuleRoot": "../beaver"
@@ -696,7 +708,7 @@
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModule": "beaver",
       "legacyBlockerId": "beaver:B-native03-runtime-bindings",
-      "description": "Four byte-identical helper full types use different source/target GUIDs; existing externalScripts equal-GUID contract prevents declaring reuse. Need supported binding resolution plus finite runtime compile closure/native oracle; no full original behavior recovery prerequisite.",
+      "description": "已由beaver dev4实现通用脚本GUID重绑定：单Prefab真实apply/独立重开通过；4脚本/11根apply实际60引用通过，报告36.6MB触发读取预算，cold未跑。工具继续修有界批量报告，正式采用未完。",
       "releaseCondition": "原证据中的真实技术缺口修复并经受影响实际调用验证；迁移不视作完成。",
       "sourceRefs": [],
       "sourceModuleRoot": "../beaver"
@@ -783,7 +795,7 @@
       "grea:T-monkey-dev8-consumer-handoff": "grea:T-zombie-bulk-static-prefabs"
     },
     "moduleActiveTaskRemoval": "verified_removed_in_both_source_files",
-    "finalPluginReadback": "grea/monkey/beaver current reads pass; default display scope awaits director update",
+    "finalPluginReadback": "verified: default current projects only foodstreet/zombie/grea, all error=null; monkey/beaver explicit history reads have zero unfinished tasks",
     "sourceFiles": {
       "grea": "proposals/lifecycle-roadmap.md",
       "monkey": "../monkey/docs/PLAN.md",
