@@ -188,3 +188,5 @@ Physical takeover diagnostic companion update adds bounded `takeoverDiagnostic` 
 
 
 Virtual pointer Mouse ownership update retains existing QA APIs/config/budgets. Only explicitly unpressed, unlocked, primary-display mouse motion with an event-supplied position outside the unchanged target viewport is ignored. Partial events without position, button/scroll changes, held drags, keyboard/other devices and unknown state preserve takeover stopping. Lifecycle ownership evidence explains the decision; a new Player companion build is required.
+
+`intake spec-bindings` emits a normal spec4/5 from an exact owned export, explicit mapping and optional reviewed policy, then invokes existing `intake.plan`; blocked consumption is preserved. See [INTAKE-BINDINGS.md](INTAKE-BINDINGS.md). No Editor, target writes, package installation or native replay.

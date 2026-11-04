@@ -100,7 +100,7 @@
     "nextTarget": "No Beaver-local target; await GREA task assignment."
   },
   "releasedVersion": "0.6.0",
-  "developmentCheckoutVersion": "0.7.0.dev6",
+  "developmentCheckoutVersion": "0.7.0.dev7",
   "governance": {
     "effectiveAt": "2026-11-04T18:35:00.866278+08:00",
     "moduleOf": "grea",

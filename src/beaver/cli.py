@@ -72,7 +72,7 @@ def capabilities():
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
         dict(id="adoption.rollback", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native normal/failed transaction restore; later-edit rejection"),
         dict(id='intake.plan/apply/rollback',state='requires_provider',provider='Unity 6000.6.2f1 for native phases',effects='create-only-reviewed-assets-and-guarded-owned-removal',verification='independent contract; exact before-state, explicit retained scripts, declared native fields; no existing adoption baseline override'),
-        dict(id='intake.bindings-plan/prepare-bindings/export-bindings',state='requires_provider',provider='Unity 6000.6.2f1 for preparation only; export continuation reuses exact original native gates',effects='new-isolated-source-copy-or-export; retained target read-only',verification='byte-identical script pins; native full comparison/cold reopen; exact original producer and identical helper required to continue export; no adoption claim'),
+        dict(id='intake.bindings-plan/prepare-bindings/export-bindings/spec-bindings',state='requires_provider',provider='Unity 6000.6.2f1 for preparation only; export continuation reuses exact original native gates',effects='new-isolated-source-copy-or-export; retained target read-only',verification='byte-identical script pins; native full comparison/cold reopen; exact original producer and identical helper required to continue export; no adoption claim'),
         dict(id="unity.plan", state="implemented", effects="plan-output", verification="python; exact source and implementation identity"),
         dict(id="unity.ui.create", state="requires_provider", provider="Unity 6000.6.2f1 + uGUI/TMP Essentials + explicit font", effects="project-write", verification="native save/reopen/source audit"),
         dict(id="unity.prefab.inspect", state="requires_provider", provider="Unity 6000.6.2f1", effects="temporary-editor-helper", verification="native hierarchy/localID/component/importer readback"),
@@ -156,6 +156,10 @@ def parser():
     binding_prepare.add_argument('--timeout',type=int,default=600)
     binding_export = intake.add_parser('export-bindings')
     for option in ('preparation','expected-plan','native-runtime','expected-native-producer','out'):binding_export.add_argument('--'+option,required=True)
+    binding_spec = intake.add_parser('spec-bindings')
+    for option in ('candidate','target','expected-manifest','mapping','out'):binding_spec.add_argument('--'+option,required=True)
+    binding_spec.add_argument('--policy')
+    binding_spec.add_argument('--preparation-receipt')
     intake_plan = intake.add_parser('plan')
     for option in ('candidate','target','spec','out'):intake_plan.add_argument('--'+option,required=True)
     intake_apply = intake.add_parser('apply')
@@ -409,6 +413,9 @@ def dispatch(a):
         from .adoption_native import recover
         return recover(a.transaction, a.editor_path, a.timeout)
     if a.command=='intake':
+        if a.action=='spec-bindings':
+            from .intake_binding_spec import generate
+            return generate(a.candidate,a.target,a.expected_manifest,a.mapping,a.out,a.policy,a.preparation_receipt)
         if a.action=='export-bindings':
             from .intake_bindings import export_existing
             return export_existing(a.preparation,a.expected_plan,a.native_runtime,a.expected_native_producer,a.out)

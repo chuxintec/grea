@@ -357,11 +357,12 @@ def execute(plan_path, expected, output, editor, budget=600):
                    bindings=plan['spec']['bindings'], nativeReports=[str(stage/(mode+'-report.json')) for mode in ('apply', 'verify')],
                    selectedPrefabs=plan['spec']['prefabs'], fieldsAndReferencesPreserved=True, independentReopen=True,
                    originalSourceAndTargetUnchanged=True, sourceFilesSha256=sha(encoded(plan['sourceFiles'])),
-                   preparedFiles=current, targetWrites=False, adoption='not_run', owningExport='required_GREA_freeze_native_selection')
+                   preparedFiles=current, targetWrites=False, adoption='not_run', owningExport='pending_owned_consumer_export')
     receipt['intakeBindingInputs'] = str(stage/'intake-binding-inputs.json')
     snapshot = load(read(snapshot_reference(stage, verified, 'verify'), max_bytes=SNAPSHOT_BYTES), max_nodes=SNAPSHOT_NODES)
     from .intake_binding_export import export_prepared
     receipt['consumerExport'] = export_prepared(stage, project, plan, current, snapshot)
+    receipt['owningExport'] = receipt['consumerExport']['status']
     write_json(stage/'preparation-receipt.json', receipt)
     return dict(status='prepared', report=str(stage/'preparation-receipt.json'), project=str(project),
                 bindings=len(plan['spec']['bindings']), prefabs=len(plan['spec']['prefabs']), native='verified-preparation-subset', targetWrites=False)

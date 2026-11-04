@@ -105,3 +105,19 @@ subasset IDs exactly; zero, booleans and out-of-range IDs remain invalid. Null
 references use the complete empty identity tuple. Source provenance is stored
 once in an owned8MiB sidecar; the1MiB lineage binds that sidecar rather than
 duplicating large original claims.
+
+`intake spec-bindings --candidate EXPORT --expected-manifest SHA256 --target TARGET
+--mapping MAPPING --out OUTPUT [--policy POLICY] [--preparation-receipt RECEIPT]`
+generates a normal schema 4 intake specification from inventoried native
+fragments and an explicit additions mapping, then actually calls the existing
+`intake.plan`. A reviewed policy may add existing compiler/asset declarations;
+schema 5 additionally permits the existing retained-assembly contract. The tool
+never invents compiler omissions, field schemas, or a common baseline.
+
+`consumption-report.json` records exact package requirement conflicts and every
+uncovered compiler path, GUID, hash and script type/assembly observed in the
+saved native oracle. No type is guessed for unobserved compiler inputs. A
+blocked planner remains blocked; this command does not install packages or run
+an Editor. An optional receipt must pin this exact exported candidate. The
+corrected receipt is a new output with the original receipt path/hash; the
+original native evidence and receipt remain unchanged.
