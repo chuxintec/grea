@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using Spine.Unity;
 using UnityEditor;
 using UnityEngine;
@@ -20,6 +21,79 @@ public static partial class MonkeyImporter
         public StaticSpineRenderingData[] dataAssets;
         public StaticSpineRenderingComponent[] components;
         public StaticSpineRenderingPayload[] payloads;
+    }
+
+    [Serializable] sealed class StaticSpineCanvasComponentEvidence
+    {
+        public string sourceComponentId, sourcePrefabId, sourceNodeId, sourceDataAssetId;
+        public int sourceCanvasContextIndex;
+        public bool sourceCanvasContextVerified, sourceNodeActive, sourceNodeActivityVerified, sourceComponentEnabled;
+    }
+
+    [Serializable] sealed class StaticSpineCanvasContextEvidenceRow
+    {
+        public int contextIndex;
+        public string sourceCanvasRenderMode, sourceCanvasScaleMode;
+        public float sourceCanvasReferencePixelsPerUnit, sourceScalerReferencePixelsPerUnit,
+            sourceScalerMatchWidthOrHeight;
+        public float[] sourceScalerReferenceResolution;
+        public bool sourceCanvasScalerPresent, sourceCanvasPpuMatchesScaler;
+        public string[] sourceNodeIds;
+    }
+
+    [Serializable] sealed class StaticSpineCanvasContextEvidence
+    {
+        public int schemaVersion = 1;
+        public string contract = "monkey-static-spine-source-canvas-context/1";
+        public string sourceManifestSha256, renderingPlanSha256, evidenceSha256;
+        public string capturePhase = "source-construction-before-prefab-save";
+        public float sourceReferencePixelsPerUnit;
+        public bool sourceNodeGeometryVerified, sourceCanvasContextVerified;
+        public int sourceNodeCount;
+        public StaticSpineCanvasContextEvidenceRow[] contexts;
+        public StaticSpineCanvasComponentEvidence[] components;
+    }
+
+    [Serializable] sealed class StaticSpineControlledHostContextEvidence
+    {
+        public int schemaVersion = 1;
+        public string contract = "monkey-static-spine-controlled-prefab-host/1";
+        public string sourceManifestSha256, renderingPlanSha256, sourceCanvasEvidenceSha256, evidenceSha256, contextKind;
+        public string sourceCanvasRenderMode, controlledHostCanvasRenderMode, controlledHostScaleMode;
+        public float sourceCanvasReferencePixelsPerUnit, sourceScalerReferencePixelsPerUnit,
+            controlledHostReferencePixelsPerUnit;
+        public bool sourceCanvasScalerPresent, sourceContextVerified, controlledHostCanvasScalerAbsent,
+            controlledHostGeometryMatchesPlan, verified;
+    }
+
+    sealed class StaticSpineSourceCanvasLiveRegistration
+    {
+        public Canvas canvas;
+        public GameObject sourceNode;
+        public StaticSpineCanvasContextEvidence evidence;
+    }
+
+    sealed class StaticSpineControlledCanvasRegistration
+    {
+        public GameObject host;
+        public Canvas canvas;
+        public StaticSpineControlledHostContextEvidence evidence;
+    }
+
+    sealed class StaticSpineReadbackOwnerRegistration
+    {
+        public string sourceComponentId, sourceDataAssetId, sourcePrefabId, sourceNodeId;
+        public SkeletonGraphic persistentOwner, loadedOwner;
+        public SkeletonDataAsset dataAsset;
+        public bool sourceNodeActive;
+        public GameObject controlledHost;
+        public StaticSpineCanvasContextEvidence sourceEvidence;
+        public StaticSpineControlledHostContextEvidence hostEvidence;
+    }
+
+    sealed class StaticSpineReadbackOwnerScope
+    {
+        public readonly List<StaticSpineReadbackOwnerRegistration> rows = new List<StaticSpineReadbackOwnerRegistration>();
     }
 
     [Serializable] sealed class StaticSpineRenderingPayload {public string target,sha256;}
@@ -67,6 +141,7 @@ public static partial class MonkeyImporter
         public bool sourceComponentEnabled;
         public bool sourceVisibleVerified;
         public bool rendererEnabled;
+        public bool sourceNodeActive, sourceNodeActivityVerified;
         public bool sourceCodeExecuted;
         public bool persistent,dataPersistent,serializedFieldsVerified,actualSkinImplicitDefault;
         public bool sourceLoop,actualLoop,sourceLoopSerialized;
@@ -76,6 +151,13 @@ public static partial class MonkeyImporter
         public float sourceDefaultScale;
         public float targetUnitsPerSourcePixel;
         public float canvasReferencePixelsPerUnit;
+        public float sourceCanvasReferencePixelsPerUnit, sourceScalerReferencePixelsPerUnit,
+            controlledHostCanvasReferencePixelsPerUnit;
+        public string sourceCanvasContextEvidenceSha256, sourceCanvasContextKind, controlledHostContextKind,
+            sourceCanvasRenderMode, controlledHostCanvasRenderMode;
+        public string controlledHostContextEvidenceSha256;
+        public bool sourceCanvasContextVerified, controlledHostContextVerified;
+        public StaticSpineControlledHostContextEvidence controlledHostContextEvidence;
         public float dataScale;
         public bool poseVerified;
         public bool colorVerified;
@@ -95,19 +177,430 @@ public static partial class MonkeyImporter
         public int schemaVersion = 1;
         public string contract="monkey-static-spine-rendering-readback/1";
         public string status,phase,sourceManifestSha256,renderingPlanSha256,sourcePrefabId,unityVersion;
+        public string sourceCanvasContextEvidencePath, sourceCanvasContextEvidenceFileSha256;
+        public StaticSpineCanvasContextEvidence sourceCanvasContext;
         public StaticSpineRenderingReadback[] components;
         public StaticSpineRenderingAssembly[] runtimeAssemblies;
     }
 
     const string StaticSpineRenderingPlanPath = "Assets/Game/Editor/Conversion/spine-static-rendering.json";
     const string StaticSpineRenderingReadbackRoot = "Analysis/Readback/SpineRendering";
+    const string StaticSpineCanvasContextEvidencePath = "Analysis/Readback/SpineRendering/source-canvas-context.json";
     static StaticSpineRenderingEnvelope staticSpineRenderingPlan;
     static string staticSpineRenderingPlanSha;
     static StaticSpineRenderingAssembly[] staticSpineRenderingAssemblies;
     static bool staticSpineRenderingUnitMappingVerified;
     static float staticSpineRenderingCanvasPpu;
+    static StaticSpineCanvasContextEvidence staticSpineSourceCanvasContext;
+    static readonly Dictionary<string, StaticSpineSourceCanvasLiveRegistration> staticSpineSourceCanvasOwners =
+        new Dictionary<string, StaticSpineSourceCanvasLiveRegistration>(StringComparer.Ordinal);
+    static readonly List<StaticSpineControlledCanvasRegistration> staticSpineControlledCanvasContexts =
+        new List<StaticSpineControlledCanvasRegistration>();
+    static readonly List<StaticSpineReadbackOwnerScope> staticSpineReadbackOwnerScopes =
+        new List<StaticSpineReadbackOwnerScope>();
     static readonly Dictionary<string, UnitySpineNativeFactory.DataAssetReadback> staticSpineRenderingAssets =
         new Dictionary<string, UnitySpineNativeFactory.DataAssetReadback>(StringComparer.Ordinal);
+
+    static StaticSpineCanvasContextEvidence BuildStaticSpineSourceCanvasContextEvidence(
+        Plan plan, Dictionary<string, GameObject> nodes, float expectedPpu, bool sourceGeometryVerified)
+    {
+        if (plan == null || nodes == null || plan.nodes == null || expectedPpu <= 0f ||
+            Single.IsNaN(expectedPpu) || Single.IsInfinity(expectedPpu))
+            throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_INPUT_INVALID");
+        var rendering = JsonUtility.FromJson<StaticSpineRenderingEnvelope>(plan.staticSpineRenderingJson);
+        if (rendering == null || rendering.components == null || rendering.sourceManifestSha256 != plan.sourceManifestSha256)
+            throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_RENDERING_PLAN_INVALID");
+
+        var canvases = new List<Canvas>();
+        var canvasNodeIds = new List<List<string>>();
+        var nodeCanvasIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var sourceNode in plan.nodes)
+        {
+            if (sourceNode == null || String.IsNullOrWhiteSpace(sourceNode.sourceId) ||
+                !nodes.TryGetValue(sourceNode.sourceId, out var node) || node == null)
+                throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_NODE_MISSING:" +
+                    (sourceNode == null ? "null" : sourceNode.sourceId));
+            var canvas = node.GetComponentInParent<Canvas>(true);
+            var scaler = canvas == null ? null : canvas.GetComponent<CanvasScaler>();
+            if (canvas == null || scaler == null || canvas.renderMode != RenderMode.ScreenSpaceOverlay ||
+                !SpineUnitClose(canvas.referencePixelsPerUnit, scaler.referencePixelsPerUnit) ||
+                !SpineUnitClose(canvas.referencePixelsPerUnit, expectedPpu) || canvas.referencePixelsPerUnit <= 0f ||
+                Single.IsNaN(canvas.referencePixelsPerUnit) || Single.IsInfinity(canvas.referencePixelsPerUnit))
+                throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_CONTEXT_DIFFERS:" + sourceNode.sourceId);
+            var index = canvases.FindIndex(value => value == canvas);
+            if (index < 0)
+            {
+                index = canvases.Count;
+                canvases.Add(canvas);
+                canvasNodeIds.Add(new List<string>());
+            }
+            canvasNodeIds[index].Add(sourceNode.sourceId);
+            nodeCanvasIndices.Add(sourceNode.sourceId, index);
+        }
+        if (canvases.Count == 0) throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_CANVAS_SET_EMPTY");
+
+        var contexts = new StaticSpineCanvasContextEvidenceRow[canvases.Count];
+        for (int i = 0; i < canvases.Count; i++)
+        {
+            var canvas = canvases[i];
+            var scaler = canvas.GetComponent<CanvasScaler>();
+            contexts[i] = new StaticSpineCanvasContextEvidenceRow
+            {
+                contextIndex = i,
+                sourceCanvasRenderMode = canvas.renderMode.ToString(),
+                sourceCanvasScaleMode = scaler.uiScaleMode.ToString(),
+                sourceCanvasReferencePixelsPerUnit = canvas.referencePixelsPerUnit,
+                sourceScalerReferencePixelsPerUnit = scaler.referencePixelsPerUnit,
+                sourceScalerMatchWidthOrHeight = scaler.matchWidthOrHeight,
+                sourceScalerReferenceResolution = new[] { scaler.referenceResolution.x, scaler.referenceResolution.y },
+                sourceCanvasScalerPresent = true,
+                sourceCanvasPpuMatchesScaler = SpineUnitClose(canvas.referencePixelsPerUnit, scaler.referencePixelsPerUnit),
+                sourceNodeIds = canvasNodeIds[i].OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            };
+        }
+
+        staticSpineSourceCanvasOwners.Clear();
+        var nodeSpecs = plan.nodes.Where(row => row != null && !String.IsNullOrWhiteSpace(row.sourceId))
+            .ToDictionary(row => row.sourceId, StringComparer.Ordinal);
+        var componentEvidence = new List<StaticSpineCanvasComponentEvidence>();
+        foreach (var component in rendering.components.Where(row => row != null))
+        {
+            if (String.IsNullOrWhiteSpace(component.sourceComponentId) || String.IsNullOrWhiteSpace(component.sourceNodeId) ||
+                String.IsNullOrWhiteSpace(component.sourceDataAssetId) || !nodeCanvasIndices.TryGetValue(component.sourceNodeId, out var contextIndex))
+                throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_COMPONENT_SOURCE_JOIN_MISSING:" +
+                    (component.sourceComponentId ?? "null"));
+            if (!nodeSpecs.TryGetValue(component.sourceNodeId, out var sourceNodeSpec))
+                throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_NODE_PLAN_MISSING:" + component.sourceNodeId);
+            var componentRow = new StaticSpineCanvasComponentEvidence
+            {
+                sourceComponentId = component.sourceComponentId,
+                sourcePrefabId = component.sourcePrefabId,
+                sourceNodeId = component.sourceNodeId,
+                sourceDataAssetId = component.sourceDataAssetId,
+                sourceCanvasContextIndex = contextIndex,
+                sourceNodeActive = sourceNodeSpec.active,
+                sourceNodeActivityVerified = nodes[component.sourceNodeId].activeSelf == sourceNodeSpec.active,
+                sourceComponentEnabled = component.sourceComponentEnabled,
+                sourceCanvasContextVerified = contexts[contextIndex].sourceCanvasPpuMatchesScaler &&
+                    contexts[contextIndex].sourceCanvasRenderMode == RenderMode.ScreenSpaceOverlay.ToString(),
+            };
+            componentEvidence.Add(componentRow);
+            if (componentRow.sourceCanvasContextVerified)
+                staticSpineSourceCanvasOwners.Add(component.sourceComponentId, new StaticSpineSourceCanvasLiveRegistration
+                {
+                    canvas = canvases[contextIndex], sourceNode = nodes[component.sourceNodeId],
+                });
+        }
+
+        var contextEvidence = new StaticSpineCanvasContextEvidence
+        {
+            sourceManifestSha256 = plan.sourceManifestSha256,
+            sourceNodeGeometryVerified = sourceGeometryVerified,
+            sourceCanvasContextVerified = contexts.Length > 0 && contexts.All(row => row.sourceCanvasScalerPresent &&
+                row.sourceCanvasPpuMatchesScaler && row.sourceCanvasRenderMode == RenderMode.ScreenSpaceOverlay.ToString() &&
+                SpineUnitClose(row.sourceCanvasReferencePixelsPerUnit, expectedPpu)),
+            sourceReferencePixelsPerUnit = expectedPpu,
+            sourceNodeCount = plan.nodes.Length,
+            contexts = contexts,
+            components = componentEvidence.OrderBy(row => row.sourceComponentId, StringComparer.Ordinal).ToArray(),
+        };
+        var renderingPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, StaticSpineRenderingPlanPath);
+        if (!File.Exists(renderingPath)) throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_RENDERING_FILE_MISSING");
+        contextEvidence.renderingPlanSha256 = StaticSpineCanvasHashBytes(File.ReadAllBytes(renderingPath));
+        contextEvidence.evidenceSha256 = StaticSpineCanvasEvidenceHash(contextEvidence);
+            if (!contextEvidence.sourceNodeGeometryVerified || !contextEvidence.sourceCanvasContextVerified ||
+            contextEvidence.components.Length != rendering.components.Length ||
+            contextEvidence.components.Any(row => !row.sourceCanvasContextVerified || !row.sourceNodeActivityVerified))
+            throw new InvalidOperationException("SPINE_SOURCE_CANVAS_EVIDENCE_INCOMPLETE");
+        foreach (var registration in staticSpineSourceCanvasOwners.Values)
+            registration.evidence = contextEvidence;
+        return contextEvidence;
+    }
+
+    static string StaticSpineCanvasEvidenceHash(StaticSpineCanvasContextEvidence evidence)
+    {
+        if (evidence == null) return null;
+        var copy = JsonUtility.FromJson<StaticSpineCanvasContextEvidence>(JsonUtility.ToJson(evidence));
+        if (copy == null) return null;
+        copy.evidenceSha256 = null;
+        using (var digest = SHA256.Create())
+            return BitConverter.ToString(digest.ComputeHash(Encoding.UTF8.GetBytes(JsonUtility.ToJson(copy))))
+                .Replace("-", String.Empty).ToLowerInvariant();
+    }
+
+    static string StaticSpineCanvasHashBytes(byte[] bytes)
+    {
+        using (var digest = SHA256.Create())
+            return BitConverter.ToString(digest.ComputeHash(bytes ?? Array.Empty<byte>())).Replace("-", String.Empty).ToLowerInvariant();
+    }
+
+    static string StaticSpineControlledHostEvidenceHash(StaticSpineControlledHostContextEvidence evidence)
+    {
+        if (evidence == null) return null;
+        var copy = JsonUtility.FromJson<StaticSpineControlledHostContextEvidence>(JsonUtility.ToJson(evidence));
+        if (copy == null) return null;
+        copy.evidenceSha256 = null;
+        using (var digest = SHA256.Create())
+            return BitConverter.ToString(digest.ComputeHash(Encoding.UTF8.GetBytes(JsonUtility.ToJson(copy))))
+                .Replace("-", String.Empty).ToLowerInvariant();
+    }
+
+    static bool StaticSpineCanvasContextEvidenceMatches(StaticSpineCanvasContextEvidence evidence,
+        string sourceComponentId, string sourceDataAssetId, string sourceManifestSha256,
+        string renderingPlanSha256, float controlledHostPpu, string controlledHostRenderMode,
+        bool controlledHostCanvasScalerAbsent)
+    {
+        if (evidence == null || evidence.schemaVersion != 1 ||
+            evidence.contract != "monkey-static-spine-source-canvas-context/1" ||
+            evidence.sourceManifestSha256 != sourceManifestSha256 || evidence.renderingPlanSha256 != renderingPlanSha256 ||
+            !evidence.sourceNodeGeometryVerified || !evidence.sourceCanvasContextVerified ||
+            evidence.sourceNodeCount <= 0 || evidence.contexts == null || evidence.contexts.Length == 0 ||
+            evidence.components == null || String.IsNullOrWhiteSpace(sourceComponentId) ||
+            String.IsNullOrWhiteSpace(sourceDataAssetId) || evidence.evidenceSha256 != StaticSpineCanvasEvidenceHash(evidence) ||
+            controlledHostRenderMode != RenderMode.WorldSpace.ToString() || !controlledHostCanvasScalerAbsent ||
+            controlledHostPpu <= 0f || Single.IsNaN(controlledHostPpu) || Single.IsInfinity(controlledHostPpu) ||
+            !SpineUnitClose(controlledHostPpu, evidence.sourceReferencePixelsPerUnit)) return false;
+        var rows = evidence.components.Where(row => row != null && row.sourceComponentId == sourceComponentId &&
+            row.sourceDataAssetId == sourceDataAssetId && row.sourceCanvasContextVerified && row.sourceNodeActivityVerified).ToArray();
+        if (rows.Length != 1 || rows[0].sourceCanvasContextIndex < 0 || rows[0].sourceCanvasContextIndex >= evidence.contexts.Length)
+            return false;
+        var context = evidence.contexts[rows[0].sourceCanvasContextIndex];
+        return context != null && context.contextIndex == rows[0].sourceCanvasContextIndex &&
+            context.sourceCanvasScalerPresent && context.sourceCanvasPpuMatchesScaler &&
+            context.sourceCanvasRenderMode == RenderMode.ScreenSpaceOverlay.ToString() &&
+            SpineUnitClose(context.sourceCanvasReferencePixelsPerUnit, evidence.sourceReferencePixelsPerUnit) &&
+            SpineUnitClose(context.sourceScalerReferencePixelsPerUnit, evidence.sourceReferencePixelsPerUnit);
+    }
+
+    static StaticSpineCanvasComponentEvidence StaticSpineSourceCanvasComponent(string sourceComponentId,
+        string sourceDataAssetId, string sourceManifestSha256, string renderingPlanSha256)
+    {
+        var evidence = staticSpineSourceCanvasContext;
+        if (evidence == null || evidence.sourceManifestSha256 != sourceManifestSha256 ||
+            evidence.renderingPlanSha256 != renderingPlanSha256 ||
+            evidence.evidenceSha256 != StaticSpineCanvasEvidenceHash(evidence)) return null;
+        var rows = (evidence.components ?? Array.Empty<StaticSpineCanvasComponentEvidence>())
+            .Where(row => row != null && row.sourceComponentId == sourceComponentId && row.sourceDataAssetId == sourceDataAssetId)
+            .ToArray();
+        return rows.Length == 1 && rows[0].sourceCanvasContextVerified && rows[0].sourceNodeActivityVerified ? rows[0] : null;
+    }
+
+    static StaticSpineControlledHostContextEvidence MakeStaticSpineControlledHostEvidence(
+        GameObject context, Plan plan, Canvas canvas)
+    {
+        if (context == null || plan == null || canvas == null || staticSpineSourceCanvasContext == null ||
+            staticSpineRenderingPlan == null || plan.sourceManifestSha256 != staticSpineRenderingPlan.sourceManifestSha256 ||
+            String.IsNullOrEmpty(plan.staticSpineRenderingJson) ||
+            staticSpineSourceCanvasContext.evidenceSha256 != StaticSpineCanvasEvidenceHash(staticSpineSourceCanvasContext))
+            throw new InvalidOperationException("SPINE_CONTROLLED_HOST_SOURCE_CONTEXT_UNAVAILABLE");
+        var scaler = context.GetComponent<CanvasScaler>();
+        var rect = context.transform as RectTransform;
+        bool geometryMatches = rect != null && plan.designSize != null && plan.designSize.Length == 2 &&
+            SpineUnitClose(rect.pivot.x, 0f) && SpineUnitClose(rect.pivot.y, 0f) &&
+            SpineUnitClose(rect.sizeDelta.x, plan.designSize[0]) && SpineUnitClose(rect.sizeDelta.y, plan.designSize[1]);
+        var result = new StaticSpineControlledHostContextEvidence
+        {
+            sourceManifestSha256 = staticSpineSourceCanvasContext.sourceManifestSha256,
+            renderingPlanSha256 = staticSpineSourceCanvasContext.renderingPlanSha256,
+            sourceCanvasEvidenceSha256 = staticSpineSourceCanvasContext.evidenceSha256,
+            contextKind = "created-by-monkey-owned-prefab-ui-context",
+            sourceCanvasRenderMode = staticSpineSourceCanvasContext.contexts.First().sourceCanvasRenderMode,
+            controlledHostCanvasRenderMode = canvas.renderMode.ToString(),
+            controlledHostScaleMode = scaler == null ? "none" : scaler.uiScaleMode.ToString(),
+            sourceCanvasReferencePixelsPerUnit = staticSpineSourceCanvasContext.sourceReferencePixelsPerUnit,
+            sourceScalerReferencePixelsPerUnit = staticSpineSourceCanvasContext.contexts.First().sourceScalerReferencePixelsPerUnit,
+            controlledHostReferencePixelsPerUnit = canvas.referencePixelsPerUnit,
+            sourceCanvasScalerPresent = staticSpineSourceCanvasContext.contexts.All(row => row.sourceCanvasScalerPresent),
+            sourceContextVerified = staticSpineSourceCanvasContext.sourceCanvasContextVerified &&
+                staticSpineSourceCanvasContext.sourceNodeGeometryVerified,
+            controlledHostCanvasScalerAbsent = scaler == null,
+            controlledHostGeometryMatchesPlan = geometryMatches,
+        };
+        result.verified = result.sourceContextVerified && result.controlledHostCanvasScalerAbsent &&
+            result.controlledHostCanvasRenderMode == RenderMode.WorldSpace.ToString() && result.controlledHostGeometryMatchesPlan &&
+            staticSpineSourceCanvasContext.components.All(row => row != null && StaticSpineCanvasContextEvidenceMatches(
+                staticSpineSourceCanvasContext, row.sourceComponentId, row.sourceDataAssetId,
+                result.sourceManifestSha256, result.renderingPlanSha256, result.controlledHostReferencePixelsPerUnit,
+                result.controlledHostCanvasRenderMode, result.controlledHostCanvasScalerAbsent));
+        result.evidenceSha256 = StaticSpineControlledHostEvidenceHash(result);
+        if (!result.verified) throw new InvalidOperationException("SPINE_CONTROLLED_HOST_CANVAS_CONTEXT_DIFFERS_FROM_SOURCE_EVIDENCE");
+        return result;
+    }
+
+    static StaticSpineControlledCanvasRegistration FindStaticSpineControlledCanvas(Canvas canvas)
+    {
+        if (canvas == null) return null;
+        return staticSpineControlledCanvasContexts.FirstOrDefault(row => row != null && row.canvas == canvas &&
+            row.host == canvas.gameObject && row.evidence != null && row.evidence.verified &&
+            row.evidence.evidenceSha256 == StaticSpineControlledHostEvidenceHash(row.evidence));
+    }
+
+    static bool StaticSpineRendererIdentityMatches(Graphic graphic, StaticSpineRenderingComponent component)
+    {
+        var owner = graphic as SkeletonGraphic;
+        if (owner == null || owner.GetType() != typeof(SkeletonGraphic) || component == null) return false;
+        var markers = owner.GetComponents<UnitySpineSourceIdentity>().Where(row => row != null && row.renderer == owner &&
+            row.instanceSourceComponentId == component.sourceComponentId &&
+            row.templateSourcePrefabId == component.sourcePrefabId &&
+            row.templateSourceId == (String.IsNullOrEmpty(component.templateComponentId) ? component.sourceComponentId : component.templateComponentId) &&
+            row.rendererKind == typeof(SkeletonGraphic).FullName).ToArray();
+        return markers.Length == 1;
+    }
+
+    public static bool TryGetStaticSpineSourceCanvasProof(Graphic graphic, string sourceComponentId, string sourceDataAssetId,
+        string sourceManifestSha256, string renderingPlanSha256, out float sourcePpu,
+        out string evidenceSha256, out string contextKind, out string diagnostic)
+    {
+        sourcePpu = 0f; evidenceSha256 = null; contextKind = null; diagnostic = null;
+        var componentEvidence = StaticSpineSourceCanvasComponent(sourceComponentId, sourceDataAssetId,
+            sourceManifestSha256, renderingPlanSha256);
+        var renderingRows = (staticSpineRenderingPlan == null ? Array.Empty<StaticSpineRenderingComponent>() :
+            staticSpineRenderingPlan.components ?? Array.Empty<StaticSpineRenderingComponent>())
+            .Where(row => row != null && row.sourceComponentId == sourceComponentId &&
+                row.sourceDataAssetId == sourceDataAssetId).ToArray();
+        if (componentEvidence == null || renderingRows.Length != 1 || !StaticSpineRendererIdentityMatches(graphic, renderingRows[0]))
+        { diagnostic = "source-canvas-context-or-renderer-identity-unverified"; return false; }
+        var expected = renderingRows[0];
+        var canvas = graphic.GetComponentInParent<Canvas>(true);
+        if (staticSpineSourceCanvasOwners.TryGetValue(sourceComponentId, out var sourceRegistration) &&
+            sourceRegistration != null && sourceRegistration.sourceNode == graphic.gameObject && sourceRegistration.canvas == canvas)
+        {
+            var scaler = canvas.GetComponent<CanvasScaler>();
+            if (scaler == null || canvas.renderMode != RenderMode.ScreenSpaceOverlay ||
+                !SpineUnitClose(canvas.referencePixelsPerUnit, staticSpineSourceCanvasContext.sourceReferencePixelsPerUnit) ||
+                !SpineUnitClose(scaler.referencePixelsPerUnit, staticSpineSourceCanvasContext.sourceReferencePixelsPerUnit) ||
+                !System.Object.ReferenceEquals(graphic.gameObject, sourceRegistration.sourceNode) ||
+                !String.IsNullOrEmpty(expected.sourceNodeId) && expected.sourceNodeId != componentEvidence.sourceNodeId)
+            { diagnostic = "source-canvas-context-unverified"; return false; }
+            sourcePpu = staticSpineSourceCanvasContext.sourceReferencePixelsPerUnit;
+            evidenceSha256 = staticSpineSourceCanvasContext.evidenceSha256;
+            contextKind = "source-construction-canvas";
+            return true;
+        }
+
+        var ownerScopes = staticSpineReadbackOwnerScopes.SelectMany(scope => scope.rows).Where(row => row != null &&
+            row.sourceComponentId == sourceComponentId && row.sourceDataAssetId == sourceDataAssetId &&
+            (row.loadedOwner == graphic || row.persistentOwner == graphic)).ToArray();
+        if (ownerScopes.Length != 1)
+        { diagnostic = "controlled-prefab-owner-pair-not-registered"; return false; }
+        var ownerScope = ownerScopes[0];
+        var controlled = staticSpineControlledCanvasContexts.SingleOrDefault(row => row != null && row.host == ownerScope.controlledHost);
+        var actualOwner = graphic as SkeletonGraphic;
+        var loadedCanvas = ownerScope.loadedOwner == null ? null : ownerScope.loadedOwner.GetComponentInParent<Canvas>(true);
+        if (controlled == null || actualOwner == null || actualOwner.enabled != expected.sourceComponentEnabled ||
+            actualOwner.gameObject.activeSelf != ownerScope.sourceNodeActive || loadedCanvas == null ||
+            loadedCanvas != controlled.canvas || loadedCanvas.gameObject != controlled.host ||
+            (canvas != null && canvas != controlled.canvas))
+        { diagnostic = "controlled-prefab-owner-or-host-identity-mismatch"; return false; }
+        if (ownerScopes.Length != 1 || controlled.evidence == null || controlled.evidence.sourceManifestSha256 != sourceManifestSha256 ||
+            controlled.evidence.evidenceSha256 != StaticSpineControlledHostEvidenceHash(controlled.evidence) ||
+            controlled.evidence.renderingPlanSha256 != renderingPlanSha256 ||
+            controlled.evidence.sourceCanvasEvidenceSha256 != staticSpineSourceCanvasContext.evidenceSha256 ||
+            controlled.canvas == null || !SpineUnitClose(controlled.canvas.referencePixelsPerUnit, controlled.evidence.sourceCanvasReferencePixelsPerUnit) ||
+            !StaticSpineCanvasContextEvidenceMatches(staticSpineSourceCanvasContext, sourceComponentId, sourceDataAssetId,
+                sourceManifestSha256, renderingPlanSha256, controlled.canvas.referencePixelsPerUnit,
+                controlled.canvas.renderMode.ToString(), controlled.canvas.GetComponent<CanvasScaler>() == null))
+        { diagnostic = "cocos-static-spine-canvas-unit-context-unverified"; return false; }
+        var actualData = actualOwner.SkeletonDataAsset;
+        if (actualData == null || actualData != ownerScope.dataAsset || actualData != AssetDatabase.LoadAssetAtPath<SkeletonDataAsset>(
+            (staticSpineRenderingPlan.dataAssets ?? Array.Empty<StaticSpineRenderingData>())
+                .Single(row => row != null && row.sourceDataAssetId == sourceDataAssetId).factorySpec.skeletonDataAssetPath))
+        { diagnostic = "source-owner-skeleton-data-reference-differs-from-pinned-asset"; return false; }
+        sourcePpu = staticSpineSourceCanvasContext.sourceReferencePixelsPerUnit;
+        evidenceSha256 = staticSpineSourceCanvasContext.evidenceSha256;
+        contextKind = ownerScope.persistentOwner == graphic ? "saved-persistent-owner-with-controlled-reopen-peer" : "controlled-prefab-reopened-owner";
+        return true;
+    }
+
+    public static void RegisterStaticSpineControlledCanvasContext(GameObject context, Plan plan)
+    {
+        if (plan == null || String.IsNullOrEmpty(plan.staticSpineRenderingJson)) return;
+        if (context == null || staticSpineRenderingPlan == null || staticSpineSourceCanvasContext == null ||
+            plan.sourceManifestSha256 != staticSpineRenderingPlan.sourceManifestSha256)
+            throw new InvalidOperationException("SPINE_CONTROLLED_HOST_SOURCE_CONTEXT_UNAVAILABLE");
+        var canvas = context.GetComponent<Canvas>();
+        var evidence = MakeStaticSpineControlledHostEvidence(context, plan, canvas);
+        staticSpineControlledCanvasContexts.RemoveAll(row => row == null || row.host == null || row.canvas == null || row.host == context);
+        staticSpineControlledCanvasContexts.Add(new StaticSpineControlledCanvasRegistration { host = context, canvas = canvas, evidence = evidence });
+    }
+
+    public static void UnregisterStaticSpineControlledCanvasContext(GameObject context)
+    {
+        if (context == null) return;
+        staticSpineControlledCanvasContexts.RemoveAll(row => row == null || row.host == null || row.host == context);
+    }
+
+    public static void RegisterStaticSpineReadbackOwnerContext(Plan plan, string prefabId,
+        Dictionary<string, GameObject> persistentNodes, Dictionary<string, GameObject> loadedNodes, GameObject controlledHost)
+    {
+        if (plan == null || String.IsNullOrEmpty(plan.staticSpineRenderingJson)) return;
+        var host = controlledHost == null ? null : staticSpineControlledCanvasContexts.SingleOrDefault(row => row != null && row.host == controlledHost);
+        if (host == null || !host.evidence.verified || staticSpineRenderingPlan == null ||
+            staticSpineSourceCanvasContext == null || plan.sourceManifestSha256 != staticSpineRenderingPlan.sourceManifestSha256 ||
+            persistentNodes == null || loadedNodes == null)
+            throw new InvalidOperationException("SPINE_READBACK_OWNER_CONTEXT_INPUT_INVALID");
+        var nodePlan = (plan.nodes ?? Array.Empty<NodeSpec>()).Where(row => row != null).ToDictionary(row => row.sourceId, StringComparer.Ordinal);
+        var sourceRows = (staticSpineRenderingPlan.components ?? Array.Empty<StaticSpineRenderingComponent>())
+            .Where(row => row != null && row.eligible && (row.sourcePrefabId == prefabId ||
+                row.sourceComponentId.StartsWith(prefabId + "#", StringComparison.Ordinal))).ToArray();
+        var scope = new StaticSpineReadbackOwnerScope();
+        foreach (var expected in sourceRows)
+        {
+            if (!persistentNodes.TryGetValue(expected.sourceNodeId, out var persistentNode) || persistentNode == null ||
+                !loadedNodes.TryGetValue(expected.sourceNodeId, out var loadedNode) || loadedNode == null ||
+                !nodePlan.TryGetValue(expected.sourceNodeId, out var nodeExpected) ||
+                persistentNode.activeSelf != nodeExpected.active || loadedNode.activeSelf != nodeExpected.active)
+                throw new InvalidOperationException("SPINE_READBACK_OWNER_NODE_OR_ACTIVITY_MISMATCH:" + expected.sourceComponentId);
+            var persistentComponents = persistentNode.GetComponents<SkeletonGraphic>();
+            var loadedComponents = loadedNode.GetComponents<SkeletonGraphic>();
+            if (persistentComponents.Length != 1 || loadedComponents.Length != 1 ||
+                !StaticSpineRendererIdentityMatches(persistentComponents[0], expected) ||
+                !StaticSpineRendererIdentityMatches(loadedComponents[0], expected) ||
+                persistentComponents[0].enabled != expected.sourceComponentEnabled ||
+                loadedComponents[0].enabled != expected.sourceComponentEnabled)
+                throw new InvalidOperationException("SPINE_READBACK_OWNER_COMPONENT_IDENTITY_OR_ENABLED_MISMATCH:" + expected.sourceComponentId);
+            var dataRows = (staticSpineRenderingPlan.dataAssets ?? Array.Empty<StaticSpineRenderingData>())
+                .Where(row => row != null && row.sourceDataAssetId == expected.sourceDataAssetId && row.eligible).ToArray();
+            if (dataRows.Length != 1 || dataRows[0].factorySpec == null)
+                throw new InvalidOperationException("SPINE_READBACK_OWNER_DATA_SPEC_MISSING:" + expected.sourceDataAssetId);
+            var dataAsset = AssetDatabase.LoadAssetAtPath<SkeletonDataAsset>(dataRows[0].factorySpec.skeletonDataAssetPath);
+            if (dataAsset == null || !EditorUtility.IsPersistent(dataAsset) ||
+                persistentComponents[0].SkeletonDataAsset != dataAsset || loadedComponents[0].SkeletonDataAsset != dataAsset)
+                throw new InvalidOperationException("SPINE_READBACK_OWNER_DATA_REFERENCE_MISMATCH:" + expected.sourceComponentId);
+            var loadedCanvas = loadedComponents[0].GetComponentInParent<Canvas>(true);
+            if (loadedCanvas == null || loadedCanvas != host.canvas || loadedCanvas.gameObject != controlledHost)
+                throw new InvalidOperationException("SPINE_READBACK_OWNER_NOT_UNDER_REGISTERED_CONTROLLED_CANVAS:" + expected.sourceComponentId);
+            scope.rows.Add(new StaticSpineReadbackOwnerRegistration
+            {
+                sourceComponentId = expected.sourceComponentId, sourceDataAssetId = expected.sourceDataAssetId,
+                sourcePrefabId = expected.sourcePrefabId, sourceNodeId = expected.sourceNodeId,
+                persistentOwner = persistentComponents[0], loadedOwner = loadedComponents[0], dataAsset = dataAsset,
+                sourceNodeActive = nodeExpected.active,
+                controlledHost = controlledHost, sourceEvidence = staticSpineSourceCanvasContext,
+                hostEvidence = host.evidence,
+            });
+        }
+        staticSpineReadbackOwnerScopes.Add(scope);
+    }
+
+    public static void UnregisterStaticSpineReadbackOwnerContext(GameObject controlledHost)
+    {
+        if (controlledHost == null) return;
+        staticSpineReadbackOwnerScopes.RemoveAll(scope => scope == null || scope.rows.Any(row => row == null || row.controlledHost == controlledHost));
+    }
+
+    static partial void BindOptionalStaticSpineControlledCanvasContext(GameObject context, Plan plan)
+    { RegisterStaticSpineControlledCanvasContext(context, plan); }
+
+    static partial void ForgetOptionalStaticSpineControlledCanvasContext(GameObject context)
+    { UnregisterStaticSpineControlledCanvasContext(context); }
+
+    static partial void BindOptionalStaticSpineReadbackOwnerContext(Plan plan, string prefabId,
+        Dictionary<string, GameObject> persistentNodes, Dictionary<string, GameObject> loadedNodes, GameObject controlledHost)
+    { RegisterStaticSpineReadbackOwnerContext(plan, prefabId, persistentNodes, loadedNodes, controlledHost); }
+
+    static partial void ForgetOptionalStaticSpineReadbackOwnerContext(GameObject controlledHost)
+    { UnregisterStaticSpineReadbackOwnerContext(controlledHost); }
 
     static partial void PrepareStaticSpineRendering(Plan plan, Dictionary<string, GameObject> nodes)
     {
@@ -124,6 +617,13 @@ public static partial class MonkeyImporter
             staticSpineRenderingPlan.dataAssets == null || staticSpineRenderingPlan.components == null ||
             planRendering == null || JsonUtility.ToJson(planRendering) != JsonUtility.ToJson(staticSpineRenderingPlan))
             throw new InvalidOperationException("SPINE_RENDERING_PLAN_SCHEMA_INVALID");
+        if (staticSpineSourceCanvasContext == null ||
+            staticSpineSourceCanvasContext.sourceManifestSha256 != staticSpineRenderingPlan.sourceManifestSha256 ||
+            staticSpineSourceCanvasContext.renderingPlanSha256 != staticSpineRenderingPlanSha ||
+            !staticSpineSourceCanvasContext.sourceNodeGeometryVerified ||
+            !staticSpineSourceCanvasContext.sourceCanvasContextVerified ||
+            StaticSpineCanvasEvidenceHash(staticSpineSourceCanvasContext) != staticSpineSourceCanvasContext.evidenceSha256)
+            throw new InvalidOperationException("SPINE_RENDERING_SOURCE_CANVAS_CONTEXT_EVIDENCE_MISSING_OR_CHANGED");
 
         staticSpineRenderingAssemblies=new[]{
             ReadStaticSpineAssembly(typeof(global::Spine.Skeleton).Assembly,"Assets/Plugins/Spine38/EditorRuntime/spine-csharp.dll"),
@@ -212,6 +712,9 @@ public static partial class MonkeyImporter
             identity.nativeTimeScale = 0f;
             identity.sourceTimeScaleVerified = false;
             identity.persistentVisiblePose = row.sourceComponentEnabled;
+            bool sourceCanvasVerified = TryGetStaticSpineSourceCanvasProof(graphic, row.sourceComponentId,
+                row.sourceDataAssetId, staticSpineRenderingPlan.sourceManifestSha256, staticSpineRenderingPlanSha,
+                out var sourcePpu, out var sourceCanvasEvidenceSha, out var sourceCanvasContextKind, out _);
             var rendererGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(graphic));
             long localId = 0;
             AssetDatabase.TryGetGUIDAndLocalFileIdentifier(graphic, out var guid, out localId);
@@ -225,16 +728,29 @@ public static partial class MonkeyImporter
                 dataAssetGuid = dataGuid, dataAssetLocalId = dataLocal,
                 rendererCreated = true, sourceVisible = row.sourceVisible, sourceCodeExecuted = false,
                 sourceComponentEnabled = row.sourceComponentEnabled,
-                unitMappingVerified = staticSpineRenderingUnitMappingVerified && dataReadback.scaleVerified,
+                unitMappingVerified = staticSpineRenderingUnitMappingVerified && dataReadback.scaleVerified && sourceCanvasVerified,
                 sourceDefaultScale = staticSpineRenderingPlan.dataAssets.Single(x => x.sourceDataAssetId == row.sourceDataAssetId).factorySpec.sourceDefaultScale,
                 targetUnitsPerSourcePixel = staticSpineRenderingPlan.dataAssets.Single(x => x.sourceDataAssetId == row.sourceDataAssetId).factorySpec.targetUnitsPerSourcePixel,
-                canvasReferencePixelsPerUnit = actualCanvasPpu,
+                canvasReferencePixelsPerUnit = sourcePpu,
+                sourceCanvasReferencePixelsPerUnit = sourcePpu,
+                sourceScalerReferencePixelsPerUnit = sourcePpu,
+                sourceCanvasContextEvidenceSha256 = sourceCanvasEvidenceSha,
+                sourceCanvasContextKind = sourceCanvasContextKind,
+                sourceCanvasContextVerified = sourceCanvasVerified,
+                sourceNodeActive = node.activeSelf,
+                sourceNodeActivityVerified = sourceCanvasVerified && node.activeSelf == staticSpineSourceCanvasContext.components
+                    .Single(item => item.sourceComponentId == row.sourceComponentId).sourceNodeActive,
+                sourceCanvasRenderMode = staticSpineSourceCanvasContext.contexts
+                    .Single(context => context.contextIndex == staticSpineSourceCanvasContext.components
+                        .Single(item => item.sourceComponentId == row.sourceComponentId).sourceCanvasContextIndex)
+                    .sourceCanvasRenderMode,
+                controlledHostContextKind = sourceCanvasContextKind,
                 dataScale = staticSpineRenderingAssets[row.sourceDataAssetId].scale,
                 sourceVisibleVerified = (node.activeInHierarchy && graphic.enabled) == row.sourceVisible,
                 rendererEnabled = graphic.enabled,
                 verified = componentReadback != null && componentReadback.staticDataBound && componentReadback.componentTypeVerified &&
                     componentReadback.dataReferenceVerified && componentReadback.dataAssetContentVerified && componentReadback.rendererMaterialVerified &&
-                    !String.IsNullOrEmpty(guid) && localId != 0 && !String.IsNullOrEmpty(dataGuid) && dataLocal != 0 && poseVerified,
+                    !String.IsNullOrEmpty(guid) && localId != 0 && !String.IsNullOrEmpty(dataGuid) && dataLocal != 0 && poseVerified && sourceCanvasVerified,
                 colorVerified = graphic.color == expectedColor, materialReferencesVerified = componentReadback != null && componentReadback.rendererMaterialVerified,
                 meshVertexCount = meshCounts.Item1, meshTriangleCount = meshCounts.Item2,
                 poseVerified = poseVerified, sourceSkin = row.sourceSkin, actualSkin = graphic.Skeleton == null || graphic.Skeleton.Skin == null ? null : graphic.Skeleton.Skin.Name,
@@ -283,9 +799,17 @@ public static partial class MonkeyImporter
                 (!expected.sourceSkinSerialized||saved.initialSkinName==(expected.sourceSkin??String.Empty))&&
                 (!expected.sourceAnimationSerialized||saved.startingAnimation==(expected.sourceAnimation??String.Empty))&&
                 saved.startingLoop==(expected.sourceLoopSerialized&&expected.sourceLoop);
-            var canvas=graphic.canvas;
-            bool unitVerified=staticSpineRenderingUnitMappingVerified&&canvas!=null&&SpineUnitClose(canvas.referencePixelsPerUnit,staticSpineRenderingCanvasPpu)&&
-                dataReadback.staticDataVerified&&dataReadback.scaleVerified&&Math.Abs(dataReadback.scale-spec.sourceDefaultScale*spec.targetUnitsPerSourcePixel/staticSpineRenderingCanvasPpu)<=0.000001f;
+            bool sourceCanvasVerified=TryGetStaticSpineSourceCanvasProof(graphic,expected.sourceComponentId,
+                expected.sourceDataAssetId,staticSpineRenderingPlan.sourceManifestSha256,staticSpineRenderingPlanSha,
+                out var sourcePpu,out var sourceCanvasEvidenceSha,out var sourceCanvasContextKind,out var sourceCanvasDiagnostic);
+            var ownerContext=staticSpineReadbackOwnerScopes.SelectMany(scope=>scope.rows).SingleOrDefault(row=>row!=null&&
+                row.sourceComponentId==expected.sourceComponentId&&row.sourceDataAssetId==expected.sourceDataAssetId&&
+                row.loadedOwner==graphic&&row.persistentOwner==saved);
+            bool hostContextVerified=ownerContext!=null&&ownerContext.hostEvidence!=null&&ownerContext.hostEvidence.verified;
+            var hostEvidence=ownerContext==null?null:ownerContext.hostEvidence;
+            bool unitVerified=staticSpineRenderingUnitMappingVerified&&sourceCanvasVerified&&hostContextVerified&&
+                dataReadback.staticDataVerified&&dataReadback.scaleVerified&&
+                Math.Abs(dataReadback.scale-spec.sourceDefaultScale*spec.targetUnitsPerSourcePixel/sourcePpu)<=0.000001f;
             // Generic Graphic/Layout refreshes can overwrite a derived RawImage
             // mesh. The SDK must write its actual source-pose geometry last.
             FinalizeSavedStaticSortSpineMeshes(new Graphic[]{graphic});
@@ -308,6 +832,8 @@ public static partial class MonkeyImporter
             var issues=new List<string>();
             if(!persistent||!dataPersistent)issues.Add("saved_persistent_identity_unverified");
             if(!fieldsMatch)issues.Add("saved_or_reopened_serialized_fields_differ");
+            if(!sourceCanvasVerified)issues.Add(sourceCanvasDiagnostic??"source_canvas_context_unverified");
+            if(!hostContextVerified)issues.Add("controlled_host_context_unverified");
             if(!unitVerified)issues.Add("source_to_native_unit_mapping_unverified");
             if(!poseVerified)issues.Add("source_time_zero_pose_unverified");
             if(!visibleVerified)issues.Add("source_visibility_differs");
@@ -319,9 +845,23 @@ public static partial class MonkeyImporter
                 persistent=persistent,dataPersistent=dataPersistent,serializedFieldsVerified=fieldsMatch,
                 rendererCreated=true,sourceVisible=expected.sourceVisible,sourceComponentEnabled=expected.sourceComponentEnabled,
                 sourceVisibleVerified=visibleVerified,rendererEnabled=saved.enabled,sourceCodeExecuted=false,
-                verified=persistent&&dataPersistent&&fieldsMatch&&unitVerified&&poseVerified&&visibleVerified&&colorVerified&&meshVerified&&materialsVerified,
+                verified=persistent&&dataPersistent&&fieldsMatch&&unitVerified&&poseVerified&&visibleVerified&&colorVerified&&meshVerified&&materialsVerified&&
+                    ownerContext!=null&&ownerContext.sourceNodeActive==savedNode.activeSelf,
                 unitMappingVerified=unitVerified,sourceDefaultScale=spec.sourceDefaultScale,targetUnitsPerSourcePixel=spec.targetUnitsPerSourcePixel,
-                canvasReferencePixelsPerUnit=staticSpineRenderingCanvasPpu,dataScale=dataReadback.scale,
+                canvasReferencePixelsPerUnit=sourcePpu,sourceCanvasReferencePixelsPerUnit=sourcePpu,
+                sourceNodeActive=ownerContext!=null&&ownerContext.sourceNodeActive,
+                sourceNodeActivityVerified=ownerContext!=null&&ownerContext.sourceNodeActive==savedNode.activeSelf&&liveNode.activeSelf==savedNode.activeSelf,
+                sourceScalerReferencePixelsPerUnit=sourcePpu,sourceCanvasContextEvidenceSha256=sourceCanvasEvidenceSha,
+                sourceCanvasContextKind=sourceCanvasContextKind,sourceCanvasContextVerified=sourceCanvasVerified,
+                controlledHostCanvasReferencePixelsPerUnit=hostEvidence==null?0f:hostEvidence.controlledHostReferencePixelsPerUnit,
+                controlledHostCanvasRenderMode=hostEvidence==null?null:hostEvidence.controlledHostCanvasRenderMode,
+                controlledHostContextEvidenceSha256=hostEvidence==null?null:hostEvidence.evidenceSha256,
+                controlledHostContextKind=hostEvidence==null?null:hostEvidence.contextKind,
+                controlledHostContextEvidence=hostEvidence,
+                sourceCanvasRenderMode=staticSpineSourceCanvasContext.contexts.Single(context=>context.contextIndex==
+                    staticSpineSourceCanvasContext.components.Single(item=>item.sourceComponentId==expected.sourceComponentId).sourceCanvasContextIndex)
+                    .sourceCanvasRenderMode,
+                controlledHostContextVerified=hostContextVerified,dataScale=dataReadback.scale,
                 poseVerified=poseVerified,colorVerified=colorVerified,materialReferencesVerified=materialsVerified,
                 meshVertexCount=mesh.Item1,meshTriangleCount=mesh.Item2,sourceSkin=expected.sourceSkin,actualSkin=effectiveSkin,
                 actualSkinImplicitDefault=skeleton!=null&&skeleton.Skin==null,sourceAnimation=expected.sourceAnimation,actualAnimation=actualAnimation,
@@ -384,10 +924,18 @@ public static partial class MonkeyImporter
         var path = Path.Combine(Directory.GetParent(Application.dataPath).FullName, StaticSpineRenderingReadbackRoot,
             name=="prepare"?"prepare.json":SpineSha(name??String.Empty)+".json");
         Directory.CreateDirectory(Path.GetDirectoryName(path));
+        var contextPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName,
+            StaticSpineCanvasContextEvidencePath.Replace('/', Path.DirectorySeparatorChar));
+        var contextBytes = Encoding.UTF8.GetBytes(JsonUtility.ToJson(staticSpineSourceCanvasContext, true));
+        File.WriteAllBytes(contextPath, contextBytes);
+        var contextFileSha = StaticSpineCanvasHashBytes(contextBytes);
         File.WriteAllText(path, JsonUtility.ToJson(new StaticSpineRenderingReadbackEnvelope {
             status = rows.All(row => row != null && row.verified) ? "verified" : "partial", components = rows.ToArray(),
             phase=name=="prepare"?"prepare-only":"saved-prefab-reopen",sourcePrefabId=name=="prepare"?null:name,
             sourceManifestSha256=staticSpineRenderingPlan.sourceManifestSha256,renderingPlanSha256=staticSpineRenderingPlanSha,
+            sourceCanvasContext=staticSpineSourceCanvasContext,
+            sourceCanvasContextEvidencePath=StaticSpineCanvasContextEvidencePath,
+            sourceCanvasContextEvidenceFileSha256=contextFileSha,
             unityVersion=Application.unityVersion,runtimeAssemblies=staticSpineRenderingAssemblies
         }, true));
     }

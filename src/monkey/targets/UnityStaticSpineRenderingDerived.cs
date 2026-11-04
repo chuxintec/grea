@@ -18,13 +18,19 @@ public static partial class MonkeyImporter
     static Dictionary<string,GameObject> spineRenderingUnitNodes;
     static float spineRenderingObservedCanvasPpu;
     static partial void ObserveStaticSpineRenderingUnitMapping(Plan plan,Dictionary<string,GameObject> nodes) {
-        spineRenderingUnitPlan=null;spineRenderingUnitNodes=null;spineRenderingObservedCanvasPpu=0;
+        spineRenderingUnitPlan=null;spineRenderingUnitNodes=null;spineRenderingObservedCanvasPpu=0;staticSpineSourceCanvasContext=null;
+        staticSpineSourceCanvasOwners.Clear();
         if(String.IsNullOrEmpty(plan.staticSpineRenderingJson))return;
         CaptureStaticSpineRenderingUnitMapping(plan,nodes,out var ppu);
+        staticSpineSourceCanvasContext=BuildStaticSpineSourceCanvasContextEvidence(plan,nodes,ppu,true);
         spineRenderingUnitPlan=plan;spineRenderingUnitNodes=nodes;spineRenderingObservedCanvasPpu=ppu;
     }
     static bool VerifyStaticSpineRenderingUnitMapping(Plan plan,Dictionary<string,GameObject> nodes,out float actualCanvasPpu) {
-        if(!System.Object.ReferenceEquals(plan,spineRenderingUnitPlan)||!System.Object.ReferenceEquals(nodes,spineRenderingUnitNodes)||spineRenderingObservedCanvasPpu<=0)
+        if(!System.Object.ReferenceEquals(plan,spineRenderingUnitPlan)||!System.Object.ReferenceEquals(nodes,spineRenderingUnitNodes)||
+            spineRenderingObservedCanvasPpu<=0||staticSpineSourceCanvasContext==null||
+            staticSpineSourceCanvasContext.sourceManifestSha256!=plan.sourceManifestSha256||
+            !staticSpineSourceCanvasContext.sourceCanvasContextVerified||!staticSpineSourceCanvasContext.sourceNodeGeometryVerified||
+            StaticSpineCanvasEvidenceHash(staticSpineSourceCanvasContext)!=staticSpineSourceCanvasContext.evidenceSha256)
             throw new InvalidOperationException("SPINE_UNIT_MAPPING_CONSTRUCTION_OBSERVATION_MISSING");
         actualCanvasPpu=spineRenderingObservedCanvasPpu;
         return true;

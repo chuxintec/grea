@@ -71,7 +71,7 @@ public static partial class MonkeyImporter
                         bool good=c.overflow==2&&label.enableAutoSizing&&Math.Abs(label.fontSizeMax-c.fontSize)<.001f&&label.fontSizeMin>0&&label.fontSizeMin<=label.fontSizeMax&&measured.fontSize>=label.fontSizeMin-.001f&&measured.fontSize<=label.fontSizeMax+.001f&&measured.fontGuid==fontGuids[c.font]&&measured.text==c.text&&measured.allCharactersPresent;
                         fonts.Add(new BulkFontEvidence {sourceId=c.sourceId,fontGuid=measured.fontGuid,text=measured.text,prefabPath=spec.path,prefabSha256=before,requestedFontSize=c.fontSize,fontSizeMin=label.fontSizeMin,fontSizeMax=label.fontSizeMax,actualFontSize=measured.fontSize,autoSizing=label.enableAutoSizing,allCharactersPresent=measured.allCharactersPresent,status=good?"configuration-verified":"failed"});
                     }
-                }finally {if(context!=null){contents.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(context);}PrefabUtility.UnloadPrefabContents(contents);}
+                }finally {if(context!=null){contents.transform.SetParent(null,false);typeof(MonkeyImporter).GetMethod("ReleasePrefabUiContext",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic)?.Invoke(null,new object[]{context});UnityEngine.Object.DestroyImmediate(context);}PrefabUtility.UnloadPrefabContents(contents);}
                 bool unchanged=Hash(spec.path)==before;foreach(var f in fonts.Where(f=>f.prefabPath==spec.path))f.prefabUnchanged=unchanged;
                 if(!unchanged)throw new InvalidOperationException("Read-only font audit changed a source Prefab");
             }

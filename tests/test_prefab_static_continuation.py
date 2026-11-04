@@ -69,6 +69,27 @@ class StaticContinuationTests(unittest.TestCase):
         self.assertEqual(result['native'],'not_run')
         for path,raw in before.items():self.assertEqual(path.read_bytes(),raw)
 
+    def test_mask_only_dispatch_preserves_payload_and_passes_pinned_engine_bytes(self):
+        engine=self.root/'engine/CCMask.js';engine.parent.mkdir();engine.write_bytes(b'fixture-engine')
+        self.spec['families']=['mask']
+        self.spec['sourceEngineEvidence']={'sourceVersion':'2.4.15','files':[dict(
+            logicalPath='cocos2d/core/components/CCMask.js',originUrl='https://example.invalid/CCMask.js',
+            **self.pin(engine))]}
+        self.write_request()
+        before=self.plan.read_bytes()
+        def module(plan,ir,manifest,stage,source_evidence=None):
+            self.assertEqual(source_evidence['files'][0]['bytes'],14)
+            self.assertEqual(source_evidence['files'][0]['sha256'],self.pin(engine)['sha256'])
+            patched=copy.deepcopy(plan);patched['staticMasks']={'fixture':'module-contract'}
+            return {'plan':patched,'summary':{'sourceMaskCount':6,'queueMaskEventCount':5}}
+        with patch('monkey.prefab_static_mask_continuation.prepare',side_effect=module) as called:
+            result=self.run_prepare()
+        self.assertEqual(called.call_count,1)
+        self.assertEqual(set(result['familyResults']),{'mask'})
+        self.assertEqual(result['familyResults']['mask']['sourceMaskCount'],6)
+        self.assertEqual(self.plan.read_bytes(),before)
+        self.assertEqual((Path(result['planPath']).parent/'unchanged.png').read_bytes(),b'frozen decoded texture')
+
     def test_stale_request_and_input_pins_refuse_before_output(self):
         with self.assertRaisesRegex(ValueError,'STATIC_CONTINUATION_REQUEST_HASH'):
             prepare(self.request,'0'*64,self.root/'new')

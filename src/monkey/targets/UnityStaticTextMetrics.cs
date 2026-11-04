@@ -10,6 +10,7 @@ using System.Text;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public static partial class MonkeyImporter
 {
@@ -84,16 +85,21 @@ public static partial class MonkeyImporter
     public sealed class StaticTextMetricComponentReadback
     {
         public string sourceLabelId, sourceOutlineId, sourceNodeId, sourceTextSha256, nativeTextSha256, status, fontKind;
-        public string labelGuid, outlineGuid, outlineNativeType, fontGuid, nativeText, nativeFontAssetPath, nativeTextStyle;
+        public string labelGuid, outlineGuid, outlineNativeType, fontGuid, nativeText, nativeFontAssetPath, nativeTextStyle, sampleContext;
         public string nativeBoundsKind = "tmp-character-quad-local-bounds-not-pixel-ink";
         public long labelLocalFileId, outlineLocalFileId, fontLocalFileId;
         public bool persistentLabel, persistentOutline, sourceTextMatches, sourceStyleMatches,
             autoSizingConfigVerified, fontBindingVerified, glyphFontChainVerified,
             lineHeightConfigVerified, outlineConfigVerified, outlineMaterialReadbackVerified,
             nativeMeshMeasured, sourceCanvasMetricAvailable, sourceFontPlatformEquivalent,
-            visualEquivalent;
+            visualEquivalent, sourceNodeActiveSelf, sourceNodeActiveInHierarchy,
+            sampleCloneIsolated, sampleAncestorActivationOverride, sampleCloneActivationOverride,
+            sampleSourceAncestorInactive, sampleStateRestored;
+        public bool sourceLabelEnabled, sampleRectTransformVerified, sourceActivityUnchanged,
+            sourceLabelEnabledUnchanged;
         public float nativeFontSize, actualFontSize, nativeFontSizeMin, nativeFontSizeMax, nativeLineSpacing,
-            nativeFontPointSize, nativeFaceLineHeight, nativePreferredWidth, nativePreferredHeight;
+            nativeFontPointSize, nativeFaceLineHeight, nativePreferredWidth, nativePreferredHeight,
+            sampleCanvasReferencePixelsPerUnit;
         public int nativeFontStyle, nativeOverflowMode, nativeWrappingMode, nativeLineCount,
             nativeCharacterCount, nativeVisibleCharacterCount;
         public StaticTextAssetIdentity[] glyphFontAssets,configuredFontAssets;
@@ -164,6 +170,9 @@ public static partial class MonkeyImporter
                 rows.Add(row);
                 continue;
             }
+            row.sourceNodeActiveSelf = loadedNode.activeSelf;
+            row.sourceNodeActiveInHierarchy = loadedNode.activeInHierarchy;
+            row.sourceLabelEnabled = loadedLabel.enabled;
 
             row.nativeText = savedLabel.text;
             row.nativeTextSha256 = ByteHash(Encoding.UTF8.GetBytes(savedLabel.text ?? String.Empty));
@@ -230,30 +239,89 @@ public static partial class MonkeyImporter
                 Mathf.Abs(savedLabel.lineSpacing - expectedLineSpacing.Value) <= 0.001f;
             if (!row.lineHeightConfigVerified) diagnostics.Add("STATIC_TEXT_LINE_HEIGHT_CONFIG_UNVERIFIED");
 
-            // Measure only the initialized reopened Prefab instance. The
-            // persistent asset remains untouched; the Editor supplies its
-            // already captured native Canvas/UI context.
-            var priorCull = loadedLabel.canvasRenderer == null || loadedLabel.canvasRenderer.cull;
-            try { loadedLabel.ForceMeshUpdate(true, true); }
-            finally { if (loadedLabel.canvasRenderer != null) loadedLabel.canvasRenderer.cull = priorCull; }
-            row.actualFontSize = loadedLabel.fontSize;
-            var info = loadedLabel.textInfo;
-            if (info != null)
+            // Source templates can keep an enabled Label beneath inactive
+            // ancestors. TMP will not initialize that object just because
+            // ForceMeshUpdate(ignoreActiveState:true) is called. Measure a
+            // disposable active-host Label clone and keep the original activity flags
+            // as separate evidence; the persistent asset is never activated.
+            StaticTextSampleLease sample = null;
+            var sampleNode = loadedNode;
+            NativeStaticTextOutline.Readback sampledOutlineReadback = null;
+            bool sampledOutlineConfigVerified = false;
+            try
             {
-                row.nativeLineCount = info.lineCount;
-                row.nativeCharacterCount = info.characterCount;
-                row.nativePreferredWidth = loadedLabel.preferredWidth;
-                row.nativePreferredHeight = loadedLabel.preferredHeight;
-                row.inkBounds = MeasureInkBounds(info);
-                row.nativeVisibleCharacterCount = row.inkBounds == null ? 0 : row.inkBounds.visibleCharacterCount;
-                row.nativeMeshMeasured = row.inkBounds != null && row.inkBounds.hasVisibleGeometry;
-                var fonts = CaptureGlyphFontAssets(info);
-                if (fonts.Count > 0) row.glyphFontAssets = fonts.ToArray();
+                if (!loadedNode.activeInHierarchy)
+                {
+                    sample = CreateStaticTextSample(loadedNode, plan);
+                    sampleNode = sample == null ? null : sample.node;
+                    row.sampleContext = "isolated-active-label-clone";
+                    row.sampleCloneIsolated = sampleNode != null;
+                    row.sampleAncestorActivationOverride = false;
+                    row.sampleCloneActivationOverride = sampleNode != null;
+                    row.sampleSourceAncestorInactive = sampleNode != null && loadedNode.activeSelf && !loadedNode.activeInHierarchy;
+                    if (sample != null)
+                    {
+                        row.sampleCanvasReferencePixelsPerUnit = sample.canvasReferencePixelsPerUnit;
+                        row.sampleRectTransformVerified = sample.rectTransformVerified;
+                    }
+                }
+                else
+                {
+                    row.sampleContext = "reopened-active-prefab-instance";
+                    var activeCanvas = loadedNode.GetComponentInParent<Canvas>(true);
+                    row.sampleCanvasReferencePixelsPerUnit = activeCanvas == null ? 0f : activeCanvas.referencePixelsPerUnit;
+                    row.sampleRectTransformVerified = loadedNode.transform is RectTransform;
+                }
+
+                var sampleLabel = sampleNode == null ? null : sampleNode.GetComponent<TextMeshProUGUI>();
+                if (sampleLabel == null) diagnostics.Add("STATIC_TEXT_ISOLATED_SAMPLE_NODE_MISSING");
+                else
+                {
+                    var priorCull = sampleLabel.canvasRenderer == null || sampleLabel.canvasRenderer.cull;
+                    try
+                    {
+                        sampleLabel.ForceMeshUpdate(true, true);
+                        var sampleOutline = sampleNode.GetComponent<NativeStaticTextOutline>();
+                        if (spec.fontKind != "bitmap-font" && spec.sourceOutlineEnabled && sampleOutline != null)
+                            sampleOutline.RefreshNow();
+                        sampledOutlineReadback = sampleOutline == null ? null : sampleOutline.LastReadback;
+                        sampledOutlineConfigVerified = sampleOutline != null && sampleOutline.Target == sampleLabel &&
+                            Mathf.Abs(sampleOutline.SourceOutlineWidth - spec.sourceOutlineWidth) <= 0.00001f &&
+                            sampleOutline.SourceOutlineColor == SourceOutlineColor(spec.sourceOutlineColor);
+                    }
+                    finally { if (sampleLabel.canvasRenderer != null) sampleLabel.canvasRenderer.cull = priorCull; }
+
+                    row.actualFontSize = sampleLabel.fontSize;
+                    var info = sampleLabel.textInfo;
+                    if (info != null)
+                    {
+                        row.nativeLineCount = info.lineCount;
+                        row.nativeCharacterCount = info.characterCount;
+                        row.nativePreferredWidth = sampleLabel.preferredWidth;
+                        row.nativePreferredHeight = sampleLabel.preferredHeight;
+                        row.inkBounds = MeasureInkBounds(info);
+                        row.nativeVisibleCharacterCount = row.inkBounds == null ? 0 : row.inkBounds.visibleCharacterCount;
+                        row.nativeMeshMeasured = row.inkBounds != null && row.inkBounds.hasVisibleGeometry;
+                        var fonts = CaptureGlyphFontAssets(info);
+                        if (fonts.Count > 0) row.glyphFontAssets = fonts.ToArray();
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                diagnostics.Add("STATIC_TEXT_ISOLATED_SAMPLE_FAILED:" + exception.GetType().Name);
+            }
+            finally
+            {
+                if (sample != null) sample.Dispose();
+                row.sampleStateRestored = true;
+                row.sourceActivityUnchanged = loadedNode != null && loadedNode.activeSelf == row.sourceNodeActiveSelf &&
+                    loadedNode.activeInHierarchy == row.sourceNodeActiveInHierarchy;
+                row.sourceLabelEnabledUnchanged = loadedLabel != null && loadedLabel.enabled == row.sourceLabelEnabled;
             }
             if (!row.nativeMeshMeasured) diagnostics.Add("STATIC_TEXT_NATIVE_MESH_METRIC_MISSING");
 
             var savedOutline = persistentNode.GetComponent<NativeStaticTextOutline>();
-            var loadedOutline = loadedNode.GetComponent<NativeStaticTextOutline>();
             var outlineIdentity = savedOutline == null ? null : CaptureIdentity(savedOutline);
             row.persistentOutline = outlineIdentity != null;
             if (outlineIdentity != null)
@@ -275,14 +343,11 @@ public static partial class MonkeyImporter
             }
             else
             {
-                var readback = loadedOutline == null ? null : loadedOutline.LastReadback;
-                row.outlineReadback = readback;
-                row.outlineConfigVerified = loadedOutline != null && loadedOutline.Target == loadedLabel &&
-                    Mathf.Abs(loadedOutline.SourceOutlineWidth - spec.sourceOutlineWidth) <= 0.00001f &&
-                    loadedOutline.SourceOutlineColor == SourceOutlineColor(spec.sourceOutlineColor);
-                row.outlineMaterialReadbackVerified = spec.sourceOutlineEnabled && readback != null &&
-                    readback.status == "material_values_applied_and_read_back" && readback.faces != null &&
-                    readback.faces.Length > 0 && readback.faces.All(face => face != null && face.materialValuesVerified);
+                row.outlineReadback = sampledOutlineReadback;
+                row.outlineConfigVerified = sampledOutlineConfigVerified;
+                row.outlineMaterialReadbackVerified = spec.sourceOutlineEnabled && sampledOutlineReadback != null &&
+                    sampledOutlineReadback.status == "material_values_applied_and_read_back" && sampledOutlineReadback.faces != null &&
+                    sampledOutlineReadback.faces.Length > 0 && sampledOutlineReadback.faces.All(face => face != null && face.materialValuesVerified);
                 if (!row.outlineConfigVerified) diagnostics.Add("STATIC_TEXT_OUTLINE_CONFIG_MISMATCH");
                 if (spec.sourceOutlineEnabled && !row.outlineMaterialReadbackVerified)
                     diagnostics.Add("STATIC_TEXT_OUTLINE_MATERIAL_METRICS_UNVERIFIED");
@@ -309,6 +374,93 @@ public static partial class MonkeyImporter
         using (var sha = SHA256.Create())
             return String.Concat(sha.ComputeHash(bytes).Select(value => value.ToString("x2")));
     }
+
+    sealed class StaticTextSampleLease : IDisposable
+    {
+        public GameObject node;
+        public float canvasReferencePixelsPerUnit;
+        public bool rectTransformVerified;
+        readonly GameObject host;
+        public StaticTextSampleLease(GameObject sampleNode, GameObject sampleHost, float referencePixelsPerUnit, bool rectVerified)
+        {
+            node = sampleNode;
+            host = sampleHost;
+            canvasReferencePixelsPerUnit = referencePixelsPerUnit;
+            rectTransformVerified = rectVerified;
+        }
+        public void Dispose()
+        {
+            if (host != null) UnityEngine.Object.DestroyImmediate(host);
+            node = null;
+        }
+    }
+
+    static StaticTextSampleLease CreateStaticTextSample(GameObject sourceNode, Plan plan)
+    {
+        if (sourceNode == null) return null;
+        var sourceRect = sourceNode.transform as RectTransform;
+        var sourceLabel = sourceNode.GetComponent<TextMeshProUGUI>();
+        if (sourceRect == null || sourceLabel == null) throw new InvalidOperationException("STATIC_TEXT_SAMPLE_SOURCE_RECT_OR_LABEL_MISSING");
+        var sourceCanvas = sourceNode.GetComponentInParent<Canvas>(true);
+        if (sourceCanvas == null || !Finite(sourceCanvas.referencePixelsPerUnit) || sourceCanvas.referencePixelsPerUnit <= 0f)
+            throw new InvalidOperationException("STATIC_TEXT_SAMPLE_SOURCE_CANVAS_MISSING");
+        GameObject probeCanvas = null;
+        try
+        {
+            probeCanvas = new GameObject("MonkeyTextMetricProbe", typeof(RectTransform), typeof(Canvas)) {
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+            SceneManager.MoveGameObjectToScene(probeCanvas, sourceNode.scene);
+            probeCanvas.SetActive(false);
+            var canvas = probeCanvas.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.referencePixelsPerUnit = sourceCanvas.referencePixelsPerUnit;
+            canvas.worldCamera = sourceCanvas.worldCamera;
+            var canvasRect = (RectTransform)probeCanvas.transform;
+            if (plan != null && plan.designSize != null && plan.designSize.Length == 2)
+                canvasRect.sizeDelta = new Vector2(plan.designSize[0], plan.designSize[1]);
+            var clone = UnityEngine.Object.Instantiate(sourceNode, probeCanvas.transform, false);
+            clone.name = "MonkeyTextMetricProbeLabel";
+            clone.SetActive(false);
+            var measured = clone.GetComponent<TextMeshProUGUI>();
+            if (measured == null) throw new InvalidOperationException("STATIC_TEXT_SAMPLE_CLONE_LABEL_MISSING");
+
+            // Suppress unrelated scripts in this disposable read-only sampling host.
+            foreach (var behaviour in clone.GetComponentsInChildren<Behaviour>(true))
+            {
+                if (behaviour == null || behaviour == measured || behaviour is NativeStaticTextOutline ||
+                    behaviour is NativeBitmapMissingGlyphs) continue;
+                behaviour.enabled = false;
+            }
+
+            var rect = (RectTransform)clone.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = sourceRect.pivot;
+            rect.sizeDelta = sourceRect.rect.size;
+            rect.anchoredPosition3D = Vector3.zero;
+            var rectVerified = rect.pivot == sourceRect.pivot &&
+                Mathf.Abs(rect.rect.width - sourceRect.rect.width) <= 0.001f &&
+                Mathf.Abs(rect.rect.height - sourceRect.rect.height) <= 0.001f;
+            if (!rectVerified) throw new InvalidOperationException("STATIC_TEXT_SAMPLE_RECT_TRANSFORM_DRIFT");
+
+            // Instantiate beneath an inactive host so no source-derived MonoBehaviour
+            // receives OnEnable before the allowlist above is applied.
+            probeCanvas.SetActive(true);
+            clone.SetActive(true);
+            measured.enabled = sourceLabel.enabled;
+            var glyphFilter = clone.GetComponent<NativeBitmapMissingGlyphs>();
+            if (glyphFilter != null && !glyphFilter.InstallDerivedRenderer())
+                throw new InvalidOperationException("STATIC_TEXT_SAMPLE_BITMAP_FILTER_FAILED");
+            return new StaticTextSampleLease(clone, probeCanvas, canvas.referencePixelsPerUnit, rectVerified);
+        }
+        catch
+        {
+            if (probeCanvas != null) UnityEngine.Object.DestroyImmediate(probeCanvas);
+            throw;
+        }
+    }
+
+    static bool Finite(float value) { return !Single.IsNaN(value) && !Single.IsInfinity(value); }
 
     // Called after the shared label setup so TTF shrink uses the source-pinned
     // Creator 2.4.15 lower bound (0), while BMFont keeps its own 0.1 floor.

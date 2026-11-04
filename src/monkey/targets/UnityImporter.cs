@@ -87,6 +87,11 @@ public static partial class MonkeyImporter
     static partial void ResolveOptionalStaticTimeMaterial(Plan plan,string id,ref UnityEngine.Object value);
     static partial void IdentifyOptionalGeneratedSpineChild(Transform child,ref bool generated);
     static partial void InitializeSavedStaticSpine(GameObject root);
+    static partial void RefreshOptionalStaticMasksForPrefab(Plan plan,SourcePrefabSpec prefab,Dictionary<string,GameObject> nodes,Dictionary<string,Sprite> sprites);
+    static partial void BindOptionalStaticSpineControlledCanvasContext(GameObject context,Plan plan);
+    static partial void ForgetOptionalStaticSpineControlledCanvasContext(GameObject context);
+    static partial void BindOptionalStaticSpineReadbackOwnerContext(Plan plan,string prefabId,Dictionary<string,GameObject> persistentNodes,Dictionary<string,GameObject> loadedNodes,GameObject controlledHost);
+    static partial void ForgetOptionalStaticSpineReadbackOwnerContext(GameObject controlledHost);
     static partial void SkipOptionalSpineDerivedProperty(Component component,string propertyPath,ref bool skip);
     static partial void IdentifyOptionalSpineDerivedComponent(Component component,ref bool generated);
     static partial void PrepareStaticSpine(Plan plan, Dictionary<string,GameObject> nodes);
@@ -146,7 +151,7 @@ public static partial class MonkeyImporter
         public MonkeyNumericCode.Result[] numericCodeBindings,numericCodeExercise;
         public string status, unityVersion, prefabGuid, sceneGuid;
         public int spriteCount, nodeCount, missingScripts; public bool editableRoundtrip,sceneReopened; public string previewPath,previewSha256,previewError,colorSpace;
-        public UnityStaticRetainedAssets.Result[] staticRetainedAssetReadback; public DynamicUiResult[] dynamicUiProbes; public MotionResult[] animations; public string[] diagnostics; public NodeResult[] nodes,nativeInitialNodes; public SpriteResult[] sprites; public FileResult[] nativeFiles,staticSpineReadbackFiles,staticTextReadbackFiles; public FontResult[] fonts; public LabelResult[] labels; public ViewReference[] viewReferences; public JsonResult[] jsonAssets; public SourcePrefabResult[] sourcePrefabs; public TmpResourceResult tmpResources;
+        public UnityStaticRetainedAssets.Result[] staticRetainedAssetReadback; public DynamicUiResult[] dynamicUiProbes; public MotionResult[] animations; public string[] diagnostics; public NodeResult[] nodes,nativeInitialNodes; public SpriteResult[] sprites; public FileResult[] nativeFiles,staticSpineReadbackFiles,staticTextReadbackFiles,staticMaskReadbackFiles; public FontResult[] fonts; public LabelResult[] labels; public ViewReference[] viewReferences; public JsonResult[] jsonAssets; public SourcePrefabResult[] sourcePrefabs; public TmpResourceResult tmpResources;
     }
     [Serializable] public class GalleryResult { public string id,spriteGuid; public bool geometryVerified; }
     [Serializable] public class JsonResult { public string id,guid,textSha256; }
@@ -744,7 +749,9 @@ public static partial class MonkeyImporter
                 blocker.Configure(go.GetComponent<UnityEngine.UI.Graphic>());blocker.enabled=spec.enabled;
             }
             else if(spec.type=="cc.Mask") {
-                var mask=go.AddComponent<UnityEngine.UI.RectMask2D>();mask.enabled=spec.enabled;
+                if(!HasStaticMaskBinding(plan,spec.sourceId)) {
+                    var mask=go.AddComponent<UnityEngine.UI.RectMask2D>();mask.enabled=spec.enabled;
+                }
             }
             else if(spec.type=="cc.Layout") {
                 if(go.GetComponent<UnityEngine.UI.LayoutGroup>()!=null || go.GetComponent<UnityEngine.UI.ContentSizeFitter>()!=null)
@@ -900,6 +907,7 @@ public static partial class MonkeyImporter
             if(!spec.path.StartsWith(Paths.sourcePrefabsRoot+"/",StringComparison.Ordinal) || spec.path.Contains("..") || File.Exists(spec.path))
                 throw new InvalidOperationException("Invalid or existing source prefab path: "+spec.path);
             PrepareNativeInstances(plan,spec.sourceId,nodeMap,nodeSpecs);
+            RefreshOptionalStaticMasksForPrefab(plan,spec,nodeMap,spriteMap);
             // Native instances copy template identities. Configure their exact
             // instance Animation bindings before assigning business references.
             if(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)AttachStaticAnimationBindings(plan,nodeMap,motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins);
@@ -940,6 +948,9 @@ public static partial class MonkeyImporter
                 }
                 var mapped=SavedNodeMap(plan.nodes,contents,spec,nodeSpecs);
                 var persistentMap=SavedNodeMap(plan.nodes,sourcePrefab,spec,nodeSpecs);
+                BindOptionalStaticSpineReadbackOwnerContext(plan,spec.sourceId,
+                    persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),
+                    mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),uiContext);
                 var referenceFailures=new List<string>();
                 foreach(var c in plan.components.Where(c=>c.convertible&&mapped.ContainsKey(c.node))) {
                     var go=mapped[c.node].gameObject;bool valid=true;
@@ -989,7 +1000,13 @@ public static partial class MonkeyImporter
                             driver.Fill==mapped[c.barNode]&&Mathf.Abs(driver.FullLength-c.totalLength)<.001f&&
                             Mathf.Abs(slider.normalizedValue-c.progress)<.0001f&&slider.fillRect==null&&slider.handleRect==null&&!slider.interactable;
                     } else if(c.type=="cc.BlockInputEvents")valid=go.GetComponent<NativeInputBlocker>()!=null && go.GetComponent<NativeInputBlocker>().Surface!=null;
-                    else if(c.type=="cc.Mask")valid=go.GetComponent<UnityEngine.UI.RectMask2D>()!=null;
+                    else if(c.type=="cc.Mask") {
+                        if(HasStaticMaskBinding(plan,c.sourceId)) {
+                            var identity=go.GetComponent<Monkey.StaticMaskSort.NativeStaticMaskIdentity>();
+                            valid=go.GetComponent<UnityEngine.UI.Mask>()!=null&&identity!=null&&
+                                identity.sourceId==c.sourceId&&identity.nativeId==c.nativeId;
+                        } else valid=go.GetComponent<UnityEngine.UI.RectMask2D>()!=null;
+                    }
                     else if(c.type=="cc.Layout")valid=go.GetComponent<UnityEngine.UI.LayoutGroup>()!=null;
                     if(!valid)referenceFailures.Add(c.sourceId);
                 }
@@ -1014,7 +1031,7 @@ public static partial class MonkeyImporter
                 using(var receipt=new StreamWriter(new FileStream(receiptPath,FileMode.CreateNew,FileAccess.Write)))
                     receipt.Write(JsonUtility.ToJson(sourcePrefabResults[sourcePrefabResults.Count-1],true));
             } finally {
-                if(uiContext!=null){contents.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(uiContext);}
+                if(uiContext!=null){ReleasePrefabUiContext(uiContext);contents.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(uiContext);}
                 PrefabUtility.UnloadPrefabContents(contents);
             }
         }
@@ -1130,6 +1147,7 @@ public static partial class MonkeyImporter
         if(Directory.Exists("Analysis/Readback/SpineRendering"))spineAuxiliaryFiles.AddRange(Directory.GetFiles("Analysis/Readback/SpineRendering","*.json").Where(path=>Path.GetFileName(path)!="prepare.json"));
         readback.staticSpineReadbackFiles=spineAuxiliaryFiles.OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray();
         readback.staticTextReadbackFiles=Directory.Exists("Analysis/Readback/TextMetrics")?Directory.GetFiles("Analysis/Readback/TextMetrics","*.json").OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray():new FileResult[0];
+        readback.staticMaskReadbackFiles=Directory.Exists("Analysis/Readback/MaskClipping")?Directory.GetFiles("Analysis/Readback/MaskClipping").Where(path=>path.EndsWith(".json",StringComparison.Ordinal)||path.EndsWith(".png",StringComparison.Ordinal)).OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray():new FileResult[0];
         File.WriteAllText("Analysis/Readback/editor-readback.json",JsonUtility.ToJson(readback,true));
         nativeProgress.phase="complete";nativeProgress.processed=1;nativeProgress.total=1;WriteNativeProgress(readback.status=="imported"?"completed":"completed_partial");
         Debug.Log("Monkey native import: "+readback.status+"; readback Analysis/Readback/editor-readback.json");

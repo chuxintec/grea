@@ -542,6 +542,7 @@ def export(plan_path, output):
             ('UnityBitmapMissingGlyphsIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityBitmapMissingGlyphsIntegration.cs')),'bitmap-missing-editor'),
             ('NativeBitmapMissingGlyphs.cs','Assets/Game/Scripts/Presentation/Bitmap/NativeBitmapMissingGlyphs.cs','bitmap-missing-runtime'),
             ('UnityStaticMaskIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityStaticMaskIntegration.cs')),'static-mask-editor/UnityStaticMaskIntegration.cs'),
+            ('UnityStaticMaskClipProbe.cs',str(Path(standard.unity('importer')).with_name('UnityStaticMaskClipProbe.cs')),'static-mask-editor/UnityStaticMaskClipProbe.cs'),
             ('NativeStaticEllipseMaskGraphic.cs','Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticEllipseMaskGraphic.cs','static-mask-runtime/NativeStaticEllipseMaskGraphic.cs'),
             ('NativeStaticInvertedMaskGraphic.cs','Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticInvertedMaskGraphic.cs','static-mask-runtime/NativeStaticInvertedMaskGraphic.cs'),
             ('NativeStaticMaskIdentity.cs','Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticMaskIdentity.cs','static-mask-runtime/NativeStaticMaskIdentity.cs'),
@@ -613,6 +614,10 @@ def export(plan_path, output):
     instruction['layoutCompletion']=p.get('layoutCompletion')
     instruction['staticLayoutContinuation']=p.get('staticLayoutContinuation')
     instruction['staticMasks']=p.get('staticMasks')
+    if isinstance(instruction['staticMasks'],dict)and instruction['staticMasks'].get('contract')=='monkey-static-mask-continuation/1':
+        mask_ids={row['sourceId']for row in instruction['staticMasks']['masks']}
+        instruction['components']=[dict(row,nativeType='UnityEngine.UI.Mask')if row.get('sourceId')in mask_ids
+            else row for row in instruction['components']]
     instruction['staticSortQueue']=p.get('staticSortQueue')
     instruction['staticSortContinuation']=p.get('staticSortContinuation')
     instruction['staticTextContinuationJson']=encoded(p['staticTextContinuation']).decode('utf-8') if p.get('staticTextContinuation') else None
@@ -720,7 +725,54 @@ def close(actual,expected,tolerance=.001):
     return type(actual) in (int,float) and abs(actual-expected)<=tolerance
 
 
-def label_font_matches(spec,actual,font,evidence=None):
+def source_ttf_shrink_evidence(instruction):
+    """Return only source-version-pinned system-TTF sizing facts, never mesh proof."""
+    from ..prefab_static_text_continuation import SCHEMA, SOURCE_PROFILE, SOURCE_VERSION, _SOURCE_ENGINE_PINS, _RAW_BASE
+    raw=instruction.get('staticTextContinuationJson')
+    if not isinstance(raw,str):return {}
+    try:fragment=load(raw.encode('utf-8'))
+    except (ValueError,TypeError):return {}
+    if (not isinstance(fragment,dict)or fragment.get('contract')!=SCHEMA or fragment.get('schemaVersion')!=1
+        or fragment.get('sourceProfile')!=SOURCE_PROFILE or fragment.get('sourceVersion')!=SOURCE_VERSION
+        or fragment.get('sourceManifestSha256')!=instruction.get('sourceManifestSha256')):return {}
+    files=fragment.get('sourceEngineFiles')
+    if not isinstance(files,list)or any(not isinstance(row,dict)or not isinstance(row.get('logicalPath'),str)for row in files):return {}
+    by_path={row.get('logicalPath'):row for row in files}
+    if len(by_path)!=len(files)or set(by_path)!=set(_SOURCE_ENGINE_PINS):return {}
+    if any(by_path[path].get('sha256')!=digest or by_path[path].get('originUrl')!=_RAW_BASE+path
+           or type(by_path[path].get('bytes'))is not int or by_path[path]['bytes']<=0
+           for path,digest in _SOURCE_ENGINE_PINS.items()):return {}
+    groups=fragment.get('components')
+    if not isinstance(groups,list)or any(not isinstance(row,dict)or not isinstance(row.get('sourceLabelId'),str)for row in groups):return {}
+    by_id={row.get('sourceLabelId'):row for row in groups}
+    if len(by_id)!=len(groups)or any(not isinstance(key,str)or not key for key in by_id):return {}
+    return by_id
+
+
+def _source_ttf_zero_floor(spec,source_sizing):
+    if not isinstance(source_sizing,dict):return False
+    policy=source_sizing.get('layoutPolicy');native=source_sizing.get('nativeFontBinding')
+    if not isinstance(native,dict):return False
+    binding=native.get('binding')
+    system=(spec.get('systemFont')is True and source_sizing.get('fontKind')=='system-font'
+        and native.get('kind')=='system-font' and isinstance(binding,dict)and binding.get('sourceSystemFont')is True
+        and binding==spec.get('nativeSystemFontBinding')and binding.get('sourceLabelId')==spec.get('sourceId'))
+    explicit=(spec.get('systemFont')is False and source_sizing.get('fontKind')=='explicit-ttf'
+        and native.get('kind')=='explicit-ttf'and native.get('assetIds')==[spec.get('font')])
+    wrap=source_sizing.get('sourceWrap')
+    shrink='wrapped-integer-binary-search-v2.4.15'if wrap is True else 'unwrapped-scale-floor-v2.4.15'
+    return bool((system or explicit)and spec.get('nativeTextSizingPolicy')=='cocos24-ttf-shrink-v1'
+        and source_sizing.get('sourceLabelId')==spec.get('sourceId')and type(wrap)is bool
+        and source_sizing.get('sourceText')==spec.get('text')and close(source_sizing.get('sourceFontSize'),spec.get('fontSize'))
+        and source_sizing.get('sourceOverflow')==2 and isinstance(policy,dict)
+        and policy.get('profile')=='cocos-2.4.15-ttf-label-v1'and policy.get('shrinkPolicy')==shrink
+        and type(policy.get('sourceShrinkLowerBound'))in(int,float)and policy['sourceShrinkLowerBound']==0
+        and type(policy.get('targetAutoSizeMin'))in(int,float)and policy['targetAutoSizeMin']==0
+        and policy.get('targetAutoSizing')is True and close(policy.get('sourceFontSizeMaximum'),spec.get('fontSize'))
+        and close(policy.get('targetAutoSizeMax'),spec.get('fontSize')))
+
+
+def label_font_matches(spec,actual,font,evidence=None,source_sizing=None):
     """SHRINK sizes may vary only with explicit native auto-size/bounds proof."""
     import math
     if not actual or not font or not font.get('guid') or actual.get('fontGuid')!=font['guid'] or actual.get('text')!=spec['text']:return False
@@ -735,7 +787,8 @@ def label_font_matches(spec,actual,font,evidence=None):
     measured=proof.get('actualFontSize',proof.get('fontSize'));low=proof.get('fontSizeMin');high=proof.get('fontSizeMax')
     if not all(type(v)in(int,float)and math.isfinite(v)for v in (measured,low,high)):return False
     if evidence and (not close(measured,actual.get('fontSize'))or proof.get('fontGuid')!=font['guid'] or proof.get('text')!=spec['text']or proof.get('allCharactersPresent')is not True or not close(proof.get('requestedFontSize'),spec['fontSize'])):return False
-    return bool(config and close(high,spec['fontSize'])and 0<low<=high and low-.001<=measured<=high+.001)
+    floor_valid=(0<=low<=high if _source_ttf_zero_floor(spec,source_sizing)else 0<low<=high)
+    return bool(config and close(high,spec['fontSize'])and floor_valid and low-.001<=measured<=high+.001)
 
 
 def bitmap_label_probe(spec,font,effective_size):
@@ -938,6 +991,8 @@ def verify(candidate, output, level='static'):
                     actual=json_assets.get(spec['id'],{})
                     if actual.get('textSha256')!=fingerprint(root/spec['path']) or not actual.get('guid'):
                         diagnostics.append(diagnostic('JSON_READBACK_MISMATCH',spec['path'],'Native TextAsset text/identity differs or is absent'))
+            from ..unity_mask_clipping_readback import verify as verify_mask_clipping
+            diagnostics.extend(verify_mask_clipping(instruction,rb,root))
             by_id={s['id']:s for s in rb.get('sprites',[])}
             for spec in instruction['textures']:
                 actual=by_id.get(spec['id'])
@@ -959,13 +1014,14 @@ def verify(candidate, output, level='static'):
                 if spec.get('atlasGuid') and (not actual or actual.get('atlasGuid')!=spec['atlasGuid'] or actual.get('materialAtlasGuid')!=spec['atlasGuid']):
                     diagnostics.append(diagnostic('BITMAP_ATLAS_READBACK_MISMATCH',spec['id'],'Saved font and material must reference the original atlas GUID'))
             by_label={l['sourceId']:l for l in rb.get('labels',[])}
+            source_sizing=source_ttf_shrink_evidence(instruction)
             from ..cocos_native_finish import font_evidence
             extra_fonts=font_evidence(root,instruction,readback_path)
             node_specs={n['sourceId']:n for n in instruction['nodes']}
             for spec in instruction['components']:
                 if spec['type']!='cc.Label' or not spec['convertible']:continue
                 actual=by_label.get(spec['sourceId']);font=by_font.get(spec.get('font'))
-                if not label_font_matches(spec,actual,font,extra_fonts.get(spec['sourceId'])):
+                if not label_font_matches(spec,actual,font,extra_fonts.get(spec['sourceId']),source_sizing.get(spec['sourceId'])):
                     diagnostics.append(diagnostic('LABEL_FONT_READBACK_MISMATCH',spec['sourceId'],'Saved text/font/GUID/glyph coverage differs; no fallback accepted'))
                     continue
                 if spec.get('bitmapProbe'):

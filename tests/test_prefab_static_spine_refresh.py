@@ -256,3 +256,36 @@ class StaticSpineHelperRefreshTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_known_external_mask_helper_refresh_requires_explicit_pinned_opt_in(tmp_path):
+    owner=StaticSpineHelperRefreshTests()
+    plan_path,request_path,plan,manifest,_=owner._write_fixture(tmp_path)
+    fragment=plan["staticSpineRendering"]
+    fragment["externalDependencies"][0]["sha256"]="e"*64
+    write_json(plan_path,plan)
+    write_json(plan_path.parent/fragment["moduleStage"]/"spine-static-rendering.json",fragment)
+    manifest["staticSpineRendering"]=fragment
+    for row in manifest["files"]:
+        f=plan_path.parent/row["path"]
+        row.update(sha256=_digest(f),bytes=f.stat().st_size)
+    write_json(plan_path.parent/"manifest.json",manifest)
+    request=json.loads(request_path.read_text())
+    request["plan"]["sha256"]=_digest(plan_path)
+    request["planManifest"]["sha256"]=_digest(plan_path.parent/"manifest.json")
+    write_json(request_path,request)
+    import pytest
+    with pytest.raises(StaticSpineRefreshError,match="external dependency differs"):
+        prepare(request_path,_digest(request_path),tmp_path/"denied")
+    assert not (tmp_path/"denied").exists()
+    request["refreshExternalDependencies"]=True
+    write_json(request_path,request)
+    with patch("monkey.prefab_static_spine_refresh._upgrade_atlas_mapping",return_value=[]):
+        report=prepare(request_path,_digest(request_path),tmp_path/"approved")
+    output=json.loads(Path(report["planPath"]).read_text())
+    dependency=output["staticSpineRendering"]["externalDependencies"][0]
+    expected=_digest(Path(__file__).resolve().parents[1]/"src/monkey/targets/NativeStaticMaskIdentity.cs")
+    assert dependency["sha256"]==expected
+    assert report["externalDependencyReplacements"][0]["previousSha256"]=="e"*64
+    assert report["textureDecodeInvoked"]is False
+    assert fragment["externalDependencies"][0]["sha256"]=="e"*64

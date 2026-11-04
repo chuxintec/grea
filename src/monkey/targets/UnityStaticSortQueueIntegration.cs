@@ -247,6 +247,36 @@ public static partial class MonkeyImporter
         return nodes;
     }
 
+    static void StaticSortInactiveSpineActivityInputs(Plan plan, SourcePrefabSpec prefab,
+        out Dictionary<string, bool> activeByNode, out Dictionary<string, string[]> pathByNode)
+    {
+        activeByNode = new Dictionary<string, bool>(StringComparer.Ordinal);
+        pathByNode = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        var sourceNodes = (plan == null ? null : plan.nodes ?? Array.Empty<NodeSpec>())
+            .Where(row => row != null && !String.IsNullOrWhiteSpace(row.sourceId) &&
+                (prefab.nodes ?? Array.Empty<string>()).Contains(row.sourceId))
+            .ToDictionary(row => row.sourceId, StringComparer.Ordinal);
+        if (String.IsNullOrWhiteSpace(prefab.root) || !sourceNodes.ContainsKey(prefab.root))
+            throw new InvalidOperationException("STATIC_SORT_INACTIVE_SPINE_PREFAB_ROOT_SOURCE_NODE_MISSING:" +
+                (prefab == null ? "null" : prefab.sourceId));
+        foreach (var pair in sourceNodes)
+        {
+            activeByNode.Add(pair.Key, pair.Value.active);
+            var path = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var cursor = pair.Key;
+            while (true)
+            {
+                if (String.IsNullOrWhiteSpace(cursor) || !seen.Add(cursor) || !sourceNodes.TryGetValue(cursor, out var node))
+                    throw new InvalidOperationException("STATIC_SORT_INACTIVE_SPINE_SOURCE_ACTIVITY_PATH_INVALID:" + pair.Key);
+                path.Add(cursor);
+                if (cursor == prefab.root) break;
+                cursor = node.parent;
+            }
+            pathByNode.Add(pair.Key, path.ToArray());
+        }
+    }
+
     static Dictionary<string, Sprite> StaticSortSpriteReferences(Plan plan, ProxyQueueSpec[] queues)
     {
         var frameIds = (queues ?? Array.Empty<ProxyQueueSpec>())
@@ -334,6 +364,9 @@ public static partial class MonkeyImporter
         var queues = StaticSortQueuesForPrefab(plan, prefab);
         var persistentNodes = StaticSortSourceNodes(prefab, persistentMap);
         var loadedNodes = StaticSortSourceNodes(prefab, loadedMap);
+        StaticSortInactiveSpineActivityInputs(plan, prefab, out var sourceActiveByNode, out var sourceActivityPathByNode);
+        var prefabRoot = loadedNodes[prefab.root];
+        var controlledHost = prefabRoot.transform.parent == null ? null : prefabRoot.transform.parent.gameObject;
         var sprites = StaticSortSpriteReferences(plan, queues);
         var persistentRows = new List<ProxyQueueReadback>();
         var loadedRows = new List<ProxyQueueReadback>();
@@ -359,7 +392,11 @@ public static partial class MonkeyImporter
             var scopeProvenance = new ProxyPrefabScopeProvenance { sourcePrefabId = prefab.sourceId,
                 prefabPath = prefab.path, rootScope = queue.rootScope,
                 persistentAssetRoot = persistentNodes[queue.rootScope],
-                loadedScopeRoot = loadedNodes[queue.rootScope] };
+                loadedScopeRoot = loadedNodes[queue.rootScope],
+                sourcePrefabRootNodeId = prefab.root, sourceManifestSha256 = plan.sourceManifestSha256,
+                persistentSourceNodes = persistentNodes, loadedSourceNodes = loadedNodes,
+                sourceNodeActive = sourceActiveByNode, sourceActivityPathByNode = sourceActivityPathByNode,
+                controlledHost = controlledHost };
             var persistent = UnityStaticSortQueueProxy.ReadPersistentSortQueueProxy(queue, persistentNodes,
                 persistentRoots[0].gameObject, persistentPresenter, resolver, materialResolver, scopeProvenance);
             var loaded = UnityStaticSortQueueProxy.ReadStaticSortQueueProxy(queue, loadedNodes,

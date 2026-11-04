@@ -85,8 +85,12 @@ namespace Monkey.StaticSortQueueProxy
     }
     public sealed class ProxyPrefabScopeProvenance
     {
-        public string sourcePrefabId, prefabPath, rootScope;
+        public string sourcePrefabId, prefabPath, rootScope, sourcePrefabRootNodeId, sourceManifestSha256;
         public GameObject persistentAssetRoot, loadedScopeRoot;
+        public GameObject controlledHost;
+        public IDictionary<string, GameObject> persistentSourceNodes, loadedSourceNodes;
+        public IDictionary<string, bool> sourceNodeActive;
+        public IDictionary<string, string[]> sourceActivityPathByNode;
     }
     [Serializable] public sealed class ProxyPresenterReadback
     {
@@ -135,7 +139,8 @@ namespace Monkey.StaticSortQueueProxy
     [Serializable] public sealed class ProxySpineNonDrawChildReadback
     {
         public string sourceComponentId, sourceNode, noDrawReason, sourceIdentityComponentId, sourceDataAssetId,
-            sourceDataAssetPath, sourceDataAssetGuid, childPath, childGraphicType, childMaterialGuid, childTextureGuid;
+            sourceDataAssetPath, sourceDataAssetGuid, childPath, childGraphicType, childMaterialGuid, childTextureGuid,
+            registrationEvidenceDisposition;
         public bool sourceOwnerEnabled, sourceNodeActive, sourceChildEnabled, sourceChildActiveSelf,
             sourceChildActiveInHierarchy, targetChildEnabled, targetChildActiveInHierarchy,
             sourceIdentityVerified, sourceDataReferenceVerified, registeredChildVerified,
@@ -147,6 +152,7 @@ namespace Monkey.StaticSortQueueProxy
         public int currentOwnerRootMeshVertexCount, currentOwnerRootMeshSubmeshCount, currentOwnerRootMeshIndexCount,
             currentOwnerRootCanvasMaterialCount;
         public string currentOwnerRootMeshSha256;
+        public QueueInactiveSpineReadback inactiveSourceFlowProof;
         public bool currentOwnerRendererListReadable, currentOwnerRendererListEmpty, currentOwnerRootMeshEmpty,
             ownerRootMeshCaptureAndCurrentFingerprintAbsent;
     }
@@ -3239,7 +3245,8 @@ namespace Monkey.StaticSortQueueProxy
             IDictionary<NativeStaticSortTextSource, bool> textSourceVerified,
             IEnumerable<ProxyBlockInputReadback> blockInputRows,
             IEnumerable<ProxySourceMaskIdentityReadback> sourceMaskIdentityRows,
-            out string missingSourceNode)
+            out string missingSourceNode,
+            IEnumerable<QueueInactiveSpineReadback> inactiveSpineFlowProofs = null)
         {
             missingSourceNode = null;
             var root = sourceNodes.TryGetValue(spec.rootScope, out var rootObject) ? rootObject : null;
@@ -3255,6 +3262,18 @@ namespace Monkey.StaticSortQueueProxy
                 if (child != null && child.sourceChildGraphic != null && child.sourceOwnerGraphic != null &&
                     child.sourceChildCanvasRenderer == child.sourceChildGraphic.canvasRenderer)
                     boundGraphics.Add(child.sourceChildGraphic);
+            foreach (var inactiveProof in inactiveSpineFlowProofs ?? Array.Empty<QueueInactiveSpineReadback>())
+            {
+                if (inactiveProof == null || !inactiveProof.verified || !inactiveProof.applicable ||
+                    inactiveProof.sourceEffectiveActive || inactiveProof.runtimeRendererListRequired ||
+                    !sourceNodes.TryGetValue(inactiveProof.node, out var inactiveNode) || inactiveNode == null) continue;
+                var owner = inactiveNode.GetComponents<Component>().SingleOrDefault(component => component != null &&
+                    component.GetType().FullName == "Spine.Unity.SkeletonGraphic") as Graphic;
+                if (owner != null &&
+                    owner.enabled == inactiveProof.sourceComponentEnabled && !owner.gameObject.activeInHierarchy &&
+                    TryReadSpineIdentity(owner, inactiveProof.sourceComponentId, out _))
+                    boundGraphics.Add(owner);
+            }
             foreach (var nullDataOwner in spineNullDataOwners ?? Array.Empty<ProxySpineNullDataOwner>())
                 if (nullDataOwner != null && nullDataOwner.sourceOwnerGraphic != null && nullDataOwner.verified &&
                     nullDataOwner.nativeDataReferenceNull &&
@@ -4834,8 +4853,37 @@ namespace Monkey.StaticSortQueueProxy
             return rows.ToArray();
         }
 
+        static QueueInactiveSpineReadback ReadInactiveSpineNoRenderProof(ProxyRendererSpec expected,
+            string sourceComponentId, ProxyPrefabScopeProvenance scope)
+        {
+            if (expected == null || expected.sourceActive || scope == null || scope.persistentSourceNodes == null ||
+                scope.loadedSourceNodes == null || scope.sourceNodeActive == null || scope.sourceActivityPathByNode == null ||
+                String.IsNullOrWhiteSpace(scope.sourcePrefabRootNodeId) || String.IsNullOrWhiteSpace(scope.sourcePrefabId) ||
+                String.IsNullOrWhiteSpace(scope.sourceManifestSha256) || scope.controlledHost == null ||
+                !scope.sourceActivityPathByNode.TryGetValue(expected.node, out var path)) return null;
+            var proof = UnityStaticSortQueue.ReadInactiveSpineNoRender(sourceComponentId, expected.node,
+                scope.sourcePrefabRootNodeId, expected.sourceEnabled, path, scope.sourceNodeActive,
+                scope.persistentSourceNodes, scope.loadedSourceNodes, scope.controlledHost);
+            proof.sourcePrefabId = scope.sourcePrefabId;
+            proof.sourceManifestSha256 = scope.sourceManifestSha256;
+            proof.sourcePrefabRootNodeId = scope.sourcePrefabRootNodeId;
+            return proof;
+        }
+
+        static bool IsExactSpineInactiveSubmesh(Graphic child, Graphic owner)
+        {
+            if (child == null || owner == null || owner.GetType().FullName != "Spine.Unity.SkeletonGraphic" ||
+                child.GetType() != typeof(RawImage) || child.transform.parent != owner.transform ||
+                child.transform.childCount != 0 || !(child.transform is RectTransform) ||
+                child.canvasRenderer == null || child.canvasRenderer.gameObject != child.gameObject ||
+                ((RawImage)child).canvasRenderer != child.canvasRenderer) return false;
+            return child.GetComponents<Component>().All(component => component == null ||
+                component is RectTransform || component is CanvasRenderer || component.GetType() == typeof(RawImage));
+        }
+
         static ProxySpineNonDrawChildReadback[] ReadSpineNonDrawChildren(ProxyQueueSpec spec,
             IDictionary<string, GameObject> sourceNodes, NativeStaticSortQueueProxyPresenter presenter,
+            ProxyPrefabScopeProvenance scopeProvenance,
             out bool allVerified, out string[] diagnostics)
         {
             var rows = new List<ProxySpineNonDrawChildReadback>();
@@ -4877,6 +4925,149 @@ namespace Monkey.StaticSortQueueProxy
                     ownerProofs.Length > 0;
                 var ownerOnlyProof = ownerProofs.Length == 1 && ownerProofs[0].ownerOnlyNoRegisteredChildren
                     ? ownerProofs[0] : null;
+                var inactiveFlowProof = !expected.sourceActive
+                    ? ReadInactiveSpineNoRenderProof(expected, sourceId, scopeProvenance)
+                    : null;
+                if (!listReadable && inactiveFlowProof != null && inactiveFlowProof.applicable && inactiveFlowProof.verified)
+                {
+                    if (!dataOK || !sourceIdentityOK || !ownerGraphicOK)
+                        gaps.Add("STATIC_SORT_PROXY_SPINE_INACTIVE_FLOW_IDENTITY_OR_DATA_UNVERIFIED: " + sourceId +
+                            ";data=" + dataOK + ";identity=" + sourceIdentityOK + ";owner=" + ownerGraphicOK +
+                            ";captureProofs=" + ownerProofs.Length + ";dataBinding=" + (dataDiagnostic ?? "none"));
+                    var rootRenderer = owner.canvasRenderer;
+                    var rootMesh = rootRenderer == null ? null : rootRenderer.GetMesh();
+                    var rootIndices = rootMesh != null && rootMesh.subMeshCount == 1
+                        ? rootMesh.GetIndices(0) : Array.Empty<int>();
+                    var rootMeshEmpty = rootMesh == null || rootMesh.vertexCount == 0 && rootMesh.subMeshCount == 0;
+                    var rootHash = rootMesh == null || rootMesh.subMeshCount == 0 ? null : MeshFingerprint(rootMesh, 0);
+
+                    if (ownerOnlyProof != null)
+                    {
+                        var noUnmappedChildGraphics = !node.GetComponentsInChildren<Graphic>(true).Any(child => child != null && child != owner &&
+                            !IsIndependentlyMappedSourceNode(child.transform, node.transform, sourceNodes));
+                        var ownerCaptureMatches = ownerOnlyProof.sourceOwnerGraphic == owner &&
+                            ownerOnlyProof.sourceOwnerEnabled == expected.sourceEnabled && !ownerOnlyProof.sourceNodeActive &&
+                            ownerOnlyProof.sourceDataAssetReference == dataAsset &&
+                            ownerOnlyProof.sourceDataAssetId == (dataEvidence == null ? null : dataEvidence.sourceDataAssetId) &&
+                            ownerOnlyProof.sourceDataAssetPath == (dataEvidence == null ? null : dataEvidence.dataAssetPath) &&
+                            ownerOnlyProof.sourceDataAssetGuid == (dataEvidence == null ? null : dataEvidence.dataAssetGuid) &&
+                            noUnmappedChildGraphics;
+                        var ownerOnlyVerified = inactiveFlowProof.verified && dataOK && sourceIdentityOK && ownerGraphicOK &&
+                            ownerCaptureMatches && !node.activeInHierarchy;
+                        rows.Add(new ProxySpineNonDrawChildReadback
+                        {
+                            sourceComponentId = sourceId, sourceNode = expected.node,
+                            noDrawReason = "inactive-source-subtree-no-render-flow",
+                            sourceIdentityComponentId = actualSourceIdentity,
+                            sourceDataAssetId = dataEvidence == null ? null : dataEvidence.sourceDataAssetId,
+                            sourceDataAssetPath = dataEvidence == null ? null : dataEvidence.dataAssetPath,
+                            sourceDataAssetGuid = dataEvidence == null ? null : dataEvidence.dataAssetGuid,
+                            sourceOwnerEnabled = owner.enabled, sourceNodeActive = expected.sourceActive,
+                            sourceIdentityVerified = sourceIdentityOK, sourceDataReferenceVerified = dataOK,
+                            registeredChildVerified = false, childReferencePersistent = dataOK,
+                            childNoDrawVerified = inactiveFlowProof.verified && !node.activeInHierarchy,
+                            ownerOnlyNoRegisteredChildren = true,
+                            ownerRendererListReadable = listReadable, ownerRendererListEmpty = false,
+                            ownerRootMeshEmpty = rootMeshEmpty,
+                            ownerRootMeshVertexCount = rootMesh == null ? -1 : rootMesh.vertexCount,
+                            ownerRootMeshSubmeshCount = rootMesh == null ? -1 : rootMesh.subMeshCount,
+                            ownerRootMeshIndexCount = rootIndices.Length,
+                            ownerRootCanvasMaterialCount = rootRenderer == null ? -1 : rootRenderer.materialCount,
+                            ownerRootMeshSha256 = rootHash,
+                            currentOwnerRendererListReadable = listReadable, currentOwnerRendererListEmpty = false,
+                            currentOwnerRootMeshEmpty = rootMeshEmpty,
+                            currentOwnerRootMeshVertexCount = rootMesh == null ? -1 : rootMesh.vertexCount,
+                            currentOwnerRootMeshSubmeshCount = rootMesh == null ? -1 : rootMesh.subMeshCount,
+                            currentOwnerRootMeshIndexCount = rootIndices.Length,
+                            currentOwnerRootCanvasMaterialCount = rootRenderer == null ? -1 : rootRenderer.materialCount,
+                            currentOwnerRootMeshSha256 = rootHash, ownerRootMeshCaptureAndCurrentFingerprintAbsent = false,
+                            sourceChildMeshVertexCount = -1, sourceChildMeshSubmeshCount = -1, sourceChildMaterialCount = -1,
+                            inactiveSourceFlowProof = inactiveFlowProof, verified = ownerOnlyVerified
+                        });
+                        if (!ownerOnlyVerified)
+                            gaps.Add("STATIC_SORT_PROXY_SPINE_INACTIVE_OWNER_NO_RENDER_FLOW_PROOF_INVALID: " + sourceId);
+                        continue;
+                    }
+
+                    if (!dataOK || !sourceIdentityOK || !ownerGraphicOK)
+                        gaps.Add("STATIC_SORT_PROXY_SPINE_INACTIVE_CHILD_SOURCE_IDENTITY_OR_DATA_UNVERIFIED: " + sourceId);
+                    if (ownerProofs.Length == 0)
+                    {
+                        gaps.Add("STATIC_SORT_PROXY_SPINE_INACTIVE_CHILD_CAPTURE_PROOF_MISSING: " + sourceId);
+                        continue;
+                    }
+                    foreach (var proof in ownerProofs)
+                    {
+                        var child = proof.sourceChildGraphic;
+                        var renderer = child == null ? null : child.canvasRenderer;
+                        var mesh = renderer == null ? null : renderer.GetMesh();
+                        var material = child == null ? null : child.material;
+                        var texture = material == null || material.mainTexture == null ?
+                            child == null ? null : child.mainTexture : material.mainTexture;
+                        long materialLocal; var materialGuid = material == null ? null : AssetGuid(material, out materialLocal);
+                        var textureGuid = TextureAssetGuid(texture);
+                        var childPath = child == null ? null : SpineChildPath(node.transform, child.transform);
+                        var childShapeOK = IsExactSpineInactiveSubmesh(child, owner);
+                        var childRefOK = childShapeOK && renderer != null && proof.sourceChildCanvasRenderer == renderer &&
+                            proof.childPath == childPath && materialGuid == proof.childMaterialGuid &&
+                            textureGuid == proof.childTextureGuid && !String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(material)) &&
+                            proof.sourceOwnerGraphic == owner && proof.sourceDataAssetReference == dataAsset &&
+                            proof.sourceDataAssetId == (dataEvidence == null ? null : dataEvidence.sourceDataAssetId) &&
+                            proof.sourceDataAssetPath == (dataEvidence == null ? null : dataEvidence.dataAssetPath) &&
+                            proof.sourceDataAssetGuid == (dataEvidence == null ? null : dataEvidence.dataAssetGuid);
+                        var childStateOK = child != null && proof.sourceOwnerEnabled == expected.sourceEnabled &&
+                            !proof.sourceNodeActive && proof.sourceChildEnabled == child.enabled &&
+                            proof.sourceChildActiveSelf == child.gameObject.activeSelf &&
+                            !child.gameObject.activeInHierarchy && proof.targetChildEnabled == child.enabled &&
+                            !proof.targetChildActiveInHierarchy;
+                        var childNoDraw = inactiveFlowProof.verified && childStateOK && !node.activeInHierarchy;
+                        var childVerified = inactiveFlowProof.verified && dataOK && sourceIdentityOK && ownerGraphicOK &&
+                            childRefOK && childStateOK && childNoDraw;
+                        rows.Add(new ProxySpineNonDrawChildReadback
+                        {
+                            sourceComponentId = sourceId, sourceNode = expected.node,
+                            noDrawReason = "inactive-source-subtree-no-render-flow",
+                            sourceIdentityComponentId = actualSourceIdentity,
+                            sourceDataAssetId = dataEvidence == null ? null : dataEvidence.sourceDataAssetId,
+                            sourceDataAssetPath = dataEvidence == null ? null : dataEvidence.dataAssetPath,
+                            sourceDataAssetGuid = dataEvidence == null ? null : dataEvidence.dataAssetGuid,
+                            childPath = childPath, childGraphicType = child == null ? null : child.GetType().FullName,
+                            childMaterialGuid = materialGuid, childTextureGuid = textureGuid,
+                            sourceOwnerEnabled = expected.sourceEnabled, sourceNodeActive = expected.sourceActive,
+                            sourceChildEnabled = proof.sourceChildEnabled, sourceChildActiveSelf = proof.sourceChildActiveSelf,
+                            sourceChildActiveInHierarchy = proof.sourceChildActiveInHierarchy,
+                            targetChildEnabled = child != null && child.enabled,
+                            targetChildActiveInHierarchy = child != null && child.gameObject.activeInHierarchy,
+                            sourceIdentityVerified = sourceIdentityOK, sourceDataReferenceVerified = dataOK,
+                            registeredChildVerified = childRefOK,
+                            registrationEvidenceDisposition = "captured-registered-child-and-persisted-owner-references;current-list-not-required",
+                            childReferencePersistent = childRefOK, childNoDrawVerified = childNoDraw,
+                            ownerOnlyNoRegisteredChildren = false,
+                            ownerRendererListReadable = listReadable, ownerRendererListEmpty = false,
+                            ownerRootMeshEmpty = rootMeshEmpty,
+                            ownerRootMeshVertexCount = rootMesh == null ? -1 : rootMesh.vertexCount,
+                            ownerRootMeshSubmeshCount = rootMesh == null ? -1 : rootMesh.subMeshCount,
+                            ownerRootMeshIndexCount = rootIndices.Length,
+                            ownerRootCanvasMaterialCount = rootRenderer == null ? -1 : rootRenderer.materialCount,
+                            ownerRootMeshSha256 = rootHash,
+                            currentOwnerRendererListReadable = listReadable, currentOwnerRendererListEmpty = false,
+                            currentOwnerRootMeshEmpty = rootMeshEmpty,
+                            currentOwnerRootMeshVertexCount = rootMesh == null ? -1 : rootMesh.vertexCount,
+                            currentOwnerRootMeshSubmeshCount = rootMesh == null ? -1 : rootMesh.subMeshCount,
+                            currentOwnerRootMeshIndexCount = rootIndices.Length,
+                            currentOwnerRootCanvasMaterialCount = rootRenderer == null ? -1 : rootRenderer.materialCount,
+                            currentOwnerRootMeshSha256 = rootHash, ownerRootMeshCaptureAndCurrentFingerprintAbsent = false,
+                            sourceChildMeshVertexCount = mesh == null ? -1 : mesh.vertexCount,
+                            sourceChildMeshSubmeshCount = mesh == null ? -1 : mesh.subMeshCount,
+                            sourceChildMaterialCount = renderer == null ? -1 : renderer.materialCount,
+                            inactiveSourceFlowProof = inactiveFlowProof, verified = childVerified
+                        });
+                        if (!childVerified)
+                            gaps.Add("STATIC_SORT_PROXY_SPINE_INACTIVE_CHILD_SOURCE_OR_RESOURCE_PROOF_INVALID: source=" +
+                                sourceId + ";path=" + (childPath ?? "<null>") + ";data=" + dataOK + ";childRefs=" + childRefOK);
+                    }
+                    continue;
+                }
                 if (ownerOnlyProof != null)
                 {
                     var rootRenderer = owner.canvasRenderer;
@@ -5550,7 +5741,7 @@ namespace Monkey.StaticSortQueueProxy
                     ";readback=" + spineEmptyPoseOwnerRows.Length + ";unverified=" +
                     String.Join(",", spineEmptyPoseOwnerRows.Where(row => row == null || !row.verified)
                         .Select(row => row == null ? "<null>" : row.sourceComponentId)) };
-            var spineNonDrawChildRows = ReadSpineNonDrawChildren(spec, sourceNodes, presenter,
+            var spineNonDrawChildRows = ReadSpineNonDrawChildren(spec, sourceNodes, presenter, scopeProvenance,
                 out var spineNonDrawChildrenVerified, out var spineNonDrawChildDiagnostics);
             var verifiedSpineIds = new HashSet<string>(spineDelegationRows.Where(row => row.verified)
                 .Select(row => row.sourceComponentId), StringComparer.Ordinal);
@@ -5563,6 +5754,10 @@ namespace Monkey.StaticSortQueueProxy
                 presenter.spineNonDrawChildren ?? Array.Empty<ProxySpineNonDrawChild>())
                 .Where(row => row != null && validSpineNonDrawChildKeys.Contains(row.sourceComponentId + "\n" + row.childPath))
                 .ToArray();
+            var inactiveSpineFlowProofs = spineNonDrawChildRows.Where(row => row != null && row.verified &&
+                row.inactiveSourceFlowProof != null && row.inactiveSourceFlowProof.verified)
+                .Select(row => row.inactiveSourceFlowProof).GroupBy(row => row.sourceComponentId, StringComparer.Ordinal)
+                .Select(group => group.First()).ToArray();
             var validSpineNullDataOwners = (presenter == null ? Array.Empty<ProxySpineNullDataOwner>() :
                 presenter.spineNullDataOwners ?? Array.Empty<ProxySpineNullDataOwner>())
                 .Where(proof => proof != null && spineNullDataOwnerRows.Any(row => row.verified && row.sourceComponentId == proof.sourceComponentId))
@@ -5580,7 +5775,7 @@ namespace Monkey.StaticSortQueueProxy
                 verifyRuntimeGeometry,
                 provisional ? "pre-save-provisional" : verifyRuntimeGeometry ? "loaded" : "persistent",
                 textSourceVerified, blockInputRows, sourceMaskIdentityRows,
-                out var uncoveredGraphicNode);
+                out var uncoveredGraphicNode, inactiveSpineFlowProofs);
             var layoutElement = proxyRoot == null ? null : proxyRoot.GetComponent<LayoutElement>();
             var layoutIgnored = layoutElement != null && layoutElement.ignoreLayout;
             var expectedRendererIds = (spec.drawEvents ?? Array.Empty<ProxyDrawEventSpec>())

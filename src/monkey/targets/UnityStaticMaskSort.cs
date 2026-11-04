@@ -12,12 +12,15 @@ namespace Monkey.StaticMaskSort
 {
     [Serializable] public sealed class MaskSpec
     {
-        public string sourceId, nativeId, node;
+        public string sourceId, sourceOriginId, nativeId, node;
         public int maskType;
         public bool enabled, inverted;
         public float alphaThreshold;
         public string spriteFrameUuid;
         public string sourceFieldsJson;
+        public string[] sourceDefaultFields;
+        public bool sourceActiveSelf, sourceActive;
+        public string sourceQueueDisposition;
         public string sourceMaterialId, resolvedSourceMaterialId, sourceEffectId, sourceEffectName, sourceEffectDocumentSha256;
         public string unityMaskShaderPath, unityMaskShaderSha256, unityMaskMaterialGuid, unityMaskMaterialPath;
     }
@@ -44,7 +47,11 @@ namespace Monkey.StaticMaskSort
         public string sourceMaterialId, resolvedSourceMaterialId, sourceEffectId, sourceEffectName, sourceEffectDocumentSha256;
         public string unityMaskMaterialGuid;
         public string unityMaskShaderPath, unityMaskShaderSha256;
-        public bool enabled, inverted, verified;
+        public string persistentIdentityGuid;
+        public bool enabled, inverted, verified, persistentIdentityVerified;
+        public MonkeyImporter.MaskClipProbeReadback clipProbe;
+        public bool clipProbeVerified;
+        public long persistentIdentityLocalFileId;
         public int maskType;
         public float alphaThreshold;
         public string sourceFieldsJson;

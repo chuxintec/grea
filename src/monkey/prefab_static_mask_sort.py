@@ -177,7 +177,7 @@ def _mask_material_proof(manifest: Mapping, bundle: str, raw: Mapping) -> dict:
             "sourceEffectProgramSha256": {"glsl1.vert": vertex_sha, "glsl1.frag": fragment_sha}}
 
 
-def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str) -> list[dict]:
+def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str, *, include_convertible_masks: bool = False) -> list[dict]:
     rows = [row for row in plan.get("components", []) if row.get("type") == source_type]
     unique: dict[str, dict] = {}
     origins={r['instanceSourceId']:r['templateSourceId'] for r in plan.get('staticAnimationComponentOrigins',[])}
@@ -193,7 +193,7 @@ def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str) -> list[dic
         native_id = row.get("nativeId") or uuid.uuid5(uuid.NAMESPACE_URL,'monkey/static-mask/'+str(plan.get('namespace'))+'/'+str(root_id)).hex
         if not isinstance(source_id, str) or not isinstance(native_id, str):
             raise StaticMaskSortError(f"{source_type} plan row lacks source identity")
-        if source_type == "cc.Mask" and row.get("convertible") is True:
+        if source_type == "cc.Mask" and row.get("convertible") is True and not include_convertible_masks:
             continue
         # Prefab sync copies have generated sourceIds, but retain the source
         # nativeId. Resolve the original source row once and keep every plan
@@ -204,10 +204,10 @@ def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str) -> list[dic
         binding = {"sourceId": source_id, "sourceOriginId": root_id, "nativeId": native_id,
                    "node": row.get("node"), "enabled": row.get("enabled") is True}
         if source_type == "cc.Mask":
-            mask_type = raw.get("_type", 0)
+            mask_type = raw.get("_type", raw.get("_N$type", 0))
             # Cocos 2.4 serialized inspector keys carry the `_N$` prefix.
-            inverted = raw.get("_N$inverted", False)
-            threshold = raw.get("_N$alphaThreshold", 0.1)
+            inverted = raw.get("_inverted", raw.get("_N$inverted", False))
+            threshold = raw.get("_alphaThreshold", raw.get("_N$alphaThreshold", 0.1))
             if type(mask_type) is not int or mask_type not in (0, 1, 2) or type(inverted) is not bool:
                 raise StaticMaskSortError(f"unsupported or missing source mask fields: {source_id}")
             if isinstance(threshold, bool) or not isinstance(threshold, (int, float)) or not 0 <= threshold <= 1:
@@ -251,7 +251,7 @@ def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str) -> list[dic
             unique[root_id] = binding
     occurrences = []
     for row in rows:
-        if source_type == "cc.Mask" and row.get("convertible") is True:
+        if source_type == "cc.Mask" and row.get("convertible") is True and not include_convertible_masks:
             continue
         base = unique[origin(row["sourceId"])]
         occurrence = dict(base)

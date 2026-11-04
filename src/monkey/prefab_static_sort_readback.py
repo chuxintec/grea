@@ -1491,6 +1491,52 @@ def _check_spine_empty_pose_owners(spec, queue_readback, mode, plan=None, spine_
     return failures
 
 
+def _inactive_spine_source_flow_matches(proof, expected, plan):
+    """Validate an explicitly inactive source path without inventing SDK list evidence."""
+    if not isinstance(proof, dict) or not isinstance(plan, dict):return False
+    sid, node_id = expected.get('sourceComponentId'), expected.get('node')
+    if (proof.get('contract') != 'monkey-static-spine-inactive-source-flow/1' or
+        type(proof.get('schemaVersion')) is not int or proof['schemaVersion'] != 1 or
+        proof.get('sourceComponentId') != sid or proof.get('node') != node_id or
+        proof.get('sourceManifestSha256') != plan.get('sourceManifestSha256') or
+        not isinstance(proof.get('sourceManifestSha256'),str) or
+        not _SHA.fullmatch(proof['sourceManifestSha256']) or
+        type(expected.get('sourceEnabled')) is not bool or
+        expected.get('sourceActive') is not False):return False
+    nodes = {row.get('sourceId'):row for row in plan.get('nodes',[]) if isinstance(row,dict)}
+    if len(nodes)!=len(plan.get('nodes',[])):return False
+    components = [row for row in plan.get('components',[]) if isinstance(row,dict) and row.get('sourceId')==sid]
+    owners = [row for row in plan.get('sourcePrefabs',[]) if isinstance(row,dict) and
+              isinstance(row.get('nodes'),list) and node_id in row['nodes']]
+    if (len(components)!=1 or components[0].get('type')!='sp.Skeleton' or components[0].get('node')!=node_id or
+        components[0].get('enabled') is not expected.get('sourceEnabled') or len(owners)!=1):return False
+    owner=owners[0];root=owner.get('root')
+    if proof.get('sourcePrefabId')!=owner.get('sourceId') or proof.get('sourcePrefabRootNodeId')!=root:return False
+    path=[];values=[];cursor=node_id
+    while cursor not in path:
+        node=nodes.get(cursor)
+        if not isinstance(node,dict) or type(node.get('active')) is not bool:return False
+        path.append(cursor);values.append(node['active'])
+        if cursor==root:break
+        cursor=node.get('parent')
+    else:return False
+    if (not root or path[-1]!=root or any(node not in owner['nodes'] for node in path) or
+        all(values) or proof.get('sourceActivityPath')!=path or
+        proof.get('sourceActivityValues')!=values or
+        any(type(x) is not bool for x in proof.get('sourceActivityValues',[])) or
+        proof.get('inactiveSourceAncestorId')!=path[values.index(False)]):return False
+    flags=('applicable','verified','sourceActivityVerified','controlledHostVerified','persistentIdentityVerified',
+           'loadedIdentityVerified','persistentEnabledVerified','loadedEnabledVerified')
+    return (all(proof.get(key) is True for key in flags) and
+        proof.get('sourceComponentEnabled') is expected.get('sourceEnabled') and
+        proof.get('sourceEffectiveActive') is False and proof.get('runtimeRendererListRequired') is False and
+        proof.get('rendererListDisposition')=='not-required-source-inactive-subtree' and
+        proof.get('persistentOwnerType')=='Spine.Unity.SkeletonGraphic' and
+        proof.get('loadedOwnerType')=='Spine.Unity.SkeletonGraphic' and
+        proof.get('persistentOwnerActiveSelf') is values[0] and proof.get('loadedOwnerActiveSelf') is values[0] and
+        proof.get('loadedOwnerActiveInHierarchy') is False and proof.get('diagnostic') in (None,''))
+
+
 def _check_spine_non_draw_children(spec, queue_readback, mode, plan=None):
     failures = []
     all_expected_rows = [row for row in spec.get("nonDrawRenderers", [])
@@ -1532,7 +1578,31 @@ def _check_spine_non_draw_children(spec, queue_readback, mode, plan=None):
         if expected is None:
             failures.append(f"{mode} Spine non-draw child has an extra source ID: {sid}")
             continue
+        inactive_flow = _inactive_spine_source_flow_matches(row.get('inactiveSourceFlowProof'), expected, plan)
+        inactive_reason = 'inactive-source-subtree-no-render-flow'
+        if row.get('inactiveSourceFlowProof') is not None and not inactive_flow:
+            failures.append(f"{mode} Spine inactive source-flow proof differs: {sid}")
         if row.get("ownerOnlyNoRegisteredChildren") is True:
+            if inactive_flow:
+                # This classifies source activity only. Do not reinterpret the
+                # old list/root-mesh observations as proof that either is empty.
+                identity_ok = (row.get('noDrawReason') == inactive_reason and
+                    row.get('sourceNode') == expected.get('node') and
+                    row.get('sourceOwnerEnabled') is expected.get('sourceEnabled') and
+                    row.get('sourceNodeActive') is False and row.get('sourceIdentityComponentId') == sid and
+                    isinstance(row.get('sourceDataAssetId'),str) and row['sourceDataAssetId'].startswith('spineAsset:') and
+                    isinstance(row.get('sourceDataAssetPath'),str) and row['sourceDataAssetPath'].startswith('Assets/') and
+                    bool(_GUID.fullmatch(row.get('sourceDataAssetGuid') or '')) and
+                    all(row.get(key) is True for key in ('sourceIdentityVerified','sourceDataReferenceVerified',
+                                                       'childReferencePersistent','childNoDrawVerified','verified')))
+                if not identity_ok:
+                    failures.append(f"{mode} Spine inactive owner identity/data proof differs: {sid}")
+                if (any(row.get(key) not in (None,'') for key in
+                        ('childPath','childGraphicType','childMaterialGuid','childTextureGuid')) or
+                    any(row.get(key) != -1 for key in
+                        ('sourceChildMeshVertexCount','sourceChildMeshSubmeshCount','sourceChildMaterialCount'))):
+                    failures.append(f"{mode} Spine inactive owner invents a child row: {sid}")
+                continue
             reason = ("inactive-owner-no-registered-renderers" if expected.get("sourceActive") is False else
                       "disabled-owner-no-registered-renderers")
             owner_identity_ok = (
@@ -1571,7 +1641,7 @@ def _check_spine_non_draw_children(spec, queue_readback, mode, plan=None):
             if row.get("ownerRootMeshSha256") not in (None, "") or row.get("currentOwnerRootMeshSha256") not in (None, ""):
                 failures.append(f"{mode} Spine empty owner root unexpectedly reports a mesh fingerprint: {sid}")
             continue
-        reason = "inactive-source" if expected.get("sourceActive") is False else "disabled-source"
+        reason = inactive_reason if inactive_flow else ("inactive-source" if expected.get("sourceActive") is False else "disabled-source")
         identity_ok = (row.get("sourceNode") == expected.get("node") and row.get("noDrawReason") == reason and
             row.get("sourceOwnerEnabled") is expected.get("sourceEnabled") and
             row.get("sourceNodeActive") is expected.get("sourceActive") and
@@ -1588,6 +1658,9 @@ def _check_spine_non_draw_children(spec, queue_readback, mode, plan=None):
             row.get("verified") is True)
         if not identity_ok:
             failures.append(f"{mode} Spine non-draw owner/child source identity or resource proof differs: {sid}")
+        if inactive_flow and row.get('registrationEvidenceDisposition') != (
+                'captured-registered-child-and-persisted-owner-references;current-list-not-required'):
+            failures.append(f"{mode} Spine inactive child registration evidence disposition differs: {sid}")
         source_enabled, source_active, source_active_self = (row.get("sourceChildEnabled"),
             row.get("sourceChildActiveInHierarchy"), row.get("sourceChildActiveSelf"))
         if (type(source_enabled) is not bool or type(source_active) is not bool or

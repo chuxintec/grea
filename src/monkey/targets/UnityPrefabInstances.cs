@@ -127,7 +127,7 @@ public static partial class MonkeyImporter
             } catch { if(root!=null)UnityEngine.Object.DestroyImmediate(root);throw; }
         }
     }
-    static Type MountedNativeComponentType(string sourceType) {
+    static Type MountedNativeComponentType(string sourceType,Plan plan=null,string sourceNode=null) {
         switch(sourceType) {
             case "cc.Widget":return typeof(NativeRectConstraints);
             case "cc.Sprite":return typeof(UnityEngine.UI.Image);
@@ -135,7 +135,8 @@ public static partial class MonkeyImporter
             case "cc.Button":return typeof(UnityEngine.UI.Button);
             case "cc.ScrollView":return typeof(UnityEngine.UI.ScrollRect);
             case "cc.BlockInputEvents":return typeof(NativeInputBlocker);
-            case "cc.Mask":return typeof(UnityEngine.UI.RectMask2D);
+            case "cc.Mask":return plan?.staticMasks?.masks!=null&&plan.staticMasks.masks.Any(row=>row!=null&&row.node==sourceNode)
+                ?typeof(UnityEngine.UI.Mask):typeof(UnityEngine.UI.RectMask2D);
             default:throw new InvalidOperationException("Mounted native component proof requires a typed adapter: "+sourceType);
         }
     }
@@ -186,8 +187,8 @@ public static partial class MonkeyImporter
                 }
             }
             foreach(var mounted in instance.mountedComponents??new PrefabMountedComponent[0]) {
-                var component=nodes[mounted.node].GetComponent(MountedNativeComponentType(mounted.sourceType));
-                if(component==null||(!PrefabUtility.IsAddedComponentOverride(component)&&!InheritedMount(component,mounted.node,MountedNativeComponentType(mounted.sourceType)))||PrefabUtility.GetCorrespondingObjectFromSourceAtPath(component,template.path)!=null)
+                var component=nodes[mounted.node].GetComponent(MountedNativeComponentType(mounted.sourceType,plan,mounted.node));
+                if(component==null||(!PrefabUtility.IsAddedComponentOverride(component)&&!InheritedMount(component,mounted.node,MountedNativeComponentType(mounted.sourceType,plan,mounted.node)))||PrefabUtility.GetCorrespondingObjectFromSourceAtPath(component,template.path)!=null)
                     throw new InvalidOperationException("Saved mounted component is not a native added-component override");
                 mountedComponents++;
             }

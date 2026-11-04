@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -79,6 +80,20 @@ namespace Monkey.StaticSortQueue
         public QueueFieldReadback[] sourceFields;
         public QueueMaskReadback[] masks;
     }
+    [Serializable] public sealed class QueueInactiveSpineReadback
+    {
+        public int schemaVersion = 1;
+        public string contract = "monkey-static-spine-inactive-source-flow/1";
+        public string sourcePrefabId, sourceManifestSha256, sourcePrefabRootNodeId,
+            sourceComponentId, node, inactiveSourceAncestorId, rendererListDisposition,
+            persistentOwnerType, loadedOwnerType, diagnostic;
+        public string[] sourceActivityPath;
+        public bool[] sourceActivityValues;
+        public bool applicable, verified, sourceComponentEnabled, sourceEffectiveActive,
+            sourceActivityVerified, controlledHostVerified, persistentIdentityVerified, loadedIdentityVerified,
+            persistentEnabledVerified, loadedEnabledVerified, persistentOwnerActiveSelf, loadedOwnerActiveSelf,
+            loadedOwnerActiveInHierarchy, runtimeRendererListRequired;
+    }
 
     [AddComponentMenu("")]
     public sealed class NativeStaticSortQueueIdentity : MonoBehaviour
@@ -119,6 +134,148 @@ namespace Monkey.StaticSortQueue
 
     public static class UnityStaticSortQueue
     {
+        const string SpineGraphicType = "Spine.Unity.SkeletonGraphic";
+        const string SpineIdentityType = "UnitySpineSourceIdentity";
+        const BindingFlags SpineIdentityFieldFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+        /// <summary>
+        /// Proves that an exact SkeletonGraphic owner is outside the source
+        /// render flow because its serialized node or an ancestor is inactive.
+        /// This is an explicit inactive-source classification; it does not
+        /// claim that the SDK CanvasRenderer list is empty or readable.
+        /// </summary>
+        public static QueueInactiveSpineReadback ReadInactiveSpineNoRender(string sourceComponentId,
+            string nodeId, string sourcePrefabRootNodeId, bool sourceComponentEnabled,
+            string[] sourceNodePath, IDictionary<string, bool> sourceNodeActive,
+            IDictionary<string, GameObject> persistentNodes, IDictionary<string, GameObject> loadedNodes,
+            GameObject controlledHost)
+        {
+            var result = new QueueInactiveSpineReadback
+            {
+                sourceComponentId = sourceComponentId,
+                node = nodeId,
+                sourceComponentEnabled = sourceComponentEnabled,
+                runtimeRendererListRequired = false,
+                rendererListDisposition = "not-required-source-inactive-subtree",
+                sourceActivityPath = Array.Empty<string>(),
+            };
+            if (String.IsNullOrWhiteSpace(sourcePrefabRootNodeId) || String.IsNullOrWhiteSpace(sourceComponentId) ||
+                String.IsNullOrWhiteSpace(nodeId) || sourceNodePath == null || sourceNodeActive == null ||
+                persistentNodes == null || loadedNodes == null || controlledHost == null)
+            {
+                result.diagnostic = "inactive-spine-proof-input-missing";
+                return result;
+            }
+
+            if (sourceNodePath.Length == 0 || sourceNodePath[0] != nodeId ||
+                sourceNodePath[sourceNodePath.Length - 1] != sourcePrefabRootNodeId ||
+                sourceNodePath.Any(String.IsNullOrWhiteSpace) || sourceNodePath.Distinct(StringComparer.Ordinal).Count() != sourceNodePath.Length)
+            {
+                result.diagnostic = "inactive-spine-source-activity-path-invalid";
+                return result;
+            }
+            result.sourceActivityPath = sourceNodePath.ToArray();
+            result.sourceActivityValues = sourceNodePath.Select(id => sourceNodeActive.TryGetValue(id, out var active) && active).ToArray();
+            result.sourceEffectiveActive = true;
+            foreach (var id in sourceNodePath)
+            {
+                if (!sourceNodeActive.TryGetValue(id, out var expectedSelf))
+                {
+                    result.diagnostic = "inactive-spine-source-path-activity-missing:" + id;
+                    return result;
+                }
+                result.sourceEffectiveActive &= expectedSelf;
+            }
+            if (result.sourceEffectiveActive)
+            {
+                result.applicable = false;
+                result.diagnostic = "inactive-spine-proof-not-applicable-to-active-source-owner";
+                return result;
+            }
+            result.applicable = true;
+            result.inactiveSourceAncestorId = sourceNodePath.First(id => !sourceNodeActive[id]);
+
+            for (int i = 0; i < sourceNodePath.Length; i++)
+            {
+                var id = sourceNodePath[i];
+                if (!persistentNodes.TryGetValue(id, out var persistentNode) || persistentNode == null ||
+                    !loadedNodes.TryGetValue(id, out var loadedNode) || loadedNode == null)
+                {
+                    result.diagnostic = "inactive-spine-source-path-node-missing:" + id;
+                    return result;
+                }
+                var expectedSelf = sourceNodeActive[id];
+                if (persistentNode.activeSelf != expectedSelf || loadedNode.activeSelf != expectedSelf)
+                {
+                    result.diagnostic = "inactive-spine-source-node-activity-changed:" + id;
+                    return result;
+                }
+            }
+            for (int i = 0; i + 1 < sourceNodePath.Length; i++)
+            {
+                if (persistentNodes[sourceNodePath[i]].transform.parent != persistentNodes[sourceNodePath[i + 1]].transform ||
+                    loadedNodes[sourceNodePath[i]].transform.parent != loadedNodes[sourceNodePath[i + 1]].transform)
+                {
+                    result.sourceActivityVerified = false;
+                    result.diagnostic = "inactive-spine-source-path-parent-mismatch:" + sourceNodePath[i];
+                    return result;
+                }
+            }
+            var persistentOwner = ExactSpineGraphic(persistentNodes[nodeId]);
+            var loadedOwner = ExactSpineGraphic(loadedNodes[nodeId]);
+            if (persistentOwner == null || loadedOwner == null)
+            {
+                result.diagnostic = "inactive-spine-source-path-renderer-missing:" + nodeId;
+                return result;
+            }
+            var persistentBehaviour = persistentOwner as Behaviour;
+            var loadedBehaviour = loadedOwner as Behaviour;
+            result.persistentOwnerActiveSelf = persistentOwner.gameObject.activeSelf;
+            result.loadedOwnerActiveSelf = loadedOwner.gameObject.activeSelf;
+            result.persistentOwnerType = persistentOwner.GetType().FullName;
+            result.loadedOwnerType = loadedOwner.GetType().FullName;
+            result.loadedOwnerActiveInHierarchy = loadedOwner.gameObject.activeInHierarchy;
+            result.controlledHostVerified = controlledHost.activeInHierarchy &&
+                loadedNodes[sourcePrefabRootNodeId].transform.IsChildOf(controlledHost.transform) &&
+                loadedOwner.gameObject.activeInHierarchy == false;
+            result.persistentEnabledVerified = persistentBehaviour != null && persistentBehaviour.enabled == sourceComponentEnabled;
+            result.loadedEnabledVerified = loadedBehaviour != null && loadedBehaviour.enabled == sourceComponentEnabled;
+            result.persistentIdentityVerified = HasExactSpineIdentity(persistentOwner, sourceComponentId);
+            result.loadedIdentityVerified = HasExactSpineIdentity(loadedOwner, sourceComponentId);
+            result.sourceActivityVerified = true;
+            // The effective inactive path may be an ancestor, so owner.activeSelf
+            // may remain true. Bind its serialized value to source evidence above;
+            // only effective loaded activity is required to be false.
+            result.verified = result.sourceActivityVerified && !result.sourceEffectiveActive &&
+                result.controlledHostVerified && result.persistentEnabledVerified && result.loadedEnabledVerified &&
+                result.persistentIdentityVerified && result.loadedIdentityVerified &&
+                result.persistentOwnerActiveSelf == sourceNodeActive[nodeId] &&
+                result.loadedOwnerActiveSelf == sourceNodeActive[nodeId];
+            result.diagnostic = result.verified ? null : "inactive-spine-render-flow-boundary-unverified";
+            return result;
+        }
+
+        static Component ExactSpineGraphic(GameObject node)
+        {
+            var matches = node == null ? Array.Empty<Component>() : node.GetComponents<Component>()
+                .Where(component => component != null && component.GetType().FullName == SpineGraphicType).ToArray();
+            return matches.Length == 1 ? matches[0] : null;
+        }
+
+        static bool HasExactSpineIdentity(Component owner, string sourceComponentId)
+        {
+            if (owner == null || owner.GetType().FullName != SpineGraphicType) return false;
+            var matches = owner.GetComponents<Component>().Where(component => component != null &&
+                component.GetType().FullName == SpineIdentityType).ToArray();
+            if (matches.Length != 1) return false;
+            var type = matches[0].GetType();
+            var sourceIdField = type.GetField("instanceSourceComponentId", SpineIdentityFieldFlags);
+            var rendererField = type.GetField("renderer", SpineIdentityFieldFlags);
+            return sourceIdField != null && rendererField != null &&
+                sourceIdField.GetValue(matches[0]) as string == sourceComponentId &&
+                rendererField.GetValue(matches[0]) as Component == owner;
+        }
+
         static string PrefabGuid(UnityEngine.Object value, out long localFileId)
         {
             string guid;

@@ -6,6 +6,9 @@ using UnityEngine;
 
 public static partial class MonkeyImporter
 {
+    static bool HasStaticMaskBinding(Plan plan,string sourceId) =>
+        plan!=null&&plan.staticMasks!=null&&plan.staticMasks.masks!=null&&
+        plan.staticMasks.masks.Any(row=>row!=null&&row.sourceId==sourceId);
     [Serializable] public class StaticReferenceIdentity { public string field,fieldPath,sourceId,guid,recordField; public int recordIndex; public long localFileId; public bool persistent; }
     [Serializable] public class StaticFieldResult { public UnityStaticFields.Readback binding; public string assetGuid; public long localFileId; public StaticReferenceIdentity[] references; }
     static MonoBehaviour StaticComponent(ComponentSpec c, GameObject node) {
@@ -48,7 +51,13 @@ public static partial class MonkeyImporter
                 case "cc.Widget":return node.GetComponent<NativeRectConstraints>();
                 case "cc.Layout":return node.GetComponent<UnityEngine.UI.LayoutGroup>();
                 case "cc.ScrollView":return node.GetComponent<UnityEngine.UI.ScrollRect>();
-                case "cc.Mask":return node.GetComponent<UnityEngine.UI.RectMask2D>();
+                case "cc.Mask":
+                    if(HasStaticMaskBinding(plan,c.sourceId)) {
+                        var marker=node.GetComponent<Monkey.StaticMaskSort.NativeStaticMaskIdentity>();
+                        return marker!=null&&marker.sourceId==c.sourceId&&marker.nativeId==c.nativeId
+                            ?node.GetComponent<UnityEngine.UI.Mask>():null;
+                    }
+                    return node.GetComponent<UnityEngine.UI.RectMask2D>();
                 case "cc.ProgressBar":return node.GetComponent<UnityEngine.UI.Slider>();
                 case "cc.BlockInputEvents":return node.GetComponent<NativeInputBlocker>();
             }

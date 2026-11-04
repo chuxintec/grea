@@ -35,7 +35,9 @@ def load_bound_receipt(candidate,readback):
         if path.is_symlink():raise ValueError('SPINE_RENDERING_RECEIPT_LINK_INVALID')
         raw=read(path,max_bytes=32*1024*1024)
         if sha(raw)!=pins[relative]:raise ValueError('SPINE_RENDERING_RECEIPT_BYTES_CHANGED')
-        if relative!='Analysis/Readback/spine-static-continuation.json':components.extend(load(raw)['components'])
+        if relative not in ('Analysis/Readback/spine-static-continuation.json',
+                            'Analysis/Readback/SpineRendering/source-canvas-context.json'):
+            components.extend(load(raw)['components'])
     return {'components':components}
 
 

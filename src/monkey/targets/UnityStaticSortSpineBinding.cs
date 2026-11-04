@@ -265,17 +265,19 @@ namespace Monkey.StaticSortQueueProxy
                     String.IsNullOrWhiteSpace(atlasGuid) || atlasLocalId == 0)
                 { diagnostic = "cocos-static-spine-atlas-asset-reference-or-persistent-identity-mismatch"; return false; }
 
-                // Reopen/read the actual serialized Spine asset with the pinned
-                // factory profile. This checks the actual skeleton/atlas bytes,
-                // page names, page textures, materials, shader and variants.
-                var canvas = sourceOwner == null ? null : sourceOwner.GetComponentInParent<Canvas>(true);
-                var scaler = canvas == null ? null : canvas.GetComponent<CanvasScaler>();
-                if (canvas == null || scaler == null || canvas.renderMode != RenderMode.ScreenSpaceOverlay ||
-                    (Single.IsNaN(canvas.referencePixelsPerUnit) || Single.IsInfinity(canvas.referencePixelsPerUnit)) || canvas.referencePixelsPerUnit <= 0f ||
-                    Math.Abs(canvas.referencePixelsPerUnit - scaler.referencePixelsPerUnit) > 0.001f)
-                { diagnostic = "cocos-static-spine-canvas-unit-context-unverified"; return false; }
+                // The saved persistent owner may have no Canvas. Its paired
+                // controlled reopen owner must remain under the explicitly
+                // registered host, whose PPU is compared with source-captured
+                // Canvas/Scaler evidence. Never infer PPU from the data scale.
+                var renderingHash = HashBytes(renderingBytes);
+                if (sourceOwner == null || !MonkeyImporter.TryGetStaticSpineSourceCanvasProof(sourceOwner, sourceComponentId,
+                    renderComponent.sourceDataAssetId, importPlan.sourceManifestSha256, renderingHash,
+                    out var sourceCanvasPpu, out _, out _, out diagnostic))
+                { diagnostic = diagnostic ?? "cocos-static-spine-canvas-unit-context-unverified"; return false; }
+                if (sourceOwner is SkeletonGraphic sourceGraphic && sourceGraphic.SkeletonDataAsset != exactDataAsset)
+                { diagnostic = "cocos-static-spine-owner-data-reference-mismatch"; return false; }
                 factorySpec = ReadCocosStaticSpineSpecForValidation(Encoding.UTF8.GetString(importBytes),
-                    Encoding.UTF8.GetString(renderingBytes), sourceComponentId, canvas.referencePixelsPerUnit, projectRoot);
+                    Encoding.UTF8.GetString(renderingBytes), sourceComponentId, sourceCanvasPpu, projectRoot);
                 var readback = UnitySpineNativeFactory.ReadDataAssetAsset(factorySpec);
                 if (readback == null || !readback.nativeAssetIdentityVerified ||
                     !readback.savedSourceReferencesVerified || !readback.sourceProfileMaterialsVerified ||
@@ -287,7 +289,6 @@ namespace Monkey.StaticSortQueueProxy
                     readback.atlasSha256 != factorySpec.atlasSha256)
                 { diagnostic = "cocos-static-spine-factory-saved-reference-proof-incomplete"; return false; }
 
-                var renderingHash = HashBytes(renderingBytes);
                 evidence = new SpineDataIdentityEvidence
                 {
                     sourceDataAssetId = renderComponent.sourceDataAssetId,

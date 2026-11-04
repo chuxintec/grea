@@ -9,7 +9,7 @@ from .sources.compiled import fail
 
 SCHEMA='monkey-static-prefab-continuation/1'
 _SHA=re.compile(r'^[0-9a-f]{64}$')
-_FAMILIES={'materials','animation','spine','sort','layout','text'}
+_FAMILIES={'materials','animation','spine','mask','sort','layout','text'}
 
 
 def _source_engine(request,paths,raws):
@@ -126,7 +126,7 @@ def prepare(request_path, expected_request_sha256, output):
     if rendering:
         paths['spineSourceEngine'],raws['spineSourceEngine']=_input(request,'spineSourceEngine')
     source_engine=None
-    if set(families)&{'layout','text'}:
+    if set(families)&{'mask','layout','text'}:
         source_engine=_source_engine(request,paths,raws)
     elif 'sourceEngineEvidence'in request:
         source_engine=_source_engine(request,paths,raws)
@@ -192,14 +192,15 @@ def prepare(request_path, expected_request_sha256, output):
             result=prepare_rendering(plan,stage,plan['staticSpineContinuation']['runtimeDependency'],stage/'spine_static_rendering',
                                      source_engine_file=paths['spineSourceEngine'],expected_source_engine_sha256=io.sha(raws['spineSourceEngine']))
             plan=result['plan'];results['spineRendering']=_summary(result)
-    for family in ('sort','layout','text'):
+    for family in ('mask','sort','layout','text'):
         if family not in families:continue
-        if family=='sort':from .prefab_static_sort_continuation import prepare as prepare_family
+        if family=='mask':from .prefab_static_mask_continuation import prepare as prepare_family
+        elif family=='sort':from .prefab_static_sort_continuation import prepare as prepare_family
         elif family=='layout':from .prefab_static_layout_continuation import prepare as prepare_family
         else:from .prefab_static_text_continuation import prepare as prepare_family
         result=prepare_family(plan,ir,manifest,stage,source_evidence=source_engine)
         plan=result['plan'];results[family]=result['summary']
-    if set(families)&{'sort','layout','text'}:
+    if set(families)&{'mask','sort','layout','text'}:
         refreshed=_refresh_existing_spine_generator(plan,stage)
         if refreshed:results['existingSpineRendering']=refreshed
     if (io.sha(io.read(request_path,max_bytes=1024*1024))!=expected_request_sha256

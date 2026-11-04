@@ -30,6 +30,7 @@ _MAX_HELPER_BYTES = 16 * 1024 * 1024
 _REFRESH_TARGETS = {
     "Assets/Game/Editor/Conversion/Spine/UnitySpineNativeFactory.cs": "targets/spine/UnitySpineNativeFactory.cs",
     "Assets/Game/Editor/Conversion/UnityStaticSpineRendering.cs": "targets/UnityStaticSpineRendering.cs",
+    "Assets/Game/Editor/Conversion/UnityStaticSpineRenderingDerived.cs": "targets/UnityStaticSpineRenderingDerived.cs",
 }
 _CONTINUATION_SUPPORT_FILES = {
     "targets/NativeStaticSpineReference.cs": (
@@ -209,7 +210,7 @@ def _package_helper_bytes(target: str) -> tuple[Path, bytes]:
     return path, raw
 
 
-def _validate_payloads(fragment: dict, module_root: Path, inventory: dict[str, dict]) -> tuple[dict[str, dict], dict[str, dict]]:
+def _validate_payloads(fragment: dict, module_root: Path, inventory: dict[str, dict], *, refresh_external_dependencies: bool = False) -> tuple[dict[str, dict], dict[str, dict]]:
     rows = fragment.get("payloads")
     if not isinstance(rows, list) or not rows:
         raise StaticSpineRefreshError("rendering fragment payload list is missing")
@@ -258,7 +259,9 @@ def _validate_payloads(fragment: dict, module_root: Path, inventory: dict[str, d
             raise StaticSpineRefreshError(f"rendering external dependency ownership changed: {target}")
         source = io.safe(package_root / _RENDER_EXTERNAL_DEPENDENCIES[target])
         raw = io.read(source, max_bytes=_MAX_HELPER_BYTES)
-        if io.sha(raw) != dependency.get("sha256"):
+        if not isinstance(dependency.get("sha256"), str) or not _SHA.fullmatch(dependency["sha256"]):
+            raise StaticSpineRefreshError(f"rendering external dependency pin is malformed: {target}")
+        if io.sha(raw) != dependency.get("sha256") and not refresh_external_dependencies:
             raise StaticSpineRefreshError(f"rendering external dependency differs from package source: {target}")
     return targets, helper_rows
 
@@ -314,9 +317,12 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
         raise StaticSpineRefreshError("request bytes differ from the expected SHA-256")
     request = _load_json(request_raw, "request", max_nodes=100_000)
     allowed = {"schema", "schemaVersion", "plan", "planManifest"}
-    if (set(request) != allowed or request.get("schema") != SCHEMA or
+    if (set(request) not in (allowed, allowed | {"refreshExternalDependencies"}) or request.get("schema") != SCHEMA or
             type(request.get("schemaVersion")) is not int or request["schemaVersion"] != 1):
         raise StaticSpineRefreshError("request schema or fields are unsupported")
+    refresh_external = request.get("refreshExternalDependencies", False)
+    if type(refresh_external) is not bool:
+        raise StaticSpineRefreshError("refreshExternalDependencies must be a boolean")
 
     plan_path, plan_raw = _input(request, "plan")
     manifest_path, manifest_raw = _input(request, "planManifest")
@@ -329,7 +335,7 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
     fragment, module_root = _validate_plan(plan, manifest, inventory, plan_root,
                                            plan_path, manifest_path, plan_raw)
     _validate_continuation_files(plan, inventory, plan_root)
-    _, helper_rows = _validate_payloads(fragment, module_root, inventory)
+    _, helper_rows = _validate_payloads(fragment, module_root, inventory, refresh_external_dependencies=refresh_external)
 
     out = io.new_output(output, [request_path, plan_root, manifest_path])
     stage = out / "plan"
@@ -342,9 +348,29 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
 
     refreshed = copy.deepcopy(plan)
     refreshed_fragment = refreshed["staticSpineRendering"]
+    from .spine_canvas_context_readback import CONTRACT as canvas_context_contract
+    refreshed_fragment["sourceCanvasContextEvidenceContract"] = canvas_context_contract
+    if isinstance(refreshed.get("staticTextContinuation"), dict):
+        from .prefab_static_text_continuation import SAMPLING_CONTRACT
+        refreshed["staticTextContinuation"]["nativeSamplingContract"] = SAMPLING_CONTRACT
+        refreshed["staticTextContinuationJson"] = json.dumps(
+            refreshed["staticTextContinuation"], ensure_ascii=False, sort_keys=True, separators=(',', ':'))
     refreshed_module = io.inside(stage, refreshed_fragment["moduleStage"])
     atlas_evidence = _upgrade_atlas_mapping(refreshed, stage)
     helper_replacements = _refresh_helper_payloads(refreshed_fragment, refreshed_module, helper_rows)
+    external_replacements = []
+    if refresh_external:
+        for dependency in refreshed_fragment.get("externalDependencies", []):
+            source = Path(__file__).parent / _RENDER_EXTERNAL_DEPENDENCIES[dependency["target"]]
+            current = io.sha(io.read(source, max_bytes=_MAX_HELPER_BYTES))
+            if current != dependency["sha256"]:
+                external_replacements.append(dict(target=dependency["target"], previousSha256=dependency["sha256"],
+                                                  currentSha256=current, providedBy=dependency["providedBy"]))
+                dependency["sha256"] = current
+    generator_refresh = None
+    if isinstance(refreshed_fragment.get("unitMapping"), dict):
+        from .prefab_static_continuation import _refresh_existing_spine_generator
+        generator_refresh = _refresh_existing_spine_generator(refreshed, stage)
     refresh_evidence = {
         "schema": SCHEMA,
         "status": "prepared_fresh_static_spine_stage",
@@ -356,6 +382,8 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
         "toolVersion": __version__,
         "requestSha256": expected_request_sha256,
         "helperReplacements": helper_replacements,
+        "externalDependencyReplacements": external_replacements,
+        "generatorUnitMappingRefresh": generator_refresh,
         "atlasMapping": atlas_evidence,
         "sourceCodeExecuted": False,
         "textureDecodeInvoked": False,
@@ -369,6 +397,11 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
 
     owner_manifest = dict(manifest)
     owner_manifest["staticSpineRendering"] = refreshed_fragment
+    for key in ("staticTextContinuation", "staticTextContinuationJson"):
+        if key in refreshed:
+            owner_manifest[key] = refreshed[key]
+    if "staticSpineRenderingTargetUnits" in refreshed:
+        owner_manifest["staticSpineRenderingTargetUnits"] = refreshed["staticSpineRenderingTargetUnits"]
     owner_manifest["staticSpineHelperRefresh"] = refresh_evidence
     owner_manifest["toolVersion"] = __version__
     if (io.sha(io.read(request_path, max_bytes=_MAX_REQUEST_BYTES)) != expected_request_sha256 or
@@ -391,6 +424,8 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
         "planPath": str(stage / "plan.json"),
         "planManifestPath": str(stage / "manifest.json"),
         "helperReplacements": helper_replacements,
+        "externalDependencyReplacements": external_replacements,
+        "generatorUnitMappingRefresh": generator_refresh,
         "atlasMapping": atlas_evidence,
         "sourceCodeExecuted": False,
         "textureDecodeInvoked": False,

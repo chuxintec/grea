@@ -24,7 +24,7 @@ monkey export --plan /fresh/continuation/plan/plan.json --out /fresh/native-cand
 
 默认族为 `materials`、`animation`。材料仅接受已有程序指纹白名单及有证明的源时刻 t=0 投影；不是通用 Shader 翻译。Animation 使用禁用的原生静态载体，保存实际 Clip 或源证据 TextAsset、槽位顺序和组件身份；部分曲线仍是部分曲线，播放与 Animator 均禁用。完整族证据写入新 plan，CLI 仅输出有界计数。
 
-已有静态渲染 plan 可选择 `families: ["sort", "layout", "text"]`。`layout` 和 `text` 要求附加 `sourceEngineEvidence: {"sourceVersion": "2.4.15", "files": [...]}`；每项为唯一 `logicalPath`、原版引擎文件的绝对 `path`、准确 `sha256`、`originUrl`。消费者同时核对版本白名单和实际字节，不能用其他版本的 API 默认值填补未知上下文。原版引擎文件仅作本地证据，不复制进候选或分发包。
+已有静态渲染 plan 可选择 `families: ["mask", "sort", "layout", "text"]`。`mask`、`layout` 和 `text` 要求附加 `sourceEngineEvidence: {"sourceVersion": "2.4.15", "files": [...]}`；每项为唯一 `logicalPath`、原版引擎文件的绝对 `path`、准确 `sha256`、`originUrl`。消费者同时核对版本白名单和实际字节，不能用其他版本的 API 默认值填补未知上下文。原版引擎文件仅作本地证据，不复制进候选或分发包。
 
 `sort` 将实际 SortRoot/SortOrder 身份绑定到原生队列驱动，逐项检查排序字段、持久标记和驱动身份，并检查保存及加载后的完整渲染队列。`layout` 保留同节点多个 Layout 的源组件顺序，通过强类型槽位驱动 RectTransform；显式 Widget 目标必须有可证明的祖先链和 XY 几何。保存初态、原生字段回读、一次性克隆上的尺寸变化与源算法结果分别验证。未知目标或变换上下文保留精确 sourceId 缺口，不使用零值代替。
 
@@ -44,7 +44,7 @@ monkey export --plan /fresh/continuation/plan/plan.json --out /fresh/native-cand
 
 显式 `spineRendering: true` 还要求已固定的 `spineRuntime` 与 `{path, sha256}` 格式的 `spineSourceEngine`。它保留原始数据载体，并准备独立 SkeletonGraphic 的时间零姿态；PMA 未知等缺口仍保留。原 Atlas 字节留在源数据载体，渲染 Atlas 仅将页名改为解码 PNG 的文件名，适配固定 SDK 按 `Material.mainTexture.name` 查找页纹理的规则。region 名、坐标和其他字节保持一致，计划记录原始及派生 SHA、逐页纹理身份。保存回读分别记录页名、材质 GUID/localID/类型/路径及纹理、Shader、混合参数检查；托管包装对象的 `ReferenceEquals` 仅作诊断。
 
-已有渲染计划需要更新原生 helper 时，使用 `refresh-static-spine-helpers`。请求 schema 为 `monkey-static-spine-helper-refresh/1`、`schemaVersion: 1`，只接收上例格式的 `plan` 和 `planManifest`。它验证完整自有清单、载体及渲染 payload 哈希，在新目录复制已有产物，仅更新包内白名单 helper 和可从原 Atlas 严格重算的原生页名映射。解码 PNG、SDK、骨骼、字体等字节复用，不调用 ASTC 解码或重新 normalize。输入篡改、映射不符及输出重叠均拒绝。
+已有渲染计划需要更新原生 helper 时，使用 `refresh-static-spine-helpers`。请求 schema 为 `monkey-static-spine-helper-refresh/1`、`schemaVersion: 1`，接收上例格式的 `plan` 和 `planManifest`，以及可选布尔 `refreshExternalDependencies`（默认 false）。它验证完整自有清单、载体及渲染 payload 哈希，在新目录复制已有产物，仅更新包内白名单 factory、rendering、derived helper 和可从原 Atlas 严格重算的原生页名映射。显式 `refreshExternalDependencies: true` 允许刷新已知、已有所有者的依赖哈希；未知依赖、所有权变化和坏哈希仍拒绝。解码 PNG、SDK、骨骼、字体等字节复用，不调用 ASTC 解码或重新 normalize。输入篡改、映射不符及输出重叠均拒绝。
 
 ```sh
 monkey refresh-static-spine-helpers --request /inputs/refresh.json \
@@ -66,3 +66,14 @@ Static Spine sorting uses the same `ResolveStaticCanvasSpec` method as asset cre
 `refresh-static-spine-helpers` accepts a frozen completed rendering stage and refreshes only the explicit factory and rendering helper allowlist. It copies all decoded PNGs and prepared fonts byte-for-byte, performs no texture decode and preserves effective source defaults. Normal export supplies current sorting helpers. Existing failed/successful candidates stay immutable; subsequent native import requires a fresh candidate directory.
 
 A purely omitted source PMA field legitimately has an empty known-values array. The pinned version-default proof permits that empty array while requiring an unknown-field count and exact source-engine/version/component/data identities; any explicitly false value conflicts with the true default and remains rejected.
+
+
+`mask` 组件族为全部源 `cc.Mask` 创建 `monkey-static-mask-continuation/1`，包括在 RenderFlow 外的未激活节点及 prefab-sync 实例。组件数与队列事件数分别记录；缺省值只来自固定 Cocos 2.4.15 `CCMask.js` 字节。请求的 `sourceEngineEvidence` 使用与 text/layout 相同的 `{sourceVersion, files}` 结构，文件描述为 `{logicalPath,path,sha256,originUrl}`，不手填 `bytes`。准备操作不启动引擎。
+
+新导入将这些 Mask 保存为带持久身份的 Unity UI Mask。保存重开后，单独的受控预览场景复制精确 RectTransform 和 Mask 设置，以白色子 Image 检验 stencil 内外像素。PNG/JSON 位于 `Analysis/Readback/MaskClipping/`，完整清单及 SHA 固定在主回读；Python 独立检查精确源 ID、保存身份、原节点状态、清理结果、像素投影和 PNG 像素。未运行或不支持的探针保留阻塞缺口。该合成探针证明原生裁剪机制，不是原游戏帧或视觉一致性证明。
+
+刷新还为新导入声明 `monkey-static-spine-source-canvas-context/1`：创建时记录真实 Canvas/Scaler、PPU 和源节点状态，保存及重开阶段只接受明确绑定的受控宿主，验证原始与宿主 PPU。独立 JSON 及 SHA 纳入主回读，但其组件行不重复计入 Spine renderer 分母。期待比例始终由源默认比例、生成单位和创建时 PPU 推导。
+
+已存在的 text 组件族在刷新后声明 `monkey-static-text-isolated-sampling/1`。未激活祖先下的 Label 仅在隔离克隆中采样 TMP 字符 quad 与 Outline 材质；原源节点状态和 Label enabled 单独保存并验证未改。受控采样不激活原始业务脚本，不证明源 Canvas 像素等价。旧未声明这些证据契约的固定候选仍按其原有证据规则校验，不补造新证据。严格源版本/字段证据可以允许 TTF SHRINK 下限 0；显式 TTF 与系统 TTF 均保持字体 GUID、文本、缺字与实际尺寸边界校验。
+
+Inactive Spine owners can use `monkey-static-spine-inactive-source-flow/1` only when the exact full source activity path through the owning Prefab root matches both persistent and loaded hierarchies under an active controlled host. This classification does not turn unreadable SDK renderer lists into empty lists. Owner/data identity and any actual child/material/texture references remain separate mandatory checks; active source owners retain the registered-renderer requirement.

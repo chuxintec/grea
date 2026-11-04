@@ -1,12 +1,12 @@
 # monkey
 
-当前开发统一在 **0.8.0.dev20** 单线，包含 Unity 来源恢复、Cocos 静态 Prefab、
+当前开发统一在 **0.8.0.dev21** 单线，包含 Unity 来源恢复、Cocos 静态 Prefab、
 Toggle 空配置桥接、显式 CoreText 静态回退字体及严格静态引用恢复。
 monkey 由 GREA 统一调度和分发；旧 0.7.0 发布与固定消费者只作兼容保留，
 不再继续 0.7 开发。字体入口见 [系统字体工具](docs/SOURCE-SYSTEM-FONTS.md)，
 Unity 来源边界见 [Prefab 恢复](docs/UNITY-PREFAB-RECOVERY.md)。
 
-已有 Cocos→Unity plan 可通过 [静态组件续接](docs/STATIC-PREFAB-CONTINUATION.md) 复用冻结产物，按通用组件族补齐静态身份与引用；准备、原生回读和视觉验收分别报告。
+已有 Cocos→Unity plan 可通过 [静态组件续接](docs/STATIC-PREFAB-CONTINUATION.md) 复用冻结产物，按通用组件族补齐静态身份与引用（含全源 Mask、受控裁剪和未激活文字采样证据）；准备、原生回读和视觉验收分别报告。
 
 [MIT License](LICENSE) · [Source](https://github.com/chuxintec/monkey) · [v0.7.0 Release](https://github.com/chuxintec/monkey/releases/tag/v0.7.0)
 

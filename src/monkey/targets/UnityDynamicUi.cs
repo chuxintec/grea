@@ -10,7 +10,13 @@ public static partial class MonkeyImporter
         context.GetComponent<Canvas>().renderMode=RenderMode.WorldSpace;
         var rect=(RectTransform)context.transform;rect.pivot=Vector2.zero;rect.sizeDelta=new Vector2(plan.designSize[0],plan.designSize[1]);
         contents.transform.SetParent(rect,false);
+        BindOptionalStaticSpineControlledCanvasContext(context,plan);
         return context;
+    }
+    static void ReleasePrefabUiContext(GameObject context) {
+        if(context==null)return;
+        ForgetOptionalStaticSpineReadbackOwnerContext(context);
+        ForgetOptionalStaticSpineControlledCanvasContext(context);
     }
     [Serializable] public class DynamicUiChild {public int index;public bool active;public float[] size,position,scale;}
     [Serializable] public class DynamicUiState { public string action;public float[] size,position;public float fontSize;public DynamicUiChild[] children; }

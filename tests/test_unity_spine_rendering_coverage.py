@@ -63,3 +63,20 @@ def test_auxiliary_bytes_are_sealed_by_the_main_readback(tmp_path):
     assert len(load_bound_receipt(tmp_path,main)['components'])==1
     io.write_json(renderer,{'components':[{'sourceComponentId':'source:prefab#1','verified':False}]})
     with pytest.raises(ValueError,match='BYTES_CHANGED'):load_bound_receipt(tmp_path,main)
+
+
+def test_canvas_context_rows_are_hash_bound_without_doubling_renderer_denominator(tmp_path):
+    carrier=tmp_path/'Analysis/Readback/spine-static-continuation.json'
+    renderer=tmp_path/'Analysis/Readback/SpineRendering/saved-prefab.json'
+    context=renderer.with_name('source-canvas-context.json')
+    carrier.parent.mkdir(parents=True);renderer.parent.mkdir()
+    sid='source:prefab#1'
+    io.write_json(carrier,{'components':[{'sourceComponentId':sid}]})
+    io.write_json(renderer,{'components':[{'sourceComponentId':sid,'verified':True}]})
+    io.write_json(context,{'contract':'monkey-static-spine-source-canvas-context/1',
+                           'components':[{'sourceComponentId':sid,'sourceNodeActive':False}]})
+    main=dict(staticSpineReadbackFiles=[dict(path=path.relative_to(tmp_path).as_posix(),sha256=io.sha(path.read_bytes()))
+                                      for path in (carrier,renderer,context)])
+    assert load_bound_receipt(tmp_path,main)['components']==[{'sourceComponentId':sid,'verified':True}]
+    context.write_bytes(context.read_bytes()+b' ')
+    with pytest.raises(ValueError,match='BYTES_CHANGED'):load_bound_receipt(tmp_path,main)

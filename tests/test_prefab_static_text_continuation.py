@@ -264,6 +264,13 @@ def test_verifies_bound_saved_prefab_metrics_without_claiming_source_visual_pari
         "outlineConfigVerified": True, "outlineMaterialReadbackVerified": True,
         "nativeMeshMeasured": True, "inkBounds": {"hasVisibleGeometry": True},
         "nativeBoundsKind": "tmp-character-quad-local-bounds-not-pixel-ink",
+        "sampleContext": "isolated-active-label-clone", "sourceNodeActiveSelf": True,
+        "sourceNodeActiveInHierarchy": False, "sourceLabelEnabled": True,
+        "sourceLabelEnabledUnchanged": True,
+        "sampleCloneIsolated": True, "sampleAncestorActivationOverride": False,
+        "sampleCloneActivationOverride": True, "sampleSourceAncestorInactive": True,
+        "sampleStateRestored": True, "sourceActivityUnchanged": True,
+        "sampleRectTransformVerified": True, "sampleCanvasReferencePixelsPerUnit": 100,
     }
     report = {
         "schemaVersion": 1, "contract": "monkey-static-text-metrics-readback/1",
@@ -295,6 +302,67 @@ def test_verifies_bound_saved_prefab_metrics_without_claiming_source_visual_pari
         dict(path=relative,sha256=hashlib.sha256(changed).hexdigest())]})
     assert rejected['status']=='partial'
     assert any('glyphFallbackChain'in d['message']for d in rejected['diagnostics'])
+
+
+def test_verifier_requires_isolated_sample_provenance_and_original_activity_preservation(tmp_path, engine_evidence):
+    plan, ir, manifest = fixture_documents()
+    prepared = text_module.prepare(plan, ir, manifest, tmp_path, source_evidence=engine_evidence)
+    candidate = tmp_path / "candidate"
+    sidecar = candidate / "Analysis/Readback/TextMetrics" / (hashlib.sha256(b"fixture:root").hexdigest() + ".json")
+    sidecar.parent.mkdir(parents=True)
+    config = prepared["plan"]["staticTextContinuationJson"].encode()
+    row = {
+        "sourceLabelId": TEXT_ID, "sourceOutlineId": OUTLINE_ID, "sourceNodeId": NODE_ID,
+        "status": "native-configuration-metrics-verified", "fontKind": "system-font",
+        "labelGuid": "a" * 32, "labelLocalFileId": 10, "outlineGuid": "b" * 32,
+        "outlineNativeType": "NativeStaticTextOutline", "outlineLocalFileId": 11,
+        "fontGuid": "c" * 32, "fontLocalFileId": 12, "persistentLabel": True, "persistentOutline": True,
+        "sourceTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(), "nativeText": TEXT,
+        "nativeTextSha256": hashlib.sha256(TEXT.encode()).hexdigest(), "sourceTextMatches": True,
+        "sourceStyleMatches": True, "nativeFontStyle": 1, "nativeOverflowMode": 0,
+        "nativeWrappingMode": 0, "autoSizingConfigVerified": True, "fontBindingVerified": True,
+        "glyphFontChainVerified": True, "lineHeightConfigVerified": True,
+        "nativeFontAssetPath": PRIMARY_PATH, "nativeFontPointSize": 44, "nativeFaceLineHeight": 44,
+        "nativeLineSpacing": 0, "nativeFontSizeMin": 0, "nativeFontSizeMax": 44, "actualFontSize": 44,
+        "glyphFontAssets": [{"guid": "c" * 32, "localFileId": 12, "assetPath": PRIMARY_PATH}],
+        "configuredFontAssets": [{"guid": "c" * 32, "localFileId": 12, "assetPath": PRIMARY_PATH},
+                                 {"guid": "d" * 32, "localFileId": -13, "assetPath": FALLBACK_PATH}],
+        "outlineConfigVerified": True, "outlineMaterialReadbackVerified": True,
+        "nativeMeshMeasured": True, "inkBounds": {"hasVisibleGeometry": True},
+        "nativeBoundsKind": "tmp-character-quad-local-bounds-not-pixel-ink",
+        "sampleContext": "isolated-active-label-clone", "sourceNodeActiveSelf": True,
+        "sourceNodeActiveInHierarchy": False, "sourceLabelEnabled": True,
+        "sourceLabelEnabledUnchanged": True,
+        "sampleCloneIsolated": True, "sampleAncestorActivationOverride": False,
+        "sampleCloneActivationOverride": True, "sampleSourceAncestorInactive": True,
+        "sampleStateRestored": True, "sourceActivityUnchanged": True,
+        "sampleRectTransformVerified": True, "sampleCanvasReferencePixelsPerUnit": 100,
+    }
+    report = {"schemaVersion": 1, "contract": "monkey-static-text-metrics-readback/1",
+              "phase": "saved-prefab-reopen", "sourceManifestSha256": plan["sourceManifestSha256"],
+              "sourcePrefabId": "fixture:root", "continuationJsonSha256": hashlib.sha256(config).hexdigest(),
+              "status": "verified", "components": [row]}
+    raw = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+    sidecar.write_bytes(raw)
+    relative = sidecar.relative_to(candidate).as_posix()
+    main = {"staticTextReadbackFiles": [{"path": relative, "sha256": hashlib.sha256(raw).hexdigest()}]}
+    assert text_module.verify(prepared["plan"], candidate, main)["status"] == "verified-native-configuration-only"
+
+    row.update({"sampleContext": "reopened-active-prefab-instance", "sourceNodeActiveSelf": True,
+                "sourceNodeActiveInHierarchy": True, "sampleCloneIsolated": False,
+                "sampleAncestorActivationOverride": False, "sampleCloneActivationOverride": False,
+                "sampleSourceAncestorInactive": False})
+    raw = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+    sidecar.write_bytes(raw)
+    main["staticTextReadbackFiles"][0]["sha256"] = hashlib.sha256(raw).hexdigest()
+    assert text_module.verify(prepared["plan"], candidate, main)["status"] == "verified-native-configuration-only"
+
+    row["sourceActivityUnchanged"] = False
+    raw = json.dumps(report, sort_keys=True, separators=(",", ":")).encode()
+    sidecar.write_bytes(raw)
+    main["staticTextReadbackFiles"][0]["sha256"] = hashlib.sha256(raw).hexdigest()
+    result = text_module.verify(prepared["plan"], candidate, main)
+    assert any("isolatedSampleContext" in item["message"] for item in result["diagnostics"])
 
 
 def test_verifier_rejects_sidecar_pin_change_and_never_resolves_source_gaps(tmp_path, engine_evidence):
@@ -339,6 +407,13 @@ def test_verifier_accepts_exact_empty_text_prefab_sidecar_and_optional_outline_i
         "autoSizingConfigVerified": True, "fontBindingVerified": True, "glyphFontChainVerified": True,
         "lineHeightConfigVerified": True, "nativeMeshMeasured": True,
         "inkBounds": {"hasVisibleGeometry": True}, "nativeBoundsKind": "tmp-character-quad-local-bounds-not-pixel-ink",
+        "sampleContext": "isolated-active-label-clone", "sourceNodeActiveSelf": True,
+        "sourceNodeActiveInHierarchy": False, "sourceLabelEnabled": True,
+        "sourceLabelEnabledUnchanged": True,
+        "sampleCloneIsolated": True, "sampleAncestorActivationOverride": False,
+        "sampleCloneActivationOverride": True, "sampleSourceAncestorInactive": True,
+        "sampleStateRestored": True, "sourceActivityUnchanged": True,
+        "sampleRectTransformVerified": True, "sampleCanvasReferencePixelsPerUnit": 100,
         "glyphFontAssets": [{"guid": "c" * 32, "localFileId": 12, "assetPath": PRIMARY_PATH}],
         "configuredFontAssets": [{"guid": "c" * 32, "localFileId": 12, "assetPath": PRIMARY_PATH},
                                  {"guid": "d" * 32, "localFileId": -13, "assetPath": FALLBACK_PATH}],
@@ -400,6 +475,13 @@ def test_verifier_uses_persistent_font_asset_identity_for_bitmap_font_binding(tm
         "glyphFontChainVerified": True, "lineHeightConfigVerified": True,
         "nativeMeshMeasured": True, "inkBounds": {"hasVisibleGeometry": True},
         "nativeBoundsKind": "tmp-character-quad-local-bounds-not-pixel-ink",
+        "sampleContext": "isolated-active-label-clone", "sourceNodeActiveSelf": True,
+        "sourceNodeActiveInHierarchy": False, "sourceLabelEnabled": True,
+        "sourceLabelEnabledUnchanged": True,
+        "sampleCloneIsolated": True, "sampleAncestorActivationOverride": False,
+        "sampleCloneActivationOverride": True, "sampleSourceAncestorInactive": True,
+        "sampleStateRestored": True, "sourceActivityUnchanged": True,
+        "sampleRectTransformVerified": True, "sampleCanvasReferencePixelsPerUnit": 100,
         "glyphFontAssets": [{"guid": font_id, "localFileId": -12, "assetPath": font_path}],
         "configuredFontAssets": [{"guid": font_id, "localFileId": -12, "assetPath": font_path}],
         "outlineConfigVerified": True,

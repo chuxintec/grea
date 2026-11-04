@@ -108,7 +108,7 @@ public static partial class MonkeyImporter
             }
             return new DynamicUiResult{sourceId=c.sourceId,type=key,status="native-state-changes-passed",states=states.ToArray()};
         } finally {
-            if(context!=null){if(root!=null)root.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(context);}
+            if(context!=null){if(root!=null)root.transform.SetParent(null,false);ReleasePrefabUiContext(context);UnityEngine.Object.DestroyImmediate(context);}
             if(root!=null)PrefabUtility.UnloadPrefabContents(root);
         }
     }
@@ -151,9 +151,9 @@ public static partial class MonkeyImporter
                     context=CreatePrefabUiContext(root,plan);LayoutSettle(root);
                     foreach(var expected in target.baseline)LayoutCompare(expected,map[expected.sourceId]);row.geometryNodes=target.baseline.Length;
                     row.missingAfter=LayoutMissing(root);if(row.missingAfter!=0)throw new InvalidOperationException("Missing script remains after replacement");
-                    root.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(context);context=null;
+                    root.transform.SetParent(null,false);ReleasePrefabUiContext(context);UnityEngine.Object.DestroyImmediate(context);context=null;
                     bool saved;var asset=PrefabUtility.SaveAsPrefabAsset(root,target.path,out saved);if(!saved||asset==null)throw new InvalidOperationException("Incremental Prefab save failed");
-                } finally {if(context!=null){if(root!=null)root.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(context);}if(root!=null)PrefabUtility.UnloadPrefabContents(root);}
+                } finally {if(context!=null){if(root!=null)root.transform.SetParent(null,false);ReleasePrefabUiContext(context);UnityEngine.Object.DestroyImmediate(context);}if(root!=null)PrefabUtility.UnloadPrefabContents(root);}
                 var persistent=LayoutMap(plan,AssetDatabase.LoadAssetAtPath<GameObject>(target.path),target);
                 foreach(var identity in target.identities) {
                     var rect=persistent[identity.sourceId];if(LayoutId(rect.gameObject,target.guid)!=identity.gameObjectFileId||LayoutId(rect,target.guid)!=identity.transformFileId)throw new InvalidOperationException("Stable GameObject/RectTransform identity changed: "+identity.sourceId);
@@ -170,7 +170,7 @@ public static partial class MonkeyImporter
                     root=PrefabUtility.LoadPrefabContents(target.path);context=CreatePrefabUiContext(root,plan);LayoutSettle(root);var map=LayoutMap(plan,root,target);
                     foreach(var expected in target.baseline)LayoutCompare(expected,map[expected.sourceId]);
                     if(LayoutMissing(root)!=0||AssetDatabase.AssetPathToGUID(target.path)!=target.guid)throw new InvalidOperationException("Saved/reopened Prefab identity or script closure differs");
-                } finally {if(context!=null){if(root!=null)root.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(context);}if(root!=null)PrefabUtility.UnloadPrefabContents(root);}
+                } finally {if(context!=null){if(root!=null)root.transform.SetParent(null,false);ReleasePrefabUiContext(context);UnityEngine.Object.DestroyImmediate(context);}if(root!=null)PrefabUtility.UnloadPrefabContents(root);}
                 row.afterSha256=Hash(target.path);row.status="saved-reopened-identity-and-geometry-verified";
                 if(!target.aggregate)foreach(var c in target.cases){string key;if(LayoutProbeSelected(c,target,groups,out key)){probes.Add(LayoutProbe(plan,target,c,key,limitations));groups.Add(key);}}
             }

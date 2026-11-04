@@ -19,6 +19,7 @@ from . import io
 
 
 SCHEMA = "monkey-static-text-continuation/1"
+SAMPLING_CONTRACT = "monkey-static-text-isolated-sampling/1"
 SOURCE_PROFILE = "cocos-2.4.15-bundle"
 SOURCE_VERSION = "2.4.15"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -539,6 +540,7 @@ def _plan_groups(plan: dict, ir: dict, source_manifest: dict, engine_pins: list[
     fragment = {
         "schemaVersion": 1,
         "contract": SCHEMA,
+        "nativeSamplingContract": SAMPLING_CONTRACT,
         "sourceVersion": SOURCE_VERSION,
         "sourceProfile": SOURCE_PROFILE,
         "sourceManifestSha256": plan.get("sourceManifestSha256"),
@@ -653,6 +655,8 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
         return {"status": "partial", "diagnostics": diagnostics, "family_proofs": [], "gaps": []}
     if fragment.get("sourceManifestSha256") != plan.get("sourceManifestSha256"):
         issue("STATIC_TEXT_SOURCE_MANIFEST_PIN_MISMATCH", message="Continuation and plan source manifest pins differ")
+    if fragment.get("nativeSamplingContract") not in (None, SAMPLING_CONTRACT):
+        issue("STATIC_TEXT_SAMPLING_CONTRACT_INVALID", message="Unknown native sampling evidence contract")
     config_sha = _expected_config_sha(plan, fragment)
     groups = fragment["components"]
     if any(not isinstance(group, dict) for group in groups):
@@ -810,6 +814,30 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                 (not auto_size_expected or _number(row.get("nativeFontSizeMin")) and _number(row.get("nativeFontSizeMax")) and
                  float(row["nativeFontSizeMin"]) <= float(font_size) <= float(row["nativeFontSizeMax"])) and
                 (auto_size_expected or abs(float(font_size) - float(group["sourceFontSize"])) <= 0.01))
+            sample_context = row.get("sampleContext")
+            sample_canvas_ppu = row.get("sampleCanvasReferencePixelsPerUnit")
+            if sample_context == "isolated-active-label-clone":
+                sample_context_verified = (row.get("sampleCloneIsolated") is True and
+                    row.get("sampleAncestorActivationOverride") is False and
+                    row.get("sampleCloneActivationOverride") is True and
+                    row.get("sampleSourceAncestorInactive") is
+                        (row.get("sourceNodeActiveSelf") is True and row.get("sourceNodeActiveInHierarchy") is False) and
+                    row.get("sourceLabelEnabled") is True and
+                    row.get("sourceLabelEnabledUnchanged") is True and
+                    row.get("sampleRectTransformVerified") is True and
+                    row.get("sampleStateRestored") is True and
+                    row.get("sourceActivityUnchanged") is True and
+                    _number(sample_canvas_ppu) and float(sample_canvas_ppu) > 0)
+            elif sample_context == "reopened-active-prefab-instance":
+                sample_context_verified = (row.get("sourceNodeActiveInHierarchy") is True and
+                    row.get("sourceLabelEnabled") is True and
+                    row.get("sourceLabelEnabledUnchanged") is True and
+                    row.get("sampleStateRestored") is True and
+                    row.get("sourceActivityUnchanged") is True and
+                    row.get("sampleRectTransformVerified") is True and
+                    _number(sample_canvas_ppu) and float(sample_canvas_ppu) > 0)
+            else:
+                sample_context_verified = False
             checks = {
                 "sourceOutlineIdentity": (
                     row.get("sourceOutlineId") in (None, "") if group.get("sourceOutlineId") is None
@@ -833,6 +861,8 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                 "nativeMeshMetrics": row.get("nativeMeshMeasured") is True and isinstance(row.get("inkBounds"), dict)
                     and row.get('nativeBoundsKind')=='tmp-character-quad-local-bounds-not-pixel-ink',
             }
+            if fragment.get("nativeSamplingContract") == SAMPLING_CONTRACT or sample_context is not None:
+                checks["isolatedSampleContext"] = sample_context_verified
             if group.get("fontKind") != "bitmap-font":
                 checks["outlineIdentity"] = (not group.get("sourceOutlineEnabled") or
                     row.get("persistentOutline") is True and row.get("outlineNativeType") == "NativeStaticTextOutline" and isinstance(row.get("outlineGuid"), str) and
