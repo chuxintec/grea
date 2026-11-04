@@ -180,7 +180,11 @@ def validate(spec):
     for step in steps:
         if not isinstance(step,dict):fail('BATCH_STEP','spec','Each step must be an object')
         kind=step.get('kind')
-        if kind=='prefab.inspect':
+        if kind=='asset.inspect':
+            if set(step)!={'kind','assetPath'}:fail('BATCH_INSPECT','spec','Expected kind and assetPath only')
+            from .intake_contract import _asset_path
+            _asset_path(step['assetPath'],'assetPath',{'.asset','.mat','.png','.ttf','.otf','.shader','.txt','.json'})
+        elif kind=='prefab.inspect':
             if set(step)!={'kind','assetPath'}:fail('BATCH_INSPECT','spec','Expected kind and assetPath only')
             asset_path(step['assetPath'],'.prefab')
         elif kind=='prefab.patch':
@@ -307,8 +311,8 @@ def plan(project,spec_path,output):
     for step in spec['steps']:
         kind=step['kind']
         if kind.startswith('resource.'):continue
-        paths=[step['assetPath']] if kind in ('prefab.inspect','prefab.patch','text.key','script.key') else step['consumers'] if kind=='reference.replace' else [step['source'],step['target']]
-        if kind!='prefab.inspect':writes.update(p+s for p in paths for s in ('','.meta'))
+        paths=[step['assetPath']] if kind in ('asset.inspect','prefab.inspect','prefab.patch','text.key','script.key') else step['consumers'] if kind=='reference.replace' else [step['source'],step['target']]
+        if kind not in ('asset.inspect','prefab.inspect'):writes.update(p+s for p in paths for s in ('','.meta'))
         roots.update(paths)
         if kind=='prefab.patch':explicit_guids.update(a['assetGuid'] for a in step['actions'] if a.get('assetGuid'))
         if kind=='reference.replace':explicit_guids.update((step['oldGuid'],step['newGuid']))

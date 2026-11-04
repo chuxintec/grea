@@ -240,11 +240,12 @@ def validate_spec(doc):
     if version == 5:
         keys = keys | {"retainedAssemblies"}
     _exact(doc, keys, "$")
-    if doc["operation"] != "additive-intake":
-        _bad("operation", "operation must be additive-intake", "OPERATION")
+    script_only = version >= 4 and doc["operation"] == "script-only-intake"
+    if doc["operation"] != "additive-intake" and not script_only:
+        _bad("operation", "operation must be additive-intake, or script-only-intake in spec4/5", "OPERATION")
     _hash(doc["candidateManifestSha256"], "candidateManifestSha256")
 
-    additions = _array(doc["additions"], "additions", 1, 256)
+    additions = _array(doc["additions"], "additions", 0 if script_only else 1, 0 if script_only else 256)
     addition_sources, addition_targets, prefab_sources = [], [], set()
     for index, item in enumerate(additions):
         where = f"additions[{index}]"
@@ -381,7 +382,7 @@ def validate_spec(doc):
     new_script_sources, new_script_targets, new_script_guids, new_script_types = [], [], [], []
     new_script_paths = set()
     if version >= 3:
-        new_scripts = _array(doc["newScripts"], "newScripts", maximum=16)
+        new_scripts = _array(doc["newScripts"], "newScripts", minimum=1 if script_only else 0, maximum=16)
         keys = {"source", "target", "guid", "sha256", "metaSha256", "sourceType", "sourceAssembly", "targetType", "targetAssembly", "baseType", "baseAssembly", "localId", "fields", "reason"}
         for index, item in enumerate(new_scripts):
             where = f"newScripts[{index}]"

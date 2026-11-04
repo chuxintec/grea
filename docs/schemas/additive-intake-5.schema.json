@@ -25,14 +25,17 @@
       "const": 5
     },
     "operation": {
-      "const": "additive-intake"
+      "enum": [
+        "additive-intake",
+        "script-only-intake"
+      ]
     },
     "candidateManifestSha256": {
       "$ref": "#/$defs/sha256"
     },
     "additions": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "maxItems": 256,
       "items": {
         "$ref": "#/$defs/addition"
@@ -834,5 +837,36 @@
       }
     }
   },
-  "description": "Closed structural schema for v3. Runtime validation enforces NFC/Windows path rules, C# identifiers, target class/path agreement, and cross-table uniqueness/reference constraints."
+  "description": "Closed structural schema for v3. Runtime validation enforces NFC/Windows path rules, C# identifiers, target class/path agreement, and cross-table uniqueness/reference constraints.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "script-only-intake"
+          }
+        },
+        "required": [
+          "operation"
+        ]
+      },
+      "then": {
+        "properties": {
+          "additions": {
+            "maxItems": 0
+          },
+          "newScripts": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "additions": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
 }

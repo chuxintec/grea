@@ -41,11 +41,14 @@ public static class BeaverBatch {
     [Serializable] public class PrefabRow {
         public string path,guid,kind,basePath,contentSha256,serializedTreeSha256;public int missingScripts;public NodeRow[] nodes;
     }
+    [Serializable] public class AssetObjectRow {public string guid,type,assembly,name;public long localId;}
+    [Serializable] public class AssetReadbackRow {public string path,guid,contentSha256,metaSha256,importerType,importerAssembly;public bool completeObjectSet;public AssetObjectRow[] objects;}
     [Serializable] public class Report {
         public string status,planSha256,error,mode,editorVersion,checkpointPolicy,checkpointState;public int completedSteps,hashReadOperations,checkpointCount;public bool checkpointComplete;
         public List<string> checkpointPaths=new List<string>();
         public List<FileRow> files=new List<FileRow>();public List<PrefabRow> prefabs=new List<PrefabRow>();
         public List<string> resourceReadbacks=new List<string>();
+        public List<AssetReadbackRow> assets=new List<AssetReadbackRow>();
         public List<string> diagnostics=new List<string>();
         public List<DependencyRow> nativeConsumers=new List<DependencyRow>();
         public SceneSettingsReadback sceneSettingsReadback;
@@ -340,6 +343,23 @@ public static class BeaverBatch {
             }
         }
     }
+    static void ReadAsset(string path) {
+        if((job.steps??new Step[0]).Count(s=>s.kind=="asset.inspect"&&s.assetPath==path)!=1)throw new Exception("One exact asset inspection step per path required");
+        var full=Full(path);var meta=Full(path+".meta");
+        var before=Hash(full);var beforeMeta=Hash(meta);
+        var importer=AssetImporter.GetAtPath(path);if(importer==null)throw new Exception("Imported asset importer unavailable "+path);
+        var importerType=importer.GetType();var guid=AssetDatabase.AssetPathToGUID(path);
+        var values=AssetDatabase.LoadAllAssetsAtPath(path).Concat(new[]{AssetDatabase.LoadMainAssetAtPath(path)}).Where(o=>o!=null).Distinct().ToArray();
+        if(values.Length<1||values.Length>4096)throw new Exception("Bounded nonempty complete native object set required");
+        var rows=new List<AssetObjectRow>();
+        foreach(var value in values) {
+            string observedGuid;long localId;
+            if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out observedGuid,out localId)||observedGuid!=guid||localId==0)throw new Exception("Native imported asset identity missing or inconsistent "+path);
+            var type=value.GetType();rows.Add(new AssetObjectRow{guid=observedGuid,localId=localId,type=type.FullName,assembly=type.Assembly.GetName().Name,name=value.name});
+        }
+        if(rows.Select(r=>r.localId).Distinct().Count()!=rows.Count||Hash(full)!=before||Hash(meta)!=beforeMeta)throw new Exception("Asset inspection changed bytes or duplicate object identities");
+        report.assets.Add(new AssetReadbackRow{path=path,guid=guid,contentSha256=before,metaSha256=beforeMeta,importerType=importerType.FullName,importerAssembly=importerType.Assembly.GetName().Name,completeObjectSet=true,objects=rows.OrderBy(r=>r.localId).ToArray()});
+    }
     static void Recover() {
         if(job.preconditions!=null)Preflight();
         var projectSettings=job.restores.FirstOrDefault(r=>r.exists&&r.path=="ProjectSettings/EditorSettings.asset");
@@ -391,6 +411,7 @@ public static class BeaverBatch {
                     var moveCheckpointPaths=new List<string>();
                     if(step.kind=="prefab.patch")Patch(step);
                     else if(step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
+                    else if(step.kind=="asset.inspect")ReadAsset(step.assetPath);
                     else if(step.kind=="asset.move") {
                         if(job.checkpointPolicy=="move-delta-v1")moveCheckpointPaths.AddRange(NewDestinationParentMetaPaths(step.target));
                         Folder(step.target);var guid=AssetDatabase.AssetPathToGUID(step.source);var ids=AssetIds(step.source);
@@ -438,6 +459,7 @@ public static class BeaverBatch {
                         if(state==null||String.IsNullOrEmpty(state.status)||new[]{"failed","blocked","needs_action","not_run","pending_editor_reopen"}.Contains(state.status))throw new Exception("Resource reopen verification rejected: "+step.kind);
                         report.resourceReadbacks.Add(evidence);
                     } else if(step.kind=="prefab.patch"||step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
+                    else if(step.kind=="asset.inspect")ReadAsset(step.assetPath);
                     report.completedSteps++;
                 }
             } else throw new Exception("Unknown mode");

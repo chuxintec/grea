@@ -192,3 +192,11 @@ Virtual pointer Mouse ownership update retains existing QA APIs/config/budgets. 
 `intake spec-bindings` emits a normal spec4/5 from an exact owned export, explicit mapping and optional reviewed policy, then invokes existing `intake.plan`; blocked consumption is preserved. See [INTAKE-BINDINGS.md](INTAKE-BINDINGS.md). No Editor, target writes, package installation or native replay.
 
 Explicit `intake package-requirements` and `--package-evidence/--expected-package-evidence` distinguish requested package declarations from verified builtin resolution. `spec-bindings --classify` emits selected semantic/compiler closure evidence and dependency-ordered ordinary spec4 batches under the unchanged16-script limit. All plans use real current target state and retain native/source/product gates. See [INTAKE-BINDINGS.md](INTAKE-BINDINGS.md).
+
+Spec4/5 add explicit `script-only-intake` mode: no noncompiler additions and
+1..16 new scripts, with the existing compiler/reference/native/rollback gates.
+`spec-bindings --reuse-exact-assets --binding-source SOURCE` connects exact
+resource evidence, complete existing binding plans and the final consumer.
+`batch` step `asset.inspect` records complete native identities without product
+writes. No new Editor execution or formal project write is implied; see
+[INTAKE-BINDINGS.md](INTAKE-BINDINGS.md).

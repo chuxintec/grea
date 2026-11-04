@@ -159,16 +159,69 @@ unresolved facade and generic forwarding identities are blocked.
 `dependency-evidence.json` owns the complete classification, source/target pins
 and boundaries. `batch-recipes.json` points to new exact-byte owned selections,
 normal spec4 documents and actual existing `intake.plan` results. Each batch
-contains at most16 new scripts and one real mapped image asset, preserves
+contains at most16 new scripts in explicit script-only mode, preserves
 strongly connected dependencies, and records deferred inputs as selection
 boundaries. No four-helper omission is invented for unrelated compiler inputs.
 Oversized cycles and unresolved dependencies block their dependants.
 
 Script destinations follow the exact uniform prefix of the explicit mapping;
 nonuniform mappings require `--script-target-root Assets/...`. Existing matching
-script identities can be reused after earlier code adoption. Images already
-present at mapped destinations are not proposed again. Re-run the command and
+script identities can be reused after earlier code adoption. Images stay in
+the later serialized asset closure. Re-run the command and
 replan against the real target after each predecessor succeeds; later recipes
 do not fabricate a future target snapshot. Native preflight, source staging,
 independent compile/GetClass, import/cold reopen, source audit and product gates
 remain required. Code plans do not authorize formal project writes.
+
+### Exact retained resources and complete binding plans
+
+`spec-bindings --reuse-exact-assets` scans the complete mapped group. An
+occupied GUID or destination is a real conflict. A different target GUID at
+the original source path is only a reuse comparison when the mapped destination
+is free. Source/target bytes, complete metadata, importer identity and complete
+native object sets must agree before a generated `externalAssets` declaration
+replaces an addition. Neither file extensions nor a shader's conventional
+localID prove native identity. Prefab PPtrs are observed references, and do not
+prove that all subassets were enumerated.
+
+`--asset-evidence BUNDLE --expected-asset-evidence SHA256` accepts a bundle with
+contract `beaver-native-asset-reuse-evidence/1` and actual `sourceStage` and
+`targetStage` paths. The adapter validates the immutable batch plan, completed
+journal, native result, exact before pins, importer and full object sets. Missing
+or inconsistent evidence stays blocked; the complete scan records every issue.
+
+The existing `batch` operation now supports the read-only `asset.inspect` step.
+It captures GUID, complete native objects (signed localID/type/assembly/name),
+importer type/assembly and file/meta hashes. Its product write set is empty.
+Generated inspection requests are plans only: this work does not run an Editor
+or replay a partial source. Regenerate them on the approved final source and
+current owned target before execution.
+
+`bindings-plan --source UNPREPARED_SOURCE --target TARGET --complete-from
+OWNED_CANDIDATE --expected-candidate MANIFEST_SHA --dependency-report REPORT
+--out OUTPUT` combines the existing bindings with proven retained component
+reuse. It uses the existing planner and native preparation transaction; source
+and target identities, fields and dependency evidence stay pinned. The known
+four-page case produces six entries. Future consumer declarations are marked
+planned, not exported or executed.
+
+Add `--binding-source UNPREPARED_SOURCE` to `spec-bindings --classify` to produce
+that complete plan in the same output. `continuation-plan.json` links the real
+binding plan, future owning export, script batches, complete resource scan and
+final Prefab consumer. It requires an approved final source and actual native
+results; it never invents a future target before-image or baseline.
+
+### Script-only batches
+
+Spec4/5 explicitly support `operation: "script-only-intake"`. This operation
+requires `additions: []` and 1..16 `newScripts`; additive mode retains its
+nonempty asset requirement. Compiler coverage, referenced dependencies,
+protected inputs, native preflight, staging, independent code-check, import,
+cold reopen and guarded rollback use the existing implementation.
+
+Generated code batches no longer include unrelated images. Their exact-byte
+owned selections contain only the selected compiler source/meta pairs,
+necessary directory metadata and pinned project/package inputs. Texture
+placement stays in the later serialized Prefab/resource closure. The previous
+dev8 image padding was not dependency evidence and is retired for new plans;
+its frozen outputs remain unchanged.

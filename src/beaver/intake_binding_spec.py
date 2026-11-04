@@ -21,7 +21,7 @@ def _document(path):
     return load(read(path, max_bytes=MANIFEST_BYTES), max_nodes=MANIFEST_NODES)
 
 
-def generate(candidate, target, expected_manifest, mapping, output, policy=None, preparation_receipt=None, package_evidence=None, expected_package_evidence=None, classification=None):
+def generate(candidate, target, expected_manifest, mapping, output, policy=None, preparation_receipt=None, package_evidence=None, expected_package_evidence=None, classification=None, *, reuse_exact_assets=False, asset_evidence=None, binding_source=None, dependency_report=None):
     from .intake import resolution_context
     resolution,_ = resolution_context(package_evidence,expected_package_evidence)
     incoming, manifest, files, manifest_sha = snapshot(candidate)
@@ -85,7 +85,24 @@ def generate(candidate, target, expected_manifest, mapping, output, policy=None,
         export = receipt.get('consumerExport', {})
         if (export.get('candidate') != str(incoming) or export.get('candidateManifestSha256') != manifest_sha or export.get('status') != 'exported'):
             fail('INTAKE_BINDING_SPEC_RECEIPT', str(receipt_path), 'Receipt must pin this exact owned exported candidate')
-    out = new_output(output, [incoming, safe(target), mapping] + ([safe(policy)] if policy else []) + ([safe(preparation_receipt)] if preparation_receipt else []) + ([safe(resolution['sourceProject']),safe(resolution['editorPath'])] if resolution else []))
+    out = new_output(output, [incoming, safe(target), mapping] + ([safe(policy)] if policy else []) + ([safe(preparation_receipt)] if preparation_receipt else []) + ([safe(resolution['sourceProject']),safe(resolution['editorPath'])] if resolution else []) + ([safe(binding_source)] if binding_source else []) + ([safe(dependency_report)] if dependency_report else []) + [safe(row['path']) for row in (asset_evidence or [])])
+    reuse_scan=None
+    if asset_evidence and not reuse_exact_assets:
+        fail('INTAKE_ASSET_EVIDENCE','assetEvidence','Explicit evidence requires --reuse-exact-assets')
+    if reuse_exact_assets:
+        from .intake_asset_reuse import scan
+        from .intake import pinned
+        evidence_paths=[dict(path=str(pinned(row['path'],row['sha256'])),sha256=row['sha256']) for row in (asset_evidence or [])]
+        reuse_scan=scan(incoming,safe(target),spec['additions'],files,native_oracle=native,evidence_paths=evidence_paths)
+        spec['additions']=reuse_scan['additions']
+        existing_sources={r['source'] for r in spec['externalAssets']}
+        for row in reuse_scan['externalAssets']:
+            if row['source'] in existing_sources:
+                fail('INTAKE_ASSET_REUSE_DUPLICATE',row['source'],'Policy and generated exact resource reuse overlap')
+            existing_sources.add(row['source']);spec['externalAssets'].append(row)
+        write_json(out/'asset-reuse-scan.json',reuse_scan)
+        spec['evidence'].append(dict(path=str(out/'asset-reuse-scan.json'),sha256=digest_file(out/'asset-reuse-scan.json')))
+        validate_spec(spec)
     write_json(out / 'intake-spec.json', spec)
     from .adoption import project_requirements
     requirements, conflicts = project_requirements(incoming, safe(target), manifest['targetProfile'], resolution=resolution)
@@ -95,6 +112,8 @@ def generate(candidate, target, expected_manifest, mapping, output, policy=None,
                   uncoveredCompilerInputs=uncovered, targetWrites=False, native='not_run', intakeApply='not_run',
                   sourceCandidateValidation={k:manifest.get(k) for k in ('native', 'diagnostics', 'staticPresentation', 'visibleEdits', 'player', 'business')},
                   typedCoverageStatus=_document(incoming / required[2])['coverageStatus'])
+    if reuse_scan is not None:
+        report['assetReuseScan']=dict(path=str(out/'asset-reuse-scan.json'),sha256=digest_file(out/'asset-reuse-scan.json'),reused=len(reuse_scan['externalAssets']),conflicts=len(reuse_scan['conflicts']))
     # This is the existing intake.plan implementation; the generated document
     # has no bypass, surrogate baseline, or relaxation of compiler coverage.
     try:
@@ -105,7 +124,16 @@ def generate(candidate, target, expected_manifest, mapping, output, policy=None,
         report['intakePlan'] = dict(status=error.status, error=error.as_dict())
     if classification is not None:
         from .intake_binding_dependencies import analyze
-        report['dependencyAnalysis'] = analyze(incoming,target,classification['sourceProject'],out/'dependency-analysis',dotnet=classification['dotnet'],sdk_root=classification['sdkRoot'],additions=spec['additions'],package_evidence=package_evidence,expected_package_evidence=expected_package_evidence,script_target_root=classification.get('scriptTargetRoot'),runtime_readback=classification.get('runtimeReadback'))
+        report['dependencyAnalysis'] = analyze(incoming,target,classification['sourceProject'],out/'dependency-analysis',dotnet=classification['dotnet'],sdk_root=classification['sdkRoot'],additions=mapped['additions'],package_evidence=package_evidence,expected_package_evidence=expected_package_evidence,script_target_root=classification.get('scriptTargetRoot'),runtime_readback=classification.get('runtimeReadback'))
+    if reuse_scan is not None and classification is not None:
+        from .intake_asset_inspection import requests
+        report['assetInspectionRequests']=requests(out/'asset-identity-requests',classification['sourceProject'],target,reuse_scan)
+    if binding_source is not None:
+        from .intake_binding_completion import propose
+        dep=report.get('dependencyAnalysis',{}).get('report') or dependency_report
+        report['bindingCompletion']=propose(incoming,target,binding_source,out/'complete-bindings',dependency_report=dep)
+    from .intake_continuation import connect
+    report['continuation']=connect(out,candidate=incoming,manifest=manifest,manifest_sha=manifest_sha,target=target,mapping=mapping,spec=out/'intake-spec.json',consumption=report['intakePlan'],analysis=report.get('dependencyAnalysis'),completion=report.get('bindingCompletion'),reuse=report.get('assetReuseScan'))
     if receipt is not None:
         receipt['owningExport'] = 'exported'
         receipt['supersedesReceipt'] = dict(path=str(receipt_path), sha256=digest_file(receipt_path), policy='new adjacent correction; original receipt unchanged; no native replay')
@@ -116,5 +144,6 @@ def generate(candidate, target, expected_manifest, mapping, output, policy=None,
     result = dict(status=report['status'], report=str(out / 'consumption-report.json'), spec=report['spec'],
                 specSha256=report['specSha256'], uncoveredCompilerInputs=len(uncovered),
                 intakePlan=report['intakePlan'], native='not_run', targetWrites=False)
-    if 'dependencyAnalysis' in report:result['dependencyAnalysis']=report['dependencyAnalysis']
+    for key in ('dependencyAnalysis','assetReuseScan','assetInspectionRequests','bindingCompletion','continuation'):
+        if key in report:result[key]=report[key]
     return result

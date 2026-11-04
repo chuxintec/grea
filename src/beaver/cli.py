@@ -72,7 +72,7 @@ def capabilities():
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
         dict(id="adoption.rollback", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native normal/failed transaction restore; later-edit rejection"),
         dict(id='intake.plan/apply/rollback',state='requires_provider',provider='Unity 6000.6.2f1 for native phases',effects='create-only-reviewed-assets-and-guarded-owned-removal',verification='independent contract; exact before-state, explicit retained scripts, declared native fields; no existing adoption baseline override'),
-        dict(id='intake.package-requirements/spec-bindings-classify',state='requires_provider',provider='explicit installed Editor files, local .NET SDK and reused immutable readback only',effects='new local specs/owned exact-byte selections; formal target read-only',verification='requested/resolved pins, actual semantic dependency batches; native/source/product gates retained'),
+        dict(id='intake.package-requirements/spec-bindings-classify',state='requires_provider',provider='explicit installed Editor files, local .NET SDK and reused immutable readback only',effects='new local specs/owned exact-byte selections; formal target read-only',verification='requested/resolved pins, script-only semantic batches, complete native resource evidence and six-binding continuation; native/source/product gates retained'),
         dict(id='intake.bindings-plan/prepare-bindings/export-bindings/spec-bindings',state='requires_provider',provider='Unity 6000.6.2f1 for preparation only; export continuation reuses exact original native gates',effects='new-isolated-source-copy-or-export; retained target read-only',verification='byte-identical script pins; native full comparison/cold reopen; exact original producer and identical helper required to continue export; no adoption claim'),
         dict(id="unity.plan", state="implemented", effects="plan-output", verification="python; exact source and implementation identity"),
         dict(id="unity.ui.create", state="requires_provider", provider="Unity 6000.6.2f1 + uGUI/TMP Essentials + explicit font", effects="project-write", verification="native save/reopen/source audit"),
@@ -153,7 +153,12 @@ def parser():
     requirements = intake.add_parser('package-requirements')
     for option in ('candidate','target','source-project','editor-path','evidence','expected-evidence','out'):requirements.add_argument('--'+option,required=True)
     binding_plan = intake.add_parser('bindings-plan')
-    for option in ('source','target','spec','out'):binding_plan.add_argument('--'+option,required=True)
+    for option in ('source','target','out'):binding_plan.add_argument('--'+option,required=True)
+    binding_mode=binding_plan.add_mutually_exclusive_group(required=True)
+    binding_mode.add_argument('--spec')
+    binding_mode.add_argument('--complete-from')
+    binding_plan.add_argument('--expected-candidate')
+    binding_plan.add_argument('--dependency-report')
     binding_prepare = intake.add_parser('prepare-bindings')
     for option in ('plan','expected-plan','out','editor-path'):binding_prepare.add_argument('--'+option,required=True)
     binding_prepare.add_argument('--timeout',type=int,default=600)
@@ -163,6 +168,11 @@ def parser():
     for option in ('candidate','target','expected-manifest','mapping','out'):binding_spec.add_argument('--'+option,required=True)
     binding_spec.add_argument('--policy')
     binding_spec.add_argument('--preparation-receipt')
+    binding_spec.add_argument('--reuse-exact-assets',action='store_true')
+    binding_spec.add_argument('--asset-evidence',action='append',default=[])
+    binding_spec.add_argument('--expected-asset-evidence',action='append',default=[])
+    binding_spec.add_argument('--binding-source')
+    binding_spec.add_argument('--dependency-report')
     binding_spec.add_argument('--classify',action='store_true')
     binding_spec.add_argument('--script-target-root')
     binding_spec.add_argument('--runtime-readback')
@@ -433,11 +443,21 @@ def dispatch(a):
                 if not all((a.source_project,a.dotnet,a.sdk_root)):
                     fail('INTAKE_DEPENDENCY_CONTEXT', '--classify', 'Explicit source project, dotnet and SDK root required')
                 classification = dict(sourceProject=a.source_project,dotnet=a.dotnet,sdkRoot=a.sdk_root,scriptTargetRoot=a.script_target_root,runtimeReadback=a.runtime_readback)
-            return generate(a.candidate,a.target,a.expected_manifest,a.mapping,a.out,a.policy,a.preparation_receipt,a.package_evidence,a.expected_package_evidence,classification)
+            if len(a.asset_evidence)!=len(a.expected_asset_evidence):
+                fail('INTAKE_ASSET_EVIDENCE', '--asset-evidence', 'Every explicit asset evidence file requires its exact SHA-256')
+            asset_evidence=[dict(path=p,sha256=h) for p,h in zip(a.asset_evidence,a.expected_asset_evidence)]
+            return generate(a.candidate,a.target,a.expected_manifest,a.mapping,a.out,a.policy,a.preparation_receipt,a.package_evidence,a.expected_package_evidence,classification,reuse_exact_assets=a.reuse_exact_assets,asset_evidence=asset_evidence,binding_source=a.binding_source,dependency_report=a.dependency_report)
         if a.action=='export-bindings':
             from .intake_bindings import export_existing
             return export_existing(a.preparation,a.expected_plan,a.native_runtime,a.expected_native_producer,a.out)
         if a.action=='bindings-plan':
+            if a.complete_from:
+                from .candidate_snapshot import snapshot,verify
+                incoming,_,files,manifest_sha=snapshot(a.complete_from);verify(incoming,files)
+                if manifest_sha!=a.expected_candidate:
+                    fail('INTAKE_CANDIDATE_DRIFT',a.complete_from,'Exact reviewed candidate manifest required for completion')
+                from .intake_binding_completion import propose
+                return propose(incoming,a.target,a.source,a.out,dependency_report=a.dependency_report)
             from .intake_bindings import preview
             return preview(a.source,a.target,a.spec,a.out)
         if a.action=='prepare-bindings':

@@ -299,14 +299,12 @@ def analyze(candidate, target, source_project, output, *, dotnet, sdk_root,
     evidence=dict(contract='beaver-intake-dependencies/1',implementationSha256=identity(),candidateManifestSha256=manifest_sha,sourceProject=str(source),contextPins=pins,runtimeFieldPolicy=dict(referenceFacade='netstandard',runtimeAssembly=runtime['assembly'] if runtime else None,proofPins=runtime_pins,policy='exact reused native Mono path and runtime core TypeDefs; unresolved/generic facade identities block'),semanticReport=dict(path=inspected['report'],sha256=digest_file(Path(inspected['report']))),targetMetadata=assemblies,retainedCompilerPins=support_pins,targetMetadataPolicy='bounded compiled snapshot plus source pins; current native compilation/GetClass not yet verified',selectedNativeRoots=sorted(roots),selectedCompilerClosure=sorted(selected),compilerClassifications=classifications,categoryCounts=dict(Counter(r['category'] for r in classifications)),compilerScopes=[dict(path=p,sha256=files[p]['sha256'],category='preparation_assembly_scope' if p in scope_only else 'unknown_compiler_input') for p in files if p.startswith('Assets/') and Path(p).suffix.lower() in {'.asmdef','.asmref','.rsp','.dll'}],packageScriptReferences=list(package_refs.values()),reuseCandidates=reused,blockingInputs=obstacles,dependencyGroups=groups,newScriptBatchLimit=16,native='not_run',targetWrites=False)
     write_json(out/'dependency-evidence.json',evidence)
     batches=[]
-    # Every code batch pairs its scripts with one real selected image asset.
-    # Later asset adoption must reuse these explicit assets after native success.
-    payloads=[r for r in additions if r['source'].endswith('.png') and not (target/r['target']).exists() and not (target/(r['target']+'.meta')).exists()]
+    # Script code stages have no noncompiler writes. Serialized texture
+    # dependencies belong to the later Prefab/resource intake closure.
     for index,group in enumerate(groups):
-        if index>=len(payloads):fail('INTAKE_DEPENDENCY_BATCH_ASSET',str(out),'A real noncompiler addition is required by the unchanged intake contract for every batch')
-        payload=payloads[index];batch=out/('batch-%02d'%(index+1));view=batch/'candidate';view.mkdir(parents=True)
+        batch=out/('batch-%02d'%(index+1));view=batch/'candidate';view.mkdir(parents=True)
         chosen={p for p in files if p.startswith(('Packages/','ProjectSettings/'))}
-        for path in group+[payload['source']]:chosen.update((path,path+'.meta'))
+        for path in group:chosen.update((path,path+'.meta'))
         # Include all original directory metadata for the chosen asset ancestry.
         for path in list(chosen):
             for parent in Path(path).parents:
@@ -322,13 +320,13 @@ def analyze(candidate, target, source_project, output, *, dotnet, sdk_root,
         doc.update(namespace='beaver-intake-batch/'+manifest_sha+'/'+str(index+1),scopeMode='selection',files=inventory,producer=dict(name='beaver',version=__version__,implementationSha256=identity()),selection=lineage)
         write_json(view/'manifest.json',doc)
         view_root,_,view_files,view_sha=snapshot(view);verify(view_root,view_files)
-        spec=dict(schemaVersion=4,operation='additive-intake',candidateManifestSha256=view_sha,additions=[payload],externalScripts=[],omittedCompilerInputs=[],verifications=[],protectedAssets=[],evidence=[dict(path=str(out/'dependency-evidence.json'),sha256=digest_file(out/'dependency-evidence.json'))]+[dict(path=p,sha256=h) for p,h in sorted(support_pins.items())],externalAssets=[],packageScripts=[],engineObjects=[],newScripts=[declarations[p] for p in group])
+        spec=dict(schemaVersion=4,operation='script-only-intake',candidateManifestSha256=view_sha,additions=[],externalScripts=[],omittedCompilerInputs=[],verifications=[],protectedAssets=[],evidence=[dict(path=str(out/'dependency-evidence.json'),sha256=digest_file(out/'dependency-evidence.json'))]+[dict(path=p,sha256=h) for p,h in sorted(support_pins.items())],externalAssets=[],packageScripts=[],engineObjects=[],newScripts=[declarations[p] for p in group])
         from .intake_contract import validate_spec
         validate_spec(spec);write_json(batch/'intake-spec.json',spec)
         try:
             plan=preview(view,target,batch/'intake-spec.json',batch/'consumer-plan',package_evidence,expected_package_evidence)
         except BeaverError as error:plan=dict(status=error.status,error=error.as_dict())
-        batches.append(dict(index=index+1,candidate=str(view),spec=str(batch/'intake-spec.json'),specSha256=digest_file(batch/'intake-spec.json'),newScripts=len(group),dependsOn=list(range(1,index+1)),intakePlan=plan,targetBefore='actual_current_target_only; replan after predecessor native success',payloadAddition=payload))
+        batches.append(dict(index=index+1,candidate=str(view),spec=str(batch/'intake-spec.json'),specSha256=digest_file(batch/'intake-spec.json'),newScripts=len(group),dependsOn=list(range(1,index+1)),intakePlan=plan,targetBefore='actual_current_target_only; replan after predecessor native success',batchKind='script-only',nonCompilerAdditions=[],nextAction='replan and stage against real predecessor result; no formal adoption claim'))
     verify(incoming,files)
     write_json(out/'batch-recipes.json',dict(contract='beaver-intake-dependency-batches/1',batches=batches,blockingInputs=obstacles,sourceNative=manifest.get('native'),formalAdoption='not_run',native='not_run',targetWrites=False))
     return dict(report=str(out/'dependency-evidence.json'),batches=str(out/'batch-recipes.json'),categoryCounts=evidence['categoryCounts'],scheduledNewScripts=sum(len(g) for g in groups),batchCount=len(groups),blockingInputs=len(obstacles))
