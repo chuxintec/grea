@@ -138,6 +138,63 @@ class UnityVerificationContractTests(unittest.TestCase):
         self.assertEqual(result['editorValidation'],'partial')
         self.assertEqual(result['resolvedNativeDiagnostics'],[])
 
+    def test_layout_slot_component_resolution_requires_exact_source_slot_and_binding(self):
+        source = 'layout:asset#0/components/0'
+        guid = '0123456789abcdef0123456789abcdef'
+        native = {'sourceId': source, 'guid': guid, 'localFileId': 14,
+            'nativeType': 'NativeStaticLayoutCompletion', 'representation': 'native-component-slot',
+            'nativeSlotId': source, 'sourceIdentityVerified': True, 'persistent': True,
+            'nativeStaticFieldsVerified': True}
+        coverage = {'nativeStaticValidation': 'pass', 'staticPresentationValidation': 'pass',
+            'components': [{'sourceId': source, 'nativeStatus': 'pass', 'disposition': 'native',
+                'nativeStaticFieldsVerified': True, 'nativeSlotId': source,
+                'staticLayoutContinuationBinding': {'sourceComponentId': source,
+                    'physicalNativeType': 'NativeStaticLayoutCompletion'},
+                'nativeComponentReadback': native}]}
+        row = {'code': 'COMPONENT_NOT_IMPORTED', 'sourceId': source,
+            'phase': 'initial-component-creation', 'resolved': True,
+            'resolution': 'native-counterpart-present',
+            'resolutionEvidence': {'sourceId': source, 'guid': guid, 'localFileId': 14,
+                'disposition': 'native', 'nativeStaticFieldsVerified': True,
+                'representation': 'native-component-slot', 'nativeSlotId': source}}
+        result = statuses('pass', [row], coverage, 'editor')
+        self.assertEqual(result['nativeStaticValidation'], 'pass')
+        mismatch = copy.deepcopy(row)
+        mismatch['resolutionEvidence']['nativeSlotId'] = 'layout:other/slot'
+        result = statuses('pass', [mismatch], coverage, 'editor')
+        self.assertNotEqual(result['nativeStaticValidation'], 'pass')
+
+    def test_reconciled_layout_family_proof_is_rechecked_against_exact_slot_identity(self):
+        source = 'layout:asset#0/components/1'
+        guid = '0123456789abcdef0123456789abcdef'
+        native = {'sourceId': source, 'guid': guid, 'localFileId': 24,
+            'nativeType': 'NativeStaticLayoutCompletion', 'representation': 'native-component-slot',
+            'nativeSlotId': source, 'sourceIdentityVerified': True, 'persistent': True,
+            'nativeStaticFieldsVerified': True}
+        coverage = {'nativeStaticValidation': 'pass', 'staticPresentationValidation': 'pass',
+            'components': [{'sourceId': source, 'nativeStatus': 'pass', 'disposition': 'native',
+                'nativeStaticFieldsVerified': True, 'nativeSlotId': source,
+                'staticLayoutContinuationBinding': {'sourceComponentId': source,
+                    'physicalNativeType': 'NativeStaticLayoutCompletion'},
+                'nativeComponentReadback': native}]}
+        row = {'code': 'MULTIPLE_LAYOUT_HANDOFF', 'sourceId': source,
+            'resolutionClassification': 'resolved', 'resolutionScope': 'saved-native-layout-proof',
+            'currentResolutionEvidence': {'scope': 'saved-native-layout-proof',
+                'resolvedCodes': ['MULTIPLE_LAYOUT_HANDOFF'],
+                'evidence': {'sourceId': source, 'guid': guid, 'localFileId': 24,
+                    'nativeType': 'NativeStaticLayoutCompletion', 'representation': 'native-component-slot',
+                    'nativeSlotId': source, 'persistent': True, 'sourceIdentityVerified': True,
+                    'requirements': {'layout': True, 'layout-context': True, 'layout-algorithm': True}},
+                'nativeIdentity': {'guid': guid, 'localFileId': 24,
+                    'nativeType': 'NativeStaticLayoutCompletion', 'representation': 'native-component-slot'}}}
+        result = statuses('pass', [row], coverage, 'editor')
+        self.assertEqual(result['nativeStaticValidation'], 'pass')
+        self.assertEqual(result['resolvedNativeDiagnostics'], [row])
+        changed = copy.deepcopy(row)
+        changed['currentResolutionEvidence']['evidence']['nativeSlotId'] = 'other-slot'
+        result = statuses('pass', [changed], coverage, 'editor')
+        self.assertNotEqual(result['nativeStaticValidation'], 'pass')
+
     def test_diagnostic_exact_dedupe_keeps_distinct_messages_and_origins(self):
         raw='COMPONENT_NOT_IMPORTED: gameAsset:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa#2 missing'
         rows=native_diagnostics([raw,raw,{'code':'COMPONENT_NOT_IMPORTED',

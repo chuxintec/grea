@@ -1,3 +1,5 @@
+2026-11-05 dev16 integration: sorting, source-oracle, text and diagnostic modules delivered; root owns shared CLI/versions/coverage/Importer and all released files. Existing fixed sources/candidates remain immutable. Source increment passed200 related checks and offline117-source compilation; actual fresh continuation/export/Editor stays with GREA54. No parallel Editor or binary work. Active unfinished tasks remain solely in GREA lifecycle-roadmap.
+
 2026-11-05 dev15集成完成：两复用模块已释放，root收回Python消费者/meta/coverage/测试单写，版本和CLI仍root。复用native10只读重验完成，104检查/10子用例过，903分母保持且retention pass；nativeStatic fail及UI度量/业务缺口仍在。原候选/16PNG/1296固定文件不变，无C#/Editor/解码/实际continuation操作；唯一任务源和实际采用仍由GREA持有。
 
 2026-11-05 dev14集成完成：两个复用模块已交回文件单写；root完成共享CLI/版本/C# Factory、渲染Atlas映射及hash续接整合。80项相关检查/10子用例、9项持久身份比较与116C#离线编译通过；实际16PNG哈希只读核验，源计划423文件/54载体payload/3support保持。均无Editor/ASTC/实际续接操作。GREA继续独占实际候选流水线，binary保持paused_by_user，任务源仍仅GREA roadmap。

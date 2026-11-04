@@ -125,7 +125,7 @@ def test_layout_probe_applies_container_resize_and_handles_negative_scale_factor
     ]
     result = simulate_layout(slot, [100, 40], [0.5, 0.5], children)
     assert result["ownerSize"] == [30, 40]  # -2 + (10*2) + (5) + 4 + 3
-    assert result["children"][0]["position"][0] == pytest.approx(-3)
+    assert result["children"][0]["position"][0] == pytest.approx(-7)
 
 
 def test_widget_probe_keeps_negative_margin_and_flips_negative_scale_anchor():
@@ -193,7 +193,7 @@ def test_probe_oracle_uses_disposable_input_geometry_and_returns_separate_after_
     assert geometry == before
     assert oracle["initialPoseUsedAsConstraintProof"] is False
     assert oracle["rows"][0]["size"] == [35, 50]
-    assert oracle["rows"][1]["position"] == pytest.approx([-7.5, 0, 0])
+    assert oracle["rows"][1]["position"] == pytest.approx([-12.5, 0, 0])
 
 
 def test_native_probe_verifier_requires_size_delta_and_formula_matched_after_geometry():

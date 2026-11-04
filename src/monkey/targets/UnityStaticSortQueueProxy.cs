@@ -204,7 +204,9 @@ namespace Monkey.StaticSortQueueProxy
     }
     [Serializable] public sealed class ProxyQueueReadback
     {
-        public string rootScope, proxyRootName;
+        public string rootScope, proxyRootName, driverGuid;
+        public long driverLocalFileId;
+        public bool driverPersistent;
         public bool sourceTreePreserved, sourceActivePreserved, sourceFieldsPreserved, sourceSortRootsPreserved,
             nestedProxyRootsDisabled, drawSequenceVerified, rendererDenominatorVerified, prefabPathVerified,
             rootMarkerVerified, presenterReferencesVerified, presenterEnabled, maskRowsVerified,
@@ -287,14 +289,18 @@ namespace Monkey.StaticSortQueueProxy
     }
     [Serializable] public sealed class ProxySortFieldReadback
     {
-        public string sourceId, node, nativeId, actualSourceId, actualNativeId;
+        public string sourceId, node, nativeId, actualSourceId, actualNativeId, markerGuid;
         public float sourceSortOrder, actualSortOrder;
-        public bool enabledInSource, actualEnabledInSource, identityPresent, identityComponentEnabled, verified;
+        public long markerLocalFileId;
+        public bool enabledInSource, actualEnabledInSource, identityPresent, identityComponentEnabled,
+            markerPersistent, verified;
     }
     [Serializable] public sealed class ProxySortRootValueReadback
     {
-        public string sourceId, node, nativeId, actualSourceId, actualNativeId;
-        public bool enabledInSource, actualEnabledInSource, identityPresent, identityComponentEnabled, verified;
+        public string sourceId, node, nativeId, actualSourceId, actualNativeId, markerGuid;
+        public long markerLocalFileId;
+        public bool enabledInSource, actualEnabledInSource, identityPresent, identityComponentEnabled,
+            markerPersistent, verified;
     }
     [Serializable] public sealed class ProxyMaskReadback
     {
@@ -636,6 +642,15 @@ namespace Monkey.StaticSortQueueProxy
         {
             string guid;
             return AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out guid, out fileId) ? guid : null;
+        }
+        static bool PersistentObjectIdentity(UnityEngine.Object value, out string guid, out long fileId)
+        {
+            guid = null;
+            fileId = 0;
+            if (value == null || !EditorUtility.IsPersistent(value) ||
+                !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out guid, out fileId))
+                return false;
+            return !String.IsNullOrWhiteSpace(guid) && fileId != 0;
         }
         static string TextureAssetGuid(Texture value)
         {
@@ -5575,12 +5590,19 @@ namespace Monkey.StaticSortQueueProxy
                 expectedRendererIds.OrderBy(id => id, StringComparer.Ordinal).SequenceEqual(actualRendererIds.OrderBy(id => id, StringComparer.Ordinal)) &&
                 nonDrawIds.Distinct(StringComparer.Ordinal).Count() == nonDrawIds.Length &&
                 nonDrawIds.OrderBy(id => id, StringComparer.Ordinal).SequenceEqual(actualNonDrawIds.OrderBy(id => id, StringComparer.Ordinal));
+            string driverGuid;
+            long driverLocalFileId;
+            var driverPersistent = PersistentObjectIdentity(presenter, out driverGuid, out driverLocalFileId);
             var sourceFieldRows = (spec.sourceFields ?? Array.Empty<QueueSortFieldSpec>()).Select(field =>
             {
                 var node = field != null && sourceNodes.TryGetValue(field.node, out var value) ? value : null;
                 var identity = node == null ? null : node.GetComponent<NativeStaticSortOrderIdentity>();
+                string markerGuid;
+                long markerLocalFileId;
+                var markerPersistent = PersistentObjectIdentity(identity, out markerGuid, out markerLocalFileId);
                 return new ProxySortFieldReadback { sourceId = field == null ? null : field.sourceId,
                     node = field == null ? null : field.node, nativeId = field == null ? null : field.nativeId,
+                    markerGuid = markerGuid, markerLocalFileId = markerLocalFileId, markerPersistent = markerPersistent,
                     sourceSortOrder = field == null ? 0f : field.sortOrder,
                     enabledInSource = field != null && field.enabled, identityPresent = identity != null,
                     actualSourceId = identity == null ? null : identity.sourceId,
@@ -5595,8 +5617,12 @@ namespace Monkey.StaticSortQueueProxy
             {
                 var node = field != null && sourceNodes.TryGetValue(field.node, out var value) ? value : null;
                 var identity = node == null ? null : node.GetComponent<NativeStaticSortRootIdentity>();
+                string markerGuid;
+                long markerLocalFileId;
+                var markerPersistent = PersistentObjectIdentity(identity, out markerGuid, out markerLocalFileId);
                 return new ProxySortRootValueReadback { sourceId = field == null ? null : field.sourceId,
                     node = field == null ? null : field.node, nativeId = field == null ? null : field.nativeId,
+                    markerGuid = markerGuid, markerLocalFileId = markerLocalFileId, markerPersistent = markerPersistent,
                     enabledInSource = field != null && field.enabled, identityPresent = identity != null,
                     actualSourceId = identity == null ? null : identity.sourceId,
                     actualNativeId = identity == null ? null : identity.nativeId,
@@ -5605,8 +5631,10 @@ namespace Monkey.StaticSortQueueProxy
                     verified = identity != null && identity.sourceId == field.sourceId && identity.nativeId == field.nativeId &&
                         identity.enabledInSource == field.enabled && !identity.enabled };
             }).ToArray();
-            var fieldsOK = sourceFieldRows.All(row => row != null && row.verified);
-            var sortRootsOK = sourceSortRootRows.All(row => row != null && row.verified);
+            var fieldsOK = sourceFieldRows.All(row => row != null && row.verified &&
+                (verifyRuntimeGeometry || row.markerPersistent));
+            var sortRootsOK = sourceSortRootRows.All(row => row != null && row.verified &&
+                (verifyRuntimeGeometry || row.markerPersistent));
             var expectedSequence = expected;
             var sequenceOK = traversalOk && observedArray.SequenceEqual(expectedSequence);
             var maskReadbacks = new List<ProxyMaskReadback>();
@@ -5788,6 +5816,7 @@ namespace Monkey.StaticSortQueueProxy
                 structuralDiagnostics.AddRange(aggregateDiagnostics.Select(item => "STATIC_SORT_PROXY_AGGREGATE: " + item));
             return new ProxyQueueReadback { rootScope = spec.rootScope,
                 proxyRootName = proxyRoot == null ? null : proxyRoot.name,
+                driverGuid = driverGuid, driverLocalFileId = driverLocalFileId, driverPersistent = driverPersistent,
                 sourceTreePreserved = sourceTreePreserved, sourceActivePreserved = sourceActivePreserved,
                 sourceFieldsPreserved = fieldsOK,
                 sourceSortRootsPreserved = sortRootsOK,

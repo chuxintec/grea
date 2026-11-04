@@ -474,5 +474,65 @@ class ComponentCoverageTests(unittest.TestCase):
         self.assertTrue(any(row["code"]=="STATIC_SPINE_RENDERING_ID_UNKNOWN" for row in result["diagnostics"]))
 
 
+    def test_layout_slot_requires_source_binding_exact_slot_and_static_field_proof(self):
+        source = "layout:asset#0/components/0"
+        binding = {"contract": "monkey-static-layout-continuation/1",
+                   "sourceComponentId": source, "sourceNodeId": "layout:asset#0",
+                   "physicalNativeType": "NativeStaticLayoutCompletion"}
+        plan = {"nodes": [{"sourceId": "layout:asset#0", "parent": None, "active": True}],
+                "components": [{"sourceId": source, "node": "layout:asset#0", "type": "cc.Layout",
+                    "nativeType": "NativeStaticLayoutCompletion", "convertible": False,
+                    "enabled": True, "staticLayoutContinuationBinding": binding}],
+                "diagnostics": [{"code": "COMPONENT_NOT_IMPORTED", "sourceId": source,
+                                 "message": "early native creation diagnostic"}]}
+        slot = {"sourceId": source, "type": "cc.Layout", "nativeType": "NativeStaticLayoutCompletion",
+                "status": "native", "sourceEnabled": True, "representation": "native-component-slot", "nativeSlotId": source,
+                "guid": "0123456789abcdef0123456789abcdef", "localFileId": 81,
+                "persistent": True, "sourceIdentityVerified": True, "nativeStaticFieldsVerified": True}
+        result = assess(plan, {"components": [slot]}, "unity")
+        covered = result["components"][0]
+        self.assertEqual(covered["nativeStatus"], "pass")
+        self.assertEqual(covered["nativeComponentReadback"]["representation"], "native-component-slot")
+        self.assertEqual(covered["nativeComponentReadback"]["nativeSlotId"], source)
+        self.assertEqual(covered["nativeSlotId"], source)
+        self.assertTrue(next(d for d in result["diagnostics"] if d["code"] == "COMPONENT_NOT_IMPORTED")["resolved"])
+
+        bad_slot = dict(slot, nativeSlotId="layout:other#0/components/0")
+        result = assess(plan, {"components": [bad_slot]}, "unity")
+        self.assertNotEqual(result["components"][0]["nativeStatus"], "pass")
+        self.assertFalse(next(d for d in result["diagnostics"] if d["code"] == "COMPONENT_NOT_IMPORTED")["resolved"])
+
+        unverified = dict(slot, nativeStaticFieldsVerified=False)
+        result = assess(plan, {"components": [unverified]}, "unity")
+        self.assertNotEqual(result["components"][0]["nativeStatus"], "pass")
+
+    def test_disabled_sort_driver_requires_binding_and_whole_queue_driver_evidence(self):
+        source = "sort:asset#0/components/0"
+        marker = "Monkey.StaticSortQueueProxy.NativeStaticSortOrderIdentity"
+        binding = {"contract": "monkey-static-sort-continuation/1", "sourceComponentId": source,
+                   "expectedMarkerType": marker}
+        plan = {"nodes": [{"sourceId": "sort:asset#0", "parent": None, "active": True}],
+                "components": [{"sourceId": source, "node": "sort:asset#0", "type": "cc.SortOrder",
+                    "nativeType": marker, "convertible": False, "enabled": True,
+                    "staticSortContinuationBinding": binding}], "diagnostics": []}
+        row = {"sourceId": source, "nativeType": marker, "status": "disabled",
+               "representation": "native-component", "guid": "0123456789abcdef0123456789abcdef",
+               "localFileId": 91, "persistent": True, "sourceIdentityVerified": True,
+               "sourceEnabled": True, "nativeEnabled": False,
+               "disabledReason": "native-static-sort-driver", "nativeStaticFieldsVerified": True,
+               "queueDriverGuid": "abcdef0123456789abcdef0123456789", "queueDriverLocalFileId": 92,
+               "queueDriverPersistent": True, "queueProofVerified": True}
+        result = assess(plan, {"disabledComponents": [row]}, "unity")
+        self.assertEqual(result["components"][0]["disposition"], "disabled")
+        self.assertEqual(result["components"][0]["nativeStatus"], "pass")
+        self.assertEqual(result["components"][0]["disabledReason"], "native-static-sort-driver")
+
+        for mutant in ({"queueProofVerified": False}, {"queueDriverPersistent": False},
+                       {"queueDriverLocalFileId": 0}, {"queueDriverGuid": "not-a-guid"}, {"sourceEnabled": False}):
+            bad = dict(row, **mutant)
+            result = assess(plan, {"disabledComponents": [bad]}, "unity")
+            self.assertNotEqual(result["components"][0]["nativeStatus"], "pass")
+
+
 if __name__ == "__main__":
     unittest.main()

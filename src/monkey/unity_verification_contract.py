@@ -6,6 +6,12 @@ import re
 from .io import diagnostic
 
 DYNAMIC_ONLY={'SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE','ANIMATION_DYNAMIC_CURVES_NOT_LOWERED'}
+_RECONCILED_FAMILY_REQUIREMENTS={
+    'MULTIPLE_LAYOUT_HANDOFF':{'layout-context','layout-algorithm'},
+    'WIDGET_CONTEXT_UNSUPPORTED':{'layout-context','layout-algorithm'},
+    'LAYOUT_NOT_VERIFIED':{'layout'},
+    'MISSING_OUTLINE_LABEL':{'same-node-label'},
+}
 _COMPONENT_ID=re.compile(r'^[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+(?:#[^\s]*)?$')
 
 
@@ -34,6 +40,11 @@ def deduplicate_diagnostics(values):
             current['resolution']=row['resolution'];current['resolutionEvidence']=copy.deepcopy(row['resolutionEvidence'])
             current['resolved']=row.get('resolved')is True
             if row.get('phase'):current['phase']=row['phase']
+        if row.get('resolutionClassification')=='resolved' and isinstance(row.get('currentResolutionEvidence'),dict):
+            current['resolutionClassification']=row['resolutionClassification']
+            current['resolutionScope']=row.get('resolutionScope')
+            current['currentResolutionEvidence']=copy.deepcopy(row['currentResolutionEvidence'])
+            current['resolved']=True
         ranks={'info':0,'warning':1,'error':2,'fatal':3}
         if ranks.get(row.get('severity'),0)>ranks.get(current.get('severity'),0):current['severity']=row['severity']
     return list(grouped.values())
@@ -230,20 +241,60 @@ def statuses(editor,diagnostics,coverage,level):
         native=covered.get('nativeComponentReadback')if isinstance(covered,dict)else None
         identity=_unity_persistent_identity(native)if isinstance(native,dict)else None
         evidence=row.get('resolutionEvidence')
-        exact_resolution=(row.get('code')=='COMPONENT_NOT_IMPORTED'
+        layout_slot=(isinstance(covered,dict) and isinstance(native,dict)
+            and native.get('representation')=='native-component-slot'
+            and native.get('nativeSlotId')==source_id and covered.get('nativeSlotId')==source_id
+            and isinstance(covered.get('staticLayoutContinuationBinding'),dict)
+            and covered['staticLayoutContinuationBinding'].get('sourceComponentId')==source_id
+            and covered['staticLayoutContinuationBinding'].get('physicalNativeType')=='NativeStaticLayoutCompletion'
+            and native.get('nativeType')=='NativeStaticLayoutCompletion')
+        legacy_exact=(row.get('code')=='COMPONENT_NOT_IMPORTED'
             and row.get('phase')=='initial-component-creation' and row.get('resolved') is True
             and row.get('resolution')=='native-counterpart-present'
             and isinstance(covered,dict) and covered.get('nativeStatus')=='pass'
             and covered.get('disposition') in ('native','disabled')
             and covered.get('nativeStaticFieldsVerified') is True
-            and isinstance(native,dict) and native.get('representation')=='native-component'
+            and isinstance(native,dict) and (native.get('representation')=='native-component' or layout_slot)
             and native.get('sourceIdentityVerified') is True and native.get('persistent') is True
             and identity is not None
             and isinstance(evidence,dict) and evidence.get('sourceId')==source_id
             and evidence.get('guid')==identity['guid']
             and evidence.get('localFileId')==identity['localFileId']
+            and (not layout_slot or evidence.get('representation')=='native-component-slot'
+                 and evidence.get('nativeSlotId')==source_id)
             and evidence.get('disposition')==covered.get('disposition')
             and evidence.get('nativeStaticFieldsVerified') is True)
+        current=row.get('currentResolutionEvidence')
+        current_detail=current.get('evidence') if isinstance(current,dict) and isinstance(current.get('evidence'),dict) else current
+        current_identity=(identity is not None and isinstance(native,dict) and isinstance(current_detail,dict)
+            and current_detail.get('sourceId')==source_id
+            and current_detail.get('guid')==identity.get('guid')
+            and current_detail.get('localFileId')==identity.get('localFileId')
+            and current_detail.get('nativeType')==native.get('nativeType')
+            and current_detail.get('representation')==native.get('representation'))
+        current_slot_ok=(not layout_slot or isinstance(current_detail,dict)
+            and current_detail.get('nativeSlotId')==source_id)
+        current_creation=(row.get('code')=='COMPONENT_NOT_IMPORTED'
+            and row.get('resolutionClassification')=='resolved'
+            and row.get('resolutionScope')=='native-static-component-creation'
+            and isinstance(current,dict) and current.get('sourceId')==source_id
+            and identity is not None
+            and current.get('guid')==identity.get('guid')
+            and current.get('localFileId')==identity.get('localFileId')
+            and current.get('nativeStaticFieldsVerified') is True
+            and current.get('disposition')==covered.get('disposition')
+            and current_identity and current_slot_ok)
+        requirements=_RECONCILED_FAMILY_REQUIREMENTS.get(row.get('code'))
+        current_family=(requirements is not None
+            and row.get('resolutionClassification')=='resolved'
+            and isinstance(current,dict) and row.get('code') in current.get('resolvedCodes',[])
+            and isinstance(current_detail,dict)
+            and isinstance(current_detail.get('requirements'),dict)
+            and all(current_detail['requirements'].get(name) is True for name in requirements)
+            and current_detail.get('persistent') is True
+            and current_detail.get('sourceIdentityVerified') is True
+            and current_identity and current_slot_ok)
+        exact_resolution=legacy_exact or current_creation or current_family
         if exact_resolution:
             resolved.append(row)
         else:

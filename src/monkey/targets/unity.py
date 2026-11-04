@@ -546,6 +546,7 @@ def export(plan_path, output):
             ('NativeStaticInvertedMaskGraphic.cs','Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticInvertedMaskGraphic.cs','static-mask-runtime/NativeStaticInvertedMaskGraphic.cs'),
             ('NativeStaticMaskIdentity.cs','Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticMaskIdentity.cs','static-mask-runtime/NativeStaticMaskIdentity.cs'),
             ('UnityStaticLayoutCompletionIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityStaticLayoutCompletionIntegration.cs')),'static-layout-editor'),
+            ('UnityStaticTextMetrics.cs',str(Path(standard.unity('importer')).with_name('UnityStaticTextMetrics.cs')),'static-text-metrics-editor'),
             ('NativeStaticLayoutCompletion.cs','Assets/Game/Scripts/Presentation/StaticLayout/NativeStaticLayoutCompletion.cs','static-layout-runtime'),
             ('UnityStaticAnimationIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityStaticAnimationIntegration.cs')),'static-animation-integration'),
             ('UnityStaticAnimationBindings.cs',str(Path(standard.unity('importer')).with_name('UnityStaticAnimationBindings.cs')),'static-animation-editor'),
@@ -609,8 +610,11 @@ def export(plan_path, output):
     instruction['staticRetainedAssets']=p.get('staticRetainedAssets')
     instruction['staticPresentation']=p.get('staticPresentation')
     instruction['layoutCompletion']=p.get('layoutCompletion')
+    instruction['staticLayoutContinuation']=p.get('staticLayoutContinuation')
     instruction['staticMasks']=p.get('staticMasks')
     instruction['staticSortQueue']=p.get('staticSortQueue')
+    instruction['staticSortContinuation']=p.get('staticSortContinuation')
+    instruction['staticTextContinuationJson']=encoded(p['staticTextContinuation']).decode('utf-8') if p.get('staticTextContinuation') else None
     instruction['bitmapMissingGlyphs']=p.get('bitmapMissingGlyphs')
     instruction['staticParticleBoundary']=p.get('staticParticleBoundary')
     instruction['staticAnimationEvidence']=p.get('staticAnimationEvidence')
@@ -785,7 +789,7 @@ def _static_sort_spine_bindings(plan, root):
 def verify(candidate, output, level='static'):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[]
     from ..sources.containers import fingerprint
-    native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None
+    native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None;text_family_proofs={}
     rendering_fragment=None;rendering_receipt=None;saved_meta_observations=[]
     if level=='editor':
         readback_path=find_analysis(root,'editor-readback.json')
@@ -839,8 +843,14 @@ def verify(candidate, output, level='static'):
             from ..prefab_static_completion_readback import verify_assets as verify_retained
             diagnostics.extend(verify_retained(instruction,rb.get('staticRetainedAssetReadback'),'unity'))
             from ..prefab_static_sort_readback import verify as verify_static_sort
-            diagnostics.extend(verify_static_sort(instruction,rb,
-                spine_native_bindings=_static_sort_spine_bindings(instruction, root)))
+            sort_gaps=verify_static_sort(instruction,rb,
+                spine_native_bindings=_static_sort_spine_bindings(instruction, root))
+            diagnostics.extend(sort_gaps)
+            if instruction.get('staticTextContinuationJson'):
+                from ..prefab_static_text_continuation import verify as verify_static_text
+                text_result=verify_static_text(instruction,root,rb)
+                diagnostics.extend(text_result['diagnostics'])
+                text_family_proofs=text_result['family_proofs']
             from ..prefab_sprite_outline_unity_readback import verify as verify_outline_saved
             diagnostics.extend(verify_outline_saved(instruction,root,rb))
             if instruction.get('staticTimeMaterialsJson'):
@@ -1046,6 +1056,11 @@ def verify(candidate, output, level='static'):
         if instruction.get('staticSpineContinuationJson'):
             coverage_plan['staticSpineContinuation']=load(instruction['staticSpineContinuationJson'].encode('utf-8'))
         normalized_readback=coverage_readback(rb,spine_coverage)
+        from ..unity_static_family_coverage import merge_sort,gate_layout
+        try:normalized_readback=merge_sort(normalized_readback,instruction,rb,queue_verified=not sort_gaps)
+        except ValueError as error:diagnostics.append(diagnostic('STATIC_SORT_COVERAGE_INVALID','staticSortQueue',str(error)))
+        normalized_readback,family_proofs=gate_layout(normalized_readback,instruction,rb)
+        family_proofs.update(text_family_proofs)
         if rendering_fragment is not None:
             coverage_plan['staticSpineRendering']=rendering_fragment
         if rendering_receipt is not None:
@@ -1057,11 +1072,15 @@ def verify(candidate, output, level='static'):
         diagnostics.extend(native_diagnostics(raw_native_diagnostics))
         diagnostics.extend(coverage.get('diagnostics',[]))
     diagnostics=deduplicate_diagnostics(diagnostics)
+    from ..unity_diagnostic_resolution import reconcile
+    reconciliation=reconcile(diagnostics,coverage,family_proofs=locals().get('family_proofs',{}))
+    diagnostics=reconciliation['diagnostics']
     dimensions=statuses(editor,diagnostics,coverage,level)
     out=new_output(output,[root])
     result=dict(schemaVersion=1,toolVersion=__version__,candidateManifestSha256=fingerprint(root/'manifest.json'),
                 diagnostics=diagnostics,staticValidation='conflict' if any(d['code'] in ('GENERATED_FILE_CHANGED','DUPLICATE_TARGET_GUID','TARGET_REFERENCE_MISSING','TARGET_LAYOUT_INVALID','NATIVE_FILE_CHANGED','ASSIGNED_NATIVE_IDENTITY_CHANGED','LAYOUT_FORBIDDEN_NAME') for d in diagnostics) else 'pass',
                 componentCoverage=coverage,nativeDiagnostics=raw_native_diagnostics,
+                diagnosticResolution=reconciliation['summary'],
                 savedGeneratedMetaReadback=saved_meta_observations,**dimensions,
                 visualValidation='not_run',businessValidation='not_run')
     write_json(out/'verification.json',result)

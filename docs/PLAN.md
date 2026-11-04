@@ -1,3 +1,5 @@
+2026-11-05 dev16 UI family source increment: added pinned Creator 2.4.15 sort/layout/text continuation for an existing frozen plan. Nine Sort identities use actual persistent queue/driver evidence; six Layout/Widget sources use exact native slots plus a disposable geometry probe. Text source preflight covers119 groups (72 system,33 bitmap,14 explicit TTF), with no source-field gaps. Font Canvas/OS/raster parity remains unknown. Historical diagnostics remain classified against exact current native evidence. Source-engine oracle7 and related200 checks pass; offline C#117 sources/175 references compiles. Native10 compatibility verification preserves1296 input files,903 component denominator and retention pass; new-candidate execution belongs to GREA54 and is not claimed here. No ASTC/font regeneration, Editor, global install, binary or public release operation.
+
 # monkey 技术上下文与历史
 
 当前开发任务和v1.1验收唯一入口：[GREA lifecycle-roadmap](/Users/wangmeng/MyProjects/Tools/grea/proposals/lifecycle-roadmap.md)，由GREA负责人单写。monkey保留仓库、0.8.0实现版本、会话及代码单写，不再维护独立未完待办或开发release列表。

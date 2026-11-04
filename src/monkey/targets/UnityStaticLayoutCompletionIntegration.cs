@@ -210,6 +210,22 @@ public static partial class MonkeyImporter
 
     // Read only persisted prefab objects. Missing source nodes are intentionally skipped
     // so each source-prefab result is checked against its own node subset.
+    static NativeStaticLayoutCompletion ResolveStaticLayoutSource(Plan plan,Dictionary<string,GameObject> nodes,string sourceId)
+    {
+        var matches=(plan.layoutCompletion?.nodes??Array.Empty<StaticLayoutNodeSpec>())
+            .Where(node=>(node.layouts??Array.Empty<StaticLayoutSlotSpec>()).Any(slot=>slot.sourceComponentId==sourceId)||
+                         (node.widgets??Array.Empty<StaticWidgetSlotSpec>()).Any(slot=>slot.sourceComponentId==sourceId)).ToArray();
+        if(matches.Length==0)return null;
+        if(matches.Length!=1)throw new InvalidOperationException("STATIC_LAYOUT_SOURCE_SLOT_AMBIGUOUS: "+sourceId);
+        if(!nodes.TryGetValue(matches[0].sourceNodeId,out var owner))return null;
+        var carrier=owner.GetComponent<NativeStaticLayoutCompletion>();
+        if(carrier==null||carrier.sourceNodeId!=matches[0].sourceNodeId)return null;
+        var slots=carrier.Readback().Where(slot=>slot.sourceComponentId==sourceId).ToArray();
+        if(slots.Length!=1||!slots[0].nativeComponentPresent||!slots[0].savedReferenceVerified)
+            throw new InvalidOperationException("STATIC_LAYOUT_SOURCE_SLOT_MISSING_OR_INVALID: "+sourceId);
+        return carrier;
+    }
+
     static StaticLayoutNodeReadback[] ReadStaticLayoutCompletion(Plan plan, Dictionary<string, GameObject> persistentNodes)
     {
         var contract = plan.layoutCompletion;

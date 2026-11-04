@@ -24,6 +24,14 @@ monkey export --plan /fresh/continuation/plan/plan.json --out /fresh/native-cand
 
 默认族为 `materials`、`animation`。材料仅接受已有程序指纹白名单及有证明的源时刻 t=0 投影；不是通用 Shader 翻译。Animation 使用禁用的原生静态载体，保存实际 Clip 或源证据 TextAsset、槽位顺序和组件身份；部分曲线仍是部分曲线，播放与 Animator 均禁用。完整族证据写入新 plan，CLI 仅输出有界计数。
 
+已有静态渲染 plan 可选择 `families: ["sort", "layout", "text"]`。`layout` 和 `text` 要求附加 `sourceEngineEvidence: {"sourceVersion": "2.4.15", "files": [...]}`；每项为唯一 `logicalPath`、原版引擎文件的绝对 `path`、准确 `sha256`、`originUrl`。消费者同时核对版本白名单和实际字节，不能用其他版本的 API 默认值填补未知上下文。原版引擎文件仅作本地证据，不复制进候选或分发包。
+
+`sort` 将实际 SortRoot/SortOrder 身份绑定到原生队列驱动，逐项检查排序字段、持久标记和驱动身份，并检查保存及加载后的完整渲染队列。`layout` 保留同节点多个 Layout 的源组件顺序，通过强类型槽位驱动 RectTransform；显式 Widget 目标必须有可证明的祖先链和 XY 几何。保存初态、原生字段回读、一次性克隆上的尺寸变化与源算法结果分别验证。未知目标或变换上下文保留精确 sourceId 缺口，不使用零值代替。
+
+`text` 只转换源身份及字体绑定完整的同节点 Label/Outline，复用已固定的字体/SDF。系统字体与 bitmap 字体分别使用 2.4.15 的参数约定；TMP 的拟合结果不等于源 Canvas 的整数缩放算法。保存回读另存字体链、行框、实际字号和描边材质，并由主回读绑定完整文件集及哈希。缺少源操作系统、Canvas 测量和栅格化证据时，字体与视觉一致性警告继续保留。
+
+上述续接复用已解码 PNG、字体和 Spine SDK 字节；若主生成器改变，只刷新新 plan 中的生成器 pin，要求新候选重新观测原生单位映射。旧 plan、候选和证据保持不变。诊断报告保留历史记录，另列 `resolved`、`remaining`、`remaining-dynamic` 与精确持久身份依据；对象存在本身不能解除字段、算法或文字度量缺口。
+
 `spine` 族的非渲染静态载体保留原始数据、atlas 和未解码纹理页的真实 TextAsset 引用及哈希；未序列化的字段保留未知。它不依赖渲染 SDK，不代表动态 Spine 行为或视觉还原已完成。可选 `spineRuntime` 的 `manifest` 为同样的 `{path, sha256}`，`assetsRoot` 为 SDK 备份根目录绝对路径，用于显式 SDK 来源核查。
 
 准备完成的 `preparationStatus=prepared` 仅表示新 plan 已生成。已有诊断和部分恢复状态保留；必须继续 export、真实 native-import、保存重开回读与原有 `freeze-native-selection`。不能以续接报告替代原生验收或工程采用。

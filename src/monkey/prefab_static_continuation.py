@@ -1,5 +1,5 @@
 """Immutable, pinned continuation of component families in an existing plan."""
-from pathlib import Path
+from pathlib import Path,PurePosixPath
 import re
 
 from . import __version__, io
@@ -9,7 +9,51 @@ from .sources.compiled import fail
 
 SCHEMA='monkey-static-prefab-continuation/1'
 _SHA=re.compile(r'^[0-9a-f]{64}$')
-_FAMILIES={'materials','animation','spine'}
+_FAMILIES={'materials','animation','spine','sort','layout','text'}
+
+
+def _source_engine(request,paths,raws):
+    evidence=request.get('sourceEngineEvidence')
+    if (not isinstance(evidence,dict)or set(evidence)!={'sourceVersion','files'}
+            or evidence['sourceVersion']!='2.4.15'or not isinstance(evidence['files'],list)
+            or not 1<=len(evidence['files'])<=32):
+        fail('STATIC_CONTINUATION_ENGINE_EVIDENCE_INVALID','sourceEngineEvidence','Expected exact version and bounded source-file pins')
+    result=[];seen=set()
+    for spec in evidence['files']:
+        if (not isinstance(spec,dict)or set(spec)-{'logicalPath','path','sha256','originUrl'}
+                or not isinstance(spec.get('logicalPath'),str)or not spec['logicalPath']
+                or '\\'in spec['logicalPath']or PurePosixPath(spec['logicalPath']).is_absolute()
+                or any(part in ('.','..')for part in spec['logicalPath'].split('/'))
+                or PurePosixPath(spec['logicalPath']).as_posix()!=spec['logicalPath']
+                or spec['logicalPath']in seen):
+            fail('STATIC_CONTINUATION_ENGINE_EVIDENCE_INVALID','sourceEngineEvidence.files','Duplicate or unsafe logical source identity')
+        seen.add(spec['logicalPath']);key='engine:'+spec['logicalPath']
+        paths[key],raws[key]=_input({'file':{'path':spec.get('path'),'sha256':spec.get('sha256')}},'file')
+        result.append(dict(spec,bytes=len(raws[key])))
+    return dict(sourceVersion='2.4.15',sourceProfile='cocos-2.4.15-bundle',files=result)
+
+
+def _refresh_existing_spine_generator(plan,stage):
+    fragment=plan.get('staticSpineRendering')
+    if not isinstance(fragment,dict):return None
+    from .prefab_static_spine_rendering import _RENDER_HELPERS,_DERIVED_HELPER
+    by_target={row['target']:row for row in fragment['payloads']}
+    for source,target in (*_RENDER_HELPERS,_DERIVED_HELPER):
+        expected=io.sha(io.read(Path(__file__).parent/source))
+        if by_target.get(target,{}).get('sha256')!=expected:
+            fail('STATIC_CONTINUATION_SPINE_HELPER_CHANGED',target,'An existing pinned render helper needs an explicit refresh before this increment')
+    mapping=fragment.get('unitMapping',{});old=mapping.get('generatorSourceSha256')
+    if not isinstance(old,str)or not _SHA.fullmatch(old):
+        fail('STATIC_CONTINUATION_SPINE_UNIT_PIN_INVALID','unitMapping','Missing frozen source generator pin')
+    current=io.sha(io.read(Path(__file__).parent/'targets/UnityImporter.cs'))
+    records=[mapping,plan['staticSpineRenderingTargetUnits']]
+    records.extend(data['factorySpec']['unitMappingEvidence']for data in fragment['dataAssets']if isinstance(data.get('factorySpec'),dict))
+    if any(row.get('generatorSourceSha256')!=old for row in records):
+        fail('STATIC_CONTINUATION_SPINE_UNIT_PIN_INVALID','unitMapping','Existing generator declarations disagree')
+    for row in records:row['generatorSourceSha256']=current
+    io.write_json(io.inside(stage,fragment['moduleStage'])/'spine-static-rendering.json',fragment)
+    return dict(previousGeneratorSha256=old,generatorSha256=current,requiresFreshNativeUnitObservation=True,
+                textureDecodeInvoked=False,decodedPayloadsChanged=False)
 
 
 def _summary(result):
@@ -64,7 +108,7 @@ def prepare(request_path, expected_request_sha256, output):
     if io.sha(raw)!=expected_request_sha256:
         fail('STATIC_CONTINUATION_REQUEST_HASH',str(request_path),'Request differs from its pin')
     request=io.load(raw)
-    allowed={'schema','schemaVersion','plan','planManifest','ir','sourceManifest','families','spineRuntime','spineRendering','spineSourceEngine'}
+    allowed={'schema','schemaVersion','plan','planManifest','ir','sourceManifest','families','spineRuntime','spineRendering','spineSourceEngine','sourceEngineEvidence'}
     if (not isinstance(request,dict)or set(request)-allowed or request.get('schema')!=SCHEMA
             or type(request.get('schemaVersion'))is not int or request['schemaVersion']!=1):
         fail('STATIC_CONTINUATION_REQUEST_INVALID',str(request_path),'Unsupported continuation request')
@@ -81,6 +125,11 @@ def prepare(request_path, expected_request_sha256, output):
         paths[name],raws[name]=_input(request,name)
     if rendering:
         paths['spineSourceEngine'],raws['spineSourceEngine']=_input(request,'spineSourceEngine')
+    source_engine=None
+    if set(families)&{'layout','text'}:
+        source_engine=_source_engine(request,paths,raws)
+    elif 'sourceEngineEvidence'in request:
+        source_engine=_source_engine(request,paths,raws)
     if paths['planManifest']!=paths['plan'].parent/'manifest.json':
         fail('STATIC_CONTINUATION_SOURCE_MISMATCH','planManifest','Expected the plan owning stage manifest')
     plan=io.stage_document(paths['plan']);ir=io.stage_document(paths['ir'])
@@ -143,12 +192,23 @@ def prepare(request_path, expected_request_sha256, output):
             result=prepare_rendering(plan,stage,plan['staticSpineContinuation']['runtimeDependency'],stage/'spine_static_rendering',
                                      source_engine_file=paths['spineSourceEngine'],expected_source_engine_sha256=io.sha(raws['spineSourceEngine']))
             plan=result['plan'];results['spineRendering']=_summary(result)
+    for family in ('sort','layout','text'):
+        if family not in families:continue
+        if family=='sort':from .prefab_static_sort_continuation import prepare as prepare_family
+        elif family=='layout':from .prefab_static_layout_continuation import prepare as prepare_family
+        else:from .prefab_static_text_continuation import prepare as prepare_family
+        result=prepare_family(plan,ir,manifest,stage,source_evidence=source_engine)
+        plan=result['plan'];results[family]=result['summary']
+    if set(families)&{'sort','layout','text'}:
+        refreshed=_refresh_existing_spine_generator(plan,stage)
+        if refreshed:results['existingSpineRendering']=refreshed
     if (io.sha(io.read(request_path,max_bytes=1024*1024))!=expected_request_sha256
             or any(io.sha(io.read(path,max_bytes=128*1024*1024))!=io.sha(raws[name])for name,path in paths.items())):
         fail('STATIC_CONTINUATION_INPUT_CHANGED','inputs','A frozen input changed during continuation; output is incomplete')
     plan['toolVersion']=__version__
     plan['staticContinuation']={'schema':SCHEMA,'parentPlanSha256':io.sha(raws['plan']),
-                                'families':families,'spineRendering':rendering,'sourceBusinessExecuted':False,'native':'not_run'}
+                                'families':families,'spineRendering':bool(plan.get('staticSpineRendering')),
+                                'spineRenderingPreparedThisRun':rendering,'sourceBusinessExecuted':False,'native':'not_run'}
     io.write_json(stage/'plan.json',plan);io.finish(stage,plan)
     report={'schema':SCHEMA,'schemaVersion':1,'toolVersion':__version__,'preparationStatus':'prepared',
             'requestSha256':expected_request_sha256,'inputs':{name:{'path':str(path),'sha256':io.sha(raws[name])}for name,path in paths.items()},

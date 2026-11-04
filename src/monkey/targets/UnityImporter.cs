@@ -16,7 +16,7 @@ public static partial class MonkeyImporter
         public StaticLayoutCompletionContract layoutCompletion; public StaticMaskContract staticMasks; public Monkey.StaticSortQueueProxy.ProxyQueueSpec[] staticSortQueue;
         public BitmapMissingGlyphContract bitmapMissingGlyphs;
         public string spriteOutlineBindingJson;
-        public string staticTimeMaterialsJson,sourceManifestSha256;
+        public string staticTimeMaterialsJson,sourceManifestSha256,staticTextContinuationJson;
         public UnityPreviewState.Spec previewState; public UnityPreviewState.Spec[] previewStates;
         public MonkeyUnityMaterialBindings.Spec materialBinding;
         public UnitySystemFonts.BindingSet systemFontBinding;
@@ -95,6 +95,8 @@ public static partial class MonkeyImporter
     static partial void ResolveStaticSpineReference(string id, Dictionary<string,GameObject> nodes, ref UnityEngine.Object value);
     static partial void ReadSavedStaticSpine(Dictionary<string,GameObject> nodes,string prefabId);
     static partial void ReadSavedStaticSpineRendering(Plan plan,Dictionary<string,GameObject> persistentNodes,Dictionary<string,GameObject> loadedNodes,string prefabId);
+    static partial void ReadSavedStaticTextMetrics(Plan plan,Dictionary<string,GameObject> persistentNodes,Dictionary<string,GameObject> loadedNodes,string sourcePrefabId);
+    static partial void ConfigureStaticTextLabel(Plan plan,ComponentSpec source,TMPro.TextMeshProUGUI label);
     static string SourceOutlineLabel(Plan plan,string nodeId) {
         for(int depth=0;depth<64;depth++) {
             var labels=plan.components.Where(c=>c.node==nodeId&&(c.type=="cc.Label"||c.type=="cc.RichText")).ToArray();
@@ -144,7 +146,7 @@ public static partial class MonkeyImporter
         public MonkeyNumericCode.Result[] numericCodeBindings,numericCodeExercise;
         public string status, unityVersion, prefabGuid, sceneGuid;
         public int spriteCount, nodeCount, missingScripts; public bool editableRoundtrip,sceneReopened; public string previewPath,previewSha256,previewError,colorSpace;
-        public UnityStaticRetainedAssets.Result[] staticRetainedAssetReadback; public DynamicUiResult[] dynamicUiProbes; public MotionResult[] animations; public string[] diagnostics; public NodeResult[] nodes,nativeInitialNodes; public SpriteResult[] sprites; public FileResult[] nativeFiles,staticSpineReadbackFiles; public FontResult[] fonts; public LabelResult[] labels; public ViewReference[] viewReferences; public JsonResult[] jsonAssets; public SourcePrefabResult[] sourcePrefabs; public TmpResourceResult tmpResources;
+        public UnityStaticRetainedAssets.Result[] staticRetainedAssetReadback; public DynamicUiResult[] dynamicUiProbes; public MotionResult[] animations; public string[] diagnostics; public NodeResult[] nodes,nativeInitialNodes; public SpriteResult[] sprites; public FileResult[] nativeFiles,staticSpineReadbackFiles,staticTextReadbackFiles; public FontResult[] fonts; public LabelResult[] labels; public ViewReference[] viewReferences; public JsonResult[] jsonAssets; public SourcePrefabResult[] sourcePrefabs; public TmpResourceResult tmpResources;
     }
     [Serializable] public class GalleryResult { public string id,spriteGuid; public bool geometryVerified; }
     [Serializable] public class JsonResult { public string id,guid,textSha256; }
@@ -721,6 +723,7 @@ public static partial class MonkeyImporter
                 label.horizontalAlignment = horizontal[Mathf.Clamp(spec.horizontalAlign,0,2)];
                 label.verticalAlignment = vertical[Mathf.Clamp(spec.verticalAlign,0,2)];
                 ConfigureLabel(go,label,spec,plan.bitmapFonts.Any(f=>f.id==spec.font));
+                ConfigureStaticTextLabel(plan,spec,label);
                 if(!string.IsNullOrEmpty(spec.codeClassName))MonkeyNumericCode.Bind(spec,label);
                 diagnostics.Add("LABEL_LINE_METRICS_REQUIRE_REFERENCE: " + spec.sourceId);
             }
@@ -991,6 +994,7 @@ public static partial class MonkeyImporter
                     if(!valid)referenceFailures.Add(c.sourceId);
                 }
                 ReadSavedStaticSpine(persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
+                ReadSavedStaticTextMetrics(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
                 ReadSavedStaticSpineRendering(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
                 ReadSavedOptionalSpriteOutline(persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
                 ReadSavedOptionalStaticTimeMaterials(persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
@@ -1125,6 +1129,7 @@ public static partial class MonkeyImporter
         if(File.Exists("Analysis/Readback/spine-static-continuation.json"))spineAuxiliaryFiles.Add("Analysis/Readback/spine-static-continuation.json");
         if(Directory.Exists("Analysis/Readback/SpineRendering"))spineAuxiliaryFiles.AddRange(Directory.GetFiles("Analysis/Readback/SpineRendering","*.json").Where(path=>Path.GetFileName(path)!="prepare.json"));
         readback.staticSpineReadbackFiles=spineAuxiliaryFiles.OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray();
+        readback.staticTextReadbackFiles=Directory.Exists("Analysis/Readback/TextMetrics")?Directory.GetFiles("Analysis/Readback/TextMetrics","*.json").OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray():new FileResult[0];
         File.WriteAllText("Analysis/Readback/editor-readback.json",JsonUtility.ToJson(readback,true));
         nativeProgress.phase="complete";nativeProgress.processed=1;nativeProgress.total=1;WriteNativeProgress(readback.status=="imported"?"completed":"completed_partial");
         Debug.Log("Monkey native import: "+readback.status+"; readback Analysis/Readback/editor-readback.json");

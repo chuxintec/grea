@@ -353,6 +353,8 @@ def prepare(plan: Mapping, manifest: Mapping) -> dict:
             source_node_active[node_id] = node.get("active") is True
             stack.extend(node.get("children", []))
     result.update({"sourceManifestSha256": source["sourceManifestSha256"],
+                   "sortSemantics": source["sortSemantics"],
+                   "sortLimitations": source["sortLimitations"],
                    "sortOrderOccurrences": order_occurrences,
                    "sortRootOccurrences": source["sortRoots"],
                    "sortGroupProposal": source["sortGroups"],

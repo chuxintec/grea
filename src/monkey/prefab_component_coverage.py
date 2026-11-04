@@ -465,6 +465,66 @@ def _native_disabled_reason(component: dict, row: dict) -> str | None:
     return None
 
 
+def _valid_sort_driver_disabled(component: dict, row: dict, engine: str) -> bool:
+    """Require the source-bound, independently verified static sort queue driver."""
+    binding = component.get("staticSortContinuationBinding")
+    source_id = component.get("sourceId")
+    expected_type = component.get("nativeType")
+    local_id = row.get("queueDriverLocalFileId", row.get("queueDriverFileId", row.get("queueDriverFileID")))
+    guid = row.get("queueDriverGuid")
+    if (engine != "unity" or not isinstance(binding, dict)
+            or component.get('type')not in ('cc.SortRoot','cc.SortOrder')
+            or type(component.get('enabled'))is not bool or row.get('sourceEnabled')is not component['enabled']
+            or not isinstance(source_id, str) or not source_id
+            or binding.get("sourceComponentId", binding.get("sourceId")) != source_id
+            or binding.get("expectedMarkerType") != expected_type
+            or not isinstance(expected_type, str) or not expected_type
+            or row.get("nativeType") != expected_type
+            or row.get("representation") != "native-component"
+            or row.get("nativeSlotId") is not None
+            or row.get("disabledReason") != "native-static-sort-driver"
+            or row.get("nativeEnabled") is not False
+            or row.get("nativeStaticFieldsVerified") is not True
+            or row.get("queueProofVerified") is not True
+            or row.get("queueDriverPersistent") is not True
+            or not isinstance(guid, str) or not _GUID.fullmatch(guid)
+            or _signed64(local_id) is None
+            or not _native_identity_verified(row, engine)):
+        return False
+    # If the source binding pins the queue driver identity, require that exact
+    # identity. Otherwise the independently verified readback identity remains
+    # mandatory, but is not confused with the disabled marker's own identity.
+    expected_guid = binding.get("queueDriverGuid")
+    expected_local = binding.get("queueDriverLocalFileId", binding.get("queueDriverFileId", binding.get("queueDriverFileID")))
+    if expected_guid is not None and expected_guid.lower() != guid.lower():
+        return False
+    if expected_local is not None and _signed64(expected_local) != _signed64(local_id):
+        return False
+    observed_binding = row.get("staticSortContinuationBinding")
+    if observed_binding is not None and observed_binding != binding:
+        return False
+    return True
+
+
+def _valid_layout_slot(component: dict, row: dict, engine: str) -> bool:
+    binding = component.get("staticLayoutContinuationBinding")
+    source_id = component.get("sourceId")
+    return bool(engine == "unity" and isinstance(binding, dict)
+        and component.get("type") in ("cc.Layout", "cc.Widget")
+        and type(component.get('enabled'))is bool and row.get('sourceEnabled')is component['enabled']
+        and binding.get("sourceComponentId") == source_id
+        and binding.get("sourceNodeId") == component.get("node")
+        and binding.get("physicalNativeType") == "NativeStaticLayoutCompletion"
+        and component.get("nativeType") == "NativeStaticLayoutCompletion"
+        and row.get("sourceId") == source_id
+        and row.get("nativeSlotId") == source_id
+        and row.get("representation") == "native-component-slot"
+        and row.get("status") == "native"
+        and row.get("nativeType") == "NativeStaticLayoutCompletion"
+        and row.get("nativeStaticFieldsVerified") is True
+        and _native_identity_verified(row, engine))
+
+
 def _valid_native_disabled(component: dict, row: dict, engine: str) -> tuple[bool, str | None]:
     if row.get("status") != "disabled" or row.get("representation") != "native-component":
         return False, None
@@ -472,6 +532,12 @@ def _valid_native_disabled(component: dict, row: dict, engine: str) -> tuple[boo
         return False, None
     if not _native_identity_verified(row, engine):
         return False, None
+    if row.get("disabledReason") == "native-static-sort-driver":
+        expected = component.get("nativeType")
+        if (expected is None or _native_type(row) != expected
+                or not _valid_sort_driver_disabled(component, row, engine)):
+            return False, None
+        return True, "native-static-sort-driver"
     expected = component.get("nativeType") or component.get("type")
     if engine == "unity":
         expected = _UNITY_NATIVE_TYPES.get(expected, expected)
@@ -769,7 +835,10 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
         disabled_reason = None
         disabled_behavior_status = None
         valid_native = [row for row in candidates if _native_identity_verified(row,engine) and
-                        (_native_type(row) == expected_type or engine=='unity'and isinstance(row.get('nativeBaseTypes'),list)and expected_type in row['nativeBaseTypes'])
+                        (_valid_layout_slot(component,row,engine) if (
+                            row.get("representation") == "native-component-slot" or
+                            isinstance(component.get("staticLayoutContinuationBinding"), dict)) else
+                         (_native_type(row) == expected_type or engine=='unity'and isinstance(row.get('nativeBaseTypes'),list)and expected_type in row['nativeBaseTypes']))
                         and row.get("status") not in ("retained", "disabled", "unsupported", "missing")]
         if len(candidates) == 1 and len(valid_native) == 1:
             disposition = "native"
@@ -951,6 +1020,9 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
             "nativeStatus": native_status,
             "nativeComponentReadback": valid_native[0] if len(valid_native) == 1 else
                 explicit if isinstance(explicit, dict) and explicit.get("representation") == "native-component" else None,
+            "nativeSlotId": valid_native[0].get("nativeSlotId") if len(valid_native) == 1 else None,
+            "staticLayoutContinuationBinding": dict(component["staticLayoutContinuationBinding"])
+                if isinstance(component.get("staticLayoutContinuationBinding"), dict) else None,
             "retainedComponentReadback": retained_rows[0] if len(retained_rows) == 1 else None,
             "nativeStaticFieldsVerified": bool(disposition in ("native", "disabled") and native_status == "pass" and
                 (not isinstance(explicit, dict) or explicit.get("nativeStaticFieldsVerified") is True or field_status == "verified")),
@@ -980,16 +1052,25 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
         native_row = coverage_row.get("nativeComponentReadback") if isinstance(coverage_row, dict) else None
         identity = _unity_persistent_identity(native_row) if isinstance(native_row, dict) and engine == "unity" else None
         static_fields_verified = isinstance(coverage_row, dict) and coverage_row.get("nativeStaticFieldsVerified") is True
+        native_representation = native_row.get("representation") if isinstance(native_row, dict) else None
+        layout_binding = coverage_row.get("staticLayoutContinuationBinding") if isinstance(coverage_row, dict) else None
+        layout_slot = (native_representation == "native-component-slot"
+            and isinstance(layout_binding, dict)
+            and layout_binding.get("sourceComponentId") == source_id
+            and layout_binding.get("physicalNativeType") == "NativeStaticLayoutCompletion"
+            and native_row.get("nativeSlotId") == source_id
+            and native_row.get("nativeType") == "NativeStaticLayoutCompletion")
         resolved = (isinstance(coverage_row, dict) and coverage_row.get("nativeStatus") == "pass" and
                     coverage_row.get("disposition") in ("native", "disabled") and static_fields_verified and
-                    isinstance(native_row, dict) and native_row.get("representation") == "native-component" and
+                    isinstance(native_row, dict) and (native_row.get("representation") == "native-component" or layout_slot) and
                     native_row.get("sourceIdentityVerified") is True and identity is not None)
         item["resolved"] = bool(resolved)
         item["resolution"] = "native-counterpart-present" if resolved else "pending-or-unverified-native-counterpart"
         if resolved:
             item["resolutionEvidence"] = {"sourceId": source_id, "guid": identity["guid"],
                 "localFileId": identity["localFileId"], "disposition": coverage_row["disposition"],
-                "nativeStaticFieldsVerified": True, "representation": native_row["representation"]}
+                "nativeStaticFieldsVerified": True, "representation": native_row["representation"],
+                **({"nativeSlotId": source_id} if layout_slot else {})}
 
     # Keep malformed/duplicate source entries in original order as well as in
     # diagnostics; the report count always reflects the complete source list.

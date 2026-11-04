@@ -8,7 +8,7 @@ using UnityEngine;
 public static partial class MonkeyImporter
 {
     [Serializable] public sealed class SourceComponentCoverage {
-        public string sourceId,node,type,nativeType,componentUuid,status,representation,guid,disabledReason;
+        public string sourceId,node,type,nativeType,componentUuid,status,representation,guid,disabledReason,nativeSlotId;
         public long localFileId;
         public string[] nativeBaseTypes;
         public bool sourceIdentityVerified,persistent,sourceEnabled,nativeEnabled,sourceVisible,nativeStaticFieldsVerified;
@@ -36,10 +36,15 @@ public static partial class MonkeyImporter
         return true;
     }
     static SourceComponentCoverage[] ReadSourceComponentCoverage(Plan plan,Dictionary<string,GameObject> nodes,ISet<string> referenceFailures) {
+        var completedLayoutSources=new HashSet<string>(ReadStaticLayoutCompletion(plan,nodes)
+            .SelectMany(node=>(node.layouts??Array.Empty<StaticLayoutComponentReadback>()).Select(slot=>slot.sourceComponentId)
+                .Concat((node.widgets??Array.Empty<StaticWidgetComponentReadback>()).Select(slot=>slot.sourceComponentId))),StringComparer.Ordinal);
         return plan.components.Where(x=>nodes.ContainsKey(x.node)).Select(source=>{
             var target=StaticReference(plan,nodes,source.sourceId);var component=target as Component;
             string guid=null;long local=0;bool persistent=target!=null&&AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target,out guid,out local)&&!String.IsNullOrEmpty(guid)&&local!=0;
             var behavior=component as Behaviour;bool enabled=behavior==null||behavior.enabled;
+            bool completedLayout=completedLayoutSources.Contains(source.sourceId)&&target is NativeStaticLayoutCompletion;
+            if(completedLayout)enabled=enabled&&source.enabled;
             var chain=new List<string>();for(var current=target==null?null:target.GetType();current!=null;current=current.BaseType)chain.Add(current.FullName);
             bool retained=source.staticFieldBinding!=null&&!String.IsNullOrEmpty(source.staticFieldBinding.typeName)||
                 source.type=="cc.ProgressBar"&&source.staticProgressBinding!=null&&!source.convertible||
@@ -49,10 +54,11 @@ public static partial class MonkeyImporter
             bool emptySprite=source.type=="cc.Sprite"&&String.IsNullOrEmpty(source.spriteFrame)&&target is UnityEngine.UI.Image image&&image.sprite==null;
             string disabledReason=enabled?null:!source.enabled?"source-disabled":emptySprite?"source-empty-sprite":source.type=="cc.Button"&&source.staticButtonBinding!=null&&source.staticButtonBinding.renderReady?"static-button-business-safety":"unproven-native-disabled";
             return new SourceComponentCoverage{sourceId=source.sourceId,node=source.node,type=source.type,nativeType=target==null?null:target.GetType().FullName,
+                nativeSlotId=completedLayout?source.sourceId:null,
                 componentUuid=persistent?guid+":"+local:null,nativeBaseTypes=chain.ToArray(),guid=guid,localFileId=local,persistent=persistent,sourceIdentityVerified=persistent,
                 sourceEnabled=source.enabled,nativeEnabled=target!=null&&enabled,sourceVisible=SourceNodeVisible(plan,source)&&!emptySprite,status=status,
-                disabledReason=disabledReason,nativeStaticFieldsVerified=persistent&&source.convertible&&referenceFailures!=null&&!referenceFailures.Contains(source.sourceId),
-                representation=retained?"disabled-source-data-carrier":target==null?"no-verified-native-counterpart":"native-component"};
+                disabledReason=disabledReason,nativeStaticFieldsVerified=persistent&&(source.convertible||completedLayout)&&referenceFailures!=null&&!referenceFailures.Contains(source.sourceId),
+                representation=retained?"disabled-source-data-carrier":target==null?"no-verified-native-counterpart":completedLayout?"native-component-slot":"native-component"};
         }).ToArray();
     }
     static SourcePresentationCoverage ReadSourcePresentationCoverage(Plan plan,SourceComponentCoverage[] rows) {

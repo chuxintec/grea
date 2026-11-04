@@ -156,17 +156,17 @@ public sealed class NativeStaticLayoutCompletion : MonoBehaviour
         bool reverse = horizontal ? slot.horizontalDirection == 1 : slot.verticalDirection == 1;
         float sign = reverse ? -1f : 1f;
         float ownerAnchor = owner.pivot[axis];
-        float cursor = (reverse ? (1f - ownerAnchor) * length : -ownerAnchor * length) + sign * (reverse ? after : before);
+        float cursor = (reverse ? (1f - ownerAnchor) * length : -ownerAnchor * length) + sign * ((reverse ? after : before) - gap);
         foreach (var child in children)
         {
             float factor = slot.affectedByScale ? Mathf.Abs(child.localScale[axis]) : 1f;
             float extent = child.rect.size[axis] * factor;
             float anchor = child.pivot[axis];
             if (reverse) anchor = 1f - anchor;
-            var p = child.anchoredPosition;
+            var p = child.localPosition;
             cursor += sign * anchor * extent + sign * gap;
             p[axis] = cursor;
-            child.anchoredPosition = p;
+            child.localPosition = p;
             cursor += sign * (1f - anchor) * extent;
         }
     }
@@ -197,7 +197,7 @@ public sealed class NativeStaticLayoutCompletion : MonoBehaviour
             float lowMargin = s.margins[lowIndex] * (s.absoluteMargins[lowIndex] != 0 ? 1f : targetLength);
             float highMargin = s.margins[highIndex] * (s.absoluteMargins[highIndex] != 0 ? 1f : targetLength);
             float low = -targetAnchor * targetLength + lowMargin;
-            float high = low + targetLength - highMargin;
+            float high = -targetAnchor * targetLength + targetLength - highMargin;
             float targetMiddle = (0.5f - targetAnchor) * targetLength;
             if (ownerParent != null && target != ownerParent)
             {
@@ -212,7 +212,7 @@ public sealed class NativeStaticLayoutCompletion : MonoBehaviour
             if (scale < 0) { anchor = 1f - anchor; scale = -scale; }
             bool stretch = (s.alignFlags & lowBit) != 0 && (s.alignFlags & highBit) != 0;
             bool centered = (s.alignFlags & centerBit) != 0;
-            var position = owner.anchoredPosition;
+            var position = new Vector2(owner.localPosition.x, owner.localPosition.y);
             if (stretch)
             {
                 float extent = high - low;
@@ -233,15 +233,29 @@ public sealed class NativeStaticLayoutCompletion : MonoBehaviour
                 else if ((s.alignFlags & lowBit) != 0) position[axis] = low + anchor * extent;
                 else position[axis] = high + (anchor - 1f) * extent;
             }
-            owner.anchoredPosition = position;
+            owner.localPosition = new Vector3(position.x, position.y, owner.localPosition.z);
         }
     }
 
     static float ConvertTargetAxis(RectTransform target, RectTransform localParent, int axis, float value)
     {
-        var local = axis == 0 ? new Vector3(value, 0, 0) : new Vector3(0, value, 0);
-        var parentLocal = localParent.InverseTransformPoint(target.TransformPoint(local));
-        return parentLocal[axis];
+        // Creator's WidgetManager converts only XY translation and scale.
+        // A valid 2D node can have scale.z == 0, so a 3D matrix inverse is not
+        // an equivalent operation here (and may be singular).
+        var chain = new System.Collections.Generic.List<RectTransform>();
+        for (var cursor = localParent; cursor != target; cursor = cursor.parent as RectTransform)
+        {
+            if (cursor == null) throw new InvalidOperationException("STATIC_WIDGET_TARGET_NOT_ANCESTOR");
+            chain.Add(cursor);
+        }
+        for (int index = chain.Count - 1; index >= 0; index--)
+        {
+            var node = chain[index];
+            var scale = node.localScale[axis];
+            if (scale == 0) throw new InvalidOperationException("STATIC_WIDGET_ZERO_ANCESTOR_XY_SCALE_UNSUPPORTED");
+            value = (value - node.localPosition[axis]) / scale;
+        }
+        return value;
     }
 
     public SlotReadback[] Readback()

@@ -109,6 +109,27 @@ class StaticContinuationTests(unittest.TestCase):
         self.spec['spineRuntime']={'manifest':self.pin(sdk),'assetsRoot':None};self.write_request()
         with self.assertRaisesRegex(ValueError,'STATIC_CONTINUATION_RUNTIME_INVALID'):self.run_prepare()
 
+    def test_layout_dispatch_requires_pinned_engine_inputs_even_without_matching_components(self):
+        self.spec['families']=['layout'];self.write_request()
+        with self.assertRaisesRegex(ValueError,'ENGINE_EVIDENCE_INVALID'):self.run_prepare()
+        engine=self.root/'engine/source.js';engine.parent.mkdir();engine.write_bytes(b'bounded evidence fixture')
+        self.spec['sourceEngineEvidence']={'sourceVersion':'2.4.15','files':[
+            dict(logicalPath='components/engine.js',**self.pin(engine))]}
+        self.write_request();before=self.plan.read_bytes()
+        result=self.run_prepare()
+        self.assertEqual(result['familyResults']['layout']['selectedComponents'],0)
+        self.assertEqual(self.plan.read_bytes(),before)
+
+    def test_changed_engine_or_unsafe_identity_is_refused_before_output(self):
+        self.spec['families']=['layout']
+        engine=self.root/'engine/source.js';engine.parent.mkdir();engine.write_bytes(b'original')
+        row=dict(logicalPath='../engine.js',**self.pin(engine))
+        self.spec['sourceEngineEvidence']={'sourceVersion':'2.4.15','files':[row]};self.write_request()
+        with self.assertRaisesRegex(ValueError,'ENGINE_EVIDENCE_INVALID'):self.run_prepare()
+        row['logicalPath']='engine.js';self.write_request();engine.write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError,'INPUT_CHANGED'):self.run_prepare()
+        self.assertFalse((self.root/'new').exists())
+
     def test_rendering_requires_explicit_spine_family_and_pinned_runtime(self):
         for value in ('true', 1, None, True):
             self.spec['spineRendering']=value;self.write_request()

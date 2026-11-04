@@ -190,7 +190,7 @@ def _same(actual, expected, keys):
     return all(actual.get(key) == expected.get(key) for key in keys)
 
 
-def _field_rows(specs, rows, owner, *, sort_root=False):
+def _field_rows(specs, rows, owner, *, sort_root=False, require_persistent=False):
     key = "sourceSortRoots" if sort_root else "sourceFields"
     if not isinstance(rows, list) or len(rows) != len(specs):
         return [f"{key} actual row count differs"]
@@ -202,6 +202,11 @@ def _field_rows(specs, rows, owner, *, sort_root=False):
             failures.append(f"{key}[{index}] is malformed")
             continue
         actual_ids.append(actual.get("sourceId"))
+        if require_persistent and (actual.get('markerPersistent') is not True or
+                not _GUID.fullmatch(actual.get('markerGuid') or '') or
+                type(actual.get('markerLocalFileId')) is not int or actual['markerLocalFileId']==0 or
+                not -(1<<63)<=actual['markerLocalFileId']<(1<<63)):
+            failures.append(f"{key}[{index}] saved marker identity is absent")
         source_values_match = _same(actual, expected, fields)
         if sort_root:
             source_values_match = source_values_match and actual.get("enabledInSource") == expected.get("enabled")
@@ -1760,8 +1765,14 @@ def _check_queue(spec, row, owner, mode, plan=None, spine_native_bindings=None):
     if row.get("sourceMaskReferencesVerified") is not True:
         failures.append(f"{mode} source mask component references are not verified")
     failures.extend(_check_source_mask_identities(spec, row, "loaded" if mode == "loaded" else "persistent", plan or {}))
-    failures.extend(_field_rows(spec.get("sourceFields", []), row.get("sourceFields"), owner))
-    failures.extend(_field_rows(spec.get("sourceSortRoots", []), row.get("sourceSortRoots"), owner, sort_root=True))
+    require_persistent=mode=='persistent' and bool((plan or {}).get('staticSortContinuation'))
+    if require_persistent and (row.get('driverPersistent') is not True or
+            not _GUID.fullmatch(row.get('driverGuid') or '') or
+            type(row.get('driverLocalFileId')) is not int or row['driverLocalFileId']==0 or
+            not -(1<<63)<=row['driverLocalFileId']<(1<<63)):
+        failures.append('persistent native sort driver identity is absent')
+    failures.extend(_field_rows(spec.get("sourceFields", []), row.get("sourceFields"), owner,require_persistent=require_persistent))
+    failures.extend(_field_rows(spec.get("sourceSortRoots", []), row.get("sourceSortRoots"), owner, sort_root=True,require_persistent=require_persistent))
     failures.extend(_check_graphics(spec, row, owner, "loaded" if mode == "loaded" else "persistent"))
     failures.extend(_check_text_sources(spec, row, "loaded" if mode == "loaded" else "persistent"))
     failures.extend(_check_spine_owner_delegations(spec, row, "loaded" if mode == "loaded" else "persistent", plan,

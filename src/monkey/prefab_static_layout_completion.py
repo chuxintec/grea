@@ -65,8 +65,11 @@ def _value_vector(value, expected=2):
 
 def _source_component(component_id, manifest_assets, sync_component_origins):
     origin_id = component_id
-    mapped = sync_component_origins.get(component_id, [])
-    if mapped:
+    seen=set()
+    while sync_component_origins.get(origin_id):
+        if origin_id in seen:return None,{'status':'source_component_origin_cycle'}
+        seen.add(origin_id)
+        mapped=sync_component_origins[origin_id]
         unique = sorted(set(mapped))
         if len(unique) != 1:
             return None, {"status": "source_component_origin_ambiguous", "candidates": unique}
@@ -396,7 +399,7 @@ def simulate_layout(slot: dict, owner_size: list[float], owner_anchor: list[floa
     sign = -1 if reverse else 1
     start = (padding[2] if axis == 0 else padding[3]) if reverse else p_before
     boundary = (1 - layout_anchor) * owner_length if reverse else -layout_anchor * owner_length
-    cursor = boundary + sign * start
+    cursor = boundary + sign * (start - gap)
     for active_index, child_index in enumerate(active_indices):
         result = children_out[child_index]
         factor = abs(result["scale"][axis]) if affected else 1.0
@@ -501,12 +504,12 @@ def simulate_widget_alignment(widget: dict, node: dict, target: dict,
             low_margin, high_margin = margins[0], margins[2]
             low_abs, high_abs = absolute[0], absolute[2]
             low = -target_anchor[axis] * target_len + (low_margin if low_abs else low_margin * target_len)
-            high = low + target_len - (high_margin if high_abs else high_margin * target_len)
+            high = -target_anchor[axis] * target_len + target_len - (high_margin if high_abs else high_margin * target_len)
         else:
             low_margin, high_margin = margins[1], margins[3]
             low_abs, high_abs = absolute[1], absolute[3]
             low = -target_anchor[axis] * target_len + (low_margin if low_abs else low_margin * target_len)
-            high = low + target_len - (high_margin if high_abs else high_margin * target_len)
+            high = -target_anchor[axis] * target_len + target_len - (high_margin if high_abs else high_margin * target_len)
         if target.get("explicit") is True:
             low = _widget_target_to_parent_axis(low, axis, chain)
             high = _widget_target_to_parent_axis(high, axis, chain)
@@ -543,7 +546,7 @@ def verify_readback(expected: dict, actual: list[dict], expected_geometry: dict 
     errors = []
     expected_nodes = {row["sourceNodeId"]: row for row in expected.get("nodes", [])}
     actual_nodes = {row.get("sourceNodeId"): row for row in actual or [] if isinstance(row, dict)}
-    if set(expected_nodes) != set(actual_nodes):
+    if len(actual_nodes)!=len(actual or [])or set(expected_nodes) != set(actual_nodes):
         errors.append("layout_completion_node_set_mismatch")
     for node_id, node_spec in expected_nodes.items():
         saved = actual_nodes.get(node_id)
