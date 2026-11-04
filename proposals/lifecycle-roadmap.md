@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "dev19/427bf4a原生14已保存重开11Prefab/668节点、missingScripts0，先前Spine规格异常不再出现；Python verify对staticMasks=null调用get崩溃，无最终回执且journal陈旧running。独立ps核4219/4237均不存在；不能据此伪造成功回执。新静态验收尚未完成，正式采用未跑。",
+      "description": "dev20/5555010经GREA公开verify15完整只读复核native14，3128输入不变；独立recover15回执已生成，旧journal不改、Unity退出码unknown、不可晋升。903分母637native/178retained/79disabled/9unsupported，整体fail。仍214排序诊断、53文字证据、24字体链不一致，6源Mask缺契约；正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -431,7 +431,8 @@
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-11-dev15-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-12-dev17-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-13-dev18-index.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-14-dev19-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-14-dev19-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-15-dev20-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -464,7 +465,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey修null mask合同与native_import异常finally回执，用固定native14实际plan/readback只读完成verify并给独立恢复回执；无C#需要不再启动Editor/解码。保真实mask证据门及整体源/视觉验收。",
+      "nextAction": "monkey按Canvas上下文/Mask/文字三模块修生产证据和转换，实际输入集成回归后固定交付；只读可关闭先只读，C#变动集中新原生，复用18PNG/字体。保源参考、像素栅格和完整视觉验收，不删false。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
