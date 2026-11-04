@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-04T12:47:54.238179+00:00",
+  "updatedAt": "2026-11-04T12:51:01.876604+00:00",
   "authority": "original-plan-owner; read-only projection, not canonical cutover",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "三仓库版本分支整改已实际执行回读：本地51→5，远端14→5。monkey已合并为唯一v0.8.0.dev9/265a123；GREA根目录旧120文件已收口，当前v1.1.0.dev2、工作区干净。四页下一步仅使用统一0.8工具继续真实字体/引用及采用核验；binary暂停。",
@@ -379,6 +379,18 @@
       "description": "根目录120文件已逐项处理：19已跟踪修改和13旧测试由新版覆盖；49消费者历史记录脱敏入Git 1c7e677后退休当前树；36无调用方维护脚本/日志直接删除；其余已在dev。现行计划由159KB收敛25KB并纳入开发线，根目录切到v1.1.0.dev2，git status无未提交文件。无全局安装或运行时修改。",
       "sourceRefs": [
         ".private/development/repository-cleanup-20261104/root-wip-classification.json"
+      ]
+    },
+    {
+      "id": "grea:T-zombie-bulk-static-prefabs",
+      "title": "monkey统一0.8线僵尸有源Prefab全量静态批处理与采用",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "planned",
+      "executionStatus": "queued_after_foodstreet_critical_path",
+      "description": "已原生核验human01a1a696-898d-7d42-8b1c-b50f44dea54e。起始161唯一地址根/601缓存来源，10已采用静态子集、151仅解析；原游戏全部包完整性未知，527目标文件不是源分母。由monkey程序核完整有源/嵌套根和依赖后直接批量生成原生Prefab，复用dev8/已验子集，beaver采用；不逐根人工恢复，不把动态代码当全静态前置。肥鹅四页优先、二进制暂停。",
+      "sourceRefs": [
+        "../../Manager/decisions/20261104-zombie-bulk-prefab-recovery/PLAN.md",
+        "../monkey/.private/unity-prefab-v080-20261104/source-prefab-inventory-with-adoption-02.json"
       ]
     }
   ],
