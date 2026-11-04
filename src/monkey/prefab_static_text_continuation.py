@@ -801,7 +801,8 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                     all(isinstance(path, str) and path in expected_paths for path in glyph_paths) and expected_primary_path in expected_paths,
                 "lineHeight": row.get("lineHeightConfigVerified") is True and expected_line_spacing is not None and
                     _number(row.get("nativeLineSpacing")) and abs(float(row["nativeLineSpacing"]) - expected_line_spacing) <= 0.001,
-                "nativeMeshMetrics": row.get("nativeMeshMeasured") is True and isinstance(row.get("inkBounds"), dict),
+                "nativeMeshMetrics": row.get("nativeMeshMeasured") is True and isinstance(row.get("inkBounds"), dict)
+                    and row.get('nativeBoundsKind')=='tmp-character-quad-local-bounds-not-pixel-ink',
             }
             if group.get("fontKind") != "bitmap-font":
                 checks["outlineIdentity"] = (not group.get("sourceOutlineEnabled") or

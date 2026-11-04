@@ -298,7 +298,8 @@ def _source_engine(path, expected_sha256):
 
 
 def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, output: str | Path,
-                      *, source_engine_file: str | Path, expected_source_engine_sha256: str) -> dict:
+                      *, source_engine_file: str | Path, expected_source_engine_sha256: str,
+                      reuse_rendering: dict | None = None) -> dict:
     """Build a complete source-component renderer plan and decoded page stage."""
     stage_root = Path(stage_root).resolve(strict=True)
     output = Path(output)
@@ -378,8 +379,18 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
     if len({json.dumps(x["stageSha256"], sort_keys=True) for x in material_profiles}) != 1:
         raise StaticSpineRenderingError("Spine source material references do not share one verified shader profile")
 
-    # Compute all data facts directly from the exact source bytes already
-    # copied by continuation. Only explicit false PMA data can render.
+    # Reuse only pages joined by exact source texture identity and source hash.
+    reusable={};reused_pages=set();decoded_pages=set();generated_pages={}
+    if reuse_rendering is not None:
+        if reuse_rendering.get('contract')!=CONTRACT or reuse_rendering.get('sourceManifestSha256')!=fragment['sourceManifestSha256']:
+            raise StaticSpineRenderingError('reused rendering belongs to another source contract')
+        for payload in reuse_rendering.get('payloads',[]):
+            if payload.get('role')!='decoded-source-astc-spine-page':continue
+            key=(payload.get('sourceTextureSourceId'),payload.get('sourceTextureSha256'))
+            if key in reusable and reusable[key]['sha256']!=payload.get('sha256'):
+                raise StaticSpineRenderingError('reused decoded page source identity is ambiguous')
+            reusable[key]=payload
+    from .prefab_static_spine_defaults import render_pma
     data_render = {}
     for data_id, row in data_by_id.items():
         scale_source = _source_scale(assets_by_id, data_id)
@@ -393,7 +404,8 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
         blend = _binary_slot_blend_modes(raw_skeleton)
         if blend.get("spineVersion") != row.get("sourceSpineVersion"):
             raise StaticSpineRenderingError(f"Spine source binary version drift: {data_id}")
-        if row.get("sourcePma", {}).get("valueKnown") is not True or row.get("sourcePma", {}).get("value") is not False:
+        effective_pma=render_pma(row)
+        if effective_pma is None:
             data_render[data_id] = {"eligible": False, "gap": "SOURCE_PMA_UNKNOWN_OR_TRUE", "blendEvidence": blend}
             continue
         atlas_text = read(atlas_path, max_bytes=16 * 1024 * 1024).decode("utf-8-sig")
@@ -412,26 +424,41 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
             if source_page_copy is None:
                 raise StaticSpineRenderingError(f"opaque ASTC page payload is absent: {data_id}:{texture_id}")
             astc_path = _source_payload(source_stage, source_page_copy)
-            from .normalize import open_texture
-            try:
-                image = open_texture(read(astc_path, max_bytes=128 * 1024 * 1024), ".astc").convert("RGBA")
-            except Exception as error:
-                raise StaticSpineRenderingError(f"ASTC page decode failed: {texture_id}:{type(error).__name__}:{error}") from error
+            key=(texture_id,page['sourceTextureSha256']);cached=reusable.get(key)
+            if cached is not None:
+                cached_path=inside(inside(stage_root,reuse_rendering['moduleStage']),cached['source'])
+                png_raw=read(cached_path,max_bytes=128*1024*1024)
+                import struct
+                if (sha(png_raw)!=cached.get('sha256')or len(png_raw)!=cached.get('bytes')or
+                    png_raw[:8]!=b'\x89PNG\r\n\x1a\n'or png_raw[12:16]!=b'IHDR'):
+                    raise StaticSpineRenderingError('reused decoded PNG bytes differ from source pin')
+                width,height=struct.unpack('>II',png_raw[16:24])
+                if (width,height)!=(cached.get('width'),cached.get('height')):
+                    raise StaticSpineRenderingError('reused decoded PNG dimensions differ from source pin')
+                reused_pages.add(key)
+            elif key in generated_pages:
+                png_raw,width,height=generated_pages[key]
+            else:
+                from .normalize import open_texture
+                try:
+                    image=open_texture(read(astc_path,max_bytes=128*1024*1024),'.astc').convert('RGBA')
+                except Exception as error:
+                    raise StaticSpineRenderingError(f'ASTC page decode failed: {texture_id}:{type(error).__name__}:{error}')from error
+                png_buffer=BytesIO();image.save(png_buffer,format='PNG',optimize=False)
+                png_raw=png_buffer.getvalue();width,height=image.size;decoded_pages.add(key)
+                generated_pages[key]=(png_raw,width,height)
             sampling = _atlas_page_sampling(atlas_text, page["sourcePageName"], data_id)
             png_target = f"{base}/pages/{hashlib.sha256(texture_id.encode()).hexdigest()[:20]}.png"
             png_relative = f"spine-static-rendering-payloads/decoded/{hashlib.sha256((texture_id+page['sourceTextureSha256']).encode()).hexdigest()[:24]}.png"
             png_file = inside(output, png_relative)
             png_file.parent.mkdir(parents=True, exist_ok=True)
-            png_buffer = BytesIO()
-            image.save(png_buffer, format="PNG", optimize=False)
-            png_raw = png_buffer.getvalue()
             if png_file.exists() and read(png_file, max_bytes=128 * 1024 * 1024) != png_raw:
                 raise StaticSpineRenderingError(f"decoded page payload collision: {png_relative}")
             if not png_file.exists():
                 png_file.write_bytes(png_raw)
             png_record = {"source": png_relative, "target": png_target, "sha256": sha(png_raw), "bytes": len(png_raw),
                           "role": "decoded-source-astc-spine-page", "sourceTextureSourceId": texture_id,
-                          "sourceTextureSha256": page["sourceTextureSha256"], "width": image.width, "height": image.height,
+                          "sourceTextureSha256": page["sourceTextureSha256"], "width": width, "height": height,
                           "sampling": sampling}
             meta = _meta_payload("spine-static-rendering", png_target, output, "texture",
                                  identity=texture_id, texture_profile=sampling)
@@ -466,13 +493,14 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
                 "graphicShaderName": "Monkey/SpineSourceGraphicProfile/Colored", "expectedSpineVersion": blend["spineVersion"],
                 "sourceDefaultScale": scale_source["value"], "targetUnitsPerSourcePixel": target_units["targetUnitsPerSourcePixel"],
                 "scaleEvidenceSha256": engine_sha, "unitMappingEvidence": target_units,
-                "premultipliedAlpha": False, "pages": page_specs,
+                "premultipliedAlpha": effective_pma, "pages": page_specs,
                 "requiredAnimations": [], "requiredSkins": []}
         page_payloads = data_render[data_id].get("pagePayloads", [])
         data_render[data_id].update({"eligible": True, "factorySpec": spec,
                                      "payloads": [skeleton_target, atlas_output, shader_row, graphic_row, *page_payloads],
                                      "sourceScaleEvidence": scale_source,
                                      "dataAssetGuidPolicy": "Unity AssetDatabase persistent identity readback"})
+        if row.get('effectivePma')is not None:data_render[data_id]['effectivePma']=row['effectivePma']
 
     # Eligibility is capability/data/context based, not activeInHierarchy:
     # templates and their sync instances must have matching renderer topology.
@@ -590,7 +618,9 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
                              "pmaOrReferenceGapCount": sum(not r["eligible"] for r in rows),
                              "dataAssetCount": len(data_render), "pmaOrScaleGapSourceDataIds": pma_gaps,
                              "sourceSlotBlendModeCounts": blend_totals,
-                             "decodedPageCount": sum(1 for p in unique.values() if p.get("role") == "decoded-source-astc-spine-page")}}
+                             "decodedPageCount": sum(1 for p in unique.values() if p.get("role") == "decoded-source-astc-spine-page"),
+                             "reusedDecodedSourceTextureCount":len(reused_pages),
+                             "newlyDecodedSourceTextureCount":len(decoded_pages)}}
     patched = dict(plan)
     patched["staticSpineRendering"] = rendering
     upgrade_atlas_mapping(patched, stage_root)

@@ -1,3 +1,5 @@
+2026-11-05 dev18 integration: Cocos static Spine binding and Python readback modules released; source-text reference module released after an actual controlled source capture. Root owns shared CLI/version/renderer default completion and all integrated files. No child owns Editor resources; GREA remains the sole actual continuation/export/native-import caller.
+
 2026-11-05 dev17: root closed the nested layout observation gate before GREA actual execution. All module writers are released; root remains the sole shared source writer. Fixed dev16 history remains unchanged; fresh execution must use dev17.
 
 2026-11-05 dev16 integration: sorting, source-oracle, text and diagnostic modules delivered; root owns shared CLI/versions/coverage/Importer and all released files. Existing fixed sources/candidates remain immutable. Source increment passed200 related checks and offline117-source compilation; actual fresh continuation/export/Editor stays with GREA54. No parallel Editor or binary work. Active unfinished tasks remain solely in GREA lifecycle-roadmap.

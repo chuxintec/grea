@@ -32,6 +32,12 @@ monkey export --plan /fresh/continuation/plan/plan.json --out /fresh/native-cand
 
 上述续接复用已解码 PNG、字体和 Spine SDK 字节；若主生成器改变，只刷新新 plan 中的生成器 pin，要求新候选重新观测原生单位映射。旧 plan、候选和证据保持不变。诊断报告保留历史记录，另列 `resolved`、`remaining`、`remaining-dynamic` 与精确持久身份依据；对象存在本身不能解除字段、算法或文字度量缺口。
 
+排序中的 Spine 数据交接分别识别 Unity-native binding plan 与 Cocos static rendering config。Cocos 路径核对 import-plan 内嵌配置和独立配置的原始字节，按源组件/实例/数据身份关联真实 SkeletonDataAsset，并核对持久 GUID/localID、骨架、Atlas、页纹理和材质引用。源与派生目录可以不同；骨架副本须字节一致，Atlas 仅允许有证明的页头名称替换，其余字节保持一致。
+
+`complete-static-spine-defaults` 接受 `monkey-static-spine-default-completion/1` 请求，字段为 `schemaVersion:1`、`plan`、`planManifest`、`sourceComponentEngine`；后三者均为 `{path,sha256}`。仅接受确定的 Cocos 2.4.15 `extensions/spine/Skeleton.js` pin，保持原始字段缺省事实，另记有效 `premultipliedAlpha` 默认值及组件/数据 ID 依据。冲突值不合并。它在新目录复用已固定 PNG，逐项核对 source texture ID/SHA、PNG SHA/尺寸；只有新增的源页调用解码器，报告复用和新增计数。旧 plan、字体及已解码页不重制。
+
+文字的源端观察入口见 [同版本源端文字参考](SOURCE-TEXT-REFERENCE.md)。历史设备状态与受控参考的验收条件分开；不能以 Unity 自己的测量证明源端保真。
+
 `spine` 族的非渲染静态载体保留原始数据、atlas 和未解码纹理页的真实 TextAsset 引用及哈希；未序列化的字段保留未知。它不依赖渲染 SDK，不代表动态 Spine 行为或视觉还原已完成。可选 `spineRuntime` 的 `manifest` 为同样的 `{path, sha256}`，`assetsRoot` 为 SDK 备份根目录绝对路径，用于显式 SDK 来源核查。
 
 准备完成的 `preparationStatus=prepared` 仅表示新 plan 已生成。已有诊断和部分恢复状态保留；必须继续 export、真实 native-import、保存重开回读与原有 `freeze-native-selection`。不能以续接报告替代原生验收或工程采用。

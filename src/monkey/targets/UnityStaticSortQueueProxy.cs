@@ -329,7 +329,7 @@ namespace Monkey.StaticSortQueueProxy
         public float sourceAlphaThreshold, actualAlphaThreshold;
     }
 
-    public static class UnityStaticSortQueueProxy
+    public static partial class UnityStaticSortQueueProxy
     {
         static string HashBytes(byte[] bytes)
         {
@@ -1915,7 +1915,8 @@ namespace Monkey.StaticSortQueueProxy
         sealed class SpineDataIdentityEvidence
         {
             public string sourceDataAssetId, dataAssetPath, dataAssetGuid, bindingPlanPath, bindingPlanSha256,
-                sourceManifestSha256;
+                sourceManifestSha256,dataAssetType,atlasAssetPath,atlasAssetGuid;
+            public long dataAssetLocalFileId;
         }
         [Serializable] sealed class SpineImportPlanEnvelope { public SpineImportPlanStage spineNativeStage; }
         [Serializable] sealed class SpineImportPlanStage
@@ -2255,6 +2256,9 @@ namespace Monkey.StaticSortQueueProxy
             UnityEngine.Object actualDataAsset, out SpineDataIdentityEvidence evidence, out string diagnostic)
         {
             evidence = null; diagnostic = null;
+            var staticResult=TryReadCocosStaticSpineDataIdentity(spec,sourceComponentId,actualDataAsset,
+                out var staticEvidence,out var staticDiagnostic,out var staticApplicable);
+            if(staticApplicable){evidence=staticEvidence;diagnostic=staticDiagnostic;return staticResult;}
             const string bindingPlanPath = "Assets/Game/Editor/Conversion/spine-native-binding-plan.json";
             if (spec == null || actualDataAsset == null || !File.Exists(bindingPlanPath))
             { diagnostic = "source-binding-plan-or-data-asset-missing"; return false; }

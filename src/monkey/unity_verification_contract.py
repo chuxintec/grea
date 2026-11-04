@@ -6,6 +6,7 @@ import re
 from .io import diagnostic
 
 DYNAMIC_ONLY={'SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE','ANIMATION_DYNAMIC_CURVES_NOT_LOWERED'}
+PROVENANCE_ONLY={'SYSTEM_FONT_PLATFORM_UNVERIFIED'}
 _RECONCILED_FAMILY_REQUIREMENTS={
     'MULTIPLE_LAYOUT_HANDOFF':{'layout-context','layout-algorithm'},
     'WIDGET_CONTEXT_UNSUPPORTED':{'layout-context','layout-algorithm'},
@@ -234,7 +235,7 @@ def statuses(editor,diagnostics,coverage,level):
                     if isinstance(row,dict) and isinstance(row.get('sourceId'),str)}
     resolved=[];blocking=[]
     for row in diagnostics:
-        if row.get('code') in DYNAMIC_ONLY:
+        if row.get('code') in DYNAMIC_ONLY|PROVENANCE_ONLY:
             continue
         source_id=row.get('sourceId')or row.get('sourceComponentId')
         covered=component_rows.get(source_id)

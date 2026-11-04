@@ -6,12 +6,21 @@ import math
 import hashlib
 import json
 import re
+from pathlib import Path
 
 from .io import diagnostic
 
 
 _SHA = re.compile(r"^[0-9a-f]{64}$")
 _GUID = re.compile(r"^[0-9a-f]{32}$")
+_COCOS_SPINE_DEFAULT_SOURCE_SHA256 = "7cdc119e26aa6dceec4bd78ae30dd08f39daa2f0da5d914d2197a730b558a5e8"
+_COCOS_SPINE_DEFAULT_SOURCE_URL = "https://raw.githubusercontent.com/cocos/cocos-engine/v2.4.15/extensions/spine/Skeleton.js"
+
+
+def _sha256_text(value):
+    return isinstance(value, str) and _SHA.fullmatch(value) is not None
+
+
 _TMP_STABLE_SLOT_FIELDS = (
     "slot", "disposition", "characterReferences", "visibleCharacterReferences",
     "textInfoVertexCount", "textInfoTriangleIndexCount", "textInfoNondegenerateTriangleCount",
@@ -52,6 +61,29 @@ def _spine_source_binding_fields_match(source_fields, component):
     bound = _spine_field_bindings(component)
     if not isinstance(source_fields, dict) or not isinstance(bound, dict):
         return False
+    if component.get("provider") == "cocos-static-spine-rendering":
+        # Cocos static render specs name only values serialized in the source
+        # component plus the independently profiled effective PMA value.
+        # Time scale remains a dynamic boundary and is not used to infer source
+        # animation behavior.
+        if not bound or set(source_fields) - (set(bound) | {"timeScale"}):
+            return False
+        for member, expected_value in bound.items():
+            if member not in source_fields:
+                return False
+            actual = source_fields[member]
+            if isinstance(expected_value, bool):
+                if actual not in ("True", "False") or (actual == "True") is not expected_value:
+                    return False
+            elif isinstance(expected_value, (int, float)) and not isinstance(expected_value, bool):
+                try:
+                    if float(actual) != float(expected_value):
+                        return False
+                except (TypeError, ValueError):
+                    return False
+            elif actual != expected_value:
+                return False
+        return True
     source_to_native = {
         "animation": "startingAnimation", "loop": "startingLoop",
         "premultipliedAlpha": "pmaVertexColors", "skin": "initialSkinName",
@@ -81,7 +113,7 @@ def _load_spine_binding_contract(plan, raw_bytes):
     """Validate the candidate-local, SHA-pinned native binding-plan bytes."""
     stage = plan.get("spineNativeStage") if isinstance(plan, dict) else None
     if not isinstance(stage, dict):
-        return None, ["Spine native stage is absent"]
+        return _load_cocos_static_spine_binding(plan, raw_bytes)
     expected_hash = stage.get("nativeBindingPlanSha256")
     if not isinstance(raw_bytes, bytes) or not _SHA.fullmatch(expected_hash or ""):
         return None, ["frozen Spine native binding-plan bytes/hash are absent"]
@@ -147,7 +179,382 @@ def _load_spine_binding_contract(plan, raw_bytes):
         errors.append("frozen Spine native binding component IDs do not exactly cover the import-plan Spine scope")
     if errors:
         return None, errors
-    return {"components": component_map, "dataAssets": data_map}, []
+    return {"provider": "unity-spine-native-binding",
+            "path": stage.get("nativeBindingPlanPath"),
+            "sha256": expected_hash,
+            "sourceManifestSha256": stage.get("sourceManifestSha256"),
+            "components": component_map, "dataAssets": data_map}, []
+
+
+def _valid_project_path(value):
+    return (isinstance(value, str) and value.startswith("Assets/") and
+            ".." not in value.split("/") and "\\" not in value)
+
+
+def _valid_payload_pin(row):
+    if not isinstance(row, dict):
+        return False
+    return (isinstance(row.get("source"), str) and row["source"] and
+            not row["source"].startswith("/") and ".." not in row["source"].split("/") and
+            _valid_project_path(row.get("target")) and
+            _sha256_text(row.get("sha256")) and
+            type(row.get("bytes")) is int and row["bytes"] > 0)
+
+
+def _source_field_state(row, name):
+    states = row.get("sourceFieldStates") if isinstance(row, dict) else None
+    return states.get(name) if isinstance(states, dict) else None
+
+
+def _cocos_static_field_bindings(component, factory, continuation_component, source_defaults,
+                                 data_asset_id, effective_pma):
+    """Normalize only serialized source render fields, never implicit defaults."""
+    rows = []
+    declarations = (
+        ("sourceAnimationSerialized", "sourceAnimation", "startingAnimation", "stringValue", str),
+        ("sourceLoopSerialized", "sourceLoop", "startingLoop", "boolValue", bool),
+        ("sourceSkinSerialized", "sourceSkin", "initialSkinName", "stringValue", str),
+    )
+    for serialized_key, source_key, member, value_key, expected_type in declarations:
+        serialized = component.get(serialized_key)
+        value = component.get(source_key)
+        if serialized is True:
+            if type(value) is not expected_type:
+                return None
+            rows.append({"member": member, value_key: value})
+        elif serialized is not False:
+            return None
+    pma = factory.get("premultipliedAlpha") if isinstance(factory, dict) else None
+    if type(pma) is not bool:
+        return None
+    states = continuation_component.get("sourceFieldStates") if isinstance(continuation_component, dict) else None
+    pma_state = states.get("premultipliedAlpha") if isinstance(states, dict) else None
+    if isinstance(pma_state, dict) and pma_state.get("present") is True:
+        if pma_state.get("status") != "serialized" or type(pma_state.get("value")) is not bool or pma_state["value"] != pma:
+            return None
+    elif isinstance(pma_state, dict) and pma_state.get("present") is False:
+        defaults = source_defaults if isinstance(source_defaults, dict) else {}
+        default_engine = defaults.get("sourceEngine")
+        source_ids = defaults.get("componentSourceIds")
+        data_ids = defaults.get("dataAssetSourceIds")
+        effective = effective_pma
+        if (defaults.get("contract") != "monkey-cocos-spine-version-defaults/1" or
+                defaults.get("sourceVersion") != "2.4.15" or
+                not isinstance(default_engine, dict) or
+                default_engine.get("logicalPath") != "extensions/spine/Skeleton.js" or
+                default_engine.get("sha256") != _COCOS_SPINE_DEFAULT_SOURCE_SHA256 or
+                not isinstance(defaults.get("fields"), dict) or
+                defaults["fields"].get("premultipliedAlpha") is not True or
+                not isinstance(source_ids, list) or component.get("sourceComponentId") not in source_ids or
+                not isinstance(data_ids, list) or data_asset_id not in data_ids or
+                not isinstance(effective, dict) or effective.get("valueKnown") is not True or
+                effective.get("value") is not True or
+                effective.get("source") != "pinned-source-version-default" or
+                effective.get("sourceVersion") != "2.4.15" or
+                effective.get("sourceEngineSha256") != default_engine.get("sha256") or pma is not True):
+            return None
+    else:
+        return None
+    rows.append({"member": "pmaVertexColors", "boolValue": pma})
+    return rows
+
+
+def _load_cocos_static_spine_binding(plan, raw_bytes):
+    """Validate the pinned Cocos static-render plan and expose canonical joins.
+
+    This binds saved static renderer evidence to its Cocos source/configuration;
+    it does not claim Cocos business behavior or animation was restored.
+    """
+    config_text = plan.get("staticSpineRenderingJson") if isinstance(plan, dict) else None
+    continuation_text = plan.get("staticSpineContinuationJson") if isinstance(plan, dict) else None
+    if not isinstance(config_text, str) or not isinstance(raw_bytes, bytes):
+        return None, ["pinned Cocos static Spine render config bytes are absent"]
+    expected = config_text.encode("utf-8")
+    if raw_bytes != expected:
+        return None, ["Cocos static Spine render config bytes differ from the pinned import-plan fragment"]
+    expected_hash = hashlib.sha256(raw_bytes).hexdigest()
+    try:
+        config = json.loads(raw_bytes.decode("utf-8"))
+        continuation = json.loads(continuation_text) if isinstance(continuation_text, str) else None
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None, ["pinned Cocos static Spine render/continuation config is not UTF-8 JSON"]
+    if not isinstance(config, dict) or not isinstance(continuation, dict):
+        return None, ["pinned Cocos static Spine config roots are malformed"]
+    manifest_sha = plan.get("sourceManifestSha256")
+    continuation_sha = hashlib.sha256(json.dumps(continuation, sort_keys=True,
+        separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    errors = []
+    if (config.get("contract") != "monkey-static-spine-rendering/1" or
+            config.get("sourceManifestSha256") != manifest_sha or
+            not _sha256_text(manifest_sha) or
+            continuation.get("sourceManifestSha256") != manifest_sha or
+            config.get("sourceContinuationSha256") != continuation_sha or
+            config.get("sourceCodeExecuted") is not False or
+            not isinstance(config.get("sourceEngine"), dict) or
+            not _sha256_text(config["sourceEngine"].get("sha256"))):
+        errors.append("Cocos static Spine render contract or manifest/continuation pins differ")
+    path = "Assets/Game/Editor/Conversion/spine-static-rendering.json"
+    if config.get("moduleStage") != "spine_static_rendering":
+        errors.append("Cocos static Spine render module stage differs")
+    components = config.get("components")
+    data_assets = config.get("dataAssets")
+    payloads = config.get("payloads")
+    continuation_components = continuation.get("components")
+    if (not isinstance(components, list) or not isinstance(data_assets, list) or
+            not isinstance(payloads, list) or not isinstance(continuation_components, list)):
+        errors.append("Cocos static Spine component/data/payload arrays are malformed")
+    for payload in payloads if isinstance(payloads, list) else []:
+        if not _valid_payload_pin(payload):
+            errors.append("Cocos static Spine config contains an invalid source/target payload pin")
+    component_plan = {row.get("sourceId"): row for row in plan.get("components", [])
+                      if isinstance(row, dict) and row.get("type") == "sp.Skeleton"}
+    continuation_data_rows = continuation.get("dataAssets")
+    continuation_data_map = {}
+    if isinstance(continuation_data_rows, list):
+        for data_row in continuation_data_rows:
+            data_id = data_row.get("sourceDataAssetId") if isinstance(data_row, dict) else None
+            if not isinstance(data_id, str) or not data_id or data_id in continuation_data_map:
+                errors.append("Cocos Spine continuation data asset identity is malformed or duplicated")
+                continue
+            continuation_data_map[data_id] = data_row
+    else:
+        errors.append("Cocos Spine continuation data asset array is malformed")
+    source_defaults = config.get("sourceComponentDefaults")
+    if source_defaults is not None:
+        default_engine = source_defaults.get("sourceEngine") if isinstance(source_defaults, dict) else None
+        component_default_ids = source_defaults.get("componentSourceIds") if isinstance(source_defaults, dict) else None
+        data_default_ids = source_defaults.get("dataAssetSourceIds") if isinstance(source_defaults, dict) else None
+        if (not isinstance(source_defaults, dict) or
+                source_defaults.get("contract") != "monkey-cocos-spine-version-defaults/1" or
+                source_defaults.get("sourceVersion") != "2.4.15" or
+                not isinstance(default_engine, dict) or
+                default_engine.get("logicalPath") != "extensions/spine/Skeleton.js" or
+                default_engine.get("sha256") != _COCOS_SPINE_DEFAULT_SOURCE_SHA256 or
+                default_engine.get("originUrl") != _COCOS_SPINE_DEFAULT_SOURCE_URL or
+                not isinstance(source_defaults.get("fields"), dict) or
+                source_defaults["fields"].get("premultipliedAlpha") is not True or
+                not isinstance(component_default_ids, list) or
+                not all(isinstance(item, str) and item for item in component_default_ids) or
+                len(component_default_ids) != len(set(component_default_ids)) or
+                not isinstance(data_default_ids, list) or
+                not all(isinstance(item, str) and item for item in data_default_ids) or
+                len(data_default_ids) != len(set(data_default_ids))):
+            errors.append("Cocos static Spine source component default evidence is malformed")
+    continuation_map = {}
+    for row in continuation_components if isinstance(continuation_components, list) else []:
+        sid = row.get("sourceComponentId") if isinstance(row, dict) else None
+        if not isinstance(sid, str) or not sid or sid in continuation_map:
+            errors.append("Cocos Spine continuation component identity is malformed or duplicated")
+            continue
+        continuation_map[sid] = row
+    component_map = {}
+    for row in components if isinstance(components, list) else []:
+        if not isinstance(row, dict):
+            errors.append("Cocos static Spine render component row is malformed")
+            continue
+        sid = row.get("sourceComponentId")
+        source = component_plan.get(sid)
+        continuation_row = continuation_map.get(sid)
+        if not isinstance(sid, str) or not sid or sid in component_map:
+            errors.append("Cocos static Spine render component ID is malformed or duplicated")
+            continue
+        if (source is None or continuation_row is None or
+                row.get("sourceNodeId") != source.get("node") or
+                continuation_row.get("sourceNodeId") != source.get("node") or
+                row.get("sourcePrefabId") != sid.partition("#")[0] or
+                continuation_row.get("sourcePrefabId") != sid.partition("#")[0] or
+                continuation_row.get("sourceComponentType") != "sp.Skeleton"):
+            errors.append(f"Cocos static Spine component does not map to exact import/continuation source: {sid}")
+        if (type(row.get("eligible")) is not bool or
+                type(row.get("sourceComponentEnabled")) is not bool or
+                row.get("sourceComponentEnabledStatus") != "plan-source-value" or
+                row.get("sourceCodeExecuted") is not False or
+                type(row.get("sourceVisible")) is not bool or
+                type(row.get("timeZeroOnly")) is not bool):
+            errors.append(f"Cocos static Spine component source/render boundary is malformed: {sid}")
+        source_ref = continuation_row.get("sourceDataReference") if isinstance(continuation_row, dict) else None
+        source_data_id = source_ref.get("sourceDataAssetId") if isinstance(source_ref, dict) else None
+        if (row.get("sourceDataAssetId") != source_data_id or
+                (source_data_id is not None and (not isinstance(source_data_id, str) or
+                 not source_data_id.startswith("spineAsset:")))):
+            errors.append(f"Cocos static Spine component data-asset mapping differs: {sid}")
+        if isinstance(source_data_id, str):
+            resolution = source_ref.get("uuidResolution") if isinstance(source_ref, dict) else None
+            if (source_data_id not in continuation_data_map or
+                    source_ref.get("status") != "source_reference_joined_exactly" or
+                    not isinstance(resolution, dict) or
+                    resolution.get("status") != "exact_redirect_chain_resolved" or
+                    resolution.get("canonicalSourceAssetId") != source_data_id):
+                errors.append(f"Cocos static Spine source UUID/data mapping is not exact: {sid}")
+        component_map[sid] = {
+            "sourceComponentId": sid,
+            "sourcePrefabId": row.get("sourcePrefabId"),
+            "sourceNodeId": row.get("sourceNodeId"),
+            "sourceHasStaticDataReference": isinstance(source_data_id, str) and bool(source_data_id),
+            "sourceDataAssetId": source_data_id,
+            "staticDataState": ("exact_data_asset_required" if source_data_id else
+                "source_uuid_absent_component_preserved_unbound"),
+            "provider": "cocos-static-spine-rendering",
+            "sourceRenderSpec": row,
+            "eligible": row.get("eligible"),
+            # Retain the familiar member binding shape for the shared typed
+            # field comparator, while distinguishing source-default omissions.
+            "targetFieldBindings": [],
+        }
+    expected_ids = set(component_plan)
+    if set(component_map) != expected_ids or set(continuation_map) != expected_ids:
+        errors.append("Cocos static Spine render/continuation component IDs do not exactly cover the plan scope")
+
+    data_map = {}
+    for data in data_assets if isinstance(data_assets, list) else []:
+        if not isinstance(data, dict):
+            errors.append("Cocos static Spine data asset row is malformed")
+            continue
+        asset_id = data.get("sourceDataAssetId")
+        factory = data.get("factorySpec")
+        atlas = data.get("nativeAtlasMapping")
+        if not isinstance(asset_id, str) or not asset_id or asset_id in data_map:
+            errors.append("Cocos static Spine data asset ID is malformed or duplicated")
+            continue
+        if data.get("eligible") is False and not isinstance(factory, dict):
+            data_map[asset_id] = {"sourceAssetId": asset_id, "skeletonDataAssetPath": None,
+                "factorySpec": None, "nativeAtlasMapping": None, "payloads": [],
+                "eligible": False, "gap": data.get("gap"),
+                "provider": "cocos-static-spine-rendering"}
+            continue
+        required_paths = (factory.get("skeletonDataAssetPath"), factory.get("atlasAssetPath"),
+                          factory.get("skeletonTextAssetPath"), factory.get("atlasTextAssetPath")) if isinstance(factory, dict) else ()
+        required_hashes = (factory.get("skeletonSha256"), factory.get("atlasSha256"),
+                           factory.get("shaderSha256"), factory.get("graphicShaderSha256"),
+                           factory.get("scaleEvidenceSha256")) if isinstance(factory, dict) else ()
+        data_payloads = data.get("payloads")
+        page_payloads = data.get("pagePayloads")
+        if (not isinstance(factory, dict) or factory.get("sourceAssetId") != asset_id or
+                not isinstance(atlas, dict) or atlas.get("sourceDataAssetId") != asset_id or
+                not all(_valid_project_path(value) for value in required_paths) or
+                not all(_sha256_text(value) for value in required_hashes) or
+                not isinstance(data_payloads, list) or not isinstance(page_payloads, list) or
+                type(data.get("eligible")) is not bool):
+            errors.append(f"Cocos static Spine factory/profile pins are malformed: {asset_id}")
+            continue
+        if (atlas.get("nativeAtlasSha256") != factory.get("atlasSha256") or
+                not isinstance(atlas.get("pages"), list) or not atlas["pages"] or
+                not isinstance(factory.get("pages"), list) or
+                len(factory["pages"]) != len(atlas["pages"])):
+            errors.append(f"Cocos static Spine native atlas mapping differs from factory pins: {asset_id}")
+        continuation_data = continuation_data_map.get(asset_id)
+        if (not isinstance(continuation_data, dict) or
+                atlas.get("sourceAtlasSha256") != continuation_data.get("sourceAtlasSha256") or
+                factory.get("skeletonSha256") != continuation_data.get("sourceNativeSha256") or
+                type(continuation_data.get("sourceNativeBytes")) is not int or
+                not isinstance(continuation_data.get("sourceAtlasPages"), list) or
+                len(continuation_data["sourceAtlasPages"]) != len(factory.get("pages", []))):
+            errors.append(f"Cocos static Spine factory bytes/atlas source pins differ from continuation: {asset_id}")
+        combined_payloads = [*data_payloads, *page_payloads]
+        if not all(_valid_payload_pin(item) for item in combined_payloads):
+            errors.append(f"Cocos static Spine source payload pins are malformed: {asset_id}")
+        skeleton_rows = [item for item in data_payloads if isinstance(item, dict) and
+                         item.get("role") == "source-spine-skeleton-bytes"]
+        atlas_rows = [item for item in data_payloads if isinstance(item, dict) and
+                      item.get("role") == "derived-native-spine-atlas-page-map"]
+        if (len(skeleton_rows) != 1 or skeleton_rows[0].get("target") != factory.get("skeletonTextAssetPath") or
+                skeleton_rows[0].get("sha256") != factory.get("skeletonSha256") or
+                isinstance(continuation_data, dict) and skeleton_rows[0].get("bytes") != continuation_data.get("sourceNativeBytes") or
+                len(atlas_rows) != 1 or atlas_rows[0].get("target") != factory.get("atlasTextAssetPath") or
+                atlas_rows[0].get("sha256") != factory.get("atlasSha256")):
+            errors.append(f"Cocos static Spine skeleton/atlas payloads do not match factorySpec pins: {asset_id}")
+        factory_pages = factory.get("pages", []) if isinstance(factory.get("pages"), list) else []
+        atlas_pages = atlas.get("pages", []) if isinstance(atlas.get("pages"), list) else []
+        source_pages = continuation_data.get("sourceAtlasPages", []) if isinstance(continuation_data, dict) else []
+        for page_index, page in enumerate(factory_pages):
+            if not isinstance(page, dict) or page_index >= len(atlas_pages) or page_index >= len(source_pages):
+                errors.append(f"Cocos static Spine factory page row is malformed: {asset_id}")
+                continue
+            atlas_page = atlas_pages[page_index]
+            source_page = source_pages[page_index]
+            page_payload = [item for item in page_payloads if isinstance(item, dict) and
+                            item.get("target") == page.get("textureAssetPath") and
+                            item.get("sha256") == page.get("textureSha256")]
+            if (not isinstance(atlas_page, dict) or not isinstance(source_page, dict) or
+                    source_page.get("sourcePageName") != page.get("sourceAtlasPage") or
+                    atlas_page.get("sourceAtlasPage") != page.get("sourceAtlasPage") or
+                    atlas_page.get("nativeAtlasPage") != page.get("nativeAtlasPage") or
+                    atlas_page.get("textureAssetPath") != page.get("textureAssetPath") or
+                    Path(page.get("textureAssetPath", "")).name != page.get("nativeAtlasPage") or
+                    not _valid_project_path(page.get("textureAssetPath")) or
+                    not _sha256_text(page.get("textureSha256")) or
+                    len(page_payload) != 1 or
+                    page_payload[0].get("sourceTextureSourceId") != source_page.get("sourceTextureSourceId") or
+                    page_payload[0].get("sourceTextureSha256") != source_page.get("sourceTextureSha256")):
+                errors.append(f"Cocos static Spine page mapping/payload differs from factorySpec pins: {asset_id}")
+        data_map[asset_id] = {
+            "sourceAssetId": asset_id,
+            "skeletonDataAssetPath": factory.get("skeletonDataAssetPath"),
+            "atlasAssetPath": factory.get("atlasAssetPath"),
+            "factorySpec": factory,
+            "nativeAtlasMapping": atlas,
+            "payloads": combined_payloads,
+            "eligible": data.get("eligible"),
+            "effectivePma": data.get("effectivePma"),
+            "provider": "cocos-static-spine-rendering",
+        }
+    referenced_ids = {row.get("sourceDataAssetId") for row in component_map.values()
+                      if isinstance(row.get("sourceDataAssetId"), str)}
+    if referenced_ids != set(data_map):
+        errors.append("Cocos static Spine data assets do not exactly match component source-data references")
+    if set(continuation_data_map) != referenced_ids:
+        errors.append("Cocos Spine continuation data asset IDs do not exactly match component source references")
+    if isinstance(source_defaults, dict):
+        expected_default_components = {sid for sid, row in continuation_map.items()
+            if isinstance(_source_field_state(row, "premultipliedAlpha"), dict) and
+               _source_field_state(row, "premultipliedAlpha").get("present") is False}
+        expected_default_data = {component_map[sid].get("sourceDataAssetId")
+            for sid in expected_default_components if sid in component_map and
+            isinstance(component_map[sid].get("sourceDataAssetId"), str)}
+        component_default_ids = source_defaults.get("componentSourceIds")
+        data_default_ids = source_defaults.get("dataAssetSourceIds")
+        if (not isinstance(component_default_ids, list) or
+                not all(isinstance(item, str) for item in component_default_ids) or
+                not isinstance(data_default_ids, list) or
+                not all(isinstance(item, str) for item in data_default_ids) or
+                set(component_default_ids) != expected_default_components or
+                set(data_default_ids) != expected_default_data):
+            errors.append("Cocos static Spine source-default evidence scope differs from omitted PMA source fields")
+    for sid, row in component_map.items():
+        asset_id = row.get("sourceDataAssetId")
+        if not asset_id:
+            continue
+        data = data_map.get(asset_id)
+        if data is None:
+            continue
+        continuation_row = continuation_map[sid]
+        bindings = (_cocos_static_field_bindings(row["sourceRenderSpec"], data["factorySpec"],
+            continuation_row, source_defaults, asset_id, data.get("effectivePma")) if data.get("eligible") is True and
+            row.get("eligible") is True else None)
+        if row.get("eligible") is True and data.get("eligible") is True and bindings is None:
+            errors.append(f"Cocos static Spine component has malformed serialized source field declarations: {sid}")
+        elif bindings is not None:
+            row["targetFieldBindings"] = bindings
+    if errors:
+        return None, errors
+    return {"provider": "cocos-static-spine-rendering", "path": path,
+            "sha256": expected_hash, "sourceManifestSha256": manifest_sha,
+            "sourceContinuationSha256": continuation_sha,
+            "components": component_map, "dataAssets": data_map}, []
+
+
+def _spine_binding_pin(plan, binding, *, source_null=False):
+    """Return the exact config identity expected on a native queue readback."""
+    stage = (plan or {}).get("spineNativeStage") or {}
+    if isinstance(binding, dict) and binding.get("provider") == "cocos-static-spine-rendering":
+        return (binding.get("path"), binding.get("sha256"),
+                binding.get("sourceManifestSha256"))
+    if source_null:
+        return ("Assets/Game/Editor/Conversion/spine-native-source-binding-plan.json",
+                stage.get("sourceNativeBindingPlanSha256"), stage.get("sourceManifestSha256"))
+    return (stage.get("nativeBindingPlanPath") or "Assets/Game/Editor/Conversion/spine-native-binding-plan.json",
+            stage.get("nativeBindingPlanSha256"),
+            stage.get("sourceManifestSha256"))
 
 
 def _valid_tmp_slot_enumeration(value, source_id):
@@ -712,6 +1119,7 @@ def _check_spine_owner_delegations(spec, queue_readback, mode, plan=None, spine_
             binding_plan = spine_stage
         component_rows = (binding_plan or {}).get("components", {})
         data_rows = (binding_plan or {}).get("dataAssets", {})
+        binding_path, binding_sha, binding_manifest = _spine_binding_pin(plan, binding_plan)
         if isinstance(component_rows, dict):
             expected_component = component_rows.get(source_id)
         else:
@@ -731,7 +1139,7 @@ def _check_spine_owner_delegations(spec, queue_readback, mode, plan=None, spine_
             expected_component.get("sourceHasStaticDataReference") is True and
             proof.get("sourceDataAssetId") == expected_component.get("sourceDataAssetId") and
             proof.get("sourceDataAssetPath") == expected_data[0].get("skeletonDataAssetPath") and
-            proof.get("sourceManifestSha256") == spine_stage.get("sourceManifestSha256"))
+            proof.get("sourceManifestSha256") == binding_manifest)
         if (proof.get("sourceNode") != source.get("node") or
                 proof.get("sourceGraphicType") != "Spine.Unity.SkeletonGraphic" or
                 proof.get("sourceIdentityComponentId") != source_id or
@@ -739,11 +1147,10 @@ def _check_spine_owner_delegations(spec, queue_readback, mode, plan=None, spine_
                 not isinstance(proof.get("sourceDataAssetPath"), str) or
                 not proof["sourceDataAssetPath"].startswith("Assets/") or
                 not _GUID.fullmatch(proof.get("sourceDataAssetGuid") or "") or
-                proof.get("sourceBindingPlanPath") != "Assets/Game/Editor/Conversion/spine-native-binding-plan.json" or
-                proof.get("sourceBindingPlanPath") != spine_stage.get("nativeBindingPlanPath") or
-                proof.get("sourceBindingPlanSha256") != spine_stage.get("nativeBindingPlanSha256") or
+                proof.get("sourceBindingPlanPath") != binding_path or
+                proof.get("sourceBindingPlanSha256") != binding_sha or
                 not _SHA.fullmatch(proof.get("sourceManifestSha256") or "") or
-                (spine_stage and not stage_mapping_matches) or
+                (binding_plan is not None and not stage_mapping_matches) or
                 proof.get("rootMeshVertexCount") != 0 or proof.get("rootMeshDelegated") is not True or
                 proof.get("sourceIdentityVerified") is not True or
                 proof.get("sourceDataReferenceVerified") is not True or
@@ -785,6 +1192,7 @@ def _check_spine_null_data_owners(spec, queue_readback, mode, plan=None, spine_n
         return [] if rows in (None, []) else [f"{mode} Spine source-null rows are outside the queue scope"]
     failures = []
     stage = (plan or {}).get("spineNativeStage") or {}
+    binding_path, binding_sha, binding_manifest = _spine_binding_pin(plan, spine_native_bindings, source_null=True)
     rows = queue_readback.get("spineNullDataOwners")
     if not isinstance(rows, list):
         return [f"{mode} Spine source-null data owner evidence is absent"]
@@ -917,11 +1325,11 @@ def _check_spine_null_data_owners(spec, queue_readback, mode, plan=None, spine_n
                 row.get("sourceNode") != expected.get("node") or component.get("node") != expected.get("node") or
                 component.get("enabled") is not expected.get("sourceEnabled") or
                 row.get("sourceStaticDataState") != "source_uuid_absent_component_preserved_unbound" or
-                row.get("sourceBindingPlanPath") != "Assets/Game/Editor/Conversion/spine-native-source-binding-plan.json" or
-                row.get("sourceBindingPlanSha256") != stage.get("sourceNativeBindingPlanSha256") or
-                row.get("sourceManifestSha256") != stage.get("sourceManifestSha256") or
+                row.get("sourceBindingPlanPath") != binding_path or
+                row.get("sourceBindingPlanSha256") != binding_sha or
+                row.get("sourceManifestSha256") != binding_manifest or
                 row.get("sourceMaterialClosureStatus") != "no-serialized-skeleton-data-no-render-material-closure" or
-                stage.get("sourceManifestSha256") != (plan or {}).get("sourceManifestSha256") or
+                binding_manifest != (plan or {}).get("sourceManifestSha256") or
                 not isinstance(row.get("rootMaterialEvidence"), str) or not row["rootMaterialEvidence"] or
                 row.get("sourceIdentityComponentId") != source_id or
                 # JsonUtility materializes an absent source-plan string as its
@@ -978,6 +1386,7 @@ def _check_spine_empty_pose_owners(spec, queue_readback, mode, plan=None, spine_
     stage = (plan or {}).get("spineNativeStage") or {}
     native_component_map = (spine_native_bindings or {}).get("components", {})
     native_data_map = (spine_native_bindings or {}).get("dataAssets", {})
+    binding_path, binding_sha, binding_manifest = _spine_binding_pin(plan, spine_native_bindings)
     actual_by_id = {}
 
     def named_fields(value):
@@ -1047,9 +1456,9 @@ def _check_spine_empty_pose_owners(spec, queue_readback, mode, plan=None, spine_
                 not isinstance(row.get("sourceDataAssetPath"), str) or
                 not row["sourceDataAssetPath"].startswith("Assets/Game/Content/Spine/") or
                 not _GUID.fullmatch(row.get("sourceDataAssetGuid") or "") or
-                row.get("sourceBindingPlanPath") != "Assets/Game/Editor/Conversion/spine-native-binding-plan.json" or
-                row.get("sourceBindingPlanSha256") != stage.get("nativeBindingPlanSha256") or
-                row.get("sourceManifestSha256") != stage.get("sourceManifestSha256") or
+                row.get("sourceBindingPlanPath") != binding_path or
+                row.get("sourceBindingPlanSha256") != binding_sha or
+                row.get("sourceManifestSha256") != binding_manifest or
                 row.get("sourceManifestSha256") != (plan or {}).get("sourceManifestSha256") or
                 not skin_match or row.get("sourceSkinRuntimeVerified") is not True or
                 type(row.get("defaultSkinRuntimeNull")) is not bool or

@@ -262,6 +262,7 @@ def test_verifies_bound_saved_prefab_metrics_without_claiming_source_visual_pari
                                  {"guid": "d" * 32, "localFileId": -13, "assetPath": FALLBACK_PATH}],
         "outlineConfigVerified": True, "outlineMaterialReadbackVerified": True,
         "nativeMeshMeasured": True, "inkBounds": {"hasVisibleGeometry": True},
+        "nativeBoundsKind": "tmp-character-quad-local-bounds-not-pixel-ink",
     }
     report = {
         "schemaVersion": 1, "contract": "monkey-static-text-metrics-readback/1",

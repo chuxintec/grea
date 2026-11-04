@@ -85,6 +85,7 @@ public static partial class MonkeyImporter
     {
         public string sourceLabelId, sourceOutlineId, sourceNodeId, sourceTextSha256, nativeTextSha256, status, fontKind;
         public string labelGuid, outlineGuid, outlineNativeType, fontGuid, nativeText, nativeFontAssetPath, nativeTextStyle;
+        public string nativeBoundsKind = "tmp-character-quad-local-bounds-not-pixel-ink";
         public long labelLocalFileId, outlineLocalFileId, fontLocalFileId;
         public bool persistentLabel, persistentOutline, sourceTextMatches, sourceStyleMatches,
             autoSizingConfigVerified, fontBindingVerified, glyphFontChainVerified,

@@ -61,6 +61,15 @@ def test_prepare_and_emit_with_synthetic_resource_providers(tmp_path, monkeypatc
     assert not scan([row['target']for row in fragment['payloads']])
     assert (candidate/spec['atlasTextAssetPath']).read_bytes()==(stage/fragment['moduleStage']/next(
         row['source']for row in fragment['payloads']if row['target']==spec['atlasTextAssetPath'])).read_bytes()
+    def unexpected_decode(*args):raise AssertionError('a pinned decoded page must not decode again')
+    monkeypatch.setattr(normalize,'open_texture',unexpected_decode)
+    reused=rendering.prepare(result['plan'],stage,runtime,stage/'spine_rendering_reused',
+        source_engine_file=engine,expected_source_engine_sha256='fixture',reuse_rendering=fragment)
+    assert reused['rendering']['summary']['reusedDecodedSourceTextureCount']==1
+    assert reused['rendering']['summary']['newlyDecodedSourceTextureCount']==0
+    old_page=next(r for r in fragment['payloads']if r['role']=='decoded-source-astc-spine-page')
+    new_page=next(r for r in reused['rendering']['payloads']if r['role']=='decoded-source-astc-spine-page')
+    assert old_page['sha256']==new_page['sha256']
 from monkey.prefab_static_spine_rendering import prepare_rendering, StaticSpineRenderingError
 
 

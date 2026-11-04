@@ -547,6 +547,7 @@ def export(plan_path, output):
             ('NativeStaticMaskIdentity.cs','Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticMaskIdentity.cs','static-mask-runtime/NativeStaticMaskIdentity.cs'),
             ('UnityStaticLayoutCompletionIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityStaticLayoutCompletionIntegration.cs')),'static-layout-editor'),
             ('UnityStaticTextMetrics.cs',str(Path(standard.unity('importer')).with_name('UnityStaticTextMetrics.cs')),'static-text-metrics-editor'),
+            ('UnityStaticSortSpineBinding.cs',str(Path(standard.unity('importer')).with_name('UnityStaticSortSpineBinding.cs')),'static-sort-spine-binding-editor'),
             ('NativeStaticLayoutCompletion.cs','Assets/Game/Scripts/Presentation/StaticLayout/NativeStaticLayoutCompletion.cs','static-layout-runtime'),
             ('UnityStaticAnimationIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityStaticAnimationIntegration.cs')),'static-animation-integration'),
             ('UnityStaticAnimationBindings.cs',str(Path(standard.unity('importer')).with_name('UnityStaticAnimationBindings.cs')),'static-animation-editor'),
@@ -779,6 +780,9 @@ def _static_sort_spine_bindings(plan, root):
     from ..prefab_spine_unity_readback import _relative_file, _sha
     stage = plan.get('spineNativeStage')
     if not isinstance(stage, dict):
+        if plan.get('staticSpineRenderingJson'):
+            path=inside(Path(root).resolve(),'Assets/Game/Editor/Conversion/spine-static-rendering.json')
+            return read(path,max_bytes=32*1024*1024) if path.is_file() else None
         return None
     path = _relative_file(Path(root).resolve(), stage.get('nativeBindingPlanPath'))
     if path is None or _sha(path) != stage.get('nativeBindingPlanSha256'):

@@ -171,6 +171,10 @@ def reconcile(diagnostics: list[dict], coverage: dict,
 
         if code in _DYNAMIC_CODES:
             classification, scope = 'remaining-dynamic', 'dynamic-behavior'
+        elif code=='SYSTEM_FONT_PLATFORM_UNVERIFIED':
+            # The historical device is provenance, not a missing serialized
+            # field. Controlled source-reference metrics have their own gates.
+            scope='historical-source-platform-provenance'
         elif code == 'COMPONENT_NOT_IMPORTED' and row.get('phase') == 'initial-component-creation':
             identity = None if source_id in duplicate_ids else _native_proof(source_id, covered)
             if identity is not None:

@@ -1219,6 +1219,221 @@ class StaticSortReadbackTests(unittest.TestCase):
         self.assertTrue(any("frozen Spine native binding-plan bytes/hash are absent" in row["message"]
                             for row in missing_plan_diagnostics))
 
+    def test_cocos_static_spine_binding_uses_exact_pinned_render_fragment_and_factory_payloads(self):
+        import hashlib
+        from src.monkey.prefab_static_sort_readback import (
+            _load_spine_binding_contract, _spine_source_binding_fields_match)
+
+        source_id = "prefab-a#0/components/0"
+        data_id = "spineAsset:data-a"
+        manifest_sha = "a" * 64
+        skeleton_sha, atlas_sha, texture_sha = "b" * 64, "c" * 64, "d" * 64
+        continuation = {"contract": "monkey-prefab-static-spine-continuation/1",
+            "sourceManifestSha256": manifest_sha, "dataAssets": [{"sourceDataAssetId": data_id,
+                "sourceNativeSha256": skeleton_sha, "sourceNativeBytes": 10,
+                "sourceSkeletonTextAssetPath": "Assets/Game/Content/Spine/SourceData/source.skel.bytes",
+                "sourceAtlasSha256": "9" * 64,
+                "sourceAtlasTextAssetPath": "Assets/Game/Content/Spine/SourceData/source.atlas.txt",
+                "sourceAtlasPages": [{"sourcePageName": "page.png", "sourceTextureSourceId": "spineAsset:texture-a",
+                    "sourceTextureSha256": "8" * 64}]}], "components": [{
+                "sourceComponentId": source_id, "sourcePrefabId": "prefab-a", "sourceNodeId": "node-a",
+                "sourceComponentType": "sp.Skeleton",
+                "sourceDataReference": {"sourceDataAssetId": data_id,
+                    "status": "source_reference_joined_exactly",
+                    "uuidResolution": {"status": "exact_redirect_chain_resolved",
+                        "canonicalSourceAssetId": data_id}},
+                "sourceFieldStates": {"premultipliedAlpha": {
+                    "present": True, "status": "serialized", "value": True}},
+            }]}
+        factory = {"sourceAssetId": data_id,
+            "skeletonDataAssetPath": "Assets/Game/Content/Spine/A/SkeletonData.asset",
+            "atlasAssetPath": "Assets/Game/Content/Spine/A/SpineAtlas.asset",
+            "skeletonTextAssetPath": "Assets/Game/Content/Spine/A/source.skel.bytes",
+            "atlasTextAssetPath": "Assets/Game/Content/Spine/A/source.atlas.txt",
+            "skeletonSha256": skeleton_sha, "atlasSha256": atlas_sha,
+            "shaderSha256": "e" * 64, "graphicShaderSha256": "f" * 64,
+            "scaleEvidenceSha256": "1" * 64, "premultipliedAlpha": True,
+            "pages": [{"sourceAtlasPage": "page.png", "nativeAtlasPage": "native.png",
+                       "sourceTextureSourceId": "spineAsset:texture-a",
+                       "textureAssetPath": "Assets/Game/Content/Spine/A/pages/native.png",
+                       "textureSha256": texture_sha}]}
+        payloads = [
+            {"source": "payloads/skeleton.bytes", "target": factory["skeletonTextAssetPath"],
+             "sha256": skeleton_sha, "bytes": 10, "role": "source-spine-skeleton-bytes"},
+            {"source": "payloads/atlas.txt", "target": factory["atlasTextAssetPath"],
+             "sha256": atlas_sha, "bytes": 11, "role": "derived-native-spine-atlas-page-map"},
+        ]
+        page_payload = {"source": "payloads/page.png", "target": factory["pages"][0]["textureAssetPath"],
+                        "sha256": texture_sha, "bytes": 12, "role": "decoded-source-astc-spine-page",
+                        "sourceTextureSourceId": "spineAsset:texture-a", "sourceTextureSha256": "8" * 64}
+        data = {"sourceDataAssetId": data_id, "eligible": True, "factorySpec": factory,
+            "nativeAtlasMapping": {"sourceDataAssetId": data_id, "nativeAtlasSha256": atlas_sha,
+                "sourceAtlasSha256": "9" * 64, "previousNativeAtlasSha256": "0" * 64,
+                "pages": [{"sourceAtlasPage": "page.png", "nativeAtlasPage": "native.png",
+                           "textureAssetPath": factory["pages"][0]["textureAssetPath"]}]},
+            "payloads": payloads, "pagePayloads": [page_payload]}
+        rendering_component = {"sourceComponentId": source_id, "sourcePrefabId": "prefab-a",
+            "sourceNodeId": "node-a", "sourceDataAssetId": data_id, "eligible": True,
+            "sourceComponentEnabled": True, "sourceComponentEnabledStatus": "plan-source-value",
+            "sourceAnimation": "idle", "sourceAnimationSerialized": True,
+            "sourceLoop": False, "sourceLoopSerialized": True,
+            "sourceSkin": "default", "sourceSkinSerialized": True,
+            "sourceVisible": True, "sourceCodeExecuted": False, "timeZeroOnly": True}
+        rendering = {"schemaVersion": 1, "contract": "monkey-static-spine-rendering/1",
+            "status": "prepared_static_spine_renderers", "moduleStage": "spine_static_rendering",
+            "sourceManifestSha256": manifest_sha,
+            "sourceContinuationSha256": hashlib.sha256(json.dumps(continuation, sort_keys=True,
+                separators=(",", ":"), ensure_ascii=False).encode()).hexdigest(),
+            "sourceEngine": {"path": "upstream/Skeleton.js", "sha256": "2" * 64,
+                             "sourceDefaultScale": 1.0, "evidence": ["pinned scale"]},
+            "sourceCodeExecuted": False, "components": [rendering_component],
+            "dataAssets": [data], "payloads": [*payloads, page_payload]}
+        plan = {"sourceManifestSha256": manifest_sha,
+            "components": [{"sourceId": source_id, "node": "node-a", "type": "sp.Skeleton"}],
+            "staticSpineContinuationJson": json.dumps(continuation, ensure_ascii=False, indent=2),
+            "staticSpineRenderingJson": json.dumps(rendering, ensure_ascii=False, indent=2)}
+        raw = plan["staticSpineRenderingJson"].encode()
+        binding, errors = _load_spine_binding_contract(plan, raw)
+        self.assertEqual([], errors)
+        self.assertEqual(binding["provider"], "cocos-static-spine-rendering")
+        self.assertEqual(binding["path"], "Assets/Game/Editor/Conversion/spine-static-rendering.json")
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), binding["sha256"])
+        self.assertEqual(binding["components"][source_id]["sourceDataAssetId"], data_id)
+        self.assertEqual(binding["dataAssets"][data_id]["skeletonDataAssetPath"], factory["skeletonDataAssetPath"])
+        source_fields = {"startingAnimation": "idle", "startingLoop": "False",
+                         "initialSkinName": "default", "pmaVertexColors": "True", "timeScale": "1"}
+        self.assertTrue(_spine_source_binding_fields_match(source_fields, binding["components"][source_id]))
+        wrong_fields = dict(source_fields, startingAnimation="other")
+        self.assertFalse(_spine_source_binding_fields_match(wrong_fields, binding["components"][source_id]))
+
+        self.assertTrue(_load_spine_binding_contract(plan, raw + b" ")[1])
+        wrong_manifest = copy.deepcopy(rendering)
+        wrong_manifest["sourceManifestSha256"] = "0" * 64
+        wrong_plan = copy.deepcopy(plan)
+        wrong_plan["staticSpineRenderingJson"] = json.dumps(wrong_manifest, ensure_ascii=False, indent=2)
+        self.assertTrue(any("manifest/continuation pins differ" in error for error in
+                            _load_spine_binding_contract(wrong_plan, wrong_plan["staticSpineRenderingJson"].encode())[1]))
+
+        wrong_map = copy.deepcopy(rendering)
+        wrong_map["components"][0]["sourceDataAssetId"] = "spineAsset:wrong"
+        wrong_plan = copy.deepcopy(plan)
+        wrong_plan["staticSpineRenderingJson"] = json.dumps(wrong_map, ensure_ascii=False, indent=2)
+        self.assertTrue(any("data-asset mapping differs" in error for error in
+                            _load_spine_binding_contract(wrong_plan, wrong_plan["staticSpineRenderingJson"].encode())[1]))
+
+        bad_payload = copy.deepcopy(rendering)
+        bad_payload["dataAssets"][0]["payloads"][0]["target"] = "Assets/../outside.bytes"
+        wrong_plan = copy.deepcopy(plan)
+        wrong_plan["staticSpineRenderingJson"] = json.dumps(bad_payload, ensure_ascii=False, indent=2)
+        self.assertTrue(any("payload" in error for error in
+                            _load_spine_binding_contract(wrong_plan, wrong_plan["staticSpineRenderingJson"].encode())[1]))
+
+        unsupported = copy.deepcopy(rendering)
+        unsupported["components"][0]["eligible"] = False
+        unsupported["components"][0]["gap"] = "SOURCE_PROFILE_GAP"
+        unsupported["dataAssets"][0] = {"sourceDataAssetId": data_id, "eligible": False,
+            "gap": "SOURCE_PROFILE_GAP"}
+        unsupported_plan = copy.deepcopy(plan)
+        unsupported_plan["staticSpineRenderingJson"] = json.dumps(unsupported, ensure_ascii=False, indent=2)
+        partial, errors = _load_spine_binding_contract(
+            unsupported_plan, unsupported_plan["staticSpineRenderingJson"].encode())
+        self.assertEqual([], errors)
+        self.assertIs(partial["components"][source_id]["eligible"], False)
+        self.assertIsNone(partial["dataAssets"][data_id]["skeletonDataAssetPath"])
+        self.assertFalse(_spine_source_binding_fields_match(source_fields, partial["components"][source_id]))
+
+    def test_cocos_static_spine_missing_pma_requires_exact_version_default_evidence(self):
+        import hashlib
+        from src.monkey.prefab_static_sort_readback import _load_spine_binding_contract
+
+        source_id = "prefab-default#0/components/0"
+        data_id = "spineAsset:default-data"
+        manifest_sha = "a" * 64
+        skeleton_sha, atlas_sha, texture_sha = "b" * 64, "c" * 64, "d" * 64
+        continuation = {"contract": "monkey-prefab-static-spine-continuation/1",
+            "sourceManifestSha256": manifest_sha, "dataAssets": [{"sourceDataAssetId": data_id,
+                "sourceNativeSha256": skeleton_sha, "sourceNativeBytes": 10,
+                "sourceSkeletonTextAssetPath": "Assets/Game/Content/Spine/SourceData/source.skel.bytes",
+                "sourceAtlasSha256": "9" * 64,
+                "sourceAtlasTextAssetPath": "Assets/Game/Content/Spine/SourceData/source.atlas.txt",
+                "sourceAtlasPages": [{"sourcePageName": "page.png", "sourceTextureSourceId": "spineAsset:texture-a",
+                    "sourceTextureSha256": "8" * 64}]}], "components": [{
+                "sourceComponentId": source_id, "sourcePrefabId": "prefab-default", "sourceNodeId": "node-a",
+                "sourceComponentType": "sp.Skeleton", "sourceDataReference": {
+                    "sourceDataAssetId": data_id, "status": "source_reference_joined_exactly",
+                    "uuidResolution": {"status": "exact_redirect_chain_resolved",
+                        "canonicalSourceAssetId": data_id}},
+                "sourceFieldStates": {"premultipliedAlpha": {
+                    "present": False, "status": "not_serialized_unknown", "value": None}},
+            }]}
+        rendering_component = {"sourceComponentId": source_id, "sourcePrefabId": "prefab-default",
+            "sourceNodeId": "node-a", "sourceDataAssetId": data_id, "eligible": True,
+            "sourceComponentEnabled": True, "sourceComponentEnabledStatus": "plan-source-value",
+            "sourceAnimation": "idle", "sourceAnimationSerialized": True,
+            "sourceLoop": False, "sourceLoopSerialized": False,
+            "sourceSkin": "default", "sourceSkinSerialized": True,
+            "sourceVisible": False, "sourceCodeExecuted": False, "timeZeroOnly": True}
+        factory = {"sourceAssetId": data_id, "premultipliedAlpha": True,
+            "effectivePma": {"valueKnown": True, "value": True,
+                "source": "pinned-source-version-default", "sourceVersion": "2.4.15",
+                "sourceEngineSha256": "7cdc119e26aa6dceec4bd78ae30dd08f39daa2f0da5d914d2197a730b558a5e8"}}
+        # Start from the complete valid fixture assembled by the prior test's
+        # public contract fields, with an explicitly pinned source-version default.
+        factory.update({"skeletonDataAssetPath": "Assets/Game/Content/Spine/A/SkeletonData.asset",
+            "atlasAssetPath": "Assets/Game/Content/Spine/A/SpineAtlas.asset",
+            "skeletonTextAssetPath": "Assets/Game/Content/Spine/A/source.skel.bytes",
+            "atlasTextAssetPath": "Assets/Game/Content/Spine/A/source.atlas.txt",
+            "skeletonSha256": skeleton_sha, "atlasSha256": atlas_sha,
+            "shaderSha256": "e" * 64, "graphicShaderSha256": "f" * 64,
+            "scaleEvidenceSha256": "1" * 64,
+            "pages": [{"sourceAtlasPage": "page.png", "nativeAtlasPage": "native.png",
+                "sourceTextureSourceId": "spineAsset:texture-a",
+                "textureAssetPath": "Assets/Game/Content/Spine/A/pages/native.png", "textureSha256": texture_sha}]})
+        payloads = [
+            {"source": "payloads/skeleton.bytes", "target": factory["skeletonTextAssetPath"],
+             "sha256": skeleton_sha, "bytes": 10, "role": "source-spine-skeleton-bytes"},
+            {"source": "payloads/atlas.txt", "target": factory["atlasTextAssetPath"],
+             "sha256": atlas_sha, "bytes": 11, "role": "derived-native-spine-atlas-page-map"},
+        ]
+        page = {"source": "payloads/page.png", "target": factory["pages"][0]["textureAssetPath"],
+                "sha256": texture_sha, "bytes": 12, "role": "decoded-source-astc-spine-page",
+                "sourceTextureSourceId": "spineAsset:texture-a", "sourceTextureSha256": "8" * 64}
+        data = {"sourceDataAssetId": data_id, "eligible": True, "effectivePma": factory["effectivePma"],
+            "factorySpec": factory, "payloads": payloads, "pagePayloads": [page],
+            "nativeAtlasMapping": {"sourceDataAssetId": data_id, "nativeAtlasSha256": atlas_sha,
+                "sourceAtlasSha256": "9" * 64, "previousNativeAtlasSha256": "0" * 64,
+                "pages": [{"sourceAtlasPage": "page.png", "nativeAtlasPage": "native.png",
+                           "textureAssetPath": factory["pages"][0]["textureAssetPath"]}]}}
+        source_defaults = {"contract": "monkey-cocos-spine-version-defaults/1", "sourceVersion": "2.4.15",
+            "sourceEngine": {"logicalPath": "extensions/spine/Skeleton.js",
+                "sha256": "7cdc119e26aa6dceec4bd78ae30dd08f39daa2f0da5d914d2197a730b558a5e8",
+                "originUrl": "https://raw.githubusercontent.com/cocos/cocos-engine/v2.4.15/extensions/spine/Skeleton.js"},
+            "fields": {"premultipliedAlpha": True}, "componentSourceIds": [source_id],
+            "dataAssetSourceIds": [data_id]}
+        rendering = {"schemaVersion": 1, "contract": "monkey-static-spine-rendering/1",
+            "status": "prepared_static_spine_renderers", "moduleStage": "spine_static_rendering",
+            "sourceManifestSha256": manifest_sha,
+            "sourceContinuationSha256": hashlib.sha256(json.dumps(continuation, sort_keys=True,
+                separators=(",", ":"), ensure_ascii=False).encode()).hexdigest(),
+            "sourceEngine": {"path": "upstream/Skeleton.js", "sha256": "3" * 64,
+                             "sourceDefaultScale": 1.0, "evidence": ["pinned scale"]},
+            "sourceCodeExecuted": False, "sourceComponentDefaults": source_defaults,
+            "components": [rendering_component], "dataAssets": [data],
+            "payloads": [*payloads, page]}
+        plan = {"sourceManifestSha256": manifest_sha,
+            "components": [{"sourceId": source_id, "node": "node-a", "type": "sp.Skeleton"}],
+            "staticSpineContinuationJson": json.dumps(continuation, ensure_ascii=False, indent=2),
+            "staticSpineRenderingJson": json.dumps(rendering, ensure_ascii=False, indent=2)}
+        binding, errors = _load_spine_binding_contract(plan, plan["staticSpineRenderingJson"].encode())
+        self.assertEqual([], errors)
+        self.assertTrue(binding["components"][source_id]["targetFieldBindings"])
+        without_defaults = copy.deepcopy(rendering)
+        without_defaults.pop("sourceComponentDefaults")
+        wrong_plan = copy.deepcopy(plan)
+        wrong_plan["staticSpineRenderingJson"] = json.dumps(without_defaults, ensure_ascii=False, indent=2)
+        self.assertTrue(any("source field declarations" in error for error in
+                            _load_spine_binding_contract(wrong_plan, wrong_plan["staticSpineRenderingJson"].encode())[1]))
+
     def test_spine_nondraw_owner_requires_exact_inactive_registered_children(self):
         from src.monkey.prefab_static_sort_readback import _check_spine_non_draw_children
         source_id = "source-spine-inactive"

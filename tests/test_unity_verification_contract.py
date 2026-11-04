@@ -11,6 +11,16 @@ from monkey.unity_verification_contract import native_diagnostics,coverage_readb
 
 
 class UnityVerificationContractTests(unittest.TestCase):
+    def test_historical_platform_caveat_preserves_history_without_replacing_metric_gates(self):
+        coverage=dict(components=[],nativeStaticValidation='pass',retentionValidation='pass',
+                      staticPresentationValidation=dict(status='pass'))
+        historical=dict(code='SYSTEM_FONT_PLATFORM_UNVERIFIED',sourceId='label',message='original device unknown')
+        result=statuses('pass',[historical],coverage,'editor')
+        self.assertEqual(result['nativeStaticValidation'],'pass')
+        metrics=dict(code='LABEL_METRICS_NOT_VERIFIED',sourceId='label',message='source comparison pending')
+        result=statuses('pass',[historical,metrics],coverage,'editor')
+        self.assertEqual(result['nativeStaticValidation'],'partial')
+        self.assertEqual(historical['message'],'original device unknown')
     def test_final_merge_preserves_source_provenance_and_distinct_messages(self):
         original={'code':'FIELD_UNPROVEN','sourceId':'source:component','location':'field/path',
                   'message':'first field','severity':'warning','origin':'source',
