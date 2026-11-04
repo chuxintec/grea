@@ -37,7 +37,7 @@ def inspect(path, data, mode='100644'):
         issues.append({'code': 'private_or_generated_path'})
     if len(data) > 2 * 1024 * 1024:
         issues.append({'code': 'oversized_source'})
-    if str(name).startswith('plugin/assets/') and name.suffix.lower() in ('.png','.svg'):
+    if (str(name).startswith('plugin/assets/') or str(name).startswith('plugin/skills/')) and name.suffix.lower() in ('.png','.svg'):
         try:
             if mode!='100644':raise ValueError('Brand assets must be non-executable regular files')
             validate_asset(str(name),data)

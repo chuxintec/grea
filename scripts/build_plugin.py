@@ -17,7 +17,7 @@ import tomllib
 import urllib.request
 
 from plugin_bundle import encoded, extract_runtime, inventory, read_source, sha256, verify_archive, write_archive
-from grea.brand_assets import validate_interface
+from grea.brand_assets import validate_interface, validate_skill_interfaces
 from product_projection import project as project_product
 from plugin_targets import target_config, runtime_lock, archive_name, client_launch
 
@@ -34,6 +34,7 @@ def write_product(source, destination, target="macos-arm64", revision="HEAD"):
                   if name.startswith('plugin/skills/') and name.endswith('/SKILL.md')}
         if len(expected) != len(set(expected)) or set(expected) != actual:
             raise ValueError('Plugin Skill set differs from declared stage architecture')
+        validate_skill_interfaces(lambda path:source[path][0],expected)
     destination.mkdir(parents=True, exist_ok=False)
     for name, (data, mode) in sorted(source.items()):
         # Preserve the audited public resource closure, including linked docs and fixtures.

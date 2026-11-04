@@ -1,0 +1,7 @@
+interface:
+  display_name: "GREA · 游戏开发"
+  short_description: "维护已采用的游戏工程，落实功能、JSON配置、资源与受影响验证"
+  default_prompt: "使用 $grea-develop，在现有工程范围内完成这项开发，并验证受影响的功能与资源。"
+  icon_small: "./assets/icon_64.png"
+  icon_large: "./assets/logo_light.svg"
+  brand_color: "#20C8A0"

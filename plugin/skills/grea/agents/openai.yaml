@@ -2,3 +2,6 @@ interface:
   display_name: "GREA · 游戏调研、恢复、开发与发布"
   short_description: "按调研、恢复、开发和发布四阶段组织技能，编排 monkey 与 beaver"
   default_prompt: "使用 $grea，根据我的目标和当前工程状态选择调研、恢复、开发或发布阶段，并按该阶段的证据与验收范围执行。"
+  icon_small: "./assets/icon_64.png"
+  icon_large: "./assets/logo_light.svg"
+  brand_color: "#20C8A0"

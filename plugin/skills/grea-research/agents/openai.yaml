@@ -1,0 +1,7 @@
+interface:
+  display_name: "GREA · 游戏调研"
+  short_description: "体验原版并分析核心循环、系统与开发成本，形成有来源的立项建议"
+  default_prompt: "使用 $grea-research，体验并分析这款游戏，整理有来源的玩法、技术边界和开发建议。"
+  icon_small: "./assets/icon_64.png"
+  icon_large: "./assets/logo_light.svg"
+  brand_color: "#20C8A0"

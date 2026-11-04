@@ -141,6 +141,8 @@ def acceptance(bundle):
         if skill_layout.is_file():
             check(installed_skills == sorted(json.loads(skill_layout.read_text(encoding='utf-8'))['canonical_skills']),
                   'Relocated plugin has a stale or missing Skill entry')
+            from grea.brand_assets import validate_skill_interfaces
+            validate_skill_interfaces(lambda path:(root/path).read_bytes(),installed_skills)
         work = base/'empty workspace'; work.mkdir()
         home = base/'clean home'; home.mkdir()
         if windows:

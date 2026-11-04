@@ -1,0 +1,7 @@
+interface:
+  display_name: "GREA · 游戏发布"
+  short_description: "构建明确身份的候选，分层验收目标运行与制品，并按授权交付发布"
+  default_prompt: "使用 $grea-release，构建并验收明确身份的候选，在已授权范围内交付或发布。"
+  icon_small: "./assets/icon_64.png"
+  icon_large: "./assets/logo_light.svg"
+  brand_color: "#20C8A0"

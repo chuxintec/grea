@@ -35,9 +35,9 @@
         "repository": "https://github.com/chuxintec/monkey",
         "tag": "v0.7.0",
         "commit": "86d47f35744a5af91614c417b00c8eaa2345baad",
-        "published": "candidate; not yet published"
+        "published": "2026-11-04T07:03:25Z"
       },
-      "releaseStatus": "packaged_candidate",
+      "releaseStatus": "official_release",
       "inFlight": "none"
     },
     {
@@ -73,9 +73,9 @@
         "repository": "https://github.com/chuxintec/beaver",
         "tag": "v0.6.0",
         "commit": "1074816d0e4c22940dea415754e587a6e8d29c3d",
-        "published": "candidate; not yet published"
+        "published": "2026-11-04T07:03:12Z"
       },
-      "releaseStatus": "packaged_candidate",
+      "releaseStatus": "official_release",
       "inFlight": "none"
     }
   ]

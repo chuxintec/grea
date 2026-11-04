@@ -1,5 +1,6 @@
 """Narrow, stdlib-only validation for grea's own brand assets, not arbitrary binaries."""
 import math
+import json
 from pathlib import PurePosixPath
 import re
 import struct
@@ -7,10 +8,13 @@ import xml.etree.ElementTree as ET
 import zlib
 
 SIZES=(24,32,64,128,512)
+SKILLS=('grea','grea-research','grea-recover','grea-develop','grea-release')
 
 
 def validate_asset(name,data):
     if len(data)>2*1024*1024:raise ValueError('Brand asset budget exceeded')
+    skill_asset=re.fullmatch(r'plugin/skills/(grea(?:-research|-recover|-develop|-release)?)/assets/(icon_64\.png|logo_light\.svg)',name)
+    if skill_asset:name='plugin/assets/'+skill_asset[2]
     match=re.fullmatch(r'plugin/assets/(icon|logo_light|logo_dark)(?:_(24|32|64|128|512))?\.(png|svg)',name)
     if not match:raise ValueError('Not an approved brand asset path')
     if match[3]=='svg':
@@ -52,6 +56,28 @@ def validate_asset(name,data):
     if len(pixels)!=expected or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:raise ValueError('PNG pixel stream differs from dimensions')
     if any(pixels[y*(1+width*4)]>4 for y in range(height)):raise ValueError('Invalid PNG row filter')
     return dict(format='png',width=width,height=height,alpha_channel=True)
+
+
+def validate_skill_interfaces(read, skills=SKILLS):
+    """Check quoted icon paths and exact own-brand bytes in each Skill closure."""
+    checked=[]
+    for skill in skills:
+        if skill not in SKILLS:raise ValueError('Unknown branded Skill')
+        base='plugin/skills/'+skill+'/'
+        try:metadata=read(base+'agents/openai.yaml').decode('utf-8')
+        except (KeyError,OSError) as error:raise ValueError('Missing Skill UI metadata: '+skill) from error
+        for field,asset in [('icon_small','icon_64.png'),('icon_large','logo_light.svg')]:
+            values=re.findall(r'^  '+field+r':\s*("[^\n]*")\s*$',metadata,re.MULTILINE)
+            if len(values)!=1 or json.loads(values[0])!='./assets/'+asset:
+                raise ValueError('Expected local quoted Skill icon path: '+skill+'/'+field)
+            try:
+                data=read(base+'assets/'+asset)
+                master=read('plugin/assets/'+asset)
+            except (KeyError,OSError) as error:raise ValueError('Missing Skill icon: '+skill+'/'+asset) from error
+            validate_asset(base+'assets/'+asset,data)
+            if data!=master:raise ValueError('Skill icon differs from approved brand asset: '+skill)
+        checked.append(skill)
+    return checked
 
 
 def validate_interface(manifest,read):

@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 from PIL import Image
-from grea.brand_assets import validate_asset, validate_interface
+from grea.brand_assets import validate_asset, validate_interface, validate_skill_interfaces, SKILLS
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
@@ -19,6 +19,22 @@ def png():
 
 
 class BrandTests(unittest.TestCase):
+    def test_five_skill_icon_closures_use_exact_brand_assets(self):
+        self.assertEqual(validate_skill_interfaces(lambda name:(ROOT/name).read_bytes()),list(SKILLS))
+
+    def test_skill_icon_escape_missing_or_changed_asset_refused(self):
+        for case in ('escape','missing','changed'):
+            def read(name):
+                data=(ROOT/name).read_bytes()
+                if name=='plugin/skills/grea/agents/openai.yaml' and case=='escape':
+                    return data.replace(b'./assets/icon_64.png',b'../assets/icon_64.png')
+                if name=='plugin/skills/grea/assets/icon_64.png':
+                    if case=='missing':raise FileNotFoundError(name)
+                    if case=='changed':return png()
+                return data
+            with self.subTest(case=case),self.assertRaises(ValueError):
+                validate_skill_interfaces(read)
+
     def test_narrow_asset_validation(self):
         self.assertEqual(validate_asset('plugin/assets/icon_64.png',png())['width'],64)
         for name,data in [('plugin/assets/anything.png',png()),('elsewhere/icon_64.png',png()),('plugin/assets/icon_64.png',png()+b'executable'),('plugin/assets/logo_dark.svg',b'<svg xmlns="http://www.w3.org/2000/svg"><script/></svg>')]:
