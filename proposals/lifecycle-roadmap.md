@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "dev22/663078d实际refresh/export17后native17越过旧owner pair异常，在嵌套文字slot1采集枚举变化处失败STATIC_SORT_PROXY_TEXT_SLOT_EVIDENCE_CHANGED_DURING_CAPTURE；PID18813退出。未达全75/36生命周期或完整UI验收；纹理/字体/Mask复用，正式采用未跑。",
+      "description": "dev23/a8ad990实际refresh/export18后native18失败SOURCE_IDENTITY_CHANGED，PID24866退出；新增完整快照定位final-prepare-pass2 slot1布局上下文validity False/False，文本/字体/字形/网格摘要一致，fallback临时→持久材质转换已记录。未达完整原生与静态验收，正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -434,7 +434,8 @@
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-14-dev19-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-15-dev20-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-16-dev21-index.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-17-dev22-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-17-dev22-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-18-dev23-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -467,7 +468,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey用native17实际多材质文字输入复现采集→注册→重建→再绑定全链，字段级枚举差异定位并修稳定采集，覆盖fallback/outline/inactive/嵌套，保全槽与身份门。固定refresh后GREA唯一Editor再验。",
+      "nextAction": "monkey修真实生产阶段textScaleContext采集时机和受控Canvas输入，保空占位/可绘制槽区分及严格fallback转换证据；实际失败快照回归并预检87队列/89槽，不把双无效当一致。固定refresh复用Mask/18PNG/字体。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
