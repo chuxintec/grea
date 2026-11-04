@@ -86,6 +86,7 @@ namespace Monkey.Targets.Spine
             public AtlasPageSpec[] pages;
             public string[] requiredAnimations;
             public string[] requiredSkins;
+            internal DataAssetSpec CopyForStaticCanvas() => (DataAssetSpec)MemberwiseClone();
         }
 
         [Serializable] public sealed class DataAssetReadback
@@ -1397,22 +1398,106 @@ namespace Monkey.Targets.Spine
             return Convert.ChangeType(value, type);
         }
 
+        // Resolve the serialized static source specification only after the caller
+        // verifies the actual Canvas unit context. Never use the asset's stored
+        // scale as its own expected value, or mutate the frozen source document.
+        public static DataAssetSpec ResolveStaticCanvasSpec(DataAssetSpec source, float verifiedCanvasPpu)
+        {
+            if (source == null) throw new InvalidOperationException("SPINE_STATIC_SPEC_FIELD_INVALID:source:expected=present;actual=null");
+            if (!IsFinite(verifiedCanvasPpu) || verifiedCanvasPpu <= 0f)
+                throw new InvalidOperationException("SPINE_STATIC_SPEC_FIELD_INVALID:canvasReferencePixelsPerUnit:expected=finite-positive;actual=" + verifiedCanvasPpu);
+            if (!IsFinite(source.sourceDefaultScale) || source.sourceDefaultScale <= 0f)
+                throw new InvalidOperationException("SPINE_STATIC_SPEC_FIELD_INVALID:sourceDefaultScale:expected=finite-positive;actual=" + source.sourceDefaultScale);
+            if (!IsFinite(source.targetUnitsPerSourcePixel) || source.targetUnitsPerSourcePixel <= 0f)
+                throw new InvalidOperationException("SPINE_STATIC_SPEC_FIELD_INVALID:targetUnitsPerSourcePixel:expected=finite-positive;actual=" + source.targetUnitsPerSourcePixel);
+            var resolved = source.CopyForStaticCanvas();
+            resolved.scale = source.sourceDefaultScale * source.targetUnitsPerSourcePixel / verifiedCanvasPpu;
+            if (!IsFinite(source.scale) || source.scale < 0f ||
+                (source.scale != 0f && Math.Abs(source.scale - resolved.scale) > 0.000001f))
+                throw new InvalidOperationException("SPINE_STATIC_SPEC_FIELD_INVALID:scale:expected=omitted-zero-or-derived-" + resolved.scale + ";actual=" + source.scale);
+            ValidateSpec(resolved);
+            return resolved;
+        }
+
+        // The same byte contract is used by sorting and the offline integration
+        // runner. Unity persistent GUID/object/reference validation remains in
+        // ReadDataAssetAsset and cannot be inferred from these file checks.
+        public static void ValidateStaticSpecAssetFiles(DataAssetSpec spec, Func<string, byte[]> readBytes)
+        {
+            ValidateSpec(spec);
+            if (readBytes == null) throw new ArgumentNullException(nameof(readBytes));
+            void Check(string field, string path, string expected)
+            {
+                if (String.IsNullOrWhiteSpace(path) || !path.StartsWith("Assets/", StringComparison.Ordinal) ||
+                    path.Contains("\\") || path.Split('/').Any(part => part == ".." || part == "." || part.Length == 0) || !IsSha(expected))
+                    throw new InvalidOperationException("SPINE_STATIC_FILE_FIELD_INVALID:" + field + ":expected=safe-Assets-path-and-sha256;actual=" + path);
+                var bytes = readBytes(path);
+                var actual = bytes == null ? "missing" : HashBytes(bytes);
+                if (actual != expected) throw new InvalidOperationException("SPINE_STATIC_FILE_SHA_MISMATCH:" + field + ":expected=" + expected + ";actual=" + actual);
+            }
+            Check("skeleton", spec.skeletonTextAssetPath, spec.skeletonSha256);
+            Check("atlas", spec.atlasTextAssetPath, spec.atlasSha256);
+            Check("shader", spec.shaderAssetPath, spec.shaderSha256);
+            Check("graphicShader", spec.graphicShaderAssetPath, spec.graphicShaderSha256);
+            void CheckGenerated(string field, string path)
+            {
+                if (String.IsNullOrWhiteSpace(path) || !path.StartsWith("Assets/", StringComparison.Ordinal) ||
+                    path.Contains("\\") || path.Split('/').Any(part => part == ".." || part == "." || part.Length == 0) || readBytes(path) == null)
+                    throw new InvalidOperationException("SPINE_STATIC_GENERATED_PATH_INVALID:" + field + ":expected=existing-safe-Assets-path;actual=" + path);
+            }
+            CheckGenerated("skeletonDataAssetPath", spec.skeletonDataAssetPath);
+            CheckGenerated("atlasAssetPath", spec.atlasAssetPath);
+            for (var i = 0; i < spec.pages.Length; i++)
+            {
+                var page = spec.pages[i]; var prefix = "pages/" + i + "/";
+                Check(prefix + "texture", page.textureAssetPath, page.textureSha256);
+                CheckGenerated(prefix + "normalMaterialAssetPath", page.normalMaterialAssetPath);
+                CheckGenerated(prefix + "graphicNormalMaterialAssetPath", page.graphicNormalMaterialAssetPath);
+                foreach (var variant in page.variants ?? Array.Empty<MaterialVariantSpec>())
+                {
+                    CheckGenerated(prefix + "variant/materialAssetPath", variant.materialAssetPath);
+                    CheckGenerated(prefix + "variant/graphicMaterialAssetPath", variant.graphicMaterialAssetPath);
+                }
+            }
+        }
+
         static void ValidateSpec(DataAssetSpec spec)
         {
-            if (spec == null || String.IsNullOrWhiteSpace(spec.sourceAssetId) ||
-                !IsSha(spec.skeletonSha256) || !IsSha(spec.atlasSha256) || !IsSha(spec.shaderSha256) ||
-                !IsSha(spec.graphicShaderSha256) || String.IsNullOrWhiteSpace(spec.graphicShaderAssetPath) ||
-                spec.graphicShaderName != UnitySpineGraphicMaterialPresentation.ExpectedUiShaderName ||
-                String.IsNullOrWhiteSpace(spec.skeletonDataAssetPath) || String.IsNullOrWhiteSpace(spec.atlasAssetPath) ||
-                !IsFinite(spec.scale) || spec.scale <= 0f || spec.pages == null || spec.pages.Length == 0)
-                throw new InvalidOperationException("SPINE_NATIVE_DATA_ASSET_SPEC_INVALID");
-            if (spec.pages.Any(page => page == null || String.IsNullOrWhiteSpace(page.sourceAtlasPage) ||
-                String.IsNullOrWhiteSpace(page.sourceTextureSourceId) || String.IsNullOrWhiteSpace(page.textureAssetPath) ||
-                String.IsNullOrWhiteSpace(page.normalMaterialAssetPath) ||
-                String.IsNullOrWhiteSpace(page.graphicNormalMaterialAssetPath) ||
-                (page.variants ?? Array.Empty<MaterialVariantSpec>()).Any(variant => variant == null ||
-                    String.IsNullOrWhiteSpace(variant.materialAssetPath) || String.IsNullOrWhiteSpace(variant.graphicMaterialAssetPath))))
-                throw new InvalidOperationException("SPINE_NATIVE_ATLAS_PAGE_SPEC_INVALID");
+            void Require(bool valid, string field, string expected, object actual)
+            {
+                if (!valid) throw new InvalidOperationException("SPINE_NATIVE_DATA_ASSET_SPEC_INVALID:" + field +
+                    ":expected=" + expected + ";actual=" + (actual ?? "null"));
+            }
+            Require(spec != null, "spec", "present", spec == null ? "null" : "present");
+            Require(!String.IsNullOrWhiteSpace(spec.sourceAssetId), "sourceAssetId", "nonempty", spec.sourceAssetId);
+            Require(IsSha(spec.skeletonSha256), "skeletonSha256", "sha256", spec.skeletonSha256);
+            Require(IsSha(spec.atlasSha256), "atlasSha256", "sha256", spec.atlasSha256);
+            Require(IsSha(spec.shaderSha256), "shaderSha256", "sha256", spec.shaderSha256);
+            Require(IsSha(spec.graphicShaderSha256), "graphicShaderSha256", "sha256", spec.graphicShaderSha256);
+            Require(!String.IsNullOrWhiteSpace(spec.graphicShaderAssetPath), "graphicShaderAssetPath", "nonempty", spec.graphicShaderAssetPath);
+            Require(spec.graphicShaderName == UnitySpineGraphicMaterialPresentation.ExpectedUiShaderName, "graphicShaderName",
+                UnitySpineGraphicMaterialPresentation.ExpectedUiShaderName, spec.graphicShaderName);
+            Require(!String.IsNullOrWhiteSpace(spec.skeletonDataAssetPath), "skeletonDataAssetPath", "nonempty", spec.skeletonDataAssetPath);
+            Require(!String.IsNullOrWhiteSpace(spec.atlasAssetPath), "atlasAssetPath", "nonempty", spec.atlasAssetPath);
+            Require(IsFinite(spec.scale) && spec.scale > 0f, "scale", "finite-positive", spec.scale);
+            Require(spec.pages != null && spec.pages.Length > 0, "pages", "nonempty", spec.pages == null ? "null" : spec.pages.Length.ToString());
+            for (var i = 0; i < spec.pages.Length; i++)
+            {
+                var page = spec.pages[i]; var prefix = "pages/" + i + "/";
+                Require(page != null, prefix, "present", "null");
+                Require(!String.IsNullOrWhiteSpace(page.sourceAtlasPage), prefix + "sourceAtlasPage", "nonempty", page.sourceAtlasPage);
+                Require(!String.IsNullOrWhiteSpace(page.sourceTextureSourceId), prefix + "sourceTextureSourceId", "nonempty", page.sourceTextureSourceId);
+                Require(!String.IsNullOrWhiteSpace(page.textureAssetPath), prefix + "textureAssetPath", "nonempty", page.textureAssetPath);
+                Require(!String.IsNullOrWhiteSpace(page.normalMaterialAssetPath), prefix + "normalMaterialAssetPath", "nonempty", page.normalMaterialAssetPath);
+                Require(!String.IsNullOrWhiteSpace(page.graphicNormalMaterialAssetPath), prefix + "graphicNormalMaterialAssetPath", "nonempty", page.graphicNormalMaterialAssetPath);
+                var variants = page.variants ?? Array.Empty<MaterialVariantSpec>();
+                for (var j = 0; j < variants.Length; j++)
+                {
+                    Require(variants[j] != null, prefix + "variants/" + j, "present", "null");
+                    Require(!String.IsNullOrWhiteSpace(variants[j].materialAssetPath), prefix + "variants/" + j + "/materialAssetPath", "nonempty", variants[j].materialAssetPath);
+                    Require(!String.IsNullOrWhiteSpace(variants[j].graphicMaterialAssetPath), prefix + "variants/" + j + "/graphicMaterialAssetPath", "nonempty", variants[j].graphicMaterialAssetPath);
+                }
+            }
         }
 
         static string[] ReadAtlasPageNames(string atlas)

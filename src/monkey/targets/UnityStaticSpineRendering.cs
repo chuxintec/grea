@@ -143,7 +143,8 @@ public static partial class MonkeyImporter
             var targetUnits = spec.targetUnitsPerSourcePixel;
             if (targetUnits <= 0f || Single.IsNaN(targetUnits) || Single.IsInfinity(targetUnits))
                 throw new InvalidOperationException("SPINE_RENDERING_TARGET_UNIT_MAPPING_UNVERIFIED:" + data.sourceDataAssetId);
-            spec.scale = spec.sourceDefaultScale * targetUnits / actualCanvasPpu;
+            spec = UnitySpineNativeFactory.ResolveStaticCanvasSpec(spec, actualCanvasPpu);
+            data.factorySpec = spec;
             var readback = UnitySpineNativeFactory.CreateDataAsset(spec);
             if (readback == null || !readback.staticDataVerified || !readback.nativeAssetIdentityVerified ||
                 !readback.savedSourceReferencesVerified || !readback.sourceProfileMaterialsVerified)

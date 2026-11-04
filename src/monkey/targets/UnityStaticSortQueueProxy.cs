@@ -2253,11 +2253,11 @@ namespace Monkey.StaticSortQueueProxy
         }
 
         static bool TryReadSpineDataIdentity(ProxyQueueSpec spec, string sourceComponentId,
-            UnityEngine.Object actualDataAsset, out SpineDataIdentityEvidence evidence, out string diagnostic)
+            UnityEngine.Object actualDataAsset, out SpineDataIdentityEvidence evidence, out string diagnostic, Graphic sourceOwner)
         {
             evidence = null; diagnostic = null;
             var staticResult=TryReadCocosStaticSpineDataIdentity(spec,sourceComponentId,actualDataAsset,
-                out var staticEvidence,out var staticDiagnostic,out var staticApplicable);
+                out var staticEvidence,out var staticDiagnostic,out var staticApplicable,sourceOwner);
             if(staticApplicable){evidence=staticEvidence;diagnostic=staticDiagnostic;return staticResult;}
             const string bindingPlanPath = "Assets/Game/Editor/Conversion/spine-native-binding-plan.json";
             if (spec == null || actualDataAsset == null || !File.Exists(bindingPlanPath))
@@ -2323,7 +2323,7 @@ namespace Monkey.StaticSortQueueProxy
             SpineDataIdentityEvidence dataEvidence = null;
             string dataDiagnostic = null;
             if (!TryReadSpineDataAsset(owner, out dataAsset) || dataAsset == null ||
-                !TryReadSpineDataIdentity(spec, row.sourceComponentId, dataAsset, out dataEvidence, out dataDiagnostic))
+                !TryReadSpineDataIdentity(spec, row.sourceComponentId, dataAsset, out dataEvidence, out dataDiagnostic, owner))
             { diagnostic = dataDiagnostic ?? "exact-source-skeleton-data-reference-missing"; return false; }
             if (!TryLoadPinnedSpineNullDataPlan(spec, out var planCache, out var planDiagnostic))
             { diagnostic = planDiagnostic; return false; }
@@ -2528,7 +2528,7 @@ namespace Monkey.StaticSortQueueProxy
                         ";dataGuid=<null>;binding=" + nullDataDiagnostic);
                 return Array.Empty<ProxySpineNonDrawChild>();
             }
-            if (!TryReadSpineDataIdentity(spec, row.sourceComponentId, dataAsset, out var dataEvidence, out var dataGap))
+            if (!TryReadSpineDataIdentity(spec, row.sourceComponentId, dataAsset, out var dataEvidence, out var dataGap, owner))
                 throw new InvalidOperationException("STATIC_SORT_PROXY_SPINE_NONDRAW_DATA_ASSET_NOT_BOUND: " + row.sourceComponentId +
                     ";dataGuid=" + AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(dataAsset)) + ";binding=" + dataGap);
             var registered = new List<CanvasRenderer>();
@@ -2820,7 +2820,7 @@ namespace Monkey.StaticSortQueueProxy
                 if (!TryReadSpineDataAsset(rootGraphic, out var dataAsset))
                     throw new InvalidOperationException("STATIC_SORT_PROXY_SPINE_OWNER_DELEGATION_DATA_REFERENCE_MISSING: " +
                         SpineMeshDiagnostic(row.sourceComponentId, rootGraphic, rootMesh));
-                if (!TryReadSpineDataIdentity(queue, row.sourceComponentId, dataAsset, out var dataEvidence, out var dataDiagnostic))
+                if (!TryReadSpineDataIdentity(queue, row.sourceComponentId, dataAsset, out var dataEvidence, out var dataDiagnostic, rootGraphic))
                     throw new InvalidOperationException("STATIC_SORT_PROXY_SPINE_OWNER_DELEGATION_DATA_REFERENCE_NOT_PERSISTENT: " +
                         SpineMeshDiagnostic(row.sourceComponentId, rootGraphic, rootMesh) + ";sourceDataGuid=" +
                         (dataEvidence == null ? "<unresolved>" : dataEvidence.dataAssetGuid) + ";sourceDataBinding=" + dataDiagnostic);
@@ -3523,7 +3523,7 @@ namespace Monkey.StaticSortQueueProxy
             var dataAssetMemberReadable = owner != null && TryReadSpineDataAsset(owner, out dataAsset) && dataAsset != null;
             var dataAssetReferenceMatchesStored = dataAssetMemberReadable && dataAsset == stored.sourceDataAssetReference;
             var dataAssetIdentityVerified = dataAssetMemberReadable && dataAssetReferenceMatchesStored &&
-                TryReadSpineDataIdentity(queueSpec, spec.sourceComponentId, dataAsset, out dataEvidence, out dataDiagnostic);
+                TryReadSpineDataIdentity(queueSpec, spec.sourceComponentId, dataAsset, out dataEvidence, out dataDiagnostic, owner);
             var dataAssetIdMatchesStored = dataAssetIdentityVerified && dataEvidence.sourceDataAssetId == stored.sourceDataAssetId;
             var dataAssetPathMatchesStored = dataAssetIdentityVerified && dataEvidence.dataAssetPath == stored.sourceDataAssetPath;
             var dataAssetGuidMatchesStored = dataAssetIdentityVerified && dataEvidence.dataAssetGuid == stored.sourceDataAssetGuid;
@@ -4560,7 +4560,7 @@ namespace Monkey.StaticSortQueueProxy
                 SpineDataIdentityEvidence dataEvidence = null; string dataDiagnostic = null;
                 var sourceDataReferenceVerified = hasActualData && actualData != null &&
                     actualData == proof.sourceDataAssetReference &&
-                    TryReadSpineDataIdentity(spec, proof.sourceComponentId, actualData, out dataEvidence, out dataDiagnostic) &&
+                    TryReadSpineDataIdentity(spec, proof.sourceComponentId, actualData, out dataEvidence, out dataDiagnostic, owner) &&
                     dataEvidence.sourceDataAssetId == proof.sourceDataAssetId &&
                     dataEvidence.dataAssetPath == proof.sourceDataAssetPath &&
                     dataEvidence.dataAssetGuid == proof.sourceDataAssetGuid &&
@@ -4868,7 +4868,7 @@ namespace Monkey.StaticSortQueueProxy
                 UnityEngine.Object dataAsset = null;
                 var hasDataAsset = TryReadSpineDataAsset(owner, out dataAsset);
                 SpineDataIdentityEvidence dataEvidence = null; string dataDiagnostic = null;
-                var dataOK = hasDataAsset && TryReadSpineDataIdentity(spec, sourceId, dataAsset, out dataEvidence, out dataDiagnostic);
+                var dataOK = hasDataAsset && TryReadSpineDataIdentity(spec, sourceId, dataAsset, out dataEvidence, out dataDiagnostic, owner);
                 var sourceIdentityOK = TryReadSpineIdentity(owner, sourceId, out var actualSourceIdentity);
                 var registered = new List<CanvasRenderer>();
                 var listReadable = TryReadSpineRendererList(owner, out registered);

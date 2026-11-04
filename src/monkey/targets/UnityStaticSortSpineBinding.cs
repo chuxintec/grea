@@ -11,6 +11,7 @@ using Monkey.Targets.Spine;
 using Spine.Unity;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 using DataAssetSpec = Monkey.Targets.Spine.UnitySpineNativeFactory.DataAssetSpec;
 
 namespace Monkey.StaticSortQueueProxy
@@ -140,7 +141,7 @@ namespace Monkey.StaticSortQueueProxy
         /// </summary>
         static bool TryReadCocosStaticSpineDataIdentity(ProxyQueueSpec spec,
             string sourceComponentId, UnityEngine.Object actualDataAsset,
-            out SpineDataIdentityEvidence evidence, out string diagnostic, out bool applicable)
+            out SpineDataIdentityEvidence evidence, out string diagnostic, out bool applicable, Graphic sourceOwner)
         {
             evidence = null;
             diagnostic = null;
@@ -231,8 +232,6 @@ namespace Monkey.StaticSortQueueProxy
                 { diagnostic = "cocos-static-spine-data-source-row-missing-or-ineligible"; return false; }
                 var dataRow = continuationDataRows[0];
                 var factorySpec = renderingDataRows[0].factorySpec;
-                if (!ValidateCocosSpineSourceDataClosure(dataRow, renderingDataRows[0], sourceComponentId,
-                    embeddedRendering, out diagnostic)) return false;
 
                 var renderingPath = Path.Combine(projectRoot, CocosStaticSpineRenderingPath);
                 if (!File.Exists(renderingPath))
@@ -269,6 +268,14 @@ namespace Monkey.StaticSortQueueProxy
                 // Reopen/read the actual serialized Spine asset with the pinned
                 // factory profile. This checks the actual skeleton/atlas bytes,
                 // page names, page textures, materials, shader and variants.
+                var canvas = sourceOwner == null ? null : sourceOwner.GetComponentInParent<Canvas>(true);
+                var scaler = canvas == null ? null : canvas.GetComponent<CanvasScaler>();
+                if (canvas == null || scaler == null || canvas.renderMode != RenderMode.ScreenSpaceOverlay ||
+                    (Single.IsNaN(canvas.referencePixelsPerUnit) || Single.IsInfinity(canvas.referencePixelsPerUnit)) || canvas.referencePixelsPerUnit <= 0f ||
+                    Math.Abs(canvas.referencePixelsPerUnit - scaler.referencePixelsPerUnit) > 0.001f)
+                { diagnostic = "cocos-static-spine-canvas-unit-context-unverified"; return false; }
+                factorySpec = ReadCocosStaticSpineSpecForValidation(Encoding.UTF8.GetString(importBytes),
+                    Encoding.UTF8.GetString(renderingBytes), sourceComponentId, canvas.referencePixelsPerUnit, projectRoot);
                 var readback = UnitySpineNativeFactory.ReadDataAssetAsset(factorySpec);
                 if (readback == null || !readback.nativeAssetIdentityVerified ||
                     !readback.savedSourceReferencesVerified || !readback.sourceProfileMaterialsVerified ||
@@ -304,9 +311,61 @@ namespace Monkey.StaticSortQueueProxy
             }
         }
 
+        // Shared production binding/spec boundary. The optional parser permits
+        // offline SDK diagnostics with the actual serialized input; Unity callers
+        // always use JsonUtility. It does not assert Unity GUID persistence.
+        public static DataAssetSpec ReadCocosStaticSpineSpecForValidation(string importJson,
+            string renderingJson, string sourceComponentId, float canvasPpu, string projectRoot,
+            Func<string, Type, object> deserialize = null)
+        {
+            if (deserialize == null) deserialize = (raw, type) => JsonUtility.FromJson(raw, type);
+            T Parse<T>(string raw) => (T)deserialize(raw, typeof(T));
+            var plan = Parse<CocosImportPlanSpineEnvelope>(importJson);
+            if (plan == null || String.IsNullOrWhiteSpace(plan.sourceManifestSha256) ||
+                plan.staticSpineRenderingJson != renderingJson)
+                throw new InvalidOperationException("COCOS_STATIC_SPEC_IMPORT_RENDERING_MISMATCH");
+            var rendering = Parse<CocosStaticSpineRenderingEnvelope>(renderingJson);
+            var continuation = Parse<CocosStaticSpineContinuationEnvelope>(plan.staticSpineContinuationJson);
+            if (rendering == null || continuation == null || rendering.schemaVersion != 1 || continuation.schemaVersion != 1 ||
+                rendering.contract != "monkey-static-spine-rendering/1" ||
+                continuation.contract != "monkey-prefab-static-spine-continuation/1" ||
+                rendering.sourceManifestSha256 != plan.sourceManifestSha256 || continuation.sourceManifestSha256 != plan.sourceManifestSha256 ||
+                String.IsNullOrWhiteSpace(rendering.sourceContinuationSha256))
+                throw new InvalidOperationException("COCOS_STATIC_SPEC_SOURCE_CONTRACT_MISMATCH");
+            var all = rendering.components ?? Array.Empty<CocosStaticSpineRenderingComponent>();
+            var exact = all.Where(x => x != null && x.sourceComponentId == sourceComponentId).ToArray();
+            var rows = exact.Length > 0 ? exact : all.Where(x => x != null && x.templateComponentId == sourceComponentId).ToArray();
+            if (rows.Length != 1 || !rows[0].eligible) throw new InvalidOperationException("COCOS_STATIC_SPEC_COMPONENT_MISSING_OR_AMBIGUOUS");
+            var component = rows[0];
+            var sourceRows = (continuation.components ?? Array.Empty<CocosStaticSpineContinuationComponent>())
+                .Where(x => x != null && x.sourceComponentId == component.sourceComponentId).ToArray();
+            if (sourceRows.Length != 1 || sourceRows[0].sourceNodeId != component.sourceNodeId ||
+                sourceRows[0].sourcePrefabId != component.sourcePrefabId || sourceRows[0].sourceTemplateComponentId != component.templateComponentId ||
+                sourceRows[0].sourceDataReference == null || sourceRows[0].sourceDataReference.status != "source_reference_joined_exactly" ||
+                sourceRows[0].sourceDataReference.sourceDataAssetId != component.sourceDataAssetId)
+                throw new InvalidOperationException("COCOS_STATIC_SPEC_COMPONENT_SOURCE_IDENTITY_MISMATCH");
+            var renderData = (rendering.dataAssets ?? Array.Empty<CocosStaticSpineRenderingData>())
+                .Single(x => x != null && x.sourceDataAssetId == component.sourceDataAssetId && x.eligible);
+            var sourceData = (continuation.dataAssets ?? Array.Empty<CocosStaticSpineContinuationData>())
+                .Single(x => x != null && x.sourceDataAssetId == component.sourceDataAssetId);
+            byte[] Read(string relative)
+            {
+                if (String.IsNullOrWhiteSpace(relative) || !relative.StartsWith("Assets/", StringComparison.Ordinal) ||
+                    relative.Contains("\\") || relative.Split('/').Any(part => part == ".." || part == "." || part.Length == 0))
+                    throw new InvalidOperationException("COCOS_STATIC_SPEC_UNSAFE_SOURCE_PATH:" + relative);
+                var path = Path.Combine(projectRoot, relative);
+                return File.Exists(path) ? File.ReadAllBytes(path) : null;
+            }
+            if (!ValidateCocosSpineSourceDataClosure(sourceData, renderData, component.sourceComponentId, rendering, out var diagnostic, Read))
+                throw new InvalidOperationException(diagnostic);
+            var resolved = UnitySpineNativeFactory.ResolveStaticCanvasSpec(renderData.factorySpec, canvasPpu);
+            UnitySpineNativeFactory.ValidateStaticSpecAssetFiles(resolved, Read);
+            return resolved;
+        }
+
         static bool ValidateCocosSpineSourceDataClosure(CocosStaticSpineContinuationData data,
             CocosStaticSpineRenderingData renderingData, string sourceComponentId,
-            CocosStaticSpineRenderingEnvelope rendering, out string diagnostic)
+            CocosStaticSpineRenderingEnvelope rendering, out string diagnostic, Func<string, byte[]> readBytes)
         {
             diagnostic = null;
             var spec = renderingData == null ? null : renderingData.factorySpec;
@@ -323,22 +382,22 @@ namespace Monkey.StaticSortQueueProxy
             // in different source-data/rendering directories. Path equality is
             // not an identity requirement; each independently pinned copy must
             // match its own source or derived hash.
-            var sourceSkeleton = AssetDatabase.LoadAssetAtPath<TextAsset>(data.sourceSkeletonTextAssetPath);
-            var nativeSkeleton = AssetDatabase.LoadAssetAtPath<TextAsset>(spec.skeletonTextAssetPath);
+            var sourceSkeleton = readBytes(data.sourceSkeletonTextAssetPath);
+            var nativeSkeleton = readBytes(spec.skeletonTextAssetPath);
             if (sourceSkeleton == null || nativeSkeleton == null ||
-                data.sourceNativeBytes <= 0 || sourceSkeleton.bytes.LongLength != data.sourceNativeBytes ||
-                HashBytes(sourceSkeleton.bytes) != data.sourceNativeSha256 ||
-                HashBytes(nativeSkeleton.bytes) != spec.skeletonSha256 ||
-                !sourceSkeleton.bytes.SequenceEqual(nativeSkeleton.bytes))
+                data.sourceNativeBytes <= 0 || sourceSkeleton.LongLength != data.sourceNativeBytes ||
+                HashBytes(sourceSkeleton) != data.sourceNativeSha256 ||
+                HashBytes(nativeSkeleton) != spec.skeletonSha256 ||
+                !sourceSkeleton.SequenceEqual(nativeSkeleton))
             { diagnostic = "cocos-static-spine-source-and-render-skeleton-bytes-differ"; return false; }
 
-            var sourceAtlas = AssetDatabase.LoadAssetAtPath<TextAsset>(data.sourceAtlasTextAssetPath);
-            var nativeAtlas = AssetDatabase.LoadAssetAtPath<TextAsset>(spec.atlasTextAssetPath);
+            var sourceAtlas = readBytes(data.sourceAtlasTextAssetPath);
+            var nativeAtlas = readBytes(spec.atlasTextAssetPath);
             var mapping = renderingData.nativeAtlasMapping;
             if (sourceAtlas == null || nativeAtlas == null || mapping == null ||
-                data.sourceAtlasBytes <= 0 || sourceAtlas.bytes.LongLength != data.sourceAtlasBytes ||
-                HashBytes(sourceAtlas.bytes) != data.sourceAtlasSha256 ||
-                HashBytes(nativeAtlas.bytes) != spec.atlasSha256 ||
+                data.sourceAtlasBytes <= 0 || sourceAtlas.LongLength != data.sourceAtlasBytes ||
+                HashBytes(sourceAtlas) != data.sourceAtlasSha256 ||
+                HashBytes(nativeAtlas) != spec.atlasSha256 ||
                 mapping.sourceDataAssetId != data.sourceDataAssetId ||
                 mapping.sourceAtlasSha256 != data.sourceAtlasSha256 || mapping.nativeAtlasSha256 != spec.atlasSha256 ||
                 mapping.pages == null || mapping.pages.Length != spec.pages.Length ||
@@ -366,14 +425,14 @@ namespace Monkey.StaticSortQueueProxy
                     sourcePage.sourceTextureSourceId != factoryPage.sourceTextureSourceId ||
                     String.IsNullOrWhiteSpace(sourcePage.sourceTexturePath) || String.IsNullOrWhiteSpace(sourcePage.sourceTextureSha256))
                 { diagnostic = "cocos-static-spine-source-page-identity-differs-from-factory-profile:" + i; return false; }
-                var opaquePage = AssetDatabase.LoadAssetAtPath<TextAsset>(sourcePage.sourceTexturePath);
+                var opaquePage = readBytes(sourcePage.sourceTexturePath);
                 if (opaquePage == null || sourcePage.sourceTextureBytes <= 0 ||
-                    opaquePage.bytes.LongLength != sourcePage.sourceTextureBytes ||
-                    HashBytes(opaquePage.bytes) != sourcePage.sourceTextureSha256)
+                    opaquePage.LongLength != sourcePage.sourceTextureBytes ||
+                    HashBytes(opaquePage) != sourcePage.sourceTextureSha256)
                 { diagnostic = "cocos-static-spine-opaque-source-page-bytes-differs-from-pin:" + i; return false; }
             }
-            if (!TryRewriteAtlasPageHeaders(sourceAtlas.bytes, mapping.pages, out var expectedNativeAtlas) ||
-                !expectedNativeAtlas.SequenceEqual(nativeAtlas.bytes))
+            if (!TryRewriteAtlasPageHeaders(sourceAtlas, mapping.pages, out var expectedNativeAtlas) ||
+                !expectedNativeAtlas.SequenceEqual(nativeAtlas))
             { diagnostic = "cocos-static-spine-native-atlas-is-not-lossless-page-header-remap"; return false; }
             return true;
         }
@@ -468,10 +527,9 @@ namespace Monkey.StaticSortQueueProxy
                 fields != null && fields.premultipliedAlpha &&
                 (defaults.componentSourceIds ?? Array.Empty<string>()).Contains(sourceComponentId, StringComparer.Ordinal) &&
                 (defaults.dataAssetSourceIds ?? Array.Empty<string>()).Contains(data.sourceDataAssetId, StringComparer.Ordinal);
-            return raw != null && raw.unknownComponentCount > 0 && raw.knownValues != null && raw.knownValues.Length > 0 &&
+            return raw != null && raw.unknownComponentCount > 0 && raw.knownValues != null &&
                 raw.knownValues.All(value => value) && exactDefaults &&
-                EffectivePmaMatches(effective, spec) && EffectivePmaMatches(renderEffective, spec) &&
-                JsonUtility.ToJson(effective) == JsonUtility.ToJson(renderEffective);
+                EffectivePmaMatches(effective, spec) && EffectivePmaMatches(renderEffective, spec);
         }
 
         static bool EffectivePmaMatches(CocosStaticSpineEffectivePma evidence, DataAssetSpec spec)

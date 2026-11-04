@@ -57,3 +57,12 @@ monkey export --plan /fresh/refresh/plan/plan.json --out /fresh/native-candidate
 已有原生结果可使用 `monkey verify --candidate /saved/native-candidate --level editor --out /fresh/verification` 只读重验。保存后 meta 的原始生成 SHA 与 `nativeFiles` 中的保存 SHA 分开记录；仅当原生成器能逐字节重建原始 pin、GUID/importer/有效字段保持、保存字节与回读 pin 相符时，允许 Unity 省略空的 `userData`、`assetBundleName`、`assetBundleVariant`。除此之外的字节变化仍拒绝，不能跳过所有 `.meta` 差异。
 
 同一源组件的非渲染载体与真实渲染器是两个角色，分别核对持久身份和各自证据。载体负责原字段和引用保留，渲染器负责可见初态；两者互不代替，也不改变源组件分母。保存侧证据先通过主回读中的完整文件集与 SHA 绑定，再参与角色归并；绑定失败时保留根因，不把下游未获证明的表达提升为通过。保存验证仍不代表视觉、交互或 Player 通过。
+
+
+Static Spine sorting uses the same `ResolveStaticCanvasSpec` method as asset creation. Frozen Cocos JSON carries sourceDefaultScale and targetUnitsPerSourcePixel, leaving the resolved scale absent. A verified source Canvas/CanvasScaler context supplies referencePixelsPerUnit; the expected data scale is computed from these independent inputs before the factory reopens the asset. A saved asset's own scale is never used as its expected value. Invalid explicit scales, missing source facts and invalid Canvas contexts are rejected with field-level expected/actual diagnostics.
+
+`ReadCocosStaticSpineSpecForValidation` is the production serialized-input boundary used by sorting. It verifies source/component/data identities, pinned source/derived byte closure, lossless atlas mapping, decoded texture and shader hashes, then calls the shared factory constructor/validator. Offline SDK checks may supply a JSON parser to this boundary; they establish the file/spec contract and cannot establish Unity persistent GUID, Canvas-object context, or save/reload behavior. These remain native Editor evidence.
+
+`refresh-static-spine-helpers` accepts a frozen completed rendering stage and refreshes only the explicit factory and rendering helper allowlist. It copies all decoded PNGs and prepared fonts byte-for-byte, performs no texture decode and preserves effective source defaults. Normal export supplies current sorting helpers. Existing failed/successful candidates stay immutable; subsequent native import requires a fresh candidate directory.
+
+A purely omitted source PMA field legitimately has an empty known-values array. The pinned version-default proof permits that empty array while requiring an unknown-field count and exact source-engine/version/component/data identities; any explicitly false value conflicts with the true default and remains rejected.

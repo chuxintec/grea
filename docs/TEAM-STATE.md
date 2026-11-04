@@ -1,3 +1,5 @@
+2026-11-05 dev19 ownership: root owns shared factory/renderer/sort adapters, refresh/version integration and source fixation. Reused binary module performed read-only actual13 root-cause analysis (no binary work); diagnostic module owns only the offline production-input integration harness. All Editor/export/refresh execution remains GREA single-writer. Source task authority remains the linked GREA roadmap.
+
 2026-11-05 dev18 integration: Cocos static Spine binding and Python readback modules released; source-text reference module released after an actual controlled source capture. Root owns shared CLI/version/renderer default completion and all integrated files. No child owns Editor resources; GREA remains the sole actual continuation/export/native-import caller.
 
 2026-11-05 dev17: root closed the nested layout observation gate before GREA actual execution. All module writers are released; root remains the sole shared source writer. Fixed dev16 history remains unchanged; fresh execution must use dev17.

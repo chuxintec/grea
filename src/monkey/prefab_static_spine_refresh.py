@@ -25,10 +25,11 @@ _MAX_REQUEST_BYTES = 1024 * 1024
 _MAX_PLAN_BYTES = 128 * 1024 * 1024
 _MAX_HELPER_BYTES = 16 * 1024 * 1024
 
-# This task refreshes the shared factory fix only. Other helper sources are
+# Refresh only the explicit shared factory/rendering adapters. Other sources are
 # checked against the frozen payload and rejected if they drift unexpectedly.
 _REFRESH_TARGETS = {
     "Assets/Game/Editor/Conversion/Spine/UnitySpineNativeFactory.cs": "targets/spine/UnitySpineNativeFactory.cs",
+    "Assets/Game/Editor/Conversion/UnityStaticSpineRendering.cs": "targets/UnityStaticSpineRendering.cs",
 }
 _CONTINUATION_SUPPORT_FILES = {
     "targets/NativeStaticSpineReference.cs": (
