@@ -39,9 +39,13 @@ class SavedFamilyCoverageTests(unittest.TestCase):
             merge_sort({},plan,saved,queue_verified=True)
 
     def test_slot_field_flag_cannot_replace_actual_algorithm_probe(self):
-        readback=dict(components=[dict(sourceId='layout',representation='native-component-slot',nativeStaticFieldsVerified=True)])
+        row=dict(sourceId='layout',representation='native-component-slot',nativeStaticFieldsVerified=True)
+        readback=dict(components=[row],sourcePrefabs=[dict(components=[copy.deepcopy(row)],
+            prefabInstances=[dict(components=[copy.deepcopy(row)])])])
         plan=dict(layoutCompletion=dict(nodes=[]),sourcePrefabs=[])
         result,proofs=gate_layout(readback,plan,dict(sourcePrefabs=[]))
         self.assertFalse(result['components'][0]['nativeStaticFieldsVerified'])
+        self.assertFalse(result['sourcePrefabs'][0]['components'][0]['nativeStaticFieldsVerified'])
+        self.assertFalse(result['sourcePrefabs'][0]['prefabInstances'][0]['components'][0]['nativeStaticFieldsVerified'])
         self.assertEqual(proofs,{})
         self.assertTrue(readback['components'][0]['nativeStaticFieldsVerified'])

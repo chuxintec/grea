@@ -1,6 +1,6 @@
 """Join UI family coverage only after independent saved-field/algorithm checks."""
 import copy
-from .prefab_component_coverage import _unity_persistent_identity
+from .prefab_component_coverage import _unity_persistent_identity,_nested_rows
 
 
 def merge_sort(readback, plan, saved, *, queue_verified):
@@ -55,7 +55,7 @@ def gate_layout(readback,plan,saved):
         if fields['errors']or probe['errors']:continue
         passed.update(slot['sourceComponentId']for node in subset['nodes']for slot in node['layouts']+node['widgets'])
     for key in ('components','disabledComponents'):
-        for row in result.get(key,[]):
+        for row in _nested_rows(result,key):
             if row.get('representation')!='native-component-slot':continue
             sid=row.get('sourceId');row['nativeStaticFieldsVerified']=sid in passed
             if sid not in passed:continue

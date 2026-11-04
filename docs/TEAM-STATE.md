@@ -1,3 +1,5 @@
+2026-11-05 dev17: root closed the nested layout observation gate before GREA actual execution. All module writers are released; root remains the sole shared source writer. Fixed dev16 history remains unchanged; fresh execution must use dev17.
+
 2026-11-05 dev16 integration: sorting, source-oracle, text and diagnostic modules delivered; root owns shared CLI/versions/coverage/Importer and all released files. Existing fixed sources/candidates remain immutable. Source increment passed200 related checks and offline117-source compilation; actual fresh continuation/export/Editor stays with GREA54. No parallel Editor or binary work. Active unfinished tasks remain solely in GREA lifecycle-roadmap.
 
 2026-11-05 dev15集成完成：两复用模块已释放，root收回Python消费者/meta/coverage/测试单写，版本和CLI仍root。复用native10只读重验完成，104检查/10子用例过，903分母保持且retention pass；nativeStatic fail及UI度量/业务缺口仍在。原候选/16PNG/1296固定文件不变，无C#/Editor/解码/实际continuation操作；唯一任务源和实际采用仍由GREA持有。
