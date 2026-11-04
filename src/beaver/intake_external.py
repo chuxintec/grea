@@ -18,14 +18,18 @@ def assets(spec, incoming, files, before, existing_guids, get_guid):
     return rows
 
 
-def package_scripts(spec, target, existing_guids):
+def package_scripts(spec, target, existing_guids, *, requirements=None):
     rows = []
     for row in spec.get('packageScripts', []):
         name = row['packageName']
         manifest = load(read(inside(target, 'Packages/manifest.json')))
         lock = load(read(inside(target, 'Packages/packages-lock.json')))
         declaration = lock.get('dependencies', {}).get(name, {})
-        if (manifest.get('dependencies', {}).get(name) != row['packageVersion']
+        resolved = (requirements or {}).get('resolvedPackages', {}).get(name, {})
+        proven_builtin = (resolved.get('resolvedVersion') == row['packageVersion'] and resolved.get('source') == 'builtin'
+                          and resolved.get('requestedTarget') == manifest.get('dependencies', {}).get(name)
+                          and resolved.get('targetRoot') and row['packageSource'] == 'builtin')
+        if ((manifest.get('dependencies', {}).get(name) != row['packageVersion'] and not proven_builtin)
                 or declaration.get('version') != row['packageVersion'] or declaration.get('source') != row['packageSource']
                 or row['packageSource'] == 'registry' and declaration.get('url') != 'https://packages.unity.com'):
             fail('INTAKE_PACKAGE_SOURCE', name, 'Exact direct official Unity registry/builtin package and locked version required')
@@ -43,6 +47,8 @@ def package_scripts(spec, target, existing_guids):
         if len(matches) != 1:
             fail('INTAKE_PACKAGE_RESOLUTION', name, 'One exact cached official package required; do not install or choose a stale copy')
         root = matches[0]
+        if proven_builtin and (str(root)!=resolved.get('targetRoot') or row['packageJsonSha256']!=resolved.get('packageJsonSha256')):
+            fail('INTAKE_PACKAGE_RESOLUTION', name, 'Proven builtin cache root/package identity differs')
         relative = row['target'].removeprefix('Packages/'+name+'/')
         pins = [('package.json', row['packageJsonSha256']), (relative, row['sha256']), (relative+'.meta', row['metaSha256'])]
         for path, expected in pins:
@@ -61,7 +67,7 @@ def recheck_packages(plan):
     if not plan.get('packageScripts'):
         return
     from .io import safe
-    current = package_scripts(plan['spec'], safe(plan['targetRoot']), {})
+    current = package_scripts(plan['spec'], safe(plan['targetRoot']), {}, requirements=plan.get('projectRequirements'))
     if current != plan['packageScripts']:
         fail('INTAKE_PACKAGE_DRIFT', plan['targetRoot'], 'Retained package resolution changed')
     if package_inputs(current) != plan['packageInputs']:

@@ -145,7 +145,10 @@ def native_lock(root):
             fail('ADOPT_EDITOR_BUSY',str(root),'Target is open in an Editor; close it normally before adoption')
 
 
-def project_requirements(incoming,target,profile):
+def project_requirements(incoming,target,profile,*,resolution=None):
+    if resolution is not None:
+        from .unity_package_requirements import resolve_requirements
+        return resolve_requirements(incoming,target,profile,source_project=Path(resolution["sourceProject"]),editor_path=Path(resolution["editorPath"]),evidence=resolution["evidence"])
     observed={};conflicts=[];requirements={}
     if profile.startswith('unity-'):
         version_file=inside(target,'ProjectSettings/ProjectVersion.txt')

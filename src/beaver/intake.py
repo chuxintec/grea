@@ -43,7 +43,20 @@ def pinned(path, expected):
     return path
 
 
-def build_plan(candidate, target, spec_path):
+def resolution_context(package_evidence, expected_package_evidence):
+    if bool(package_evidence) != bool(expected_package_evidence):
+        fail('INTAKE_PACKAGE_EVIDENCE', str(package_evidence), 'Resolution file and exact SHA-256 are required together')
+    if not package_evidence:return None,None
+    context_path=pinned(package_evidence,expected_package_evidence)
+    context=load(read(context_path,max_bytes=MANIFEST_BYTES),max_nodes=MANIFEST_NODES)
+    if not isinstance(context,dict) or set(context)!={'contract','sourceProject','editorPath','evidence'} or context['contract']!='beaver-unity-package-resolution/1':
+        fail('INTAKE_PACKAGE_EVIDENCE',str(context_path),'Closed explicit source/Editor/evidence context required')
+    if any(not isinstance(context[k],str) or not Path(context[k]).is_absolute() for k in ('sourceProject','editorPath')):
+        fail('INTAKE_PACKAGE_EVIDENCE',str(context_path),'Explicit absolute source project and Editor paths required')
+    return context,context_path
+
+
+def build_plan(candidate, target, spec_path, package_evidence=None, expected_package_evidence=None):
     incoming, manifest, files, manifest_hash = snapshot(candidate)
     verify(incoming, files)
     spec_path = safe(spec_path)
@@ -58,7 +71,8 @@ def build_plan(candidate, target, spec_path):
     if not (target/'Assets').is_dir():
         fail('INTAKE_TARGET', str(target), 'Existing owned Unity project required')
     from .adoption import project_requirements
-    requirements, conflicts = project_requirements(incoming, target, manifest['targetProfile'])
+    resolution, context_path = resolution_context(package_evidence, expected_package_evidence)
+    requirements, conflicts = project_requirements(incoming, target, manifest['targetProfile'], resolution=resolution)
     if conflicts:
         fail('INTAKE_REQUIREMENTS', str(target), 'Editor/package requirements differ; do not install or change settings')
     before = source_files(target)
@@ -132,7 +146,7 @@ def build_plan(candidate, target, spec_path):
         externals.append(row); covered.add(src)
     from .intake_external import assets, package_scripts
     external_assets = assets(spec, incoming, files, before, existing_guids, guid)
-    packages = package_scripts(spec, target, existing_guids)
+    packages = package_scripts(spec, target, existing_guids, requirements=requirements)
     for row in packages:
         source = candidate_guids.get(row['guid'])
         if source and source.endswith('.cs'):
@@ -190,6 +204,8 @@ def build_plan(candidate, target, spec_path):
                 projectRequirements=requirements, existingAdoptionState='untouched',
                 policy='create-only; retained source/meta unchanged; no baseline claim; independent native reopen; guarded rollback',
                 native='not_run', visual='not_run', business='not_run')
+    if package_evidence:
+        plan['packageResolution'] = dict(path=str(context_path), sha256=expected_package_evidence)
     if spec['schemaVersion']>=2:
         from .intake_external import package_inputs
         plan.update(externalAssets=external_assets, packageScripts=packages, packageInputs=package_inputs(packages))
@@ -202,9 +218,10 @@ def build_plan(candidate, target, spec_path):
     return plan
 
 
-def preview(candidate, target, spec, output):
-    plan = build_plan(candidate, target, spec)
-    out = new_output(output, [safe(candidate), safe(target), safe(spec)])
+def preview(candidate, target, spec, output, package_evidence=None, expected_package_evidence=None):
+    plan = build_plan(candidate, target, spec, package_evidence, expected_package_evidence)
+    resolution,_ = resolution_context(package_evidence,expected_package_evidence)
+    out = new_output(output, [safe(candidate), safe(target), safe(spec)] + ([safe(resolution['sourceProject']),safe(resolution['editorPath'])] if resolution else []))
     write_json(out/'intake-plan.json', plan)
     digest = digest_file(out/'intake-plan.json')
     write_json(out/'plan-identity.json', dict(sha256=digest))
@@ -234,7 +251,8 @@ def checked_plan(path, expected):
 
 
 def recheck(plan):
-    fresh = build_plan(plan['candidateRoot'], plan['targetRoot'], plan['specPath'])
+    resolution = plan.get('packageResolution', {})
+    fresh = build_plan(plan['candidateRoot'], plan['targetRoot'], plan['specPath'], resolution.get('path'), resolution.get('sha256'))
     if fresh != plan:
         fail('INTAKE_PRECONDITION_DRIFT', plan['targetRoot'], 'Candidate, spec, evidence or exact target before-state changed')
 

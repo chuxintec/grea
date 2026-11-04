@@ -146,6 +146,7 @@ internal static class Program
                 generatedSources = x.GeneratedSources,
                 errors = x.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error),
                 warnings = x.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Warning),
+                sourceSemantics = SourceSemantics(x),
                 declaredTypes = x.Compilation.Assembly.GlobalNamespace.GetNamespaceMembers().SelectMany(FlattenTypes).Select(t => new
                 {
                     symbol = Display(t), kind = t.TypeKind.ToString(), partialParts = t.DeclaringSyntaxReferences.Length,
@@ -154,6 +155,227 @@ internal static class Program
             }).ToArray(),
             diagnostics
         };
+    }
+
+    static object[] SourceSemantics(AssemblyBuild build)
+    {
+        var suppliedPaths = new HashSet<string>(build.Trees.Select(t => NormalizePath(t.FilePath)), StringComparer.Ordinal);
+        bool unityEditorDefined = (build.Input.defines ?? new List<string>()).Contains("UNITY_EDITOR", StringComparer.Ordinal);
+        bool editorReference = (build.Input.references ?? new List<string>()).Any(p =>
+            Path.GetFileNameWithoutExtension(p).StartsWith("UnityEditor", StringComparison.Ordinal));
+        bool editorAssembly = build.Input.name.EndsWith("-Editor", StringComparison.Ordinal);
+        // A runtime assembly can be compiled in the Editor domain and can reference
+        // UnityEditor APIs under UNITY_EDITOR. Only Unity's reserved default editor
+        // assembly identity proves that every source in this input is editor-only.
+        bool editorDomain = unityEditorDefined && build.Input.name == "Assembly-CSharp-Editor";
+        var result = new List<object>();
+        foreach (var tree in build.Trees.OrderBy(t => t.FilePath, StringComparer.Ordinal))
+        {
+            var model = build.Compilation.GetSemanticModel(tree, ignoreAccessibility: false);
+            var root = tree.GetRoot();
+            var declared = root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>()
+                .Select(n => (node: n, symbol: model.GetDeclaredSymbol(n) as INamedTypeSymbol))
+                .Where(x => x.symbol != null).ToArray();
+            var typeRows = declared.Select(x => TypeSemanticRow(x.symbol, declared.Length)).ToArray();
+
+            var dependencies = new Dictionary<string, object>(StringComparer.Ordinal);
+            foreach (var node in root.DescendantNodes())
+            {
+                if (node is ExpressionSyntax || node is TypeSyntax || node is AttributeSyntax)
+                {
+                    var info = model.GetSymbolInfo(node);
+                    var symbol = info.Symbol ?? (info.CandidateSymbols.Length == 1 ? info.CandidateSymbols[0] : null);
+                    AddSourceDependency(symbol, tree, suppliedPaths, dependencies);
+                }
+                if (node is ExpressionSyntax || node is TypeSyntax)
+                {
+                    var typeInfo = model.GetTypeInfo(node);
+                    AddSourceDependency(typeInfo.Type, tree, suppliedPaths, dependencies);
+                    AddSourceDependency(typeInfo.ConvertedType, tree, suppliedPaths, dependencies);
+                }
+            }
+
+            var unresolved = build.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error &&
+                    d.Location != Location.None && d.Location.SourceTree == tree)
+                .Select(d => (object)new { code = d.Id, message = d.GetMessage(), span = d.Location.SourceSpan.Start })
+                .ToArray();
+            var lateBound = new List<object>();
+            foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                var method = model.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+                if (IsLateBoundMethod(method))
+                {
+                    var strings = invocation.ArgumentList.Arguments.Select(a => model.GetConstantValue(a.Expression))
+                        .Where(v => v.HasValue && v.Value is string).Select(v => (string)v.Value).ToArray();
+                    lateBound.Add(new { symbol = FullSourceSymbolName(method), path = tree.FilePath,
+                        span = invocation.SpanStart, stringValues = strings, reason = "reflection or dynamic lookup can depend on runtime names" });
+                }
+                else if (method == null && (model.GetTypeInfo(invocation.Expression).Type?.TypeKind == TypeKind.Dynamic ||
+                    model.GetSymbolInfo(invocation).CandidateReason == CandidateReason.LateBound))
+                    lateBound.Add(new { symbol = "dynamic invocation", path = tree.FilePath,
+                        span = invocation.SpanStart, stringValues = Array.Empty<string>(), reason = "invocation is dynamically bound" });
+            }
+            var editorReasons = new List<string>();
+            if (unityEditorDefined) editorReasons.Add("UNITY_EDITOR is an active compilation symbol; this alone does not prove editor-only scope");
+            if (editorReference) editorReasons.Add("assembly compile references include UnityEditor metadata; this alone does not prove editor-only scope");
+            if (editorAssembly) editorReasons.Add("assembly name has an Editor suffix; custom assembly scope is not inferred from its name");
+            if (editorDomain) editorReasons.Add("assembly identity is Unity's reserved Assembly-CSharp-Editor default editor domain");
+            result.Add(new
+            {
+                path = tree.FilePath,
+                types = typeRows,
+                dependencies = dependencies.Values.OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray(),
+                unresolved,
+                lateBoundDependencies = lateBound.ToArray(),
+                editorOnly = editorDomain,
+                editorOnlyReasons = editorReasons.ToArray(),
+                editorEvidence = new { definesUnityEditor = unityEditorDefined, referencedUnityEditor = editorReference,
+                    assemblyName = build.Input.name, editorSuffixHint = editorAssembly,
+                    reservedDefaultEditorAssembly = editorDomain, compileDomainKnown = editorDomain }
+            });
+        }
+        return result.ToArray();
+    }
+
+    static object TypeSemanticRow(INamedTypeSymbol type, int sourceTypeCount)
+    {
+        var carrierReasons = new List<string>();
+        var reasons = new List<string>();
+        if (type.TypeKind != TypeKind.Class) { carrierReasons.Add("declaration is not a class"); reasons.Add("declaration is not a class"); }
+        var baseType = type.BaseType;
+        var baseIsSchemaRoot = false;
+        for (var current = baseType; current != null; current = current.BaseType)
+            if (current.ToDisplayString() == "UnityEngine.MonoBehaviour" || current.ToDisplayString() == "UnityEngine.ScriptableObject")
+                baseIsSchemaRoot = true;
+        if (!baseIsSchemaRoot) { carrierReasons.Add("base chain does not resolve to MonoBehaviour or ScriptableObject"); reasons.Add("base chain does not resolve to MonoBehaviour or ScriptableObject"); }
+        var sourceTypeDeclarations = type.DeclaringSyntaxReferences.Select(r => r.GetSyntax())
+            .OfType<BaseTypeDeclarationSyntax>().ToArray();
+        if (sourceTypeDeclarations.Length != 1) { carrierReasons.Add("type has multiple declaration parts"); reasons.Add("type has multiple declaration parts"); }
+        if (sourceTypeCount != 1) { carrierReasons.Add("source file does not declare exactly one type"); reasons.Add("source file does not declare exactly one type"); }
+        var localTypes = sourceTypeDeclarations.SelectMany(n => n.DescendantNodesAndSelf().OfType<BaseTypeDeclarationSyntax>())
+            .Where(n => n != sourceTypeDeclarations.FirstOrDefault()).ToArray();
+        if (localTypes.Length != 0) { carrierReasons.Add("declaration contains nested types"); reasons.Add("declaration contains nested types"); }
+        if (type.Interfaces.Length != 0) { carrierReasons.Add("type implements interfaces"); reasons.Add("type implements interfaces"); }
+        if (!type.GetMembers().OfType<IFieldSymbol>().Any(f => !f.IsImplicitlyDeclared))
+        { carrierReasons.Add("type declares no fields"); reasons.Add("type declares no fields"); }
+        foreach (var member in type.GetMembers())
+        {
+            if (member is IFieldSymbol field)
+            {
+                if (field.IsStatic || field.IsConst) { carrierReasons.Add("type contains a static or constant field"); reasons.Add("type contains a static or constant field"); }
+                if (HasFieldInitializer(field)) reasons.Add("field has an initializer");
+            }
+            else if (member is IMethodSymbol method && !method.IsImplicitlyDeclared && method.MethodKind == MethodKind.Constructor)
+            { carrierReasons.Add("type declares a constructor"); reasons.Add("type declares a constructor"); }
+            else if (!member.IsImplicitlyDeclared)
+            { carrierReasons.Add("type contains non-field behavior or state members"); reasons.Add("type contains non-field behavior or state members"); }
+        }
+        var fields = type.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsImplicitlyDeclared)
+            .OrderBy(f => f.Name, StringComparer.Ordinal)
+            .Select(f => new { name = f.Name, type = ReflectionFullName(f.Type), assembly = ContainingAssemblyIdentity(f.Type)?.Name,
+                serialized = IsSerializedField(f) }).ToArray();
+        return new
+        {
+            fullName = ReflectionFullName(type), assembly = type.ContainingAssembly?.Identity.Name,
+            baseType = baseType == null ? null : ReflectionFullName(baseType),
+            baseAssembly = baseType?.ContainingAssembly?.Identity.Name,
+            interfaces = type.Interfaces.Select(i => new { type = ReflectionFullName(i), assembly = i.ContainingAssembly?.Identity.Name }).ToArray(),
+            kind = type.TypeKind.ToString(), unityObject = IsUnityObject(type), fields, fieldCarrier = carrierReasons.Count == 0,
+            fieldCarrierReasons = carrierReasons.Distinct().ToArray(),
+            schemaOnly = reasons.Count == 0, schemaOnlyReasons = reasons.Distinct().ToArray()
+        };
+    }
+
+    static bool HasFieldInitializer(IFieldSymbol field)
+        => field.DeclaringSyntaxReferences.Select(r => r.GetSyntax()).OfType<VariableDeclaratorSyntax>()
+            .Any(v => v.Initializer != null);
+
+    static void AddSourceDependency(ISymbol symbol, SyntaxTree fromTree, HashSet<string> suppliedPaths,
+        Dictionary<string, object> dependencies)
+    {
+        if (symbol == null) return;
+        if (symbol is IAliasSymbol alias) symbol = alias.Target;
+        if (symbol == null || symbol is INamespaceSymbol || symbol is IAssemblySymbol || symbol is IModuleSymbol) return;
+        if (symbol is IMethodSymbol method) AddSourceDependencyLocation(method.ContainingType, fromTree, suppliedPaths, dependencies);
+        else if (symbol is IFieldSymbol field) AddSourceDependencyLocation(field.ContainingType, fromTree, suppliedPaths, dependencies);
+        AddSourceDependencyLocation(symbol, fromTree, suppliedPaths, dependencies);
+    }
+
+    static void AddSourceDependencyLocation(ISymbol symbol, SyntaxTree fromTree, HashSet<string> suppliedPaths,
+        Dictionary<string, object> dependencies)
+    {
+        if (symbol == null || symbol is INamespaceSymbol || symbol is IAssemblySymbol || symbol is IModuleSymbol) return;
+        foreach (var location in symbol.Locations.Where(l => l.IsInSource && l.SourceTree != null))
+        {
+            string path = NormalizePath(location.SourceTree.FilePath);
+            if (!suppliedPaths.Contains(path) || location.SourceTree == fromTree) continue;
+            string assembly = symbol.ContainingAssembly?.Identity.Name ?? "";
+            string display = FullSourceSymbolName(symbol);
+            string key = path + "\n" + assembly + "\n" + display;
+            dependencies[key] = new { path = location.SourceTree.FilePath, assembly, symbol = display };
+        }
+    }
+
+    static string NormalizePath(string value) => (value ?? "").Replace('\\', '/');
+
+    static string FullSourceSymbolName(ISymbol symbol)
+    {
+        if (symbol is IMethodSymbol method)
+            return ReflectionFullName(method.ContainingType) + "." + method.MetadataName + "(" +
+                string.Join(",", method.Parameters.Select(p => ReflectionFullName(p.Type))) + ")";
+        if (symbol is IFieldSymbol field) return ReflectionFullName(field.ContainingType) + "." + field.MetadataName;
+        if (symbol is IPropertySymbol property) return ReflectionFullName(property.ContainingType) + "." + property.MetadataName;
+        if (symbol is IEventSymbol eventSymbol) return ReflectionFullName(eventSymbol.ContainingType) + "." + eventSymbol.MetadataName;
+        if (symbol is INamedTypeSymbol type) return ReflectionFullName(type);
+        return Display(symbol);
+    }
+
+    static bool IsLateBoundMethod(IMethodSymbol method)
+    {
+        if (method == null || method.ContainingType == null) return false;
+        string type = method.ContainingType.ToDisplayString();
+        string ns = method.ContainingType.ContainingNamespace?.ToDisplayString() ?? "";
+        if (type == "System.Type" && (method.Name == "GetType" || method.Name == "GetMethod" ||
+            method.Name == "GetField" || method.Name == "GetProperty" || method.Name == "GetMembers")) return true;
+        if (ns == "System.Reflection" && (method.Name.StartsWith("Invoke", StringComparison.Ordinal) ||
+            method.Name.StartsWith("Load", StringComparison.Ordinal))) return true;
+        if (type == "System.Activator" && method.Name == "CreateInstance") return true;
+        if (type == "UnityEngine.Resources" && method.Name.StartsWith("Load", StringComparison.Ordinal)) return true;
+        return type == "UnityEngine.AssetBundle" && method.Name.StartsWith("Load", StringComparison.Ordinal);
+    }
+
+    static string ReflectionFullName(ITypeSymbol type)
+    {
+        if (type == null) return null;
+        if (type is IArrayTypeSymbol array)
+            return ReflectionFullName(array.ElementType) + "[" + new string(',', Math.Max(0, array.Rank - 1)) + "]";
+        if (type is IPointerTypeSymbol pointer) return ReflectionFullName(pointer.PointedAtType) + "*";
+        if (type is ITypeParameterSymbol parameter) return (parameter.TypeParameterKind == TypeParameterKind.Method ? "!!" : "!") + parameter.Ordinal;
+        if (type is not INamedTypeSymbol named) return type.ToDisplayString();
+        var name = ReflectionMetadataName(named.OriginalDefinition);
+        if (!named.IsGenericType || named.TypeArguments.Length == 0) return name;
+        return name + "[" + string.Join(",", named.TypeArguments.Select(argument => "[" + ReflectionFullName(argument) + ", " + ReflectionAssemblyIdentity(ContainingAssemblyIdentity(argument)) + "]")) + "]";
+    }
+
+    static AssemblyIdentity ContainingAssemblyIdentity(ITypeSymbol type)
+        => type is IArrayTypeSymbol array ? ContainingAssemblyIdentity(array.ElementType) :
+           type is IPointerTypeSymbol pointer ? ContainingAssemblyIdentity(pointer.PointedAtType) : type?.ContainingAssembly?.Identity;
+
+    static string ReflectionMetadataName(INamedTypeSymbol type)
+    {
+        string name = type.MetadataName;
+        if (type.ContainingType != null) return ReflectionMetadataName(type.ContainingType) + "+" + name;
+        string ns = type.ContainingNamespace == null || type.ContainingNamespace.IsGlobalNamespace ? "" : type.ContainingNamespace.ToDisplayString() + ".";
+        return ns + name;
+    }
+
+    static string ReflectionAssemblyIdentity(AssemblyIdentity identity)
+    {
+        if (identity == null) return "";
+        string culture = string.IsNullOrEmpty(identity.CultureName) ? "neutral" : identity.CultureName;
+        string token = identity.PublicKeyToken == null || identity.PublicKeyToken.Length == 0 ? "null" :
+            string.Concat(identity.PublicKeyToken.Select(b => b.ToString("x2")));
+        return identity.Name + ", Version=" + identity.Version + ", Culture=" + culture + ", PublicKeyToken=" + token;
     }
 
     static IEnumerable<INamedTypeSymbol> FlattenTypes(INamespaceSymbol ns)

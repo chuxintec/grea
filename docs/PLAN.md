@@ -100,7 +100,7 @@
     "nextTarget": "No Beaver-local target; await GREA task assignment."
   },
   "releasedVersion": "0.6.0",
-  "developmentCheckoutVersion": "0.7.0.dev7",
+  "developmentCheckoutVersion": "0.7.0.dev8",
   "governance": {
     "effectiveAt": "2026-11-04T18:35:00.866278+08:00",
     "moduleOf": "grea",
@@ -342,8 +342,8 @@
     }
   ],
   "moduleTechnicalEvidence": {
-    "intakeBindingCandidate": "/Users/wangmeng/MyProjects/Tools/beaver/.private/intake-bindings-20261104/dev7/candidate-delivery.json",
-    "version": "0.7.0.dev7",
+    "intakeBindingCandidate": "/Users/wangmeng/MyProjects/Tools/beaver/.private/intake-bindings-20261104/dev8/candidate-delivery.json",
+    "version": "0.7.0.dev8",
     "greaTaskId": "grea:T-foodstreet-four-activity-bulk",
     "note": "Fixed implementation identity is in candidate index. GREA owns live native/consumer acceptance; dev2 failed native copy retained unchanged. No independent development task authority."
   }

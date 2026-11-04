@@ -21,7 +21,9 @@ def _document(path):
     return load(read(path, max_bytes=MANIFEST_BYTES), max_nodes=MANIFEST_NODES)
 
 
-def generate(candidate, target, expected_manifest, mapping, output, policy=None, preparation_receipt=None):
+def generate(candidate, target, expected_manifest, mapping, output, policy=None, preparation_receipt=None, package_evidence=None, expected_package_evidence=None, classification=None):
+    from .intake import resolution_context
+    resolution,_ = resolution_context(package_evidence,expected_package_evidence)
     incoming, manifest, files, manifest_sha = snapshot(candidate)
     verify(incoming, files)
     if manifest_sha != expected_manifest:
@@ -83,10 +85,10 @@ def generate(candidate, target, expected_manifest, mapping, output, policy=None,
         export = receipt.get('consumerExport', {})
         if (export.get('candidate') != str(incoming) or export.get('candidateManifestSha256') != manifest_sha or export.get('status') != 'exported'):
             fail('INTAKE_BINDING_SPEC_RECEIPT', str(receipt_path), 'Receipt must pin this exact owned exported candidate')
-    out = new_output(output, [incoming, safe(target), mapping] + ([safe(policy)] if policy else []) + ([safe(preparation_receipt)] if preparation_receipt else []))
+    out = new_output(output, [incoming, safe(target), mapping] + ([safe(policy)] if policy else []) + ([safe(preparation_receipt)] if preparation_receipt else []) + ([safe(resolution['sourceProject']),safe(resolution['editorPath'])] if resolution else []))
     write_json(out / 'intake-spec.json', spec)
     from .adoption import project_requirements
-    requirements, conflicts = project_requirements(incoming, safe(target), manifest['targetProfile'])
+    requirements, conflicts = project_requirements(incoming, safe(target), manifest['targetProfile'], resolution=resolution)
     report = dict(projectRequirements=requirements, requirementConflicts=conflicts, owningExport='exported', contract='beaver-intake-bindings-spec/1', candidateRoot=str(incoming),
                   candidateManifestSha256=manifest_sha, spec=str(out / 'intake-spec.json'),
                   specSha256=digest_file(out / 'intake-spec.json'), compilerInputCount=len(compiler),
@@ -96,11 +98,14 @@ def generate(candidate, target, expected_manifest, mapping, output, policy=None,
     # This is the existing intake.plan implementation; the generated document
     # has no bypass, surrogate baseline, or relaxation of compiler coverage.
     try:
-        report['intakePlan'] = preview(incoming, target, out / 'intake-spec.json', out / 'consumer-plan')
+        report['intakePlan'] = preview(incoming, target, out / 'intake-spec.json', out / 'consumer-plan', package_evidence, expected_package_evidence)
         report['status'] = 'planned'
     except BeaverError as error:
         report['status'] = error.status
         report['intakePlan'] = dict(status=error.status, error=error.as_dict())
+    if classification is not None:
+        from .intake_binding_dependencies import analyze
+        report['dependencyAnalysis'] = analyze(incoming,target,classification['sourceProject'],out/'dependency-analysis',dotnet=classification['dotnet'],sdk_root=classification['sdkRoot'],additions=spec['additions'],package_evidence=package_evidence,expected_package_evidence=expected_package_evidence,script_target_root=classification.get('scriptTargetRoot'),runtime_readback=classification.get('runtimeReadback'))
     if receipt is not None:
         receipt['owningExport'] = 'exported'
         receipt['supersedesReceipt'] = dict(path=str(receipt_path), sha256=digest_file(receipt_path), policy='new adjacent correction; original receipt unchanged; no native replay')
@@ -108,6 +113,8 @@ def generate(candidate, target, expected_manifest, mapping, output, policy=None,
         write_json(out / 'preparation-receipt.json', receipt)
         report['correctedReceipt'] = str(out / 'preparation-receipt.json')
     write_json(out / 'consumption-report.json', report)
-    return dict(status=report['status'], report=str(out / 'consumption-report.json'), spec=report['spec'],
+    result = dict(status=report['status'], report=str(out / 'consumption-report.json'), spec=report['spec'],
                 specSha256=report['specSha256'], uncoveredCompilerInputs=len(uncovered),
                 intakePlan=report['intakePlan'], native='not_run', targetWrites=False)
+    if 'dependencyAnalysis' in report:result['dependencyAnalysis']=report['dependencyAnalysis']
+    return result

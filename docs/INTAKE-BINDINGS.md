@@ -121,3 +121,54 @@ blocked planner remains blocked; this command does not install packages or run
 an Editor. An optional receipt must pin this exact exported candidate. The
 corrected receipt is a new output with the original receipt path/hash; the
 original native evidence and receipt remain unchanged.
+
+
+### Requested and resolved package identity
+
+`intake package-requirements --candidate EXPORT --target TARGET --source-project
+SAVED_PROJECT --editor-path EDITOR --evidence ORIGINAL_PROOF --expected-evidence
+SHA256 --out OUTPUT` creates a hash-pinned resolution context and a fresh
+requirements report. It checks the candidate, saved project and target input
+bytes, Editor version/revision, complete dependency locks, actual package
+caches and Editor builtin sources. The supported builtin UGUI override requires
+a strictly lower stable requested version and exact resolved/cache/Editor
+agreement; missing, stale or inconsistent evidence blocks. Other version
+mismatches remain blocked. It never installs packages or edits manifests.
+
+Pass `--package-evidence OUTPUT/package-resolution.json
+--expected-package-evidence SHA256` to `intake plan` or `intake spec-bindings`.
+The context and all resolved identities are included in the plan and rechecked.
+The default requirement policy is unchanged without this explicit context.
+
+### Selected compiler closure and ordered code batches
+
+Add `--classify --source-project SAVED_PROJECT --dotnet DOTNET --sdk-root SDK
+--runtime-readback PREVIOUS_COLD_REOPEN_LOG` to `intake spec-bindings`.
+The tool checks actual Bee source scopes and source/meta bytes, then runs the
+existing offline Roslyn inspector. It follows native script roots and actual
+symbol dependencies, records field carriers, runtime components, Editor-only
+scope, retained types, compiler support and unknowns. Empty native references
+do not prove a file is unnecessary. Namespace symbols create no dependency
+edges; late-bound lookups remain explicit blockers.
+
+The reused cold-reopen log and the supplied Editor's actual Mono core library
+pin runtime field identities rather than copying reference-facade assembly
+names into native expectations. Arrays use their element type's assembly;
+unresolved facade and generic forwarding identities are blocked.
+
+`dependency-evidence.json` owns the complete classification, source/target pins
+and boundaries. `batch-recipes.json` points to new exact-byte owned selections,
+normal spec4 documents and actual existing `intake.plan` results. Each batch
+contains at most16 new scripts and one real mapped image asset, preserves
+strongly connected dependencies, and records deferred inputs as selection
+boundaries. No four-helper omission is invented for unrelated compiler inputs.
+Oversized cycles and unresolved dependencies block their dependants.
+
+Script destinations follow the exact uniform prefix of the explicit mapping;
+nonuniform mappings require `--script-target-root Assets/...`. Existing matching
+script identities can be reused after earlier code adoption. Images already
+present at mapped destinations are not proposed again. Re-run the command and
+replan against the real target after each predecessor succeeds; later recipes
+do not fabricate a future target snapshot. Native preflight, source staging,
+independent compile/GetClass, import/cold reopen, source audit and product gates
+remain required. Code plans do not authorize formal project writes.
