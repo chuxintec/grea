@@ -43,7 +43,7 @@ object after applying a binding before dirtying or saving. Lost or duplicate
 owner IDs fail the gate; exceptions and field comparisons are never skipped.
 
 The helper records every serialized property, persistent reference GUID/localID,
-object identity and property type before the change. Only the declared script
+object identity and property type before the change. ObjectReference values are atomic GUID/localID/type records, with MonoScript class/assembly checked against the explicit bindings. Their internal serialized pointer subtrees (including transient m_FileID storage) are not enumerated; all ordinary numeric fields, array elements and other real serialized properties remain included. Only the declared script
 identities and their matching Editor class identifier may differ. Unsupported
 property kinds, missing references, missing scripts, field loss, unexpected
 files/settings changes and failed/late Editor exit block consumption. A second

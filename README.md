@@ -1,16 +1,16 @@
 # beaver
 
-Local development candidate **0.7.0.dev3** adds isolated native script-binding preparation to the existing intake pipeline, retaining the observation-root/deadline debug changes. Preparation requires the explicit Unity gates; see [the contract](docs/INTAKE-BINDINGS.md). The latest public stable release remains [v0.6.0](https://github.com/chuxintec/beaver/releases/tag/v0.6.0). See [development scope](docs/DEVELOPMENT-v0.7.md).
+Local development candidate **0.7.0.dev4** adds isolated native script-binding preparation to the existing intake pipeline, retaining the observation-root/deadline debug changes. Preparation requires the explicit Unity gates; see [the contract](docs/INTAKE-BINDINGS.md). The latest public stable release remains [v0.6.0](https://github.com/chuxintec/beaver/releases/tag/v0.6.0). See [development scope](docs/DEVELOPMENT-v0.7.md).
 
 Controlled native game-project tooling: inspect a target, prepare an immutable plan, apply bounded changes and retain readback/recovery evidence. GREA supplies workflows; monkey supplies recovery candidates; beaver operates on adopted or existing development projects.
 
 ## Install
 
-Candidate version: **0.7.0.dev3** (local fixed adoption; not a new public release). Verify the supplied SHA256SUMS, then install the downloaded wheel in an isolated environment:
+Candidate version: **0.7.0.dev4** (local fixed adoption; not a new public release). Verify the supplied SHA256SUMS, then install the downloaded wheel in an isolated environment:
 
 ```sh
 python3 -m venv .venv
-.venv/bin/python -m pip install './beaver_game_tools-0.7.0.dev3-py3-none-any.whl[toolkit]'
+.venv/bin/python -m pip install './beaver_game_tools-0.7.0.dev4-py3-none-any.whl[toolkit]'
 .venv/bin/beaver version
 .venv/bin/beaver capabilities
 ```

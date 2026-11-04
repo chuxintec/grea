@@ -38,12 +38,21 @@ public static class BeaverIntakeBindings {
         if(value==null)return "null";
         string guid;long local;
         if(!EditorUtility.IsPersistent(value)||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out guid,out local)||String.IsNullOrEmpty(guid)||local==0)throw new Exception("Nonpersistent or unidentified reference");
+        if(!normalize)return guid+"#"+local.ToString(Culture);
+        var runtime=value.GetType();
+        var semantic=job.bindings.SingleOrDefault(b=>b.sourceType==runtime.FullName&&(b.sourceAssembly==runtime.Assembly.GetName().Name||job.bridgeAssembly==runtime.Assembly.GetName().Name));
+        var type=semantic==null?runtime.FullName+"@"+runtime.Assembly.GetName().Name:"binding:"+semantic.targetAssembly+"/"+semantic.targetType;
         var script=value as MonoScript;
-        if(normalize&&script!=null) {
+        if(script!=null) {
+            var resolved=script.GetClass();if(resolved==null)throw new Exception("MonoScript reference class is unresolved");
             var b=job.bindings.SingleOrDefault(r=>r.sourceGuid==guid||r.targetGuid==guid);
-            if(b!=null) { if(local!=b.sourceLocalId)throw new Exception("MonoScript localID differs");return b.targetGuid+"#"+b.targetLocalId; }
+            if(b!=null) {
+                if(local!=b.sourceLocalId||resolved.FullName!=b.sourceType||(resolved.Assembly.GetName().Name!=b.sourceAssembly&&resolved.Assembly.GetName().Name!=job.bridgeAssembly))throw new Exception("MonoScript persistent type/localID differs");
+                return b.targetGuid+"#"+b.targetLocalId+"|"+type+"|binding:"+b.targetAssembly+"/"+b.targetType;
+            }
+            type+="|script:"+resolved.FullName+"@"+resolved.Assembly.GetName().Name;
         }
-        return guid+"#"+local.ToString(Culture);
+        return guid+"#"+local.ToString(Culture)+"|"+type;
     }
     static string Json<T>(T value) { return JsonUtility.ToJson(new Box<T>{value=value}); }
     static string Value(SerializedProperty p) {
@@ -128,8 +137,12 @@ public static class BeaverIntakeBindings {
                 var type=value.GetType();var binding=job.bindings.SingleOrDefault(b=>b.sourceType==type.FullName&&(b.sourceAssembly==type.Assembly.GetName().Name||job.bridgeAssembly==type.Assembly.GetName().Name));
                 var owner=new Owner{guid=guid,localId=local,type=binding==null?type.AssemblyQualifiedName:"binding:"+binding.targetAssembly+"/"+binding.targetType};prefab.owners.Add(owner);
                 using(var so=new SerializedObject(value)) {
-                    so.UpdateIfRequiredOrScript();var p=so.GetIterator();int properties=0;
-                    while(p.Next(true)) {
+                    so.UpdateIfRequiredOrScript();var p=so.GetIterator();int properties=0;bool enterChildren=true;
+                    while(p.Next(enterChildren)) {
+                        // A PPtr is an atomic persistent reference. Unity's
+                        // internal m_FileID below it is a transient instance
+                        // handle, not its AssetDatabase file/local identifier.
+                        enterChildren=p.propertyType!=SerializedPropertyType.ObjectReference;
                         if(++properties>250000)throw new Exception("Serialized property budget exceeded");
                         if(p.propertyPath=="m_Script"&&binding!=null) {
                             var actual=Id(p.objectReferenceValue,false);
@@ -156,8 +169,9 @@ public static class BeaverIntakeBindings {
             foreach(var key in keys) {
                 var value=ResolveOwner(path,key.guid,key.localId);bool edit=false;
                 using(var so=new SerializedObject(value)) {
-                    so.UpdateIfRequiredOrScript();var p=so.GetIterator();
-                    while(p.Next(true)) {
+                    so.UpdateIfRequiredOrScript();var p=so.GetIterator();bool enterChildren=true;
+                    while(p.Next(enterChildren)) {
+                        enterChildren=p.propertyType!=SerializedPropertyType.ObjectReference;
                         if(p.propertyType!=SerializedPropertyType.ObjectReference||!(p.objectReferenceValue is MonoScript))continue;
                         var script=(MonoScript)p.objectReferenceValue;string guid;long local;
                         if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(script,out guid,out local))throw new Exception("MonoScript reference identity unavailable");
