@@ -70,8 +70,16 @@ public static partial class MonkeyImporter
             if(component!=null)UnityStaticFields.Assign(c.staticFieldBinding,component,id=>StaticReference(plan,nodes,id));
         }
     }
+    static bool HasStaticToggles(Plan plan) {
+        // Keep legacy plans with source Toggles strict, while ignoring the
+        // phantom empty Spec that JsonUtility creates for a JSON null.
+        return plan.toggleBindingPresent || (plan.components != null &&
+            plan.components.Any(c=>c.type=="cc.Toggle"||c.type=="cc.ToggleContainer"));
+    }
     static UnityStaticToggle.Readback ReadStaticToggles(Plan plan,Dictionary<string,GameObject> nodes) {
-        if(plan.toggleBinding==null)return null;
+        if(!HasStaticToggles(plan))return null;
+        if(plan.toggleBinding==null||plan.toggleBinding.bindings==null)
+            throw new InvalidOperationException("STATIC_TOGGLE_BINDING_FAILED: missing_toggle_spec");
         var spec=new UnityStaticToggle.Spec{bindings=plan.toggleBinding.bindings.Where(x=>nodes.ContainsKey(x.nodeSourceId)).ToArray()};
         var result=UnityStaticToggle.Read(spec,id=>nodes.TryGetValue(id,out var n)?n:null,id=>StaticReference(plan,nodes,id));
         if(result.fields.Any(x=>!x.verified))throw new InvalidOperationException("STATIC_TOGGLE_SAVED_READBACK_FAILED: "+JsonUtility.ToJson(result));
