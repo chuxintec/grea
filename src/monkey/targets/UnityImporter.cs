@@ -92,6 +92,8 @@ public static partial class MonkeyImporter
     static partial void ForgetOptionalStaticSpineControlledCanvasContext(GameObject context);
     static partial void BindOptionalStaticSpineReadbackOwnerContext(Plan plan,string prefabId,Dictionary<string,GameObject> persistentNodes,Dictionary<string,GameObject> loadedNodes,GameObject controlledHost);
     static partial void ForgetOptionalStaticSpineReadbackOwnerContext(GameObject controlledHost);
+    static partial void RebindOptionalStaticSpineNativeInstanceContext(Plan plan,PrefabInstanceSpec instance,Dictionary<string,GameObject> nodes,Dictionary<UnityEngine.Object,UnityEngine.Object> replacements);
+    static partial void WriteOptionalStaticSpineOwnerContextLifecycleEvidence();
     static partial void SkipOptionalSpineDerivedProperty(Component component,string propertyPath,ref bool skip);
     static partial void IdentifyOptionalSpineDerivedComponent(Component component,ref bool generated);
     static partial void PrepareStaticSpine(Plan plan, Dictionary<string,GameObject> nodes);
@@ -343,6 +345,8 @@ public static partial class MonkeyImporter
     static void FailAsync(Exception error) {
         if(!asyncRunning)return;
         handlingFailure=true;
+        try {WriteOptionalStaticSpineOwnerContextLifecycleEvidence();}
+        catch(Exception evidenceError) {Debug.LogWarning("STATIC_SPINE_OWNER_LIFECYCLE_EVIDENCE_WRITE_FAILED: "+evidenceError.Message);}
         try {if(nativeProgress!=null)WriteNativeProgress(error is OperationCanceledException?"budget_exhausted":"failed");}
         finally {try {CloseOwnedScene();} finally {Debug.LogException(error);FinishAsync(error is OperationCanceledException?3:1);}}
     }
@@ -1136,6 +1140,7 @@ public static partial class MonkeyImporter
         File.WriteAllText("Analysis/Readback/source-prefabs-readback.json",JsonUtility.ToJson(readback,true));
         readback.staticPreviews=BuildStaticPreviews(plan);
         readback.staticPreview=readback.staticPreviews.LastOrDefault();
+        WriteOptionalStaticSpineOwnerContextLifecycleEvidence();
         readback.nativeFiles = Paths.nativeRoots.Where(Directory.Exists).SelectMany(folder=>Directory.GetFiles(folder,"*",SearchOption.AllDirectories))
             .Concat(Paths.metaRoots.Where(Directory.Exists).SelectMany(folder=>Directory.GetFiles(folder,"*.meta",SearchOption.AllDirectories)))
             .OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult {

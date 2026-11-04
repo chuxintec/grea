@@ -111,6 +111,8 @@ class StaticSpineHelperRefreshTests(unittest.TestCase):
                 report = prepare(request_path, request_sha, base / "output")
             output_plan_root = Path(report["planPath"]).parent
             output_plan = json.loads(Path(report["planPath"]).read_text())
+            self.assertEqual(output_plan["staticSpineRendering"]["ownerContextLifecycleEvidenceContract"],
+                             "monkey-static-spine-owner-context-lifecycle/1")
             self.assertEqual(report["schema"], SCHEMA)
             self.assertEqual(report["parentPlanSha256"], parent_plan_sha)
             self.assertTrue(all(item["status"] == "already_current" for item in report["helperReplacements"]))

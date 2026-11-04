@@ -71,6 +71,64 @@ public static partial class MonkeyImporter
         public Canvas canvas;
         public GameObject sourceNode;
         public StaticSpineCanvasContextEvidence evidence;
+        public string sourceComponentId, sourcePrefabId, sourceNodeId, sourceDataAssetId;
+    }
+
+    [Serializable] sealed class StaticSpineOwnerContextLifecycleRow
+    {
+        public string phase, sourceComponentId, sourceDataAssetId, sourcePrefabId, sourceNodeId, templateComponentId;
+        public string instanceOwnerPrefabId, instanceRootNodeId, instanceNodeId, templatePrefabId, templateNodeId;
+        public string[] sourceActivityPath;
+        public bool[] sourceActivityValues;
+        public string priorOwnerType, priorOwnerPath, priorOwnerAssetPath, priorOwnerGuid;
+        public long priorOwnerLocalFileId;
+        public bool priorOwnerPersistent;
+        public string actualOwnerType, actualOwnerPath, actualOwnerAssetPath, actualOwnerGuid;
+        public long actualOwnerLocalFileId;
+        public bool actualOwnerPersistent;
+        public string dataAssetType, dataAssetPath, dataAssetGuid;
+        public long dataAssetLocalFileId;
+        public string sourceCanvasEvidenceSha256, renderingPlanSha256, sourceManifestSha256;
+        public string controlledHostEvidenceSha256, controlledHostCanvasRenderMode;
+        public string sourceCanvasRenderMode, actualCanvasRenderMode, actualCanvasScaleMode;
+        public float sourceCanvasPpu, sourceScalerPpu, actualCanvasPpu, actualScalerPpu, actualScalerMatchWidthOrHeight,
+            controlledHostCanvasPpu;
+        public float[] actualScalerReferenceResolution;
+        public bool sourceCanvasScalerPresent, actualCanvasScalerPresent, controlledHostContextVerified,
+            ownerPairRegistered, sourceActivityPathVerified, verified;
+        public bool priorOwnerRetired, priorOwnerRegistryRevoked;
+        public string registrationStatus, diagnostic;
+    }
+
+    [Serializable] sealed class StaticSpineOwnerContextLifecycleComponent
+    {
+        public string sourceComponentId, sourceDataAssetId, sourcePrefabId, sourceNodeId, templateComponentId;
+        public bool eligible, sourceConstructionOwnerRegistered;
+        public string sourceConstructionOwnerType, sourceConstructionOwnerPath, sourceConstructionDataAssetPath,
+            sourceConstructionDataAssetGuid, sourceCanvasEvidenceSha256, sourceCanvasRenderMode;
+        public float sourceCanvasPpu, sourceScalerPpu;
+        public StaticSpineOwnerContextLifecycleRow[] transitions;
+    }
+
+    [Serializable] sealed class StaticSpineOwnerContextLifecycleEnvelope
+    {
+        public int schemaVersion = 1;
+        public string contract = "monkey-static-spine-owner-context-lifecycle/1";
+        public string phase = "native-import";
+        public string sourceCanvasEvidenceContract = "monkey-static-spine-source-canvas-context/1";
+        public string sourceManifestSha256, renderingPlanSha256, sourceCanvasEvidenceSha256, evidenceSha256;
+        public StaticSpineOwnerContextLifecycleComponent[] components;
+        public StaticSpineOwnerContextLifecycleRow[] transitions;
+    }
+
+    sealed class StaticSpineNativeInstanceOwnerRegistration
+    {
+        public string sourceComponentId, sourceDataAssetId, sourcePrefabId, sourceNodeId, templateComponentId;
+        public SkeletonGraphic priorOwner, owner;
+        public SkeletonDataAsset dataAsset;
+        public GameObject prefabRoot, instanceRoot;
+        public StaticSpineCanvasContextEvidence sourceEvidence;
+        public StaticSpineOwnerContextLifecycleRow lifecycle;
     }
 
     sealed class StaticSpineControlledCanvasRegistration
@@ -186,6 +244,7 @@ public static partial class MonkeyImporter
     const string StaticSpineRenderingPlanPath = "Assets/Game/Editor/Conversion/spine-static-rendering.json";
     const string StaticSpineRenderingReadbackRoot = "Analysis/Readback/SpineRendering";
     const string StaticSpineCanvasContextEvidencePath = "Analysis/Readback/SpineRendering/source-canvas-context.json";
+    const string StaticSpineOwnerContextLifecyclePath = "Analysis/Readback/SpineRendering/owner-context-lifecycle.json";
     static StaticSpineRenderingEnvelope staticSpineRenderingPlan;
     static string staticSpineRenderingPlanSha;
     static StaticSpineRenderingAssembly[] staticSpineRenderingAssemblies;
@@ -198,6 +257,13 @@ public static partial class MonkeyImporter
         new List<StaticSpineControlledCanvasRegistration>();
     static readonly List<StaticSpineReadbackOwnerScope> staticSpineReadbackOwnerScopes =
         new List<StaticSpineReadbackOwnerScope>();
+    static readonly List<StaticSpineNativeInstanceOwnerRegistration> staticSpineNativeInstanceOwners =
+        new List<StaticSpineNativeInstanceOwnerRegistration>();
+    static readonly List<StaticSpineOwnerContextLifecycleRow> staticSpineOwnerContextLifecycleRows =
+        new List<StaticSpineOwnerContextLifecycleRow>();
+    static readonly List<StaticSpineOwnerContextLifecycleComponent> staticSpineOwnerContextLifecycleComponents =
+        new List<StaticSpineOwnerContextLifecycleComponent>();
+    static readonly HashSet<Graphic> staticSpineRetiredNativeInstanceOwners = new HashSet<Graphic>();
     static readonly Dictionary<string, UnitySpineNativeFactory.DataAssetReadback> staticSpineRenderingAssets =
         new Dictionary<string, UnitySpineNativeFactory.DataAssetReadback>(StringComparer.Ordinal);
 
@@ -289,6 +355,8 @@ public static partial class MonkeyImporter
                 staticSpineSourceCanvasOwners.Add(component.sourceComponentId, new StaticSpineSourceCanvasLiveRegistration
                 {
                     canvas = canvases[contextIndex], sourceNode = nodes[component.sourceNodeId],
+                    sourceComponentId = component.sourceComponentId, sourcePrefabId = component.sourcePrefabId,
+                    sourceNodeId = component.sourceNodeId, sourceDataAssetId = component.sourceDataAssetId,
                 });
         }
 
@@ -447,6 +515,512 @@ public static partial class MonkeyImporter
         return markers.Length == 1;
     }
 
+    static string StaticSpineOwnerRelativePath(GameObject root, GameObject owner)
+    {
+        if (root == null || owner == null) return null;
+        var parts = new List<string>();
+        var cursor = owner.transform;
+        while (cursor != null && cursor != root.transform)
+        {
+            parts.Add(cursor.GetSiblingIndex().ToString() + ":" + cursor.name);
+            cursor = cursor.parent;
+        }
+        if (cursor != root.transform) return null;
+        parts.Add("root:" + root.name);
+        parts.Reverse();
+        return String.Join("/", parts);
+    }
+
+    static string StaticSpineAssetGuid(UnityEngine.Object asset, out long localId)
+    {
+        localId = 0;
+        if (asset == null || !EditorUtility.IsPersistent(asset)) return null;
+        return AssetDatabase.TryGetGUIDAndLocalFileIdentifier(asset, out var guid, out localId) ? guid : null;
+    }
+
+    static StaticSpineCanvasContextEvidenceRow StaticSpineSourceCanvasContextRow(StaticSpineCanvasComponentEvidence component)
+    {
+        return component == null || staticSpineSourceCanvasContext == null ? null :
+            (staticSpineSourceCanvasContext.contexts ?? Array.Empty<StaticSpineCanvasContextEvidenceRow>())
+                .SingleOrDefault(row => row != null && row.contextIndex == component.sourceCanvasContextIndex);
+    }
+
+    static bool StaticSpineCloneCanvasMatchesSource(Graphic owner, StaticSpineCanvasComponentEvidence component,
+        out Canvas canvas, out string diagnostic)
+    {
+        canvas = owner == null ? null : owner.GetComponentInParent<Canvas>(true);
+        diagnostic = null;
+        var source = StaticSpineSourceCanvasContextRow(component);
+        var scaler = canvas == null ? null : canvas.GetComponent<CanvasScaler>();
+        if (source == null || canvas == null)
+        { diagnostic = "clone-canvas-or-source-context-missing"; return false; }
+        if (source.sourceCanvasScalerPresent != (scaler != null) ||
+            canvas.renderMode.ToString() != source.sourceCanvasRenderMode ||
+            !SpineUnitClose(canvas.referencePixelsPerUnit, source.sourceCanvasReferencePixelsPerUnit))
+        { diagnostic = "clone-canvas-render-mode-or-ppu-differs-from-source"; return false; }
+        if (scaler != null && (scaler.uiScaleMode.ToString() != source.sourceCanvasScaleMode ||
+            !SpineUnitClose(scaler.referencePixelsPerUnit, source.sourceScalerReferencePixelsPerUnit) ||
+            !SpineUnitClose(scaler.matchWidthOrHeight, source.sourceScalerMatchWidthOrHeight) ||
+            source.sourceScalerReferenceResolution == null || source.sourceScalerReferenceResolution.Length != 2 ||
+            !SpineUnitClose(scaler.referenceResolution.x, source.sourceScalerReferenceResolution[0]) ||
+            !SpineUnitClose(scaler.referenceResolution.y, source.sourceScalerReferenceResolution[1])))
+        { diagnostic = "clone-canvas-scaler-fields-differ-from-source"; return false; }
+        return true;
+    }
+
+    static bool StaticSpineInstanceActivityPathMatches(Plan plan, string sourceNodeId, string sourceRootId,
+        IDictionary<string, GameObject> actualNodes, Dictionary<UnityEngine.Object, UnityEngine.Object> replacements,
+        out string[] path, out bool[] activeValues, out GameObject oldRoot, out GameObject actualRoot, out string diagnostic)
+    {
+        path = Array.Empty<string>(); activeValues = Array.Empty<bool>(); oldRoot = null; actualRoot = null; diagnostic = null;
+        var specs = (plan == null ? Array.Empty<NodeSpec>() : plan.nodes ?? Array.Empty<NodeSpec>())
+            .Where(row => row != null && !String.IsNullOrWhiteSpace(row.sourceId)).ToArray();
+        var matches = specs.GroupBy(row => row.sourceId, StringComparer.Ordinal)
+            .Where(group => group.Count() != 1).Select(group => group.Key).ToArray();
+        if (matches.Length != 0)
+        { diagnostic = "source-node-plan-identity-ambiguous:" + matches[0]; return false; }
+        var byId = specs.ToDictionary(row => row.sourceId, StringComparer.Ordinal);
+        var pathRows = new List<string>();
+        var values = new List<bool>();
+        var actualPathNodes = new List<GameObject>();
+        var previousPathNodes = new List<GameObject>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var cursorId = sourceNodeId;
+        while (true)
+        {
+            if (String.IsNullOrWhiteSpace(cursorId) || !seen.Add(cursorId) || !byId.TryGetValue(cursorId, out var nodeSpec) ||
+                actualNodes == null || !actualNodes.TryGetValue(cursorId, out var actualNode) || actualNode == null)
+            { diagnostic = "source-activity-path-source-or-actual-node-missing:" + (cursorId ?? "<null>"); return false; }
+            var previousRows = replacements == null ? Array.Empty<GameObject>() : replacements
+                .Where(pair => pair.Key is GameObject && pair.Value == actualNode)
+                .Select(pair => pair.Key as GameObject).Where(value => value != null).ToArray();
+            if (previousRows.Length != 1 || previousRows[0].activeSelf != nodeSpec.active || actualNode.activeSelf != nodeSpec.active)
+            { diagnostic = "source-activity-path-object-or-state-differs:" + cursorId; return false; }
+            pathRows.Add(cursorId); values.Add(nodeSpec.active);
+            actualPathNodes.Add(actualNode); previousPathNodes.Add(previousRows[0]);
+            if (cursorId == sourceRootId)
+            {
+                actualRoot = actualNode; oldRoot = previousRows[0];
+                break;
+            }
+            cursorId = nodeSpec.parent;
+        }
+        for (int i = 0; i + 1 < pathRows.Count; i++)
+        {
+            if (previousPathNodes[i].transform.parent != previousPathNodes[i + 1].transform ||
+                actualPathNodes[i].transform.parent != actualPathNodes[i + 1].transform)
+            { diagnostic = "source-activity-path-parent-mismatch:" + pathRows[i]; return false; }
+        }
+        path = pathRows.ToArray(); activeValues = values.ToArray();
+        return true;
+    }
+
+    static StaticSpineOwnerContextLifecycleRow StaticSpineLifecycleRow(string phase,
+        StaticSpineRenderingComponent expected, Graphic priorOwner, Graphic actualOwner,
+        GameObject priorRoot, GameObject actualRoot, SkeletonDataAsset dataAsset,
+        string instanceOwnerPrefabId, string instanceRootNodeId, string instanceNodeId,
+        string templatePrefabId, string templateNodeId, bool registered, bool verified, string diagnostic)
+    {
+        var sourceEvidence = staticSpineSourceCanvasContext;
+        var componentEvidence = StaticSpineSourceCanvasComponent(expected == null ? null : expected.sourceComponentId,
+            expected == null ? null : expected.sourceDataAssetId,
+            sourceEvidence == null ? null : sourceEvidence.sourceManifestSha256,
+            sourceEvidence == null ? null : sourceEvidence.renderingPlanSha256);
+        var sourceContext = StaticSpineSourceCanvasContextRow(componentEvidence);
+        var priorGuid = StaticSpineAssetGuid(priorOwner, out var priorLocal);
+        var actualGuid = StaticSpineAssetGuid(actualOwner, out var actualLocal);
+        var dataGuid = StaticSpineAssetGuid(dataAsset, out var dataLocal);
+        var actualCanvas = actualOwner == null ? null : actualOwner.GetComponentInParent<Canvas>(true);
+        var actualScaler = actualCanvas == null ? null : actualCanvas.GetComponent<CanvasScaler>();
+        return new StaticSpineOwnerContextLifecycleRow
+        {
+            phase = phase,
+            sourceComponentId = expected == null ? null : expected.sourceComponentId,
+            sourceDataAssetId = expected == null ? null : expected.sourceDataAssetId,
+            sourcePrefabId = expected == null ? null : expected.sourcePrefabId,
+            sourceNodeId = expected == null ? null : expected.sourceNodeId,
+            templateComponentId = expected == null ? null : expected.templateComponentId,
+            instanceOwnerPrefabId = instanceOwnerPrefabId,
+            instanceRootNodeId = instanceRootNodeId,
+            instanceNodeId = instanceNodeId,
+            templatePrefabId = templatePrefabId,
+            templateNodeId = templateNodeId,
+            priorOwnerType = priorOwner == null ? null : priorOwner.GetType().FullName,
+            priorOwnerPath = StaticSpineOwnerRelativePath(priorRoot, priorOwner == null ? null : priorOwner.gameObject),
+            priorOwnerAssetPath = priorOwner == null ? null : AssetDatabase.GetAssetPath(priorOwner),
+            priorOwnerGuid = priorGuid,
+            priorOwnerLocalFileId = priorLocal,
+            priorOwnerPersistent = priorOwner != null && EditorUtility.IsPersistent(priorOwner),
+            actualOwnerType = actualOwner == null ? null : actualOwner.GetType().FullName,
+            actualOwnerPath = StaticSpineOwnerRelativePath(actualRoot, actualOwner == null ? null : actualOwner.gameObject),
+            actualOwnerAssetPath = actualOwner == null ? null : AssetDatabase.GetAssetPath(actualOwner),
+            actualOwnerGuid = actualGuid,
+            actualOwnerLocalFileId = actualLocal,
+            actualOwnerPersistent = actualOwner != null && EditorUtility.IsPersistent(actualOwner),
+            dataAssetType = dataAsset == null ? null : dataAsset.GetType().FullName,
+            dataAssetPath = dataAsset == null ? null : AssetDatabase.GetAssetPath(dataAsset),
+            dataAssetGuid = dataGuid,
+            dataAssetLocalFileId = dataLocal,
+            sourceCanvasEvidenceSha256 = sourceEvidence == null ? null : sourceEvidence.evidenceSha256,
+            renderingPlanSha256 = staticSpineRenderingPlanSha,
+            sourceManifestSha256 = sourceEvidence == null ? null : sourceEvidence.sourceManifestSha256,
+            sourceCanvasRenderMode = sourceContext == null ? null : sourceContext.sourceCanvasRenderMode,
+            sourceCanvasPpu = sourceContext == null ? 0f : sourceContext.sourceCanvasReferencePixelsPerUnit,
+            sourceScalerPpu = sourceContext == null ? 0f : sourceContext.sourceScalerReferencePixelsPerUnit,
+            sourceCanvasScalerPresent = sourceContext != null && sourceContext.sourceCanvasScalerPresent,
+            actualCanvasRenderMode = actualCanvas == null ? null : actualCanvas.renderMode.ToString(),
+            actualCanvasScaleMode = actualScaler == null ? "none" : actualScaler.uiScaleMode.ToString(),
+            actualCanvasPpu = actualCanvas == null ? 0f : actualCanvas.referencePixelsPerUnit,
+            actualScalerPpu = actualScaler == null ? 0f : actualScaler.referencePixelsPerUnit,
+            actualScalerMatchWidthOrHeight = actualScaler == null ? 0f : actualScaler.matchWidthOrHeight,
+            actualScalerReferenceResolution = actualScaler == null ? Array.Empty<float>() :
+                new[] { actualScaler.referenceResolution.x, actualScaler.referenceResolution.y },
+            actualCanvasScalerPresent = actualScaler != null,
+            ownerPairRegistered = registered,
+            verified = verified,
+            registrationStatus = registered ? verified ? "registered-verified" : "registered-unverified" : "not-registered",
+            diagnostic = diagnostic,
+        };
+    }
+
+    static void RecordStaticSpineOwnerLifecycle(StaticSpineOwnerContextLifecycleRow row)
+    {
+        if (row == null) throw new ArgumentNullException(nameof(row));
+        staticSpineOwnerContextLifecycleRows.Add(row);
+    }
+
+    static StaticSpineOwnerContextLifecycleComponent StaticSpineLifecycleComponent(string sourceComponentId)
+    {
+        return staticSpineOwnerContextLifecycleComponents.SingleOrDefault(row => row != null &&
+            row.sourceComponentId == sourceComponentId);
+    }
+
+    static void ResetStaticSpineOwnerLifecycleRegistries()
+    {
+        staticSpineRenderingPlan = null;
+        staticSpineRenderingPlanSha = null;
+        staticSpineRenderingAssets.Clear();
+        staticSpineSourceCanvasContext = null;
+        staticSpineSourceCanvasOwners.Clear();
+        staticSpineNativeInstanceOwners.Clear();
+        staticSpineRetiredNativeInstanceOwners.Clear();
+        staticSpineReadbackOwnerScopes.Clear();
+        staticSpineControlledCanvasContexts.Clear();
+        staticSpineOwnerContextLifecycleRows.Clear();
+        staticSpineOwnerContextLifecycleComponents.Clear();
+    }
+
+    static void InitializeStaticSpineOwnerLifecycleComponents(StaticSpineRenderingEnvelope rendering)
+    {
+        staticSpineOwnerContextLifecycleComponents.Clear();
+        foreach (var component in rendering == null ? Array.Empty<StaticSpineRenderingComponent>() :
+            rendering.components ?? Array.Empty<StaticSpineRenderingComponent>())
+            if (component != null)
+                staticSpineOwnerContextLifecycleComponents.Add(new StaticSpineOwnerContextLifecycleComponent
+                {
+                    sourceComponentId = component.sourceComponentId, sourceDataAssetId = component.sourceDataAssetId,
+                    sourcePrefabId = component.sourcePrefabId, sourceNodeId = component.sourceNodeId,
+                    templateComponentId = component.templateComponentId, eligible = component.eligible,
+                    sourceConstructionOwnerRegistered = false,
+                    transitions = Array.Empty<StaticSpineOwnerContextLifecycleRow>(),
+                });
+    }
+
+    static void RegisterStaticSpineSourceConstructionOwner(StaticSpineRenderingComponent expected,
+        GameObject node, SkeletonGraphic graphic, SkeletonDataAsset dataAsset)
+    {
+        if (expected == null || node == null || graphic == null || dataAsset == null ||
+            !staticSpineSourceCanvasOwners.TryGetValue(expected.sourceComponentId, out var source) || source == null ||
+            source.sourceNode != node || source.sourcePrefabId != expected.sourcePrefabId ||
+            source.sourceNodeId != expected.sourceNodeId || source.sourceDataAssetId != expected.sourceDataAssetId ||
+            source.evidence == null || source.evidence != staticSpineSourceCanvasContext ||
+            !StaticSpineRendererIdentityMatches(graphic, expected) || graphic.SkeletonDataAsset != dataAsset)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_SOURCE_CONSTRUCTION_REGISTRATION_INVALID:" +
+                (expected == null ? "null" : expected.sourceComponentId));
+        var dataRows = (staticSpineRenderingPlan.dataAssets ?? Array.Empty<StaticSpineRenderingData>())
+            .Where(row => row != null && row.eligible && row.sourceDataAssetId == expected.sourceDataAssetId).ToArray();
+        if (dataRows.Length != 1 || dataRows[0].factorySpec == null ||
+            AssetDatabase.GetAssetPath(dataAsset) != dataRows[0].factorySpec.skeletonDataAssetPath ||
+            AssetDatabase.LoadAssetAtPath<SkeletonDataAsset>(dataRows[0].factorySpec.skeletonDataAssetPath) != dataAsset ||
+            !EditorUtility.IsPersistent(dataAsset) || String.IsNullOrWhiteSpace(StaticSpineAssetGuid(dataAsset, out var dataLocal)) || dataLocal == 0)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_SOURCE_DATA_ASSET_NOT_EXACT_PERSISTENT:" + expected.sourceComponentId);
+        var component = StaticSpineLifecycleComponent(expected.sourceComponentId);
+        if (component == null || component.sourceDataAssetId != expected.sourceDataAssetId ||
+            component.sourcePrefabId != expected.sourcePrefabId || component.sourceNodeId != expected.sourceNodeId ||
+            component.templateComponentId != expected.templateComponentId)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_SOURCE_COMPONENT_ROW_MISSING:" + expected.sourceComponentId);
+        var row = StaticSpineLifecycleRow("source-construction", expected, null, graphic, null, node,
+            dataAsset, null, null, expected.sourceNodeId, null, null, true, true, null);
+        component.sourceConstructionOwnerRegistered = true;
+        component.sourceConstructionOwnerType = graphic.GetType().FullName;
+        component.sourceConstructionOwnerPath = row.actualOwnerPath;
+        component.sourceConstructionDataAssetPath = row.dataAssetPath;
+        component.sourceConstructionDataAssetGuid = row.dataAssetGuid;
+        component.sourceCanvasEvidenceSha256 = row.sourceCanvasEvidenceSha256;
+        component.sourceCanvasRenderMode = row.sourceCanvasRenderMode;
+        component.sourceCanvasPpu = row.sourceCanvasPpu;
+        component.sourceScalerPpu = row.sourceScalerPpu;
+        RecordStaticSpineOwnerLifecycle(row);
+        staticSpineNativeInstanceOwners.Add(new StaticSpineNativeInstanceOwnerRegistration
+        {
+            sourceComponentId = expected.sourceComponentId, sourceDataAssetId = expected.sourceDataAssetId,
+            sourcePrefabId = expected.sourcePrefabId, sourceNodeId = expected.sourceNodeId,
+            templateComponentId = expected.templateComponentId, owner = graphic, dataAsset = dataAsset,
+            prefabRoot = node, instanceRoot = node, sourceEvidence = staticSpineSourceCanvasContext,
+            lifecycle = row,
+        });
+    }
+
+    public static void RecordStaticSpineOwnerContextUse(Graphic owner, string sourceComponentId,
+        string sourceDataAssetId, string phase, bool verified, string diagnostic)
+    {
+        if (staticSpineRenderingPlan == null) return;
+        var expectedRows = (staticSpineRenderingPlan.components ?? Array.Empty<StaticSpineRenderingComponent>())
+            .Where(row => row != null && row.eligible && row.sourceComponentId == sourceComponentId &&
+                row.sourceDataAssetId == sourceDataAssetId).ToArray();
+        if (expectedRows.Length != 1)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_USE_SOURCE_ROW_MISSING_OR_AMBIGUOUS:" + sourceComponentId);
+        var expected = expectedRows[0];
+        var registration = staticSpineNativeInstanceOwners.Where(row => row != null && row.owner == owner &&
+            row.sourceComponentId == sourceComponentId && row.sourceDataAssetId == sourceDataAssetId).ToArray();
+        var savedPairs = staticSpineReadbackOwnerScopes.SelectMany(scope => scope == null ?
+            Enumerable.Empty<StaticSpineReadbackOwnerRegistration>() : scope.rows).Where(row => row != null &&
+                row.sourceComponentId == sourceComponentId && row.sourceDataAssetId == sourceDataAssetId &&
+                (row.persistentOwner == owner || row.loadedOwner == owner)).ToArray();
+        if (registration.Length > 1 || savedPairs.Length > 1)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_USE_OWNER_PAIR_AMBIGUOUS:" + sourceComponentId);
+        var dataAsset = owner as SkeletonGraphic == null ? null : ((SkeletonGraphic)owner).SkeletonDataAsset;
+        var savedPair = savedPairs.Length == 1 ? savedPairs[0] : null;
+        var effectivePhase = savedPair != null && phase == "static-sort-create-capture"
+            ? "saved-prefab-owner-pair-capture" : phase;
+        var row = savedPair == null
+            ? StaticSpineLifecycleRow(effectivePhase, expected, null, owner, null,
+                registration.Length == 1 ? registration[0].instanceRoot : owner == null ? null : owner.gameObject,
+                dataAsset, expected.sourcePrefabId, null, expected.sourceNodeId, null, null,
+                registration.Length == 1, verified && registration.Length == 1, diagnostic)
+            : StaticSpineLifecycleRow(effectivePhase, expected, savedPair.persistentOwner, owner,
+                savedPair.persistentOwner == null ? null : savedPair.persistentOwner.gameObject,
+                owner == null ? null : owner.gameObject,
+                savedPair.dataAsset, savedPair.sourcePrefabId, null, savedPair.sourceNodeId, null, null,
+                true, verified && savedPair.hostEvidence != null && savedPair.hostEvidence.verified, diagnostic);
+        row.diagnostic = String.IsNullOrEmpty(row.diagnostic) ? diagnostic : row.diagnostic + ";" + diagnostic;
+        if (savedPair != null)
+        {
+            row.controlledHostEvidenceSha256 = savedPair.hostEvidence == null ? null : savedPair.hostEvidence.evidenceSha256;
+            row.controlledHostContextVerified = savedPair.hostEvidence != null && savedPair.hostEvidence.verified;
+            row.controlledHostCanvasRenderMode = savedPair.controlledHost == null ? null :
+                savedPair.controlledHost.GetComponent<Canvas>()?.renderMode.ToString();
+            var controlledCanvas = savedPair.controlledHost == null ? null : savedPair.controlledHost.GetComponent<Canvas>();
+            row.controlledHostCanvasPpu = controlledCanvas == null ? 0f : controlledCanvas.referencePixelsPerUnit;
+        }
+        if (registration.Length == 1)
+        {
+            if (phase == "native-instance-clone")
+            {
+                row.priorOwnerRegistryRevoked = registration[0].lifecycle.priorOwnerRegistryRevoked;
+                row.priorOwnerRetired = registration[0].priorOwner == null ||
+                    staticSpineRetiredNativeInstanceOwners.Contains(registration[0].priorOwner);
+            }
+            if (!registration[0].lifecycle.verified || !row.verified)
+                row.registrationStatus = "registered-unverified";
+        }
+        if (savedPair != null && (!row.verified || !row.controlledHostContextVerified))
+            row.registrationStatus = "registered-unverified";
+        RecordStaticSpineOwnerLifecycle(row);
+    }
+
+    static partial void RebindOptionalStaticSpineNativeInstanceContext(Plan plan, PrefabInstanceSpec instance,
+        Dictionary<string, GameObject> nodes, Dictionary<UnityEngine.Object, UnityEngine.Object> replacements)
+    {
+        if (plan == null || String.IsNullOrEmpty(plan.staticSpineRenderingJson)) return;
+        if (instance == null || nodes == null || replacements == null || staticSpineRenderingPlan == null ||
+            staticSpineSourceCanvasContext == null || plan.sourceManifestSha256 != staticSpineRenderingPlan.sourceManifestSha256 ||
+            staticSpineSourceCanvasContext.sourceManifestSha256 != plan.sourceManifestSha256 ||
+            staticSpineSourceCanvasContext.renderingPlanSha256 != staticSpineRenderingPlanSha ||
+            StaticSpineCanvasEvidenceHash(staticSpineSourceCanvasContext) != staticSpineSourceCanvasContext.evidenceSha256)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_REBIND_INPUT_OR_PIN_INVALID:" +
+                (instance == null ? "null-instance" : instance.owner + ":" + instance.root));
+
+        var nodePairs = instance.nodes ?? Array.Empty<PrefabObjectPair>();
+        var candidates = (staticSpineRenderingPlan.components ?? Array.Empty<StaticSpineRenderingComponent>())
+            .Where(expected => expected != null && expected.eligible && expected.sourcePrefabId == instance.owner &&
+                !String.IsNullOrWhiteSpace(expected.templateComponentId) &&
+                expected.templateComponentId.StartsWith(instance.template + "#", StringComparison.Ordinal))
+            .Select(expected => new { expected, pairs = nodePairs.Where(pair => pair != null &&
+                pair.instanceObject == expected.sourceNodeId).ToArray() })
+            .Where(item => item.pairs.Length > 0).ToArray();
+        if (candidates.Length == 0) return;
+
+        var pending = new List<StaticSpineNativeInstanceOwnerRegistration>();
+        var rootTarget = nodes.TryGetValue(instance.root, out var mappedRoot) ? mappedRoot : null;
+        var rootPairs = rootTarget == null ? Array.Empty<KeyValuePair<UnityEngine.Object, UnityEngine.Object>>() :
+            replacements.Where(pair => pair.Key is GameObject && pair.Value == rootTarget).ToArray();
+        if (rootTarget == null || rootPairs.Length != 1)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_INSTANCE_ROOT_REPLACEMENT_MISSING:" +
+                instance.owner + ":" + instance.root);
+        var rootSource = rootPairs[0].Key as GameObject;
+
+        foreach (var item in candidates)
+        {
+            var expected = item.expected;
+            if (item.pairs.Length != 1)
+                throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_INSTANCE_NODE_MAPPING_AMBIGUOUS:" + expected.sourceComponentId);
+            var pair = item.pairs[0];
+            var templateComponentRows = (plan.components ?? Array.Empty<ComponentSpec>())
+                .Where(component => component != null && component.sourceId == expected.templateComponentId &&
+                    component.type == "sp.Skeleton").ToArray();
+            if (templateComponentRows.Length != 1 || templateComponentRows[0].node != pair.templateObject)
+            {
+                var failure = StaticSpineLifecycleRow("native-instance-clone", expected, null, null,
+                    null, null, null, instance.owner, instance.root, pair.instanceObject,
+                    instance.template, pair.templateObject, false, false,
+                    "template-component-node-join-count=" + templateComponentRows.Length);
+                RecordStaticSpineOwnerLifecycle(failure);
+                throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_TEMPLATE_COMPONENT_NODE_JOIN_INVALID:" +
+                    expected.sourceComponentId + ";templateComponent=" + expected.templateComponentId +
+                    ";mappedNode=" + pair.templateObject + ";componentRows=" + templateComponentRows.Length);
+            }
+            var newNode = nodes.TryGetValue(expected.sourceNodeId, out var mappedNode) ? mappedNode : null;
+            var activityPathOK = StaticSpineInstanceActivityPathMatches(plan, expected.sourceNodeId, instance.root,
+                nodes, replacements, out var activityPath, out var activityValues,
+                out var activityPathOldRoot, out var activityPathActualRoot, out var activityPathDiagnostic);
+            var oldNodePairs = replacements.Where(mapping => mapping.Key is GameObject && mapping.Value == newNode)
+                .Select(mapping => mapping.Key as GameObject).Where(node => node != null).ToArray();
+            GameObject oldNode = oldNodePairs.Length == 1 ? oldNodePairs[0] : null;
+            if (newNode == null || oldNodePairs.Length != 1 || oldNode == null ||
+                !oldNode.transform.IsChildOf(rootSource.transform) ||
+                !newNode.transform.IsChildOf(rootTarget.transform) || !activityPathOK ||
+                activityPathOldRoot != rootSource || activityPathActualRoot != rootTarget)
+            {
+                var failure = StaticSpineLifecycleRow("native-instance-clone", expected, null, null,
+                    rootSource, rootTarget, null, instance.owner, instance.root, pair.instanceObject,
+                    instance.template, pair.templateObject, false, false, activityPathDiagnostic ??
+                        "instance-node-ancestry-or-replacement-mismatch");
+                failure.sourceActivityPath = activityPath;
+                failure.sourceActivityValues = activityValues;
+                failure.sourceActivityPathVerified = activityPathOK;
+                RecordStaticSpineOwnerLifecycle(failure);
+                throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_INSTANCE_NODE_ANCESTRY_MISMATCH:" +
+                    expected.sourceComponentId + ";templateNode=" + pair.templateObject + ";root=" + instance.root +
+                    ";activity=" + (activityPathDiagnostic ?? "invalid"));
+            }
+            var oldOwners = replacements.Where(mapping => mapping.Key is SkeletonGraphic && mapping.Value is SkeletonGraphic)
+                .Select(mapping => new { oldOwner = (SkeletonGraphic)mapping.Key, newOwner = (SkeletonGraphic)mapping.Value })
+                .Where(mapping => mapping.oldOwner.gameObject == oldNode && StaticSpineRendererIdentityMatches(mapping.oldOwner, expected))
+                .ToArray();
+            if (oldOwners.Length != 1)
+                throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_INSTANCE_OWNER_REPLACEMENT_AMBIGUOUS:" +
+                    expected.sourceComponentId + ";oldCount=" + oldOwners.Length);
+            var oldOwner = oldOwners[0].oldOwner;
+            var newOwner = oldOwners[0].newOwner;
+            var parents = staticSpineNativeInstanceOwners.Where(row => row != null && row.owner == oldOwner &&
+                row.sourceComponentId == expected.sourceComponentId && row.sourceDataAssetId == expected.sourceDataAssetId &&
+                row.sourceEvidence == staticSpineSourceCanvasContext && row.lifecycle != null && row.lifecycle.verified).ToArray();
+            if (parents.Length != 1)
+            {
+                var failure = StaticSpineLifecycleRow("native-instance-clone", expected, oldOwner, newOwner,
+                    rootSource, rootTarget, newOwner == null ? null : newOwner.SkeletonDataAsset,
+                    instance.owner, instance.root, pair.instanceObject, instance.template, pair.templateObject,
+                    false, false, "prior-owner-registration-count=" + parents.Length);
+                RecordStaticSpineOwnerLifecycle(failure);
+                throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_PRIOR_OWNER_NOT_EXACTLY_REGISTERED:" +
+                    expected.sourceComponentId + ";count=" + parents.Length);
+            }
+            var parent = parents[0];
+            var componentEvidence = StaticSpineSourceCanvasComponent(expected.sourceComponentId, expected.sourceDataAssetId,
+                plan.sourceManifestSha256, staticSpineRenderingPlanSha);
+            var source = staticSpineSourceCanvasOwners.TryGetValue(expected.sourceComponentId, out var sourceOwner) ? sourceOwner : null;
+            var nodePlan = (plan.nodes ?? Array.Empty<NodeSpec>()).Where(row => row != null &&
+                row.sourceId == expected.sourceNodeId).ToArray();
+            var dataRows = (staticSpineRenderingPlan.dataAssets ?? Array.Empty<StaticSpineRenderingData>())
+                .Where(row => row != null && row.eligible && row.sourceDataAssetId == expected.sourceDataAssetId).ToArray();
+            var spec = dataRows.Length == 1 ? dataRows[0].factorySpec : null;
+            var expectedAsset = spec == null ? null : AssetDatabase.LoadAssetAtPath<SkeletonDataAsset>(spec.skeletonDataAssetPath);
+            var actualAsset = newOwner == null ? null : newOwner.SkeletonDataAsset;
+            var oldAsset = oldOwner == null ? null : oldOwner.SkeletonDataAsset;
+            var assetGuid = StaticSpineAssetGuid(actualAsset, out var assetLocalId);
+            bool oldCanvasOK = StaticSpineCloneCanvasMatchesSource(oldOwner, componentEvidence, out var oldCanvas, out var oldCanvasDiagnostic);
+            bool newCanvasOK = StaticSpineCloneCanvasMatchesSource(newOwner, componentEvidence, out var newCanvas, out var newCanvasDiagnostic);
+            var targetDataOK = dataRows.Length == 1 && spec != null && expectedAsset != null &&
+                EditorUtility.IsPersistent(expectedAsset) && actualAsset == expectedAsset && oldAsset == expectedAsset &&
+                parent.dataAsset == expectedAsset && AssetDatabase.GetAssetPath(actualAsset) == spec.skeletonDataAssetPath &&
+                !String.IsNullOrWhiteSpace(assetGuid) && assetLocalId != 0;
+            var sourceNodeActivity = activityPathOK && nodePlan.Length == 1 && oldNode.activeSelf == nodePlan[0].active &&
+                newNode.activeSelf == nodePlan[0].active && oldOwner.enabled == expected.sourceComponentEnabled &&
+                newOwner.enabled == expected.sourceComponentEnabled;
+            var exactInstanceRelation = instance.owner == expected.sourcePrefabId &&
+                instance.template == expected.templateComponentId.Split('#')[0] &&
+                templateComponentRows[0].sourceId == expected.templateComponentId &&
+                templateComponentRows[0].node == pair.templateObject &&
+                parent.sourcePrefabId == expected.sourcePrefabId && parent.sourceNodeId == expected.sourceNodeId &&
+                parent.templateComponentId == expected.templateComponentId &&
+                oldNode.transform.IsChildOf(rootSource.transform) && newNode.transform.IsChildOf(rootTarget.transform) &&
+                StaticSpineRendererIdentityMatches(oldOwner, expected) && StaticSpineRendererIdentityMatches(newOwner, expected);
+            var diagnostic = !exactInstanceRelation ? "source-template-instance-identity-mismatch" :
+                !targetDataOK ? "persistent-source-data-asset-reference-mismatch" :
+                !sourceNodeActivity ? "source-node-or-component-activity-mismatch" :
+                !oldCanvasOK ? "prior-owner-canvas:" + oldCanvasDiagnostic :
+                !newCanvasOK ? "clone-owner-canvas:" + newCanvasDiagnostic : null;
+            bool verified = exactInstanceRelation && targetDataOK && sourceNodeActivity && oldCanvasOK && newCanvasOK &&
+                source != null && source.sourceNode == oldNode && source.sourceDataAssetId == expected.sourceDataAssetId &&
+                parent.owner == oldOwner && staticSpineSourceCanvasContext.sourceNodeGeometryVerified &&
+                staticSpineSourceCanvasContext.sourceCanvasContextVerified;
+            var lifecycle = StaticSpineLifecycleRow("native-instance-clone", expected, oldOwner, newOwner,
+                rootSource, rootTarget, actualAsset, instance.owner, instance.root, pair.instanceObject,
+                instance.template, pair.templateObject, verified, verified, diagnostic);
+            lifecycle.sourceActivityPath = activityPath;
+            lifecycle.sourceActivityValues = activityValues;
+            lifecycle.sourceActivityPathVerified = activityPathOK;
+            lifecycle.priorOwnerRegistryRevoked = verified;
+            if (!verified)
+            {
+                lifecycle.registrationStatus = "registered-unverified";
+                RecordStaticSpineOwnerLifecycle(lifecycle);
+                throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_NATIVE_INSTANCE_CLONE_UNVERIFIED:" +
+                    expected.sourceComponentId + ";phase=native-instance-clone;old=" + lifecycle.priorOwnerPath +
+                    ";new=" + lifecycle.actualOwnerPath + ";data=" + lifecycle.dataAssetGuid + ";canvas=" + diagnostic);
+            }
+            pending.Add(new StaticSpineNativeInstanceOwnerRegistration
+            {
+                sourceComponentId = expected.sourceComponentId, sourceDataAssetId = expected.sourceDataAssetId,
+                sourcePrefabId = expected.sourcePrefabId, sourceNodeId = expected.sourceNodeId,
+                templateComponentId = expected.templateComponentId, priorOwner = oldOwner, owner = newOwner,
+                dataAsset = expectedAsset, prefabRoot = rootSource, instanceRoot = rootTarget,
+                sourceEvidence = staticSpineSourceCanvasContext, lifecycle = lifecycle,
+            });
+        }
+
+        // Commit only after every mapped owner in this native replacement passed.
+        var priorRegistrations = pending.Select(transfer => staticSpineNativeInstanceOwners.Where(row => row != null &&
+            row.owner == transfer.priorOwner && row.sourceComponentId == transfer.sourceComponentId &&
+            row.sourceDataAssetId == transfer.sourceDataAssetId).ToArray()).ToArray();
+        if (priorRegistrations.Any(rows => rows.Length != 1) || priorRegistrations.Select(rows => rows[0])
+            .Distinct().Count() != priorRegistrations.Length)
+        {
+            foreach (var transfer in pending)
+            {
+                transfer.lifecycle.verified = false;
+                transfer.lifecycle.ownerPairRegistered = false;
+                transfer.lifecycle.priorOwnerRegistryRevoked = false;
+                transfer.lifecycle.registrationStatus = "not-registered";
+                transfer.lifecycle.diagnostic = "native-instance-rebind-prior-registration-changed-before-commit";
+                RecordStaticSpineOwnerLifecycle(transfer.lifecycle);
+            }
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_REBIND_TRANSACTION_PRIOR_REGISTRATION_CHANGED:" +
+                instance.owner + ":" + instance.root);
+        }
+        for (int i = 0; i < pending.Count; i++)
+        {
+            var transfer = pending[i];
+            var previous = priorRegistrations[i][0];
+            staticSpineNativeInstanceOwners.Remove(previous);
+            staticSpineRetiredNativeInstanceOwners.Add(transfer.priorOwner);
+            transfer.lifecycle.priorOwnerRegistryRevoked = true;
+            staticSpineNativeInstanceOwners.Add(transfer);
+            RecordStaticSpineOwnerLifecycle(transfer.lifecycle);
+        }
+    }
+
     public static bool TryGetStaticSpineSourceCanvasProof(Graphic graphic, string sourceComponentId, string sourceDataAssetId,
         string sourceManifestSha256, string renderingPlanSha256, out float sourcePpu,
         out string evidenceSha256, out string contextKind, out string diagnostic)
@@ -463,7 +1037,8 @@ public static partial class MonkeyImporter
         var expected = renderingRows[0];
         var canvas = graphic.GetComponentInParent<Canvas>(true);
         if (staticSpineSourceCanvasOwners.TryGetValue(sourceComponentId, out var sourceRegistration) &&
-            sourceRegistration != null && sourceRegistration.sourceNode == graphic.gameObject && sourceRegistration.canvas == canvas)
+            sourceRegistration != null && sourceRegistration.sourceNode == graphic.gameObject && sourceRegistration.canvas == canvas &&
+            !staticSpineRetiredNativeInstanceOwners.Contains(graphic))
         {
             var scaler = canvas.GetComponent<CanvasScaler>();
             if (scaler == null || canvas.renderMode != RenderMode.ScreenSpaceOverlay ||
@@ -475,6 +1050,43 @@ public static partial class MonkeyImporter
             sourcePpu = staticSpineSourceCanvasContext.sourceReferencePixelsPerUnit;
             evidenceSha256 = staticSpineSourceCanvasContext.evidenceSha256;
             contextKind = "source-construction-canvas";
+            return true;
+        }
+
+        var nativeInstanceOwners = staticSpineNativeInstanceOwners.Where(row => row != null &&
+            row.sourceComponentId == sourceComponentId && row.sourceDataAssetId == sourceDataAssetId && row.owner == graphic).ToArray();
+        if (nativeInstanceOwners.Length != 0)
+        {
+            if (nativeInstanceOwners.Length != 1)
+            { diagnostic = "native-instance-owner-registration-ambiguous:phase=native-instance-clone;count=" + nativeInstanceOwners.Length; return false; }
+            var lifecycleOwner = nativeInstanceOwners[0];
+            var canvasMatches = StaticSpineCloneCanvasMatchesSource(graphic, componentEvidence, out var lifecycleCanvas,
+                out var canvasDiagnostic);
+            var exactDataAsset = lifecycleOwner.dataAsset;
+            long localId;
+            var dataGuid = StaticSpineAssetGuid(exactDataAsset, out localId);
+            var actualGraphic = graphic as SkeletonGraphic;
+            if (lifecycleOwner.lifecycle == null || !lifecycleOwner.lifecycle.verified ||
+                lifecycleOwner.sourceEvidence != staticSpineSourceCanvasContext ||
+                lifecycleOwner.lifecycle.sourceCanvasEvidenceSha256 != staticSpineSourceCanvasContext.evidenceSha256 ||
+                lifecycleOwner.lifecycle.renderingPlanSha256 != renderingPlanSha256 ||
+                lifecycleOwner.lifecycle.sourceManifestSha256 != sourceManifestSha256 ||
+                lifecycleOwner.lifecycle.sourceComponentId != sourceComponentId ||
+                lifecycleOwner.lifecycle.sourceDataAssetId != sourceDataAssetId ||
+                !StaticSpineRendererIdentityMatches(graphic, expected) || exactDataAsset == null || actualGraphic == null ||
+                actualGraphic.SkeletonDataAsset != exactDataAsset || !EditorUtility.IsPersistent(exactDataAsset) ||
+                String.IsNullOrWhiteSpace(dataGuid) || localId == 0 || !canvasMatches || lifecycleCanvas == null ||
+                lifecycleOwner.instanceRoot == null || !graphic.transform.IsChildOf(lifecycleOwner.instanceRoot.transform))
+            {
+                diagnostic = "native-instance-owner-lifecycle-unverified:phase=native-instance-clone;source=" + sourceComponentId +
+                    ";prior=" + (lifecycleOwner.lifecycle == null ? "<none>" : lifecycleOwner.lifecycle.priorOwnerPath ?? "<none>") +
+                    ";actual=" + (lifecycleOwner.lifecycle == null ? "<none>" : lifecycleOwner.lifecycle.actualOwnerPath ?? "<none>") +
+                    ";dataGuid=" + (dataGuid ?? "<missing>") + ";canvas=" + (canvasDiagnostic ?? "unverified");
+                return false;
+            }
+            sourcePpu = staticSpineSourceCanvasContext.sourceReferencePixelsPerUnit;
+            evidenceSha256 = staticSpineSourceCanvasContext.evidenceSha256;
+            contextKind = "native-instance-clone-lifecycle";
             return true;
         }
 
@@ -539,6 +1151,19 @@ public static partial class MonkeyImporter
             staticSpineSourceCanvasContext == null || plan.sourceManifestSha256 != staticSpineRenderingPlan.sourceManifestSha256 ||
             persistentNodes == null || loadedNodes == null)
             throw new InvalidOperationException("SPINE_READBACK_OWNER_CONTEXT_INPUT_INVALID");
+        var owningPrefabs = (plan.sourcePrefabs ?? Array.Empty<SourcePrefabSpec>())
+            .Where(row => row != null && row.sourceId == prefabId).ToArray();
+        if (owningPrefabs.Length != 1 || String.IsNullOrWhiteSpace(owningPrefabs[0].root) ||
+            String.IsNullOrWhiteSpace(owningPrefabs[0].path) ||
+            !persistentNodes.TryGetValue(owningPrefabs[0].root, out var persistentRoot) || persistentRoot == null ||
+            !loadedNodes.TryGetValue(owningPrefabs[0].root, out var loadedRoot) || loadedRoot == null)
+            throw new InvalidOperationException("SPINE_READBACK_OWNER_PREFAB_ROOT_PAIR_INVALID:" + prefabId);
+        var expectedPrefabPath = owningPrefabs[0].path.Replace('\\', '/');
+        if (!EditorUtility.IsPersistent(persistentRoot) ||
+            AssetDatabase.GetAssetPath(persistentRoot).Replace('\\', '/') != expectedPrefabPath ||
+            AssetDatabase.LoadAssetAtPath<GameObject>(expectedPrefabPath) != persistentRoot)
+            throw new InvalidOperationException("SPINE_READBACK_OWNER_PERSISTENT_ROOT_PATH_OR_IDENTITY_MISMATCH:" + prefabId +
+                ";expected=" + expectedPrefabPath + ";actual=" + AssetDatabase.GetAssetPath(persistentRoot));
         var nodePlan = (plan.nodes ?? Array.Empty<NodeSpec>()).Where(row => row != null).ToDictionary(row => row.sourceId, StringComparer.Ordinal);
         var sourceRows = (staticSpineRenderingPlan.components ?? Array.Empty<StaticSpineRenderingComponent>())
             .Where(row => row != null && row.eligible && (row.sourcePrefabId == prefabId ||
@@ -553,7 +1178,13 @@ public static partial class MonkeyImporter
                 throw new InvalidOperationException("SPINE_READBACK_OWNER_NODE_OR_ACTIVITY_MISMATCH:" + expected.sourceComponentId);
             var persistentComponents = persistentNode.GetComponents<SkeletonGraphic>();
             var loadedComponents = loadedNode.GetComponents<SkeletonGraphic>();
-            if (persistentComponents.Length != 1 || loadedComponents.Length != 1 ||
+            if (persistentComponents.Length != 1 || loadedComponents.Length != 1)
+                throw new InvalidOperationException("SPINE_READBACK_OWNER_COMPONENT_COUNT_MISMATCH:" + expected.sourceComponentId);
+            var persistentComponentPath = AssetDatabase.GetAssetPath(persistentComponents[0]).Replace('\\', '/');
+            if (!EditorUtility.IsPersistent(persistentComponents[0]) || persistentComponentPath != expectedPrefabPath)
+                throw new InvalidOperationException("SPINE_READBACK_OWNER_PERSISTENT_COMPONENT_PATH_OR_IDENTITY_MISMATCH:" +
+                    expected.sourceComponentId + ";expected=" + expectedPrefabPath + ";actual=" + persistentComponentPath);
+            if (
                 !StaticSpineRendererIdentityMatches(persistentComponents[0], expected) ||
                 !StaticSpineRendererIdentityMatches(loadedComponents[0], expected) ||
                 persistentComponents[0].enabled != expected.sourceComponentEnabled ||
@@ -579,6 +1210,19 @@ public static partial class MonkeyImporter
                 controlledHost = controlledHost, sourceEvidence = staticSpineSourceCanvasContext,
                 hostEvidence = host.evidence,
             });
+            var lifecycle = StaticSpineLifecycleRow("saved-prefab-owner-pair", expected, persistentComponents[0],
+                loadedComponents[0], persistentRoot, loadedRoot, dataAsset, prefabId, owningPrefabs[0].root,
+                expected.sourceNodeId, null, null, true, true, null);
+            lifecycle.controlledHostEvidenceSha256 = host.evidence.evidenceSha256;
+            lifecycle.controlledHostCanvasRenderMode = host.canvas.renderMode.ToString();
+            lifecycle.controlledHostCanvasPpu = host.canvas.referencePixelsPerUnit;
+            lifecycle.controlledHostContextVerified = host.evidence.verified &&
+                host.evidence.sourceCanvasEvidenceSha256 == staticSpineSourceCanvasContext.evidenceSha256 &&
+                host.evidence.sourceManifestSha256 == plan.sourceManifestSha256 &&
+                host.evidence.renderingPlanSha256 == staticSpineRenderingPlanSha;
+            if (!lifecycle.controlledHostContextVerified)
+                throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_SAVED_PAIR_HOST_EVIDENCE_INVALID:" + expected.sourceComponentId);
+            RecordStaticSpineOwnerLifecycle(lifecycle);
         }
         staticSpineReadbackOwnerScopes.Add(scope);
     }
@@ -586,8 +1230,83 @@ public static partial class MonkeyImporter
     public static void UnregisterStaticSpineReadbackOwnerContext(GameObject controlledHost)
     {
         if (controlledHost == null) return;
+        var releasedScopes = staticSpineReadbackOwnerScopes.Where(scope => scope != null &&
+            scope.rows.Any(row => row != null && row.controlledHost == controlledHost)).ToArray();
+        var host = staticSpineControlledCanvasContexts.SingleOrDefault(row => row != null && row.host == controlledHost);
+        foreach (var scope in releasedScopes)
+        foreach (var owner in scope.rows.Where(row => row != null && row.controlledHost == controlledHost))
+        {
+            var expectedRows = (staticSpineRenderingPlan == null ? Array.Empty<StaticSpineRenderingComponent>() :
+                staticSpineRenderingPlan.components ?? Array.Empty<StaticSpineRenderingComponent>())
+                .Where(row => row != null && row.sourceComponentId == owner.sourceComponentId &&
+                    row.sourceDataAssetId == owner.sourceDataAssetId).ToArray();
+            var expected = expectedRows.Length == 1 ? expectedRows[0] : null;
+            var release = StaticSpineLifecycleRow("controlled-host-release", expected, owner.persistentOwner,
+                owner.loadedOwner, owner.persistentOwner == null ? null : owner.persistentOwner.gameObject,
+                owner.loadedOwner == null ? null : owner.loadedOwner.gameObject, owner.dataAsset,
+                owner.sourcePrefabId, null, owner.sourceNodeId, null, null, false,
+                expected != null && owner.sourceEvidence == staticSpineSourceCanvasContext &&
+                    owner.hostEvidence != null && owner.hostEvidence.verified && host != null && host.evidence == owner.hostEvidence,
+                expected == null ? "release-source-component-row-missing" : null);
+            release.ownerPairRegistered = false;
+            release.priorOwnerRegistryRevoked = true;
+            release.registrationStatus = release.verified ? "released" : "released-unverified";
+            release.controlledHostContextVerified = release.verified;
+            release.controlledHostEvidenceSha256 = owner.hostEvidence == null ? null : owner.hostEvidence.evidenceSha256;
+            release.controlledHostCanvasRenderMode = host == null || host.canvas == null ? null : host.canvas.renderMode.ToString();
+            release.controlledHostCanvasPpu = host == null || host.canvas == null ? 0f : host.canvas.referencePixelsPerUnit;
+            RecordStaticSpineOwnerLifecycle(release);
+        }
         staticSpineReadbackOwnerScopes.RemoveAll(scope => scope == null || scope.rows.Any(row => row == null || row.controlledHost == controlledHost));
     }
+
+    public static string WriteStaticSpineOwnerContextLifecycleEvidence()
+    {
+        if (staticSpineRenderingPlan == null || staticSpineSourceCanvasContext == null) return null;
+        if (staticSpineSourceCanvasContext.evidenceSha256 != StaticSpineCanvasEvidenceHash(staticSpineSourceCanvasContext) ||
+            staticSpineSourceCanvasContext.sourceManifestSha256 != staticSpineRenderingPlan.sourceManifestSha256 ||
+            staticSpineSourceCanvasContext.renderingPlanSha256 != staticSpineRenderingPlanSha)
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_SOURCE_CANVAS_EVIDENCE_PIN_MISMATCH");
+        foreach (var owner in staticSpineNativeInstanceOwners.Where(row => row != null && row.lifecycle != null &&
+            row.lifecycle.phase == "native-instance-clone"))
+        {
+            owner.lifecycle.priorOwnerRetired = owner.priorOwner == null;
+            owner.lifecycle.priorOwnerRegistryRevoked = !staticSpineNativeInstanceOwners.Any(row => row != null &&
+                row.owner == owner.priorOwner && row.sourceComponentId == owner.sourceComponentId);
+            if (!owner.lifecycle.priorOwnerRetired || !owner.lifecycle.priorOwnerRegistryRevoked)
+            {
+                owner.lifecycle.verified = false;
+                owner.lifecycle.registrationStatus = "registered-unverified";
+                owner.lifecycle.diagnostic = "prior-owner-not-retired-or-registration-not-revoked";
+            }
+        }
+        var known = new HashSet<string>(staticSpineOwnerContextLifecycleComponents.Select(row => row.sourceComponentId), StringComparer.Ordinal);
+        if (known.Count != staticSpineOwnerContextLifecycleComponents.Count ||
+            staticSpineOwnerContextLifecycleRows.Any(row => row == null || !known.Contains(row.sourceComponentId)))
+            throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_TRACE_SOURCE_DENOMINATOR_INVALID");
+        foreach (var component in staticSpineOwnerContextLifecycleComponents)
+            component.transitions = staticSpineOwnerContextLifecycleRows.Where(row => row.sourceComponentId == component.sourceComponentId).ToArray();
+        var envelope = new StaticSpineOwnerContextLifecycleEnvelope
+        {
+            sourceManifestSha256 = staticSpineRenderingPlan.sourceManifestSha256,
+            renderingPlanSha256 = staticSpineRenderingPlanSha,
+            sourceCanvasEvidenceSha256 = staticSpineSourceCanvasContext.evidenceSha256,
+            components = staticSpineOwnerContextLifecycleComponents.OrderBy(row => row.sourceComponentId, StringComparer.Ordinal).ToArray(),
+            transitions = staticSpineOwnerContextLifecycleRows.ToArray(),
+        };
+        envelope.evidenceSha256 = null;
+        envelope.evidenceSha256 = StaticSpineCanvasHashBytes(Encoding.UTF8.GetBytes(JsonUtility.ToJson(envelope)));
+        var bytes = Encoding.UTF8.GetBytes(JsonUtility.ToJson(envelope, true));
+        var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+        if (String.IsNullOrWhiteSpace(projectRoot)) throw new InvalidOperationException("SPINE_OWNER_LIFECYCLE_PROJECT_ROOT_UNAVAILABLE");
+        var path = Path.Combine(projectRoot, StaticSpineOwnerContextLifecyclePath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        File.WriteAllBytes(path, bytes);
+        return path;
+    }
+
+    static partial void WriteOptionalStaticSpineOwnerContextLifecycleEvidence()
+    { WriteStaticSpineOwnerContextLifecycleEvidence(); }
 
     static partial void BindOptionalStaticSpineControlledCanvasContext(GameObject context, Plan plan)
     { RegisterStaticSpineControlledCanvasContext(context, plan); }
@@ -624,6 +1343,11 @@ public static partial class MonkeyImporter
             !staticSpineSourceCanvasContext.sourceCanvasContextVerified ||
             StaticSpineCanvasEvidenceHash(staticSpineSourceCanvasContext) != staticSpineSourceCanvasContext.evidenceSha256)
             throw new InvalidOperationException("SPINE_RENDERING_SOURCE_CANVAS_CONTEXT_EVIDENCE_MISSING_OR_CHANGED");
+
+        staticSpineNativeInstanceOwners.Clear();
+        staticSpineRetiredNativeInstanceOwners.Clear();
+        staticSpineOwnerContextLifecycleRows.Clear();
+        InitializeStaticSpineOwnerLifecycleComponents(staticSpineRenderingPlan);
 
         staticSpineRenderingAssemblies=new[]{
             ReadStaticSpineAssembly(typeof(global::Spine.Skeleton).Assembly,"Assets/Plugins/Spine38/EditorRuntime/spine-csharp.dll"),
@@ -712,6 +1436,7 @@ public static partial class MonkeyImporter
             identity.nativeTimeScale = 0f;
             identity.sourceTimeScaleVerified = false;
             identity.persistentVisiblePose = row.sourceComponentEnabled;
+            RegisterStaticSpineSourceConstructionOwner(row, node, graphic, dataAsset);
             bool sourceCanvasVerified = TryGetStaticSpineSourceCanvasProof(graphic, row.sourceComponentId,
                 row.sourceDataAssetId, staticSpineRenderingPlan.sourceManifestSha256, staticSpineRenderingPlanSha,
                 out var sourcePpu, out var sourceCanvasEvidenceSha, out var sourceCanvasContextKind, out _);

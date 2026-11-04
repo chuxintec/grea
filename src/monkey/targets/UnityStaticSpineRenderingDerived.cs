@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,9 +19,21 @@ public static partial class MonkeyImporter
     static Dictionary<string,GameObject> spineRenderingUnitNodes;
     static float spineRenderingObservedCanvasPpu;
     static partial void ObserveStaticSpineRenderingUnitMapping(Plan plan,Dictionary<string,GameObject> nodes) {
-        spineRenderingUnitPlan=null;spineRenderingUnitNodes=null;spineRenderingObservedCanvasPpu=0;staticSpineSourceCanvasContext=null;
-        staticSpineSourceCanvasOwners.Clear();
+        spineRenderingUnitPlan=null;spineRenderingUnitNodes=null;spineRenderingObservedCanvasPpu=0;
+        ResetStaticSpineOwnerLifecycleRegistries();
         if(String.IsNullOrEmpty(plan.staticSpineRenderingJson))return;
+        var renderingPath=Path.Combine(Directory.GetParent(Application.dataPath).FullName,StaticSpineRenderingPlanPath);
+        var embedded=JsonUtility.FromJson<StaticSpineRenderingEnvelope>(plan.staticSpineRenderingJson);
+        if(embedded!=null&&File.Exists(renderingPath)) {
+            var frozenBytes=File.ReadAllBytes(renderingPath);
+            var frozen=JsonUtility.FromJson<StaticSpineRenderingEnvelope>(Encoding.UTF8.GetString(frozenBytes));
+            if(frozen!=null&&JsonUtility.ToJson(frozen)==JsonUtility.ToJson(embedded)&&
+                frozen.sourceManifestSha256==plan.sourceManifestSha256) {
+                staticSpineRenderingPlan=frozen;
+                staticSpineRenderingPlanSha=StaticSpineCanvasHashBytes(frozenBytes);
+                InitializeStaticSpineOwnerLifecycleComponents(frozen);
+            }
+        }
         CaptureStaticSpineRenderingUnitMapping(plan,nodes,out var ppu);
         staticSpineSourceCanvasContext=BuildStaticSpineSourceCanvasContextEvidence(plan,nodes,ppu,true);
         spineRenderingUnitPlan=plan;spineRenderingUnitNodes=nodes;spineRenderingObservedCanvasPpu=ppu;

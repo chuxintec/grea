@@ -64,7 +64,7 @@ def _readback_documents(documents, candidate_root: Path) -> list[dict]:
             return []
         result = []
         for path in sorted(directory.glob("*.json")):
-            if path.name == "source-canvas-context.json":
+            if path.name in ("source-canvas-context.json", "owner-context-lifecycle.json", "prepare.json"):
                 continue
             _, item = _read_json(path)
             if isinstance(item, dict):

@@ -350,6 +350,8 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
     refreshed_fragment = refreshed["staticSpineRendering"]
     from .spine_canvas_context_readback import CONTRACT as canvas_context_contract
     refreshed_fragment["sourceCanvasContextEvidenceContract"] = canvas_context_contract
+    from .spine_owner_lifecycle_readback import CONTRACT as owner_lifecycle_contract
+    refreshed_fragment["ownerContextLifecycleEvidenceContract"] = owner_lifecycle_contract
     if isinstance(refreshed.get("staticTextContinuation"), dict):
         from .prefab_static_text_continuation import SAMPLING_CONTRACT
         refreshed["staticTextContinuation"]["nativeSamplingContract"] = SAMPLING_CONTRACT

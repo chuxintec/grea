@@ -784,7 +784,7 @@ def verify(plan: dict, candidate_root: str | Path, readback_path: str | Path | N
         documents = []
         if sidecar.is_dir():
             for path in sorted(sidecar.glob("*.json")):
-                if path.name in ("prepare.json", "source-canvas-context.json"):
+                if path.name in ("prepare.json", "source-canvas-context.json", "owner-context-lifecycle.json"):
                     continue
                 raw = read(path, max_bytes=16 * 1024 * 1024)
                 documents.append(json.loads(raw.decode("utf-8-sig")))
@@ -835,6 +835,8 @@ def verify(plan: dict, candidate_root: str | Path, readback_path: str | Path | N
                          "missing": sorted(expected_ids - actual_ids), "extra": sorted(actual_ids - expected_ids)})
         from .spine_canvas_context_readback import verify_context_evidence
         gaps.extend(verify_context_evidence(rendering, candidate_root, documents))
+        from .spine_owner_lifecycle_readback import verify_lifecycle_evidence
+        gaps.extend(verify_lifecycle_evidence(rendering, candidate_root))
         gaps.extend(verify_rendering(plan, {"components": rows}))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         gaps.append({"code": "SPINE_RENDERING_SIDECAR_UNREADABLE", "message": str(error)})

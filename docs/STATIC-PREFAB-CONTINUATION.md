@@ -77,3 +77,7 @@ A purely omitted source PMA field legitimately has an empty known-values array. 
 已存在的 text 组件族在刷新后声明 `monkey-static-text-isolated-sampling/1`。未激活祖先下的 Label 仅在隔离克隆中采样 TMP 字符 quad 与 Outline 材质；原源节点状态和 Label enabled 单独保存并验证未改。受控采样不激活原始业务脚本，不证明源 Canvas 像素等价。旧未声明这些证据契约的固定候选仍按其原有证据规则校验，不补造新证据。严格源版本/字段证据可以允许 TTF SHRINK 下限 0；显式 TTF 与系统 TTF 均保持字体 GUID、文本、缺字与实际尺寸边界校验。
 
 Inactive Spine owners can use `monkey-static-spine-inactive-source-flow/1` only when the exact full source activity path through the owning Prefab root matches both persistent and loaded hierarchies under an active controlled host. This classification does not turn unreadable SDK renderer lists into empty lists. Owner/data identity and any actual child/material/texture references remain separate mandatory checks; active source owners retain the registered-renderer requirement.
+
+刷新还声明 `monkey-static-spine-owner-context-lifecycle/1`，将 `Analysis/Readback/SpineRendering/owner-context-lifecycle.json` 纳入主回读 SHA 清单。该文件的构造登记、模板替换、排序捕获、保存重开配对与宿主释放记录用于验证对象生命周期，不重复计入 renderer 分母。组件 ID 与节点 ID 分别通过计划表关联，不从组件 ID 的序号推导所属节点。
+
+原生实例替换在完整属性和引用重映射后、旧根销毁前，验证准确的旧/新 renderer、实例根、模板节点、数据资产和实际 Canvas 上下文；全部候选通过后才转移登记并撤销旧对象。保存资产与加载副本继续使用独立配对，释放宿主后撤销该作用域。构造期登记不能充当保存重开证据。失败时保留部分生命周期记录及原异常；完整验收仍要求真实 Editor 的保存、重开与引用结果。

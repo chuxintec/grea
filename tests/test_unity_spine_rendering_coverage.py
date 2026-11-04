@@ -80,3 +80,19 @@ def test_canvas_context_rows_are_hash_bound_without_doubling_renderer_denominato
     assert load_bound_receipt(tmp_path,main)['components']==[{'sourceComponentId':sid,'verified':True}]
     context.write_bytes(context.read_bytes()+b' ')
     with pytest.raises(ValueError,match='BYTES_CHANGED'):load_bound_receipt(tmp_path,main)
+
+
+def test_owner_lifecycle_components_are_bound_without_becoming_renderers(tmp_path):
+    carrier=tmp_path/'Analysis/Readback/spine-static-continuation.json'
+    renderer=tmp_path/'Analysis/Readback/SpineRendering/saved-prefab.json'
+    lifecycle=renderer.with_name('owner-context-lifecycle.json')
+    carrier.parent.mkdir(parents=True);renderer.parent.mkdir()
+    io.write_json(carrier,{'components':[]})
+    io.write_json(renderer,{'components':[{'sourceComponentId':'source:one','verified':True}]})
+    io.write_json(lifecycle,{'contract':'monkey-static-spine-owner-context-lifecycle/1',
+                             'components':[{'sourceComponentId':'source:one'}], 'transitions':[]})
+    main=dict(staticSpineReadbackFiles=[dict(path=path.relative_to(tmp_path).as_posix(),sha256=io.sha(path.read_bytes()))
+                                      for path in (carrier,renderer,lifecycle)])
+    assert len(load_bound_receipt(tmp_path,main)['components'])==1
+    lifecycle.write_bytes(lifecycle.read_bytes()+b' ')
+    with pytest.raises(ValueError,match='BYTES_CHANGED'):load_bound_receipt(tmp_path,main)

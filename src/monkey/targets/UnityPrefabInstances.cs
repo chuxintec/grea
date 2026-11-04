@@ -121,6 +121,7 @@ public static partial class MonkeyImporter
                 foreach(var item in nodes.Where(p=>p.Key.Split('#')[0]==owner))
                     foreach(var component in item.Value.GetComponents<Component>())if(component!=null)RemapNativeReferences(component,replacements);
                 if(firstEngineError!=null)throw new InvalidOperationException("NATIVE_ENGINE_ERROR_RECORDED during native reference transfer");
+                RebindOptionalStaticSpineNativeInstanceContext(plan,instance,nodes,replacements);
                 UnityEngine.Object.DestroyImmediate(previousRoot);
                 InitializeSavedStaticSpine(root);
                 if(Hash(template.path)!=prefabTemplateHashes[instance.template])throw new InvalidOperationException("Instance override mutated shared template");

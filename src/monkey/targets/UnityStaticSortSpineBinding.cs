@@ -270,9 +270,14 @@ namespace Monkey.StaticSortQueueProxy
                 // registered host, whose PPU is compared with source-captured
                 // Canvas/Scaler evidence. Never infer PPU from the data scale.
                 var renderingHash = HashBytes(renderingBytes);
-                if (sourceOwner == null || !MonkeyImporter.TryGetStaticSpineSourceCanvasProof(sourceOwner, sourceComponentId,
+                var sourceCanvasPpu = 0f;
+                var canvasProof = sourceOwner != null && MonkeyImporter.TryGetStaticSpineSourceCanvasProof(sourceOwner, sourceComponentId,
                     renderComponent.sourceDataAssetId, importPlan.sourceManifestSha256, renderingHash,
-                    out var sourceCanvasPpu, out _, out _, out diagnostic))
+                    out sourceCanvasPpu, out _, out _, out diagnostic);
+                if (sourceOwner == null) diagnostic = "cocos-static-spine-owner-null-before-canvas-proof";
+                MonkeyImporter.RecordStaticSpineOwnerContextUse(sourceOwner, sourceComponentId,
+                    renderComponent.sourceDataAssetId, "static-sort-create-capture", canvasProof, diagnostic);
+                if (!canvasProof)
                 { diagnostic = diagnostic ?? "cocos-static-spine-canvas-unit-context-unverified"; return false; }
                 if (sourceOwner is SkeletonGraphic sourceGraphic && sourceGraphic.SkeletonDataAsset != exactDataAsset)
                 { diagnostic = "cocos-static-spine-owner-data-reference-mismatch"; return false; }
