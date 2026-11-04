@@ -87,7 +87,8 @@ class UnitySystemFontOutlineTests(unittest.TestCase):
         refresh = self.runtime.split("public Readback RefreshNow()", 1)[1].split("void Apply(TMP_TextInfo", 1)[0]
         prepare = self.runtime.split("void PreparePrimaryMaterialForMesh()", 1)[1].split("void Apply(TMP_TextInfo", 1)[0]
         self.assertLess(refresh.index("PreparePrimaryMaterialForMesh()"), refresh.index("target.ForceMeshUpdate(true, true)"))
-        self.assertIn("var primary = GetVariant(target.font)", prepare)
+        self.assertIn("TryGetPersistentVariant(target.font, null, primaryAtlas, out var primary)", prepare)
+        self.assertIn("if (!hasPersistentPrimary) primary = GetVariant(target.font)", prepare)
         self.assertIn("target.fontSharedMaterial = primary", prepare)
         self.assertIn("NATIVE_STATIC_TEXT_OUTLINE_PRIMARY_MATERIAL_PREPARE_FAILED", refresh)
         self.assertIn("existing.material != null", self.runtime.split("Material GetVariant(", 1)[1].split("bool ConfigureMaterial", 1)[0])

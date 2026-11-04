@@ -39,6 +39,7 @@ public static class UnitySystemFonts
         public string fontAssetDirectory;
         public string fontAssetPathRule;
         public string populationMode;
+        public string unityPopulationPolicy;
         public int pointSize;
         public string glyphCoverageScope;
         public string newCharacterBoundary;
@@ -1036,6 +1037,10 @@ public static class UnitySystemFonts
             throw new InvalidOperationException("SYSTEM_FONT_RUNTIME_PLATFORM_CONSTRAINT_MISSING");
         if (spec.sourceOSIdentityVerified || spec.visualEquivalent)
             throw new InvalidOperationException("SYSTEM_FONT_SOURCE_BOUNDARY_INVALID: source OS and visual equivalence must remain unverified");
+        if (!string.IsNullOrEmpty(spec.unityPopulationPolicy)
+            && spec.unityPopulationPolicy != "dynamic-if-exact-v1"
+            && spec.unityPopulationPolicy != "coretext-static-fallbacks-v1")
+            throw new InvalidOperationException("SYSTEM_FONT_POPULATION_POLICY_INVALID");
         if ((spec.populationMode != "DynamicOS" && spec.populationMode != "Mixed") || spec.pointSize != 90)
             throw new InvalidOperationException("SYSTEM_FONT_POPULATION_MODE_INVALID: expected DynamicOS or evidence-split Mixed mode at point size 90");
         if (string.IsNullOrEmpty(spec.irSha256) || string.IsNullOrEmpty(spec.sourceManifestSha256) || string.IsNullOrEmpty(spec.resolutionReceiptSha256))
@@ -1046,6 +1051,20 @@ public static class UnitySystemFonts
             throw new InvalidOperationException("SYSTEM_FONT_EXPLICIT_FONT_REPLACEMENT: explicit TTF/bitmap Label bindings must not be replaced");
         if (!string.Equals(spec.fontAssetDirectory, "Assets/Game/Content/Fonts/System", StringComparison.Ordinal))
             throw new InvalidOperationException("SYSTEM_FONT_ASSET_DIRECTORY_INVALID");
+    }
+
+    static bool StaticSdfPhysicalFacesSupported(FontSpec font, string policy)
+    {
+        if (font == null || font.matchingPhysicalFaces == null) return false;
+        // Legacy protected/ambiguous faces carry no exact physical match.
+        if (font.matchingPhysicalFaces.Length == 0) return true;
+        // A physical match alone does not prove Unity's DynamicOS loader can
+        // open it. Only the explicit fallback policy permits that same face
+        // to use generated SDF pixels, keeping the original identity evidence.
+        return policy == "coretext-static-fallbacks-v1" && font.role == "fallback"
+            && font.matchingPhysicalFaces.Length == 1 && font.matchingPhysicalFaces[0] != null
+            && !string.IsNullOrEmpty(font.targetPostScriptName)
+            && string.Equals(font.matchingPhysicalFaces[0].postScriptName, font.targetPostScriptName, StringComparison.Ordinal);
     }
 
     static void ValidateReferences(BindingSet bindingSet, Dictionary<string, FontSpec> byId)
@@ -1062,7 +1081,7 @@ public static class UnitySystemFonts
             if (font.populationMode == "StaticSDFRequired"
                 && (font.generationMode != "CoreTextRasterizedStaticSDF" || font.fontFileCopiedOrExported
                     || string.IsNullOrEmpty(font.targetPostScriptName) || !IsSha256(font.targetSystemFontFileSha256)
-                    || font.matchingPhysicalFaces == null || font.matchingPhysicalFaces.Length != 0))
+                    || !StaticSdfPhysicalFacesSupported(font, bindingSet.systemFonts.unityPopulationPolicy)))
                 throw new InvalidOperationException("SYSTEM_FONT_STATIC_SDF_CONTRACT_INVALID: " + font.assetId);
             if (font.populationMode == "DynamicOS"
                 && (string.IsNullOrEmpty(font.targetPostScriptName) || !IsSha256(font.targetSystemFontFileSha256)

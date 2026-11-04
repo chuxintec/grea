@@ -1,3 +1,19 @@
+# monkey 技术上下文与历史
+
+当前开发任务和v1.1验收唯一入口：[GREA lifecycle-roadmap](/Users/wangmeng/MyProjects/Tools/grea/proposals/lifecycle-roadmap.md)，由GREA负责人单写。monkey保留仓库、0.8.0实现版本、会话及代码单写，不再维护独立未完待办或开发release列表。
+
+- 肥鹅四页工具实现、实际原生结果与采用：`grea:T-foodstreet-four-activity-bulk`。
+- 肥鹅四页收口后僵尸全量有源Prefab转换与采用：`grea:T-zombie-bulk-static-prefabs`。
+- 二进制模块工作：`grea:T-binary-provider-macos`，保留当前用户后置/暂停约束。
+
+2026-11-04实际任务源迁移：已从下方结构化视图删除三个未完task和未完dev8 release；已完成历史仍保留。旧ID→GREA ID、原输入/消费者/阻塞摘要与原文SHA见 `.private/unified-task-source-20261104/handoff-index.json`；这不是将未完产品任务标done/cancelled。
+
+当前技术交付记录：dev10修正显式静态SDF策略与Unity物理face校验的合同；实际52标签绑定已通过生产C#纯合同测试，GREA复用已有IR与136字形产物继续原生导入。原始SHA、源字体/face证明和严格反例保留；本文不另建验收待办。
+
+## 已完成交付及技术历史
+
+以下为历史来源与已完成技术记录，旧的Current/Next/待验措辞均为当时快照，不再构成独立当前任务或开发发布计划。
+
 Unified0.8.0.dev9 source integration complete (2026-11-04): merge retains all prior Unity-source recovery/profiles/CLI/package resources and includes the fixed Cocos Toggle null-spec bridge, request-pinned CoreText static fallback policy, source-font prepare/generate CLI, and absent retained-asset contract schema guard.179 Unity-focused pytest checks pass;75 Cocos/font/static-field/common-CLI checks pass with1 optional environment probe skip (groups overlap, not a combined unique total). No new Editor/Swift/binary run. Prior real GREA actual03 produced11Prefabs/668nodes/0missingScripts but partial static refs; actual04 exposed unavailable Unity font family. New source lets GREA alone regenerate/import with exact identities; missing Spine/Animation/custom materials remain explicit gaps. The merge histories retain both old branches; single current v0.8.0.dev9 head/default replaces all previous heads after exact remote verification, tags/fixed bytes remain unchanged.
 
 2026-11-04 latest user override human01a1a68e-cacd-79f1-a284-b10ddae38551, natively verified in GREA chat: consolidate monkey into the single v0.8.0 series; no new v0.7 iteration. Preserve prior fixed Cocos/Unity artifacts and tags. Integrate Toggle/font commits through a87dde2 and current strict static-reference null-contract fix into next v0.8.0.dev9, keep Unity-source recovery, run affected checks, then migrate default and retire covered prior heads. Root tracked PLAN/TEAM WIP is checkpointed before isolated detached integration; opaque .codex remains untouched. GREA alone runs actual four-page import/adoption.
@@ -8,7 +24,7 @@ Unified0.8.0.dev9 source integration complete (2026-11-04): merge retains all pr
 
 2026-11-04 Foodstreet priority: binary work paused_by_user; fixed v0.8 dev8 two-root public CLI handoff is complete (dev8-fixed-two-root-handoff-index.json), adoption remains GREA-owned. GREA is the sole Foodstreet actual convert/native-import caller. Current actual02 failed at896/903 components with missing_toggle_spec despite zero source Toggles: JSON null Spec was materialized by Unity. Isolated stable-line worktree .private/worktrees/cocos-system-font-v071 commit0da189a (0.7.1.dev1) fixes explicit presence/source-type gating in creation and saved readback, preserving missing-spec strict refusal.16 focused checks pass including1 optional skip; fixed source and runnable argv delivered to GREA. No monkey Editor/duplicate batch. Next module exposes existing pinned system-font resolver/SDF preparation;52 system labels/47 dependent outlines remain separate. No publication/global upgrade/game writes.
 
-# monkey — v0.7.0 stable release / v0.8.0 independent development
+# monkey 技术交付历史（非当前任务源）
 
 ## Full-parent native continuation — 2026-11-04
 
@@ -28,9 +44,9 @@ Corrected GREA-ratified Bounce v2 profile, unchanged original source/explicit ta
 
 Actual production native verifier/refusal fixture15 passes12 materialized native-target refusals and28 captured-native-signature contract refusals.14 attempted curve edits normalized by Unity and caused no materialized target drift; they are recorded separately and are not claimed refused. Earlier fixture14 stopped on that ineffective mutant and is retained.116 related Python checks pass. The verbose full native report exceeded the unchanged128MiB readback cap in Native18; lossless compact JSON (all fields retained) resolves it in Native19. Fixeddev8 package/actual fixed entry handoff is being established; no consumer lock or original59pairs changed.
 
-## Manager 当前任务投影
+## 已完成历史投影
 
-本块由monkey随原PLAN单写维护；历史段落与迁移记录不自动成为当前任务或完成率分母。
+本块仅保留已完成历史；未完成task/development-release及其管理阻塞条目已从本源实际删除并交GREA。
 
 ```manager-task-view
 {
@@ -38,7 +54,7 @@ Actual production native verifier/refusal fixture15 passes12 materialized native
   "projectId": "monkey",
   "updatedOn": "2026-11-04",
   "ownerSessionId": "01a19b7a-b22a-7ac1-88b0-4c3d3219718b",
-  "scope": "GREA内部monkey恢复模块：v0.8 Unity真实消费者静态恢复继续；Mac ARM64二进制从已验v0.7.0隔离。无独立发布/全局安装/旧锁切换。",
+  "scope": "仅保留已完成历史。当前开发任务及发布验收唯一来源为GREA proposals/lifecycle-roadmap.md，按负责人分派实施，不维护monkey独立待办。",
   "releases": [
     {
       "id": "monkey:v0.7.0",
@@ -130,32 +146,14 @@ Actual production native verifier/refusal fixture15 passes12 materialized native
       ]
     },
     {
-      "id": "monkey:v0.8.0-dev8",
-      "title": "Unity-source静态Prefab恢复开发候选",
-      "version": "0.8.0.dev8",
-      "workflowStatus": "in_progress",
-      "description": "正确Bounce v2+原生SDK驱动保存修复；完整BattleMain/独立根原型保存冷读通过，负向40拒绝、源条件及相关116检查过；现在固定内部候选并核同制品实际入口，交GREA组织采用。",
-      "candidateCommit": null,
-      "acceptanceCriteria": [
-        "固定版本身份、既有静态保存/独立冷读/消费者采用证据保持",
-        "BattleMain仅在源字段严格一致的原生保存及独立冷读通过后接受；未支持能力继续明确拒绝",
-        "视觉、Player与业务验收单独记录，不由静态数量推导；正式发布范围尚未授权"
-      ],
-      "verification": {
-        "result": "partial",
-        "scope": "两完整根原型全字段/引用保存与独立冷读过；headless/禁用未知行为保持，固定入口和消费尚待完成"
-      },
+      "id": "monkey:history-source-inventory",
+      "kind": "phase_milestone",
+      "version": null,
+      "title": "历史完成：冻结来源Prefab分母与既有消费者映射",
+      "workflowStatus": "done",
+      "description": "只表示已完成的技术证据核验，不是新的开发release或整版完成声明；源于已完成inventory任务，原dev8开发release已移交GREA。",
       "sourceRefs": [
-        "docs/PLAN.md#current-consumer-milestone--2026-11-02",
-        "docs/PLAN.md#fixed-dev7-effect-handoff--2026-11-02",
-        "/Users/wangmeng/MyProjects/Manager/decisions/20261104-product-driven-tooling/PLAN.md"
-      ],
-      "consumerProjectId": "zombie",
-      "consumerTaskIds": [
-        "zombie:T0001",
-        "zombie:T0002",
-        "zombie:T0003",
-        "zombie:T0006"
+        ".private/unity-prefab-v080-20261104/source-prefab-inventory-with-adoption-02.json"
       ]
     }
   ],
@@ -233,45 +231,10 @@ Actual production native verifier/refusal fixture15 passes12 materialized native
       ]
     },
     {
-      "id": "monkey:battlemain-uv-empty-curve",
-      "primaryReleaseId": "monkey:v0.8.0-dev8",
-      "title": "解决BattleMain源空UV曲线的原生表示差异",
-      "workflowStatus": "in_progress",
-      "description": "完整BattleMain491节点1380组件59291字段及独立根4节点8组件4297字段原型save/cold通过；身份引用稳定。负向实际native目标12拒绝、捕获签名28拒绝；14次被引擎归一未形成漂移不计拒绝。固定dev8入口验证/消费未闭环。",
-      "acceptanceCriteria": [
-        "提供有源证据且保留严格字段校验的目标表示方案，不归一化源数据或放宽比较",
-        "鲜候选原生保存和独立冷读通过受影响字段及身份/引用检查",
-        "固定实现/同版或新批准候选及实际采用分层记录；失败证据保留"
-      ],
-      "blockerIds": [
-        "monkey:blocker-uv-empty-native-representation"
-      ],
-      "verification": {
-        "result": "partial",
-        "scope": "实际双源复制保存/冷读与完整根失败证据；通用修复未过完整根，不可采用"
-      },
-      "sourceRefs": [
-        "docs/PLAN.md#current-consumer-milestone--2026-11-02",
-        ".private/unity-prefab-v080-20261102/UVRepresentationProbe01/summary.json"
-      ],
-      "consumerProjectId": "zombie",
-      "consumerTaskIds": [
-        "zombie:T0001",
-        "zombie:T0002",
-        "zombie:T0003",
-        "zombie:T0006"
-      ],
-      "consumerPacket": "/Users/wangmeng/MyProjects/Games/projects/21-zombie-cannon/Analysis/product-driven-tooling-20261104/consumer-packet.json",
-      "nextAction": "区分原Provider原生导入与新AddComponent的曲线表示；若可保原值则实现通用修复，若需语义映射先形成有界裁定请求。固定下一dev后交项目自然采用。",
-      "fixedDelivery": null,
-      "adoption": null
-    },
-    {
       "id": "monkey:unity-source-prefab-inventory",
-      "primaryReleaseId": "monkey:v0.8.0-dev8",
       "title": "冻结来源Prefab根与依赖分母及首关消费者映射",
       "workflowStatus": "done",
-      "description": "601冻结缓存/132文件名Prefab包/161精确地址根；按源identity和原生GUID关联既有10个正式采用静态子集，151仅来源解析；335粒子/77空TwoConstants/17来源根。未重导或重复验收。",
+      "description": "601冻结缓存/132文件名Prefab包/161精确地址根；按源identity和原生GUID关联既有10个正式采用静态子集，151仅来源解析；335粒子/77空TwoConstants/17来源根。未重导或重复验收。 历史实现版本引用monkey:v0.8.0-dev8；其未完开发release条目已移交GREA，本行仅保留已完成的来源分母核验事实。",
       "consumerProjectId": "zombie",
       "consumerTaskIds": [
         "zombie:T0001",
@@ -290,58 +253,11 @@ Actual production native verifier/refusal fixture15 passes12 materialized native
       "verification": {
         "result": "pass",
         "scope": "冻结来源分母与既有静态子集精确关联；不是整包获取、整模块或新增原生/视觉验收"
-      }
-    },
-    {
-      "id": "monkey:binary-macos-standalone",
-      "primaryReleaseId": "monkey:v0.7.0",
-      "title": "Mac ARM64稳定模块真实CLI二进制与源码资源边界",
-      "workflowStatus": "in_progress",
-      "description": "用户已批准二进制分发，覆盖同日完整模块源码包选择；专用稳定工作树86d47f，模块子Agent只写隔离环境。Nuitka standalone实际Mach-O、可搬迁验证与嵌套源码审计；只本地候选交GREA。",
-      "acceptanceCriteria": [
-        "真实Mach-O公共version/capabilities/help与可搬迁目录/完整文件身份",
-        "内部helper/模板/嵌入载荷源码完整审计，不删实际能力或用源码fallback",
-        "共同编译flock、最多2jobs、无Editor/产品/全局/发布操作；交GREA统筹"
-      ],
-      "sourceRefs": [
-        "/Users/wangmeng/MyProjects/Tools/grea/.private/development/binary-distribution-20261104/binary-provider-contract-v1.json"
-      ]
-    },
-    {
-      "id": "monkey:foodstreet-four-activity-closure",
-      "primaryReleaseId": "monkey:v0.7.0",
-      "title": "肥鹅四活动Cocos→Unity完整静态闭包与离线候选",
-      "workflowStatus": "in_progress",
-      "description": "由独立模块核最新固定Cocos链路，四根和已证动态源计算完整闭包，经GREA公开请求生成独立Analysis输出；8项不是分母。仅离线，原生由负责人另交资源，不写产品/WIP。",
-      "sourceRefs": [
-        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/FOUR-ACTIVITY-RECOVERY-CONSUMER-INPUTS.json"
-      ],
-      "acceptanceCriteria": [
-        "固定producer身份和实际公共GREA请求可复查",
-        "完整四根静态闭包、动态源证据/未知引用、sourceID→目标映射与实际纯输出",
-        "不采用/覆盖现有活动页WIP；原生/视觉/业务维持未验；缺适配仅交准确接口差异给GREA"
-      ]
+      },
+      "primaryReleaseId": "monkey:history-source-inventory"
     }
   ],
-  "blockers": [
-    {
-      "id": "monkey:blocker-uv-empty-native-representation",
-      "title": "两真实完整根的Bounce与SDK保存表示技术缺口已过原型门",
-      "workflowStatus": "resolved",
-      "taskIds": [
-        "monkey:battlemain-uv-empty-curve"
-      ],
-      "owner": "monkey",
-      "ownerSessionId": "01a19b7a-b22a-7ac1-88b0-4c3d3219718b",
-      "description": "Native19及独立Native03全静态字段/引用保存/冷读通过；NativeRefusal15共40拒绝，14未形成漂移的尝试单列。固定dev8/消费仍是后续工作，非整版/视觉/业务验收。",
-      "resolutionCondition": "完整BattleMain与独立真实根保存/冷读及目标全签名/负向变异拒绝通过，固定候选交GREA，再由消费者采用验收。",
-      "sourceRefs": [
-        ".private/unity-prefab-v080-20261104/BattleRendererNative19/execution-result.json",
-        ".private/unity-prefab-v080-20261104/IndependentProgressEffectNative03/execution-result.json",
-        ".private/unity-prefab-v080-20261104/ParticleProfileRefusal15/UnityProject/native-refusal-report.json"
-      ]
-    }
-  ]
+  "blockers": []
 }
 ```
 

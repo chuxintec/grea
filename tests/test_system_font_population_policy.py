@@ -19,7 +19,8 @@ def fixture():
                          fallback=fallback,family=family,styleName='Regular',postScriptName=postscript,
                          systemFontFileUrl=url,variationAxes={},requiredForVisualText=True,glyphCovered=True))
         evidence.append(dict(family=family,styleName='Regular',postScriptName=postscript,
-                             systemFontFileUrl=url,exactPostScriptFaceCount=1,exactPostScriptFaces=[{'index':0}]))
+                             systemFontFileUrl=url,exactPostScriptFaceCount=1,
+                             exactPostScriptFaces=[dict(faceIndex=0,family=family,subfamily='Regular',postScriptName=postscript)]))
         files.append(dict(path=url,status='inspected',fileSha256='f'*64,fileSizeBytes=100))
     receipt=dict(schema='monkey-macos-system-font-resolution/1',status='resolved',targetOS='macOS',
         targetOSVersion='synthetic',visualEquivalent=False,
@@ -58,7 +59,8 @@ class SystemFontPopulationPolicyTests(unittest.TestCase):
             self.assertEqual(fallback['familyName'],'Example Sans')
             self.assertEqual(fallback['targetPostScriptName'],'ExampleSans-Regular')
             self.assertEqual(fallback['targetSystemFontFileSha256'],'f'*64)
-            self.assertEqual(fallback['matchingPhysicalFaces'],[{'index':0}])
+            self.assertEqual(fallback['matchingPhysicalFaces'],[dict(faceIndex=0,family='Example Sans',
+                subfamily='Regular',postScriptName='ExampleSans-Regular')])
             plan=prepare_static_coretext_sdf_plan(ir,'b'*64,path,pin)
             self.assertEqual(plan.status,'prepared',plan.record)
             self.assertEqual(plan.record['systemFonts'][0]['assetId'],fallback['assetId'])
