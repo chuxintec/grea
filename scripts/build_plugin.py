@@ -185,6 +185,8 @@ def build(out, *, worktree=False, cache=None, tag=None, target=None, modules=Non
     metadata = json.loads(source['plugin/version.json'][0])
     if metadata['version'] != version or metadata['greaVersion'] != version:
         raise ValueError('Plugin and product versions differ')
+    if metadata.get('moduleDistribution',{}).get('mode') == 'binary':
+        raise ValueError('Binary module packaging awaits fixed native artifacts and acceptance; source-wheel fallback is disabled')
     for client in ('.codex-plugin', '.claude-plugin'):
         if json.loads(source[f'plugin/{client}/plugin.json'][0])['version'] != version:
             raise ValueError('Client manifest version differs')

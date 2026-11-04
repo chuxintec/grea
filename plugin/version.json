@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "name": "grea",
-  "version": "1.1.0.dev1",
-  "greaVersion": "1.1.0.dev1",
+  "version": "1.1.0.dev2",
+  "greaVersion": "1.1.0.dev2",
   "requiredOperations": [
     "session",
     "describe_tool",
@@ -13,5 +13,10 @@
   "requiredProviders": [
     "monkey",
     "beaver"
-  ]
+  ],
+  "moduleDistribution": {
+    "mode": "binary",
+    "stage": "macos_arm64_development",
+    "sourceWheelFallback": false
+  }
 }

@@ -56,6 +56,12 @@ def module(name, root=None):
     raise ValueError('Unknown GREA module: ' + str(name))
 
 
+def _require_legacy_source_distribution(root=None):
+    metadata = Path(root or package_root())/'plugin/version.json'
+    if metadata.is_file() and json.loads(metadata.read_text()).get('moduleDistribution',{}).get('mode') == 'binary':
+        raise ValueError('Source-wheel fallback is disabled for binary distribution; use the fixed binary artifact and install-binary')
+
+
 def bundled_dir(root=None):
     return Path(root or package_root())/'modules'/'wheels'
 
@@ -157,6 +163,7 @@ def _core_site():
 
 def install(name, output, *, wheel=None, state=None, root=None):
     """Explicit install of one locked module into an isolated venv; never binds or replaces."""
+    _require_legacy_source_distribution(root)
     entry = module(name, root)
     if os.name == 'nt':
         raise ValueError('Module install on Windows is not supported yet; the provider readiness requires a POSIX console launcher')
@@ -214,6 +221,7 @@ def install(name, output, *, wheel=None, state=None, root=None):
 
 def fetch(destination, root=None, timeout=60):
     """Download the locked wheels (build/CI only), verifying size and SHA256; reuses verified files."""
+    _require_legacy_source_distribution(root)
     import tempfile
     import urllib.request
     destination = Path(destination); destination.mkdir(parents=True, exist_ok=True)

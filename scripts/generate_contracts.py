@@ -28,6 +28,8 @@ from grea.monkey_contracts import documents as monkey_documents
 outputs.update(monkey_documents())
 from grea.beaver_contracts import documents as beaver_documents
 outputs.update(beaver_documents())
+from grea.binary_provider import documents as binary_documents
+outputs.update(binary_documents())
 outputs['unity-capabilities.json']=capability_matrix()
 # Input documents authored from Skills ship the same generated schema bytes.
 # Runtime contracts remain canonical here, never manually copied into references.

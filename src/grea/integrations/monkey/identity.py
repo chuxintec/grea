@@ -60,12 +60,47 @@ def package_files(root):
     return files
 
 
+def create_binary_lock(manifest, expected, output):
+    from grea import registry
+    from grea.binary_provider import validate
+    out=disjoint(output,manifest)
+    if out.exists() or not out.parent.is_dir():raise ValueError('Use a fresh lock output')
+    entry=registry.tool('monkey');command=registry.command(entry);probe=registry.command(entry,probe=True)
+    if probe!=command+['capabilities','--json']:raise ValueError('Probe must use the actual monkey binary')
+    binary=validate(manifest,expected,'monkey',command=command)
+    out.mkdir()
+    receipt,_,error=runner.execute('monkey',[],out/'probe',probe=True,timeout_seconds=20,max_output_bytes=1024**2,max_inline_bytes=1024**2)
+    cap=receipt.get('parsed_stdout')
+    if error or not receipt.get('capture_complete') or not isinstance(cap,dict) or cap.get('schemaVersion')!=1:
+        raise ValueError('Binary monkey capability probe failed')
+    binary=validate(manifest,expected,'monkey',command=command,capabilities=cap)
+    if cap.get('version')!=binary['metadata']['version']:raise ValueError('Binary version differs from manifest')
+    files=dict(binary['runtime_files']);files[binary['manifest']['path']]=binary['manifest']['sha256']
+    cfg=dict(schema_version=3,identity_mode='binary',version=cap['version'],capabilities_sha256=digest(cap),
+             identity_root=binary['root'],command=command,probe=probe,binary_manifest=binary['manifest'],
+             runtime_files=binary['runtime_files'],identity_files=[dict(path=p,sha256=s) for p,s in sorted(files.items())])
+    from .pipeline import validate_fixed_candidate
+    validate_fixed_candidate(cfg,cap)
+    write_new(out/'monkey-lock.json',cfg)
+    return cfg
+
+
 _legacy_pinned=pinned
 
 def pinned(config):
     cfg=read(config)
     if cfg.get('schema_version')==1:return _legacy_pinned(config)
     from grea import registry
+    if cfg.get('schema_version')==3:
+        from grea.binary_provider import check_lock
+        required={'schema_version','identity_mode','version','capabilities_sha256','identity_files','identity_root','command','probe','runtime_files','binary_manifest'}
+        if set(cfg)!=required or cfg.get('identity_mode')!='binary':raise ValueError('Expected explicit binary monkey lock v3')
+        entry=registry.tool('monkey')
+        if registry.command(entry)!=cfg['command'] or registry.command(entry,probe=True)!=cfg['probe']:raise ValueError('Binary provider launcher changed')
+        binary=check_lock(cfg,'monkey')
+        files=dict(binary['runtime_files']);files[binary['manifest']['path']]=binary['manifest']['sha256']
+        if cfg['identity_files']!=[dict(path=p,sha256=s) for p,s in sorted(files.items())]:raise ValueError('Binary identity inventory differs from lock')
+        return cfg
     required={'schema_version','version','capabilities_sha256','identity_files','identity_root','command','probe','package_files'}
     if set(cfg)!=required or cfg['schema_version']!=2:raise ValueError('Expected provider lock v1 or v2')
     entry=registry.tool('monkey')

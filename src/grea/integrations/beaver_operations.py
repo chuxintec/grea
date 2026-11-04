@@ -436,8 +436,7 @@ def invoke(lock, request_file, output):
                 if isinstance(actual,dict):result['provider_result']=actual
                 if profile_identity and hash_file(profile_identity['path'],8*1024**2)!=profile_identity:
                     raise ValueError('Bound profile changed during invocation')
-                if beaver.package_identity(cfg['identity_root'])!=cfg['package_files'] or beaver.command_identity(cfg['command'])!=cfg['command_files']:
-                    raise ValueError('Provider implementation changed during invocation')
+                beaver.verify_identity(cfg,full=False)
                 if not invocation.get('capture_complete') or not isinstance(actual,dict) or actual.get('contract')!='beaver-result/1' or actual.get('producer',{}).get('name')!='beaver' or actual.get('producer',{}).get('version')!=cfg['version']:
                     raise ValueError('Incomplete or unsupported beaver result')
                 if cfg['version'] in beaver.V03_CANDIDATES:

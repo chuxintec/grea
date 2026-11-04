@@ -2,7 +2,7 @@
 import argparse,json,subprocess
 from grea.common import GreaError,write_new
 from grea.integrations.monkey import pipeline
-from grea.integrations.monkey.identity import create_lock,pinned
+from grea.integrations.monkey.identity import create_lock,create_binary_lock,pinned
 from grea.integrations.monkey.audit import audit
 
 
@@ -13,7 +13,10 @@ def main(argv=None):
     for action in ('check','ensure'):
         sub=commands.add_parser(action);sub.add_argument('--output',required=True)
         if action=='ensure':sub.add_argument('--install-if-missing',action='store_true')
-    pin=commands.add_parser('pin');pin.add_argument('--package-root',required=True);pin.add_argument('--output',required=True)
+    pin=commands.add_parser('pin');pin.add_argument('--output',required=True)
+    identity=pin.add_mutually_exclusive_group(required=True)
+    identity.add_argument('--package-root');identity.add_argument('--binary-manifest')
+    pin.add_argument('--expected-binary-manifest')
     for action in ('plan','run','audit'):
         p=commands.add_parser(action);p.add_argument('--config',help='Omit to use the checked persistent local binding');p.add_argument('--output',required=True)
         p.add_argument({'plan':'--request','run':'--plan','audit':'--workspace'}[action],required=True)
@@ -61,7 +64,11 @@ def main(argv=None):
             from grea.integrations.monkey.local import default_lock
             args.config=default_lock()
         if args.action=='pin':
-            result=create_lock(args.package_root,args.output)
+            if args.binary_manifest:
+                result=create_binary_lock(args.binary_manifest,args.expected_binary_manifest,args.output)
+            else:
+                if args.expected_binary_manifest:raise ValueError('Binary manifest SHA requires binary manifest mode')
+                result=create_lock(args.package_root,args.output)
             print(json.dumps(dict(status='pinned',version=result['version'],output=args.output)));return 0
         if args.action=='plan':result=pipeline.plan(args.config,args.request,args.output)
         elif args.action=='run':result=pipeline.execute(args.config,args.plan,args.output)

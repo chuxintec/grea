@@ -50,6 +50,11 @@ SUPPORTED_VERSIONS = ('0.4.0', '0.4.1', '0.6.0', DEV1_VERSION, DEV2_VERSION, DEV
 
 
 def validate_fixed_candidate(cfg, cap):
+    if cfg.get('identity_mode')=='binary':
+        # Real compiled inventory replaces no source digest. pinned() checks it.
+        if cfg['version']!=STABLE_VERSION or digest(cap)!=STABLE_CAPABILITIES_SHA256 or 'verify' not in cap.get('implemented',[]):
+            raise ValueError('Unsupported binary monkey source/capabilities')
+        return
     if cfg['version'] not in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION, DEV9_VERSION, STABLE_VERSION, *UNITY_PREFAB_VERSIONS):
         return
     files = {Path(k).relative_to(cfg['identity_root']).as_posix(): v
@@ -118,7 +123,8 @@ def snapshot(roots, max_files=200000, max_bytes=32*1024**3):
 
 def probe(lock, output):
     cfg=pinned(lock)
-    if cfg['schema_version']!=2:raise ValueError('Bulk pipeline requires launcher-bound provider lock v2')
+    if cfg['schema_version']!=2 and not (cfg['schema_version']==3 and cfg.get('identity_mode')=='binary'):
+        raise ValueError('Bulk pipeline requires launcher-bound Python v2 or binary v3 lock')
     if cfg['version'] not in SUPPORTED_VERSIONS:
         raise ValueError('Unsupported pinned monkey version; use a supported fixed provider or monkey_bridge for historical contracts')
     value,_,error=runner.execute('monkey',[],output,probe=True,timeout_seconds=20,
@@ -128,6 +134,9 @@ def probe(lock, output):
         raise ValueError('Provider capability probe failed')
     if cap.get('version')!=cfg['version'] or cap.get('schemaVersion')!=1 or digest(cap)!=cfg['capabilities_sha256']:
         raise ValueError('Provider capabilities differ from lock')
+    if cfg.get('identity_mode')=='binary':
+        from grea.binary_provider import check_lock
+        check_lock(cfg,'monkey',capabilities=cap)
     validate_fixed_candidate(cfg, cap)
     return cfg,cap
 

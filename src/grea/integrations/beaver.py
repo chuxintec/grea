@@ -117,7 +117,7 @@ V03_GROUPS = {
 V05_GROUPS = {'ui.inspect/analyze/repair-plan', 'wiring.plan', 'diagnostics.summarize', 'toolkit.grea'}
 
 
-def validate_capabilities(cap):
+def validate_capabilities(cap, binary_implementation=None):
     version=cap.get('version')
     if version not in SUPPORTED_VERSIONS: raise ValueError('Unsupported beaver version: '+str(version))
     if version in ('0.2.0',*V03_CANDIDATES):
@@ -163,7 +163,10 @@ def validate_capabilities(cap):
             required |= V05_GROUPS | P0_GROUPS | VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OPERATIONS | {'unity.assets.retire/recover','qa.inspect-instance','qa.bind','qa.input'}
         if len(ids)!=len(set(ids)) or not required<=set(ids):
             raise ValueError('Missing or duplicated beaver capabilities')
-        if version in V03_CANDIDATES and cap.get('producer_implementation_sha256')!=V03_CANDIDATES[version]['implementation_sha256']:
+        expected = binary_implementation if binary_implementation is not None else V03_CANDIDATES.get(version,{}).get('implementation_sha256')
+        if binary_implementation is not None and version != STABLE_VERSION:
+            raise ValueError('Unsupported binary beaver business baseline')
+        if version in V03_CANDIDATES and cap.get('producer_implementation_sha256')!=expected:
             raise ValueError('Only the fixed beaver '+V03_CANDIDATES[version]['candidate']+' implementation is supported')
 
 
@@ -254,7 +257,7 @@ def imported_package(command):
     return Path(json.loads(probe.stdout)['package_root']).resolve(strict=True)
 
 
-def capability_probe(output):
+def capability_probe(output, binary=None):
     from grea import registry, runner
     entry = registry.tool('beaver'); command = registry.command(entry)
     if registry.command(entry,probe=True) != command+['capabilities']:
@@ -274,15 +277,40 @@ def capability_probe(output):
         cap['producer_implementation_sha256']=producer.get('implementationSha256')
     if not isinstance(cap.get('version'),str):
         raise ValueError('beaver capability probe failed or is incomplete')
-    validate_capabilities(cap)
+    if binary is not None:
+        from grea.binary_provider import runtime_identity
+        validate_capabilities(cap,binary_implementation=runtime_identity(binary['metadata']))
+    else: validate_capabilities(cap)
     return command, cap
 
 
-def check(output, lock=None, identity_root=None, pin=False):
+def verify_identity(cfg, *, full=True):
+    """Keep binary runtime identity distinct from historical imported-package identity."""
+    binary = None
+    if cfg.get('identity_mode') == 'binary':
+        from grea.binary_provider import check_lock
+        required={'schema_version','identity_mode','provider','version','command','command_files','identity_root','binary_manifest','runtime_files','capabilities_sha256','provenance'}
+        if cfg.get('schema_version') != 2 or cfg.get('provider') != 'beaver' or set(cfg)!=required:
+            raise ValueError('Expected binary beaver lock v2')
+        binary = check_lock(cfg, 'beaver')
+    else:
+        if full and (cfg.get('schema_version') != 1 or cfg.get('provider') != 'beaver'):
+            raise ValueError('Invalid beaver lock')
+        if package_identity(cfg['identity_root']) != cfg['package_files']:
+            raise ValueError('Provider package drift')
+        if full and imported_package(cfg['command']) != Path(cfg['identity_root']).resolve():
+            raise ValueError('Provider imported package drift')
+    if command_identity(cfg['command']) != cfg['command_files']:
+        raise ValueError('Provider command drift')
+    return binary
+
+
+def check(output, lock=None, identity_root=None, pin=False, binary_manifest=None, expected_binary_manifest=None):
     """Explicit probe/pin. A lock covers supplied package bytes and the capability response."""
     roots = [state_root()]
     if lock: roots.append(lock)
     if identity_root: roots.append(identity_root)
+    if binary_manifest: roots.append(binary_manifest)
     out = disjoint(output,*roots)
     if out.exists() or not out.parent.is_dir(): raise ValueError('Use a fresh receipt directory')
     out.mkdir()
@@ -293,24 +321,43 @@ def check(output, lock=None, identity_root=None, pin=False):
             found = discover()
             lock = found.get('lock')
         cfg = json.loads(Path(lock).read_text()) if lock else None
+        binary = None
         if cfg:
-            if cfg.get('schema_version') != 1 or cfg.get('provider') != 'beaver': raise ValueError('Invalid beaver lock')
-            if package_identity(cfg['identity_root']) != cfg['package_files']: raise ValueError('Provider package drift')
+            binary = verify_identity(cfg)
             from grea import registry
             if registry.command(registry.tool('beaver')) != cfg['command']: raise ValueError('Provider launcher drift')
-            if imported_package(cfg['command']) != Path(cfg['identity_root']).resolve(): raise ValueError('Provider imported package drift')
-            if command_identity(cfg['command']) != cfg['command_files']: raise ValueError('Provider command drift')
-        command, cap = capability_probe(out/'probe')
+        if binary_manifest is not None or expected_binary_manifest is not None:
+            if not pin or identity_root or not binary_manifest or not expected_binary_manifest:
+                raise ValueError('Binary pin requires manifest and expected SHA256, without Python identity root')
+            from grea import registry
+            from grea.binary_provider import validate
+            binary = validate(binary_manifest, expected_binary_manifest, 'beaver', command=registry.command(registry.tool('beaver')))
+        command, cap = capability_probe(out/'probe',binary=binary) if binary is not None else capability_probe(out/'probe')
         result.update(version=cap['version'], capabilities_sha256=digest(cap), capability_probe='passed')
         if cfg and cfg['version'] != cap['version']: raise ValueError('Provider version differs from lock')
         if cfg and digest(cap) != cfg['capabilities_sha256']: raise ValueError('Provider capability drift')
+        if binary or (cfg and cfg.get('identity_mode') == 'binary'):
+            from grea.binary_provider import validate, check_lock
+            raw = json.loads((out/'probe/run.json').read_text())['parsed_stdout']
+            if binary:
+                validate(binary_manifest, expected_binary_manifest, 'beaver', command=command, capabilities=raw)
+                if cap['version'] != binary['metadata']['version']:
+                    raise ValueError('Binary version differs from manifest')
+            else:
+                check_lock(cfg, 'beaver', capabilities=raw)
         if pin:
-            if not identity_root: raise ValueError('pin requires --identity-root; development source must be explicit')
-            if imported_package(command) != Path(identity_root).resolve(): raise ValueError('Identity root is not the actually imported beaver package')
-            cfg = dict(schema_version=1,provider='beaver',version=cap['version'],command=command,
-                       command_files=command_identity(command),identity_root=str(Path(identity_root).absolute()),
-                       package_files=package_identity(identity_root),capabilities_sha256=digest(cap),
-                       provenance='explicit-local-binding-not-published-acceptance')
+            if binary:
+                cfg = dict(schema_version=2, identity_mode='binary', provider='beaver', version=cap['version'],
+                           command=command, command_files=command_identity(command), identity_root=binary['root'],
+                           binary_manifest=binary['manifest'], runtime_files=binary['runtime_files'],
+                           capabilities_sha256=digest(cap), provenance='explicit-binary-binding-not-native-acceptance')
+            else:
+                if not identity_root: raise ValueError('pin requires --identity-root; development source must be explicit')
+                if imported_package(command) != Path(identity_root).resolve(): raise ValueError('Identity root is not the actually imported beaver package')
+                cfg = dict(schema_version=1,provider='beaver',version=cap['version'],command=command,
+                           command_files=command_identity(command),identity_root=str(Path(identity_root).absolute()),
+                           package_files=package_identity(identity_root),capabilities_sha256=digest(cap),
+                           provenance='explicit-local-binding-not-published-acceptance')
             write_new(out/'beaver-lock.json',cfg)
             result['lock'] = str(out/'beaver-lock.json')
         if cfg:
@@ -352,8 +399,11 @@ def inspect_project(lock, project, output):
             invocation,_,error=runner.execute('beaver',['project','inspect','--project',str(Path(project).resolve(strict=True))],out/'inspect',timeout_seconds=30,max_output_bytes=1024**2,max_inline_bytes=1024**2)
             actual=invocation.get('parsed_stdout')
             result['executed']=True
-            if package_identity(cfg['identity_root'])!=cfg['package_files'] or command_identity(cfg['command'])!=cfg['command_files']:
-                result['diagnostic']='Provider implementation drift during operation'
+            identity_error = None
+            try: verify_identity(cfg,full=False)
+            except (ValueError,OSError,GreaError) as failure: identity_error = str(failure)
+            if identity_error:
+                result['diagnostic']='Provider implementation drift during operation: '+identity_error
             elif error or not invocation.get('capture_complete') or not isinstance(actual,dict) or actual.get('contract')!='beaver-result/1' or actual.get('producer',{}).get('name')!='beaver' or actual.get('producer',{}).get('version')!=cfg['version']:
                 result['diagnostic']='beaver project.inspect failed or returned an unsupported/incomplete result'
             else:
@@ -361,7 +411,8 @@ def inspect_project(lock, project, output):
                     from grea.beaver_contracts import validate_result
                     try:
                         validate_result(actual)
-                        if actual['producer']['implementationSha256']!=V03_CANDIDATES[cfg['version']]['implementation_sha256']:
+                        expected = response['producer'].get('implementationSha256') if cfg.get('identity_mode')=='binary' else V03_CANDIDATES[cfg['version']]['implementation_sha256']
+                        if actual['producer']['implementationSha256']!=expected:
                             raise ValueError('Unsupported fixed candidate implementation')
                     except ValueError as error:
                         result.update(diagnostic=str(error),provider_result=actual)
