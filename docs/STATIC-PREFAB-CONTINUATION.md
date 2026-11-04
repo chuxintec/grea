@@ -39,3 +39,7 @@ monkey export --plan /fresh/refresh/plan/plan.json --out /fresh/native-candidate
 ```
 
 刷新报告同样不表示 Editor、视觉或 Player 验收通过。
+
+已有原生结果可使用 `monkey verify --candidate /saved/native-candidate --level editor --out /fresh/verification` 只读重验。保存后 meta 的原始生成 SHA 与 `nativeFiles` 中的保存 SHA 分开记录；仅当原生成器能逐字节重建原始 pin、GUID/importer/有效字段保持、保存字节与回读 pin 相符时，允许 Unity 省略空的 `userData`、`assetBundleName`、`assetBundleVariant`。除此之外的字节变化仍拒绝，不能跳过所有 `.meta` 差异。
+
+同一源组件的非渲染载体与真实渲染器是两个角色，分别核对持久身份和各自证据。载体负责原字段和引用保留，渲染器负责可见初态；两者互不代替，也不改变源组件分母。保存侧证据先通过主回读中的完整文件集与 SHA 绑定，再参与角色归并；绑定失败时保留根因，不把下游未获证明的表达提升为通过。保存验证仍不代表视觉、交互或 Player 通过。

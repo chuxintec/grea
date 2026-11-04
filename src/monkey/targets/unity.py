@@ -786,7 +786,7 @@ def verify(candidate, output, level='static'):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[]
     from ..sources.containers import fingerprint
     native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None
-    rendering_fragment=None;rendering_receipt=None
+    rendering_fragment=None;rendering_receipt=None;saved_meta_observations=[]
     if level=='editor':
         readback_path=find_analysis(root,'editor-readback.json')
         if not readback_path.is_file():
@@ -806,25 +806,32 @@ def verify(candidate, output, level='static'):
                     diagnostics.append(diagnostic('NATIVE_FILE_CHANGED',relative,'Native file differs from saved readback'))
             instruction=load(read(root/standard.locate(m,'importPlan'),max_bytes=128*1024*1024),max_nodes=8_000_000)
             diagnostics.extend(gallery_readback(instruction,rb))
-            if instruction.get('staticSpineContinuationJson'):
+            spine_receipts_bound=True;pending_rendering_receipt=None
+            if instruction.get('staticSpineRenderingJson'):
+                rendering_fragment=load(instruction['staticSpineRenderingJson'].encode('utf-8'))
+                from ..unity_spine_rendering_coverage import load_bound_receipt
+                try:pending_rendering_receipt=load_bound_receipt(root,rb)
+                except (OSError,ValueError,KeyError,TypeError) as error:
+                    spine_receipts_bound=False
+                    diagnostics.append(diagnostic('STATIC_SPINE_READBACK_BINDING_INVALID',
+                        'Analysis/Readback',str(error)))
+            if instruction.get('staticSpineContinuationJson') and spine_receipts_bound:
                 from ..prefab_static_spine_continuation import verify as verify_static_spine
-                spine_diagnostics=verify_static_spine(load(instruction['staticSpineContinuationJson'].encode('utf-8')),root,rb)
+                spine_diagnostics=verify_static_spine(load(instruction['staticSpineContinuationJson'].encode('utf-8')),root,rb,
+                                                      meta_observations=saved_meta_observations)
                 diagnostics.extend(spine_diagnostics)
                 if not spine_diagnostics:
                     sidecar=load(read(root/'Analysis/Readback/spine-static-continuation.json'))
                     spine_coverage={'status':'verified','sourceComponentIds':[row['sourceComponentId']for row in sidecar['components']]}
-            if instruction.get('staticSpineRenderingJson'):
-                rendering_fragment=load(instruction['staticSpineRenderingJson'].encode('utf-8'))
+            if rendering_fragment is not None and spine_receipts_bound:
                 from ..prefab_static_spine_rendering import verify as verify_static_spine_rendering
-                from ..unity_spine_rendering_coverage import load_bound_receipt
                 try:
-                    receipt=load_bound_receipt(root,rb)
                     rendering_gaps=verify_static_spine_rendering({'staticSpineRendering':rendering_fragment},root)
                     for gap in rendering_gaps:
                         normalized=diagnostic(gap['code'],gap.get('location','Analysis/Readback/SpineRendering'),
                                               gap.get('message')or encoded(gap).decode('utf-8'),gap.get('sourceId'))
                         normalized.update(gap);diagnostics.append(normalized)
-                    if not rendering_gaps:rendering_receipt=receipt
+                    if not rendering_gaps:rendering_receipt=pending_rendering_receipt
                 except (OSError,ValueError,KeyError,TypeError) as error:
                     diagnostics.append(diagnostic('STATIC_SPINE_RENDERING_READBACK_INVALID','Analysis/Readback/SpineRendering',str(error)))
             from ..prefab_spine_unity_readback import verify as verify_spine_saved
@@ -1054,7 +1061,8 @@ def verify(candidate, output, level='static'):
     out=new_output(output,[root])
     result=dict(schemaVersion=1,toolVersion=__version__,candidateManifestSha256=fingerprint(root/'manifest.json'),
                 diagnostics=diagnostics,staticValidation='conflict' if any(d['code'] in ('GENERATED_FILE_CHANGED','DUPLICATE_TARGET_GUID','TARGET_REFERENCE_MISSING','TARGET_LAYOUT_INVALID','NATIVE_FILE_CHANGED','ASSIGNED_NATIVE_IDENTITY_CHANGED','LAYOUT_FORBIDDEN_NAME') for d in diagnostics) else 'pass',
-                componentCoverage=coverage,nativeDiagnostics=raw_native_diagnostics,**dimensions,
+                componentCoverage=coverage,nativeDiagnostics=raw_native_diagnostics,
+                savedGeneratedMetaReadback=saved_meta_observations,**dimensions,
                 visualValidation='not_run',businessValidation='not_run')
     write_json(out/'verification.json',result)
     return finish(out,result)

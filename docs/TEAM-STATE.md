@@ -1,3 +1,5 @@
+2026-11-05 dev15集成完成：两复用模块已释放，root收回Python消费者/meta/coverage/测试单写，版本和CLI仍root。复用native10只读重验完成，104检查/10子用例过，903分母保持且retention pass；nativeStatic fail及UI度量/业务缺口仍在。原候选/16PNG/1296固定文件不变，无C#/Editor/解码/实际continuation操作；唯一任务源和实际采用仍由GREA持有。
+
 2026-11-05 dev14集成完成：两个复用模块已交回文件单写；root完成共享CLI/版本/C# Factory、渲染Atlas映射及hash续接整合。80项相关检查/10子用例、9项持久身份比较与116C#离线编译通过；实际16PNG哈希只读核验，源计划423文件/54载体payload/3support保持。均无Editor/ASTC/实际续接操作。GREA继续独占实际候选流水线，binary保持paused_by_user，任务源仍仅GREA roadmap。
 
 2026-11-05 dev13集成：两复用模块已释放；root收回C#渲染helper单写，完成持久身份/已保存UI上下文分离、unit观察、SDK实际加载字节、sidecar主回读封存、Python归并与完整合成provider准备/导出验证。原模块索引保留，集成差异归dev13统一handoff；实际批次仍GREA独占，binary仍paused。

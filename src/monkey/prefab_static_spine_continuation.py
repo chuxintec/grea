@@ -911,7 +911,33 @@ def _persistent_identity(guid_value, local_id) -> bool:
             and type(local_id) is int and -(1 << 63) <= local_id < (1 << 63) and local_id != 0)
 
 
-def _verify_impl(plan_fragment: dict, candidate_root: str | Path, editor_readback: dict | str | Path) -> list[dict]:
+def _saved_retained_meta(row, contract, saved_raw, native_readback):
+    """Recover exact generator bytes, then verify the pinned saved equivalent."""
+    recipes = {'unity-retained-material-meta': 'native-asset',
+               'unity-default-material-meta': 'native-material',
+               'unity-text-asset-meta': 'text', 'unity-texture2d-meta': 'texture'}
+    recipe = recipes.get(row.get('kind'))
+    if recipe is None or not row['target'].endswith('.meta'):
+        raise StaticSpineContinuationError('No source-pinned generated meta recipe for this payload')
+    matches = [asset.get('unity', {}) for asset in contract.get('assets', [])
+               if asset.get('unity', {}).get('path', '') + '.meta' == row['target']]
+    if len(matches) != 1:
+        raise StaticSpineContinuationError('Generated meta asset identity is missing or ambiguous')
+    from .prefab_static_retained_assets import _unity_meta
+    original = _unity_meta(matches[0]['guid'], recipe)
+    if len(original) != row['bytes'] or _sha(original) != row['sha256']:
+        raise StaticSpineContinuationError('Generated meta recipe differs from the frozen original SHA/bytes')
+    records = native_readback.get('nativeFiles') if isinstance(native_readback, dict) else None
+    pins = [record for record in records or [] if isinstance(record, dict) and record.get('path') == row['target']]
+    if len(pins) != 1:
+        raise StaticSpineContinuationError('Saved meta requires one exact nativeFiles hash binding')
+    from .unity_saved_meta import verify_saved_meta
+    evidence = verify_saved_meta(original, saved_raw, pins[0].get('sha256'))
+    return dict(evidence, path=row['target'], sourceKind=row['kind'])
+
+
+def _verify_impl(plan_fragment: dict, candidate_root: str | Path, editor_readback: dict | str | Path,
+                 native_readback=None, meta_observations=None) -> list[dict]:
     """Verify emitted bytes and an explicit Unity saved-prefab readback receipt."""
     fragment = plan_fragment
     from .io import diagnostic
@@ -1035,11 +1061,18 @@ def _verify_impl(plan_fragment: dict, candidate_root: str | Path, editor_readbac
             return [diagnostic("STATIC_SPINE_RETAINED_ASSET_MISSING", target, "pinned non-rendering retained source payload is absent")]
         raw = path.read_bytes()
         if len(raw) != row.get("bytes") or _sha(raw) != row.get("sha256"):
-            return [diagnostic("STATIC_SPINE_RETAINED_ASSET_CHANGED", target, "retained source payload differs from its plan SHA")]
+            try:
+                evidence = _saved_retained_meta(row, retained_contract, raw, native_readback)
+                if meta_observations is not None:
+                    meta_observations.append(evidence)
+            except (ValueError, KeyError, TypeError) as error:
+                return [diagnostic("STATIC_SPINE_RETAINED_ASSET_CHANGED", target,
+                    "Retained payload differs from its original pin and no strict saved-meta equivalence is proven: " + str(error))]
     return []
 
 
-def verify(plan_fragment: dict, candidate_root: str | Path, editor_readback: dict | str | Path | None = None) -> list[dict]:
+def verify(plan_fragment: dict, candidate_root: str | Path, editor_readback: dict | str | Path | None = None,
+           *, meta_observations=None) -> list[dict]:
     """Return strict diagnostics and read saved identity from the canonical sidecar."""
     from .io import diagnostic
     root = Path(candidate_root)
@@ -1047,7 +1080,7 @@ def verify(plan_fragment: dict, candidate_root: str | Path, editor_readback: dic
     try:
         if not sidecar.is_file() or sidecar.is_symlink():
             return [diagnostic("STATIC_SPINE_READBACK_MISSING", str(sidecar), "Editor saved-prefab identity sidecar is absent")]
-        diagnostics = _verify_impl(plan_fragment, root, sidecar)
+        diagnostics = _verify_impl(plan_fragment, root, sidecar, editor_readback, meta_observations)
         if diagnostics or not isinstance(editor_readback, dict) or 'components' not in editor_readback:
             return diagnostics
         # Both records must refer to the same saved source instance. Template
@@ -1058,7 +1091,10 @@ def verify(plan_fragment: dict, candidate_root: str | Path, editor_readback: dic
             actual.setdefault(row.get('sourceId'), []).append(row)
         failures = []
         for row in receipt['components']:
-            candidates = actual.get(row['sourceComponentId'], [])
+            candidates = [item for item in actual.get(row['sourceComponentId'], [])
+                          if item.get('nativeType') == 'NativeStaticSpineReference'
+                          and item.get('representation') == 'disabled-source-data-carrier'
+                          and item.get('status') == 'retained']
             if (len(candidates) != 1 or candidates[0].get('persistent') is not True
                     or candidates[0].get('sourceIdentityVerified') is not True
                     or candidates[0].get('guid') != row['persistedGuid']

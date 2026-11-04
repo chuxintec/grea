@@ -280,8 +280,13 @@ class ComponentCoverageTests(unittest.TestCase):
         row={"sourceComponentId":"progress","verified":True,"carrierDisabled":True,
              "carrierGuid":"0123456789abcdef0123456789abcdef","carrierLocalFileId":12,
              "sourceEnabled":True,"mode":0,"progress":0.5,"reverse":False,
-             "barSpriteSourceId":"bar-sprite","barSpritePersistent":True}
-        normalized=coverage_readback({"staticProgressFields":[row]})
+             "barSpriteSourceId":"bar-sprite","barSpritePersistent":True,
+             "barSpriteGuid":"fedcba9876543210fedcba9876543210","barSpriteLocalFileId":13}
+        normalized=coverage_readback({"staticProgressFields":[row],"components":[{
+            "sourceId":"bar-sprite","status":"native","representation":"native-component",
+            "nativeType":"UnityEngine.UI.Image","sourceIdentityVerified":True,"persistent":True,
+            "guid":"fedcba9876543210fedcba9876543210","localFileId":13,
+        }]})
         result=assess(plan,normalized,"unity")
         self.assertEqual(result["components"][0]["disposition"],"retained")
         self.assertEqual(result["retentionValidation"],"pass")
@@ -289,6 +294,36 @@ class ComponentCoverageTests(unittest.TestCase):
         result=assess(plan,coverage_readback({"staticProgressFields":[row]}),"unity")
         self.assertEqual(result["components"][0]["disposition"],"missing")
         self.assertEqual(result["retentionValidation"],"partial")
+
+    def test_progress_single_precision_is_exact_and_creator_numbers_remain_strict(self):
+        import struct
+        from monkey.prefab_component_coverage import _progress_number_matches
+        value=struct.unpack('!f',struct.pack('!f',.9))[0]
+        self.assertTrue(_progress_number_matches(value,.9,'unity'))
+        self.assertFalse(_progress_number_matches(.9000001,.9,'unity'))
+        self.assertFalse(_progress_number_matches(float('nan'),.9,'unity'))
+        self.assertFalse(_progress_number_matches(True,1,'unity'))
+        self.assertFalse(_progress_number_matches(value,.9,'creator'))
+
+    def test_native_slider_profile_needs_native_fields_not_a_fabricated_extra_carrier(self):
+        sid='progress';guid='a'*32
+        plan={'nodes':[{'sourceId':'node','active':True}], 'components':[dict(sourceId=sid,
+            node='node',type='cc.ProgressBar',enabled=True,convertible=True,
+            staticProgressBinding=dict(policy='native-static-progress-v1',sourceEnabled=True,
+                mode=0,progress=.6,reverse=False,barSpriteSourceId='bar'))]}
+        native=dict(sourceId=sid,status='native',representation='native-component',
+            nativeType='UnityEngine.UI.Slider',guid=guid,localFileId=1,persistent=True,
+            sourceIdentityVerified=True,nativeStaticFieldsVerified=True,nativeEnabled=True,sourceEnabled=True)
+        result=assess(plan,{'components':[native]},'unity')
+        self.assertEqual(result['sourceComponentCount'],1)
+        self.assertEqual(result['components'][0]['disposition'],'native')
+        self.assertFalse(any(d['code']=='STATIC_RETENTION_READBACK_INCOMPLETE' for d in result['diagnostics']))
+        native['nativeStaticFieldsVerified']=False
+        self.assertNotEqual(assess(plan,{'components':[native]},'unity')['nativeStaticValidation'],'pass')
+        native['nativeStaticFieldsVerified']=True
+        plan['staticComponentRetentions']=[{'sourceComponentId':sid}]
+        declared=assess(plan,{'components':[native]},'unity')
+        self.assertTrue(any(d['code']=='STATIC_RETENTION_READBACK_INCOMPLETE' for d in declared['diagnostics']))
 
     def test_spine_renderer_does_not_skip_retained_carrier_verification(self):
         sid="spine-source"
@@ -299,19 +334,130 @@ class ComponentCoverageTests(unittest.TestCase):
         readback={"staticSpineContinuation":{"status":"verified","sourceComponentIds":[sid]},
             "staticSpineRendering":{"status":"verified","sourceComponentIds":[sid]},
             "components":[{"sourceId":sid,"status":"native","representation":"native-component",
+                "coverageRole":"native-renderer",
                 "nativeType":"Spine.Unity.SkeletonGraphic","nativeStaticFieldsVerified":True,
                 "nativeEnabled":True,
                 "sourceIdentityVerified":True,"persistent":True,"guid":guid,"localFileId":20}],
             "retainedComponents":[{"sourceId":sid,"status":"verified","verified":True,
-                "sourceIdentityVerified":True,"persistent":True,"guid":guid,"localFileId":21,
-                "representation":"non-rendering-static-spine"}]}
+                "coverageRole":"retained-carrier","sourceIdentityVerified":True,"persistent":True,
+                "guid":"fedcba9876543210fedcba9876543210","localFileId":21,
+                "nativeType":"NativeStaticSpineReference","representation":"disabled-source-data-carrier"}]}
         result=assess(plan,readback,"unity")
         self.assertEqual(result["components"][0]["disposition"],"native")
         self.assertEqual(result["retentionValidation"],"pass")
         self.assertEqual(result["staticPresentationValidation"]["status"],"pass")
+        self.assertEqual(result["components"][0]["nativeComponentReadback"]["localFileId"],20)
+        self.assertEqual(result["components"][0]["retainedComponentReadback"]["localFileId"],21)
         readback["retainedComponents"][0]["guid"]="bad"
         result=assess(plan,readback,"unity")
         self.assertEqual(result["retentionValidation"],"partial")
+
+    def test_spine_carrier_and_renderer_roles_join_across_top_and_prefab_scopes(self):
+        sid="spine-role-source"
+        carrier={"sourceId":sid,"node":"node-a","type":"sp.Skeleton","nativeType":"NativeStaticSpineReference",
+                 "status":"retained","representation":"disabled-source-data-carrier","coverageRole":"retained-carrier",
+                 "guid":"0123456789abcdef0123456789abcdef","localFileId":30,"componentUuid":"0123456789abcdef0123456789abcdef:30",
+                 "sourceIdentityVerified":True,"persistent":True,"verified":True,"fieldsVerified":True,
+                 "sourceEnabled":True,"nativeEnabled":False}
+        renderer={"sourceId":sid,"node":"node-a","type":"sp.Skeleton","nativeType":"Spine.Unity.SkeletonGraphic",
+                  "status":"native","representation":"native-component","coverageRole":"native-renderer",
+                  "guid":"fedcba9876543210fedcba9876543210","localFileId":31,
+                  "componentUuid":"fedcba9876543210fedcba9876543210:31","sourceIdentityVerified":True,
+                  "persistent":True,"nativeStaticFieldsVerified":True,"sourceEnabled":True,"nativeEnabled":True}
+        plan={"nodes":self.plan["nodes"],"components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
+              "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        raw_copy={key:value for key,value in carrier.items() if key!="coverageRole"}
+        readback={"components":[dict(carrier),dict(renderer)],"sourcePrefabs":[{"components":[raw_copy]}],
+                  "staticSpineContinuation":{"status":"verified","sourceComponentIds":[sid]},
+                  "staticSpineRendering":{"status":"verified","sourceComponentIds":[sid]}}
+        result=assess(plan,readback,"unity")
+        self.assertEqual(result["components"][0]["disposition"],"native")
+        self.assertEqual(result["retentionValidation"],"pass")
+        self.assertEqual(result["staticPresentationValidation"]["status"],"pass")
+        self.assertFalse(any(row["code"] in ("NATIVE_COMPONENT_READBACK_AMBIGUOUS","NATIVE_COMPONENT_IDENTITY_MISMATCH",
+                                             "STATIC_RETENTION_READBACK_AMBIGUOUS") for row in result["diagnostics"]))
+
+    def test_same_role_renderer_duplicates_are_still_ambiguous(self):
+        sid="spine-role-duplicate"
+        renderer={"sourceId":sid,"status":"native","representation":"native-component","coverageRole":"native-renderer",
+                  "nativeType":"Spine.Unity.SkeletonGraphic","sourceIdentityVerified":True,"persistent":True,
+                  "nativeStaticFieldsVerified":True,"nativeEnabled":True,"sourceEnabled":True,
+                  "guid":"0123456789abcdef0123456789abcdef","localFileId":40}
+        duplicate=dict(renderer, guid="fedcba9876543210fedcba9876543210", localFileId=41)
+        plan={"nodes":self.plan["nodes"],"components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
+              "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        readback={"components":[renderer,duplicate],"staticSpineRendering":{"status":"verified","sourceComponentIds":[sid]}}
+        result=assess(plan,readback,"unity")
+        self.assertEqual(result["components"][0]["disposition"],"missing")
+        self.assertTrue(any(row["code"]=="NATIVE_COMPONENT_READBACK_AMBIGUOUS" for row in result["diagnostics"]))
+
+    def test_same_role_retained_duplicates_still_fail_retention(self):
+        sid="spine-retained-duplicate"
+        carrier={"sourceId":sid,"status":"retained","coverageRole":"retained-carrier",
+                 "nativeType":"NativeStaticSpineReference","representation":"disabled-source-data-carrier",
+                 "sourceIdentityVerified":True,"persistent":True,"verified":True,"fieldsVerified":True,
+                 "guid":"0123456789abcdef0123456789abcdef","localFileId":50}
+        plan={"nodes":self.plan["nodes"],"components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
+              "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        readback={"retainedComponents":[dict(carrier),dict(carrier)],
+                  "staticSpineContinuation":{"status":"verified","sourceComponentIds":[sid]}}
+        result=assess(plan,readback,"unity")
+        self.assertEqual(result["retentionValidation"],"partial")
+        self.assertTrue(any(row["code"]=="STATIC_RETENTION_READBACK_AMBIGUOUS" for row in result["diagnostics"]))
+
+    def test_normalized_peer_duplicate_survives_pipeline_and_fails_native_role(self):
+        from monkey.unity_verification_contract import coverage_readback
+        sid="spine-normalized-peer-duplicate"
+        renderer={"sourceId":sid,"status":"native","representation":"native-component",
+                  "coverageRole":"native-renderer","nativeType":"Spine.Unity.SkeletonGraphic",
+                  "sourceIdentityVerified":True,"persistent":True,"nativeStaticFieldsVerified":True,
+                  "nativeEnabled":True,"sourceEnabled":True,
+                  "guid":"0123456789abcdef0123456789abcdef","localFileId":60}
+        plan={"nodes":self.plan["nodes"],"components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
+              "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        normalized=coverage_readback({"components":[dict(renderer),dict(renderer)]},
+                                     {"status":"verified","sourceComponentIds":[sid]})
+        self.assertTrue(any(item.get("sourceId")==sid and item.get("coverageRole")=="native-renderer"
+                            for item in normalized.get("componentPeerDuplicates",[])))
+        normalized["staticSpineRendering"]={"status":"verified","sourceComponentIds":[sid]}
+        result=assess(plan,normalized,"unity")
+        self.assertEqual(result["components"][0]["disposition"],"missing")
+        self.assertTrue(any(row["code"]=="NATIVE_COMPONENT_READBACK_AMBIGUOUS" and row.get("sourceId")==sid
+                            for row in result["diagnostics"]))
+
+    def test_unsupported_readback_status_is_not_misreported_as_native_identity_mismatch(self):
+        row={"sourceId":"component-a","status":"unsupported","representation":"unsupported",
+             "coverageRole":"unsupported-component","nativeType":None}
+        result=assess(self.plan,{"components":[row]},"unity")
+        self.assertEqual(result["components"][0]["disposition"],"unsupported")
+        self.assertFalse(any(item["code"]=="NATIVE_COMPONENT_IDENTITY_MISMATCH" for item in result["diagnostics"]))
+
+    def test_role_tag_cannot_promote_a_physical_carrier_to_native_renderer(self):
+        sid="spine-role-spoof"
+        carrier={"sourceId":sid,"status":"retained","representation":"disabled-source-data-carrier",
+                 "coverageRole":"native-renderer","nativeType":"NativeStaticSpineReference",
+                 "sourceIdentityVerified":True,"persistent":True,"verified":True,"fieldsVerified":True,
+                 "guid":"0123456789abcdef0123456789abcdef","localFileId":70}
+        plan={"components":[{"sourceId":sid,"type":"sp.Skeleton","enabled":True}],
+              "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        result=assess(plan,{"components":[carrier]},"unity")
+        self.assertTrue(any(item["code"]=="COMPONENT_ROLE_MISMATCH" for item in result["diagnostics"]))
+        self.assertNotEqual(result["components"][0]["disposition"],"native")
+
+    def test_source_disabled_spine_renderer_keeps_renderer_role_and_disabled_state(self):
+        sid="spine-disabled-renderer"
+        plan={"nodes":self.plan["nodes"],"components":[{"sourceId":sid,"node":"node-a",
+            "type":"sp.Skeleton","enabled":False}],
+            "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        row={"sourceId":sid,"status":"disabled","representation":"native-component",
+             "coverageRole":"native-renderer","nativeType":"Spine.Unity.SkeletonGraphic",
+             "sourceIdentityVerified":True,"persistent":True,"nativeStaticFieldsVerified":True,
+             "sourceEnabled":False,"nativeEnabled":False,"disabledReason":"source-disabled",
+             "sourceVisible":False,"guid":"0123456789abcdef0123456789abcdef","localFileId":71}
+        result=assess(plan,{"disabledComponents":[row]},"unity")
+        self.assertEqual(result["components"][0]["disposition"],"disabled")
+        self.assertEqual(result["components"][0]["nativeStatus"],"pass")
+        self.assertFalse(any(item["code"]=="COMPONENT_ROLE_MISMATCH" for item in result["diagnostics"]))
 
     def test_spine_self_report_unknown_ids_cannot_verify_static_render(self):
         sid="spine-source";guid="0123456789abcdef0123456789abcdef"

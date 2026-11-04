@@ -6,6 +6,17 @@ from .prefab_component_coverage import _unity_persistent_identity
 from .io import inside,read,sha,load
 
 
+def _retained_spine_carrier(row):
+    if not isinstance(row,dict):return False
+    signature=(row.get('nativeType')=='NativeStaticSpineReference' and
+               row.get('representation')=='disabled-source-data-carrier' and row.get('status')=='retained')
+    if row.get('coverageRole')=='retained-carrier' and not signature:
+        raise ValueError('SPINE_RENDERING_ROLE_MISMATCH')
+    if row.get('nativeType')=='NativeStaticSpineReference' and not signature:
+        raise ValueError('SPINE_RENDERING_ROLE_MISMATCH')
+    return signature
+
+
 def load_bound_receipt(candidate,readback):
     """Bind auxiliary receipt bytes to the main, externally pinned readback."""
     root=Path(candidate)
@@ -63,14 +74,21 @@ def merge(readback, rendering, receipt):
         enabled=row['rendererEnabled']
         native=dict(sourceId=sid,node=source['sourceNodeId'],type='sp.Skeleton',nativeType='Spine.Unity.SkeletonGraphic',
                     componentUuid=identity['guid']+':'+str(identity['localFileId']),**identity,
+                    coverageRole='native-renderer',
                     sourceIdentityVerified=True,persistent=True,sourceEnabled=source['sourceComponentEnabled'],
                     nativeEnabled=enabled,sourceVisible=visible,nativeStaticFieldsVerified=True,
                     representation='native-component',status='native'if enabled else'disabled',
                     disabledReason=None if enabled else'source-disabled',
                     renderingEvidence='saved-prefab-reopen-spine-static-rendering')
         collection='components'if enabled else'disabledComponents'
-        if any(existing.get('sourceId')==sid for existing in result.get(collection,[])):
+        peer_rows=[existing for key in ('components','disabledComponents')
+                   for existing in result.get(key,[]) if isinstance(existing,dict) and existing.get('sourceId')==sid]
+        renderer_rows=[existing for existing in peer_rows if not _retained_spine_carrier(existing)]
+        if renderer_rows:
             raise ValueError('SPINE_RENDERING_NATIVE_COUNTERPART_AMBIGUOUS: '+sid)
+        for existing in peer_rows:
+            if _retained_spine_carrier(existing):
+                existing.setdefault('coverageRole','retained-carrier')
         result.setdefault(collection,[]).append(native)
         # This supplements the carrier receipt rather than replacing it.
         source_ids.append(sid)

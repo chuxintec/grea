@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 import json
 import re
+import math
+import struct
 from .io import diagnostic
 
 
@@ -54,6 +56,138 @@ def _nested_rows(readback: dict, key: str) -> list[dict]:
         for container_key in ("sourcePrefabs", "prefabInstances", "candidatePrefabInstances", "instances"):
             stack.extend(_rows(container, container_key))
     return rows
+
+
+def _component_role(row: dict) -> tuple[str, bool]:
+    """Resolve roles from saved type/status/representation, then cross-check tags."""
+    if row.get("coverageRoleConflicts"):
+        return "role-mismatch", True
+    is_static_carrier = (row.get("nativeType") == "NativeStaticSpineReference" or
+                         row.get("representation") == "disabled-source-data-carrier")
+    if is_static_carrier:
+        is_retained_collection = row.get("_coverageCollectionRole") == "retained-carrier"
+        natural = ("retained-carrier" if row.get("status") == "retained" or
+                   is_retained_collection and row.get("status") in (
+                       "verified", "saved_static_references_verified", "retained_source_identity_verified")
+                   else "role-mismatch")
+    elif row.get("_coverageCollectionRole") == "retained-carrier":
+        natural = "retained-carrier"
+    elif row.get("status") == "retained":
+        natural = "retained-carrier"
+    elif row.get("status") in ("native", "disabled") and row.get("nativeType") == "Spine.Unity.SkeletonGraphic":
+        natural = "native-renderer"
+    elif row.get("_coverageCollectionRole") == "disabled-component":
+        natural = "disabled-component"
+    elif row.get("status") == "disabled":
+        natural = "disabled-component"
+    elif row.get("status") == "native":
+        natural = "native-component"
+    elif row.get("status") == "unsupported":
+        natural = "unsupported-component"
+    elif row.get("status") == "missing":
+        natural = "missing-component"
+    else:
+        natural = "native-component"
+    explicit = row.get("coverageRole")
+    if explicit is None:
+        return natural, natural == "role-mismatch"
+    allowed = {"retained-carrier", "native-renderer", "native-component", "disabled-component",
+               "unsupported-component", "missing-component"}
+    if explicit not in allowed or explicit != natural:
+        return "role-mismatch", True
+    if explicit == "native-renderer" and (row.get("nativeType") != "Spine.Unity.SkeletonGraphic" or
+                                           row.get("representation") != "native-component"):
+        return "role-mismatch", True
+    if explicit == "retained-carrier" and row.get("status") not in (
+            "retained", "verified", "saved_static_references_verified", "retained_source_identity_verified"):
+        return "role-mismatch", True
+    return explicit, False
+
+
+def _component_observations(readback: dict, engine: str = "unity") -> list[dict]:
+    """Collect role-bearing component rows, coalescing only cross-scope copies.
+
+    Unity emits a top-level saved row and repeats that same row inside its
+    owning sourcePrefab record. One exact copy across those scopes is one
+    observation. Repetitions within a peer list, or the same sourceId with a
+    different role/persistent identity, remain visible for ambiguity checks.
+    """
+    root_rows = []
+    root_keys = ("components", "retainedComponents", "disabledComponents")
+    for key in root_keys:
+        collection_role = "retained-carrier" if key == "retainedComponents" else "disabled-component" if key == "disabledComponents" else None
+        for row in _rows(readback, key):
+            scoped = dict(row)
+            if collection_role:
+                scoped["_coverageCollectionRole"] = collection_role
+            root_rows.append(("root", scoped))
+    def identity_key(row):
+        identity = _unity_persistent_identity(row) if engine == "unity" else _native_id(row)
+        if isinstance(identity, dict):
+            identity = (identity.get("guid"), identity.get("localFileId"))
+        if identity is None:
+            identity = json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+        return (_identity(row), _component_role(row)[0], identity)
+
+    root_matches = defaultdict(list)
+    for index, (_, row) in enumerate(root_rows):
+        root_matches[identity_key(row)].append(index)
+    root_remaining = {key: list(indices) for key, indices in root_matches.items()}
+    result = [dict(row) for _, row in root_rows]
+    nested_rows = []
+    visited = {id(readback)}
+    stack = []
+    for key in ("sourcePrefabs", "prefabInstances", "candidatePrefabInstances", "instances"):
+        for index, item in enumerate(_rows(readback, key)):
+            stack.append((item, f"{key}/{index}"))
+    while stack:
+        container, scope = stack.pop()
+        if id(container) in visited:
+            continue
+        visited.add(id(container))
+        for key in root_keys:
+            collection_role = "retained-carrier" if key == "retainedComponents" else "disabled-component" if key == "disabledComponents" else None
+            for row in _rows(container, key):
+                scoped = dict(row)
+                if collection_role:
+                    scoped["_coverageCollectionRole"] = collection_role
+                nested_rows.append((scope + "/" + key, scoped))
+        for key in ("sourcePrefabs", "prefabInstances", "candidatePrefabInstances", "instances"):
+            for index, item in enumerate(_rows(container, key)):
+                stack.append((item, scope + "/" + key + "/" + str(index)))
+    for _, row in nested_rows:
+        key = identity_key(row)
+        matches = root_remaining.get(key, [])
+        if matches:
+            root_index = matches.pop(0)
+            existing = result[root_index]
+            merged = dict(existing)
+            conflicts = dict(merged.get("coverageRoleConflicts", {}))
+            evidence_keys = {
+                "sourceId", "sourceComponentId", "coverageRole", "status", "representation", "nativeType",
+                "componentUuid", "guid", "localFileId", "sourceEnabled", "nativeEnabled", "disabledReason",
+                "sourceIdentityVerified", "persistent", "verified", "fieldsVerified", "sourceVisible",
+                "nativeStaticFieldsVerified", "sourceNodeId",
+            }
+            for field, value in row.items():
+                if field not in merged:
+                    merged[field] = value
+                elif field in evidence_keys and merged[field] != value:
+                    conflicts[field] = {"primary": merged[field], "otherScope": value}
+            if conflicts:
+                merged["coverageRoleConflicts"] = conflicts
+            result[root_index] = merged
+            continue
+        result.append(dict(row))
+    return result
+
+
+def _observation_token(row: dict, engine: str) -> tuple:
+    identity = _unity_persistent_identity(row) if engine == "unity" else _native_id(row)
+    if isinstance(identity, dict):
+        identity = (identity.get("guid"), identity.get("localFileId"))
+    return (_identity(row), _component_role(row)[0], row.get("status"), row.get("representation"),
+            _native_type(row), identity)
 
 
 def _dedupe_exact_rows(rows: list[dict]) -> list[dict]:
@@ -264,6 +398,17 @@ def _valid_retention(row: dict, engine: str = "unity") -> bool:
             and row.get("status") in ("verified", "retained", "disabled", "native", "retained_source_identity_verified", "saved_static_references_verified"))
 
 
+def _progress_number_matches(actual, expected, engine):
+    if (type(actual)not in(int,float)or type(expected)not in(int,float)
+            or not math.isfinite(actual)or not math.isfinite(expected)):
+        return False
+    if engine!='unity':return actual==expected
+    # UnityStaticProgress stores these fields as System.Single. Compare the
+    # exact declared representation, rather than a permissive epsilon.
+    try:return struct.pack('!f',actual)==struct.pack('!f',expected)
+    except (OverflowError,struct.error):return False
+
+
 def _valid_progress_retention(component: dict, row: dict, engine: str) -> bool:
     """Join a disabled progress carrier to its exact source profile and bar sprite."""
     binding = component.get("staticProgressBinding")
@@ -284,8 +429,14 @@ def _valid_progress_retention(component: dict, row: dict, engine: str) -> bool:
         "progress": binding.get("progress"),
         "reverse": binding.get("reverse"),
     }
-    if any(row.get(key) != value for key, value in expected.items()):
-        return False
+    for key,value in expected.items():
+        actual=row.get(key)
+        if key=='progress':
+            if not _progress_number_matches(actual,value,engine):return False
+        elif type(actual)is not type(value)or actual!=value:
+            return False
+    if 'totalLength'in binding:
+        if not _progress_number_matches(row.get('totalLength'),binding['totalLength'],engine):return False
     return True
 
 
@@ -381,7 +532,7 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
     readback_available = any(key in readback for key in (
         "components", "sourceComponentCoverage", "sourcePrefabs", "retainedComponents",
         "prefabInstances", "candidatePrefabInstances", "disabledComponents", "staticFieldBindings",
-        "staticPresentationValidation", "staticSpineRendering", "staticProgressFields"))
+        "staticPresentationValidation", "staticSpineRendering", "staticProgressFields", "componentPeerDuplicates"))
 
     source_by_id: dict[str, list[dict]] = defaultdict(list)
     components = []
@@ -401,51 +552,129 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
             continue
         source_by_id[source_id].append(component)
 
-    native_rows = _nested_rows(readback, "components")
-    native_source_ids = {_identity(row) for row in native_rows if _identity(row)}
+    component_observations = _component_observations(readback, engine)
+    native_rows = []
+    retained_observations = []
+    disabled_observations = []
+    unsupported_observations = []
+    missing_observations = []
+    for row in component_observations:
+        role, mismatch = _component_role(row)
+        if row.get("coverageRoleConflicts"):
+            diagnostics.append(diagnostic("COMPONENT_ROLE_OBSERVATION_CONFLICT", _identity(row) or "readback/components",
+                "Top-level and prefab-local observations disagree on saved role or identity evidence", _identity(row)))
+        if mismatch:
+            diagnostics.append(diagnostic("COMPONENT_ROLE_MISMATCH", _identity(row) or "readback/components",
+                "Explicit coverage role disagrees with the saved native type/status/representation", _identity(row)))
+        if role == "retained-carrier":
+            retained_observations.append(row)
+        elif role == "disabled-component" or row.get("status") == "disabled":
+            disabled_observations.append(row)
+        elif role == "unsupported-component":
+            unsupported_observations.append(row)
+        elif role == "missing-component":
+            missing_observations.append(row)
+        else:
+            native_rows.append(row)
+    component_tokens = {_observation_token(row, engine) for row in component_observations}
     for observation in _rows(readback, "sourceComponentCoverage"):
         sid = _identity(observation)
-        if sid in native_source_ids:
-            continue
         actual = observation.get("nativeComponentReadback")
-        if isinstance(actual, dict):
-            native_rows.append(actual)
-            if _identity(actual): native_source_ids.add(_identity(actual))
-        elif isinstance(actual, list):
-            for row in actual:
-                if not isinstance(row, dict):
-                    continue
-                row_id = _identity(row)
-                if row_id and row_id in native_source_ids:
-                    continue
-                native_rows.append(row)
-                if row_id: native_source_ids.add(row_id)
-    native_rows = _dedupe_exact_rows(native_rows)
+        actual_rows = [actual] if isinstance(actual, dict) else actual if isinstance(actual, list) else []
+        for actual_row in actual_rows:
+            if not isinstance(actual_row, dict):
+                continue
+            token = _observation_token(actual_row, engine)
+            if token in component_tokens:
+                continue
+            role, mismatch = _component_role(actual_row)
+            if actual_row.get("coverageRoleConflicts"):
+                diagnostics.append(diagnostic("COMPONENT_ROLE_OBSERVATION_CONFLICT", _identity(actual_row) or "readback/sourceComponentCoverage",
+                    "Component coverage observation conflicts with saved role or identity evidence", _identity(actual_row)))
+            if mismatch:
+                diagnostics.append(diagnostic("COMPONENT_ROLE_MISMATCH", _identity(actual_row) or "readback/sourceComponentCoverage",
+                    "Explicit coverage role disagrees with the saved native type/status/representation", _identity(actual_row)))
+            if role == "retained-carrier":
+                retained_observations.append(actual_row)
+            elif role == "disabled-component" or actual_row.get("status") == "disabled":
+                disabled_observations.append(actual_row)
+            elif role == "unsupported-component":
+                unsupported_observations.append(actual_row)
+            elif role == "missing-component":
+                missing_observations.append(actual_row)
+            else:
+                native_rows.append(actual_row)
     native_by_id: dict[str, list[dict]] = defaultdict(list)
     for row in native_rows:
         sid = _identity(row)
         if sid:
             native_by_id[sid].append(row)
     retained_by_id: dict[str, list[dict]] = defaultdict(list)
-    for row in _dedupe_component_observations(_nested_rows(readback, "retainedComponents"),engine):
+    for row in retained_observations:
         sid = _identity(row)
         if sid:
             retained_by_id[sid].append(row)
     disabled_by_id: dict[str, list[dict]] = defaultdict(list)
-    for row in _dedupe_component_observations(_nested_rows(readback, "disabledComponents"),engine):
+    for row in disabled_observations:
         sid = _identity(row)
         if sid:
             disabled_by_id[sid].append(row)
-    for row in native_rows:
+    unsupported_by_id: dict[str, list[dict]] = defaultdict(list)
+    for row in unsupported_observations:
         sid = _identity(row)
-        if not sid:
+        if sid:
+            unsupported_by_id[sid].append(row)
+    missing_by_id: dict[str, list[dict]] = defaultdict(list)
+    for row in missing_observations:
+        sid = _identity(row)
+        if sid:
+            missing_by_id[sid].append(row)
+    # Normalizers may have to coalesce cross-scope mirrors while retaining a
+    # compact record of duplicates inside one peer collection. Feed those
+    # records into the same role-specific ambiguity paths as raw duplicate
+    # rows; never let normalization turn a duplicate into a pass.
+    peer_duplicates = defaultdict(int)
+    for item in _rows(readback, "componentPeerDuplicates"):
+        sid = item.get("sourceId") or item.get("sourceComponentId")
+        role = item.get("coverageRole")
+        count = item.get("duplicateCount")
+        identity = item.get("persistentIdentity")
+        if (not isinstance(sid, str) or role not in ("native-renderer", "retained-carrier", "native-component",
+                                                       "disabled-component", "unsupported-component", "missing-component")
+                or type(count) is not int or count < 2):
+            diagnostics.append(diagnostic("COMPONENT_PEER_DUPLICATE_RECORD_INVALID", "readback/componentPeerDuplicates",
+                "Peer duplicate record is malformed and cannot be used as positive evidence", sid if isinstance(sid, str) else None))
             continue
-        if row.get("status") == "retained":
-            retained_by_id[sid].append(row)
-        elif row.get("status") == "disabled":
-            disabled_by_id[sid].append(row)
-    retained_by_id={sid:_dedupe_component_observations(rows,engine) for sid,rows in retained_by_id.items()}
-    disabled_by_id={sid:_dedupe_component_observations(rows,engine) for sid,rows in disabled_by_id.items()}
+        if engine == "unity" and identity is not None:
+            if not isinstance(identity, dict) or _unity_persistent_identity(identity) is None:
+                diagnostics.append(diagnostic("COMPONENT_PEER_DUPLICATE_RECORD_INVALID", sid,
+                    "Peer duplicate persistent identity is malformed", sid))
+                continue
+        peer_duplicates[(sid, role)] += count - 1
+    for (sid, role), extra_count in peer_duplicates.items():
+        marker = {"sourceId": sid, "_peerDuplicate": True}
+        if role in ("native-renderer", "native-component"):
+            marker.update(status="native", representation="native-component",
+                          nativeType="Spine.Unity.SkeletonGraphic" if role == "native-renderer" else None,
+                          coverageRole=role)
+            native_by_id[sid].extend(dict(marker) for _ in range(extra_count))
+            diagnostics.append(diagnostic("NATIVE_COMPONENT_READBACK_AMBIGUOUS", sid,
+                "Normalizer preserved duplicate native peer observations in componentPeerDuplicates", sid))
+        elif role == "retained-carrier":
+            marker.update(status="retained", representation="disabled-source-data-carrier",
+                          nativeType="NativeStaticSpineReference", coverageRole=role)
+            retained_by_id[sid].extend(dict(marker) for _ in range(extra_count))
+            diagnostics.append(diagnostic("STATIC_RETENTION_READBACK_AMBIGUOUS", sid,
+                "Normalizer preserved duplicate retained peer observations in componentPeerDuplicates", sid))
+        elif role == "disabled-component":
+            marker.update(status="disabled", representation="native-component", coverageRole=role)
+            disabled_by_id[sid].extend(dict(marker) for _ in range(extra_count))
+        elif role == "unsupported-component":
+            marker.update(status="unsupported", representation="unsupported", coverageRole=role)
+            unsupported_by_id[sid].extend(dict(marker) for _ in range(extra_count))
+        else:
+            marker.update(status="missing", representation="missing", coverageRole=role)
+            missing_by_id[sid].extend(dict(marker) for _ in range(extra_count))
     static_fields_by_id: dict[str, list[dict]] = defaultdict(list)
     seen_field_readbacks = set()
     for row in _static_field_rows(readback):
@@ -507,7 +736,11 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
             if isinstance(sid, str) and sid:
                 retention_expected.add(sid)
     for row in source_rows:
-        if isinstance(row, dict) and isinstance(row.get("staticProgressBinding"), dict):
+        # The pinned Unity producer creates UnityStaticProgress only for its
+        # fallback profile. Native Slider+driver mappings retain their own
+        # static values/references and undergo the native-field proof instead.
+        if (isinstance(row, dict) and isinstance(row.get("staticProgressBinding"), dict)
+                and not(engine=='unity' and row.get('convertible')is True)):
             sid = row.get("sourceId")
             if isinstance(sid, str) and sid:
                 retention_expected.add(sid)
@@ -551,8 +784,12 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
             native_status = "missing"
             disposition = "missing"
             disabled_rows = _dedupe_component_observations(disabled_by_id.get(source_id, []),engine)
-            valid_disabled = [(row, reason) for row in disabled_rows
-                              for valid, reason in [_valid_native_disabled(component, row, engine)] if valid]
+            if len(disabled_by_id.get(source_id, [])) > 1:
+                diagnostics.append(diagnostic("NATIVE_DISABLED_READBACK_AMBIGUOUS", source_id,
+                    "Multiple disabled native role observations share one sourceId", source_id))
+            valid_disabled = ([] if len(disabled_by_id.get(source_id, [])) > 1 else
+                [(row, reason) for row in disabled_rows
+                 for valid, reason in [_valid_native_disabled(component, row, engine)] if valid])
             candidates_only_disabled = all(row.get("status") == "disabled" for row in candidates)
             if (len(valid_disabled) == 1 and len(disabled_rows) == 1 and
                     (not candidates or candidates_only_disabled)):
@@ -580,11 +817,20 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
                                               "Native component type or persistent identity differs", source_id))
             if not valid_disabled:
                 disposition = "missing"
-                explicit = candidates[0] if len(candidates) == 1 else None
+                unsupported_rows = unsupported_by_id.get(source_id, [])
+                missing_rows = missing_by_id.get(source_id, [])
+                explicit = (candidates[0] if len(candidates) == 1 else
+                            unsupported_rows[0] if len(unsupported_rows) == 1 else
+                            missing_rows[0] if len(missing_rows) == 1 else None)
                 if isinstance(explicit, dict) and explicit.get("status") == "unsupported":
                     disposition = "unsupported"
                 elif isinstance(explicit, dict) and explicit.get("status") == "missing":
                     disposition = "missing"
+                if len(unsupported_rows) > 1:
+                    disposition = "unsupported"
+                    native_status = "partial"
+                    diagnostics.append(diagnostic("UNSUPPORTED_COMPONENT_READBACK_AMBIGUOUS", source_id,
+                        "Multiple unsupported observations share one source component ID", source_id))
             retained = retained_by_id.get(source_id, [])
             retained_fields_ok,retained_fields_status=_valid_static_fields(component,static_fields_by_id)
             progress_retained = (len(retained) == 1 and
@@ -649,6 +895,9 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
         # Verify retained source state independently even when a matching
         # native renderer/component also exists for the same source ID.
         retained_rows = retained_by_id.get(source_id, [])
+        if len(retained_rows) > 1:
+            diagnostics.append(diagnostic("STATIC_RETENTION_READBACK_AMBIGUOUS", source_id,
+                "Multiple retained carrier role observations share one sourceId", source_id))
         if source_id in retention_expected and len(retained_rows) == 1:
             retained_row = retained_rows[0]
             if retained_row.get("retentionEvidenceKind") == "static-progress-carrier-readback":
@@ -702,6 +951,7 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
             "nativeStatus": native_status,
             "nativeComponentReadback": valid_native[0] if len(valid_native) == 1 else
                 explicit if isinstance(explicit, dict) and explicit.get("representation") == "native-component" else None,
+            "retainedComponentReadback": retained_rows[0] if len(retained_rows) == 1 else None,
             "nativeStaticFieldsVerified": bool(disposition in ("native", "disabled") and native_status == "pass" and
                 (not isinstance(explicit, dict) or explicit.get("nativeStaticFieldsVerified") is True or field_status == "verified")),
             "disabledReason": disabled_reason or (explicit.get("disabledReason") if isinstance(explicit, dict) else None),

@@ -72,8 +72,17 @@ def test_verify_loads_canonical_sidecar_and_accepts_exact_saved_identity(tmp_pat
     receipt['components'][0]['persistedLocalFileId'] = -(1 << 63) + 1
     sidecar.write_text(json.dumps(receipt))
     native = {'components': [{'sourceId': component['sourceComponentId'], 'guid': 'e' * 32,
-        'localFileId': -(1 << 63) + 1, 'persistent': True, 'sourceIdentityVerified': True}]}
+        'localFileId': -(1 << 63) + 1, 'persistent': True, 'sourceIdentityVerified': True,
+        'nativeType':'NativeStaticSpineReference', 'status':'retained',
+        'representation':'disabled-source-data-carrier'}]}
     assert spine.verify(fragment, tmp_path, native) == []
+    renderer = dict(native['components'][0], nativeType='Spine.Unity.SkeletonGraphic',
+                    status='native', representation='native-component', localFileId=42)
+    native['components'].append(renderer)
+    assert spine.verify(fragment, tmp_path, native) == []
+    native['components'].append(dict(native['components'][0]))
+    assert spine.verify(fragment, tmp_path, native)[0]['code'] == 'STATIC_SPINE_PERSISTENT_IDENTITY_MISMATCH'
+    native['components'].pop()
     native['components'][0]['localFileId'] = 42
     assert spine.verify(fragment, tmp_path, native)[0]['code'] == 'STATIC_SPINE_PERSISTENT_IDENTITY_MISMATCH'
     for invalid in (True, 0, 1 << 63, -(1 << 63) - 1, '123'):
@@ -88,6 +97,29 @@ def test_verify_requires_canonical_sidecar_even_if_generic_readback_is_supplied(
     assert len(diagnostics) == 1
     assert diagnostics[0]["code"] == "STATIC_SPINE_READBACK_MISSING"
     assert diagnostics[0]["severity"] == "error"
+
+
+def test_retained_meta_accepts_only_source_pinned_recipe_and_saved_hash():
+    from monkey.prefab_static_retained_assets import _unity_meta
+    import pytest
+    uid='a'*32
+    target='Assets/Game/Content/RetainedAssets/example.asset.meta'
+    original=_unity_meta(uid,'native-asset')
+    saved=original.replace(b'  userData: \n',b'').replace(b'  assetBundleName: \n',b'').replace(b'  assetBundleVariant: \n',b'')
+    row={'target':target,'kind':'unity-retained-material-meta','sha256':spine._sha(original),'bytes':len(original)}
+    contract={'assets':[{'unity':{'path':target[:-5],'guid':uid}}]}
+    readback={'nativeFiles':[{'path':target,'sha256':spine._sha(saved)}]}
+    assert spine._saved_retained_meta(row,contract,saved,readback)['path']==target
+    for pins in ({'nativeFiles':[]},{'nativeFiles':readback['nativeFiles']*2},
+                 {'nativeFiles':[{'path':target,'sha256':'0'*64}]}):
+        with pytest.raises(ValueError):
+            spine._saved_retained_meta(row,contract,saved,pins)
+    with pytest.raises(ValueError,match='frozen original'):
+        spine._saved_retained_meta(dict(row,sha256='0'*64),contract,saved,readback)
+    changed=saved.replace(b'mainObjectFileID: 11400000',b'mainObjectFileID: 1')
+    with pytest.raises(ValueError):
+        spine._saved_retained_meta(row,contract,changed,
+            {'nativeFiles':[{'path':target,'sha256':spine._sha(changed)}]})
 
 
 def test_typed_source_field_keeps_absence_distinct_from_default():

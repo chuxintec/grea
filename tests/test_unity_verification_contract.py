@@ -185,3 +185,38 @@ class UnityVerificationContractTests(unittest.TestCase):
         self.assertFalse(retained['sourceIdentityVerified'])
         self.assertFalse(retained['persistent'])
         self.assertFalse(retained['verified'])
+
+    def test_progress_projection_joins_one_carrier_and_requires_exact_saved_bar_identity(self):
+        guid='a'*32
+        carrier=dict(sourceId='progress',type='cc.ProgressBar',nativeType='UnityStaticProgress',
+            status='retained',representation='disabled-source-data-carrier',guid=guid,localFileId=1,
+            persistent=True,sourceIdentityVerified=True,sourceEnabled=True,nativeEnabled=False)
+        bar=dict(sourceId='bar',type='cc.Sprite',nativeType='UnityEngine.UI.Image',status='native',
+            representation='native-component',guid=guid,localFileId=2,persistent=True,sourceIdentityVerified=True)
+        receipt=dict(sourceComponentId='progress',carrierGuid=guid,carrierLocalFileId=1,
+            barSpriteSourceId='bar',barSpriteGuid=guid,barSpriteLocalFileId=2,barSpritePersistent=True,
+            verified=True,carrierDisabled=True,sourceEnabled=True,mode=0,progress=.5,reverse=False)
+        raw=dict(components=[carrier,bar],sourcePrefabs=[dict(components=[dict(carrier),dict(bar)],
+            staticProgressFields=[receipt])])
+        normalized=coverage_readback(raw)
+        self.assertEqual(len(normalized['retainedComponents']),1)
+        observed=normalized['retainedComponents'][0]
+        self.assertTrue(observed['verified'])
+        self.assertTrue(observed['barSpriteIdentityVerified'])
+        self.assertEqual(observed['representation'],'disabled-source-data-carrier')
+        receipt['barSpriteLocalFileId']=3
+        changed=coverage_readback(raw)['retainedComponents'][0]
+        self.assertFalse(changed['verified'])
+        self.assertFalse(changed['barSpriteIdentityVerified'])
+
+    def test_normalization_preserves_same_peer_duplicate_evidence(self):
+        row=dict(sourceId='s',type='sp.Skeleton',nativeType='NativeStaticSpineReference',
+            status='retained',representation='disabled-source-data-carrier',guid='a'*32,localFileId=1,
+            sourceIdentityVerified=True,persistent=True)
+        normalized=coverage_readback(dict(components=[row,dict(row)]))
+        self.assertEqual(len(normalized['retainedComponents']),1)
+        self.assertEqual(normalized['componentPeerDuplicates'][0]['duplicateCount'],2)
+        self.assertEqual(normalized['componentPeerDuplicates'][0]['coverageRole'],'retained-carrier')
+        self.assertEqual(normalized['componentPeerDuplicates'][0]['scope'],'root/components')
+        repeated=coverage_readback(dict(components=[row],sourcePrefabs=[dict(components=[dict(row)])]))
+        self.assertEqual(repeated['componentPeerDuplicates'],[])

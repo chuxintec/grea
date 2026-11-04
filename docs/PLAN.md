@@ -8,7 +8,7 @@
 
 2026-11-04实际任务源迁移：已从下方结构化视图删除三个未完task和未完dev8 release；已完成历史仍保留。旧ID→GREA ID、原输入/消费者/阻塞摘要与原文SHA见 `.private/unified-task-source-20261104/handoff-index.json`；这不是将未完产品任务标done/cancelled。
 
-当前技术交付记录：dev14按实际native09日志及固定SDK IL定位到原Atlas页名与哈希PNG名称未映射，生成仅替换页头的独立原生Atlas，原Atlas/region/坐标及16页既有PNG字节保留；Factory分别报告页名和实际持久Material的GUID/localID/类型/路径，引用包装仅诊断，纹理字节/Shader/混合参数仍严格核验。新增请求及完整自有清单固定的fresh helper刷新入口，不重新解码。80项相关检查、10个子用例及9个持久身份比较用例通过；116份C#对175程序集离线编译通过，固定SDK只读解析18组骨骼/Atlas与75个初态。固定源码交接见本轮私有handoff；实际续接/export/Editor仍由GREA独占，源码、离线解析与编译不算视觉/Player通过。本文不另建验收待办。
+当前技术交付记录：dev15仅修Python保存meta合同和角色归并，复用固定native10只读完整verify。原始生成meta SHA与nativeFiles保存SHA分开严格核验，只允许3个已知空行省略；carrier/render分别核身份，peer重复及角色冒用仍拒绝。Progress投影与同一实际载体按精确身份合并、bar引用独立交叉核对；原生Slider无需虚构额外载体，实际fallback的数值按System.Single精确位表示比较，显式保留合同不减项。903源组件/903唯一ID保持，627native/79disabled/180retained/17unsupported；本轮meta/73歧义/197身份误报/86保留不全/53可见Spine阻塞归零，retention pass，editor/presentation partial，nativeStatic fail；文字度量、17未支持及业务/Player缺口保留。104相关测试和10子用例通过，1可选解码环境检查跳过；1296固定文件重验前后SHA不变、解码及子进程调用0，无C#/Editor/候选修改。正式采用/完整呈现仍按GREA唯一任务源推进。
 
 ## 已完成交付及技术历史
 

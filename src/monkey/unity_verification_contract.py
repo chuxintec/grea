@@ -77,11 +77,51 @@ def native_diagnostics(values):
     return deduped
 
 
+def _component_peer_duplicates(readback):
+    """Keep source peer multiplicity before normalization coalesces observations."""
+    from .prefab_component_coverage import _component_role,_unity_persistent_identity
+    result=[];stack=[('root',readback)];visited=set()
+    while stack:
+        scope,container=stack.pop()
+        if id(container) in visited:continue
+        visited.add(id(container))
+        for key in ('components','retainedComponents','disabledComponents'):
+            groups={}
+            values=container.get(key)
+            for row in values if isinstance(values,list)else[]:
+                if not isinstance(row,dict)or not isinstance(row.get('sourceId'),str)or not row['sourceId']:continue
+                role=_component_role(row)[0]
+                if key=='retainedComponents' and row.get('coverageRole')is None:
+                    role='retained-carrier'
+                elif key=='disabledComponents' and row.get('coverageRole')is None and role!='native-renderer':
+                    role='disabled-component'
+                groups.setdefault((row['sourceId'],role),[]).append(row)
+            for (sid,role),rows in groups.items():
+                if len(rows)<2:continue
+                identities=[]
+                for row in rows:
+                    identity=_unity_persistent_identity(row)
+                    if identity not in identities:identities.append(identity)
+                result.append(dict(sourceId=sid,coverageRole=role,scope=scope+'/'+key,
+                    duplicateCount=len(rows),persistentIdentity=identities[0]if len(identities)==1 else None,
+                    persistentIdentities=identities))
+        for key in ('sourcePrefabs','prefabInstances','candidatePrefabInstances','instances'):
+            values=container.get(key)
+            for index,child in enumerate(values if isinstance(values,list)else[]):
+                if isinstance(child,dict):stack.append((scope+'/'+key+'/'+str(index),child))
+    return result
+
+
 def coverage_readback(readback,spine_readback=None):
     """Normalize actual saved records; never infer presence from convertible."""
     result=copy.deepcopy(readback)
+    result['componentPeerDuplicates']=_component_peer_duplicates(readback)
     from .prefab_component_coverage import _dedupe_exact_rows,_nested_rows,_native_identity_verified
     rows=_dedupe_exact_rows(_nested_rows(result,'components'))
+    for row in rows:
+        if (row.get('type')=='sp.Skeleton' and row.get('nativeType')=='NativeStaticSpineReference'
+                and row.get('status')=='retained' and row.get('representation')=='disabled-source-data-carrier'):
+            row['coverageRole']='retained-carrier'
     result['components']=[row for row in rows if row.get('status')=='native']
     result['retainedComponents']=_dedupe_exact_rows(
         [*(_nested_rows(result,'retainedComponents')),*[row for row in rows if row.get('status')=='retained']])
@@ -127,6 +167,7 @@ def coverage_readback(readback,spine_readback=None):
         if not isinstance(sid,str)or not sid:continue
         progress=dict(row)
         progress.update(sourceId=sid,status='retained',representation='native-static-progress-carrier',
+            type='cc.ProgressBar',nativeType='UnityStaticProgress',coverageRole='retained-carrier',
             guid=row.get('carrierGuid'),localFileId=row.get('carrierLocalFileId'),
             componentUuid=(str(row.get('carrierGuid'))+':'+str(row.get('carrierLocalFileId'))
                            if row.get('carrierGuid')and row.get('carrierLocalFileId')is not None else None),
@@ -144,6 +185,27 @@ def coverage_readback(readback,spine_readback=None):
                     'sourceIdentityVerified':True,'persistent':True},'unity'),
             nativeEnabled=not row.get('carrierDisabled',False),
             retentionEvidenceKind='static-progress-carrier-readback')
+        bar_rows=[item for item in rows if item.get('sourceId')==row.get('barSpriteSourceId')
+                  and item.get('nativeType')=='UnityEngine.UI.Image']
+        bar_ids={(item.get('guid'),item.get('localFileId')) for item in bar_rows}
+        bar_verified=(bool(bar_rows) and len(bar_ids)==1
+            and all(_native_identity_verified(item,'unity') for item in bar_rows)
+            and _native_identity_verified({'guid':row.get('barSpriteGuid'),'localFileId':row.get('barSpriteLocalFileId'),
+                'sourceIdentityVerified':True,'persistent':True},'unity')
+            and bar_ids=={(row.get('barSpriteGuid'),row.get('barSpriteLocalFileId'))})
+        progress['barSpriteIdentityVerified']=bar_verified
+        progress['verified']=progress['verified'] and bar_verified
+        progress['fieldsVerified']=progress['fieldsVerified'] and bar_verified
+        carriers=[item for item in result['retainedComponents'] if item.get('sourceId')==sid
+                  and item.get('nativeType')=='UnityStaticProgress'
+                  and _native_identity_verified(item,'unity') and item.get('nativeEnabled')is False
+                  and item.get('guid')==progress['guid'] and item.get('localFileId')==progress['localFileId']]
+        if len(carriers)==1 and row.get('carrierDisabled')is True:
+            # The specialized receipt describes this same physical component,
+            # rather than introducing a second retained entity.
+            carrier=carriers[0];representation=carrier.get('representation')
+            carrier.update(progress);carrier['representation']=representation
+            continue
         progress_rows.append(progress)
     result['retainedComponents']=_dedupe_exact_rows([*result['retainedComponents'],*progress_rows])
     if spine_readback is not None:result['staticSpineContinuation']=spine_readback
