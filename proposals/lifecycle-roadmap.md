@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "monkey dev13/273d127实际续接解码16必要Spine页，复用136字形/UI纹理；native09 PID87226退出，在parse_saved_atlas页名/材质身份回读门失败，未达静态/视觉验收。dev12已有11Prefab保存重开但全源fail，不以旧成功替代当前渲染门。beaver dev9六绑定/纯脚本批次/资源检查接续计划已具备，未正式采用。",
+      "description": "monkey dev14/64a8d96实际refresh复用16页，Atlas修复后native10完成11Prefab/668节点保存重开、missingScripts0。整体静态/保留/呈现仍fail：保存meta空字段变化被判漂移、同源载体/Renderer角色联结歧义及其他源缺口；12渲染sidecar不能代替整体验收。预览已查看，文字/空态重叠未视觉通过。beaver dev9接续计划待最终源，正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -426,7 +426,8 @@
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-03-toggle-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-08-dev12-index.json",
         "../beaver/.private/intake-bindings-20261104/dev9/candidate-delivery.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-09-dev13-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-09-dev13-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-10-dev14-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -459,7 +460,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey定位保存Atlas页名或材质持久身份差异并修通用校验/映射，提供固定产物续接复用16已解码页；完成真实静态呈现/源验收后接beaver dev9，不重放旧partial或提前正式写入。",
+      "nextAction": "monkey修保存meta及多角色回读联结，优先对固定native10只读verify复用原生证据；C#变动才新原生，16纹理不重解码。继续完整源/静态呈现验收后接beaver。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
