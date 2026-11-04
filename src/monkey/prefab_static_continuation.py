@@ -14,13 +14,14 @@ _FAMILIES={'materials','animation','spine'}
 
 def _summary(result):
     """Keep CLI output bounded; full family evidence remains in the plan."""
-    detail=result.get('continuation',{})
+    detail=result.get('continuation',result.get('rendering',{}))
     keys=('componentCount','componentReferenceCount','clipSlotCount','sourceEvidenceAssetCount',
           'convertedCurveSlotCount','partialOrEvidenceOnlyCurveSlotCount','sourceDataAssetCount')
     nested=detail.get('summary',{})
     spine_keys=('sourceSpineComponentCount','syncInstanceComponentCount','sourceSkeletonDataAssetCount',
                 'missingSourceSkeletonDataReferenceCount','missingSourceObjectReferenceCount',
-                'sourceAstcPagesCopiedOpaque','sourceAstcPagesDecoded','rendered','animated')
+                'sourceAstcPagesCopiedOpaque','sourceAstcPagesDecoded','rendered','animated',
+                'sourceComponentCount','eligibleComponentCount','sourceVisibleEligibleCount','decodedPageCount','dataAssetCount')
     return {'schema':result.get('schema')or detail.get('schema')or detail.get('contract'),'status':result.get('status'),
             **{key:detail[key]for key in keys if key in detail},
             **{key:nested[key]for key in spine_keys if key in nested}}
@@ -63,7 +64,7 @@ def prepare(request_path, expected_request_sha256, output):
     if io.sha(raw)!=expected_request_sha256:
         fail('STATIC_CONTINUATION_REQUEST_HASH',str(request_path),'Request differs from its pin')
     request=io.load(raw)
-    allowed={'schema','schemaVersion','plan','planManifest','ir','sourceManifest','families','spineRuntime'}
+    allowed={'schema','schemaVersion','plan','planManifest','ir','sourceManifest','families','spineRuntime','spineRendering','spineSourceEngine'}
     if (not isinstance(request,dict)or set(request)-allowed or request.get('schema')!=SCHEMA
             or type(request.get('schemaVersion'))is not int or request['schemaVersion']!=1):
         fail('STATIC_CONTINUATION_REQUEST_INVALID',str(request_path),'Unsupported continuation request')
@@ -71,9 +72,15 @@ def prepare(request_path, expected_request_sha256, output):
     if (not isinstance(families,list)or not families or any(not isinstance(x,str)or x not in _FAMILIES for x in families)
             or len(set(families))!=len(families)):
         fail('STATIC_CONTINUATION_FAMILIES_INVALID','families','Expected distinct supported component families')
+    rendering=request.get('spineRendering',False)
+    if (type(rendering)is not bool or rendering and ('spine'not in families or 'spineRuntime'not in request or 'spineSourceEngine'not in request)
+            or 'spineSourceEngine'in request and not rendering):
+        fail('STATIC_CONTINUATION_RENDERING_INVALID','spineRendering','Rendering requires the spine family, pinned runtime and independently pinned source engine file')
     paths={};raws={}
     for name in ('plan','planManifest','ir','sourceManifest'):
         paths[name],raws[name]=_input(request,name)
+    if rendering:
+        paths['spineSourceEngine'],raws['spineSourceEngine']=_input(request,'spineSourceEngine')
     if paths['planManifest']!=paths['plan'].parent/'manifest.json':
         fail('STATIC_CONTINUATION_SOURCE_MISMATCH','planManifest','Expected the plan owning stage manifest')
     plan=io.stage_document(paths['plan']);ir=io.stage_document(paths['ir'])
@@ -125,12 +132,23 @@ def prepare(request_path, expected_request_sha256, output):
                              unity_runtime_manifest_path=runtime_path,unity_runtime_manifest_sha256=runtime_sha,
                              unity_runtime_assets_root=runtime_root)
         plan=result['plan'];results['spine']=_summary(result)
+        if rendering:
+            from .prefab_static_spine_rendering import prepare as prepare_rendering
+            generator=Path(__file__).parent/'targets/UnityImporter.cs'
+            plan['staticSpineRenderingTargetUnits']={
+                'status':'declared_generator_mapping_requires_native_verification',
+                'targetUnitsPerSourcePixel':1.0,'coordinateSpace':'source-pixels-to-ugui-local-units',
+                'generatorSourceSha256':io.sha(io.read(generator)),
+                'runtimeCheck':'exact-plan-node-RectTransform-fields-and-actual-canvas-reference-ppu'}
+            result=prepare_rendering(plan,stage,plan['staticSpineContinuation']['runtimeDependency'],stage/'spine_static_rendering',
+                                     source_engine_file=paths['spineSourceEngine'],expected_source_engine_sha256=io.sha(raws['spineSourceEngine']))
+            plan=result['plan'];results['spineRendering']=_summary(result)
     if (io.sha(io.read(request_path,max_bytes=1024*1024))!=expected_request_sha256
             or any(io.sha(io.read(path,max_bytes=128*1024*1024))!=io.sha(raws[name])for name,path in paths.items())):
         fail('STATIC_CONTINUATION_INPUT_CHANGED','inputs','A frozen input changed during continuation; output is incomplete')
     plan['toolVersion']=__version__
     plan['staticContinuation']={'schema':SCHEMA,'parentPlanSha256':io.sha(raws['plan']),
-                                'families':families,'sourceBusinessExecuted':False,'native':'not_run'}
+                                'families':families,'spineRendering':rendering,'sourceBusinessExecuted':False,'native':'not_run'}
     io.write_json(stage/'plan.json',plan);io.finish(stage,plan)
     report={'schema':SCHEMA,'schemaVersion':1,'toolVersion':__version__,'preparationStatus':'prepared',
             'requestSha256':expected_request_sha256,'inputs':{name:{'path':str(path),'sha256':io.sha(raws[name])}for name,path in paths.items()},

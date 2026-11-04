@@ -191,9 +191,8 @@ public static partial class MonkeyImporter
         if(spineStaticEnvelope==null)return;
         foreach(var row in (spineStaticEnvelope.components??Array.Empty<SpineComponent>()).Where(x=>x.sourcePrefabId==prefabId)) {
             var carrier=SpineCarrier(row,nodes); if(carrier==null)throw new InvalidOperationException("STATIC_SPINE_SAVED_CARRIER_MISSING: "+row.sourceComponentId);
-            var persistent=PrefabUtility.GetCorrespondingObjectFromSource(carrier) as NativeStaticSpineReference;
             string guidValue=null; long localId=0;
-            if(persistent!=null)AssetDatabase.TryGetGUIDAndLocalFileIdentifier(persistent,out guidValue,out localId);
+            bool persistent=ReadSpinePersistentIdentity(carrier,out guidValue,out localId);
             var typedFieldsMatch=SpineCarrierIdentityMatches(carrier,row)&&SpineTypedFieldsMatch(carrier,row.sourceFields??Array.Empty<SpineField>())&&
                 carrier.sourceComponentEnabledKnown==(row.sourceComponentEnabledStatus=="plan-source-value")&&
                 (!carrier.sourceComponentEnabledKnown||carrier.sourceComponentEnabled==row.sourceComponentEnabled)&&
@@ -204,7 +203,7 @@ public static partial class MonkeyImporter
             var result=new SpineComponentReadback { sourceComponentId=row.sourceComponentId,sourceTemplateComponentId=row.sourceTemplateComponentId,
                 sourceNodeId=row.sourceNodeId,sourceFieldsSha256=SpineSha(carrier.sourceFieldsJson),sourceComponentEnvelopeSha256=SpineSha(carrier.sourceComponentEnvelopeJson),
                 savedComponent=typedFieldsMatch,
-                persistedGuidStatus=(!String.IsNullOrEmpty(guidValue)&&localId!=0)?"verified":"missing",persistedGuid=guidValue,persistedLocalFileId=localId,
+                persistedGuidStatus=persistent?"verified":"missing",persistedGuid=guidValue,persistedLocalFileId=localId,
                 sourceDataAssetId=row.sourceDataReference.sourceDataAssetId };
             if(carrier.sourceData!=null)AssetDatabase.TryGetGUIDAndLocalFileIdentifier(carrier.sourceData,out result.dataAssetGuid,out result.dataAssetLocalFileId);
             var expectedData=(spineStaticEnvelope.dataAssets??Array.Empty<SpineData>()).SingleOrDefault(x=>x.sourceDataAssetId==row.sourceDataReference.sourceDataAssetId);
@@ -245,6 +244,15 @@ public static partial class MonkeyImporter
             carrier.sourceTemplateComponentId==row.sourceTemplateComponentId&&
             carrier.sourcePrefabId==row.sourcePrefabId&&carrier.sourceNodeId==row.sourceNodeId&&
             carrier.sourceTemplateNodeId==row.sourceTemplateNodeId;
+    }
+    static bool ReadSpinePersistentIdentity(NativeStaticSpineReference carrier,out string guidValue,out long localId) {
+        // The caller supplies the saved asset map, never temporary prefab
+        // contents. A nested override belongs to this saved instance; following
+        // its template can lose or substitute that identity.
+        guidValue=null;localId=0;
+        return carrier!=null&&EditorUtility.IsPersistent(carrier)&&
+            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(carrier,out guidValue,out localId)&&
+            !String.IsNullOrEmpty(guidValue)&&localId!=0;
     }
     static bool SpineTypedFieldsMatch(NativeStaticSpineReference c,SpineField[] fields) {
         foreach(var f in fields) {

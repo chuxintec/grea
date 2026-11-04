@@ -10,6 +10,7 @@ class ComponentCoverageTests(unittest.TestCase):
             "components": [{
                 "sourceId": "component-a", "node": "node-a", "type": "cc.Sprite",
                 "nativeType": "cc.Sprite", "convertible": True, "enabled": True,
+                "spriteFrame": "asset:frame-a",
             }],
             "diagnostics": [],
         }
@@ -54,6 +55,7 @@ class ComponentCoverageTests(unittest.TestCase):
         readback = {"retainedComponents": [{
             "sourceId": "component-a", "status": "verified", "verified": True,
             "sourceIdentityVerified": True, "representation": "opaque-source-evidence",
+            "guid": "0123456789abcdef0123456789abcdef", "localFileId": 1, "persistent": True,
         }]}
         result = assess(self.plan, readback, "unity")
         self.assertEqual(result["components"][0]["disposition"], "retained")
@@ -115,7 +117,9 @@ class ComponentCoverageTests(unittest.TestCase):
         readback = {
             "staticSpineContinuation": {"status": "verified", "sourceComponentIds": ["spine-a"]},
             "retainedComponents": [{"sourceId": "spine-a", "status": "verified", "verified": True,
-                                    "sourceIdentityVerified": True, "representation": "non-rendering-static-spine"}],
+                                    "sourceIdentityVerified": True, "persistent": True,
+                                    "guid": "0123456789abcdef0123456789abcdef", "localFileId": 2,
+                                    "representation": "non-rendering-static-spine"}],
         }
         result = assess(plan, readback, "unity")
         row = result["components"][0]
@@ -200,6 +204,128 @@ class ComponentCoverageTests(unittest.TestCase):
         }]}]}
         result = assess(self.plan, readback, "creator")
         self.assertEqual(result["components"][0]["disposition"], "native")
+
+    def test_explicit_source_empty_sprite_is_business_disabled_not_missing(self):
+        plan={"nodes":self.plan["nodes"],"components":[{
+            "sourceId":"sprite-empty","node":"node-a","type":"cc.Sprite","enabled":True,
+            "spriteFrame":None,"nativeType":"cc.Sprite","convertible":True,
+        }]}
+        row={"sourceId":"sprite-empty","status":"disabled","representation":"native-component",
+             "nativeType":"UnityEngine.UI.Image","sourceEnabled":True,"nativeEnabled":False,
+             "disabledReason":"source-empty-sprite","nativeStaticFieldsVerified":True,
+             "sourceIdentityVerified":True,"persistent":True,
+             "guid":"0123456789abcdef0123456789abcdef","localFileId":7}
+        result=assess(plan,{"components":[row]},"unity")
+        self.assertEqual(result["components"][0]["disposition"],"disabled")
+        self.assertEqual(result["components"][0]["nativeStatus"],"pass")
+        self.assertFalse(result["components"][0]["sourceVisible"])
+        self.assertNotEqual(result["nativeStaticValidation"],"fail")
+
+    def test_empty_sprite_requires_explicit_source_field_and_native_null_proof(self):
+        from monkey.prefab_component_coverage import _valid_native_disabled
+        component={"sourceId":"s","type":"cc.Sprite","enabled":True,"spriteFrame":None}
+        row={"sourceId":"s","status":"disabled","representation":"native-component",
+             "nativeType":"UnityEngine.UI.Image","sourceEnabled":True,"nativeEnabled":False,
+             "disabledReason":"source-empty-sprite","nativeStaticFieldsVerified":True,
+             "sourceIdentityVerified":True,"persistent":True,
+             "guid":"0123456789abcdef0123456789abcdef","localFileId":7}
+        self.assertTrue(_valid_native_disabled(component,row,"unity")[0])
+        unknown_source={"sourceId":"s","type":"cc.Sprite","enabled":True}
+        self.assertTrue(_valid_native_disabled(unknown_source,row,"unity")[0])
+        self.assertIsNone(_valid_native_disabled(unknown_source,row,"unity")[1])
+        row["nativeStaticFieldsVerified"]=False
+        self.assertTrue(_valid_native_disabled(component,row,"unity")[0])
+        result=assess({"nodes":self.plan["nodes"],"components":[{
+            "sourceId":"s","node":"node-a","type":"cc.Sprite","enabled":True,
+            "spriteFrame":None}]},{"components":[row]},"unity")
+        self.assertEqual(result["components"][0]["disposition"],"disabled")
+        self.assertEqual(result["components"][0]["nativeStatus"],"partial")
+
+    def test_native_disabled_button_requires_exact_business_safe_profile(self):
+        plan={"nodes":self.plan["nodes"],"components":[{
+            "sourceId":"button","node":"node-a","type":"cc.Button","enabled":True,
+            "staticButtonBinding":{"behavior":"disabled","renderReady":True,"sourceEnabled":True},
+        }]}
+        row={"sourceId":"button","status":"disabled","representation":"native-component",
+             "nativeType":"UnityEngine.UI.Button","sourceEnabled":True,"nativeEnabled":False,
+             "disabledReason":"static-button-business-safety","nativeStaticFieldsVerified":True,
+             "sourceIdentityVerified":True,"persistent":True,
+             "guid":"0123456789abcdef0123456789abcdef","localFileId":8}
+        result=assess(plan,{"components":[row]},"unity")
+        self.assertEqual(result["components"][0]["disposition"],"disabled")
+        self.assertEqual(result["components"][0]["nativeStatus"],"pass")
+        self.assertEqual(result["components"][0]["sourceBehaviorStatus"],"disabled_for_business_safety_behavior_not_restored")
+        row["disabledReason"]="unproven-native-disabled"
+        result=assess(plan,{"components":[row]},"unity")
+        self.assertEqual(result["components"][0]["disposition"],"disabled")
+        self.assertEqual(result["components"][0]["nativeStatus"],"partial")
+        self.assertTrue(any(item["code"]=="NATIVE_DISABLED_REASON_UNPROVEN" for item in result["diagnostics"]))
+
+    def test_unity_identity_accepts_signed64_edges_and_rejects_invalid_pairs(self):
+        from monkey.prefab_component_coverage import _unity_persistent_identity
+        guid="0123456789abcdef0123456789abcdef"
+        for local in (-(1<<63),(1<<63)-1):
+            self.assertIsNotNone(_unity_persistent_identity({"guid":guid,"localFileId":local}))
+        for local in (0,1<<63,-(1<<63)-1,True,"01"):
+            self.assertIsNone(_unity_persistent_identity({"guid":guid,"localFileId":local}))
+        self.assertIsNone(_unity_persistent_identity({"guid":"bad","localFileId":1}))
+        self.assertIsNone(_unity_persistent_identity({"guid":guid,"localFileId":1,"componentUuid":guid+":2"}))
+
+    def test_static_progress_retention_joins_source_id_values_and_bar_sprite(self):
+        from monkey.unity_verification_contract import coverage_readback
+        binding={"sourceComponentId":"progress","sourceEnabled":True,"mode":0,"progress":0.5,
+                 "reverse":False,"barSpriteSourceId":"bar-sprite"}
+        plan={"components":[{"sourceId":"progress","type":"cc.ProgressBar","enabled":True,
+                             "staticProgressBinding":binding}]}
+        row={"sourceComponentId":"progress","verified":True,"carrierDisabled":True,
+             "carrierGuid":"0123456789abcdef0123456789abcdef","carrierLocalFileId":12,
+             "sourceEnabled":True,"mode":0,"progress":0.5,"reverse":False,
+             "barSpriteSourceId":"bar-sprite","barSpritePersistent":True}
+        normalized=coverage_readback({"staticProgressFields":[row]})
+        result=assess(plan,normalized,"unity")
+        self.assertEqual(result["components"][0]["disposition"],"retained")
+        self.assertEqual(result["retentionValidation"],"pass")
+        row["barSpriteSourceId"]="other-sprite"
+        result=assess(plan,coverage_readback({"staticProgressFields":[row]}),"unity")
+        self.assertEqual(result["components"][0]["disposition"],"missing")
+        self.assertEqual(result["retentionValidation"],"partial")
+
+    def test_spine_renderer_does_not_skip_retained_carrier_verification(self):
+        sid="spine-source"
+        guid="0123456789abcdef0123456789abcdef"
+        plan={"nodes":self.plan["nodes"],"components":[{
+            "sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
+            "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        readback={"staticSpineContinuation":{"status":"verified","sourceComponentIds":[sid]},
+            "staticSpineRendering":{"status":"verified","sourceComponentIds":[sid]},
+            "components":[{"sourceId":sid,"status":"native","representation":"native-component",
+                "nativeType":"Spine.Unity.SkeletonGraphic","nativeStaticFieldsVerified":True,
+                "nativeEnabled":True,
+                "sourceIdentityVerified":True,"persistent":True,"guid":guid,"localFileId":20}],
+            "retainedComponents":[{"sourceId":sid,"status":"verified","verified":True,
+                "sourceIdentityVerified":True,"persistent":True,"guid":guid,"localFileId":21,
+                "representation":"non-rendering-static-spine"}]}
+        result=assess(plan,readback,"unity")
+        self.assertEqual(result["components"][0]["disposition"],"native")
+        self.assertEqual(result["retentionValidation"],"pass")
+        self.assertEqual(result["staticPresentationValidation"]["status"],"pass")
+        readback["retainedComponents"][0]["guid"]="bad"
+        result=assess(plan,readback,"unity")
+        self.assertEqual(result["retentionValidation"],"partial")
+
+    def test_spine_self_report_unknown_ids_cannot_verify_static_render(self):
+        sid="spine-source";guid="0123456789abcdef0123456789abcdef"
+        plan={"nodes":self.plan["nodes"],"components":[{
+            "sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
+            "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
+        readback={"staticSpineRendering":{"status":"verified","sourceComponentIds":["invented"]},
+            "components":[{"sourceId":sid,"status":"native","representation":"native-component",
+                "nativeType":"Spine.Unity.SkeletonGraphic","nativeStaticFieldsVerified":True,
+                "nativeEnabled":True,
+                "sourceIdentityVerified":True,"persistent":True,"guid":guid,"localFileId":20}]}
+        result=assess(plan,readback,"unity")
+        self.assertEqual(result["staticPresentationValidation"]["status"],"partial")
+        self.assertTrue(any(row["code"]=="STATIC_SPINE_RENDERING_ID_UNKNOWN" for row in result["diagnostics"]))
 
 
 if __name__ == "__main__":

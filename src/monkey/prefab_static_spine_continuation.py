@@ -25,6 +25,7 @@ _UNITY_CONTENT_ROOT = "Assets/Game/Content/Spine/SourceData"
 _EDITOR_HELPER = "Assets/Game/Editor/Conversion/UnityStaticSpineContinuation.cs"
 _RUNTIME_REFERENCE = "Assets/Game/Presentation/Common/Layout/NativeStaticSpineReference.cs"
 _RUNTIME_DATA = "Assets/Game/Presentation/Common/Layout/NativeStaticSpineData.cs"
+_RUNTIME_REFERENCE_ROOT = "Assets/Plugins/Spine38"
 
 
 class StaticSpineContinuationError(ValueError):
@@ -905,6 +906,11 @@ def _mono_script_meta(guid_value: str) -> bytes:
     return ("fileFormatVersion: 2\nguid: " + guid_value + "\nMonoImporter:\n  externalObjects: {}\n  serializedVersion: 2\n  defaultReferences: []\n  executionOrder: 0\n  icon: {instanceID: 0}\n  userData: \n  assetBundleName: \n  assetBundleVariant: \n").encode("utf-8")
 
 
+def _persistent_identity(guid_value, local_id) -> bool:
+    return (isinstance(guid_value, str) and re.fullmatch(r"[0-9a-f]{32}", guid_value) is not None
+            and type(local_id) is int and -(1 << 63) <= local_id < (1 << 63) and local_id != 0)
+
+
 def _verify_impl(plan_fragment: dict, candidate_root: str | Path, editor_readback: dict | str | Path) -> list[dict]:
     """Verify emitted bytes and an explicit Unity saved-prefab readback receipt."""
     fragment = plan_fragment
@@ -981,12 +987,12 @@ def _verify_impl(plan_fragment: dict, candidate_root: str | Path, editor_readbac
             if row.get(key) != want:
                 failures.append({"sourceComponentId": source_id, "field": key, "expected": want, "actual": row.get(key)})
         if row.get("savedComponent") is not True or row.get("persistedGuidStatus") != "verified" or \
-                not row.get("persistedGuid") or not row.get("persistedLocalFileId"):
+                not _persistent_identity(row.get("persistedGuid"), row.get("persistedLocalFileId")):
             failures.append({"sourceComponentId": source_id, "field": "persistedComponentIdentity", "actual": row.get("persistedGuidStatus")})
         expected_data_id = expected_row.get("sourceDataReference", {}).get("sourceDataAssetId")
         if expected_data_id is not None and (row.get("sourceDataAssetId") != expected_data_id or
-                row.get("dataAssetGuidStatus") != "verified" or not row.get("dataAssetGuid") or
-                not row.get("dataAssetLocalFileId")):
+                row.get("dataAssetGuidStatus") != "verified" or
+                not _persistent_identity(row.get("dataAssetGuid"), row.get("dataAssetLocalFileId"))):
             failures.append({"sourceComponentId": source_id, "field": "persistedSkeletonDataIdentity",
                              "expectedSourceDataAssetId": expected_data_id, "actualSourceDataAssetId": row.get("sourceDataAssetId"),
                              "guidStatus": row.get("dataAssetGuidStatus")})
@@ -1011,7 +1017,7 @@ def _verify_impl(plan_fragment: dict, candidate_root: str | Path, editor_readbac
             saved = actual_refs[field_path]
             if saved.get("sourceAssetId") != ref.get("sourceAssetId") or saved.get("sourceUuid") != ref.get("sourceUuid"):
                 failures.append({"sourceComponentId": source_id, "field": "sourceObjectReferenceIdentity", "path": field_path})
-            if saved.get("resolved") is not True or not saved.get("persistedGuid") or not saved.get("persistedLocalFileId"):
+            if saved.get("resolved") is not True or not _persistent_identity(saved.get("persistedGuid"), saved.get("persistedLocalFileId")):
                 failures.append({"sourceComponentId": source_id, "field": "sourceObjectReferencePersistence", "path": field_path})
     if failures or receipt.get("status") != "saved_static_references_verified":
         if not failures:
@@ -1041,6 +1047,27 @@ def verify(plan_fragment: dict, candidate_root: str | Path, editor_readback: dic
     try:
         if not sidecar.is_file() or sidecar.is_symlink():
             return [diagnostic("STATIC_SPINE_READBACK_MISSING", str(sidecar), "Editor saved-prefab identity sidecar is absent")]
-        return _verify_impl(plan_fragment, root, sidecar)
+        diagnostics = _verify_impl(plan_fragment, root, sidecar)
+        if diagnostics or not isinstance(editor_readback, dict) or 'components' not in editor_readback:
+            return diagnostics
+        # Both records must refer to the same saved source instance. Template
+        # identities and synthetic nonzero file IDs cannot stand in for it.
+        receipt = json.loads(sidecar.read_text(encoding='utf-8'))
+        actual = {}
+        for row in editor_readback['components']:
+            actual.setdefault(row.get('sourceId'), []).append(row)
+        failures = []
+        for row in receipt['components']:
+            candidates = actual.get(row['sourceComponentId'], [])
+            if (len(candidates) != 1 or candidates[0].get('persistent') is not True
+                    or candidates[0].get('sourceIdentityVerified') is not True
+                    or candidates[0].get('guid') != row['persistedGuid']
+                    or candidates[0].get('localFileId') != row['persistedLocalFileId']
+                    or not _persistent_identity(candidates[0].get('guid'), candidates[0].get('localFileId'))):
+                failures.append(row['sourceComponentId'])
+        if failures:
+            return [diagnostic('STATIC_SPINE_PERSISTENT_IDENTITY_MISMATCH', str(sidecar),
+                               json.dumps({'sourceComponentIds': failures}, ensure_ascii=False))]
+        return []
     except Exception as error:
         return [diagnostic("STATIC_SPINE_READBACK_INVALID", str(sidecar), f"{type(error).__name__}: {error}")]

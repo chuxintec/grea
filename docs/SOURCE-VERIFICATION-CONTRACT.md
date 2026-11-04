@@ -2,6 +2,10 @@
 
 Unity 与 Creator 的 `componentCoverage` 按完整 `plan.components` 逐项列出 `native`、`retained`、`disabled`、`unsupported`、`missing`；`convertible` 不再缩小分母。原生身份必须来自实际保存回读，静态字段、保留数据及源可见内容另需相应证据。源和原生诊断均保留在结果中。
 
+诊断以源身份、代码、位置和原文去重，重复观察的来源及原始索引仍保留。不同字段、消息、位置或源组件不能合并。创建早期缺少原生组件的观察，可以与最终保存身份关联说明后续已有对应物；这不证明原始业务或未知字段语义已经恢复。
+
+`disabledReason` 区分源本来禁用、静态 Button 关闭业务回调、源 Sprite 无图以及原因未知的禁用。只有来源与目标字段、实际持久身份和明确禁用边界均相符，才验证相应静态表达。Unity 的 local file ID 按非零 signed 64 位值核验；不要求正数，文本形式仅接受规范十进制整数并与组合身份交叉核对，不接受布尔值、浮点或越界数。C# Spine 侧报告的对应字段必须是 JSON 整数。Spine 侧报告直接读取保存的实例对象，并与主回读按源身份、GUID、local ID 对接，不以模板身份代替嵌套实例。
+
 - `staticValidation` 只检查拥有文件、GUID、资源与目录完整性。
 - `nativeStaticValidation` 检查全源组件的原生身份及字段；未验证或仅保留的组件不能汇总为完整通过。
 - `retentionValidation` 单列身份、字段、原始资源的保留结果。
@@ -10,7 +14,9 @@ Unity 与 Creator 的 `componentCoverage` 按完整 `plan.components` 逐项列�
 
 `freeze-native-selection` 接受导入器的干净 `imported` 枚举，同时继续核对固定回读 SHA、原生文件、重开、全源覆盖和静态呈现。它不接收缺失分母、未完成呈现或被过滤后的原生诊断来代替这些门槛。已验证静态部分的明确纯动态边界仍单列。
 
-静态 Spine 续接会在模板及每个平铺实例上创建真实类型载体，再由既有 Prefab 替换链复制字段、替换引用；同类型 Spine 组件按精确模板来源身份对应。它保留骨骼、atlas、原始纹理页和材料对象引用，尚未实现 Spine 渲染或动画。
+默认静态 Spine 续接会在模板及每个平铺实例上创建真实类型载体，再由既有 Prefab 替换链复制字段、替换引用；同类型 Spine 组件按精确模板来源身份对应。它保留骨骼、atlas、原始纹理页和材料对象引用，不提供渲染或动画证明。
+
+请求显式设置 `spineRendering: true` 时，还须提供 `spineRuntime` 的固定备份 manifest、资源根以及 `spineSourceEngine` 的实际同版本源文件路径与 SHA。此模式在新目录生成必要的页纹理、真实 SkeletonGraphic 与时间零初态；已有字体和 UI 纹理继续复用。数据载体保留不替代渲染器。完整源分母包括不适用或缺输入的行；可见项必须有独立保存回读的渲染器、数据、初态及非空几何和真实材料证据，不能将空节点、引用成功或载体身份当成图像。最终静态呈现、视觉比较与 Player 结果仍分别核验。
 
 自定义 Unity UI schema carrier 的字段型 C# 声明不是原程序集完整方法清单。缺少独立原始方法来源时，即使目标原生基类能绘制，也不证明源类的渲染或生命周期语义已恢复。
 

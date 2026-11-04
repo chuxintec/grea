@@ -68,6 +68,18 @@ def test_verify_loads_canonical_sidecar_and_accepts_exact_saved_identity(tmp_pat
     }), encoding="utf-8")
 
     assert spine.verify(fragment, tmp_path, {"status": "ignored-generic-readback"}) == []
+    receipt = json.loads(sidecar.read_text())
+    receipt['components'][0]['persistedLocalFileId'] = -(1 << 63) + 1
+    sidecar.write_text(json.dumps(receipt))
+    native = {'components': [{'sourceId': component['sourceComponentId'], 'guid': 'e' * 32,
+        'localFileId': -(1 << 63) + 1, 'persistent': True, 'sourceIdentityVerified': True}]}
+    assert spine.verify(fragment, tmp_path, native) == []
+    native['components'][0]['localFileId'] = 42
+    assert spine.verify(fragment, tmp_path, native)[0]['code'] == 'STATIC_SPINE_PERSISTENT_IDENTITY_MISMATCH'
+    for invalid in (True, 0, 1 << 63, -(1 << 63) - 1, '123'):
+        receipt['components'][0]['persistedLocalFileId'] = invalid
+        sidecar.write_text(json.dumps(receipt))
+        assert spine.verify(fragment, tmp_path)[0]['code'] == 'STATIC_SPINE_SAVED_REFERENCE_MISMATCH'
 
 
 def test_verify_requires_canonical_sidecar_even_if_generic_readback_is_supplied(tmp_path):
@@ -84,6 +96,22 @@ def test_typed_source_field_keeps_absence_distinct_from_default():
     assert unknown["present"] is False
     assert explicit_false["present"] is True
     assert explicit_false["boolValue"] is False
+
+
+def test_optional_runtime_backup_reads_exact_namespace_and_preserves_bytes(tmp_path):
+    import pytest
+    root=tmp_path/'sdk';relative='Assets/Plugins/Spine38/EditorRuntime/provider.dll';dll=root/relative
+    dll.parent.mkdir(parents=True);dll.write_bytes(b'synthetic provider fixture')
+    manifest=dict(producerManifestSHA256=spine.RUNTIME_REFERENCE_BACKUP,
+        upstream=dict(upstreamCommit='8b4844bd4b193ba9e54487ed397a777993cbad56',
+                      sourceVersion='3.8.99 skeleton compatible branch3.8',compiledAgainst='Unity6000.6.2f1'),
+        files=[dict(path=relative,sha256=_sha(dll.read_bytes()),bytes=dll.stat().st_size)])
+    path=tmp_path/'sdk-manifest.json';path.write_text(json.dumps(manifest));pin=_sha(path.read_bytes())
+    result=spine._pinned_runtime_record(manifest,path,pin,root)
+    assert len(result['verifiedFiles'])==1 and result['copied']is False
+    dll.write_bytes(b'changed')
+    with pytest.raises(spine.StaticSpineContinuationError,match='differs from its manifest'):
+        spine._pinned_runtime_record(manifest,path,pin,root)
 
 
 def test_payload_copy_writes_named_file_under_private_module_stage(tmp_path):

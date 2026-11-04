@@ -109,6 +109,13 @@ class StaticContinuationTests(unittest.TestCase):
         self.spec['spineRuntime']={'manifest':self.pin(sdk),'assetsRoot':None};self.write_request()
         with self.assertRaisesRegex(ValueError,'STATIC_CONTINUATION_RUNTIME_INVALID'):self.run_prepare()
 
+    def test_rendering_requires_explicit_spine_family_and_pinned_runtime(self):
+        for value in ('true', 1, None, True):
+            self.spec['spineRendering']=value;self.write_request()
+            with self.assertRaisesRegex(ValueError,'STATIC_CONTINUATION_RENDERING_INVALID'):self.run_prepare()
+        self.spec['families']=['spine'];self.spec['spineRendering']=True;self.write_request()
+        with self.assertRaisesRegex(ValueError,'STATIC_CONTINUATION_RENDERING_INVALID'):self.run_prepare()
+
     def test_owned_manifest_change_cannot_redefine_frozen_payloads(self):
         (self.plan.parent/'unchanged.png').write_bytes(b'edited')
         manifest=io.stage_manifest(self.plan.parent)

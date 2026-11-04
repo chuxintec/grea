@@ -8,7 +8,7 @@
 
 2026-11-04实际任务源迁移：已从下方结构化视图删除三个未完task和未完dev8 release；已完成历史仍保留。旧ID→GREA ID、原输入/消费者/阻塞摘要与原文SHA见 `.private/unified-task-source-20261104/handoff-index.json`；这不是将未完产品任务标done/cancelled。
 
-当前技术交付记录：dev12修正嵌套实例Spine载体的全源创建、精确模板对应与引用替换；全源组件覆盖和原生诊断透传接入Unity/Creator，保留/禁用/静态呈现/Player分别报告。冻结接受干净imported枚举，但仍要求文件、原生、全源分母及静态呈现通过。Spine非渲染与自定义UI缺方法来源证明继续partial，实际呈现仍待GREA工具链推进；本文不另建验收待办。
+当前技术交付记录：dev13修正合法disabled与源载体的producer/consumer处置，按精确源身份保留不同诊断并去重；Spine保存回读直接取实际持久实例，不追溯模板。显式spineRendering续接接入已pin SDK、源引擎文件、材料/骨骼/页纹理和真实SkeletonGraphic时间零初态，保存侧报告由主回读SHA链封存，原始载体仍独立核验。145项受影响测试、116份C#对175程序集离线编译通过；真实18组骨骼+atlas已由固定SDK只读解析，75个初态名称无缺失。实际页解码、续接/export/Editor仍由GREA独占；2个隐藏PMA未知保留gap，不把源码实现、引用成功或离线编译算作可见/Player验收。本文不另建验收待办。
 
 ## 已完成交付及技术历史
 

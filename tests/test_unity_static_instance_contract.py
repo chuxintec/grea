@@ -28,7 +28,7 @@ class UnityStaticInstanceContractTests(unittest.TestCase):
             '[Serializable] sealed class SpinePage', '[Serializable] sealed class SpinePma',
             'static NativeStaticSpineReference SpineCarrier(', 'static void PrepareStaticSpineCarriers(',
             'static void SpineAssignFields(', 'static UnityEngine.Object SpineResolveObject(',
-            'static bool SpineCarrierIdentityMatches('))
+            'static bool SpineCarrierIdentityMatches(', 'static bool ReadSpinePersistentIdentity('))
         members+=declaration(source,'static partial void ResolveOptionalStaticSpineInstanceCounterpart(').replace('static partial void','static void')
         members+=declaration((targets/'UnityPrefabInstances.cs').read_text(),'static void PairNativeInstanceComponents(')
         runtime='\n'.join(re.sub(r'^using .*;\n','', (targets/name).read_text(),flags=re.M)
@@ -49,9 +49,12 @@ public class GameObject:Object {
     public Component AddComponent(Type t){var c=(Component)Activator.CreateInstance(t);c.gameObject=this;components.Add(c);return c;}
 }}
 public class NativeRetainedMaterial:UnityEngine.Object {public bool retentionOnly=true,renderingRecovered;}
-static class EditorUtility {public static void SetDirty(UnityEngine.Object value){}}
+static class EditorUtility {public static void SetDirty(UnityEngine.Object value){} public static bool IsPersistent(UnityEngine.Object value){return AssetDatabase.Identities.ContainsKey(value);}}
 static class AssetDatabase {
     public static readonly Dictionary<string,UnityEngine.Object> Assets=new Dictionary<string,UnityEngine.Object>();
+    public static readonly Dictionary<UnityEngine.Object,KeyValuePair<string,long>> Identities=new Dictionary<UnityEngine.Object,KeyValuePair<string,long>>();
+    public static bool TryGetGUIDAndLocalFileIdentifier(UnityEngine.Object value,out string guid,out long id){
+        bool found=Identities.TryGetValue(value,out var pair);guid=pair.Key;id=pair.Value;return found;}
     public static T LoadAssetAtPath<T>(string path)where T:UnityEngine.Object{return Assets.TryGetValue(path,out var value)?value as T:null;}
 }
 static class UnityStaticRetainedAssets {
@@ -83,6 +86,10 @@ static void Main(){
     UnityStaticRetainedAssets.Material=new NativeRetainedMaterial();
     spineStaticPlan=new Plan();spineStaticEnvelope=new SpineEnvelope{components=rows,dataAssets=new[]{new SpineData{sourceDataAssetId="data",nativeStaticSpineDataAssetPath="data.asset"}}};
     PrepareStaticSpineCarriers(spineStaticPlan,nodes);PrepareStaticSpineCarriers(spineStaticPlan,nodes);
+    var saved=SpineCarrier(rows[1],nodes);AssetDatabase.Identities[saved]=new KeyValuePair<string,long>("saved-instance-guid",-5599142833222434985L);
+    Require(ReadSpinePersistentIdentity(saved,out var savedGuid,out var savedId)&&savedGuid=="saved-instance-guid"&&savedId==-5599142833222434985L,"read direct signed64 saved-instance identity");
+    AssetDatabase.Identities.Remove(saved);
+    Require(!ReadSpinePersistentIdentity(saved,out savedGuid,out savedId),"temporary object cannot impersonate saved instance");
     foreach(var row in rows){var c=SpineCarrier(row,nodes);
         Require(c!=null&&nodes[row.sourceNodeId].GetComponents<NativeStaticSpineReference>().Length==1,"one real counterpart per node");
         Require(SpineCarrierIdentityMatches(c,row)&&c.sourceFieldsJson=="original fields","exact source identity and fields");

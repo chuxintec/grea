@@ -24,7 +24,7 @@ public static partial class MonkeyImporter
         public int uiStateProbeVersion; public string[] uiProbeSources;
         public float[] designSize; public float pixelsPerUnit; public string uiGeometryReadback;
         public TextureSpec[] textures; public AssetSpec[] assets; public BitmapSpec[] bitmapFonts; public int sourceDiagnosticCount;
-        public UnityStaticRetainedAssets.Contract staticRetainedAssets; public string staticSpineContinuationJson; public StaticControlSpec[] staticControlBindings; public bool staticCompletionEnabled,staticAnimationBindingsEnabled; public StaticAnimationEvidenceSpec[] staticAnimationEvidence; public StaticAnimationComponentOrigin[] staticAnimationComponentOrigins; public StaticAnimationAssetRef[] staticAnimationAssetReferences;
+        public UnityStaticRetainedAssets.Contract staticRetainedAssets; public string staticSpineContinuationJson,staticSpineRenderingJson; public StaticControlSpec[] staticControlBindings; public bool staticCompletionEnabled,staticAnimationBindingsEnabled; public StaticAnimationEvidenceSpec[] staticAnimationEvidence; public StaticAnimationComponentOrigin[] staticAnimationComponentOrigins; public StaticAnimationAssetRef[] staticAnimationAssetReferences;
         public NodeSpec[] nodes; public ComponentSpec[] components; public MotionSpec[] animations; public bool galleryOnly; public SourcePrefabSpec[] sourcePrefabs; public PrefabInstanceSpec[] prefabInstances; public TmpResourceSpec tmpResources;
     }
     [Serializable] public class StaticAnimationAssetRef {public string sourceId,animationId,path;}
@@ -90,8 +90,11 @@ public static partial class MonkeyImporter
     static partial void SkipOptionalSpineDerivedProperty(Component component,string propertyPath,ref bool skip);
     static partial void IdentifyOptionalSpineDerivedComponent(Component component,ref bool generated);
     static partial void PrepareStaticSpine(Plan plan, Dictionary<string,GameObject> nodes);
+    static partial void PrepareStaticSpineRendering(Plan plan, Dictionary<string,GameObject> nodes);
+    static partial void ObserveStaticSpineRenderingUnitMapping(Plan plan,Dictionary<string,GameObject> nodes);
     static partial void ResolveStaticSpineReference(string id, Dictionary<string,GameObject> nodes, ref UnityEngine.Object value);
     static partial void ReadSavedStaticSpine(Dictionary<string,GameObject> nodes,string prefabId);
+    static partial void ReadSavedStaticSpineRendering(Plan plan,Dictionary<string,GameObject> persistentNodes,Dictionary<string,GameObject> loadedNodes,string prefabId);
     static string SourceOutlineLabel(Plan plan,string nodeId) {
         for(int depth=0;depth<64;depth++) {
             var labels=plan.components.Where(c=>c.node==nodeId&&(c.type=="cc.Label"||c.type=="cc.RichText")).ToArray();
@@ -141,7 +144,7 @@ public static partial class MonkeyImporter
         public MonkeyNumericCode.Result[] numericCodeBindings,numericCodeExercise;
         public string status, unityVersion, prefabGuid, sceneGuid;
         public int spriteCount, nodeCount, missingScripts; public bool editableRoundtrip,sceneReopened; public string previewPath,previewSha256,previewError,colorSpace;
-        public UnityStaticRetainedAssets.Result[] staticRetainedAssetReadback; public DynamicUiResult[] dynamicUiProbes; public MotionResult[] animations; public string[] diagnostics; public NodeResult[] nodes,nativeInitialNodes; public SpriteResult[] sprites; public FileResult[] nativeFiles; public FontResult[] fonts; public LabelResult[] labels; public ViewReference[] viewReferences; public JsonResult[] jsonAssets; public SourcePrefabResult[] sourcePrefabs; public TmpResourceResult tmpResources;
+        public UnityStaticRetainedAssets.Result[] staticRetainedAssetReadback; public DynamicUiResult[] dynamicUiProbes; public MotionResult[] animations; public string[] diagnostics; public NodeResult[] nodes,nativeInitialNodes; public SpriteResult[] sprites; public FileResult[] nativeFiles,staticSpineReadbackFiles; public FontResult[] fonts; public LabelResult[] labels; public ViewReference[] viewReferences; public JsonResult[] jsonAssets; public SourcePrefabResult[] sourcePrefabs; public TmpResourceResult tmpResources;
     }
     [Serializable] public class GalleryResult { public string id,spriteGuid; public bool geometryVerified; }
     [Serializable] public class JsonResult { public string id,guid,textSha256; }
@@ -665,6 +668,7 @@ public static partial class MonkeyImporter
         foreach (var node in plan.nodes)
             for (var i=0;i<node.children.Length;i++)
                 if (nodeMap.ContainsKey(node.children[i])) nodeMap[node.children[i]].transform.SetSiblingIndex(i);
+        ObserveStaticSpineRenderingUnitMapping(plan,nodeMap);
         int componentProgress=0;
         foreach (var spec in plan.components)
         {
@@ -848,6 +852,7 @@ public static partial class MonkeyImporter
         CreateBitmapMissingGlyphs(plan,nodeMap,fonts);
         CreateStaticFields(plan,nodeMap);
         PrepareStaticSpine(plan,nodeMap);
+        PrepareStaticSpineRendering(plan,nodeMap);
         // Optional native renderers are created after the ordinary UI pass.
         foreach(var spec in plan.components.Where(c=>c.convertible&&c.type=="cc.Button"&&c.staticButtonBinding!=null&&c.staticButtonBinding.renderReady)) {
             var target=string.IsNullOrEmpty(spec.target)?nodeMap[spec.node]:nodeMap[spec.target];
@@ -938,7 +943,7 @@ public static partial class MonkeyImporter
                     if(c.behaviorBinding!=null&&!string.IsNullOrEmpty(c.behaviorBinding.typeName))valid=MonkeyBehaviorBindings.Read(c.behaviorBinding,go,c.enabled);
                     else if(c.type=="cc.Sprite") {
                         var image=go.GetComponent<UnityEngine.UI.Image>();
-                        valid=image!=null && (string.IsNullOrEmpty(c.spriteFrame)?image.sprite==null:image.sprite==spriteMap[c.spriteFrame+(c.trim?"":"@original")]);
+                        valid=image!=null && image.enabled==(c.enabled&&!string.IsNullOrEmpty(c.spriteFrame)) && (string.IsNullOrEmpty(c.spriteFrame)?image.sprite==null:image.sprite==spriteMap[c.spriteFrame+(c.trim?"":"@original")]);
                         if(recoveredMaterial!=null&&plan.materialBinding.spriteBindings.Any(b=>b.sourceId==c.sourceId))
                             valid=valid&&MonkeyUnityMaterialBindings.ReadBound(plan.materialBinding,recoveredMaterial.asset,image);
                     } else if(c.type=="cc.Label" || c.type=="cc.LabelOutline" || c.type=="cc.RichText") {
@@ -985,12 +990,13 @@ public static partial class MonkeyImporter
                     else if(c.type=="cc.Layout")valid=go.GetComponent<UnityEngine.UI.LayoutGroup>()!=null;
                     if(!valid)referenceFailures.Add(c.sourceId);
                 }
-                ReadSavedStaticSpine(mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
+                ReadSavedStaticSpine(persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
+                ReadSavedStaticSpineRendering(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
                 ReadSavedOptionalSpriteOutline(persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
                 ReadSavedOptionalStaticTimeMaterials(persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
                 var numericBindings=plan.components.Where(c=>c.convertible&&!string.IsNullOrEmpty(c.codeClassName)&&persistentMap.ContainsKey(c.node)).Select(c=>MonkeyNumericCode.Read(c,persistentMap[c.node].gameObject)).ToArray();
                 var behaviorBindings=plan.components.Where(c=>c.convertible&&c.behaviorBinding!=null&&!string.IsNullOrEmpty(c.behaviorBinding.typeName)&&persistentMap.ContainsKey(c.node)).Select(c=>MonkeyBehaviorBindings.ReadPersistent(c.behaviorBinding,persistentMap[c.node].gameObject,c.sourceId,c.enabled)).ToArray();
-                sourcePrefabResults.Add(new SourcePrefabResult {components=ReadSourceComponentCoverage(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),generatedSortNodeCount=generatedSortNodeCount,staticSortFields=plan.staticSortQueue==null||plan.staticSortQueue.Length==0?null:ReadStaticSortForPrefab(plan,spec,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),bitmapMissingGlyphFields=ReadBitmapMissingGlyphs(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),fonts),staticLayoutProbe=RunStaticLayoutPrefabProbe(plan,spec,contents),staticMaskFields=ReadStaticMasks(plan,mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spriteMap),staticLayoutFields=ReadStaticLayoutCompletion(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),toggleFields=ReadStaticToggles(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),prefabInstances=ReadNativeInstances(plan,mapped,spec.sourceId),numericCodeBindings=numericBindings,behaviorBindings=behaviorBindings,staticControlFields=plan.staticControlBindings==null?null:ReadStaticControls(plan.staticControlBindings.Where(x=>persistentMap.ContainsKey(x.node)).ToArray(),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticAnimationFields=!(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)?null:ReadSavedStaticAnimationBindings(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins),staticProgressFields=ReadStaticProgress(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticFieldBindings=ReadStaticFields(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),sourceId=spec.sourceId,path=spec.path,
+                sourcePrefabResults.Add(new SourcePrefabResult {components=ReadSourceComponentCoverage(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),new HashSet<string>(referenceFailures)),generatedSortNodeCount=generatedSortNodeCount,staticSortFields=plan.staticSortQueue==null||plan.staticSortQueue.Length==0?null:ReadStaticSortForPrefab(plan,spec,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),bitmapMissingGlyphFields=ReadBitmapMissingGlyphs(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),fonts),staticLayoutProbe=RunStaticLayoutPrefabProbe(plan,spec,contents),staticMaskFields=ReadStaticMasks(plan,mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spriteMap),staticLayoutFields=ReadStaticLayoutCompletion(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),toggleFields=ReadStaticToggles(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),prefabInstances=ReadNativeInstances(plan,mapped,spec.sourceId),numericCodeBindings=numericBindings,behaviorBindings=behaviorBindings,staticControlFields=plan.staticControlBindings==null?null:ReadStaticControls(plan.staticControlBindings.Where(x=>persistentMap.ContainsKey(x.node)).ToArray(),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticAnimationFields=!(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)?null:ReadSavedStaticAnimationBindings(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins),staticProgressFields=ReadStaticProgress(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticFieldBindings=ReadStaticFields(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),sourceId=spec.sourceId,path=spec.path,
                     nativePrefabType=nativePrefabType.ToString(),nativeInitialNodes=initialPrefabNodes,
                     guid=AssetDatabase.AssetPathToGUID(spec.path),nodeCount=transforms.Length-generatedTextSubmeshCount-generatedSpineSubmeshCount-generatedSortNodeCount,generatedTextSubmeshCount=generatedTextSubmeshCount,generatedSpineSubmeshCount=generatedSpineSubmeshCount,missingScripts=missing,
                     savedReloaded=true,geometryPhase="native-layout-settled-v1",layoutSettlePasses=passes,
@@ -1115,6 +1121,10 @@ public static partial class MonkeyImporter
                 path=path.Replace('\\','/'), sha256=Hash(path)
             }).ToArray();
         Directory.CreateDirectory("Analysis/Readback");
+        var spineAuxiliaryFiles=new List<string>();
+        if(File.Exists("Analysis/Readback/spine-static-continuation.json"))spineAuxiliaryFiles.Add("Analysis/Readback/spine-static-continuation.json");
+        if(Directory.Exists("Analysis/Readback/SpineRendering"))spineAuxiliaryFiles.AddRange(Directory.GetFiles("Analysis/Readback/SpineRendering","*.json").Where(path=>Path.GetFileName(path)!="prepare.json"));
+        readback.staticSpineReadbackFiles=spineAuxiliaryFiles.OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray();
         File.WriteAllText("Analysis/Readback/editor-readback.json",JsonUtility.ToJson(readback,true));
         nativeProgress.phase="complete";nativeProgress.processed=1;nativeProgress.total=1;WriteNativeProgress(readback.status=="imported"?"completed":"completed_partial");
         Debug.Log("Monkey native import: "+readback.status+"; readback Analysis/Readback/editor-readback.json");

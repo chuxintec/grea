@@ -576,6 +576,9 @@ def export(plan_path, output):
     if p.get('staticSpineContinuation'):
         from ..prefab_static_spine_continuation import emit as emit_static_spine
         emit_static_spine(p,plan_path.parent,out)
+    if p.get('staticSpineRendering'):
+        from ..prefab_static_spine_rendering import emit as emit_static_spine_rendering
+        emit_static_spine_rendering(p,plan_path.parent,out)
     from ..prefab_static_carriers import emit as emit_static
     emit_static(p,plan_path.parent,'unity',out)
     if p.get('spriteOutlineBinding'):
@@ -602,6 +605,7 @@ def export(plan_path, output):
     instruction['staticCompletionEnabled']=bool(p.get('staticCompletion'))
     instruction['staticAnimationBindingsEnabled']=bool(p.get('staticAnimationBindingsEnabled'))
     instruction['staticSpineContinuationJson']=encoded(p['staticSpineContinuation']).decode('utf-8') if p.get('staticSpineContinuation') else None
+    instruction['staticSpineRenderingJson']=encoded(p['staticSpineRendering']).decode('utf-8') if p.get('staticSpineRendering') else None
     instruction['staticRetainedAssets']=p.get('staticRetainedAssets')
     instruction['staticPresentation']=p.get('staticPresentation')
     instruction['layoutCompletion']=p.get('layoutCompletion')
@@ -782,6 +786,7 @@ def verify(candidate, output, level='static'):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[]
     from ..sources.containers import fingerprint
     native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None
+    rendering_fragment=None;rendering_receipt=None
     if level=='editor':
         readback_path=find_analysis(root,'editor-readback.json')
         if not readback_path.is_file():
@@ -808,6 +813,20 @@ def verify(candidate, output, level='static'):
                 if not spine_diagnostics:
                     sidecar=load(read(root/'Analysis/Readback/spine-static-continuation.json'))
                     spine_coverage={'status':'verified','sourceComponentIds':[row['sourceComponentId']for row in sidecar['components']]}
+            if instruction.get('staticSpineRenderingJson'):
+                rendering_fragment=load(instruction['staticSpineRenderingJson'].encode('utf-8'))
+                from ..prefab_static_spine_rendering import verify as verify_static_spine_rendering
+                from ..unity_spine_rendering_coverage import load_bound_receipt
+                try:
+                    receipt=load_bound_receipt(root,rb)
+                    rendering_gaps=verify_static_spine_rendering({'staticSpineRendering':rendering_fragment},root)
+                    for gap in rendering_gaps:
+                        normalized=diagnostic(gap['code'],gap.get('location','Analysis/Readback/SpineRendering'),
+                                              gap.get('message')or encoded(gap).decode('utf-8'),gap.get('sourceId'))
+                        normalized.update(gap);diagnostics.append(normalized)
+                    if not rendering_gaps:rendering_receipt=receipt
+                except (OSError,ValueError,KeyError,TypeError) as error:
+                    diagnostics.append(diagnostic('STATIC_SPINE_RENDERING_READBACK_INVALID','Analysis/Readback/SpineRendering',str(error)))
             from ..prefab_spine_unity_readback import verify as verify_spine_saved
             diagnostics.extend(verify_spine_saved(instruction,root,rb))
             from ..prefab_static_completion_readback import verify_assets as verify_retained
@@ -1012,16 +1031,25 @@ def verify(candidate, output, level='static'):
     if standard.current(m):
         from ..layout.verify import scan
         diagnostics.extend(scan([f['path'] for f in m['files']]))
-    from ..unity_verification_contract import coverage_readback,statuses
+    from ..unity_verification_contract import coverage_readback,statuses,deduplicate_diagnostics
     if level=='editor' and rb is not None:
         from ..prefab_component_coverage import assess
         source_diagnostics=instruction.get('sourceDiagnostics',m.get('diagnostics',[]))
         coverage_plan=dict(instruction,diagnostics=source_diagnostics)
         if instruction.get('staticSpineContinuationJson'):
             coverage_plan['staticSpineContinuation']=load(instruction['staticSpineContinuationJson'].encode('utf-8'))
-        coverage=assess(coverage_plan,coverage_readback(rb,spine_coverage),'unity')
+        normalized_readback=coverage_readback(rb,spine_coverage)
+        if rendering_fragment is not None:
+            coverage_plan['staticSpineRendering']=rendering_fragment
+        if rendering_receipt is not None:
+            from ..unity_spine_rendering_coverage import merge as merge_rendering
+            try:normalized_readback=merge_rendering(normalized_readback,rendering_fragment,rendering_receipt)
+            except ValueError as error:
+                diagnostics.append(diagnostic('STATIC_SPINE_RENDERING_COVERAGE_INVALID','Analysis/Readback/SpineRendering',str(error)))
+        coverage=assess(coverage_plan,normalized_readback,'unity')
         diagnostics.extend(native_diagnostics(raw_native_diagnostics))
         diagnostics.extend(coverage.get('diagnostics',[]))
+    diagnostics=deduplicate_diagnostics(diagnostics)
     dimensions=statuses(editor,diagnostics,coverage,level)
     out=new_output(output,[root])
     result=dict(schemaVersion=1,toolVersion=__version__,candidateManifestSha256=fingerprint(root/'manifest.json'),

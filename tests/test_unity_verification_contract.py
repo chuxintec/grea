@@ -7,10 +7,25 @@ from unittest.mock import patch
 
 from monkey import io
 from monkey.native_selection import _native_verification
-from monkey.unity_verification_contract import native_diagnostics,coverage_readback,statuses
+from monkey.unity_verification_contract import native_diagnostics,coverage_readback,statuses,deduplicate_diagnostics
 
 
 class UnityVerificationContractTests(unittest.TestCase):
+    def test_final_merge_preserves_source_provenance_and_distinct_messages(self):
+        original={'code':'FIELD_UNPROVEN','sourceId':'source:component','location':'field/path',
+                  'message':'first field','severity':'warning','origin':'source',
+                  'sourceEvidence':[{'origin':'source','index':2,'raw':'source observation'}]}
+        native={**original,'origin':'native-readback','severity':'error','nativeDiagnosticIndex':7,
+                'sourceEvidence':[{'origin':'native-readback','index':7,'raw':'native observation'}]}
+        rows=[original,native,{**original,'message':'different field'}]
+        before=copy.deepcopy(rows);merged=deduplicate_diagnostics(rows)
+        self.assertEqual(rows,before)
+        self.assertEqual(len(merged),2)
+        self.assertEqual(merged[0]['severity'],'error')
+        self.assertEqual(merged[0]['origins'],['source','native-readback'])
+        self.assertEqual(len(merged[0]['sourceEvidence']),2)
+        self.assertEqual(merged[0]['nativeDiagnosticIndexes'],[7])
+
     def test_native_gap_cannot_be_promoted_by_editor_partial(self):
         raw=['COMPONENT_NOT_IMPORTED: source:missing sp.Skeleton']
         diagnostics=native_diagnostics(raw)
@@ -51,9 +66,12 @@ class UnityVerificationContractTests(unittest.TestCase):
                           'referenceVerified':False,'referencesVerified':False}]}
         plan={'nodes':[{'sourceId':'n','active':True,'parent':None}],
               'components':[{'sourceId':'s','node':'n','type':'cc.Sprite','nativeType':'cc.Sprite',
+                             'spriteFrame':'sprite:a',
                              'staticFieldBinding':{'fields':[{'sourceFieldName':'value'}]}}]}
         row={'sourceId':'s','status':'native','nativeType':'UnityEngine.UI.Image',
-             'componentUuid':'guid:1','sourceIdentityVerified':True,'persistent':True}
+             'guid':'0123456789abcdef0123456789abcdef','localFileId':1,
+             'componentUuid':'0123456789abcdef0123456789abcdef:1',
+             'sourceIdentityVerified':True,'persistent':True}
         rb={'components':[row],'diagnostics':[],
             'sourcePrefabs':[{'components':[row],'staticFieldBindings':[{'binding':field}]}],
             'staticPresentationValidation':{'components':[{'sourceId':'s','sourceVisible':True,'verified':True,'rendered':True}]}}
@@ -95,3 +113,75 @@ class UnityVerificationContractTests(unittest.TestCase):
                 (root/'Assets/a.prefab').write_bytes(b'changed')
                 with self.assertRaisesRegex(ValueError,'NATIVE_READBACK_DRIFT'):
                     _native_verification(root,root/'out','a'*64,io.sha(path.read_bytes()))
+
+    def test_initial_missing_component_diagnostic_resolves_only_with_exact_persistent_coverage(self):
+        from monkey.prefab_component_coverage import assess
+        source='source:asset#4';guid='0123456789abcdef0123456789abcdef'
+        plan={'nodes':[{'sourceId':'node:asset#1','active':True}],
+              'components':[{'sourceId':source,'node':'node:asset#1','type':'cc.Button','enabled':True,
+                  'staticButtonBinding':{'behavior':'disabled','renderReady':True,'sourceEnabled':True}}],
+              'diagnostics':[]}
+        native={'sourceId':source,'status':'disabled','representation':'native-component',
+                'nativeType':'UnityEngine.UI.Button','sourceEnabled':True,'nativeEnabled':False,
+                'disabledReason':'static-button-business-safety','nativeStaticFieldsVerified':True,
+                'sourceIdentityVerified':True,'persistent':True,'guid':guid,'localFileId':14}
+        coverage=assess(plan,{'components':[native]},'unity')
+        diagnostic_row={'code':'COMPONENT_NOT_IMPORTED','sourceId':source,
+            'phase':'initial-component-creation','resolved':True,'resolution':'native-counterpart-present',
+            'resolutionEvidence':{'sourceId':source,'guid':guid,'localFileId':14,'disposition':'disabled',
+                                  'nativeStaticFieldsVerified':True}}
+        result=statuses('pass',[diagnostic_row],coverage,'editor')
+        self.assertEqual(result['editorValidation'],'partial')
+        self.assertEqual(result['resolvedNativeDiagnostics'],[diagnostic_row])
+        changed=copy.deepcopy(diagnostic_row);changed['resolutionEvidence']['localFileId']=15
+        result=statuses('pass',[changed],coverage,'editor')
+        self.assertEqual(result['editorValidation'],'partial')
+        self.assertEqual(result['resolvedNativeDiagnostics'],[])
+
+    def test_diagnostic_exact_dedupe_keeps_distinct_messages_and_origins(self):
+        raw='COMPONENT_NOT_IMPORTED: gameAsset:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa#2 missing'
+        rows=native_diagnostics([raw,raw,{'code':'COMPONENT_NOT_IMPORTED',
+            'sourceId':'gameAsset:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa#2',
+            'location':'other-phase','message':'late mismatch'}])
+        self.assertEqual(len(rows),2)
+        self.assertEqual(len(rows[0]['sourceEvidence']),2)
+        self.assertEqual(rows[0]['nativeDiagnosticIndexes'],[0,1])
+        self.assertNotEqual(rows[0]['message'],rows[1]['message'])
+
+    def test_nested_prefab_instances_fill_component_rows_without_double_count(self):
+        guid='0123456789abcdef0123456789abcdef'
+        component={'sourceId':'s','status':'native','representation':'native-component',
+                   'nativeType':'UnityEngine.Transform','sourceIdentityVerified':True,'persistent':True,
+                   'guid':guid,'localFileId':2}
+        readback={'components':[component],
+                  'sourcePrefabs':[{'components':[copy.deepcopy(component)]}],
+                  'prefabInstances':[{'instances':[{'components':[copy.deepcopy(component)]}]}],
+                  'diagnostics':[]}
+        normalized=coverage_readback(readback)
+        self.assertEqual(len(normalized['components']),1)
+
+    def test_conflicting_nested_component_rows_are_not_collapsed_by_source_id(self):
+        from monkey.prefab_component_coverage import assess
+        guid='0123456789abcdef0123456789abcdef'
+        first={'sourceId':'s','status':'native','representation':'native-component',
+               'nativeType':'UnityEngine.UI.Image','sourceIdentityVerified':True,'persistent':True,
+               'guid':guid,'localFileId':2}
+        second={**first,'localFileId':3,'componentUuid':guid+':3'}
+        plan={'nodes':[{'sourceId':'n','active':True}],
+              'components':[{'sourceId':'s','node':'n','type':'cc.Sprite','spriteFrame':'f'}]}
+        normalized=coverage_readback({'components':[first],
+            'prefabInstances':[{'components':[second]}],'diagnostics':[]})
+        result=assess(plan,normalized,'unity')
+        self.assertEqual(result['components'][0]['disposition'],'missing')
+        self.assertTrue(any(row['code']=='NATIVE_COMPONENT_READBACK_AMBIGUOUS'
+                            for row in result['diagnostics']))
+
+    def test_static_progress_normalization_rejects_bad_carrier_identity(self):
+        row={'sourceComponentId':'progress','verified':True,'carrierDisabled':True,
+             'carrierGuid':'bad-guid','carrierLocalFileId':4,'sourceEnabled':True,
+             'mode':0,'progress':1.0,'reverse':False,'barSpriteSourceId':'bar','barSpritePersistent':True}
+        normalized=coverage_readback({'staticProgressFields':[row]})
+        retained=normalized['retainedComponents'][0]
+        self.assertFalse(retained['sourceIdentityVerified'])
+        self.assertFalse(retained['persistent'])
+        self.assertFalse(retained['verified'])

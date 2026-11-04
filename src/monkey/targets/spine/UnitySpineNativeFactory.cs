@@ -78,6 +78,9 @@ namespace Monkey.Targets.Spine
             public string graphicShaderName;
             public string expectedSpineVersion;
             public float scale;
+            // Optional source/target unit evidence for the static continuation.
+            // Legacy native stages continue supplying their already-resolved scale.
+            public float sourceDefaultScale,targetUnitsPerSourcePixel;
             public bool premultipliedAlpha;
             public AtlasPageSpec[] pages;
             public string[] requiredAnimations;

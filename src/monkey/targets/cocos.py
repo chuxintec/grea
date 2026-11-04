@@ -717,6 +717,8 @@ def verify(candidate,output,level='static'):
         from ..prefab_component_coverage import assess as assess_component_coverage
         component_coverage=assess_component_coverage(plan,{},'creator')
         diagnostics.extend(component_coverage['diagnostics'])
+    from ..unity_verification_contract import deduplicate_diagnostics
+    diagnostics=deduplicate_diagnostics(diagnostics)
     integrity_codes={'GENERATED_FILE_CHANGED','NATIVE_FILE_CHANGED','DUPLICATE_TARGET_GUID','TARGET_REFERENCE_MISSING','TARGET_LAYOUT_INVALID','ASSIGNED_NATIVE_IDENTITY_CHANGED','LAYOUT_FORBIDDEN_NAME'}
     static_integrity='conflict' if any(d.get('code') in integrity_codes for d in diagnostics) else 'pass'
     out=new_output(output,[root]);report=dict(schemaVersion=1,toolVersion=__version__,diagnostics=diagnostics,
