@@ -8,7 +8,7 @@
 
 2026-11-04实际任务源迁移：已从下方结构化视图删除三个未完task和未完dev8 release；已完成历史仍保留。旧ID→GREA ID、原输入/消费者/阻塞摘要与原文SHA见 `.private/unified-task-source-20261104/handoff-index.json`；这不是将未完产品任务标done/cancelled。
 
-当前技术交付记录：dev11加入固定plan/文件清单/IR/源清单的不可变组件族续接，复用t=0材质、禁用态Animation与非渲染Spine静态载体；100项聚焦检查及108源文件离线C#引用编译通过。Spine 75组件/18数据/18原始ASTC页只读来源核验完成，未解码、未恢复渲染/播放。实际续接、Unity保存重开、冻结及beaver采用由GREA唯一调用；本文不另建验收待办。
+当前技术交付记录：dev12修正嵌套实例Spine载体的全源创建、精确模板对应与引用替换；全源组件覆盖和原生诊断透传接入Unity/Creator，保留/禁用/静态呈现/Player分别报告。冻结接受干净imported枚举，但仍要求文件、原生、全源分母及静态呈现通过。Spine非渲染与自定义UI缺方法来源证明继续partial，实际呈现仍待GREA工具链推进；本文不另建验收待办。
 
 ## 已完成交付及技术历史
 

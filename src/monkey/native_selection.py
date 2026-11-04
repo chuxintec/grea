@@ -215,7 +215,7 @@ def _native_verification(root, output, expected_manifest, expected_readback):
         fail("READBACK_SHA_MISMATCH", str(rb_path), "Readback differs from the pinned SHA256")
     rb = load(rb_raw, max_nodes=8_000_000)
     if (rb.get("unityVersion") != "6000.6.2f1" or rb.get("missingScripts") != 0
-            or rb.get("status") not in ("pass", "partial")
+            or rb.get("status") not in ("imported", "pass", "partial")
             or not isinstance(rb.get("nativeScope"), str) or not rb.get("nativeScope")
             or not isinstance(rb.get("sourceGraphVerification"), str)
             or not rb.get("sourceGraphVerification")):
@@ -247,6 +247,18 @@ def _native_verification(root, output, expected_manifest, expected_readback):
             fail("CANDIDATE_SHA_MISMATCH", str(root / "manifest.json"), "Verifier saw a different candidate manifest")
         if result.get("staticValidation") != "pass" or result.get("nativeStaticValidation") != "pass":
             fail("NATIVE_STATIC_VERIFY_FAILED", str(verify_out / "verification.json"), "Unity static/native static verification did not pass")
+        coverage=result.get("componentCoverage") or {}
+        component_rows=coverage.get('components')
+        source_count=coverage.get('sourceComponentCount')
+        full_coverage=(coverage.get('schema')=='monkey-prefab-component-coverage/1'
+            and isinstance(component_rows,list)and type(source_count)is int
+            and all(isinstance(row,dict)for row in component_rows)
+            and source_count==len(component_rows)==coverage.get('uniqueSourceComponentCount')
+            and len({row.get('sourceId')for row in component_rows})==source_count
+            and all(isinstance(row.get('sourceId'),str)and row['sourceId']and row.get('nativeStatus')=='pass'for row in component_rows))
+        if result.get("staticPresentationValidation")!="pass" or not full_coverage:
+            fail("NATIVE_SOURCE_COVERAGE_INCOMPLETE", str(verify_out / "verification.json"),
+                 "Full source component coverage and static presentation must be independently verified")
         if result.get("editorValidation") not in ("pass", "partial"):
             fail("NATIVE_EDITOR_VERIFY_FAILED", str(verify_out / "verification.json"), "Unity Editor verification failed")
         unexpected = [d for d in result.get("diagnostics", []) if d.get("code") not in _DYNAMIC_ONLY]

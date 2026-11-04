@@ -14,6 +14,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .prefab_spine_materials import TARGET_ENGINE_FILE_PINS
+
 
 CACHE_MODE_SOURCE_VALUES = {
     0: "REALTIME",
@@ -696,7 +698,8 @@ def prepare_spine_emission(
                 "sourceFieldValueRetainedInEmission": True,
                 "sourceMaterialRoute": "Creator sp.Skeleton updateMaterial -> builtinResMgr.get(default-spine-material)",
                 "targetEngineSource": "cocos/spine/skeleton.ts",
-                "targetEngineSourceSha256": "2e86383e7e7dfb93bc40ec1d7e44c6bb2b8ebe4e95c100ad16620bd24114329",
+                "targetEngineSourceSha256": TARGET_ENGINE_FILE_PINS["cocos/spine/skeleton.ts"],
+                "targetEnginePinRole": "declared-version-reference-not-independent-file-attestation",
                 "animationFrozenBySerializedTimeScale": True,
                 "businessCallbacksExecuted": False,
             }

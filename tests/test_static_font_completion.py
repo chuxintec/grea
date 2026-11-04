@@ -66,6 +66,11 @@ class StaticFontCompletionTests(unittest.TestCase):
                     "coveredUnicodeOccurrences": 1, "missingUnicodeOccurrences": 0, "missing": [], "perUnicodeScalar": []}}
         label = {"sourceComponentId": source, "sourceText": "出", "fontSize": 24,
                  "sourceFontFamilyEvidence": "creator-label-default-Arial"}
+        old_scalar={"unicodeScalar":65,"character":"A","resolutions":[{"styleName":"Regular"}]}
+        new_scalar={"unicodeScalar":20986,"character":"出","resolutions":[{"styleName":"Fallback"}]}
+        base['glyphCoverage']={"requiredUnicodeOccurrences":1,"coveredUnicodeOccurrences":1,
+                               "perUnicodeScalar":[old_scalar]}
+        added['glyphCoverage']['perUnicodeScalar']=[new_scalar]
         ir = {"components": [label_component(source, "n", "出")]}
         merged = _merge_resolution(base, added, [label], __import__("pathlib").Path("prep.json"),
                                    "i" * 64, __import__("pathlib").Path("manifest.json"), "m" * 64)
@@ -73,6 +78,9 @@ class StaticFontCompletionTests(unittest.TestCase):
         self.assertFalse(binding["sourceSystemFont"])
         self.assertEqual(SOURCE_EFFECTIVE_POLICY, binding["sourceEffectiveFontPolicy"])
         self.assertFalse(merged["visualEquivalent"])
+        self.assertEqual(merged['glyphCoverage']['perUnicodeScalar'],[old_scalar,new_scalar])
+        self.assertEqual(base['glyphCoverage']['perUnicodeScalar'],[old_scalar])
+        self.assertEqual(added['glyphCoverage']['perUnicodeScalar'],[new_scalar])
 
     def test_static_face_union_preserves_asset_identity_and_existing_glyphs(self):
         base_face = {"assetId": "coretext-static-sdf-123456789012345678901234",

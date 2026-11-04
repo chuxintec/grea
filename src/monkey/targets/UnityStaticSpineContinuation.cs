@@ -70,7 +70,13 @@ public static partial class MonkeyImporter
     static NativeStaticSpineReference SpineCarrier(SpineComponent row, Dictionary<string,GameObject> nodes) {
         if(row==null||nodes==null||!nodes.TryGetValue(row.sourceNodeId,out var node)||node==null)return null;
         var all=node.GetComponents<NativeStaticSpineReference>();
-        return all.SingleOrDefault(x=>x!=null&&x.sourceComponentId==row.sourceTemplateComponentId);
+        return all.SingleOrDefault(x=>x!=null&&x.sourceComponentId==row.sourceComponentId&&x.sourceTemplateComponentId==row.sourceTemplateComponentId);
+    }
+    static partial void ResolveOptionalStaticSpineInstanceCounterpart(Component source,GameObject target,ref Component destination) {
+        var carrier=source as NativeStaticSpineReference;if(carrier==null)return;
+        var matches=target.GetComponents<NativeStaticSpineReference>().Where(x=>x.sourceTemplateComponentId==carrier.sourceTemplateComponentId).ToArray();
+        if(matches.Length!=1)throw new InvalidOperationException("STATIC_SPINE_INSTANCE_COUNTERPART_IDENTITY_INVALID: "+carrier.sourceComponentId);
+        destination=matches[0];
     }
     static partial void PrepareStaticSpine(Plan plan, Dictionary<string,GameObject> nodes)
     {
@@ -104,11 +110,16 @@ public static partial class MonkeyImporter
             asset.skeletonParsed=false; asset.atlasDecoded=false; asset.pagesDecoded=false; asset.nonRendering=true;
             EditorUtility.SetDirty(asset);
         }
+        PrepareStaticSpineCarriers(plan,nodes);
+    }
+    static void PrepareStaticSpineCarriers(Plan plan,Dictionary<string,GameObject> nodes) {
+        // Build every flat source counterpart before native template replacement.
+        // The generic instance transfer pairs/copies these components and remaps
+        // references before retiring the temporary source hierarchy.
         foreach(var row in spineStaticEnvelope.components??Array.Empty<SpineComponent>()) {
-            if(row.sourceComponentId!=row.sourceTemplateComponentId)continue;
             if(!nodes.TryGetValue(row.sourceNodeId,out var node)||node==null)throw new InvalidOperationException("STATIC_SPINE_SOURCE_NODE_MISSING: "+row.sourceNodeId);
             var carriers=node.GetComponents<NativeStaticSpineReference>();
-            var carrier=carriers.SingleOrDefault(x=>x!=null&&x.sourceComponentId==row.sourceTemplateComponentId);
+            var carrier=carriers.SingleOrDefault(x=>x!=null&&x.sourceComponentId==row.sourceComponentId);
             if(carrier==null)carrier=node.AddComponent<NativeStaticSpineReference>();
             carrier.sourceComponentId=row.sourceComponentId; carrier.sourceTemplateComponentId=row.sourceTemplateComponentId;
             carrier.sourcePrefabId=row.sourcePrefabId; carrier.sourceNodeId=row.sourceNodeId; carrier.sourceTemplateNodeId=row.sourceTemplateNodeId;
@@ -183,7 +194,7 @@ public static partial class MonkeyImporter
             var persistent=PrefabUtility.GetCorrespondingObjectFromSource(carrier) as NativeStaticSpineReference;
             string guidValue=null; long localId=0;
             if(persistent!=null)AssetDatabase.TryGetGUIDAndLocalFileIdentifier(persistent,out guidValue,out localId);
-            var typedFieldsMatch=SpineTypedFieldsMatch(carrier,row.sourceFields??Array.Empty<SpineField>())&&
+            var typedFieldsMatch=SpineCarrierIdentityMatches(carrier,row)&&SpineTypedFieldsMatch(carrier,row.sourceFields??Array.Empty<SpineField>())&&
                 carrier.sourceComponentEnabledKnown==(row.sourceComponentEnabledStatus=="plan-source-value")&&
                 (!carrier.sourceComponentEnabledKnown||carrier.sourceComponentEnabled==row.sourceComponentEnabled)&&
                 carrier.sourceFieldsJson==row.sourceFieldsJson&&carrier.sourceFieldsSha256==row.sourceFieldsSha256&&
@@ -228,6 +239,12 @@ public static partial class MonkeyImporter
             spineStaticReadback.Add(result);
         }
         WriteStaticSpineReadback();
+    }
+    static bool SpineCarrierIdentityMatches(NativeStaticSpineReference carrier,SpineComponent row) {
+        return carrier.sourceComponentId==row.sourceComponentId&&
+            carrier.sourceTemplateComponentId==row.sourceTemplateComponentId&&
+            carrier.sourcePrefabId==row.sourcePrefabId&&carrier.sourceNodeId==row.sourceNodeId&&
+            carrier.sourceTemplateNodeId==row.sourceTemplateNodeId;
     }
     static bool SpineTypedFieldsMatch(NativeStaticSpineReference c,SpineField[] fields) {
         foreach(var f in fields) {

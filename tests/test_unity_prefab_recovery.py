@@ -120,3 +120,41 @@ def test_native_bridge_refuses_candidate_payload_drift_before_editor_launch(tmp_
     prefab.write_bytes(prefab.read_bytes() + b"# manual change\n")
     with pytest.raises(ParseError, match="UNITY_PREFAB_CANDIDATE_DRIFT"):
         prepare(project, manifest_sha)
+
+
+@pytest.mark.parametrize("member,expected", [
+    ("", "source-ui-behavior-unverified"),
+    ("protected override void OnPopulateMesh(UnityEngine.UI.VertexHelper vh) { vh.Clear(); }",
+     "source-ui-behavior-unverified"),
+])
+def test_schema_only_custom_image_carries_hash_pinned_source_presentation_classification(tmp_path, member, expected):
+    from monkey.unity_prefab_recovery import script_proposals
+    source_text = "public class CustomImage : UnityEngine.UI.Image { " + member + " }"
+    source_path = tmp_path / "CustomImage.cs"
+    source_path.write_text(source_text, encoding="utf-8")
+    source_hash = sha(source_path.read_bytes())
+    parsed, _ = type_models_for_test(source_text, source_path, source_hash)
+    script_id = {"assembly": "Assembly-CSharp.dll", "namespace": "", "name": "CustomImage"}
+    script_proposal = script_proposals([{
+        "sourceSha256": "1" * 64,
+        "document": {
+            "files": [{"id": "0", "name": "CAB"}],
+            "objects": [
+                {"type": "MonoBehaviour", "status": "parsed", "file": "0", "pathId": "1",
+                 "embeddedSchemaId": "schema", "borrowedSchemaId": None,
+                 "data": {"m_Script": {"fileId": "0", "pathId": "2"}}},
+                {"type": "MonoScript", "status": "parsed", "file": "0", "pathId": "2", "rawSha256": "2" * 64,
+                 "data": {"m_AssemblyName": script_id["assembly"], "m_Namespace": "", "m_ClassName": script_id["name"]}},
+            ],
+            "embeddedSchemas": {"schema": {"children": []}}, "borrowedSchemas": {},
+        },
+    }], parsed, False)
+    model = script_proposal[(script_id["assembly"], "", script_id["name"])]
+    assert model["state"] == "native-base-schema-only"
+    assert model["proposal"]["sourceUiStaticEvidence"]["status"] == expected
+
+
+def type_models_for_test(source_text, source_path, source_hash):
+    from monkey.unity_prefab_types import parse_declarations
+    return parse_declarations(source_text, assembly="Assembly-CSharp.dll", source_path=str(source_path),
+                              source_sha256=source_hash), []

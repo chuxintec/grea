@@ -361,7 +361,7 @@ module.exports = {
                 if(c.codeClassName)numericCodeBindings.push(numeric.read(comp,c));
                 if(c.type==='cc.Label'&&comp.overflow!==(c.nativeOverflow??c.overflow))throw Error('Saved Label overflow policy differs: '+c.sourceId);
                 if(c.type==='cc.Sprite'&&comp.sizeMode!==(c.nativeSizeMode??c.sizeMode))throw Error('Saved Sprite sizing policy differs: '+c.sourceId);
-                refs.push({sourceId:c.sourceId,nodeUuid:n.uuid,componentUuid:comp.uuid,type:c.type});
+                refs.push({sourceId:c.sourceId,nodeUuid:n.uuid,componentUuid:comp.uuid,type:c.type,nativeType:cc.js.getClassName(comp)});
                 if(c.type==='cc.Label'||c.type==='cc.RichText')labels.push({sourceId:c.sourceId,text:comp.string,fontUuid:comp.font&&comp.font._uuid,useSystemFont:comp.useSystemFont,fontFamily:comp.fontFamily});
             }
             const frames=[];
@@ -444,7 +444,9 @@ module.exports = {
             const spineBindings=spineModule.readCreatorSpineBindings(spineSpecs.map(c=>c.spineBinding),id=> {
                 const c=spineById.get(id);return c?mapped.get(c.node).getComponents(cc.sp.Skeleton):[];
             },id=>({sourceActivity:spineModule.sourceNodeActivity(plan,spineById.get(id).node),readbackScope:'saved_scene_mapped'}));
-            return {staticRetainedAssetReadback,spineBindings,staticTimeMaterials,resourceProbes:await resources.read(plan,scene),tiledRenderer:tiledReadback(plan,mapped),dynamicUiProbes,nativeInitialNodes:plan.nativeInitialNodes,sourcePrefabs,prefabInstances,jsonAssets,audioAssets,fontPages,animations,numericCodeBindings,nodeCount:saved.length,nodes:[...mapped].map(([sourceId,n])=>({sourceId,nodeUuid:n.uuid,name:n.name,
+            const sourceComponentCoverage=plan.components.map((spec,sourceIndex)=>({sourceIndex,sourceId:spec.sourceId||null,sourceType:spec.type||null,
+                nativeComponentReadback:refs.filter(row=>row.sourceId===spec.sourceId).map(row=>({sourceId:row.sourceId,type:row.type,nativeType:row.nativeType,componentUuid:row.componentUuid,nodeUuid:row.nodeUuid}))}));
+            return {sourceDiagnostics:plan.sourceDiagnostics||[],staticRetainedAssetReadback,spineBindings,staticTimeMaterials,resourceProbes:await resources.read(plan,scene),tiledRenderer:tiledReadback(plan,mapped),dynamicUiProbes,nativeInitialNodes:plan.nativeInitialNodes,sourcePrefabs,prefabInstances,jsonAssets,audioAssets,fontPages,animations,numericCodeBindings,nodeCount:saved.length,sourceComponentCoverage,nodes:[...mapped].map(([sourceId,n])=>({sourceId,nodeUuid:n.uuid,name:n.name,
                 position:[n.position.x,n.position.y,n.position.z],size:[n.getComponent(cc.UITransform).width,n.getComponent(cc.UITransform).height],
                 pivot:[n.getComponent(cc.UITransform).anchorX,n.getComponent(cc.UITransform).anchorY],scale:[n.scale.x,n.scale.y,n.scale.z],
                 rotation:[n.rotation.x,n.rotation.y,n.rotation.z,n.rotation.w],active:n.active,...prefabs.uiState(n,sourceNodes.get(sourceId))})),components:refs,labels,frames};

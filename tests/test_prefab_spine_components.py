@@ -313,6 +313,12 @@ class PrefabSpineComponentBindingTests(unittest.TestCase):
             self.assertEqual(len(prepared['creatorMaterialProfile']['contractSha256']), 64)
             self.assertTrue(all(row['creatorStaticPose']['nativeEnabled'] for row in prepared['components']))
             self.assertTrue(all(row['creatorStaticPose']['nativeTimeScale'] == 0 for row in prepared['components']))
+            from monkey.prefab_spine_materials import TARGET_ENGINE_FILE_PINS
+            for row in prepared['components']:
+                pose=row['creatorStaticPose']
+                self.assertRegex(pose['targetEngineSourceSha256'],r'^[0-9a-f]{64}$')
+                self.assertEqual(pose['targetEngineSourceSha256'],TARGET_ENGINE_FILE_PINS['cocos/spine/skeleton.ts'])
+                self.assertEqual(pose['targetEnginePinRole'],'declared-version-reference-not-independent-file-attestation')
             self.assertEqual(prepared['components'][0]['creatorStaticPose']['sourceTimeScale']['value'], 0.5)
             self.assertEqual(prepared['components'][2]['sourceDataAssetId'], None)
             self.assertEqual(prepared['components'][2]['creatorMaterialBinding']['targetMaterialUuid'], 'default-spine-material')

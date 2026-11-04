@@ -22,6 +22,7 @@ namespace MonkeyUnitySource
         {
             public int schemaVersion;
             public string targetUnityVersion;
+            public string sourceCandidateManifestSha256;
             public string outputRelative;
             public bool headless;
             public bool reopenOnly;
@@ -196,6 +197,7 @@ namespace MonkeyUnitySource
             public int reconstructionFieldsChecked;
             public BuiltinSeedEvidence[] builtinSeeds = new BuiltinSeedEvidence[0];
             public ParticleRepresentationEvidence[] particleRepresentations = new ParticleRepresentationEvidence[0];
+            public SourceUiPresentationEvidence[] sourceUiPresentation = new SourceUiPresentationEvidence[0];
             public NativeIdentity[] nativeIdentitiesBefore;
             public NativeIdentity[] nativeIdentitiesAfter;
             public DisabledBehavior[] disabledBehaviors;
@@ -209,6 +211,37 @@ namespace MonkeyUnitySource
             public string[] limitations;
             public Failure[] failures;
         }
+
+        [Serializable] sealed class SourceUiPresentationEvidence
+        {
+            public string sourceId, sourceType, sourceAssembly, sourceBase, classification, sourceEvidenceContract;
+            public string sourceDeclarationPath, sourceDeclarationSha256, methodInventoryStatus;
+            public bool targetCanRender, sourceStaticSemanticsVerified;
+            public int sourceMethodCount;
+            public string[] reasons;
+        }
+
+        [Serializable] sealed class SourceUiPresentation
+        {
+            public string contract, status, sourceBase, sourceDeclarationPath, sourceDeclarationSha256, methodInventoryStatus;
+            public string nativeSchemaVersion;
+            public string sourceMethodInventoryProvenanceStatus;
+            public bool sourceCodeExecuted, targetRenderingIsSeparate;
+            public string[] sourceBaseChain;
+            public bool staticSemanticsProven;
+            public int sourceMethodCount;
+            public string[] reasons, sourceFieldNames;
+            public SourceCodeIdentity sourceIdentity;
+        }
+        [Serializable] sealed class SourceCodeIdentity { public string assembly, @namespace, name; }
+        [Serializable] sealed class SourceCodeCarrier { public SourceCodeIdentity identity; public SourceCodeProposal proposal; }
+        [Serializable] sealed class SourceCodeProposal { public SourceUiPresentation sourceUiStaticEvidence; }
+        [Serializable] sealed class SourceCodeCarrierEnvelope { public SourceCodeCarrier[] rows; }
+        [Serializable] sealed class CandidateFile { public string path, sha256; public long bytes; }
+        [Serializable] sealed class CandidateManifest { public CandidateFile[] files; }
+
+        static Dictionary<string,SourceUiPresentation> sourceUiEvidenceByIdentity =
+            new Dictionary<string,SourceUiPresentation>(StringComparer.Ordinal);
 
         [Serializable] sealed class NativeIdentity
         {
@@ -359,6 +392,7 @@ namespace MonkeyUnitySource
                 string json = new UTF8Encoding(false, true).GetString(planBytes);
                 Plan plan = JsonUtility.FromJson<Plan>(json);
                 ValidatePlan(plan);
+                sourceUiEvidenceByIdentity = LoadSourceUiEvidence(projectRoot, plan.sourceCandidateManifestSha256);
                 outputPath = SafeReadbackPath(projectRoot, plan.outputRelative);
                 if (File.Exists(outputPath)) throw new InvalidOperationException("Readback output already exists; refusing overwrite: " + plan.outputRelative);
                 string outputDirectory = Path.GetDirectoryName(outputPath);
@@ -408,6 +442,47 @@ namespace MonkeyUnitySource
             }
         }
 
+        static Dictionary<string,SourceUiPresentation> LoadSourceUiEvidence(string projectRoot,string expectedManifestSha256)
+        {
+            var result=new Dictionary<string,SourceUiPresentation>(StringComparer.Ordinal);
+            if(String.IsNullOrEmpty(expectedManifestSha256))return result;
+            if(!IsSha256(expectedManifestSha256))throw new InvalidOperationException("Source candidate manifest SHA-256 is invalid");
+            string manifestPath=Path.Combine(projectRoot,"manifest.json");
+            byte[] manifestBytes=ReadBounded(manifestPath,128*1024*1024);
+            if(!String.Equals(Sha256(manifestBytes),expectedManifestSha256,StringComparison.Ordinal))
+                throw new InvalidOperationException("Source UI evidence candidate manifest differs from native plan pin");
+            var manifest=JsonUtility.FromJson<CandidateManifest>(new UTF8Encoding(false,true).GetString(manifestBytes));
+            var rows=(manifest==null?Array.Empty<CandidateFile>():manifest.files??Array.Empty<CandidateFile>())
+                .Where(x=>x!=null&&x.path=="Analysis/Code/schema-carriers.json").ToArray();
+            if(rows.Length!=1||!IsSha256(rows[0].sha256)||rows[0].bytes<=0)
+                throw new InvalidOperationException("Pinned schema-carriers source UI evidence file is missing or ambiguous");
+            string sourcePath=Path.Combine(projectRoot,"Analysis","Code","schema-carriers.json");
+            byte[] sourceBytes=ReadBounded(sourcePath,64*1024*1024);
+            if(sourceBytes.LongLength!=rows[0].bytes||!String.Equals(Sha256(sourceBytes),rows[0].sha256,StringComparison.Ordinal))
+                throw new InvalidOperationException("Pinned schema-carriers source UI evidence bytes changed");
+            string sourceJson=new UTF8Encoding(false,true).GetString(sourceBytes).Trim();
+            if(!sourceJson.StartsWith("[",StringComparison.Ordinal))throw new InvalidOperationException("schema-carriers evidence is not a JSON array");
+            var envelope=JsonUtility.FromJson<SourceCodeCarrierEnvelope>("{\"rows\":"+sourceJson+"}");
+            foreach(var carrier in envelope==null?Array.Empty<SourceCodeCarrier>():envelope.rows??Array.Empty<SourceCodeCarrier>()) {
+                var identity=carrier==null?null:carrier.identity;
+                var evidence=carrier==null||carrier.proposal==null?null:carrier.proposal.sourceUiStaticEvidence;
+                if(identity==null||evidence==null)continue;
+                string key=SourceUiKey(identity.assembly,identity.@namespace,identity.name);
+                if(result.ContainsKey(key))throw new InvalidOperationException("Duplicate source UI static evidence identity: "+key);
+                if(evidence.contract!="monkey-unity-source-ui-static-evidence/1"||evidence.sourceIdentity==null||
+                    evidence.sourceIdentity.assembly!=identity.assembly||evidence.sourceIdentity.@namespace!=identity.@namespace||
+                    evidence.sourceIdentity.name!=identity.name||!IsSha256(evidence.sourceDeclarationSha256))
+                    throw new InvalidOperationException("Source UI static evidence identity/contract is malformed: "+key);
+                result.Add(key,evidence);
+            }
+            return result;
+        }
+
+        static string SourceUiKey(string assembly,string namespaceName,string className)
+        {
+            return (assembly??"").Replace(".dll","")+"|"+(namespaceName??"")+"|"+(className??"");
+        }
+
         static RootResult VerifyColdRoot(string projectRoot, RootPlan plan)
         {
             var result = new RootResult { sourceId = plan.sourceId, sourcePrefabPath = plan.path, status = "failed" };
@@ -420,6 +495,8 @@ namespace MonkeyUnitySource
                 GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(plan.path);
                 if (asset == null) throw new InvalidOperationException("Cold-reopen Prefab is absent");
                 MappedTree mapped = CheckTree(plan, asset, "independent-cold-asset", false, true, result, failures);
+                var coldLimitations=new List<string>();
+                VerifySourceUiPresentation(plan,mapped,result,coldLimitations);
                 contents = PrefabUtility.LoadPrefabContents(plan.path);
                 if (contents == null) throw new InvalidOperationException("Cold LoadPrefabContents returned null");
                 CheckTree(plan, contents, "independent-cold-contents", false, false, result, failures);
@@ -434,7 +511,8 @@ namespace MonkeyUnitySource
                 result.readbackPrefabPath = plan.path;
                 result.readbackPrefabGuid = AssetDatabase.AssetPathToGUID(plan.path);
                 result.visualCompleteness = "not_run_independent_cold_reopen";
-                result.limitations = new string[] { "static-render-deferred-no-graphics", "unavailable-source-behavior-remains-disabled" };
+                result.limitations = new string[] { "static-render-deferred-no-graphics", "unavailable-source-behavior-remains-disabled" }
+                    .Concat(coldLimitations).ToArray();
                 result.status = "partial";
             }
             catch (Exception error)
@@ -459,7 +537,8 @@ namespace MonkeyUnitySource
                 limitations = new string[0], failures = new Failure[0],
                 fieldResults = new FieldResult[0], assetReferences = new AssetReferenceIdentity[0],
                 fieldResultsAfter = new FieldResult[0], assetReferencesAfter = new AssetReferenceIdentity[0],
-                editability = new EditResult[0], disabledBehaviors = new DisabledBehavior[0]
+                editability = new EditResult[0], disabledBehaviors = new DisabledBehavior[0],
+                sourceUiPresentation = new SourceUiPresentationEvidence[0]
             };
             var failures = new List<Failure>();
             result.reconstructedFromSource = reconstruct;
@@ -555,6 +634,7 @@ namespace MonkeyUnitySource
                 result.nativeIdentitiesStable = SameNativeIdentities(before.identities, after.identities);
                 if (!result.nativeIdentitiesStable) throw new InvalidOperationException("Node/component GUID or local file IDs changed after save/reopen");
                 CompareReferenceTables(before.references, after.references);
+                VerifySourceUiPresentation(plan,before,result,limitations);
 
                 bool hasUi = IsUiPlan(plan);
                 if (headless)
@@ -567,8 +647,10 @@ namespace MonkeyUnitySource
                 {
                     result.image = RenderPrefab(projectRoot, imported, result.readbackPrefabGuid, plan, out EditResult[] edits, representative);
                     result.editability = edits;
-                    result.visualCompleteness = limitations.Any(v => v.StartsWith("disabled-unavailable:", StringComparison.Ordinal))
-                        ? "partial-disabled-components" : "static-rendered";
+                    result.visualCompleteness = limitations.Any(v => v.StartsWith("unverified-source-ui-static-semantics:", StringComparison.Ordinal))
+                        ? "partial-source-ui-static-semantics-unverified"
+                        : limitations.Any(v => v.StartsWith("disabled-unavailable:", StringComparison.Ordinal))
+                            ? "partial-disabled-components" : "static-rendered";
                     if (result.image == null || result.image.status != "passed")
                         failures.Add(new Failure { phase = "visual", message = result.image == null ? "No image evidence" : result.image.error });
                     if (representative && !edits.Any(e => e.status == "passed"))
@@ -586,6 +668,7 @@ namespace MonkeyUnitySource
                 }
 
                 bool incomplete = limitations.Any(v => v.StartsWith("disabled-unavailable:", StringComparison.Ordinal) ||
+                    v.StartsWith("unverified-source-ui-static-semantics:", StringComparison.Ordinal) ||
                     v == "static-render-deferred-no-graphics" ||
                     v == "sprite-renderer-or-non-UI-scene-preview-not-implemented" ||
                     v.StartsWith("representative-editability-", StringComparison.Ordinal));
@@ -703,6 +786,74 @@ namespace MonkeyUnitySource
                 }
             }
             return mapped;
+        }
+
+        static void VerifySourceUiPresentation(RootPlan plan,MappedTree mapped,RootResult result,List<string> limitations)
+        {
+            var rows=new List<SourceUiPresentationEvidence>();
+            foreach(var pair in mapped.components) {
+                var graphic=pair.Value as Graphic;
+                if(graphic==null)continue;
+                var expected=mapped.componentPlans[pair.Key];
+                var actualType=pair.Value.GetType();
+                bool targetCanRender=graphic.enabled&&graphic.gameObject.activeInHierarchy;
+                bool exactNative=(actualType==typeof(Image)||actualType==typeof(RawImage)||actualType==typeof(Text))&&
+                    actualType.Assembly.GetName().Name=="UnityEngine.UI";
+                if(!exactNative&&IsUnityOwnedAssembly(expected.assembly))continue;
+                bool sourceVerified=exactNative;
+                string classification=exactNative?"exact-native-ui-base":"custom-ui-source-semantics-unverified";
+                string sourceBase=exactNative?actualType.FullName:null;
+                string sourceContract=null,sourcePath=null,sourceSha=null,methodStatus=null;
+                int methodCount=0;string[] reasons=new string[0];
+                if(!exactNative&&!IsUnityOwnedAssembly(expected.assembly)) {
+                    string key=SourceUiKey(expected.assembly,expected.type.Contains(".")?expected.type.Substring(0,expected.type.LastIndexOf('.')):"",expected.type.Contains(".")?expected.type.Substring(expected.type.LastIndexOf('.')+1):expected.type);
+                    SourceUiPresentation evidence;
+                    if(sourceUiEvidenceByIdentity.TryGetValue(key,out evidence)) {
+                        Type provenBase=SourceUiBaseType(evidence.sourceBase);
+                        bool identityMatches=evidence.sourceIdentity!=null&&
+                            SourceUiKey(evidence.sourceIdentity.assembly,evidence.sourceIdentity.@namespace,evidence.sourceIdentity.name)==key;
+                        bool typeChainMatches=provenBase!=null&&provenBase.IsAssignableFrom(actualType)&&
+                            ActualSourceUiBaseChainMatches(actualType,evidence.sourceBaseChain);
+                        sourceVerified=identityMatches&&typeChainMatches&&evidence.contract=="monkey-unity-source-ui-static-evidence/1"&&
+                            !evidence.sourceCodeExecuted&&evidence.targetRenderingIsSeparate&&
+                            evidence.nativeSchemaVersion=="source-2021.3.30f1_target-6000.6.2f1_ugui-2.6.0"&&
+                            evidence.staticSemanticsProven&&evidence.status=="source-static-behavior-neutral"&&
+                            evidence.sourceMethodInventoryProvenanceStatus=="verified-independent-original-method-inventory"&&
+                            evidence.methodInventoryStatus=="complete-empty"&&evidence.sourceMethodCount==0&&IsSha256(evidence.sourceDeclarationSha256);
+                        sourceBase=evidence.sourceBase;sourceContract=evidence.contract;sourcePath=evidence.sourceDeclarationPath;
+                        sourceSha=evidence.sourceDeclarationSha256;methodStatus=evidence.methodInventoryStatus;
+                        methodCount=evidence.sourceMethodCount;reasons=evidence.reasons??new string[0];
+                        classification=sourceVerified?"source-static-behavior-neutral":"source-ui-static-evidence-rejected";
+                    } else reasons=new string[]{"pinned-source-ui-static-evidence-missing"};
+                }
+                rows.Add(new SourceUiPresentationEvidence{sourceId=pair.Key,sourceType=actualType.FullName,
+                    sourceAssembly=actualType.Assembly.GetName().Name,sourceBase=sourceBase,classification=classification,
+                    sourceEvidenceContract=sourceContract,sourceDeclarationPath=sourcePath,sourceDeclarationSha256=sourceSha,
+                    methodInventoryStatus=methodStatus,sourceMethodCount=methodCount,targetCanRender=targetCanRender,
+                    sourceStaticSemanticsVerified=sourceVerified,reasons=reasons});
+                if(!sourceVerified)limitations.Add("unverified-source-ui-static-semantics:"+pair.Key+":targetCanRender="+targetCanRender.ToString().ToLowerInvariant());
+            }
+            result.sourceUiPresentation=rows.ToArray();
+        }
+
+        static Type SourceUiBaseType(string fullName)
+        {
+            if(fullName=="UnityEngine.UI.Image")return typeof(Image);
+            if(fullName=="UnityEngine.UI.RawImage")return typeof(RawImage);
+            if(fullName=="UnityEngine.UI.Text")return typeof(Text);
+            if(fullName=="UnityEngine.UI.Graphic")return typeof(Graphic);
+            return null;
+        }
+
+        static bool ActualSourceUiBaseChainMatches(Type type,string[] expected)
+        {
+            if(type==null||expected==null||expected.Length<3)return false;
+            var actual=new List<string>();
+            for(Type current=type;current!=null;current=current.BaseType) {
+                actual.Add(current.FullName);
+                if(current==typeof(MonoBehaviour))break;
+            }
+            return expected.SequenceEqual(actual,StringComparer.Ordinal);
         }
 
         static FieldResult CheckField(ComponentPlan componentPlan, Component component, SerializedObject serialized,

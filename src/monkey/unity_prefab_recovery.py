@@ -127,6 +127,7 @@ def type_models(evidence, selected_script_identities=None):
 
 def script_proposals(inputs, parsed, allow_disabled, selected_objects=None):
     output = {}
+    source_ui_cache = {}
     for entry in inputs:
         doc = entry["document"]
         file_names = {f["id"]: f["name"] for f in doc["files"]}
@@ -152,6 +153,13 @@ def script_proposals(inputs, parsed, allow_disabled, selected_objects=None):
             if schema is None:
                 continue
             proposal = propose_schema(parsed, identity, schema)
+            from .unity_prefab_source_ui import classify_source_ui_static
+            source_ui_key = (identity["assembly"], identity["namespace"], identity["name"], proposal.get("base"))
+            if source_ui_key not in source_ui_cache:
+                source_ui_cache[source_ui_key] = classify_source_ui_static(parsed, identity, proposal.get("base"))
+            source_ui = source_ui_cache[source_ui_key]
+            if source_ui is not None:
+                proposal["sourceUiStaticEvidence"] = source_ui
             key = (identity["assembly"], identity["namespace"], identity["name"])
             if proposal.get("status") == "schema_only":
                 emitted = copy.deepcopy(proposal)
@@ -393,7 +401,17 @@ def recover(request_path, expected_request, output):
                 dest.write_bytes(data)
                 continue
             data = model["code"].encode()
-            code_records.append(dict(path=relative, **{k: v for k, v in model.items() if k != "code"}))
+            code_record = dict(path=relative, **{k: v for k, v in model.items() if k != "code"})
+            ui_evidence = model.get("proposal", {}).get("sourceUiStaticEvidence")
+            if ui_evidence is not None:
+                code_record["staticPresentation"] = ("source-static-behavior-neutral" if ui_evidence.get("staticSemanticsProven") is True
+                                                      else "partial-source-ui-semantics-unverified")
+                if ui_evidence.get("staticSemanticsProven") is not True:
+                    gaps.append(dict(code="UNITY_PREFAB_SOURCE_UI_STATIC_UNVERIFIED", path=relative,
+                        sourceIdentity=ui_evidence.get("sourceIdentity"),
+                        staticPresentation=code_record["staticPresentation"], reasons=ui_evidence.get("reasons", []),
+                        targetCanRender="assessed separately by native readback"))
+            code_records.append(code_record)
             for enum in model["proposal"].get("enums", []):
                 enum_key = (enum["identity"]["assembly"], enum["namespace"], enum["name"])
                 if enum_key in enums and enums[enum_key] != enum:

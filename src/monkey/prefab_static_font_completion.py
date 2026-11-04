@@ -191,7 +191,7 @@ def _merge_resolution(base: dict, added: dict, labels: list[dict],
         "coveredUnicodeOccurrences": old_cov.get("coveredUnicodeOccurrences", 0) + new_cov.get("coveredUnicodeOccurrences", 0),
         "missingUnicodeOccurrences": old_cov.get("missingUnicodeOccurrences", 0) + new_cov.get("missingUnicodeOccurrences", 0),
         "missing": (old_cov.get("missing") or []) + (new_cov.get("missing") or []),
-        "perUnicodeScalar": (old_cov.get("perUnicodeScalar") or []) + (new_cov.get("glyphCoverage", {}).get("perUnicodeScalar") or []),
+        "perUnicodeScalar": (old_cov.get("perUnicodeScalar") or []) + (new_cov.get("perUnicodeScalar") or []),
     }
     if merged["glyphCoverage"]["missingUnicodeOccurrences"]:
         raise FontCompletionError("CoreText did not resolve every required source character")

@@ -421,7 +421,7 @@ def export(plan_path,output):
                                      'inspect-ordinary-save':dict(methods=['inspectOrdinarySaveApi']),
                                      'revalidate-saved-candidate':dict(methods=['revalidateSavedCandidate']),
                                      'stop-save-diagnostics':dict(methods=['stopOrdinarySaveProbe'])})))
-    write_json(ext/'import-plan.json',{k:p[k] for k in ['schemaVersion','targetProfile','designSize','assets','nodes','components'] }|dict(resourceProbes=p.get('resourceProbes'),rendererBudget=p.get('rendererBudget'),projectUuid=project_id,animations=p.get('animations',[]),sourcePrefabs=p.get('sourcePrefabs',[]),prefabInstances=p.get('prefabInstances',[]),prefabRelationshipReadback='creator-native-fileid-v1',uiGeometryReadback='native-ui-layout-roundtrip-v1',sceneGeometryReadback='full-local-v1',bitmapPageReadback='sprite-frame-v1',spriteMeshReadback='native-rect-mesh-v1',outputPaths=standard.creator_output_paths()))
+    write_json(ext/'import-plan.json',{k:p[k] for k in ['schemaVersion','targetProfile','designSize','assets','nodes','components'] }|dict(sourceDiagnostics=p.get('diagnostics',[]),resourceProbes=p.get('resourceProbes'),rendererBudget=p.get('rendererBudget'),projectUuid=project_id,animations=p.get('animations',[]),sourcePrefabs=p.get('sourcePrefabs',[]),prefabInstances=p.get('prefabInstances',[]),prefabRelationshipReadback='creator-native-fileid-v1',uiGeometryReadback='native-ui-layout-roundtrip-v1',sceneGeometryReadback='full-local-v1',bitmapPageReadback='sprite-frame-v1',spriteMeshReadback='native-rect-mesh-v1',outputPaths=standard.creator_output_paths()))
     from .dynamic_ui import driven_fields
     instruction_path=ext/'import-plan.json';instruction=load(instruction_path.read_bytes())
     instruction['sourceManifestSha256']=p.get('sourceManifestSha256')
@@ -524,9 +524,10 @@ def _verify_creator_native_identity_contract(plan, readback, project_uuid, manif
 
 
 def verify(candidate,output,level='static'):
-    root=safe(candidate);m=stage_manifest(root);diagnostics=[]
+    root=safe(candidate);m=stage_manifest(root);diagnostics=[];component_coverage=None
     from ..sources.containers import fingerprint
     if m.get('targetProfile')!=PROFILE:fail('UNSUPPORTED_CANDIDATE',str(root),'Expected Creator profile')
+    plan=load(read(root/'extensions/monkey-import/import-plan.json',max_bytes=128*1024*1024),max_nodes=8_000_000)
     native={};editor='not_run'
     if level=='editor':
         rb_path=find_analysis(root,'editor-readback.json')
@@ -540,7 +541,9 @@ def verify(candidate,output,level='static'):
                 fail('CREATOR_READBACK_REVISION_INVALID',str(root/'Analysis/Readback/current-revision.json'),str(error))
             if revision is not None:rb_path=revision['path']
             rb=load(read(rb_path,max_bytes=128*1024*1024),max_nodes=8_000_000);native={f['path']:f['sha256'] for f in rb.get('nativeFiles',[])}
-            plan=load(read(root/'extensions/monkey-import/import-plan.json',max_bytes=128*1024*1024),max_nodes=8_000_000)
+            from ..prefab_component_coverage import assess as assess_component_coverage
+            component_coverage=assess_component_coverage(plan,rb,'creator')
+            diagnostics.extend(component_coverage['diagnostics'])
             expected_assets={a['sourceId']:a for a in plan['assets']}
             actual_assets={a['sourceId']:a for a in rb.get('assets',[])}
             json_assets={a['sourceId']:a for a in rb.get('jsonAssets',[])}
@@ -699,7 +702,7 @@ def verify(candidate,output,level='static'):
     identity_gaps=verify_assigned(root,m);diagnostics.extend(identity_gaps)
     if identity_gaps and editor=='pass':editor='fail'
     # Static asset references are logical, not asserted native subresource UUIDs.
-    plan=load(read(root/'extensions/monkey-import/import-plan.json',max_bytes=128*1024*1024),max_nodes=8_000_000);ids={a['sourceId'] for a in plan['assets']}
+    ids={a['sourceId'] for a in plan['assets']}
     for a in plan['assets']:
         if a.get('atlas') and a['atlas'] not in ids:diagnostics.append(diagnostic('MISSING_ATLAS',a['path'],'Bitmap atlas absent'))
     for c in plan['components']:
@@ -710,8 +713,20 @@ def verify(candidate,output,level='static'):
         from ..layout.verify import scan
         diagnostics.extend(scan([f['path'] for f in m['files']]))
     if any(d['code'] in ('GENERATED_FILE_CHANGED','NATIVE_FILE_CHANGED') for d in diagnostics) and editor=='pass':editor='fail'
+    if component_coverage is None:
+        from ..prefab_component_coverage import assess as assess_component_coverage
+        component_coverage=assess_component_coverage(plan,{},'creator')
+        diagnostics.extend(component_coverage['diagnostics'])
+    integrity_codes={'GENERATED_FILE_CHANGED','NATIVE_FILE_CHANGED','DUPLICATE_TARGET_GUID','TARGET_REFERENCE_MISSING','TARGET_LAYOUT_INVALID','ASSIGNED_NATIVE_IDENTITY_CHANGED','LAYOUT_FORBIDDEN_NAME'}
+    static_integrity='conflict' if any(d.get('code') in integrity_codes for d in diagnostics) else 'pass'
     out=new_output(output,[root]);report=dict(schemaVersion=1,toolVersion=__version__,diagnostics=diagnostics,
-        staticValidation='conflict' if any(d['code']not in {'EDITOR_NOT_RUN','SPINE_SOURCE_UNBOUND_DYNAMIC_NOT_RUN','ANIMATION_DYNAMIC_CURVES_NOT_LOWERED'} for d in diagnostics) else 'pass',editorValidation=editor,
-        nativeStaticValidation='pass' if editor=='pass' else editor, runtimeCheck='pass' if editor=='pass' and not any(d['code']not in {'SPINE_SOURCE_UNBOUND_DYNAMIC_NOT_RUN','ANIMATION_DYNAMIC_CURVES_NOT_LOWERED'} for d in diagnostics) else 'not_run' if level!='editor' else 'fail',
+        staticValidation=static_integrity,editorValidation=editor,
+        nativeStaticValidation=(component_coverage['nativeStaticValidation'] if editor in ('pass','partial') and component_coverage else editor),
+        componentCoverage=component_coverage['components'] if component_coverage else [],
+        componentCoverageCounts=component_coverage['dispositionCounts'] if component_coverage else {},
+        componentCoverageSourceCount=component_coverage['sourceComponentCount'] if component_coverage else None,
+        retentionValidation=component_coverage['retentionValidation'] if component_coverage else 'not_run',
+        staticPresentationValidation=component_coverage['staticPresentationValidation'] if component_coverage else {'status':'not_run'},
+        runtimeCheck='not_run',playerValidation='not_run',
         counts=dict(scope='candidate-import-plan',assets=len(plan['assets']),spriteFrames=sum(a['kind']=='sprite'for a in plan['assets']),nodes=len(plan['nodes']),plannedPrefabs=len(plan.get('sourcePrefabs',[]))))
     write_json(out/'verification.json',report);return finish(out,report)

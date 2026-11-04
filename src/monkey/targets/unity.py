@@ -551,6 +551,7 @@ def export(plan_path, output):
             ('UnityStaticAnimationBindings.cs',str(Path(standard.unity('importer')).with_name('UnityStaticAnimationBindings.cs')),'static-animation-editor'),
             ('UnityStaticProgressIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityStaticProgressIntegration.cs')),'static-progress-editor'),
             ('UnityStaticFields.cs',str(Path(standard.unity('importer')).with_name('UnityStaticFields.cs')),'static-fields-editor'),
+            ('UnitySourceComponentCoverage.cs',str(Path(standard.unity('importer')).with_name('UnitySourceComponentCoverage.cs')),'source-component-coverage-editor'),
             ('UnityStaticFieldIntegration.cs',str(Path(standard.unity('importer')).with_name('UnityStaticFieldIntegration.cs')),'static-field-integration-editor'),
             ('materials/ui_color/UnityMaterialBindings.cs',str(Path(standard.unity('importer')).with_name('UnityMaterialBindings.cs')),'material-bindings-editor'),
             ('UnityPreviewState.cs',str(Path(standard.unity('importer')).with_name('UnityPreviewState.cs')),'preview-state-editor'),
@@ -631,6 +632,7 @@ def export(plan_path, output):
     instruction['toggleBindingPresent']=p.get('toggleBinding') is not None
     instruction['behaviorBindingReadback']='persistent-source-fields-v1'
     instruction['transformReadback']='full-local-v1'
+    instruction['sourceDiagnostics']=p.get('diagnostics',[])
     instruction['sourceDiagnosticCount']=len(p['diagnostics'])
     instruction['prefabGuid']=guid(p['namespace'],'native-prefab')
     instruction['prefabRelationshipReadback']='native-source-correspondence-v1'
@@ -779,13 +781,17 @@ def _static_sort_spine_bindings(plan, root):
 def verify(candidate, output, level='static'):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[]
     from ..sources.containers import fingerprint
-    native={};editor='not_run'
+    native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None
     if level=='editor':
         readback_path=find_analysis(root,'editor-readback.json')
         if not readback_path.is_file():
             diagnostics.append(diagnostic('EDITOR_NOT_RUN','Analysis/Readback/editor-readback.json','Run native import in the declared Editor first'))
         else:
             rb=load(read(readback_path,max_bytes=128*1024*1024),max_nodes=8_000_000)
+            from ..unity_verification_contract import native_diagnostics
+            raw_native_diagnostics=rb.get('diagnostics')
+            if rb.get('status')not in ('imported','pass','partial'):
+                diagnostics.append(diagnostic('NATIVE_READBACK_STATUS_INVALID',str(readback_path),'Unsupported native import status'))
             native={f['path']:f['sha256'] for f in rb.get('nativeFiles',[])}
             if rb.get('unityVersion')!='6000.6.2f1' or rb.get('missingScripts')!=0:
                 diagnostics.append(diagnostic('EDITOR_READBACK_FAILED',str(readback_path),'Version/missing-script check failed'))
@@ -797,7 +803,11 @@ def verify(candidate, output, level='static'):
             diagnostics.extend(gallery_readback(instruction,rb))
             if instruction.get('staticSpineContinuationJson'):
                 from ..prefab_static_spine_continuation import verify as verify_static_spine
-                diagnostics.extend(verify_static_spine(load(instruction['staticSpineContinuationJson'].encode('utf-8')),root,rb))
+                spine_diagnostics=verify_static_spine(load(instruction['staticSpineContinuationJson'].encode('utf-8')),root,rb)
+                diagnostics.extend(spine_diagnostics)
+                if not spine_diagnostics:
+                    sidecar=load(read(root/'Analysis/Readback/spine-static-continuation.json'))
+                    spine_coverage={'status':'verified','sourceComponentIds':[row['sourceComponentId']for row in sidecar['components']]}
             from ..prefab_spine_unity_readback import verify as verify_spine_saved
             diagnostics.extend(verify_spine_saved(instruction,root,rb))
             from ..prefab_static_completion_readback import verify_assets as verify_retained
@@ -1002,11 +1012,21 @@ def verify(candidate, output, level='static'):
     if standard.current(m):
         from ..layout.verify import scan
         diagnostics.extend(scan([f['path'] for f in m['files']]))
+    from ..unity_verification_contract import coverage_readback,statuses
+    if level=='editor' and rb is not None:
+        from ..prefab_component_coverage import assess
+        source_diagnostics=instruction.get('sourceDiagnostics',m.get('diagnostics',[]))
+        coverage_plan=dict(instruction,diagnostics=source_diagnostics)
+        if instruction.get('staticSpineContinuationJson'):
+            coverage_plan['staticSpineContinuation']=load(instruction['staticSpineContinuationJson'].encode('utf-8'))
+        coverage=assess(coverage_plan,coverage_readback(rb,spine_coverage),'unity')
+        diagnostics.extend(native_diagnostics(raw_native_diagnostics))
+        diagnostics.extend(coverage.get('diagnostics',[]))
+    dimensions=statuses(editor,diagnostics,coverage,level)
     out=new_output(output,[root])
     result=dict(schemaVersion=1,toolVersion=__version__,candidateManifestSha256=fingerprint(root/'manifest.json'),
                 diagnostics=diagnostics,staticValidation='conflict' if any(d['code'] in ('GENERATED_FILE_CHANGED','DUPLICATE_TARGET_GUID','TARGET_REFERENCE_MISSING','TARGET_LAYOUT_INVALID','NATIVE_FILE_CHANGED','ASSIGNED_NATIVE_IDENTITY_CHANGED','LAYOUT_FORBIDDEN_NAME') for d in diagnostics) else 'pass',
-                editorValidation=editor,nativeStaticValidation='pass' if editor in ('pass','partial') else editor,
-                runtimeCheck='pass' if editor in ('pass','partial') and not any(d['code']not in {'SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE','ANIMATION_DYNAMIC_CURVES_NOT_LOWERED'} for d in diagnostics) else 'not_run' if level!='editor' else 'fail',
+                componentCoverage=coverage,nativeDiagnostics=raw_native_diagnostics,**dimensions,
                 visualValidation='not_run',businessValidation='not_run')
     write_json(out/'verification.json',result)
     return finish(out,result)

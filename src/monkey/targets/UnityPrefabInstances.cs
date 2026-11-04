@@ -1,4 +1,4 @@
-// Development-only native Prefab construction. No source identities enter Player components.
+// Editor-only native Prefab construction; retained source metadata stays opaque.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +7,7 @@ using UnityEngine;
 
 public static partial class MonkeyImporter
 {
+    static partial void ResolveOptionalStaticSpineInstanceCounterpart(Component source,GameObject target,ref Component destination);
     [Serializable] public class PrefabObjectPair { public string instanceObject,templateObject; }
     [Serializable] public class PrefabMountedChildren { public string parent; public string[] roots,nodes; }
     [Serializable] public class PrefabMountedComponent { public string node,component,sourceType,nativeType; }
@@ -54,6 +55,26 @@ public static partial class MonkeyImporter
         if(changed)serialized.ApplyModifiedPropertiesWithoutUndo();
         if(PrefabUtility.IsPartOfPrefabInstance(component))PrefabUtility.RecordPrefabInstancePropertyModifications(component);
     }
+    static void PairNativeInstanceComponents(GameObject sourceNode,GameObject target,
+        Dictionary<UnityEngine.Object,UnityEngine.Object> replacements,List<KeyValuePair<Component,Component>> pairs) {
+        var counters=new Dictionary<Type,int>();
+        foreach(var component in sourceNode.GetComponents<Component>().Where(c=>!(c is Transform))) {
+            if(component==null)throw new InvalidOperationException("Missing component in native instance source");
+            bool derived=false;IdentifyOptionalSpineDerivedComponent(component,ref derived);if(derived)continue;
+            var type=component.GetType();int index=counters.TryGetValue(type,out var count)?count:0;counters[type]=index+1;
+            var candidates=target.GetComponents(type);
+            Component destination=null;
+            ResolveOptionalStaticSpineInstanceCounterpart(component,target,ref destination);
+            if(destination==null)destination=index<candidates.Length?candidates[index]:target.AddComponent(type);
+            if(destination==null)throw new InvalidOperationException("Native instance component unavailable");
+            replacements.Add(component,destination);pairs.Add(new KeyValuePair<Component,Component>(component,destination));
+        }
+        foreach(var component in target.GetComponents<Component>().Where(c=>!(c is Transform))) {
+            if(component is CanvasGroup)continue;
+            bool derived=false;IdentifyOptionalSpineDerivedComponent(component,ref derived);if(derived)continue;
+            if(!pairs.Any(p=>p.Value==component))throw new InvalidOperationException("Native template component has no supported instance counterpart: "+component.GetType().Name);
+        }
+    }
     static void PrepareNativeInstances(Plan plan,string owner,Dictionary<string,GameObject> nodes,Dictionary<string,NodeSpec> sourceNodes) {
         var specs=(plan.sourcePrefabs??new SourcePrefabSpec[0]).ToDictionary(s=>s.sourceId);
         foreach(var instance in (plan.prefabInstances??new PrefabInstanceSpec[0]).Where(s=>s.owner==owner&&s.outermost)) {
@@ -73,21 +94,7 @@ public static partial class MonkeyImporter
                     if(!templateNodes.ContainsKey(pair.templateObject)||!nodes.ContainsKey(pair.instanceObject))throw new InvalidOperationException("Native instance mapping unavailable");
                     var old=nodes[pair.instanceObject];var target=templateNodes[pair.templateObject].gameObject;
                     replacements.Add(old,target);replacements.Add(old.transform,target.transform);
-                    var counters=new Dictionary<Type,int>();
-                    foreach(var component in old.GetComponents<Component>().Where(c=>!(c is Transform))) {
-                        if(component==null)throw new InvalidOperationException("Missing component in native instance source");
-                        bool derived=false;IdentifyOptionalSpineDerivedComponent(component,ref derived);if(derived)continue;
-                        var type=component.GetType();int index=counters.TryGetValue(type,out var count)?count:0;counters[type]=index+1;
-                        var candidates=target.GetComponents(type);
-                        var destination=index<candidates.Length?candidates[index]:target.AddComponent(type);
-                        if(destination==null)throw new InvalidOperationException("Native instance component unavailable");
-                        replacements.Add(component,destination);pairs.Add(new KeyValuePair<Component,Component>(component,destination));
-                    }
-                    foreach(var component in target.GetComponents<Component>().Where(c=>!(c is Transform))) {
-                        if(component is CanvasGroup)continue;
-                        bool derived=false;IdentifyOptionalSpineDerivedComponent(component,ref derived);if(derived)continue;
-                        if(!pairs.Any(p=>p.Value==component))throw new InvalidOperationException("Native template component has no supported instance counterpart: "+component.GetType().Name);
-                    }
+                    PairNativeInstanceComponents(old,target,replacements,pairs);
                 }
                 foreach(var group in instance.mountedChildren??new PrefabMountedChildren[0]) {
                     if(!nodes.ContainsKey(group.parent))throw new InvalidOperationException("Mounted parent missing");

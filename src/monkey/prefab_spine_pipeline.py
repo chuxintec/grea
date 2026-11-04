@@ -2,6 +2,7 @@
 from pathlib import Path
 from .io import read,load,sha,safe,inside,stage_manifest
 from .sources.compiled import fail
+from .prefab_spine_materials import TARGET_ENGINE_FILE_PINS
 
 
 def load_binding(ir,ir_path,receipt_path,expected_sha,resources):
@@ -42,7 +43,7 @@ def load_binding(ir,ir_path,receipt_path,expected_sha,resources):
                     or pose.get('nativeEnabled') is not True or pose.get('nativeTimeScale')!=0
                     or pose.get('animationFrozenBySerializedTimeScale') is not True
                     or pose.get('businessCallbacksExecuted') is not False
-                    or pose.get('targetEngineSourceSha256')!='2e86383e7e7dfb93bc40ec1d7e44c6bb2b8ebe4e95c100ad16620bd24114329'
+                    or pose.get('targetEngineSourceSha256')!=TARGET_ENGINE_FILE_PINS['cocos/spine/skeleton.ts']
                     or pose.get('sourceMaterialRoute')!='Creator sp.Skeleton updateMaterial -> builtinResMgr.get(default-spine-material)'):
                 fail('SPINE_CREATOR_STATIC_POSE','spine','Creator persistent t0 policy is absent or invalid')
             source_binding = (material.get('sourceMaterialBinding') or
