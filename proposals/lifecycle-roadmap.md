@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "dev20/5555010经GREA公开verify15完整只读复核native14，3128输入不变；独立recover15回执已生成，旧journal不改、Unity退出码unknown、不可晋升。903分母637native/178retained/79disabled/9unsupported，整体fail。仍214排序诊断、53文字证据、24字体链不一致，6源Mask缺契约；正式采用未跑。",
+      "description": "dev21/6f66c5d实际refresh16、仅Mask续接16、导出16完成，6Mask/5队列且纹理未解码；native16在嵌套Spine排序交接失败controlled-prefab-owner-pair-not-registered，PID13761退出。新上下文/裁剪/文字尚未完成原生验收，旧证据保留，正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -432,7 +432,8 @@
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-12-dev17-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-13-dev18-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-14-dev19-index.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-15-dev20-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-15-dev20-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-16-dev21-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -465,7 +466,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey按Canvas上下文/Mask/文字三模块修生产证据和转换，实际输入集成回归后固定交付；只读可关闭先只读，C#变动集中新原生，复用18PNG/字体。保源参考、像素栅格和完整视觉验收，不删false。",
+      "nextAction": "monkey按75组件/36嵌套实例全生命周期核注册→模板替换→clone→保存/重开owner配对，实际native16输入完整链路回归；避免单实例补丁。固定刷新复用完整Mask计划、18PNG与字体，GREA唯一Editor再验。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
