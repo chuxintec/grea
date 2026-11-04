@@ -228,6 +228,58 @@ def failed_native_attempts(stage):
     return attempts
 
 
+def export_existing(preparation, expected_plan, native_runtime, expected_native_producer, output):
+    """Continue a failed Python export without replaying verified Editor gates.
+
+    The complete original producer and identical native helper are pinned. This
+    operation reads the original stage and writes only a new export directory.
+    """
+    stage, runtime = safe(preparation), safe(native_runtime)
+    plan_file = inside(stage, 'preparation-plan.json')
+    if digest_file(plan_file) != expected_plan:
+        fail('INTAKE_BINDING_PLAN', str(plan_file), 'Exact original native plan hash required')
+    plan = load(read(plan_file))
+    if plan.get('contract') != CONTRACT or plan.get('implementationSha256') != expected_native_producer:
+        fail('INTAKE_BINDING_IMPLEMENTATION', str(plan_file), 'Explicit original native producer required')
+    inventory = {}; total = 0
+    for path in sorted(runtime.rglob('*')):
+        if path.is_symlink(): fail('SYMLINK_PATH', str(path), 'Original runtime inventory cannot contain links')
+        if not path.is_file() or '__pycache__' in path.parts or path.suffix in ('.pyc','.pyo'): continue
+        total += path.stat().st_size
+        if len(inventory) >= 1024 or total > 64*1024*1024:
+            fail('INTAKE_BINDING_RUNTIME_BUDGET', str(runtime), 'Original runtime exceeds1024 files/64MiB')
+        inventory[path.relative_to(runtime).as_posix()] = digest_file(path)
+    if sha(encoded(inventory)) != expected_native_producer:
+        fail('INTAKE_BINDING_IMPLEMENTATION', str(runtime), 'Original native runtime bytes differ from pinned producer')
+    helper = 'targets/BeaverIntakeBindings.cs'
+    if inventory.get(helper) != digest_file(Path(__file__).parent/helper):
+        fail('INTAKE_BINDING_NATIVE_CHANGED', str(runtime), 'Native helper changed; fresh Editor gates are required')
+    fresh = build_plan(plan['sourceRoot'], plan['targetRoot'], plan['specPath'])
+    if dict(plan, implementationSha256=identity()) != fresh:
+        fail('INTAKE_BINDING_PRECONDITION', str(stage), 'Original source, target pins or spec changed')
+    attempts = failed_native_attempts(stage)
+    if len(attempts) != 2 or any(not p['exited'] or p['exitCode'] != 0 or p['interrupted'] for p in attempts):
+        fail('INTAKE_BINDING_NATIVE_FAILED', str(stage), 'Both original native processes must have reaped successful exits')
+    hashes = []
+    verified = None
+    for mode in ('apply','verify'):
+        report = load(read(inside(stage, mode+'-report.json'), max_bytes=REPORT_BYTES), max_nodes=10000)
+        if report.get('status') != 'verified' or report.get('planSha256') != expected_plan or report.get('mode') != mode:
+            fail('INTAKE_BINDING_NATIVE_FAILED', str(stage), 'Both original native gates must have verified the exact plan')
+        snapshot_reference(stage, report, mode); hashes.append(report['snapshotSha256']); verified = report
+    if hashes[0] != hashes[1] or digest_file(stage/'binding-before.json', max_bytes=SNAPSHOT_BYTES) != hashes[1]:
+        fail('INTAKE_BINDING_CHECKPOINT', str(stage), 'Before/apply/cold snapshots differ')
+    project = inside(stage, 'UnityProject')
+    if (project/HELPER).exists() or (project/(HELPER+'.meta')).exists():
+        fail('INTAKE_BINDING_HELPER_DRIFT', str(project), 'Original preparation must have removed its owned helper')
+    snapshot = load(read(snapshot_reference(stage, verified, 'verify'), max_bytes=SNAPSHOT_BYTES), max_nodes=SNAPSHOT_NODES)
+    from .intake_binding_export import export_prepared
+    result = export_prepared(stage, project, plan, source_files(project), snapshot, output=safe(output))
+    result.update(report=str(safe(output)/'export-receipt.json'), native='verified-original-gates-reused',
+                  originalNativeProducer=expected_native_producer, nativeProcesses=attempts, editorStarted=False)
+    return result
+
+
 def execute(plan_path, expected, output, editor, budget=600):
     if threading.current_thread() is not threading.main_thread() or type(budget) is not int or not 1 <= budget <= 1200:
         fail('INTAKE_BINDING_BUDGET', str(budget), 'Main-thread owner and 1..1200 seconds per Editor phase required')

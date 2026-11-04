@@ -209,8 +209,8 @@ def _parse_reference(prop, where):
         return {"guid": "", "localId": 0, "type": "", "assembly": ""}, None
     if not isinstance(ref["guid"], str) or not _GUID.fullmatch(ref["guid"]):
         fail("INTAKE_BINDING_EXPORT_REFERENCE", where, "Lowercase GUID required")
-    if type(ref["localId"]) is not int or ref["localId"] <= 0:
-        fail("INTAKE_BINDING_EXPORT_REFERENCE", where, "Positive localID required")
+    if type(ref["localId"]) is not int or ref["localId"] == 0 or not -(1 << 63) <= ref["localId"] < (1 << 63):
+        fail("INTAKE_BINDING_EXPORT_REFERENCE", where, "Nonzero signed64 localID required")
     for key in ("type", "assembly", "name", "assetPath", "scriptType", "scriptAssembly"):
         if not isinstance(ref[key], str):
             fail("INTAKE_BINDING_EXPORT_REFERENCE", where + "." + key, "String value required")
@@ -541,7 +541,7 @@ def _candidate_inventory(candidate: Path):
     return rows
 
 
-def export_prepared(stage: Path, project: Path, plan: dict, prepared_files: dict, snapshot: dict) -> dict:
+def export_prepared(stage: Path, project: Path, plan: dict, prepared_files: dict, snapshot: dict, *, output=None) -> dict:
     """Freeze an already verified private preparation copy for ordinary intake."""
     stage = safe(stage)
     project = safe(project)
@@ -584,7 +584,8 @@ def export_prepared(stage: Path, project: Path, plan: dict, prepared_files: dict
             "reason": "Native script rebinding preparation does not promote original source/static acceptance."
         })
 
-    candidate_path = stage / "frozen-candidate"
+    export_root = stage if output is None else new_output(output, [stage, project, source_root, safe(plan["targetRoot"])])
+    candidate_path = export_root / "frozen-candidate"
     if safe(candidate_path).exists():
         fail("OUTPUT_EXISTS", str(candidate_path), "Fresh frozen candidate directory required")
     candidate = new_output(candidate_path, [project, source_root, safe(plan["targetRoot"])])
@@ -600,6 +601,8 @@ def export_prepared(stage: Path, project: Path, plan: dict, prepared_files: dict
                                      max_bytes=MAX_SNAPSHOT_BYTES, max_nodes=MAX_SNAPSHOT_NODES)
     coverage_record = _write_compact(analysis / "typed-coverage.json", coverage,
                                      max_bytes=MAX_SNAPSHOT_BYTES, max_nodes=MAX_SNAPSHOT_NODES)
+    origin_record = _write_compact(analysis / "source-origin.json", dict(origin=origin, manifestsFound=origin_manifests),
+                                   max_bytes=8*1024*1024, max_nodes=MAX_SNAPSHOT_NODES)
     lineage = {
         "schemaVersion": 1,
         "contract": CONTRACT,
@@ -610,8 +613,8 @@ def export_prepared(stage: Path, project: Path, plan: dict, prepared_files: dict
             "sourceProductSnapshotSha256": origin["productSnapshotSha256"],
             "sourceFilesSha256": source_files_sha,
             "owningStatus": origin["owningStatus"],
-            "owningManifest": origin_manifest,
-            "manifestsFound": origin_manifests
+            "owningManifest": None if origin_manifest is None else {k:origin_manifest[k] for k in ('path','sha256','bytes')},
+            "sourceOriginSidecar": origin_record
         },
         "retainedTarget": {"root": str(plan["targetRoot"]), "wrote": False,
                            "scriptPins": [{"path": row["target"], "guid": row["targetGuid"], "sha256": row["targetSha256"],
@@ -634,10 +637,10 @@ def export_prepared(stage: Path, project: Path, plan: dict, prepared_files: dict
         "typedCoverage": {key: value for key, value in coverage.items()
                           if key not in ("unsupportedProperties", "excludedParentProperties")},
         "compilerCoverage": intake_fragments["compilerCoverage"],
-        "sourceState": {"native": output_native, "diagnostics": source_claims.get("diagnostics", []),
+        "sourceState": {"native": output_native, "diagnosticsSha256": sha(_compact(source_claims.get("diagnostics", []))),
                         "preparationDoesNotPromoteSourceAcceptance": True},
         "sidecars": {"serializedOracle": snapshot_record, "intakeSpecFragments": fragment_record,
-                     "typedCoverage": coverage_record},
+                     "typedCoverage": coverage_record,"sourceOrigin":origin_record},
         "limits": ["No formal target changes or intake apply.",
                    "The source owning manifest, if present, is provenance only and does not claim ownership of prepared native files.",
                    "Bridge compiler inputs are not all target compiler coverage.",
@@ -703,5 +706,5 @@ def export_prepared(stage: Path, project: Path, plan: dict, prepared_files: dict
         "typedCoverage": coverage_record["path"],
         "lineageSha256": lineage_record["sha256"]
     }
-    write_json(stage / "export-receipt.json", receipt)
+    write_json(export_root / "export-receipt.json", receipt)
     return receipt

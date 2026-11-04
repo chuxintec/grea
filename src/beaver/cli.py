@@ -72,7 +72,7 @@ def capabilities():
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
         dict(id="adoption.rollback", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native normal/failed transaction restore; later-edit rejection"),
         dict(id='intake.plan/apply/rollback',state='requires_provider',provider='Unity 6000.6.2f1 for native phases',effects='create-only-reviewed-assets-and-guarded-owned-removal',verification='independent contract; exact before-state, explicit retained scripts, declared native fields; no existing adoption baseline override'),
-        dict(id='intake.bindings-plan/prepare-bindings',state='requires_provider',provider='Unity 6000.6.2f1 for preparation only',effects='new-isolated-source-copy; retained target read-only',verification='byte-identical source/target script pins; native GUID rebinding and full serialized comparison/cold reopen required; no adoption claim'),
+        dict(id='intake.bindings-plan/prepare-bindings/export-bindings',state='requires_provider',provider='Unity 6000.6.2f1 for preparation only; export continuation reuses exact original native gates',effects='new-isolated-source-copy-or-export; retained target read-only',verification='byte-identical script pins; native full comparison/cold reopen; exact original producer and identical helper required to continue export; no adoption claim'),
         dict(id="unity.plan", state="implemented", effects="plan-output", verification="python; exact source and implementation identity"),
         dict(id="unity.ui.create", state="requires_provider", provider="Unity 6000.6.2f1 + uGUI/TMP Essentials + explicit font", effects="project-write", verification="native save/reopen/source audit"),
         dict(id="unity.prefab.inspect", state="requires_provider", provider="Unity 6000.6.2f1", effects="temporary-editor-helper", verification="native hierarchy/localID/component/importer readback"),
@@ -154,6 +154,8 @@ def parser():
     binding_prepare = intake.add_parser('prepare-bindings')
     for option in ('plan','expected-plan','out','editor-path'):binding_prepare.add_argument('--'+option,required=True)
     binding_prepare.add_argument('--timeout',type=int,default=600)
+    binding_export = intake.add_parser('export-bindings')
+    for option in ('preparation','expected-plan','native-runtime','expected-native-producer','out'):binding_export.add_argument('--'+option,required=True)
     intake_plan = intake.add_parser('plan')
     for option in ('candidate','target','spec','out'):intake_plan.add_argument('--'+option,required=True)
     intake_apply = intake.add_parser('apply')
@@ -407,6 +409,9 @@ def dispatch(a):
         from .adoption_native import recover
         return recover(a.transaction, a.editor_path, a.timeout)
     if a.command=='intake':
+        if a.action=='export-bindings':
+            from .intake_bindings import export_existing
+            return export_existing(a.preparation,a.expected_plan,a.native_runtime,a.expected_native_producer,a.out)
         if a.action=='bindings-plan':
             from .intake_bindings import preview
             return preview(a.source,a.target,a.spec,a.out)
@@ -576,6 +581,9 @@ def main(argv=None):
         if a.command=='intake' and a.action=='prepare-bindings':
             base['actualChanges']=[dict(operation='intake.prepare-bindings',preparationDirectory=a.out,targetProjectWrites=False)]
             base['verification']['native']=data.get('native','not_run')
+        if a.command=='intake' and a.action=='export-bindings':
+            base['actualChanges']=[dict(operation='intake.export-bindings',exportDirectory=a.out,targetProjectWrites=False,originalPreparationWrites=False)]
+            base['verification']['native']=data.get('native','not_run')
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
         if a.command=='unity' and a.action=='recover':
@@ -640,6 +648,8 @@ def main(argv=None):
         if getattr(a,'command',None)=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
             base['actualChanges']=[dict(status='inspect_recovery_receipt',report=str(Path(a.out,'recovery-result.json')),reason='Recovery can fail after partial writes; inspect the separate receipt')]
         if isinstance(error,BeaverError):
+            if getattr(a,'command',None)=='intake' and a.action=='export-bindings' and Path(a.out).is_dir():
+                base['actualChanges']=[dict(status='inspect_export_directory',exportDirectory=a.out,targetProjectWrites=False,originalPreparationWrites=False,reason='New export may be incomplete; no Editor was invoked by this continuation')]
             if getattr(a,'command',None)=='intake' and a.action=='prepare-bindings' and Path(a.out).is_dir():
                 base['actualChanges']=[dict(status='inspect_isolated_preparation_copy',preparationDirectory=a.out,targetProjectWrites=False,reason='Native preparation may have failed after isolated writes; preserve evidence; output is not adoptable')]
                 from .intake_bindings import failed_native_attempts

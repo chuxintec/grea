@@ -10,8 +10,8 @@ from beaver.candidate_snapshot import snapshot as read_candidate, verify as veri
 from beaver.errors import BeaverError
 from beaver.intake import build_plan as intake_build_plan
 from beaver.intake_binding_export import export_prepared
-from beaver.intake_bindings import build_plan
-from beaver.io import load, read, sha, write_json
+from beaver.intake_bindings import build_plan, export_existing
+from beaver.io import load, read, sha, write_json, encoded
 from beaver.output_limits import digest_file
 from beaver.unity import source_files
 from helpers import finish
@@ -33,6 +33,9 @@ class BindingExportTests(unittest.TestCase):
         prefab_bytes = (b"--- !u!114 &11400000\nMonoBehaviour:\n  m_Script: "
                         b"{fileID: 11500000, guid: " + SOURCE_GUID.encode() + b", type: 3}\n")
         _write_asset(source, "Assets/Panel.prefab", prefab_bytes, PREFAB_GUID)
+        _write_asset(source, "Assets/Material.mat", b"neutral synthetic material fixture", "6" * 32)
+        with (source / "Assets/Panel.prefab").open('ab') as stream:
+            stream.write(b"  m_SharedMaterial: {fileID: -2100000, guid: "+b"6"*32+b", type: 2}\n")
         finish(source, dict(schemaVersion=1, targetProfile="unity-6000.6.2f1-ugui",
                             namespace="source-partial", native="partial", diagnostics=["source remains partial"]))
         binding = dict(source="Assets/Widget.cs", sourceGuid=SOURCE_GUID, sourceType="Widget",
@@ -67,7 +70,7 @@ class BindingExportTests(unittest.TestCase):
         prepared_prefab = project / "Assets/Panel.prefab"
         prepared_prefab.write_bytes(prepared_prefab.read_bytes().replace(SOURCE_GUID.encode(), TARGET_GUID.encode()))
         prepared_files = source_files(project)
-        plan_sha = "a" * 64
+        plan_sha = sha(encoded(plan))
         write_json(stage / "preparation-plan.json", plan)
         write_json(stage / "binding-job.json", dict(projectRoot=str(project), bridgeRoot="Assets/BeaverIntakeBindings",
                                                      bridgeAssembly="Beaver.IntakeBindings", planSha256=plan_sha, mode="verify"))
@@ -83,10 +86,13 @@ class BindingExportTests(unittest.TestCase):
                           value=f"{TARGET_GUID}#11500000|UnityEditor.MonoScript@UnityEditor.CoreModule|script:Widget@Assembly-CSharp",
                           reference=script_ref),
                      dict(path="m_Count", type="Integer:int", value="7"),
+                     dict(path="m_SharedMaterial",type="ObjectReference:PPtr<Material>",value="6"*32+"#-2100000|UnityEngine.Material@UnityEngine.CoreModule|script:@",
+                          reference=dict(guid="6"*32,localId=-2100000,type="UnityEngine.Material",assembly="UnityEngine.CoreModule",name="Material",assetPath="Assets/Material.mat",scriptType="",scriptAssembly="")),
                      dict(path="m_EditorClassIdentifier", type="String", value="binding:Widget")
                  ])
         ])])
         snapshot_bytes = json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        (stage / 'binding-before.json').write_bytes(snapshot_bytes)
         for mode in ("apply", "verify"):
             leaf = mode + "-snapshot.json"
             (stage / leaf).write_bytes(snapshot_bytes)
@@ -121,9 +127,11 @@ class BindingExportTests(unittest.TestCase):
             self.assertEqual(len(fragments["externalScripts"]), 1)
             self.assertEqual(fragments["externalScripts"][0]["sourceGuid"], TARGET_GUID)
             self.assertTrue(fragments["compilerCoverage"]["remainingCoverageRequired"] is False)
+            material=next(field for obj in fragments['spec4Fragment']['verifications'][0]['objects'] for field in obj['fields'] if field['propertyPath']=='m_SharedMaterial')
+            self.assertEqual(material['value']['localId'],-2100000)
             spec4 = dict(schemaVersion=4, operation="additive-intake",
                          candidateManifestSha256=manifest_sha,
-                         additions=[dict(source="Assets/Panel.prefab", target="Assets/Recovered/Panel.prefab")],
+                         additions=[dict(source="Assets/Panel.prefab", target="Assets/Recovered/Panel.prefab"),dict(source="Assets/Material.mat",target="Assets/Recovered/Material.mat")],
                          externalScripts=fragments["externalScripts"],
                          omittedCompilerInputs=fragments["omittedCompilerInputs"],
                          verifications=fragments["spec4Fragment"]["verifications"],
@@ -165,6 +173,32 @@ class BindingExportTests(unittest.TestCase):
                 self.export(f)
             self.assertEqual(caught.exception.code, "INTAKE_BINDING_EXPORT_DRIFT")
 
+    def test_readonly_export_continuation_checks_original_producer_and_processes(self):
+        import beaver
+        with tempfile.TemporaryDirectory() as temp:
+            f=self.fixture(Path(temp).resolve());stage=f['stage'];expected=sha(encoded(f['plan']));producer=f['plan']['implementationSha256']
+            for n,mode in enumerate(('apply','verify')):write_json(stage/(mode+'-process.json'),dict(pid=12345+n,exited=True,exitCode=0,interrupted=False))
+            before={str(p.relative_to(stage)):sha(p.read_bytes()) for p in stage.rglob('*') if p.is_file()}
+            runtime=Path(beaver.__file__).parent
+            result=export_existing(stage,expected,runtime,producer,f['root']/'resumed')
+            self.assertFalse(result['editorStarted']);self.assertEqual(result['native'],'verified-original-gates-reused')
+            self.assertEqual(before,{str(p.relative_to(stage)):sha(p.read_bytes()) for p in stage.rglob('*') if p.is_file()})
+            for bad_producer in ('0'*64,):
+                with self.assertRaises(BeaverError):export_existing(stage,expected,runtime,bad_producer,f['root']/'uncreated')
+            write_json(stage/'verify-process.json',dict(pid=12346,exited=False,exitCode=None,interrupted=False))
+            with self.assertRaises(BeaverError) as caught:export_existing(stage,expected,runtime,producer,f['root']/'uncreated')
+            self.assertEqual(caught.exception.code,'INTAKE_BINDING_NATIVE_FAILED')
+
+    def test_signed_reference_boundaries_keep_zero_and_invalid_values_rejected(self):
+        from beaver.intake_binding_export import _parse_reference
+        with tempfile.TemporaryDirectory() as temp:
+            f=self.fixture(Path(temp).resolve());prop=f['snapshot']['prefabs'][0]['owners'][1]['properties'][2]
+            self.assertEqual(prop['reference']['localId'],-2100000)
+            _parse_reference(prop,'material')
+            for value in (0,True,-(1<<63)-1,1<<63):
+                bad=copy.deepcopy(prop);bad['reference']['localId']=value
+                with self.assertRaises(BeaverError):_parse_reference(bad,'material')
+
     @staticmethod
     def refresh_native_snapshot(f, snapshot):
         raw = json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -172,7 +206,7 @@ class BindingExportTests(unittest.TestCase):
             leaf = mode + "-snapshot.json"
             (f["stage"] / leaf).write_bytes(raw)
             write_json(f["stage"] / (mode + "-report.json"),
-                       dict(status="verified", mode=mode, planSha256="a" * 64,
+                       dict(status="verified", mode=mode, planSha256=snapshot['planSha256'],
                             snapshotFile=leaf, snapshotSha256=sha(raw), snapshotBytes=len(raw)))
 
 

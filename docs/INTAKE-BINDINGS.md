@@ -87,3 +87,21 @@ acceptance and full original behavior recovery are outside this operation.
 Failure envelopes distinguish a prelaunch failure (`native: not_run`) from a
 started Editor gate (`native: failed`, with owned PID/exit receipts) and an
 unreaped Editor (`native: attempted_exit_pending`). Preserve those receipts.
+
+
+A failed Python export can continue with `intake export-bindings --preparation
+ORIGINAL_STAGE --expected-plan ORIGINAL_PLAN_SHA --native-runtime
+ORIGINAL_BEAVER_PACKAGE_ROOT --expected-native-producer ORIGINAL_PRODUCER_SHA
+--out FRESH_EXPORT_DIRECTORY`. The entire original runtime inventory is pinned
+(max1024 files/64MiB), its producer must match the old plan, and its native helper
+must be byte-identical to the current helper. Both original processes must have
+exited successfully and the before/apply/cold snapshots must be identical. Source,
+retained script, spec and provenance pins are freshly checked. The original stage
+is read-only; this command creates only the new export, never invokes Editor or
+replays native gates. A native helper change requires fresh preparation.
+
+Unity persistent localIDs are signed64 values. Export preserves negative material
+subasset IDs exactly; zero, booleans and out-of-range IDs remain invalid. Null
+references use the complete empty identity tuple. Source provenance is stored
+once in an owned8MiB sidecar; the1MiB lineage binds that sidecar rather than
+duplicating large original claims.
