@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "status": "limited_pass_consumer_pending",
+  "provider_version": "0.5.1.dev20261102+fix25",
+  "source_commit": "43adf741efcbad6d8075d8e582eb1d817652e526",
+  "producer_sha256": "3c3425936301e7a0c4b988b8d9405cff7a9cd61541c959cb3db76597750495ee",
+  "delivery_sha256": "7fd6e5d1df3d3127f62f1c0cbad0bf6f104a47b2980fff7fff27d0b389d1cc87",
+  "wheel_sha256": "260959c38999f781422a40f94e66731e37709de1fca4762f886cfecd54329eb1",
+  "runtime_files_matched": 137,
+  "contract_documents_verified": 4,
+  "native_evidence_leaf_files_verified": 27,
+  "additional_oracle_font_and_prior_recovery_pins_verified": 6,
+  "contract": "beaver-additive-intake/2",
+  "spec_versions": [
+    1,
+    2
+  ],
+  "operations": [
+    "intake.plan",
+    "intake.apply",
+    "intake.rollback"
+  ],
+  "cli": "public pin ready; neutral spec2 retained-resource/package declaration plan and four schema/closure rejections; wrong-SHA apply/rollback blocked; unrelated inspect not executed",
+  "stdio_mcp": "spec2 plan ok/native not_run; missing-array transport partial with provider blocked/native not_run",
+  "focused_tests": 101,
+  "source_font_read": "original and isolated copy asset/meta SHA matched; GREA read-only",
+  "independent_reference_crosscheck": {
+    "oracle_visited": 3342428,
+    "oracle_references": 26,
+    "all_external_references": 29,
+    "preflight_cold_rollback_exact_match": true,
+    "receipt_sha256": "ebd638899922218e84ed10df3d54edbb0cbeca71821cc7aa66c0f5b57db0c301",
+    "oracle_os_exit": "unknown after interrupted original tool turn; not claimed zero"
+  },
+  "upstream_native_reused": {
+    "receipt_sha256": "8eb4b1a01ba6f008b95848ab01968d9eb1bbf7136b58e54083392f676339b3c6",
+    "font_objects": 3,
+    "external_objects": 5,
+    "new_asset": 1,
+    "rollback_original_files": 55,
+    "reference_and_complex_array_limit": 250001,
+    "limits_unchanged": 250000,
+    "later_font_edit": "preserved; rollback native not_run"
+  },
+  "scope": "Thin routing and frozen proof review; no native rerun, Editor, screen or product writes",
+  "old_fix24_transaction": "original runtime zero-import rollback preserved; no replay or migration",
+  "source_candidate": "unchanged TipUI reused; no regeneration required",
+  "consumer": "pending owner fresh fixed25 plan and actual intake",
+  "source_partial_rule": "preserve partial/exit1 with intakeStatus verified; no automatic replay",
+  "visual": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "push": false,
+  "install": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "5ad0bea7ae1e698fbe2aa0dbcb40c178f60910213bcc0ea7601ab1a89dba18ab",
+    "originalBytes": 2519,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

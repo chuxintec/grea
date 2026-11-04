@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-01",
+  "version": "0.5.1.dev20261101+fix18",
+  "sourceCommit": "b5e9b034c3cb850168f3cd1e97d51a6e1063f9fc",
+  "producer": "878a710de4899861adf497f46bc56b8853c1725bcae5fec679d53008d1c2c1f2",
+  "wheelSha256": "09dc1846e4d5556e667c8d1122e748048f5024e58861cbce24214223cd1f4499",
+  "runtimeFilesEqualCommitWheelInstall": 132,
+  "contractHashesVerified": {
+    "CLI-CONTRACT.md": "67084602d90e344bab16bd1947ee5dec9bc3716e65e93e430aea7a6b7fc9314b",
+    "SDK-MIGRATION.md": "738eef1fd9e184aa9b215ce4985e09f98dfc05890e96cbfa32b8f887a72a1fcf",
+    "QA-BINDING.md": "243328c3de58f6dd49e9d57a32068a71aa22de6a01f51d79193a07ccb522bf60",
+    "QA-RUNTIME.md": "bf90c91057c36e6137e90ab5e1f68283f7bb77bf730c084420b190cf1e5f0335",
+    "ADOPTION-ASSEMBLIES.md": "203cf92cc3eafb265187223c3ac1defa83174dec242dd329585ea16cc2405bef",
+    "ADOPTION-DEPENDENCIES.md": "6561788bccecc84e8f303d7c2c3d634b9608661769114a434866fdb1bfa54969",
+    "BUILD-POLICY.md": "98170389aa3a554f5b654adde75f57c56f11cacfd02c5c68f919a5972de07056"
+  },
+  "actualPublicPin": "ready",
+  "actualPublicConsumption": {
+    "sdk-positive-plan": {
+      "status": "ok",
+      "executed": true,
+      "diagnosticCodes": [],
+      "verification": {
+        "native": "not_run",
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    },
+    "sdk-default-conflict": {
+      "status": "blocked",
+      "executed": true,
+      "diagnosticCodes": [],
+      "verification": {
+        "native": "not_run",
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    },
+    "qa-missing-run": {
+      "status": "blocked",
+      "executed": true,
+      "diagnosticCodes": [
+        "QA_UNKNOWN_OWNERSHIP"
+      ],
+      "verification": {
+        "native": "not_run",
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    },
+    "qa-bind-refused": {
+      "status": "blocked",
+      "executed": true,
+      "diagnosticCodes": [
+        "QA_UNKNOWN_OWNERSHIP"
+      ],
+      "verification": {
+        "native": "not_run",
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    },
+    "qa-invalid-session": {
+      "status": "blocked",
+      "executed": true,
+      "diagnosticCodes": [
+        "QA_BIND_SESSION_SCHEMA"
+      ],
+      "verification": {
+        "native": "not_run",
+        "player": "not_run",
+        "visual": "not_run",
+        "business": "not_run"
+      }
+    }
+  },
+  "positivePlanSha256": "303dadc01b0a484b9490de597a93d7647081497b0c3e794c959c816efa8787ae",
+  "negativePlanSha256": "afcf165783f81a4e6e258650c0c199782fc2fd87abb7a03bc1b2958457a27ca5",
+  "migrationSpecHashRetained": true,
+  "defaultSdkConflicts": 4,
+  "isolatedTargetMatchesFrozenBaselineFiles": 35,
+  "targetedTests": 81,
+  "partialEffects": "mocked invoke: partial/exit1 retains unknown counts or nonzero posted/AX effects; single execution, no replay",
+  "inputGuard": "new finite named operations, paired SDK path/hash, backend enum and uint32 window, stable required QA identifiers, no raw argv",
+  "producerNativeAcceptance": "Fixed original receipts read-only SHA-verified; SDK independent reopen native flags verified and neutral GUI review passed; no GREA reexecution",
+  "consumerNativeAcceptance": "SDK migration pending; App40 instance binding/normal exit reported passed, actual login input not accepted",
+  "editorStarted": false,
+  "desktopInputPerformed": false,
+  "globalInstallation": false,
+  "remotePush": false,
+  "limits": [
+    "This GREA acceptance covers public read-only plans and pre-native refusal, not SDK writes or genuine input.",
+    "No changes to active upstream NativeTarget; used independent frozen baseline copy.",
+    "Old fix17/default and fixed12 source/font evidence remain separate."
+  ],
+  "fixedDeliverySha256": "719cfe5d643130fa7ef7a7682629f4d7fd1030f198fe60578689d861afb268d7",
+  "fixedEvidenceSha256": {
+    "sdk-plan-cli.json": "c95bfae32bc458c30122c1a88c33c68127a0e428b2990fc5eb93c21d2f4f9ea1",
+    "sdk-apply-cli.json": "b579af3fbfda541f5973481d675e5868a16fc5204e129114b5589f9b84b7acfa",
+    "sdk-rollback-cli.json": "a0338394dc8a05d56fc35ea82d5622810ec861bee7ac534d3904dfee69b1b065",
+    "gui-fixed-review.json": "4777659cde8d33ea32459bbf00076b0665e8ae68e24c2ee53a89f9abb7e06339",
+    "gui-bind-cli.json": "d5270de4fe230d01e3c8518fca35dbdca6901441debbbb87782a2aa8bebffc97",
+    "gui-live-collect-cli.json": "ee2700784141ac03f61a1da9fb51048f02d6b3c83509ae99f4659e689afd7d42",
+    "gui-exited-collect-cli.json": "c8a232064ec9aa1b9e3562bfd5d85c080774d8c8082976c51f6905bef1740e9a",
+    "gui-stale-cli.json": "43ab66e5d7770ab52202332c816baf117631bdea1000c3b575417876fcb958bd",
+    "default-sdk-conflict-cli.json": "ec574ff0fb0e5f90a68d899c3c529a4479c44a4ded851c92bcd66d7244f91416",
+    "installed-tests.log": "134d8c50bd4bf7ddcf011c6720be6723516ccf347c5598d165fb188a2e934971",
+    "sdk-native-code.json": "1c49ca43ec52ebe2302411cc32abfd17d12aa75bbffd4678ba358061db1cdad9",
+    "sdk-native-apply.json": "6334237e3317ea04932e26d6c7df6e4ffb062d376b581e0c7abc62236c706966",
+    "sdk-native-verify.json": "8d923c76b8a6b2b453bd7b3d26c11db179546ec726da20b606f741bfb10615e4",
+    "sdk-native-rollback.json": "fe7ac7dab119b94840f7618add7863565dee2d978aa1d5e885588b1a84ecad0a"
+  },
+  "producerSdkProof": {
+    "apply": "adopted",
+    "independentColdReopen": "verified",
+    "rollback": "rolled-back",
+    "canonicalMonoScripts": 32,
+    "canonicalGuidLocalIdTypePreserved": true,
+    "editorLoadedMvidVerified": true,
+    "inactivePlayerMonoScriptsObserved": [],
+    "inactivePlayerEvidence": "native-before-byte-identical-player; exact previous canonical DLL SHA/MVID",
+    "ownedOperations": 5,
+    "oldReferenceVerified": true,
+    "playerRuntime": "not_run",
+    "original11AssetFilesRestored": true
+  },
+  "producerQaProof": {
+    "backend": "macos-native-ax-pid/1",
+    "newStrongLaunchRequired": true,
+    "oldPrepareOwnerCompatible": true,
+    "legacyUnknownOriginNotUpgraded": true,
+    "sessionMinutes": 5,
+    "windowIdRange": [
+      1,
+      4294967295
+    ],
+    "fixedNeutral": "click/text/drag/window screenshot/live collect/normal close/exited collect/stale refusal passed",
+    "twoSameBundleInstances": "diagnostic source-native helper identical to fixed; counters 0/0 -> 1/0 -> 1/1; foreign window blocked",
+    "desktopReleased": true
+  },
+  "producerInstalledTests": 99,
+  "consumerApp40": {
+    "evidenceClass": "provider message reporting actual consumer difference; underlying project receipts not independently inspected here",
+    "instanceIdentity": "process/birth/owner/profile/window passed",
+    "normalExitCollect": "passed",
+    "loginInput": "click and text did not produce login effect",
+    "coordinateOwnership": "provider reports window-logic coordinates valid; no claim of consumer-coordinate error",
+    "coordinateBackendHypothesis": "Unity may consume CG screen position rather than Cocoa window-relative payload; diagnostic only, not confirmed",
+    "fixed18Changed": false,
+    "newPublicVersionAllowed": false,
+    "next": "Wait for provider diagnosis and any new immutable producer plus real consumer handling evidence"
+  },
+  "publicHistoricalCopy": {
+    "originalSha256": "cb9b853debaeed7d1c5f128c83510d7c52caad2319e8706109887468d56d1473",
+    "originalBytes": 7246,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

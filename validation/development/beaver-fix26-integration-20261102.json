@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "status": "limited_pass_consumer_pending",
+  "provider_version": "0.5.1.dev20261102+fix26",
+  "source_commit": "8c26168597c25986f066dc1ae3d5669135da9d36",
+  "producer_sha256": "e62c40cf03d5be2eeba64bb11a8b4badef945df8cbe139aaea13f06323403fb3",
+  "delivery_sha256": "6c42fc38b0ed08a3cf4208a5ae17c8de8776a6f6fe163345cd64297bbd605471",
+  "wheel_sha256": "00e56542bd7ea7fa420abb691357c9f87bea09c5d994a198d9116ef64db3e0ff",
+  "runtime_files_matched": 137,
+  "contract_documents_verified": 5,
+  "native_evidence_leaf_files_verified": 98,
+  "contract": "beaver-additive-intake/3",
+  "spec_versions": [
+    1,
+    2,
+    3
+  ],
+  "operations": [
+    "intake.plan",
+    "intake.apply",
+    "intake.rollback"
+  ],
+  "cli": "public pin ready; spec3 one-script declaration plan; five schema/compiler refusals; wrong-SHA apply/rollback blocked; insufficient budget and unrelated operation not executed",
+  "stdio_mcp": "spec3 plan ok/native not_run; missing-newScripts transport partial/provider blocked",
+  "focused_tests": 105,
+  "budgets": {
+    "apply": "5*inner+310",
+    "rollback": "2*inner+160",
+    "inner_maximum": 280,
+    "outer_maximum": 1800,
+    "old_fix23_25": "unchanged 3/2 phases +130"
+  },
+  "upstream_native_reused": {
+    "positive": {
+      "newScripts": 2,
+      "prefabOwners": 8,
+      "fields": 19,
+      "characters": [
+        42,
+        0,
+        65535
+      ],
+      "independentCodeCheck": true,
+      "independentColdVerify": true,
+      "laterEdit": {
+        "laterEditPreserved": true,
+        "journalAndEvidenceUnchanged": true,
+        "native": "not_run"
+      },
+      "restored": 3
+    },
+    "typeConflict": {
+      "beforeCodeStaging": true,
+      "restored": 0
+    },
+    "compileFailure": {
+      "beforeAssetImport": true,
+      "compilerErrorObserved": true,
+      "laterEdit": {
+        "laterEditPreserved": true,
+        "journalAndEvidenceUnchanged": true,
+        "native": "not_run"
+      },
+      "restoreCode": true,
+      "restored": 2
+    },
+    "wrongIntegerKind": {
+      "nativeRefused": true,
+      "restored": 3
+    },
+    "exactOriginalFiles": 42,
+    "exactOriginalDirectories": true,
+    "oldSourceTrialsUnchanged": true,
+    "screen": "not_used",
+    "player": "not_run",
+    "visual": "not_run",
+    "business": "not_run",
+    "receipt_sha256": "e5e09e9ea8774850c8125810dbbbde0bc131d78a90d7711e7307f93a71145409",
+    "independent_processes": [
+      {
+        "exitCode": 0,
+        "exited": true,
+        "interrupted": false,
+        "pid": 99381
+      },
+      {
+        "exitCode": 0,
+        "exited": true,
+        "interrupted": false,
+        "pid": 99650
+      },
+      {
+        "exitCode": 0,
+        "exited": true,
+        "interrupted": false,
+        "pid": 99882
+      },
+      {
+        "exitCode": 0,
+        "exited": true,
+        "interrupted": false,
+        "pid": 214
+      }
+    ]
+  },
+  "consumer": "pending formal owner new spec3 plan and actual intake; neutral fixture is not game acceptance",
+  "source_partial_rule": "preserve partial/exit1 with intakeStatus verified; no automatic replay",
+  "grea_editor_started": false,
+  "product_writes": false,
+  "visual": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "push": false,
+  "install": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "3b31c5a26da4cb36c5206569df31b6c86adf351b1987a03c78e9a91d484587a9",
+    "originalBytes": 3294,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

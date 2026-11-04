@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "scoped_consumer_pass_source_partial",
+  "completion_sha256": "94eb3b149fd4ca36002cb2b2e19151edf8c084d527dbd325e756a96019f4e924",
+  "plan_sha256": "7b30da738b1f62e6408941179ed3730d141562ddc2109d6a8bca6a12c8c82489",
+  "journal_sha256": "13e50aaab1f2c55977842fa9445fcba0eb1b6ca1cb9043fe70ed77b0e0c775ff",
+  "producer_sha256": "3c3425936301e7a0c4b988b8d9405cff7a9cd61541c959cb3db76597750495ee",
+  "candidate_manifest_sha256": "1505d3f3b9410aefaf94baee65b8e20163eedcb695d1d06b3c17dbe07a7d8dda",
+  "existing_entries_recorded_preserved": 126445,
+  "new_files_current_sha_verified": 2,
+  "native_owners": 15,
+  "typed_fields": 206,
+  "object_reference_fields": 35,
+  "project_scripts": 1,
+  "official_package_scripts": 2,
+  "independent_processes": [
+    {
+      "exitCode": 0,
+      "exited": true,
+      "interrupted": false,
+      "pid": 12350
+    },
+    {
+      "exitCode": 0,
+      "exited": true,
+      "interrupted": false,
+      "pid": 12992
+    }
+  ],
+  "public_status": "partial",
+  "intake_status": "verified",
+  "formal_distinct_adopted_roots": 6,
+  "source_denominator_increase": 0,
+  "source_diagnostics": "2 historical SDK records retained",
+  "old_tip_and_fix24_journals": "retained; frozen SHA checked separately",
+  "formal_new_rollback": "not_run",
+  "grea_editor_started": false,
+  "product_writes": false,
+  "visual": "not_run",
+  "visible_edits": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "push": false,
+  "install": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "e19966490dcb0e3fdd2075c9968769570fbe41496536af653d2e264260f4e75a",
+    "originalBytes": 1516,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

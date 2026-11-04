@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "status": "exact_dual_lane_binding_verified_formal_consumers_pending",
+  "version": "0.6.0.dev20261102+fix27",
+  "source_commit": "8bb6bf34ef6d965ba51cfeed0e573b720b7e4d2e",
+  "producer_sha256": "88acc905abc700070e4b7761bf97416d0eb0c09966ceec2849c3a02ff32656eb",
+  "delivery_sha256": "7b7caeffde9b5678de32bcc0b98f8cd915d6be15dc721dc66240b6d5ef84569d",
+  "runtime_verification": {
+    "runtime_files": 141,
+    "index_pins_verified": 17,
+    "source_commit": "8bb6bf34ef6d965ba51cfeed0e573b720b7e4d2e",
+    "delivery_sha256": "7b7caeffde9b5678de32bcc0b98f8cd915d6be15dc721dc66240b6d5ef84569d"
+  },
+  "additional_evidence_pins_verified": 6,
+  "companion_unchanged_sha256": "3ef50940335fd9bace767d722dd0f8db32f08980143ca51ef578f737b99bc731",
+  "operations": [
+    "intake.apply",
+    "intake.plan",
+    "intake.rollback",
+    "qa.collect",
+    "qa.launch",
+    "qa.prepare",
+    "qa.virtual-bind",
+    "qa.virtual-input",
+    "qa.virtual-prepare",
+    "qa.virtual-status",
+    "qa.virtual-stop"
+  ],
+  "virtual_checks": {
+    "cli_prepare": "real private channel creation; no Player launched",
+    "cases": [
+      {
+        "case": "prepare-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SPEC_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "bind-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_CHANNEL_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "input-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SESSION_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "status-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SESSION_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "stop-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SESSION_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "mcp-prepare",
+        "status": "ok",
+        "transport": "ok",
+        "native": "not_run"
+      },
+      {
+        "case": "mcp-stop-refused",
+        "status": "blocked",
+        "transport": "partial",
+        "native": "not_run"
+      }
+    ],
+    "own_test_channels_cleaned": [
+      {
+        "channel_id": "32d9769809584cdda122a51c032975eb",
+        "unbound_private_directory_removed": true,
+        "no_endpoint_or_client_state": true,
+        "credentials_not_in_reports": true
+      },
+      {
+        "channel_id": "e9421acfbfbf476f9eb91224b1f30de6",
+        "unbound_private_directory_removed": true,
+        "no_endpoint_or_client_state": true,
+        "credentials_not_in_reports": true
+      }
+    ],
+    "virtual_input": "not_dispatched_by_GREA; neutral matrix reused",
+    "native": "not_run",
+    "visual": "not_run",
+    "business": "not_run",
+    "formal_consumer": "pending T0060"
+  },
+  "intake_checks": {
+    "editor_started": false,
+    "maximum_native_phases": 5,
+    "negatives": [
+      {
+        "case": "missing-new-scripts",
+        "codes": [
+          "INTAKE_SPEC_FIELDS"
+        ],
+        "status": "blocked"
+      },
+      {
+        "case": "wrong-script-pin",
+        "codes": [
+          "INTAKE_NEW_SCRIPT_PIN"
+        ],
+        "status": "blocked"
+      },
+      {
+        "case": "wrong-script-domain",
+        "codes": [
+          "INTAKE_SPEC_ASSEMBLY"
+        ],
+        "status": "blocked"
+      },
+      {
+        "case": "undeclared-compiler",
+        "codes": [
+          "INTAKE_COMPILER_COVERAGE"
+        ],
+        "status": "blocked"
+      },
+      {
+        "case": "spec2-with-new-scripts",
+        "codes": [
+          "INTAKE_SPEC_FIELDS"
+        ],
+        "status": "blocked"
+      },
+      {
+        "case": "apply-wrong-hash",
+        "executed": true,
+        "status": "blocked"
+      },
+      {
+        "case": "rollback-wrong-hash",
+        "executed": true,
+        "status": "blocked"
+      },
+      {
+        "case": "apply-short-budget",
+        "executed": false,
+        "status": "needs_action"
+      },
+      {
+        "case": "nonintake-refused",
+        "executed": false,
+        "status": "needs_action"
+      }
+    ],
+    "new_scripts": 1,
+    "positive": "spec3 declaration plan only; no native compilation claim",
+    "target_unchanged": true
+  },
+  "old_plan_refusal": {
+    "status": "blocked",
+    "code": "INTAKE_IMPLEMENTATION",
+    "original_plan_sha256": "0a63f991a454a37e7cb48f10628d00759f8a3aaed368d16e3300311e13872086",
+    "old_producer": "e62c40cf03d5be2eeba64bb11a8b4badef945df8cbe139aaea13f06323403fb3",
+    "target_unchanged": true,
+    "editor_started": false
+  },
+  "focused_contract_tests": 17,
+  "unchanged_prior_checks_reused": 110,
+  "producer_installed_checks_reused": {
+    "run": 138,
+    "passed": true,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "schemaRuntime": "existing GREA dependencies appended; installed beaver import asserted"
+  },
+  "producer_native_reused": {
+    "intake": {
+      "status": "fixed-installed-native-watcher-verified",
+      "producer": "88acc905abc700070e4b7761bf97416d0eb0c09966ceec2849c3a02ff32656eb",
+      "positive": {
+        "newScripts": 2,
+        "fieldsChecked": 19,
+        "watchersChecked": 2,
+        "watcherResolutions": 2,
+        "independentCodeCheckAndColdReopen": true,
+        "sourcePartialPreserved": true
+      },
+      "rollback": {
+        "restored": 3,
+        "exited": true,
+        "allOriginalBeforeEntriesEqual": 45
+      },
+      "evidence": [
+        {
+          "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/watcher-intake-20261102/fixed27/plan-cli.json",
+          "sha256": "302113554804df261c2e281ddab1f2a4b098997fb1c7d86f48caff85829a4126",
+          "bytes": 1056
+        },
+        {
+          "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/watcher-intake-20261102/fixed27/apply-cli.json",
+          "sha256": "e057107a24ab2716a41606434cfa9653dfb898a1e36f83eec4a79cf6b00d52b4",
+          "bytes": 1894
+        },
+        {
+          "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/watcher-intake-20261102/fixed27/rollback-cli.json",
+          "sha256": "b43de2f4a3818af2da2b86d11656389d9246640021cd1098fcd2da833a36a6d4",
+          "bytes": 1065
+        }
+      ],
+      "unchangedNativeNegativeBoundary": {
+        "cases": 10,
+        "proof": {
+          "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/watcher-intake-20261102/negative03/result.json",
+          "sha256": "00485e1e59cb5ae0222fb60fe083998599b402373424343507dcb325b2b7236a",
+          "bytes": 2598
+        },
+        "helpersEqualFrozenPackage": true
+      },
+      "formalGameWrite": false,
+      "visual": "not_run",
+      "business": "not_run"
+    },
+    "post_exit": {
+      "cleanupPerformed": true,
+      "companionUnchangedFromVirtual4": true,
+      "dispatchPerformed": false,
+      "exitCode": 0,
+      "formalConsumer": "owner App64 old archived channel pending same fixed operation",
+      "lifecycleReceiptSha256": "42e2a922c0f145d24038a3eab28ada5f86d0e02324e4ce893d8bd73730d9dff0",
+      "noPointerCommandDispatched": true,
+      "onlyOriginalChannelConfigAndStateRemoved": true,
+      "ownerTypedConfigArchiveAndLifecycleUnchanged": true,
+      "player": "existing build14 fixture, no rebuild; explicitly configured device fully started then normal ninety-frame autoquit",
+      "producer": "88acc905abc700070e4b7761bf97416d0eb0c09966ceec2849c3a02ff32656eb",
+      "retiredAfterCleanExit": true,
+      "status": "fixed-installed-real-clean-exit-retirement-verified",
+      "stopReceipt": "${USER_HOME}/Documents/Games/tools/beaver/.private/virtual-pointer-20261102/vp18-post-exit-stop/virtual-pointer-stop.json",
+      "stoppedByBudget": false
+    },
+    "retirement_business_outcome": "not_evaluated; no dispatch; cleanup is not business rollback"
+  },
+  "binding": {
+    "providers": "${USER_HOME}/Documents/Games/tools/grea/.private/fix27-integration-20261102/providers.json",
+    "providers_sha256": "95f7452993372d7736883a5737edcc879d4ae85402e9014b4fa61eb95b43438c",
+    "lock": "${USER_HOME}/Documents/Games/tools/grea/.private/fix27-integration-20261102/pin/beaver-lock.json",
+    "lock_sha256": "d0d8bd2c0ac97d45492e65a62e9a8eca9d6bef34130adc1f3c12947dbee10fd3",
+    "qa_examples": "${USER_HOME}/Documents/Games/tools/grea/.private/fix27-integration-20261102/qa-examples/README.md",
+    "intake_examples": "${USER_HOME}/Documents/Games/tools/grea/.private/fix27-integration-20261102/intake-examples/README.md"
+  },
+  "checks": {
+    "skill_sync": true,
+    "schemas": true,
+    "docs": true,
+    "diff": true
+  },
+  "formal_consumers": {
+    "foodstreet": "original App64 session post-exit stop pending owner evidence; no rebuild needed",
+    "zombie": "fresh watcher intake pending owner plan/apply/cold evidence"
+  },
+  "capture": "not_supported",
+  "windowed_focus": "not_run",
+  "natural_human_parallel": "pending",
+  "grea_editor_or_player_started": false,
+  "formal_game_writes": false,
+  "global_plugin_updated": false,
+  "push": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "ee44e71e74ea48932b623f3106cf256414e3699e1de224957438343d97800d2a",
+    "originalBytes": 9176,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

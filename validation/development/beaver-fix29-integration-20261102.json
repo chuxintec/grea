@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "status": "exact_fix29_intake_binding_verified_damagetip_formal_pending",
+  "version": "0.6.0.dev20261102+fix29",
+  "source_commit": "722ebf282a8b7954d3a18b634d5526b30f25b5f3",
+  "producer_sha256": "24d91ac09ad2c9c49453f3743757d766b4632af51d5626d6cb083258634bb23a",
+  "delivery_sha256": "6bfdd404ed35ac98401af7a0707c9fe7fdf8baa112247e4000ec4995659ca219",
+  "runtime_verification": {
+    "runtime_files": 143,
+    "index_pins_verified": 18,
+    "source_commit": "722ebf282a8b7954d3a18b634d5526b30f25b5f3",
+    "delivery_sha256": "6bfdd404ed35ac98401af7a0707c9fe7fdf8baa112247e4000ec4995659ca219"
+  },
+  "operations": [
+    "intake.plan",
+    "intake.apply",
+    "intake.rollback"
+  ],
+  "qa_eight": "kept exact fixed27; not enabled for fix29",
+  "intake_contract": "beaver-additive-intake/5",
+  "spec_versions": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "cli_mcp_checks": {
+    "cli_positive": {
+      "status": "planned",
+      "report": "${USER_HOME}/Documents/Games/tools/grea/.private/fix29-integration-20261102/spec5-positive/provider-output/intake-plan.json",
+      "planSha256": "f35dcf4b00c2d9d1a59cc8eb101f3f813c36dd8094fd6029854e4548358227aa",
+      "additions": 2,
+      "externalScripts": 0,
+      "native": "not_run",
+      "externalAssets": 0,
+      "packageScripts": 0,
+      "newScripts": 1,
+      "maximumNativePhases": 5,
+      "engineObjects": 0,
+      "retainedAssemblies": 1,
+      "scriptPolicy": "schema-only-retained-assembly/1"
+    },
+    "cases": [
+      {
+        "case": "missing-retained",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_SPEC_FIELDS"
+        ]
+      },
+      {
+        "case": "undeclared",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_SPEC_ASSEMBLY"
+        ]
+      },
+      {
+        "case": "wrong-name",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_SPEC_ASSEMBLY"
+        ]
+      },
+      {
+        "case": "wrong-byte-pin",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_RETAINED_ASSEMBLY_PIN"
+        ]
+      },
+      {
+        "case": "wrong-meta-pin",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_RETAINED_ASSEMBLY_PIN"
+        ]
+      },
+      {
+        "case": "extra-source-field",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_SPEC_FIELDS"
+        ]
+      },
+      {
+        "case": "duplicate-row",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_SPEC_DUPLICATE"
+        ]
+      },
+      {
+        "case": "missing-omission",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_RETAINED_ASSEMBLY_CANDIDATE_OMISSION"
+        ]
+      },
+      {
+        "case": "spec4-with-retained",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_SPEC_FIELDS"
+        ]
+      },
+      {
+        "case": "initializer",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_NEW_SCRIPT_SCHEMA"
+        ]
+      },
+      {
+        "case": "method",
+        "status": "blocked",
+        "codes": [
+          "INTAKE_NEW_SCRIPT_SCHEMA"
+        ]
+      },
+      {
+        "case": "old-exact-plan",
+        "status": "blocked",
+        "code": "INTAKE_IMPLEMENTATION"
+      },
+      {
+        "case": "mcp-spec5-positive",
+        "status": "ok",
+        "transport": "ok"
+      },
+      {
+        "case": "mcp-wrong-retained",
+        "status": "blocked",
+        "transport": "partial"
+      }
+    ],
+    "target_unchanged": true,
+    "editor_started": false,
+    "formal_product_writes": false
+  },
+  "focused_tests": 13,
+  "producer_installed_tests_reused": {
+    "run": 117,
+    "passed": true,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "schemaRuntime": "existing GREA dependencies appended; installed beaver import asserted"
+  },
+  "producer_native_evidence_reused": {
+    "status": "verified-declared-native-static-subset",
+    "unity": "6000.6.2f1",
+    "owners": 3,
+    "fields": 6,
+    "newScripts": 1,
+    "retainedAssemblies": 1,
+    "actualCompiledAssembly": "NeutralSchema",
+    "retainedIdentity": [
+      {
+        "guid": "bd3d9f2649e4f49c19fb94a844b60b96",
+        "metaSha256": "73cb17823fc829f3e1b75b21a59acc13451724db8d5dfca98aaf7dabcce000bc",
+        "name": "NeutralSchema",
+        "sha256": "a09bfb904e1a4e632cdad31c1a183978f648ca05aed6b6b4792bbb8306e056dc",
+        "target": "Assets/Scope/Scope.asmdef"
+      }
+    ],
+    "retainedAssemblyGates": [
+      "preflight",
+      "code-before",
+      "code-after",
+      "independent-code-check",
+      "import-before",
+      "import-after",
+      "independent-cold",
+      "rollback-before",
+      "rollback-after",
+      "independent-rollback-check"
+    ],
+    "independentCodeAndColdNewScriptEqual": true,
+    "nativeNegativeCases": [
+      "initializer",
+      "callback",
+      "property",
+      "static-field",
+      "wrong-native-name",
+      "wrong-native-guid"
+    ],
+    "negativeHelpersExactlyEqualFixedSource": true,
+    "applyExit": 1,
+    "sourcePartialRetained": true,
+    "rollbackRestored": 2,
+    "restoredBefore": {
+      "files": 29,
+      "allExact": true,
+      "retainedAssemblyUnchanged": true,
+      "laterAsmdefEditPreservedOnRefusedRollback": true,
+      "blockedExit3": true
+    },
+    "oldProducerRefused": "INTAKE_IMPLEMENTATION",
+    "player": "not_run",
+    "visual": "not_run",
+    "business": "not_run"
+  },
+  "retained_assembly_contract": {
+    "policy": "schema-only-retained-assembly/1",
+    "optIn": "spec5; inherits all spec4 mandatory fields; retainedAssemblies array0..16",
+    "fields": [
+      "target",
+      "guid",
+      "sha256",
+      "metaSha256",
+      "name"
+    ],
+    "compilerWrites": "only exact declared new .cs; no new or replaced asmdef/asmref",
+    "scope": "nearest exact retained runtime asmdef; casefold unique name; candidate source asmdef same name explicitly omitted and covered by script in that scope",
+    "source": "bounded canonical grammar single public class with immediate base and public fields; no methods/constructors/initializers/properties/attributes/directives",
+    "native": "native asmdef identity pins every gate; actual CompilationPipeline name/path; one GetClass/base/fields; no declared methods/staticinitializer and default base-only constructor IL",
+    "unchanged": "spec1–4 parser and default Assembly-CSharp-only behavior; argv; source diagnostics; old transaction runtime; watcher/retained-byte guards"
+  },
+  "binding": {
+    "providers": "${USER_HOME}/Documents/Games/tools/grea/.private/fix29-integration-20261102/providers.json",
+    "providers_sha256": "9f2bb64bc2ac3e071289c65559b25df4827423d2fd8e4e45da2f6ed0595d4762",
+    "lock": "${USER_HOME}/Documents/Games/tools/grea/.private/fix29-integration-20261102/pin/beaver-lock.json",
+    "lock_sha256": "e914ff4ad945b7028486c3d093a980e182d2476532db65a32d690bc92c554b93",
+    "examples": "${USER_HOME}/Documents/Games/tools/grea/.private/fix29-integration-20261102/consumer-examples/README.md"
+  },
+  "checks": {
+    "skill_sync": true,
+    "schemas": true,
+    "docs": true,
+    "diff": true
+  },
+  "formal_consumer": "zombie owner fresh spec5 plan/apply/cold pending; still 8roots52pairs",
+  "candidate_regenerated": false,
+  "candidate_refrozen": false,
+  "formal_asmdef_modified": false,
+  "grea_editor_or_player_started": false,
+  "formal_product_writes": false,
+  "source_partial": "preserved",
+  "dynamic_number_mesh": "not_implemented",
+  "visual": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "global_plugin_updated": false,
+  "push": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "f7d1c983c98abab36920407e121f12e5e6048d4b950ff8f76e389bb966db0990",
+    "originalBytes": 7574,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

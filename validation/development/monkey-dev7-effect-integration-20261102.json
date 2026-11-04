@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "status": "fixed_dev7_public_binding_and_saved_effect_evidence_verified_formal_adoption_pending",
+  "version": "0.8.0.dev7",
+  "producer_commit": "2e88bc95fbe9cf82d61ad0a192715f334a242695",
+  "handoff": {
+    "path": "${USER_HOME}/Documents/Games/tools/monkey/.private/unity-prefab-v080-20261102/dev7-fixed-effect-handoff-01.json",
+    "sha256": "6e1369a1a5163448b3f634109feff48152f6448d90e037c9fefff7cf87da06eb"
+  },
+  "verification": {
+    "package_files": 458,
+    "package_digest": "ef4d3ad75d9395788efe0b857782feb33549c4114fb4f7582ca1c3f63e669c2d",
+    "capabilities_digest": "85eca6fb100dfd734fc7ca337fe28b0915c187015620109d938b6ae178ef1853",
+    "pins_verified": 14,
+    "saved_files_verified": 76,
+    "fields": 64,
+    "owners": 2,
+    "components": 4,
+    "missing_scripts": 0,
+    "failures": 0,
+    "first_cold_references_stable": true,
+    "native_exit_codes": [
+      1,
+      1
+    ],
+    "new_asset_pairs": 4,
+    "reused_pairs": 0,
+    "producer_commit": "2e88bc95fbe9cf82d61ad0a192715f334a242695",
+    "source_graph_gaps": [
+      {
+        "category": "unity-default-resources",
+        "externalIdentity": {
+          "category": "unity-default-resources",
+          "fileId": "3",
+          "guid": "00000000000000000e00000000000000",
+          "guidEncoding": "serialized-guid-bytes-hex",
+          "ownerSerializedFile": {
+            "containerSha256": "9b1fad7392746e6f00d86d0a8777c9797a589d3f473ebdd743e0d5519e13b7ea",
+            "name": "CAB-811173610d1cb420d577f7dceb576cbe",
+            "serializedFileSha256": "d371655c23ab7cae548240e39c931a857db3eaa1a98eed15006c22e257566b9a"
+          },
+          "path": "Library/unity default resources"
+        },
+        "kind": "engine-reference-unverified",
+        "location": "$/m_Mesh",
+        "pointer": {
+          "fileId": "3",
+          "pathId": "10210"
+        },
+        "reason": "native engine identity not verified",
+        "sourceObjectId": "{\"containerSha256\":\"9b1fad7392746e6f00d86d0a8777c9797a589d3f473ebdd743e0d5519e13b7ea\",\"pathId\":\"-900432925372114859\",\"serializedFile\":\"CAB-811173610d1cb420d577f7dceb576cbe\",\"serializedFileSha256\":\"d371655c23ab7cae548240e39c931a857db3eaa1a98eed15006c22e257566b9a\"}"
+      }
+    ],
+    "original_diagnostics": [
+      {
+        "code": "UNITY_PREFAB_TARGET_GUID_UNRESOLVED",
+        "guid": "0000000deadbeef15deadf00d0000000",
+        "path": "ExportedProject/Assets/effect/0_hzh/textures/youhua/materials/pugong2_op.mat"
+      }
+    ],
+    "boundaries": {
+      "battleMain": "UV curve strict refusal remains independent",
+      "business": "not_run",
+      "formalAdoption": "pending_owner",
+      "player": "not_run",
+      "shader": "existing native reference closure only; source compiled Shader semantic/visual equivalence unverified",
+      "sourcePartialExit1": true,
+      "versionComplete": false,
+      "visual": "not_run"
+    },
+    "grea_editor_started": false,
+    "candidate_regenerated": false,
+    "candidate_refrozen": false
+  },
+  "binding": {
+    "providers": "${USER_HOME}/Documents/Games/tools/grea/.private/monkey-v08-dev7-integration-20261102/providers.json",
+    "providers_sha256": "984b633069aba7aa75dbf9ebb5e1bd67dc4849cc6edb0d09f9793f7a48614d8a",
+    "lock": "${USER_HOME}/Documents/Games/tools/grea/.private/monkey-v08-dev7-integration-20261102/pin/monkey-lock.json",
+    "lock_sha256": "385ee8413bd9de1a3410bfa2289ded4a203a1599baf5b74aa6509372fc3de333",
+    "readme": "${USER_HOME}/Documents/Games/tools/grea/.private/monkey-v08-dev7-integration-20261102/README.md"
+  },
+  "saved_candidate": "${USER_HOME}/Documents/Games/tools/monkey/.private/unity-prefab-v080-20261102/FixedEffectTextureMaterialSavedSelection01",
+  "saved_manifest": {
+    "bytes": 15800,
+    "path": "${USER_HOME}/Documents/Games/tools/monkey/.private/unity-prefab-v080-20261102/FixedEffectTextureMaterialSavedSelection01/manifest.json",
+    "sha256": "5a23b9dcece825fcb8ecec250663d51dac2237dca9365a5e2c0b34b8b72ce0ad"
+  },
+  "new_asset_pairs": [
+    {
+      "fileSha256": "455584c9b26bed40d94602a3347772339cb0ba00fced6a71cb6c91a041bc57a1",
+      "guid": "ff512b98bc51f41cc9bbdb34271d6fd2",
+      "metaSha256": "d138929c1bc573232908ccc49d005516f26f80ed957c321c5886ad63e60930f6",
+      "path": "Assets/Game/Content/Data/TextureMaterialGenerated/8969188c98d333fe318ff8a6.asset"
+    },
+    {
+      "fileSha256": "83aaefac41438f38a2d8e10dfccbfd3d56b01cd0bf5528285796b4ab8cf8516e",
+      "guid": "3ee74f396db57b645b3819bf2c80daf3",
+      "metaSha256": "2bbd59d487d006ad95abe5a1f70f6acd0aa9873784effae15ecb870fa50df848",
+      "path": "Assets/Game/Content/Materials/Effect/0Hzh/Youhua/pugong2_op.mat"
+    },
+    {
+      "fileSha256": "3244badb9394b7c31c23433fcea3105350996df9c53094a3f4915d6ab162670b",
+      "guid": "2ef264321f3932647b5327637c12f87b",
+      "metaSha256": "51ad9c0cae90d38fc0263ba51f5889c3d92edfbbcbb60502d4a40ccd93737408",
+      "path": "Assets/Game/Content/Prefabs/Resources/effect/skill/pugong/eff_pugong_fly2.prefab"
+    },
+    {
+      "fileSha256": "dfe6c80b2447e291fe48195d38c478b477d41c7e16a5f81f414f267e6cced615",
+      "guid": "3ae387a23daf97344a1c3a7576dbef75",
+      "metaSha256": "430259264a28a62d65dbb9f9a5266e4631a43c2f31852b1ffe294b976f4bb784",
+      "path": "Assets/Game/Content/Shaders/Resources/shaders/dod/effect/alphablended_nofog.asset"
+    }
+  ],
+  "adopted_48_pair_index": {
+    "bytes": 21650,
+    "path": "${USER_HOME}/Documents/Games/projects/21-向僵尸开炮/Analysis/static-prefab-20261102/login-intake-fix27-01/current-adopted-48-pairs.json",
+    "sha256": "3cddd344f11fe17bfb584cff389341582dc2a8988426ddf1be146ae2bbed58de"
+  },
+  "public_cli": {
+    "pin": "actual exact package/capability binding",
+    "wrong_execution_sha": "exit2; no output"
+  },
+  "stdio_mcp": {
+    "wrong_execution_sha": "error; no output"
+  },
+  "focused_tests": 14,
+  "producer_exact_wheel_checks_reused": 131,
+  "checks": {
+    "skill_sync": true,
+    "schemas": true,
+    "docs": true,
+    "diff": true
+  },
+  "source_status": "partial/exit1/needs_action preserved, not source complete",
+  "grea_recover_verify_freeze_rerun": false,
+  "grea_unity_started": false,
+  "formal_product_writes": false,
+  "formal_consumer": "zombie owner fresh fixed-beaver plan/apply/cold pending",
+  "visual": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "shader": "native closure only, source semantic/visual equivalence unverified",
+  "global_plugin_updated": false,
+  "push": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "cddb14ff2614f5095eeff5a02ba960bae72fe108b4c4a8f54339cf7cb51f27fa",
+    "originalBytes": 6518,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

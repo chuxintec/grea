@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "status": "fixed31_qa8_binding_ready_consumer_pending",
+  "version": "0.6.0.dev20261103+fix31",
+  "producer": "fe3c863caf3180382f48d0e01670b1a129a6361523062924322e4443f9d29714",
+  "source": "ba7281d9d0060301bb900b2fc6bfbc23468af76b",
+  "delivery": {
+    "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-ownership-20261103/fixed31/candidate-delivery-fix31.json",
+    "sha256": "025d54fc9541b870c622695600ddcdb95aad51077e1a68fa9362ed0861bffefa"
+  },
+  "verification": {
+    "runtime_files": 143,
+    "index_pins_verified": 13,
+    "source_commit": "ba7281d9d0060301bb900b2fc6bfbc23468af76b",
+    "delivery_sha256": "025d54fc9541b870c622695600ddcdb95aad51077e1a68fa9362ed0861bffefa"
+  },
+  "binding": {
+    "providers": "${USER_HOME}/Documents/Games/tools/grea/.private/fix31-integration-20261103/providers.json",
+    "providers_sha256": "0e3581018399c90ab7bbf0f2da38fa413960f91a585134a99646652765f20ab8",
+    "lock": "${USER_HOME}/Documents/Games/tools/grea/.private/fix31-integration-20261103/pin/beaver-lock.json",
+    "lock_sha256": "ba7e9f3ab2d0b3f70cc513fbe0295ac4397de1279e0173dd2b26f2376b03cc42"
+  },
+  "companion": {
+    "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-ownership-20261103/fixed31/source/src/beaver/targets/BeaverVirtualPointer.cs",
+    "sha256": "564653fd3535aebb31315d83eab8775b31693f229a2a2bce4835a50d95a3cc0e",
+    "bytes": 77126
+  },
+  "scope": "QA8 only; intake stays fixed29",
+  "contract_tests": 20,
+  "cli_pin": "actual exact fixed package/capability probe passed",
+  "unchanged_cli_mcp_matrix": "fixed30 proof reused; no replay",
+  "native_focused_proof": {
+    "cases": 19,
+    "proof": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-ownership-20261103/NativeRun01/native-proof.json",
+      "sha256": "61784324b9b639c69b9494e1542ce739ca8ad99e2af6c5ddd08fdfe64143b3ee",
+      "bytes": 454
+    },
+    "caseDetails": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-ownership-20261103/NativeRun01/ownership-cases.json",
+      "sha256": "3d9be3e5b707e7c37b6e873dd998c9a39ab516b38837c93fa0912612979bdb40",
+      "bytes": 16558
+    },
+    "process": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-ownership-20261103/NativeRun01/process.json",
+      "sha256": "635365245f340548720537ab77bef6b6bc48f4d8d6108ac0683243be23850b35",
+      "bytes": 58
+    },
+    "desktop": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-ownership-20261103/NativeRun01/desktop.json",
+      "sha256": "81be0b416974c1872e47f25ae0de384fc7ae83ca79501d3d80b220f4296ec02f",
+      "bytes": 34334
+    },
+    "nativeMouse": true,
+    "nativeKeyboard": true,
+    "App69Replay": "exact before810,-373 and event6332,-1736 with explicit button-up/unlocked/display0 assumptions; old trace lacks these state facts",
+    "callbackProof": "outside continues; inside/held drag/keyboard/delta-only stop in actual C# callback; targetPID deliberately simulated against actual observed foreground, no app activation or real human input",
+    "normalExit": 0
+  },
+  "unchanged_evidence": {
+    "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-ownership-20261103/unchanged-evidence-reuse.json",
+    "sha256": "b3b2937353a186316849863cfab64462988548dcfd1f1c2dbbc409966c86aff6",
+    "bytes": 910
+  },
+  "policy": {
+    "name": "unpressed-mouse-motion-outside-primary-viewport/1",
+    "ignoreOnly": "fresh target foreground; unchanged viewport; Mouse changes only position/delta; event itself supplies finite outside position; display0; cursor None; no button held before or in event",
+    "preserveStop": "inside motion, any nonmotion/button/scroll change, held drags, keyboard/other devices, delta-only/missing event position, locked/confined cursor, unknown/nonprimary display, bad position or resize",
+    "diagnostic": "takeoverDiagnostic.policy=fresh-foreground-and-mouse-viewport/2; mouseOwnership shows inputs/reason, outsideMouseMotionEvents counts; bounded existing lifecycle schema",
+    "api": "unchanged QA config/commands/receipts/argv/budgets; stopOnTakeover remains mandatory true"
+  },
+  "consumer_steps": [
+    "Narrow QA8 fixed31 binding only; intake3 remains fixed29",
+    "Copy exact new companion and rebuild one QA Player; App69 binary cannot acquire this change from CLI alone",
+    "Keep stopOnTakeover and all safeguards; one authorized consumer run, no interrupted-business replay",
+    "If stop recurs, retain lifecycle takeoverDiagnostic including mouseOwnership; native=true alone is not human-origin proof"
+  ],
+  "limitations": [
+    "Only pure unpressed Mouse position/delta events with event-supplied known outside position get exemption; this is not a global ignore-mouse switch",
+    "Historical App68 source causes remain unknown; App69 no-button-change trace does not prove buttons were up or cursor unlocked",
+    "No real human target takeover or formal game run by beaver; no OS input/window activation",
+    "Initial private fixture button-test integer literals caused overload compile errors; corrected to float. Review found unsafe delta-only old-position exemption and it was removed before fixed sealing; delta regression passes",
+    "No new generic matrix; exact unaffected evidence reused",
+    "No formal game write, global install, push or release; old runtimes/transactions retained"
+  ],
+  "grea_unity_started": false,
+  "formal_product_writes": false,
+  "global_install": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "bc6a2877d5b9538340ab1488f0e1fd122f920d83ab6dd169ac73f60508e16dba",
+    "originalBytes": 5542,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

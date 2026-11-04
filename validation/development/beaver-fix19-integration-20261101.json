@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-01",
+  "version": "0.5.1.dev20261101+fix19",
+  "sourceCommit": "27d21d2dfde424d432d3dbd5ba875d2d900339c4",
+  "producer": "3b12ef5aa779d1e95033237346ab3d9fe248d77193d9f92347f3c31042ebf72c",
+  "wheelSha256": "92145bc903048c319af76b6383f053f7a6c9bd4f7269d78815483cb39c423458",
+  "runtimeFilesEqualCommitWheelInstall": 132,
+  "contractHashesVerified": {
+    "CLI-CONTRACT.md": "67084602d90e344bab16bd1947ee5dec9bc3716e65e93e430aea7a6b7fc9314b",
+    "SDK-MIGRATION.md": "6aa59709842481bb7a725b8470f4e73a654648585ff0c1aba6e99076a7606235",
+    "QA-BINDING.md": "b4289e931743c2b71712fd9b619553cb80c3d392d6ab48b40457c1d97f0f46d5",
+    "QA-RUNTIME.md": "bf90c91057c36e6137e90ab5e1f68283f7bb77bf730c084420b190cf1e5f0335",
+    "ADOPTION-ASSEMBLIES.md": "203cf92cc3eafb265187223c3ac1defa83174dec242dd329585ea16cc2405bef",
+    "ADOPTION-DEPENDENCIES.md": "6561788bccecc84e8f303d7c2c3d634b9608661769114a434866fdb1bfa54969",
+    "BUILD-POLICY.md": "98170389aa3a554f5b654adde75f57c56f11cacfd02c5c68f919a5972de07056"
+  },
+  "actualPublicPin": "ready",
+  "actualPublicConsumption": [
+    {
+      "case": "inspect-unknown",
+      "status": "blocked",
+      "diagnostics": [
+        "QA_UNKNOWN_OWNERSHIP"
+      ],
+      "executed": true,
+      "launchPerformed": false,
+      "cursorMoved": false,
+      "nativeControllerUsed": false
+    },
+    {
+      "case": "bind-default",
+      "status": "blocked",
+      "diagnostics": [
+        "QA_UNKNOWN_OWNERSHIP"
+      ],
+      "executed": true,
+      "launchPerformed": false,
+      "cursorMoved": false,
+      "nativeControllerUsed": false
+    },
+    {
+      "case": "bind-pointer-sync",
+      "status": "blocked",
+      "diagnostics": [
+        "QA_UNKNOWN_OWNERSHIP"
+      ],
+      "executed": true,
+      "launchPerformed": false,
+      "cursorMoved": false,
+      "nativeControllerUsed": false
+    }
+  ],
+  "targetedTests": 84,
+  "backendValue": "macos-native-ax-pid-pointer-sync/1",
+  "backendValueVersionGate": "fix19 only; omission/default retains event-only backend",
+  "cursorEffects": "Explicit global cursor-state positioning; events remain PID-directed; no automatic fallback, no claim of zero effects when eventsPosted=0",
+  "partialEffectsCheck": "mocked GREA invocation preserves cursorSync attempted/completed with zero posted events and partial status",
+  "producerUnityReview": {
+    "status": "passed-observed-callback",
+    "sha256": "4b4bb254b8a0db7dd19dc6cf0b5417c1d0e5e930f644a90960042f4057344a36",
+    "counter": "0 -> click 1 -> drag 2",
+    "scope": "read-only sealed-probe review; final fixed input receipt pending",
+    "finalFixedInputReceipt": "read-only verified",
+    "finalDeliverySha256": "62eba2e5f4358f410c78985b07790b498fa3968b58ea3c198306ade8fab94274",
+    "evidenceSha256": {
+      "gui-review.json": "4b4bb254b8a0db7dd19dc6cf0b5417c1d0e5e930f644a90960042f4057344a36",
+      "gui-launch-cli.json": "b71fcaa4d1bf00ff39c5904a6b4bb17edbfc4a851e37966308a672d1a40d39e9",
+      "gui-bind-cli.json": "dc8b7259d9054dda240e987833c28f66ceb29537277a4cba68922289ba17a53f",
+      "gui-click-cli.json": "a5c2033bd0e433a9e2c46769a41524606442c5011e83c7c62de607dfe6f607a5",
+      "gui-field-cli.json": "601cf33489cb85068ce368098708aaef274f15c051ab1bc9004a1d4b4ddf37f5",
+      "gui-text-cli.json": "6ed2aef2d8872a9eaedb7f9056803acd80ce5ecc8b2850d045dac50d169c1c67",
+      "gui-drag-cli.json": "016eb1e6f4f02bd7f4af7fd29f2c8b3de57eb8ebd21d71afe0f4762ab7f60c13",
+      "gui-shot-cli.json": "573dbfa8933869a45a0dcfab2ac462f23ba4510ca0c4a8f23c97a7ac6954fc03",
+      "gui-close-cli.json": "1bfb8a02361942d9dc549409881288496090fdb864eaa1f385ef7c608aca58ef",
+      "gui-collect-cli.json": "d00bcaedbc5bf8a46bab690084b09df4e8b7c31c6b3c0e72379d3c5621fba0e2",
+      "installed-tests.log": "ff66954576afd7283c9b029987d177807556f9d5d195d4a1642b6d0850a9030d"
+    },
+    "cliProducerIdentitiesMatched": 9,
+    "installedProducerChecks": 110,
+    "screenshotSha256": "65ec29f7be660b50a071b36ff526da9e0add8a1f56167002e984e7e95468c29f",
+    "screenshotVisual": "Viewed: counter 2 and IntegratedUnity input/label visible; neutral probe only",
+    "axClose": "partial retained; no retry; later normal exit0/collected independent"
+  },
+  "sdkNativeAcceptance": "fix19 extended SDK checkpoint failed: legitimate canonical before/after MVID/location comparison rejected; producer rollback/fix in progress, no SDK apply authorized by this handoff",
+  "consumerInputAcceptance": "App40 fix18 failed login retained; fix19 actual product input pending",
+  "editorStarted": false,
+  "desktopInputPerformed": false,
+  "globalInstallation": false,
+  "remotePush": false,
+  "limits": [
+    "This GREA run used unknown-owner refusal paths only; no cursor positioning or native controller execution.",
+    "Pointer-sync backend must be explicitly selected on a new exact-version binding with exclusive desktop ownership.",
+    "Neutral Unity callbacks are not product login/drag/save acceptance.",
+    "Fixed SDK and GUI/product readiness are tracked separately."
+  ],
+  "producerInputProof": {
+    "actualUnityCallback": "counter0->1->2",
+    "text": "IntegratedUnity visible in bound-window no-shadow screenshot",
+    "pointerState": "explicit global system-cursor sync inside exact owned/foreground/AX-hit window; PID-only events",
+    "normalExit0": true,
+    "collected": true,
+    "axClose": "partial/AX_CLOSE_FAILED retained; later normal exit independently observed",
+    "business": "pending FoodStreet actual consumer"
+  },
+  "projectHandoff": "Fixed GREA provider config/lock and explicit pointer-sync backend delivered to project owner; actual product input pending",
+  "publicHistoricalCopy": {
+    "originalSha256": "81e03df56041f81f6de24c76f5d271c2658068e61d5cb981d7cb9e6701693e13",
+    "originalBytes": 5641,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

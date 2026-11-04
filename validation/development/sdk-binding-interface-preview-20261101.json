@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-01",
+  "state": "unsealed-interface-review-only",
+  "contractDocumentSha256": {
+    "SDK-MIGRATION.md": "738eef1fd9e184aa9b215ce4985e09f98dfc05890e96cbfa32b8f887a72a1fcf",
+    "QA-BINDING.md": "243328c3de58f6dd49e9d57a32068a71aa22de6a01f51d79193a07ccb522bf60"
+  },
+  "currentPublicRejections": {
+    "adoption.plan": "Unknown or missing named options",
+    "qa.inspect-instance": "Unsupported named beaver operation",
+    "qa.bind": "Unsupported named beaver operation",
+    "qa.input": "Unsupported named beaver operation"
+  },
+  "resultEnvelope": "Synthetic blocked result preserves nested partial-effect counts, launchPerformed=false and inputDelivery without data schema changes",
+  "requiredAdapterChanges": [
+    "Version-gated adoption.plan paired sdk-migration absolute path and expected-sdk-migration SHA; no old fix17 capability expansion.",
+    "Add finite qa.inspect-instance and qa.bind operations with required project/build/profile/run/expected-owner and controlled fresh out.",
+    "Bind optional positive window ID and exact backend enum; never global/name fallback.",
+    "Add qa.input session/spec absolute paths with both expected hashes and fresh out; do not duplicate native input-spec evaluator.",
+    "Retain full provider result on blocked/partial including posted/AX effects; no automatic replay.",
+    "Stable QA identifier guards apply to new inspect/bind IDs; generate CLI/MCP schema from same finite operations."
+  ],
+  "fixedProvider": "pending producer version, implementation/package/contract hashes and executable acceptance inputs",
+  "sdkNativeReopen": "producer reports null/empty comparison repair in progress; not accepted here",
+  "actualNativeBinding": "producer-reported diagnostic proof only; GREA has not executed new backend",
+  "runtimeExecuted": false,
+  "editorStarted": false,
+  "desktopInputPerformed": false,
+  "versionWhitelistChanged": false,
+  "limits": [
+    "No unstable provider binding or runtime invocation.",
+    "Existing fix12 source/font evidence remains reusable; new SDK/native and consumer acceptance separate."
+  ],
+  "publicHistoricalCopy": {
+    "originalSha256": "fb4322d9da234ee512d74e738da8c433508cb2a8ac976de540e9897d8955a223",
+    "originalBytes": 2128,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

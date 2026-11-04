@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "status": "fixed30_qa8_exact_binding_verified_consumer_pending",
+  "version": "0.6.0.dev20261103+fix30",
+  "source_commit": "62c400edcef34ced790b4a28cbee70d4c6f3192f",
+  "producer_sha256": "cc6a7800eb12bfed6b73f58333737554e50c678817cdaefb529971dae499d682",
+  "delivery_sha256": "fda2f22bd1fe1636d18f2a6ae5a6b07ed1cefa934923f6a27d77f684483c4dc8",
+  "runtime_verification": {
+    "runtime_files": 143,
+    "index_pins_verified": 15,
+    "source_commit": "62c400edcef34ced790b4a28cbee70d4c6f3192f",
+    "delivery_sha256": "fda2f22bd1fe1636d18f2a6ae5a6b07ed1cefa934923f6a27d77f684483c4dc8"
+  },
+  "operations": [
+    "qa.virtual-prepare",
+    "qa.virtual-bind",
+    "qa.virtual-input",
+    "qa.virtual-status",
+    "qa.virtual-stop",
+    "qa.prepare",
+    "qa.launch",
+    "qa.collect"
+  ],
+  "intake": "exact fixed29 retained; not enabled for fixed30",
+  "companion": {
+    "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-diagnostic-20261103/fixed30/source/src/beaver/targets/BeaverVirtualPointer.cs",
+    "sha256": "56d2312cc2830b0b3b1a6e55e86065f0ed290854584298c3d8beba6fe28e49a3",
+    "bytes": 72044
+  },
+  "cli_mcp_checks": {
+    "cli_prepare": "real private channel creation; no Player launched",
+    "cases": [
+      {
+        "case": "prepare-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SPEC_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "bind-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_CHANNEL_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "input-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SESSION_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "status-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SESSION_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "stop-sha-refused",
+        "status": "blocked",
+        "diagnostics": [
+          "QA_VP_SESSION_DRIFT"
+        ],
+        "native": "not_run"
+      },
+      {
+        "case": "mcp-prepare",
+        "status": "ok",
+        "transport": "ok",
+        "native": "not_run"
+      },
+      {
+        "case": "mcp-stop-refused",
+        "status": "blocked",
+        "transport": "partial",
+        "native": "not_run"
+      }
+    ],
+    "own_test_channels_cleaned": [
+      {
+        "channel_id": "c2a36c16e26f4abea98bf2501eaf732c",
+        "unbound_private_directory_removed": true,
+        "no_endpoint_or_client_state": true,
+        "credentials_not_in_reports": true
+      },
+      {
+        "channel_id": "8b64027a240d4442a3a5eb7a2354e423",
+        "unbound_private_directory_removed": true,
+        "no_endpoint_or_client_state": true,
+        "credentials_not_in_reports": true
+      }
+    ],
+    "virtual_input": "not_dispatched_by_GREA; producer fixed installed UI/diagnostic evidence reused",
+    "native": "not_run",
+    "visual": "not_run",
+    "business": "not_run",
+    "formal_consumer": "pending owner rebuilt diagnostic Player"
+  },
+  "focused_tests": 15,
+  "producer_installed_checks_reused": {
+    "run": 64,
+    "passed": true,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "schemaRuntime": "existing GREA dependencies appended; installed beaver import asserted"
+  },
+  "producer_native_proof_scope": {
+    "evidence": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-diagnostic-20261103/NativeRun01/native-proof.json",
+      "sha256": "8e690aaccb631ef90ac065b1f805fb1314befa10ad4084e43435a0af31a6e7bd",
+      "bytes": 542
+    },
+    "eventControls": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-diagnostic-20261103/NativeRun01/native-event-controls.json",
+      "sha256": "12a08e868d8af447cadc39da7079879a5e074ae8c2242e608c7e0f12de9a6eb3",
+      "bytes": 143
+    },
+    "callbackDiagnostic": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-diagnostic-20261103/NativeRun01/native-callback-diagnostic.json",
+      "sha256": "4fc34d2ce64817bf6cb84d4ba55f26fb2fb82471552beb056801a9e38b4866bc",
+      "bytes": 789
+    },
+    "runtimeProcess": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-diagnostic-20261103/NativeRun01/process.json",
+      "sha256": "7ee06d500b43733ca4291b943e61ea6f32363ec28d485402acc556c829e9b37d",
+      "bytes": 57
+    },
+    "desktopObservation": {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-diagnostic-20261103/NativeRun01/desktop.json",
+      "sha256": "63868c3d7fe05d2b13ebd61c46b6a41b0fae28017fbf4a4930fb1a4987cd7450",
+      "bytes": 34248
+    },
+    "kind": "actual native Mouse in-memory StateEvent, no OS event queued; same-frame stale self PID replaced with actual other foreground PID; background callback stays alive and values redacted; virtual device excluded",
+    "targetPositive": "actual C# predicate with simulated PID arguments only, not a real human foreground takeover",
+    "unknownObserver": "predicate does not classify physical takeover; runtime separately fails closed with frontmost_observer_unavailable"
+  },
+  "producer_ui_evidence": {
+    "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/takeover-diagnostic-20261103/fixed-ui-proof.json",
+    "sha256": "01610cb1153caf039319fc035b7b5ba4bd1a4b25c4584ff8e712b49a75c38c43",
+    "bytes": 1182
+  },
+  "takeover_diagnostic": {
+    "contract": "beaver-physical-takeover-diagnostic/1",
+    "location": "terminal lifecycle-*.json.takeoverDiagnostic",
+    "policy": "fresh-foreground-state-change/1",
+    "fields": "event ID/type/time/current input time/bytes/update type, source device ID/layout/native, cached+fresh frontmost PID, Unity focus/background policy, bounded changed control path/before/event values only when target is current foreground; last4events*6controls and8device/focus context",
+    "privacy": "no text events, raw buffers, serials or arbitrary values; outside target omit all control paths and values",
+    "fix": "force read-only OS foreground query inside onEvent even when same-frame observer already ran; classification uses this fresh PID",
+    "preserved": "native user devices + State/Delta + same0.0001 changed-control threshold + target foreground -> physical_takeover stop; observer failure stops separately; no startup grace/reset suppression; same virtual-source exclusions and cleanup",
+    "historicalApp68": "three old traces cannot be attributed retrospectively",
+    "originLimit": "native device state event does not prove human origin or foreground at event queue time"
+  },
+  "binding": {
+    "providers": "${USER_HOME}/Documents/Games/tools/grea/.private/fix30-integration-20261103/providers.json",
+    "providers_sha256": "628c590eef0d4a096a1f4bdf9d9e62241a398f3f2ca79708b70e8a2683807c4f",
+    "lock": "${USER_HOME}/Documents/Games/tools/grea/.private/fix30-integration-20261103/pin/beaver-lock.json",
+    "lock_sha256": "21a621b3b08076acfd36ac521db58c68c2e49d0503b217ff9320e1925f97106e",
+    "examples": "${USER_HOME}/Documents/Games/tools/grea/.private/fix30-integration-20261103/consumer-examples/README.md"
+  },
+  "checks": {
+    "skill_sync": true,
+    "schemas": true,
+    "docs": true,
+    "diff": true
+  },
+  "consumer_action": "owner exact companion QA rebuild and one authorized diagnostic run; retain terminal lifecycle, no business replay",
+  "old_three_stop_causes": "unknown; no retrospective inference",
+  "physical_takeover_guards": "preserved; stopOnTakeover true",
+  "capture": "not_supported; unchanged",
+  "human_foreground_takeover": "not_run",
+  "natural_human_parallel": "not_run",
+  "grea_editor_or_player_started": false,
+  "formal_product_writes": false,
+  "global_plugin_updated": false,
+  "push": false,
+  "release": false,
+  "limitations": [
+    "Neutral in-app UI only; formal App68/new QA Player consumption not_run by beaver",
+    "No real human target-foreground takeover test, no natural-human parallel or whole-game/business claim",
+    "Read-only sampled desktop evidence, no OS mouse/keyboard input or window activation by maintainer",
+    "Current public API capture remains not_supported; no screenshot work in this fix",
+    "First neutral runtime artifact layout was rejected before launch; first UI spec used wrong fixed viewport and was rejected before input; failed driver later lost parent identity and guard refused. Exact own orphan birth/exe/argv was audited then SIGTERM; failed trial not claimed normal",
+    "Controlled UI trial used observed viewport and normal0; postprocessing corrected stop receipt path and retained typed config from saved successful receipts without input/launch replay",
+    "Old transactions use their original exact runtimes; no global install, push, release or formal project write"
+  ],
+  "publicHistoricalCopy": {
+    "originalSha256": "f9d3dd07db2c4fb7db1e9c6dce6c2462eb5ebf49c8c96454e916002d8debafdc",
+    "originalBytes": 8924,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

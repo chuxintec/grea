@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-01",
+  "recordKind": "append-only closure supplement v2",
+  "status": "closed-scoped-fixed-toolchain",
+  "upstreamOriginalRoot": {
+    "artifact": "beaver:toolchain-final-closure-20261101.json",
+    "sha256": "44a2d8792eb96cd472e72fad5f4c488f97cd1f22d57f7629775b2d4d57844b57",
+    "unchanged": true
+  },
+  "upstreamClosureDigests": {
+    "buildFontFix12": "e4726b7f1139bd37205f2881a3f802af9f742b82b881fd64c906c553ea7f3f32",
+    "SDKFix20": "1187f7c77b67cbe62e73a4c696a3ca39692a913ba6236c31d5152c47aa3b3fd8",
+    "AppInputFix21": "34a0a431c056bb7bfd8e0e96d7599955fdcb051bc60971ea3336b87f6f1badc1"
+  },
+  "originalGreaIntegrationReceipts": [
+    {
+      "artifact": "beaver-fix20-integration-20261101.json",
+      "sha256": "20c57295d4364107e397402ffb1f173e82fa7f0ed93332a49d5f278b4932b8aa",
+      "role": "unchanged pre-consumer integration snapshot"
+    },
+    {
+      "artifact": "beaver-fix21-integration-20261101.json",
+      "sha256": "48c3eb75bad329373121bebff7efccaf108389bb5031526a5a3c8a9f39e3cb06",
+      "role": "unchanged pre-consumer integration snapshot"
+    }
+  ],
+  "currentConsumerSupplements": [
+    {
+      "artifact": "beaver-fix20-consumer-20261101.json",
+      "sha256": "00b232cf0101a779ed9578c8bd4842ba4fe1b2810a8e123d2d23522f7a27bb4a"
+    },
+    {
+      "artifact": "beaver-fix21-consumer-20261101.json",
+      "sha256": "938424943c9e64502501b2121a07e7924e8d84dfba20c09cc4d276b56d431a5d"
+    }
+  ],
+  "correction": {
+    "cause": "SDK20 same-name integration receipt had lawful later consumer metadata added after external SHA seal",
+    "observedDriftSha256": "00b232cf0101a779ed9578c8bd4842ba4fe1b2810a8e123d2d23522f7a27bb4a",
+    "resolution": "Exact externally sealed integration bytes restored. Added consumer report moved byte-for-byte to beaver-fix20-consumer-20261101.json (same observed drift SHA), not discarded. fix21 integration original never changed.",
+    "original20RestoredSha256": "20c57295d4364107e397402ffb1f173e82fa7f0ed93332a49d5f278b4932b8aa",
+    "oldProviderRootOrFailuresRewritten": false
+  },
+  "scope": {
+    "buildFont": "fixed12 prior post-Editor-exit 14 font/55608 source evidence reused",
+    "sdk": "fixed20 actual scoped 4054-reference native adoption/cold reopen/rollback accepted",
+    "input": "fixed21 actual bound App40 login/board/two exits/15-field resume accepted",
+    "fullProductOrV20Accepted": false
+  },
+  "limits": [
+    "Historical blocked/failed/partial evidence retained.",
+    "No Editor, Player, source rebuild or full original-source scan repeated.",
+    "No remote push, global installation, release, service or production action.",
+    "Current-state supplements supersede pending state only, not original observations or producer identity."
+  ],
+  "publicHistoricalCopy": {
+    "originalSha256": "1fbae0684a4b60db2dcd5e0fd1dcccb0021c9262c73615386c33d03ab42ca26d",
+    "originalBytes": 2771,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

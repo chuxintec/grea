@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "target_builtin_identity_reused_verified_formal_preflight_pending",
+  "review": "read_only; no new Editor launch or project write",
+  "source_receipt": {
+    "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/engine-object-intake-20261102/fixed28/damagetip-shader-engine-identity-reuse.json",
+    "sha256": "306c2d697febb94b75f043cc4d5d618c3e5433cfafabc98815af2a50d08e5e3b"
+  },
+  "four_evidence_pins_verified": true,
+  "unique_probe_match": true,
+  "identity": {
+    "guid": "0000000000000000f000000000000000",
+    "localId": 10753,
+    "type": "UnityEngine.Shader",
+    "assembly": "UnityEngine.CoreModule",
+    "name": "Sprites/Default",
+    "assetPath": "Resources/unity_builtin_extra"
+  },
+  "binding": "fixed29 unchanged; no new contract/producer",
+  "next": "owner fresh spec5 engineObjects explicit row; target preflight/import/cold six-tuple verification required",
+  "prior_blocked_plan": "preserved; not replayed",
+  "source_graph_equivalence": "unverified",
+  "shader_semantics": "unverified",
+  "visual": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "formal_roots": 8,
+  "formal_pairs": 52,
+  "publicHistoricalCopy": {
+    "originalSha256": "bf58cce19f161621dcc3dc4d0b9968896ab4a0b3ea330ebcab27e28e353d4dbc",
+    "originalBytes": 1170,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

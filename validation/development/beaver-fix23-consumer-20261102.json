@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "status": "scoped_consumer_pass_source_partial",
+  "completion_sha256": "b82da79829d52f618525e1d95e2ecc2c55b8219d16e2c859056bb2cde461d18e",
+  "plan_sha256": "2a8972fb6548bde136c1af1dd54b667be52a8d3b233300ae3d2e6b960aa44da7",
+  "journal_sha256": "24fe5b7fd1a00337f91ef97c04c602c27c923d0fdb947f2a97c16bdcc5386217",
+  "producer_sha256": "c32043e594be592194b20f25c81b8a5624b16530dd5cb14287150ea99e4cc1ea",
+  "intake_status": "verified",
+  "public_status": "partial",
+  "source_native": "native-partial",
+  "existing_recorded_entries_preserved": 126374,
+  "existing_source_rehash": "owner exact before/after records reused; no second full source scan",
+  "new_asset_pairs": 12,
+  "new_folder_metas": 9,
+  "new_files_independently_rehashed": 33,
+  "retained_scripts_independently_pinned": 3,
+  "native_prefab_objects_checked": 42,
+  "typed_fields_verified": 531,
+  "independent_processes": [
+    {
+      "exitCode": 0,
+      "exited": true,
+      "interrupted": false,
+      "pid": 56282
+    },
+    {
+      "exitCode": 0,
+      "exited": true,
+      "interrupted": false,
+      "pid": 56932
+    }
+  ],
+  "source_diagnostics_preserved": true,
+  "original_prefab_and_key": "retained; protected file/meta pins independently matched",
+  "grea_started_editor": false,
+  "formal_rollback": "not_run",
+  "visual": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "source_shader_and_behavior_gaps": "retained",
+  "other_source_roots": "not covered by this single module",
+  "automatic_replay": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "7ba32aef75e682d6c4a0d37dde5640cb3cbf985a83872e69145257bf55443798",
+    "originalBytes": 1527,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

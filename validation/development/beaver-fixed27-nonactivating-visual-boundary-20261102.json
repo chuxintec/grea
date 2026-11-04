@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "status": "existing_eight_route_nonactivating_visual_path_not_verified",
+  "review": "static read-only; no launch/capture/input",
+  "provider": "fixed27 QA eight operations; App64 companion virtual4 unchanged",
+  "source_pins": [
+    {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/watcher-intake-20261102/fixed27/source/src/beaver/qa_runtime.py",
+      "sha256": "e28396918faade5606401b2f5fbab63dc3d8f92e77136f23409ee8494483b3d9"
+    },
+    {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/watcher-intake-20261102/fixed27/source/src/beaver/targets/BeaverVirtualPointer.cs",
+      "sha256": "3ef50940335fd9bace767d722dd0f8db32f08980143ca51ef578f737b99bc731"
+    },
+    {
+      "path": "${USER_HOME}/Documents/Games/tools/beaver/.private/watcher-intake-20261102/fixed27/source/docs/VIRTUAL-POINTER.md",
+      "sha256": "6a9ae232cebeb94b7dec612cc6b7d17779de4fa019dcbd485a1e7e7de3a06a91"
+    }
+  ],
+  "findings": {
+    "virtual_capture": "accepted finite command returns not_supported/CAPTURE_NOT_SUPPORTED; empty capturePath/captureSha",
+    "launch": "direct subprocess.Popen/start_new_session; process ownership is verified, no explicit nonactivating GUI startup contract or proof",
+    "batch": "explicit typed virtual config permits batchmode; prior consumer zero PNG and project batch ScreenCapture unavailable",
+    "collect": "collects declared existing artifacts; not a capture producer",
+    "native": "old qa.bind/input outside this producer eight-route gate; no fallback authorized"
+  },
+  "minimal_compatible_requirement": "beaver fixed target-only capture/nonactivation contract with owner/build/profile/run/session identity and file SHA; prefer existing App64; launch and image capability must each be actually proven",
+  "compatibility": "If supported inside existing finite virtual capture/typed preparation contract, argv may remain unchanged; any new operation/options/producer requires explicit narrow GREA gate after fixed delivery. No preregistration.",
+  "ui513_ui522_visual": "pending actual target frames",
+  "b01": "passed consumer evidence retained; no rerun",
+  "ui506_ui508": "owner separately reconciling",
+  "system_cursor": "must remain untouched",
+  "focus": "must not activate target; other app use must remain possible",
+  "natural_human_parallel": "separate real sample pending",
+  "publicHistoricalCopy": {
+    "originalSha256": "8ef486931785859259adaeef8d6ffae09c5c7f24ec116bd148f645273fdae1ba",
+    "originalBytes": 2389,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

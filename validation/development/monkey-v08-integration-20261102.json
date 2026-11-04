@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "status": "limited_pass",
+  "scope": "Exact dev2 saved-selection freeze; no native rerun or adoption",
+  "producer_version": "0.8.0.dev2",
+  "source_commit": "c4b984f3ce10e492554d318ace8dba9a85f2dc37",
+  "handoff_sha256": "c807b43ca57300d1ac569f799389173120d5b9960f737f5a596eca7efb463b1d",
+  "wheel_sha256": "856effacb7407c4fe61428243d3015eec9a401f7798d039d686839e55d8398ce",
+  "package_files": 441,
+  "package_digest": "b12528b0ec63ecf7a1498ba94ef5530bf1057a7653931ac5938554667c7969ed",
+  "capabilities_digest": "64082896453ab0d3a272864b932a57146545f9ec755fb0c751a8a99e23e7b9f4",
+  "supported_operation": "freeze-unity-prefabs",
+  "other_v08_operations": "not_adapted",
+  "candidate_files": 97,
+  "candidate_manifest_sha256": "5c75ff8dfdf943762ba1dc77e52e3b911683994a8953c06045a7c50a8e2d36ec",
+  "cli_positive": "needs_action/exit1; all owned bytes match producer selection",
+  "cli_negative": "wrong execution SHA rejected exit2 before output/provider operation",
+  "stdio_mcp": {
+    "positive_execution": "97 matching files; transport partial/exit1/capture_complete",
+    "first_client_decode": "AttributeError structuredContent; provider execution and receipts preserved",
+    "corrected_client_negative": "structured_content parsed; wrong SHA rejected, no output"
+  },
+  "focused_tests": 45,
+  "docs": {
+    "documents": 157,
+    "links": 755,
+    "skill_entries": 5,
+    "skill_markdown": 70,
+    "skill_links": 368,
+    "generated_contracts": "no_drift",
+    "skill_sync": "consistent"
+  },
+  "reused_native_evidence": {
+    "first_pid": 58716,
+    "cold_pid": 59361,
+    "processes_exited": true,
+    "process_exit_codes": [
+      1,
+      1
+    ],
+    "status": "native-partial",
+    "source_roots": 1,
+    "nodes": 12,
+    "components": 30,
+    "fields_checked_each_phase": 531,
+    "native_objects_stable": 42,
+    "asset_references_stable": 81,
+    "source_enabled_true_saved_false_cold_false": 2,
+    "missing_scripts": 0,
+    "failures": 0
+  },
+  "grea_editor_started": false,
+  "source03_unchanged": true,
+  "adoption": "pending explicit assembly/GUID mapping, unique loading key/consumer and independent baseline",
+  "static_presentation": "not_run_headless",
+  "visible_edits": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "push": false,
+  "publish": false,
+  "install": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "13938ae66edfd7041f32af5c7ed19caadcef74b4d568e14d19039f3b137566a1",
+    "originalBytes": 2340,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "status": "authorized_windowed_consumer_real_frames_verified_prior_absolute_startup_gate_superseded",
+  "human_authorization": {
+    "thread_id": "01a19b82-9c2c-7d70-8cd2-51cedfe6db52",
+    "turn_id": "01a19cc8-57b0-7e82-970b-0aa7738ddec1",
+    "item_id": "01a19cc8-57c6-79e0-a7d8-664e6a7b8925",
+    "text": "你到底为什么视觉验收受阻啊，直接打开 app ，虚拟光标控制不就可以了吗",
+    "native_read_thread_verified": true
+  },
+  "correction": "Initial window opening authorized. Absolute prelaunch nonactivation was an overconstraint and no longer blocks this flow; virtual control still must not move OS mouse or use native capture/input fallback.",
+  "consumer_review": {
+    "path": "${USER_HOME}/Documents/Games/projects/20-肥鹅美食街/Analysis/v13-new-player-review-20261028/freeze/takeover/integration-repo/Analysis/v20-virtual-pointer-20261102/runtime-64-windowed-12/visual-review.json",
+    "sha256": "c75676ba23b215a6ffe234a028e3a6ab86403970864272d2d6a9e7a8f5daf637"
+  },
+  "run_id": "vp64-windowed-12",
+  "build_id": "app64-windowed-20261102-12",
+  "source_sha256": "ef54cb92829d1fe1705c2efe5475568b01bd88ac02c2f14d0431e4d0a5dcee8e",
+  "unchanged_provider": "fixed27 QA8 + existing virtual4 companion, App64 observer target ScreenCapture",
+  "frames": [
+    {
+      "label": "street",
+      "path": "${USER_HOME}/Documents/Games/projects/20-肥鹅美食街/Analysis/v13-new-player-review-20261028/freeze/takeover/integration-repo/Analysis/v20-virtual-pointer-20261102/runtime-64-windowed-12/selected-frames/street.png",
+      "sha256": "f1191a86a82489be0f1bc816b823fe1afe45a575e5acf9c2f6db973c6fcc3104",
+      "source": "${USER_HOME}/Library/Application Support/beaver/unity-qa/foodstreet/data/profiles/v20-firstday-20261101/qa-observation/vp64-windowed-12/frame-0028.png",
+      "frame": 1885,
+      "width": 510,
+      "height": 936,
+      "runId": "vp64-windowed-12"
+    },
+    {
+      "label": "cooking-selected",
+      "path": "${USER_HOME}/Documents/Games/projects/20-肥鹅美食街/Analysis/v13-new-player-review-20261028/freeze/takeover/integration-repo/Analysis/v20-virtual-pointer-20261102/runtime-64-windowed-12/selected-frames/cooking-selected.png",
+      "sha256": "2c4e1a746b4db52bc171ca353426fbb406b0eb4ccb06c489a962b3aa4371ccff",
+      "source": "${USER_HOME}/Library/Application Support/beaver/unity-qa/foodstreet/data/profiles/v20-firstday-20261101/qa-observation/vp64-windowed-12/frame-0027.png",
+      "frame": 1864,
+      "width": 510,
+      "height": 936,
+      "runId": "vp64-windowed-12"
+    },
+    {
+      "label": "mainline",
+      "path": "${USER_HOME}/Documents/Games/projects/20-肥鹅美食街/Analysis/v13-new-player-review-20261028/freeze/takeover/integration-repo/Analysis/v20-virtual-pointer-20261102/runtime-64-windowed-12/selected-frames/mainline.png",
+      "sha256": "47847395b0ca920e65dd427e61827c9fd5034d3f1d9d1dfc1370c4debc6c42c8",
+      "source": "${USER_HOME}/Library/Application Support/beaver/unity-qa/foodstreet/data/profiles/v20-firstday-20261101/qa-observation/vp64-windowed-12/frame-0023.png",
+      "frame": 1766,
+      "width": 510,
+      "height": 936,
+      "runId": "vp64-windowed-12"
+    },
+    {
+      "label": "bag-open",
+      "path": "${USER_HOME}/Documents/Games/projects/20-肥鹅美食街/Analysis/v13-new-player-review-20261028/freeze/takeover/integration-repo/Analysis/v20-virtual-pointer-20261102/runtime-64-windowed-12/selected-frames/bag-open.png",
+      "sha256": "33ed09ded7f47e780999b5c703abdcfd8580be6aa60df48493e537c927fa3b9d",
+      "source": "${USER_HOME}/Library/Application Support/beaver/unity-qa/foodstreet/data/profiles/v20-firstday-20261101/qa-observation/vp64-windowed-12/frame-0025.png",
+      "frame": 1814,
+      "width": 510,
+      "height": 936,
+      "runId": "vp64-windowed-12"
+    }
+  ],
+  "grea_visual_inspection": "Viewed all four actual PNGs: Mainline board, open bag, selected completed cooking prompt and Street visible; no pink placeholder seen in these frames.",
+  "owner_scoped_acceptance": {
+    "UI506": "pass scoped current Mainline/Street not_configured; no activity intrusion into bag/order/playable board",
+    "UI513": "pass scoped current Mainline: no pink placeholder or diagnostic foreground",
+    "UI522": "pass scoped current day6 Mainline/order queue/completed cooking selection/bag/Street; actual pixels and input, no active activity business claim"
+  },
+  "entire_before_after_snapshot_equal": true,
+  "state": {
+    "revision": 473,
+    "coins": 22,
+    "diamonds": 71,
+    "energy": 109,
+    "entireSnapshotUnchanged": true
+  },
+  "strict_live_stop": true,
+  "virtual_capture_operation": "still not_supported; actual images from existing project observer",
+  "prior_neutral_batch_and_nonactivating_failures": "historical limited experiments retained; not a global stop condition under latest authorization",
+  "prelaunch_nonactivation": "not claimed",
+  "natural_human_parallel": "not observed",
+  "activity_business": "not verified",
+  "grea_launched_player": false,
+  "grea_modified_product": false,
+  "global_plugin_updated": false,
+  "limits": [
+    "No active v2.4 activity window/authority claim",
+    "No natural human parallel-use confirmation or prelaunch nonactivation guarantee",
+    "Earlier failed neutral batch and platform reviews remain historical only; not a current stop condition",
+    "B01 bubble/finite timed producer and UI521 normal story gates unchanged"
+  ],
+  "publicHistoricalCopy": {
+    "originalSha256": "72bc7712b74dea4502f47ae06d96129d6d8b8dd729892308558e42f242798b7f",
+    "originalBytes": 5496,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "status": "formal_effect_declared_static_intake_and_native_engine_identity_verified",
+  "review": "read_only; no Unity launch/project writes/retry",
+  "consumer_completion": {
+    "path": "${USER_HOME}/Documents/Games/projects/21-向僵尸开炮/Analysis/static-prefab-20261102/effect-intake-dev7-fix28-01/consumer-completion-01.json",
+    "sha256": "2206f29a9f178bb956cd65e370816687120da075679b20b685348fc1e63354b3"
+  },
+  "producer_sha256": "ddc3b92126803069ce8029f01dc5fa451cd61c00beccebc94e499bcdbe850e33",
+  "plan_sha256": "f12221ceeddb114ba9b038af7ce0d3ec05dd0932d44f73a4b09ae4cfa2055770",
+  "journal_sha256": "ea1615f3d37e6d1a2d2a9128804e1d13298848c6e6778207f0d5c00fc18f0d6b",
+  "journal_state": "complete",
+  "native_verified": true,
+  "wrapper_status": "partial",
+  "intake_status": "verified",
+  "transport_error": null,
+  "routes": [
+    {
+      "path": "${USER_HOME}/Documents/Games/projects/21-向僵尸开炮/Analysis/static-prefab-20261102/effect-intake-dev7-fix28-01/plan-01/result.json",
+      "sha256": "889807fd17f7355cfecc3d03c4c9c6e794bd15fcc1e8c1249be87ad8f6ce4a14",
+      "status": "ok",
+      "transport_error": null
+    },
+    {
+      "path": "${USER_HOME}/Documents/Games/projects/21-向僵尸开炮/Analysis/static-prefab-20261102/effect-intake-dev7-fix28-01/apply-01/result.json",
+      "sha256": "1eb89ddff4c231b46b7bbff44a0b62a5a93be3fcb39c2e108bab3cebc8081783",
+      "status": "partial",
+      "transport_error": null
+    }
+  ],
+  "source_manifest_comparison": {
+    "before": 126524,
+    "after": 126540,
+    "old_entries_exact": true,
+    "added": 16
+  },
+  "bounded_current_new_file_hashes_verified": 16,
+  "engine_identity": [
+    {
+      "assembly": "UnityEngine.CoreModule",
+      "assetPath": "Library/unity default resources",
+      "guid": "0000000000000000e000000000000000",
+      "localId": 10210,
+      "name": "Quad",
+      "type": "UnityEngine.Mesh"
+    }
+  ],
+  "four_native_observations_equal": true,
+  "independent_processes": [
+    {
+      "path": "${USER_HOME}/Documents/Games/projects/21-向僵尸开炮/Analysis/static-prefab-20261102/effect-intake-dev7-fix28-01/apply-01/provider-output/intake-preflight-process.json",
+      "sha256": "d38a8afeb23fd929ee40b64d8afdaeb6fa3cef4a4a902320902692d378f645c4",
+      "pid": 46670,
+      "exit_code": 0
+    },
+    {
+      "path": "${USER_HOME}/Documents/Games/projects/21-向僵尸开炮/Analysis/static-prefab-20261102/effect-intake-dev7-fix28-01/apply-01/provider-output/intake-verify-process.json",
+      "sha256": "bcd8214666ecbc34497bb0d8c8d66ced1c43b190ef5ce67122db11a17681d3b5",
+      "pid": 47574,
+      "exit_code": 0
+    }
+  ],
+  "declared_prefab_objects": 6,
+  "fields_checked": 64,
+  "formal_distinct_roots": 8,
+  "formal_adopted_pairs": 52,
+  "source_mesh_equivalence": "unverified",
+  "source_graph_gaps": [
+    {
+      "category": "unity-default-resources",
+      "externalIdentity": {
+        "category": "unity-default-resources",
+        "fileId": "3",
+        "guid": "00000000000000000e00000000000000",
+        "guidEncoding": "serialized-guid-bytes-hex",
+        "ownerSerializedFile": {
+          "containerSha256": "9b1fad7392746e6f00d86d0a8777c9797a589d3f473ebdd743e0d5519e13b7ea",
+          "name": "CAB-811173610d1cb420d577f7dceb576cbe",
+          "serializedFileSha256": "d371655c23ab7cae548240e39c931a857db3eaa1a98eed15006c22e257566b9a"
+        },
+        "path": "Library/unity default resources"
+      },
+      "kind": "engine-reference-unverified",
+      "location": "$/m_Mesh",
+      "pointer": {
+        "fileId": "3",
+        "pathId": "10210"
+      },
+      "reason": "native engine identity not verified",
+      "sourceObjectId": "{\"containerSha256\":\"9b1fad7392746e6f00d86d0a8777c9797a589d3f473ebdd743e0d5519e13b7ea\",\"pathId\":\"-900432925372114859\",\"serializedFile\":\"CAB-811173610d1cb420d577f7dceb576cbe\",\"serializedFileSha256\":\"d371655c23ab7cae548240e39c931a857db3eaa1a98eed15006c22e257566b9a\"}"
+    }
+  ],
+  "source_diagnostics": [
+    {
+      "code": "UNITY_PREFAB_TARGET_GUID_UNRESOLVED",
+      "guid": "0000000deadbeef15deadf00d0000000",
+      "path": "ExportedProject/Assets/effect/0_hzh/textures/youhua/materials/pugong2_op.mat"
+    }
+  ],
+  "shader_semantics": "unverified",
+  "visual": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "old_transactions": "retained; no replay",
+  "limits": "Static declarations and target native identity only; no full restoration or QA claim",
+  "publicHistoricalCopy": {
+    "originalSha256": "13bd89f5010666c5dfc7eac9d99ec4ebc53178aac02ac7ebe606b8906bee2ded",
+    "originalBytes": 4488,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

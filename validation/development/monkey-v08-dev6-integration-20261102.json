@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "status": "limited_freeze_pass_consumers_pending",
+  "provider_version": "0.8.0.dev6",
+  "source_commit": "3fb450c51b8e3a04c1bd8c71aaea0cee71befea1",
+  "handoff_sha256": "528ea18699b6ec544830b8f6b2ba2dc6a487f878bef6d8211510e170052dfbbe",
+  "wheel_sha256": "6cfd9cf4d8998a6bb2a42a10ab655df00b30a2d72b1968c095884466791f2a0a",
+  "fixed_verification": {
+    "status": "fixed-dev6-inputs-and-reused-native-evidence-verified",
+    "package_files": 452,
+    "package_digest": "302f4ada206cb3462a6d95d7a5af37deee2742cc7b99b595d0058a62fc8a3dad",
+    "capabilities_digest": "a9ff89dcb4796318cad3dfd44627528355ef3c5410a22fa603a7ad6b3356cc82",
+    "indexed_pins": 23,
+    "modules": [
+      {
+        "label": "TipUI",
+        "files": 68,
+        "manifest_sha256": "a2a1f213f1f7ae90666c9198bd11446173a6f4bb59f7823f3dea8b299cbad673",
+        "fields": 195,
+        "objects": 16,
+        "references": 28,
+        "native": "native-partial",
+        "processes": [
+          51015,
+          51568
+        ],
+        "exit_codes": [
+          1,
+          1
+        ],
+        "disabled_instances": 0,
+        "diagnostics": 2,
+        "compiler_inputs": [
+          "Assets/Game/Scripts/GameBase/DodGame/DodImage.cs",
+          "Assets/Game/Scripts/GameBase/DodGame/DodText.cs",
+          "Assets/Game/Scripts/GameBase/DodGame/EGameTextType.cs",
+          "Assets/Game/Scripts/GameBase/GameBase.asmdef"
+        ]
+      },
+      {
+        "label": "MainLogin-original-atlas",
+        "files": 158,
+        "manifest_sha256": "39202724fb6af44542a4d56d9b1a80d1b97e176300d6d3645d342bf2ab51c64c",
+        "fields": 4757,
+        "objects": 350,
+        "references": 844,
+        "native": "native-partial",
+        "processes": [
+          52401,
+          52865
+        ],
+        "exit_codes": [
+          1,
+          1
+        ],
+        "disabled_instances": 40,
+        "diagnostics": 22,
+        "compiler_inputs": [
+          "Assets/Game/Scripts/Assembly-CSharp/EmptyGraph.cs",
+          "Assets/Game/Scripts/Assembly-CSharp/T5Game/GradientColor.cs",
+          "Assets/Game/Scripts/Assembly-CSharp/UIButtonScale.cs",
+          "Assets/Game/Scripts/Assembly-CSharp/UIButtonSound.cs",
+          "Assets/Game/Scripts/Assembly-CSharp/UITextIDBinder.cs",
+          "Assets/Game/Scripts/GameBase/DodGame/DodImage.cs",
+          "Assets/Game/Scripts/GameBase/DodGame/DodInputField.cs",
+          "Assets/Game/Scripts/GameBase/DodGame/DodText.cs",
+          "Assets/Game/Scripts/GameBase/DodGame/EGameTextType.cs",
+          "Assets/Game/Scripts/GameBase/GameBase.asmdef",
+          "Assets/Game/Scripts/GameLogic/GameLogic.asmdef",
+          "Assets/Game/Scripts/GameLogic/T5Game/UIBtnSoundType.cs"
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "scope": "atlasAssets",
+        "files": 29,
+        "asset_rows": 8,
+        "first_cold_identical": true,
+        "normalization": [
+          "selected original atlas PNG decoded back to pinned bottom-up RGBA32/no-mip Texture2D",
+          "existing Sprite GUID/localID/meta and serialized geometry preserved; only native texture references rebound"
+        ]
+      },
+      {
+        "scope": "unpackedAssetsRegression",
+        "files": 17,
+        "asset_rows": 2,
+        "first_cold_identical": true,
+        "normalization": [
+          "source ASTC decoded to CPU-readable RGBA32/no-mip Texture2D",
+          "new native GUID/localID; original render-data key is evidence only"
+        ]
+      }
+    ],
+    "old_dev5_and_failure_evidence": "preserved; no old pass rewritten",
+    "grea_editor_started": false,
+    "consumer_adoption": "not_run_by_grea",
+    "visual": "not_run_headless",
+    "player": "not_run",
+    "business": "not_run"
+  },
+  "public_operation": "freeze-unity-prefabs",
+  "other_commands": "not_adapted; no recover/verify/rebuild-assets exposure",
+  "cli_pin": "ready",
+  "cli_positive": "Tip and repaired Login selections each exactly reproduce producer manifest and owned files; needs_action/exit1",
+  "manifest_sha256": {
+    "tip-freeze": "a2a1f213f1f7ae90666c9198bd11446173a6f4bb59f7823f3dea8b299cbad673",
+    "login-atlas-freeze": "39202724fb6af44542a4d56d9b1a80d1b97e176300d6d3645d342bf2ab51c64c"
+  },
+  "cli_and_stdio_negative": "wrong execution SHA rejected; no output/provider operation",
+  "focused_tests": 48,
+  "compiler_preservation": "Full candidate payload retained; target class and EGameTextType enum/values require supported exact reuse proof before intake",
+  "source_partial_rule": "freeze does not set intakeStatus verified; no automatic apply or replay",
+  "old_evidence": "dev5/404/failures and already adopted roots unchanged",
+  "atlas_gap_status": "eight Login sprites repaired only in new fixed candidate; old missing-atlas failure is historical, not erased",
+  "remaining_source_failures": [
+    "trimmed gun atlas unsupported",
+    "BattleMain Renderer byte/bool mismatch refused"
+  ],
+  "consumer": "pending owner complete preflight, supported mappings and actual intake",
+  "grea_editor_started": false,
+  "product_writes": false,
+  "visual": "not_run_headless",
+  "visible_edits": "not_run_headless",
+  "player": "not_run",
+  "business": "not_run",
+  "push": false,
+  "install": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "a06b7c88dd9a91e6e460184119d59148a8a7c8477b175eff661a2c7cd4863fb5",
+    "originalBytes": 5241,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

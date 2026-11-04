@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "status": "formal_consumer_blocked_on_scene_replacement",
+  "version": "0.6.0.dev20261102+virtual2",
+  "public_binding": "limited pass remains valid; not normal FoodStreet acceptance",
+  "owner_report": {
+    "source": "FoodStreet scene dependency message",
+    "EntryFlowController": "line45 Additive load Mainline; line87 normal login unload Entry",
+    "FoodStreetBootstrap": "lines48-49 restore main board input"
+  },
+  "task": "T0060",
+  "candidate": "App63",
+  "player_started": false,
+  "channel_created": false,
+  "normal_entry_bypass": false,
+  "scene_boundary": "known virtual2 destroyed-module restoration/rebind failure; producer preparing virtual3",
+  "next": "same API and workflow, new exact virtual3 pin plus true scene reload proof before normal Entry flow consumption",
+  "native_input_fallback": false,
+  "old_validation_replay": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "38c78fe2155007a779bba843bf18379f1f0d3e8c91539135e83aa625a4195766",
+    "originalBytes": 884,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}

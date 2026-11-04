@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "status": "scoped_consumer_pass_source_partial",
+  "producer_version": "0.5.1.dev20261102+fix25",
+  "producer_sha256": "3c3425936301e7a0c4b988b8d9405cff7a9cd61541c959cb3db76597750495ee",
+  "completion_sha256": "5fa532f0a3944bc909547c563975dd0689a76c48144bffe55e3bc33111283dc2",
+  "plan_sha256": "fe3583cc77fd6bde0ec471368c99842062b0a106dac3f22b5b03295d52173c16",
+  "journal_sha256": "5f59a257839ebfeb4adc97834248a644a0db92d7a82570ffad24902c0ab45694",
+  "source_candidate_manifest_sha256": "a2a1f213f1f7ae90666c9198bd11446173a6f4bb59f7823f3dea8b299cbad673",
+  "intake_status": "verified",
+  "public_status": "partial",
+  "old_fix24_rollback_journal": "unchanged; rolled-back/restored0; original runtime preserved",
+  "recorded_existing_entries_preserved": 126437,
+  "source_rehash_scope": "8 new files and exact retained script/font asset+meta pins independently read; original full before/after records reused",
+  "new_asset_pairs": 3,
+  "new_directory_metas": 2,
+  "new_files_verified": 8,
+  "native_prefab_objects": 16,
+  "typed_fields": 195,
+  "retained_project_scripts": 2,
+  "official_package_scripts": 2,
+  "retained_font_objects": 3,
+  "external_references_equal_first_cold": 13,
+  "font_traversal_visited": 50,
+  "font_scalar_data_length": 1642040,
+  "font_scalar_type": "char, childless Integer",
+  "independent_processes": [
+    {
+      "exitCode": 0,
+      "exited": true,
+      "interrupted": false,
+      "pid": 97104
+    },
+    {
+      "exitCode": 0,
+      "exited": true,
+      "interrupted": false,
+      "pid": 97615
+    }
+  ],
+  "formal_distinct_adopted_roots": 5,
+  "headless_source_denominator_increase": 0,
+  "source_diagnostics": "2 original SDK pending-rebind diagnostics retained; actual target packages separately verified",
+  "font_tool_gap": "closed by real consumer; not a full static/game pass",
+  "formal_new_rollback": "not_run; transaction retained",
+  "grea_editor_started": false,
+  "product_writes_by_grea": false,
+  "visual": "not_run",
+  "visible_edits": "not_run",
+  "player": "not_run",
+  "business": "not_run",
+  "automatic_replay": false,
+  "push": false,
+  "install": false,
+  "release": false,
+  "publicHistoricalCopy": {
+    "originalSha256": "5c56d1b4fed616fd81e10bcd298947593d4c3a641e53e76ba1034cbc7d4f925d",
+    "originalBytes": 2165,
+    "localHomePaths": "redacted",
+    "scope": "Historical consumer evidence only; not current acceptance or a replay instruction"
+  }
+}
