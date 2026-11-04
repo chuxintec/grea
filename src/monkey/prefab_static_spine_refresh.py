@@ -353,6 +353,7 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
     from .spine_owner_lifecycle_readback import CONTRACT as owner_lifecycle_contract
     refreshed_fragment["ownerContextLifecycleEvidenceContract"] = owner_lifecycle_contract
     if isinstance(refreshed.get("staticTextContinuation"), dict):
+        refreshed["staticTextSlotCaptureLifecycleContract"] = "monkey-static-sort-text-capture-lifecycle/1"
         from .prefab_static_text_continuation import SAMPLING_CONTRACT
         refreshed["staticTextContinuation"]["nativeSamplingContract"] = SAMPLING_CONTRACT
         refreshed["staticTextContinuationJson"] = json.dumps(
@@ -399,7 +400,7 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
 
     owner_manifest = dict(manifest)
     owner_manifest["staticSpineRendering"] = refreshed_fragment
-    for key in ("staticTextContinuation", "staticTextContinuationJson"):
+    for key in ("staticTextContinuation", "staticTextContinuationJson", "staticTextSlotCaptureLifecycleContract"):
         if key in refreshed:
             owner_manifest[key] = refreshed[key]
     if "staticSpineRenderingTargetUnits" in refreshed:

@@ -591,3 +591,10 @@ The fixed selection now carries the manifest-owned Spine runtime pair, importer 
 ## Local maintenance — 2026-11-02
 
 Authorized cleanup removed245 inactive regenerable Unity Library caches only; current three WIP caches, fixed dependencies, candidate resources, source inputs and transaction evidence retained. Exact deletion and disk metrics: `.private/cleanup-20261102/REPORT.md` and `report.json`. No engine run or version acceptance was added.
+
+
+## 2026-11-05 dev23 text capture source validation
+
+The completed source change freezes every drawable TMP slot before registering any captured fallback variant, then requires two identical final preparations before rebinding each slot. Source text, raw/drawable slot sets, primary and fallback font identities, character assets, layout/scale operands and exact material profiles remain checked. Versioned slot evidence binds material, shader and texture GUID/local IDs; unmarked saved evidence retains its prior hash contract. Refusals preserve complete lifecycle and before/after enumerations inside the new candidate.
+
+The combined offline checks pass331 tests and54 subcases;119 C# sources compile against175 references. An actual-input inventory covers119 text groups, with87 queued IDs and32 nonqueue groups. The extracted production lifecycle and transition gates pass all87 queued IDs/89 drawable rows and nine refusal cases;57 groups reuse saved slot layouts and30 missing queue groups are explicitly modeled. All173 input pins are unchanged. Independent Python consumption of those modeled receipts passes in persistent and loaded modes. Unity/TMP/AssetDatabase operations, persistent identities, the full rebind implementation and readback adapter remain simulated; these results are source validation. The immutable native17 failure did not record a per-field mutation delta. GREA retains native-stage execution and acceptance authority through its sole lifecycle roadmap.

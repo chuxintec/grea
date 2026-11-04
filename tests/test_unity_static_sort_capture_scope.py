@@ -351,17 +351,26 @@ class UnityStaticSortCaptureScopeTests(unittest.TestCase):
         self.assertGreater(prepare.rindex("PrepareSource(textOwner, row.sourceComponentId"),
                            prepare.index("CaptureOwnerFontMaterial(textOwner, row.sourceComponentId"))
         self.assertIn("CaptureAndRebindTextSlots(spec, row, textOwner, ownerStyle, out var textSlotEnumeration)", core)
-        self.assertIn("RebindCapturedSlot(captureProofs[slot], owner, current.sourceGraphic", self.source)
+        self.assertIn("RebindCapturedSlot(captured, owner, current.sourceGraphic", self.source)
         self.assertIn("GetCurrentSlots(owner, row.sourceComponentId", self.source)
-        self.assertIn("CaptureFallbackMaterial(live, materialPath", self.source)
-        self.assertLess(self.source.index("CaptureFallbackMaterial(live, materialPath"),
-                        self.source.index("PrepareSource(owner, row.sourceComponentId", self.source.index("CaptureFallbackMaterial(live, materialPath")))
+        capture_slots = self.block("static List<TextSlotBinding> CaptureAndRebindTextSlots(",
+                                   "static void ValidateTextSlotEnumeration(")
+        self.assertIn("CaptureFallbackMaterialProfile(live, materialPath", capture_slots)
+        self.assertIn("RegisterCapturedFallbackVariant(binding", capture_slots)
+        self.assertLess(capture_slots.index("CaptureFallbackMaterialProfile(live, materialPath"),
+                        capture_slots.index("RegisterCapturedFallbackVariant(binding"))
+        self.assertLess(capture_slots.index("RegisterCapturedFallbackVariant(binding"),
+                        capture_slots.index("PrepareSource(owner, row.sourceComponentId"))
+        self.assertIn("final-prepare-pass1", capture_slots)
+        self.assertIn("final-prepare-pass2", capture_slots)
+        self.assertIn("ValidateCapturedSlotTransition", self.source)
         capture_slots = core.index("CaptureAndRebindTextSlots(spec, row, textOwner, ownerStyle, out var textSlotEnumeration)")
         text_proxy = core.index("CreateProxyGraphic(sourceGraphic, sourceNode.GetComponent<Graphic>()", capture_slots)
         self.assertLess(capture_slots, text_proxy)
         self.assertIn("UnityStaticSortTextSource.Attach(proxyObject, textBinding, mesh, meshSha)", create)
         self.assertIn("UnityStaticSortTextSource.ReadPersistent", read)
         self.assertIn("UnityStaticSortTextSource.ReadInitialized", read)
+        self.assertIn("captureLifecycle = identity.captureLifecycle", read)
         self.assertIn("textSources = textSourceReadbacks.ToArray()", read)
 
     def test_optional_mask_proof_strings_canonicalize_null_without_dropping_checks(self):

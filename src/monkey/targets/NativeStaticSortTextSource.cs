@@ -7,6 +7,7 @@ namespace Monkey.StaticSortQueueProxy
     [Serializable]
     public sealed class NativeStaticSortTextSlotEvidence
     {
+        public string evidenceContract;
         public int slot;
         public int characterReferences;
         public int visibleCharacterReferences;
@@ -23,6 +24,14 @@ namespace Monkey.StaticSortQueueProxy
         public long sourceAssetLocalFileId;
         public string atlasGuid;
         public long atlasLocalFileId;
+        public string sourceGraphicMaterialGuid;
+        public long sourceGraphicMaterialLocalFileId;
+        public string textInfoMaterialGuid;
+        public long textInfoMaterialLocalFileId;
+        public string sourceShaderGuid;
+        public long sourceShaderLocalFileId;
+        public string sourceTextureGuid;
+        public long sourceTextureLocalFileId;
         public string textInfoMaterialFingerprint;
         public string sourceGraphicMaterialFingerprint;
         public string characterEvidenceSha256;
@@ -34,12 +43,75 @@ namespace Monkey.StaticSortQueueProxy
     [Serializable]
     public sealed class NativeStaticSortTextSlotEnumeration
     {
+        public string evidenceContract;
         public string sourceComponentId;
         public string sourceTextSha256;
         public int slotCount;
         public bool verified;
         public string evidenceSha256;
         public NativeStaticSortTextSlotEvidence[] rows;
+    }
+
+    /// <summary>
+    /// Captures the complete, source-bound lifecycle that changes TMP's live
+    /// slot materials while an owned static fallback is captured. Every phase
+    /// remains available to readback; this is not a pass flag by itself.
+    /// </summary>
+    [Serializable]
+    public sealed class NativeStaticSortTextCaptureLifecycle
+    {
+        public int schemaVersion = 1;
+        public string contract = "monkey-static-sort-text-capture-lifecycle/1";
+        public string sourceComponentId, sourceTextSha256, ownerFontAssetGuid,
+            ownerFontMaterialGuid, ownerFontMaterialFingerprint, status, diagnostic, evidenceSha256;
+        public long ownerFontAssetLocalFileId, ownerFontMaterialLocalFileId;
+        public int initialSlotCount, finalSlotCount;
+        public int[] initialDrawableSlotIds, finalDrawableSlotIds;
+        public bool initialEnumerationVerified, allInitialBindingsCaptured,
+            allFallbackProfilesCaptured, allFallbackVariantsRegistered, finalPrepareCompleted, finalSlotSetVerified,
+            allSlotsRebound, sourceTextAndFontRechecked, persistentReferencesRechecked, verified;
+        public NativeStaticSortTextCapturePhase[] phases;
+        public NativeStaticSortTextSlotEnumeration initialEnumeration, finalEnumeration;
+    }
+
+    [Serializable]
+    public sealed class NativeStaticSortTextCapturePhase
+    {
+        public string phase, status, diagnostic, sourceComponentId, sourceTextSha256, ownerFontAssetGuid,
+            ownerFontMaterialGuid, ownerFontMaterialFingerprint;
+        public long ownerFontAssetLocalFileId, ownerFontMaterialLocalFileId;
+        public int slot = -1;
+        public string enumerationSha256;
+        public NativeStaticSortTextSlotEnumeration enumeration;
+        public NativeStaticSortTextCaptureSlot[] slots;
+    }
+
+    [Serializable]
+    public sealed class NativeStaticSortTextCaptureSlot
+    {
+        public int slot, characterReferences, visibleCharacterReferences;
+        public string snapshotMoment;
+        public string disposition, sourceAssetKind, sourceAssetGuid, atlasGuid,
+            textInfoMaterialFingerprint, textInfoCharacterMaterialFingerprint, sourceGraphicMaterialFingerprint,
+            characterEvidenceSha256, characterAssetEvidenceSha256, sourceMeshSha256;
+        public long sourceAssetLocalFileId, atlasLocalFileId;
+        public string sourceGraphicMaterialGuid, textInfoMaterialGuid, sourceShaderGuid, sourceTextureGuid;
+        public long sourceGraphicMaterialLocalFileId, textInfoMaterialLocalFileId,
+            sourceShaderLocalFileId, sourceTextureLocalFileId;
+        public string ownerFontAssetGuid, ownerFontMaterialGuid, ownerFontMaterialFingerprint,
+            fallbackFontAssetGuid, fallbackFontMaterialGuid, fallbackFontMaterialFingerprint,
+            fallbackAtlasGuid, transientFallbackFingerprint, bakedProxyMaterialGuid,
+            bakedProxyMaterialFingerprint, sourceMaterialFingerprint, tmpFallbackAlgorithm;
+        public long ownerFontAssetLocalFileId, ownerFontMaterialLocalFileId,
+            fallbackFontAssetLocalFileId, fallbackFontMaterialLocalFileId,
+            fallbackAtlasLocalFileId, bakedProxyMaterialLocalFileId;
+        public int textInfoVertexCount, canvasVertexCount, textInfoNondegenerateTriangleCount,
+            canvasNondegenerateTriangleCount;
+        public uint textInfoTriangleIndexCount, canvasTriangleIndexCount;
+        public bool textInfoMaterialMissing, tmpFallbackMaterialBaked, requiresPersistentFallbackRegistration,
+            persistentFallbackVariantRegistered,
+            sourceGraphicEnabled, sourceGraphicActiveSelf;
+        public NativeStaticSortTextScaleContext textScaleContext;
     }
 
     [Serializable]
@@ -134,6 +206,7 @@ namespace Monkey.StaticSortQueueProxy
         public bool sourceGraphicEnabled;
         public bool sourceGraphicActiveSelf;
         public NativeStaticSortTextSlotEnumeration textSlotEnumeration;
+        public NativeStaticSortTextCaptureLifecycle captureLifecycle;
         public NativeStaticSortTextScaleContext textScaleContext;
         public bool textInfoMaterialMissing;
         public bool textInfoCharacterSlotVerified;

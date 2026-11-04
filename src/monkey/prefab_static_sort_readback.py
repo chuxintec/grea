@@ -802,8 +802,12 @@ def _check_graphics(spec, queue_readback, owner, mode):
     return failures
 
 
-def _check_text_sources(spec, queue_readback, mode):
-    failures = []
+def _check_text_sources(spec, queue_readback, mode, plan=None):
+    from .text_slot_capture_lifecycle_readback import CONTRACT as capture_contract, verify_queue as verify_capture
+    failures = verify_capture(queue_readback, mode,
+        required=isinstance(plan,dict) and plan.get('staticTextSlotCaptureLifecycleContract')==capture_contract)
+    if isinstance(plan,dict) and plan.get('staticTextSlotCaptureLifecycleContract') not in (None,capture_contract):
+        failures.append(f"{mode} TMP capture lifecycle contract is unsupported")
     non_draw_ids = {row.get("sourceComponentId") for row in spec.get("nonDrawRenderers", []) if isinstance(row, dict)}
     graphic_rows = queue_readback.get("graphics") or []
     drawable_ids = {row.get("sourceComponentId") for row in graphic_rows if isinstance(row, dict)}
@@ -1849,7 +1853,26 @@ def _empty_text_slot_row_hash(row):
         row.get("characterEvidenceSha256") or "", row.get("characterAssetEvidenceSha256") or "",
         row.get("sourceMeshSha256") or "",
     )
-    return hashlib.sha256("|".join(str(value) for value in fields).encode("utf-8")).hexdigest()
+    evidence = "|".join(str(value) for value in fields)
+    contract = row.get("evidenceContract")
+    if contract:
+        if contract != "monkey-static-sort-text-slot-evidence/2":
+            return None
+        identities = [f'{row.get(prefix + "Guid") or ""}:{row.get(prefix + "LocalFileId", 0)}'
+                      for prefix in ("sourceGraphicMaterial", "textInfoMaterial", "sourceShader", "sourceTexture")]
+        evidence = contract + "|" + evidence + "|" + "|".join(identities)
+    return hashlib.sha256(evidence.encode("utf-8")).hexdigest()
+
+
+def _text_slot_enumeration_hash(value):
+    evidence = "|".join([value["sourceComponentId"], value["sourceTextSha256"], str(value["slotCount"]),
+                         *[row["evidenceSha256"] for row in value["rows"]]])
+    contract = value.get("evidenceContract")
+    if contract:
+        if contract != "monkey-static-sort-text-slot-enumeration/2":
+            return None
+        evidence = contract + "|" + evidence
+    return hashlib.sha256(evidence.encode("utf-8")).hexdigest()
 
 
 def _valid_empty_text_slot_enumeration(value, source_id, text_hash):
@@ -1859,7 +1882,10 @@ def _valid_empty_text_slot_enumeration(value, source_id, text_hash):
             not isinstance(value.get("rows"), list) or len(value["rows"]) != value["slotCount"] or
             not _SHA.fullmatch(value.get("evidenceSha256") or "")):
         return False
-    row_hashes = []
+    contract = value.get("evidenceContract")
+    if contract not in (None, "", "monkey-static-sort-text-slot-enumeration/2"):
+        return False
+    row_contract = "monkey-static-sort-text-slot-evidence/2" if contract else None
     for index, row in enumerate(value["rows"]):
         if (not isinstance(row, dict) or row.get("slot") != index or row.get("disposition") != "empty-placeholder" or
                 type(row.get("characterReferences")) is not int or row["characterReferences"] != 0 or
@@ -1873,12 +1899,10 @@ def _valid_empty_text_slot_enumeration(value, source_id, text_hash):
                 type(row.get("atlasLocalFileId")) is not int or row["atlasLocalFileId"] == 0 or
                 any(not _SHA.fullmatch(row.get(key) or "") for key in
                     ("characterEvidenceSha256", "characterAssetEvidenceSha256", "evidenceSha256")) or
+                (row.get("evidenceContract") or None) != row_contract or
                 row.get("evidenceSha256") != _empty_text_slot_row_hash(row)):
             return False
-        row_hashes.append(row["evidenceSha256"])
-    expected_hash = hashlib.sha256((value["sourceComponentId"] + "|" + value["sourceTextSha256"] + "|" +
-                                    str(value["slotCount"]) + "|" + "|".join(row_hashes)).encode("utf-8")).hexdigest()
-    return value["evidenceSha256"] == expected_hash
+    return value["evidenceSha256"] == _text_slot_enumeration_hash(value)
 
 
 def _empty_text_slot_enumeration_matches(expected, actual, mode):
@@ -2306,7 +2330,7 @@ def _check_queue(spec, row, owner, mode, plan=None, spine_native_bindings=None):
     failures.extend(_field_rows(spec.get("sourceFields", []), row.get("sourceFields"), owner,require_persistent=require_persistent))
     failures.extend(_field_rows(spec.get("sourceSortRoots", []), row.get("sourceSortRoots"), owner, sort_root=True,require_persistent=require_persistent))
     failures.extend(_check_graphics(spec, row, owner, "loaded" if mode == "loaded" else "persistent"))
-    failures.extend(_check_text_sources(spec, row, "loaded" if mode == "loaded" else "persistent"))
+    failures.extend(_check_text_sources(spec, row, "loaded" if mode == "loaded" else "persistent", plan))
     failures.extend(_check_spine_owner_delegations(spec, row, "loaded" if mode == "loaded" else "persistent", plan,
                                                     spine_native_bindings))
     failures.extend(_check_spine_null_data_owners(spec, row, "loaded" if mode == "loaded" else "persistent", plan,

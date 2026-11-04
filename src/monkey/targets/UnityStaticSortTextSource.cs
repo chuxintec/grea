@@ -31,6 +31,7 @@ namespace Monkey.StaticSortQueueProxy
         public bool sourceCanvasCullBeforeCaptured;
         public bool sourceCanvasCullBeforeRuntime;
         public NativeStaticSortTextSlotEnumeration textSlotEnumeration;
+        public NativeStaticSortTextCaptureLifecycle captureLifecycle;
         public bool textInfoMaterialMissing;
         public bool textInfoCharacterSlotVerified;
         public bool textInfoCharacterMaterialVerified;
@@ -71,6 +72,7 @@ namespace Monkey.StaticSortQueueProxy
         public string sourceMeshRegenerationDiagnostic;
         public NativeStaticSortTextScaleContext currentTextScaleContext;
         public bool tmpFallbackMaterialBaked;
+        public bool requiresPersistentFallbackRegistration;
         public bool persistentFallbackVariantRegistered;
         public string tmpFallbackAlgorithm;
         public int tmpFallbackAtlasIndex;
@@ -112,6 +114,7 @@ namespace Monkey.StaticSortQueueProxy
         public bool sourceSlotMeshVerified;
         public bool sourceMeshRegeneratedFromCurrentTmpVerified;
         public NativeStaticSortTextSlotEnumeration textSlotEnumeration;
+        public NativeStaticSortTextCaptureLifecycle captureLifecycle;
         public NativeStaticSortTextSlotEnumeration currentTextSlotEnumeration;
         public bool textInfoMaterialMissing, textInfoCharacterSlotVerified, textInfoCharacterMaterialVerified;
         public bool textInfoFontAssetVerified, textInfoAtlasVerified;
@@ -171,6 +174,8 @@ namespace Monkey.StaticSortQueueProxy
     /// </summary>
     public static class UnityStaticSortTextSource
     {
+        const string TEXT_SLOT_ENUMERATION_CONTRACT_V2 = "monkey-static-sort-text-slot-enumeration/2";
+        const string TEXT_SLOT_EVIDENCE_CONTRACT_V2 = "monkey-static-sort-text-slot-evidence/2";
         const string MainTex = "_MainTex";
         static readonly FieldInfo MaterialSlotField = typeof(TMP_SubMeshUI).GetField(
             "m_materialReferenceIndex", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -2335,9 +2340,34 @@ namespace Monkey.StaticSortQueueProxy
             out List<TextSlotBinding> slots, out NativeStaticSortTextSlotEnumeration enumeration,
             out string diagnostic)
         {
+            return GetCurrentSlotsCore(owner, sourceComponentId, presenter, identity,
+                identity == null ? null : identity.textSlotEnumeration, out slots, out enumeration, out diagnostic);
+        }
+
+        public static bool GetCurrentEmptyTextSlots(TMP_Text owner, string sourceComponentId,
+            NativeStaticSortTextSlotEnumerationIdentity emptyIdentity,
+            out List<TextSlotBinding> slots, out NativeStaticSortTextSlotEnumeration enumeration,
+            out string diagnostic)
+        {
+            return GetCurrentSlotsCore(owner, sourceComponentId, null, null,
+                emptyIdentity == null ? null : emptyIdentity.slotEnumeration, out slots, out enumeration, out diagnostic);
+        }
+
+        static bool GetCurrentSlotsCore(TMP_Text owner, string sourceComponentId,
+            NativeStaticSortQueueProxyPresenter presenter, NativeStaticSortTextSource identity,
+            NativeStaticSortTextSlotEnumeration expectedEnumeration,
+            out List<TextSlotBinding> slots, out NativeStaticSortTextSlotEnumeration enumeration,
+            out string diagnostic)
+        {
             slots = new List<TextSlotBinding>(); enumeration = null; diagnostic = null;
             if (owner == null || String.IsNullOrWhiteSpace(sourceComponentId))
                 return Fail("TMP_SORT_CURRENT_SLOTS_OWNER_OR_ID_MISSING", out diagnostic);
+            var evidenceContract = expectedEnumeration != null &&
+                String.IsNullOrEmpty(expectedEnumeration.evidenceContract)
+                    ? null : TEXT_SLOT_EVIDENCE_CONTRACT_V2;
+            if (expectedEnumeration != null && !String.IsNullOrEmpty(expectedEnumeration.evidenceContract) &&
+                expectedEnumeration.evidenceContract != TEXT_SLOT_ENUMERATION_CONTRACT_V2)
+                return Fail("TMP_SORT_CURRENT_SLOTS_ENUMERATION_CONTRACT_UNSUPPORTED:" + expectedEnumeration.evidenceContract, out diagnostic);
             var info = owner.textInfo;
             if (info == null || info.materialCount <= 0 || info.meshInfo == null || info.meshInfo.Length < info.materialCount)
                 return Fail("TMP_SORT_CURRENT_SLOTS_TEXTINFO_UNAVAILABLE", out diagnostic);
@@ -2385,7 +2415,7 @@ namespace Monkey.StaticSortQueueProxy
                             ":canvasGeometry=" + MeshGeometryDiagnostic(rendererMesh), out diagnostic);
                     var placeholderGraphic = slotGraphic;
                     rows.Add(BuildTextInfoSlotEvidence(owner, slot, placeholderGraphic, generated, null,
-                        textInfoReferences, visibleTextInfoReferences, "empty-placeholder"));
+                        textInfoReferences, visibleTextInfoReferences, "empty-placeholder", evidenceContract));
                     continue;
                 }
                 if (slotGraphic == null)
@@ -2404,11 +2434,12 @@ namespace Monkey.StaticSortQueueProxy
                 if (!TryResolveSlot(owner, generated, slot, sourceComponentId, presenter, slotIdentity, out var binding, out diagnostic))
                     return false;
                 rows.Add(BuildTextInfoSlotEvidence(owner, slot, slotGraphic, generated, binding,
-                    textInfoReferences, visibleTextInfoReferences, "drawable"));
+                    textInfoReferences, visibleTextInfoReferences, "drawable", evidenceContract));
                 slots.Add(binding);
             }
             var sourceTextSha = HashText(owner.text ?? String.Empty);
             enumeration = new NativeStaticSortTextSlotEnumeration {
+                evidenceContract = evidenceContract == TEXT_SLOT_EVIDENCE_CONTRACT_V2 ? TEXT_SLOT_ENUMERATION_CONTRACT_V2 : null,
                 sourceComponentId = sourceComponentId,
                 sourceTextSha256 = sourceTextSha,
                 slotCount = info.materialCount,
@@ -2423,9 +2454,499 @@ namespace Monkey.StaticSortQueueProxy
             return true;
         }
 
+        public static NativeStaticSortTextCaptureLifecycle BeginCaptureLifecycle(string sourceComponentId,
+            TMP_Text owner, NativeStaticSortTextSlotEnumeration initialEnumeration)
+        {
+            if (owner == null || String.IsNullOrWhiteSpace(sourceComponentId) ||
+                !IsValidTextSlotEnumeration(initialEnumeration) ||
+                initialEnumeration.evidenceContract != TEXT_SLOT_ENUMERATION_CONTRACT_V2 ||
+                initialEnumeration.sourceComponentId != sourceComponentId)
+                return null;
+            AssetIdentity(owner.font, out var fontGuid, out var fontLocalId);
+            AssetIdentity(owner.fontSharedMaterial, out var materialGuid, out var materialLocalId);
+            return new NativeStaticSortTextCaptureLifecycle {
+                sourceComponentId = sourceComponentId,
+                sourceTextSha256 = HashText(owner.text ?? String.Empty),
+                ownerFontAssetGuid = fontGuid,
+                ownerFontAssetLocalFileId = fontLocalId,
+                ownerFontMaterialGuid = materialGuid,
+                ownerFontMaterialLocalFileId = materialLocalId,
+                ownerFontMaterialFingerprint = MaterialFingerprint(owner.fontSharedMaterial),
+                initialSlotCount = initialEnumeration.slotCount,
+                initialDrawableSlotIds = TextSlotDrawableIds(initialEnumeration),
+                initialEnumerationVerified = true,
+                initialEnumeration = initialEnumeration,
+                phases = Array.Empty<NativeStaticSortTextCapturePhase>(),
+                status = "in_progress",
+            };
+        }
+
+        public static NativeStaticSortTextCapturePhase CaptureLifecyclePhase(string phase, int slot,
+            TMP_Text owner, string sourceComponentId, IList<TextSlotBinding> bindings,
+            NativeStaticSortTextSlotEnumeration enumeration)
+        {
+            if (String.IsNullOrWhiteSpace(phase) || owner == null || String.IsNullOrWhiteSpace(sourceComponentId) ||
+                bindings == null || !IsValidTextSlotEnumeration(enumeration) ||
+                enumeration.evidenceContract != TEXT_SLOT_ENUMERATION_CONTRACT_V2 || enumeration.sourceComponentId != sourceComponentId)
+                return null;
+            AssetIdentity(owner.font, out var fontGuid, out var fontLocalId);
+            AssetIdentity(owner.fontSharedMaterial, out var materialGuid, out var materialLocalId);
+            return new NativeStaticSortTextCapturePhase {
+                phase = phase,
+                status = "observed",
+                slot = slot,
+                sourceComponentId = sourceComponentId,
+                sourceTextSha256 = HashText(owner.text ?? String.Empty),
+                ownerFontAssetGuid = fontGuid,
+                ownerFontAssetLocalFileId = fontLocalId,
+                ownerFontMaterialGuid = materialGuid,
+                ownerFontMaterialLocalFileId = materialLocalId,
+                ownerFontMaterialFingerprint = MaterialFingerprint(owner.fontSharedMaterial),
+                enumerationSha256 = enumeration.evidenceSha256,
+                enumeration = enumeration,
+                slots = bindings.Where(binding => binding != null).OrderBy(binding => binding.materialSlot)
+                    .Select(binding => CaptureLifecycleSlot(binding, phase, enumeration)).ToArray(),
+            };
+        }
+
+        public static void AppendCaptureLifecyclePhase(NativeStaticSortTextCaptureLifecycle lifecycle,
+            NativeStaticSortTextCapturePhase phase)
+        {
+            if (lifecycle == null || phase == null) return;
+            lifecycle.phases = (lifecycle.phases ?? Array.Empty<NativeStaticSortTextCapturePhase>())
+                .Concat(new[] { phase }).ToArray();
+        }
+
+        static NativeStaticSortTextCaptureSlot CaptureLifecycleSlot(TextSlotBinding binding, string moment,
+            NativeStaticSortTextSlotEnumeration enumeration)
+        {
+            var enumRow = enumeration == null || enumeration.rows == null ? null :
+                enumeration.rows.SingleOrDefault(row => row != null && row.slot == binding.materialSlot);
+            AssetIdentity(binding.owner == null ? null : binding.owner.font, out var ownerFontGuid, out var ownerFontLocalId);
+            AssetIdentity(binding.fontAsset, out var fontGuid, out var fontLocalId);
+            AssetIdentity(binding.spriteAsset, out var spriteGuid, out var spriteLocalId);
+            AssetIdentity(binding.ownerFontSharedMaterial, out var ownerMaterialGuid, out var ownerMaterialLocalId);
+            AssetIdentity(binding.fallbackFontAsset, out var fallbackFontGuid, out var fallbackFontLocalId);
+            AssetIdentity(binding.fallbackFontMaterial, out var fallbackMaterialGuid, out var fallbackMaterialLocalId);
+            AssetIdentity(binding.sourceMaterial, out var sourceMaterialGuid, out var sourceMaterialLocalId);
+            AssetIdentity(binding.sourceMaterial == null ? null : binding.sourceMaterial.shader,
+                out var shaderGuid, out var shaderLocalFileId);
+            AssetIdentity(binding.sourceTexture, out var textureGuid, out var textureLocalFileId);
+            AssetIdentity(binding.proxyMaterial, out var bakedMaterialGuid, out var bakedMaterialLocalId);
+            return new NativeStaticSortTextCaptureSlot {
+                snapshotMoment = moment,
+                slot = binding.materialSlot,
+                characterReferences = binding.textInfoCharacterCount,
+                visibleCharacterReferences = binding.textInfoVisibleCharacterCount,
+                disposition = "drawable",
+                sourceAssetKind = binding.spriteAsset == null ? "font" : "sprite",
+                sourceAssetGuid = binding.spriteAsset == null ? fontGuid : spriteGuid,
+                sourceAssetLocalFileId = binding.spriteAsset == null ? fontLocalId : spriteLocalId,
+                atlasGuid = binding.sourceTextureGuid,
+                atlasLocalFileId = binding.sourceTextureLocalFileId,
+                textInfoMaterialFingerprint = enumRow == null ? null : enumRow.textInfoMaterialFingerprint,
+                textInfoCharacterMaterialFingerprint = binding.textInfoCharacterMaterialFingerprint,
+                sourceGraphicMaterialFingerprint = binding.sourceMaterialFingerprint,
+                characterEvidenceSha256 = binding.textInfoCharacterEvidenceSha256,
+                characterAssetEvidenceSha256 = binding.textInfoCharacterAssetEvidenceSha256,
+                sourceMeshSha256 = binding.sourceMeshSha256,
+                sourceGraphicMaterialGuid = sourceMaterialGuid ?? binding.sourceMaterialGuid,
+                sourceGraphicMaterialLocalFileId = sourceMaterialLocalId != 0 ? sourceMaterialLocalId : binding.sourceMaterialLocalFileId,
+                textInfoMaterialGuid = enumRow == null ? null : enumRow.textInfoMaterialGuid,
+                textInfoMaterialLocalFileId = enumRow == null ? 0 : enumRow.textInfoMaterialLocalFileId,
+                sourceShaderGuid = shaderGuid ?? binding.sourceShaderGuid,
+                sourceShaderLocalFileId = shaderLocalFileId != 0 ? shaderLocalFileId : binding.sourceShaderLocalFileId,
+                sourceTextureGuid = textureGuid ?? binding.sourceTextureGuid,
+                sourceTextureLocalFileId = textureLocalFileId != 0 ? textureLocalFileId : binding.sourceTextureLocalFileId,
+                ownerFontAssetGuid = ownerFontGuid,
+                ownerFontAssetLocalFileId = ownerFontLocalId,
+                ownerFontMaterialGuid = ownerMaterialGuid ?? binding.ownerFontMaterialGuid,
+                ownerFontMaterialLocalFileId = ownerMaterialLocalId != 0 ? ownerMaterialLocalId : binding.ownerFontMaterialLocalFileId,
+                ownerFontMaterialFingerprint = binding.ownerFontMaterialFingerprint,
+                fallbackFontAssetGuid = fallbackFontGuid ?? binding.fallbackFontAssetGuid,
+                fallbackFontAssetLocalFileId = fallbackFontLocalId != 0 ? fallbackFontLocalId : binding.fallbackFontAssetLocalFileId,
+                fallbackFontMaterialGuid = fallbackMaterialGuid ?? binding.fallbackFontMaterialGuid,
+                fallbackFontMaterialLocalFileId = fallbackMaterialLocalId != 0 ? fallbackMaterialLocalId : binding.fallbackFontMaterialLocalFileId,
+                fallbackFontMaterialFingerprint = binding.fallbackFontMaterialFingerprint,
+                fallbackAtlasGuid = binding.fallbackAtlasGuid,
+                fallbackAtlasLocalFileId = binding.fallbackAtlasLocalFileId,
+                transientFallbackFingerprint = binding.transientFallbackFingerprint,
+                bakedProxyMaterialGuid = bakedMaterialGuid ?? binding.bakedProxyMaterialGuid,
+                bakedProxyMaterialLocalFileId = bakedMaterialLocalId != 0 ? bakedMaterialLocalId : binding.bakedProxyMaterialLocalFileId,
+                bakedProxyMaterialFingerprint = binding.bakedProxyMaterialFingerprint,
+                sourceMaterialFingerprint = binding.sourceMaterialFingerprint,
+                tmpFallbackAlgorithm = binding.tmpFallbackAlgorithm,
+                textInfoVertexCount = enumRow == null ? 0 : enumRow.textInfoVertexCount,
+                canvasVertexCount = enumRow == null ? 0 : enumRow.canvasVertexCount,
+                textInfoTriangleIndexCount = enumRow == null ? 0 : enumRow.textInfoTriangleIndexCount,
+                canvasTriangleIndexCount = enumRow == null ? 0 : enumRow.canvasTriangleIndexCount,
+                textInfoNondegenerateTriangleCount = enumRow == null ? 0 : enumRow.textInfoNondegenerateTriangleCount,
+                canvasNondegenerateTriangleCount = enumRow == null ? 0 : enumRow.canvasNondegenerateTriangleCount,
+                textInfoMaterialMissing = binding.textInfoMaterialMissing,
+                tmpFallbackMaterialBaked = binding.tmpFallbackMaterialBaked,
+                requiresPersistentFallbackRegistration = binding.requiresPersistentFallbackRegistration,
+                persistentFallbackVariantRegistered = binding.persistentFallbackVariantRegistered,
+                sourceGraphicEnabled = binding.sourceGraphicEnabled,
+                sourceGraphicActiveSelf = binding.sourceGraphicActiveSelf,
+                textScaleContext = binding.currentTextScaleContext,
+            };
+        }
+
+        public static bool TextSlotDenominatorMatches(NativeStaticSortTextSlotEnumeration expected,
+            NativeStaticSortTextSlotEnumeration actual, out string diagnostic)
+        {
+            diagnostic = null;
+            if (!IsValidTextSlotEnumeration(expected) || !IsValidTextSlotEnumeration(actual))
+            {
+                diagnostic = "enum-validity=" + (expected != null && expected.verified) + "/" + (actual != null && actual.verified);
+                return false;
+            }
+            var failed = new List<string>();
+            if (expected.sourceComponentId != actual.sourceComponentId) failed.Add("sourceComponentId");
+            if (expected.sourceTextSha256 != actual.sourceTextSha256) failed.Add("sourceTextSha256");
+            if (expected.slotCount != actual.slotCount) failed.Add("slotCount");
+            if (expected.rows.Length != actual.rows.Length) failed.Add("rowCount");
+            for (var index = 0; index < Math.Min(expected.rows.Length, actual.rows.Length); index++)
+            {
+                var left = expected.rows[index];
+                var right = actual.rows[index];
+                var fields = new List<string>();
+                if (left.slot != right.slot) fields.Add("slot");
+                if (left.disposition != right.disposition) fields.Add("disposition");
+                if (left.characterReferences != right.characterReferences) fields.Add("characterReferences");
+                if (left.visibleCharacterReferences != right.visibleCharacterReferences) fields.Add("visibleCharacterReferences");
+                if (left.sourceAssetKind != right.sourceAssetKind) fields.Add("sourceAssetKind");
+                if (left.sourceAssetGuid != right.sourceAssetGuid || left.sourceAssetLocalFileId != right.sourceAssetLocalFileId) fields.Add("sourceAssetIdentity");
+                if (left.atlasGuid != right.atlasGuid || left.atlasLocalFileId != right.atlasLocalFileId) fields.Add("atlasIdentity");
+                if (left.characterAssetEvidenceSha256 != right.characterAssetEvidenceSha256) fields.Add("characterAssetEvidenceSha256");
+                if (fields.Count > 0)
+                    failed.Add("slot=" + index + ";fields=" + String.Join(",", fields) + ";expected=" +
+                        TextSlotEvidenceSummary(left) + ";actual=" + TextSlotEvidenceSummary(right));
+            }
+            if (failed.Count > 0)
+            {
+                diagnostic = String.Join(" || ", failed);
+                return false;
+            }
+            return true;
+        }
+
+        public static int[] TextSlotDrawableIds(NativeStaticSortTextSlotEnumeration enumeration)
+        {
+            if (!IsValidTextSlotEnumeration(enumeration)) return Array.Empty<int>();
+            return enumeration.rows.Where(row => row.disposition == "drawable").Select(row => row.slot).OrderBy(slot => slot).ToArray();
+        }
+
+        static string TextSlotEvidenceSummary(NativeStaticSortTextSlotEvidence row)
+        {
+            return "slot=" + row.slot + ",disp=" + row.disposition + ",refs=" + row.characterReferences + "/" +
+                row.visibleCharacterReferences + ",asset=" + row.sourceAssetKind + ":" + row.sourceAssetGuid + ":" +
+                row.sourceAssetLocalFileId + ",atlas=" + row.atlasGuid + ":" + row.atlasLocalFileId +
+                ",characterAssets=" + row.characterAssetEvidenceSha256;
+        }
+
+        public static bool TextLayoutContextMatches(NativeStaticSortTextScaleContext expected,
+            NativeStaticSortTextScaleContext actual, out string diagnostic)
+        {
+            diagnostic = null;
+            if (!IsValidTextScaleContext(expected) || !IsValidTextScaleContext(actual))
+            {
+                diagnostic = "context-validity=" + (expected != null) + "/" + (actual != null);
+                return false;
+            }
+            var failed = new List<string>();
+            if (expected.sourceComponentId != actual.sourceComponentId) failed.Add("sourceComponentId");
+            if (expected.sourceTextSha256 != actual.sourceTextSha256) failed.Add("sourceTextSha256");
+            if (expected.materialSlot != actual.materialSlot) failed.Add("materialSlot");
+            if (expected.textLayoutEvidenceSha256 != actual.textLayoutEvidenceSha256) failed.Add("textLayoutEvidenceSha256:" +
+                TextLayoutEvidenceDifference(expected.textLayoutInputs, actual.textLayoutInputs));
+            if (expected.canvasRenderMode != actual.canvasRenderMode) failed.Add("canvasRenderMode");
+            if (!Mathf.Approximately(expected.canvasScaleFactor, actual.canvasScaleFactor)) failed.Add("canvasScaleFactor");
+            if (expected.worldCameraAssigned != actual.worldCameraAssigned) failed.Add("worldCameraAssigned");
+            if (!Mathf.Approximately(expected.ownerLossyScaleY, actual.ownerLossyScaleY)) failed.Add("ownerLossyScaleY");
+            if (!Mathf.Approximately(expected.graphicLossyScaleY, actual.graphicLossyScaleY)) failed.Add("graphicLossyScaleY");
+            if (!Mathf.Approximately(expected.ownerFontSize, actual.ownerFontSize)) failed.Add("ownerFontSize");
+            if (!Mathf.Approximately(expected.ownerFontSizeMin, actual.ownerFontSizeMin)) failed.Add("ownerFontSizeMin");
+            if (!Mathf.Approximately(expected.ownerFontSizeMax, actual.ownerFontSizeMax)) failed.Add("ownerFontSizeMax");
+            if (expected.ownerFontStyle != actual.ownerFontStyle) failed.Add("ownerFontStyle");
+            if (expected.ownerAutoSizing != actual.ownerAutoSizing) failed.Add("ownerAutoSizing");
+            if (!Mathf.Approximately(expected.charWidthAdjustmentDelta, actual.charWidthAdjustmentDelta)) failed.Add("charWidthAdjustmentDelta");
+            if (!Mathf.Approximately(expected.characterHorizontalScale, actual.characterHorizontalScale)) failed.Add("characterHorizontalScale");
+            if (failed.Count > 0)
+            {
+                diagnostic = String.Join(",", failed);
+                return false;
+            }
+            return true;
+        }
+
+        public static bool ValidateCapturedSlotTransition(TextSlotBinding captured, TextSlotBinding current,
+            NativeStaticSortTextSlotEnumeration finalEnumeration, out string diagnostic)
+        {
+            diagnostic = null;
+            if (captured == null || current == null || finalEnumeration == null || captured.owner == null ||
+                captured.owner != current.owner || captured.sourceComponentId != current.sourceComponentId ||
+                captured.materialSlot != current.materialSlot || captured.captureLifecycle == null)
+                return Fail("TMP_SORT_CAPTURED_SLOT_TRANSITION_INPUT_INVALID", out diagnostic);
+            var lifecycle = captured.captureLifecycle;
+            if (!CaptureLifecycleReadyForRebind(lifecycle, captured.sourceComponentId, captured.sourceTextSha256, out var lifecycleDiagnostic))
+                return Fail("TMP_SORT_CAPTURED_SLOT_LIFECYCLE_NOT_READY:" + lifecycleDiagnostic, out diagnostic);
+            if (lifecycle.finalEnumeration.evidenceSha256 != finalEnumeration.evidenceSha256 ||
+                current.textSlotEnumeration == null || current.textSlotEnumeration.evidenceSha256 != finalEnumeration.evidenceSha256)
+                return Fail("TMP_SORT_CAPTURED_SLOT_FINAL_ENUMERATION_NOT_PINNED:" + captured.materialSlot, out diagnostic);
+            if (!TextSlotDenominatorMatches(lifecycle.initialEnumeration, finalEnumeration, out var denominatorDiff))
+                return Fail("TMP_SORT_CAPTURED_SLOT_SOURCE_DENOMINATOR_CHANGED:" + denominatorDiff, out diagnostic);
+
+            var slot = captured.materialSlot;
+            if (slot < 0 || slot >= lifecycle.initialEnumeration.rows.Length || slot >= finalEnumeration.rows.Length)
+                return Fail("TMP_SORT_CAPTURED_SLOT_OUTSIDE_ENUMERATION:" + slot, out diagnostic);
+            var initialRow = lifecycle.initialEnumeration.rows[slot];
+            var finalRow = finalEnumeration.rows[slot];
+            var differences = new List<string>();
+            if (initialRow.disposition != "drawable" || finalRow.disposition != "drawable") differences.Add("disposition");
+            if (!captured.sourceGraphicEnabled.Equals(current.sourceGraphicEnabled)) differences.Add("sourceGraphicEnabled");
+            if (!captured.sourceGraphicActiveSelf.Equals(current.sourceGraphicActiveSelf)) differences.Add("sourceGraphicActiveSelf");
+            if (captured.generatedSubmesh != current.generatedSubmesh) differences.Add("generatedSubmesh");
+            if (captured.fontAsset != current.fontAsset) differences.Add("fontAssetObject");
+            if (captured.spriteAsset != current.spriteAsset) differences.Add("spriteAssetObject");
+            if (captured.ownerFontSharedMaterial != current.ownerFontSharedMaterial) differences.Add("ownerFontSharedMaterialObject");
+            if (captured.sourceTexture != current.sourceTexture) differences.Add("sourceTextureObject");
+            if (captured.fallbackFontAsset != current.fallbackFontAsset) differences.Add("fallbackFontAssetObject");
+            if (captured.fallbackFontMaterial != current.fallbackFontMaterial) differences.Add("fallbackFontMaterialObject");
+            if (captured.sourceTextSha256 != current.sourceTextSha256) differences.Add("sourceTextSha256=" + captured.sourceTextSha256 + "->" + current.sourceTextSha256);
+            if (captured.textInfoCharacterCount != current.textInfoCharacterCount) differences.Add("characterCount=" + captured.textInfoCharacterCount + "->" + current.textInfoCharacterCount);
+            if (captured.textInfoVisibleCharacterCount != current.textInfoVisibleCharacterCount) differences.Add("visibleCharacterCount=" + captured.textInfoVisibleCharacterCount + "->" + current.textInfoVisibleCharacterCount);
+            if (captured.textInfoCharacterAssetEvidenceSha256 != current.textInfoCharacterAssetEvidenceSha256)
+                differences.Add("characterAssetEvidenceSha256=" + captured.textInfoCharacterAssetEvidenceSha256 + "->" + current.textInfoCharacterAssetEvidenceSha256);
+            if (!TextLayoutContextMatches(captured.currentTextScaleContext, current.currentTextScaleContext, out var layoutDiff))
+                differences.Add("textLayoutContext=" + layoutDiff);
+            if (!current.textInfoCharacterSlotVerified || !current.textInfoCharacterMaterialVerified ||
+                !current.textInfoFontAssetVerified || !current.textInfoAtlasVerified)
+                differences.Add("finalTextInfoMaterialFontAtlasVerification=" + current.textInfoCharacterSlotVerified + "/" +
+                    current.textInfoCharacterMaterialVerified + "/" + current.textInfoFontAssetVerified + "/" + current.textInfoAtlasVerified);
+
+            var fallbackProfileVerified = false;
+            if (captured.tmpFallbackMaterialBaked)
+            {
+                if (String.IsNullOrWhiteSpace(captured.transientFallbackFingerprint) ||
+                    captured.bakedProxyMaterialFingerprint != captured.transientFallbackFingerprint ||
+                    captured.proxyMaterial == null || !PersistentAsset(captured.proxyMaterial,
+                        out var bakedGuid, out var bakedFileId) || bakedGuid != captured.bakedProxyMaterialGuid ||
+                    bakedFileId != captured.bakedProxyMaterialLocalFileId)
+                    differences.Add("capturedFallbackBakeIdentityOrFingerprintInvalid");
+                else if (captured.persistentFallbackVariantRegistered)
+                {
+                    if (current.sourceMaterial != captured.proxyMaterial ||
+                        current.sourceMaterialFingerprint != captured.bakedProxyMaterialFingerprint ||
+                        finalRow.sourceGraphicMaterialGuid != captured.bakedProxyMaterialGuid ||
+                        finalRow.sourceGraphicMaterialLocalFileId != captured.bakedProxyMaterialLocalFileId ||
+                        finalRow.sourceGraphicMaterialFingerprint != captured.bakedProxyMaterialFingerprint)
+                        differences.Add("registeredVariantFinalMaterialProfile=" +
+                            finalRow.sourceGraphicMaterialGuid + ":" + finalRow.sourceGraphicMaterialLocalFileId + ":" +
+                            finalRow.sourceGraphicMaterialFingerprint + " expected=" + captured.bakedProxyMaterialGuid + ":" +
+                            captured.bakedProxyMaterialLocalFileId + ":" + captured.bakedProxyMaterialFingerprint);
+                    else fallbackProfileVerified = true;
+                }
+                else
+                {
+                    var currentPersistent = PersistentAsset(current.sourceMaterial, out var currentGuid, out var currentFileId);
+                    if (currentPersistent || current.sourceMaterialFingerprint != captured.transientFallbackFingerprint ||
+                        finalRow.sourceGraphicMaterialFingerprint != captured.transientFallbackFingerprint ||
+                        !String.IsNullOrWhiteSpace(finalRow.sourceGraphicMaterialGuid) || finalRow.sourceGraphicMaterialLocalFileId != 0)
+                        differences.Add("unregisteredTransientFinalMaterialProfile=" + currentGuid + ":" + currentFileId + ":" +
+                            current.sourceMaterialFingerprint + " expected=" + captured.transientFallbackFingerprint);
+                    else fallbackProfileVerified = true;
+                }
+                if (initialRow.sourceGraphicMaterialFingerprint != captured.transientFallbackFingerprint)
+                    differences.Add("initialGraphicMaterialDiffersFromCapturedTmpFallback=" + initialRow.sourceGraphicMaterialFingerprint +
+                        "!=" + captured.transientFallbackFingerprint);
+            }
+            else
+            {
+                if (captured.sourceMaterial != current.sourceMaterial ||
+                    captured.sourceMaterialFingerprint != current.sourceMaterialFingerprint ||
+                    initialRow.sourceGraphicMaterialGuid != finalRow.sourceGraphicMaterialGuid ||
+                    initialRow.sourceGraphicMaterialLocalFileId != finalRow.sourceGraphicMaterialLocalFileId ||
+                    initialRow.sourceGraphicMaterialFingerprint != finalRow.sourceGraphicMaterialFingerprint)
+                    differences.Add("nonFallbackSourceMaterialChanged=" + initialRow.sourceGraphicMaterialGuid + ":" +
+                        initialRow.sourceGraphicMaterialLocalFileId + ":" + initialRow.sourceGraphicMaterialFingerprint + "->" +
+                        finalRow.sourceGraphicMaterialGuid + ":" + finalRow.sourceGraphicMaterialLocalFileId + ":" +
+                        finalRow.sourceGraphicMaterialFingerprint);
+                else fallbackProfileVerified = true;
+            }
+
+            bool characterMaterialChanged = captured.textInfoCharacterEvidenceSha256 != current.textInfoCharacterEvidenceSha256 ||
+                captured.textInfoCharacterMaterialFingerprint != current.textInfoCharacterMaterialFingerprint ||
+                initialRow.textInfoMaterialFingerprint != finalRow.textInfoMaterialFingerprint;
+            bool sourceMeshChanged = captured.sourceMeshSha256 != current.sourceMeshSha256 ||
+                initialRow.sourceMeshSha256 != finalRow.sourceMeshSha256;
+            bool sourceGraphicMaterialChanged = initialRow.sourceGraphicMaterialFingerprint != finalRow.sourceGraphicMaterialFingerprint;
+            bool anyMaterialOrMeshDelta = characterMaterialChanged || sourceMeshChanged || sourceGraphicMaterialChanged;
+            if (anyMaterialOrMeshDelta && (!captured.tmpFallbackMaterialBaked || !fallbackProfileVerified))
+                differences.Add("unaccountedMaterialOrMeshDelta;characterEvidence=" +
+                    captured.textInfoCharacterEvidenceSha256 + "->" + current.textInfoCharacterEvidenceSha256 +
+                    ";textInfoMaterial=" + initialRow.textInfoMaterialFingerprint + "->" + finalRow.textInfoMaterialFingerprint +
+                    ";sourceGraphicMaterial=" + initialRow.sourceGraphicMaterialFingerprint + "->" + finalRow.sourceGraphicMaterialFingerprint +
+                    ";sourceMesh=" + initialRow.sourceMeshSha256 + "->" + finalRow.sourceMeshSha256);
+            else if (sourceMeshChanged && !sourceGraphicMaterialChanged && !characterMaterialChanged)
+                differences.Add("sourceMeshChangedWithoutObservedMaterialTransition=" + initialRow.sourceMeshSha256 + "->" + finalRow.sourceMeshSha256);
+
+            if (current.sourceMeshSha256 != finalRow.sourceMeshSha256)
+                differences.Add("finalSourceMeshDoesNotMatchFinalEnumeration=" + current.sourceMeshSha256 + "!=" + finalRow.sourceMeshSha256);
+            if (current.textInfoMaterialMissing != captured.textInfoMaterialMissing &&
+                !(captured.textInfoMaterialMissing && !current.textInfoMaterialMissing && fallbackProfileVerified))
+                differences.Add("textInfoMaterialMissing=" + captured.textInfoMaterialMissing + "->" + current.textInfoMaterialMissing);
+
+            if (differences.Count > 0)
+            {
+                diagnostic = "slot=" + slot + ";failed=" + String.Join(",", differences) +
+                    ";initial=" + TextSlotEvidenceSummary(initialRow) +
+                    ";final=" + TextSlotEvidenceSummary(finalRow) +
+                    ";initialBinding=" + SlotBindingTransitionSummary(captured) +
+                    ";finalBinding=" + SlotBindingTransitionSummary(current);
+                return false;
+            }
+            return true;
+        }
+
+        static string SlotBindingTransitionSummary(TextSlotBinding binding)
+        {
+            return "slot=" + binding.materialSlot + ",text=" + binding.sourceTextSha256 +
+                ",font=" + binding.fontAssetGuid + ":" + binding.fontAssetLocalFileId +
+                ",sprite=" + binding.spriteAssetGuid + ":" + binding.spriteAssetLocalFileId +
+                ",atlas=" + binding.sourceTextureGuid + ":" + binding.sourceTextureLocalFileId +
+                ",sourceMat=" + binding.sourceMaterialGuid + ":" + binding.sourceMaterialLocalFileId + ":" + binding.sourceMaterialFingerprint +
+                ",fallback=" + binding.fallbackFontAssetGuid + ":" + binding.fallbackFontAssetLocalFileId + "/" +
+                binding.fallbackFontMaterialGuid + ":" + binding.fallbackFontMaterialLocalFileId + ":" + binding.fallbackFontMaterialFingerprint +
+                ",transient=" + binding.transientFallbackFingerprint +
+                ",baked=" + binding.bakedProxyMaterialGuid + ":" + binding.bakedProxyMaterialLocalFileId + ":" + binding.bakedProxyMaterialFingerprint +
+                ",registered=" + binding.persistentFallbackVariantRegistered + ",mesh=" + binding.sourceMeshSha256 +
+                ",characterAssets=" + binding.textInfoCharacterAssetEvidenceSha256;
+        }
+
+        public static string CaptureLifecycleHash(NativeStaticSortTextCaptureLifecycle lifecycle)
+        {
+            if (lifecycle == null) return null;
+            var savedHash = lifecycle.evidenceSha256;
+            lifecycle.evidenceSha256 = null;
+            var json = JsonUtility.ToJson(lifecycle, false);
+            lifecycle.evidenceSha256 = savedHash;
+            return HashText(json);
+        }
+
+        public static bool ValidateCaptureLifecycle(NativeStaticSortTextCaptureLifecycle lifecycle)
+        {
+            return lifecycle != null && lifecycle.schemaVersion == 1 &&
+                lifecycle.contract == "monkey-static-sort-text-capture-lifecycle/1" &&
+                lifecycle.verified && lifecycle.status == "verified" &&
+                lifecycle.initialEnumerationVerified && lifecycle.allInitialBindingsCaptured &&
+                lifecycle.allFallbackProfilesCaptured && lifecycle.allFallbackVariantsRegistered && lifecycle.finalPrepareCompleted &&
+                lifecycle.finalSlotSetVerified && lifecycle.allSlotsRebound &&
+                lifecycle.sourceTextAndFontRechecked && lifecycle.persistentReferencesRechecked &&
+                !String.IsNullOrWhiteSpace(lifecycle.sourceComponentId) && IsSha256(lifecycle.sourceTextSha256) &&
+                IsValidTextSlotEnumeration(lifecycle.initialEnumeration) && IsValidTextSlotEnumeration(lifecycle.finalEnumeration) &&
+                lifecycle.initialEnumeration.sourceComponentId == lifecycle.sourceComponentId &&
+                lifecycle.finalEnumeration.sourceComponentId == lifecycle.sourceComponentId &&
+                lifecycle.initialEnumeration.evidenceContract == TEXT_SLOT_ENUMERATION_CONTRACT_V2 &&
+                lifecycle.finalEnumeration.evidenceContract == TEXT_SLOT_ENUMERATION_CONTRACT_V2 &&
+                lifecycle.initialEnumeration.sourceTextSha256 == lifecycle.sourceTextSha256 &&
+                lifecycle.finalEnumeration.sourceTextSha256 == lifecycle.sourceTextSha256 &&
+                lifecycle.initialSlotCount == lifecycle.initialEnumeration.slotCount &&
+                lifecycle.finalSlotCount == lifecycle.finalEnumeration.slotCount &&
+                (lifecycle.initialDrawableSlotIds ?? Array.Empty<int>()).SequenceEqual(TextSlotDrawableIds(lifecycle.initialEnumeration)) &&
+                (lifecycle.finalDrawableSlotIds ?? Array.Empty<int>()).SequenceEqual(TextSlotDrawableIds(lifecycle.finalEnumeration)) &&
+                lifecycle.phases != null && lifecycle.phases.Length > 0 &&
+                lifecycle.phases.All(phase => phase != null && !String.IsNullOrWhiteSpace(phase.phase) &&
+                    phase.sourceComponentId == lifecycle.sourceComponentId &&
+                    phase.sourceTextSha256 == lifecycle.sourceTextSha256 &&
+                    phase.enumeration != null && IsValidTextSlotEnumeration(phase.enumeration) &&
+                    phase.enumerationSha256 == phase.enumeration.evidenceSha256 && phase.slots != null &&
+                    CapturePhaseSlotsMatchEnumeration(phase)) &&
+                IsSha256(lifecycle.evidenceSha256) && CaptureLifecycleHash(lifecycle) == lifecycle.evidenceSha256;
+        }
+
+        static bool CapturePhaseSlotsMatchEnumeration(NativeStaticSortTextCapturePhase phase)
+        {
+            if (phase == null || phase.enumeration == null || phase.slots == null) return false;
+            foreach (var slot in phase.slots)
+            {
+                if (slot == null || slot.slot < 0 || slot.slot >= phase.enumeration.rows.Length) return false;
+                var row = phase.enumeration.rows[slot.slot];
+                if (row == null || row.disposition != "drawable" || slot.disposition != row.disposition ||
+                    slot.characterReferences != row.characterReferences || slot.visibleCharacterReferences != row.visibleCharacterReferences ||
+                    slot.sourceAssetKind != row.sourceAssetKind || slot.sourceAssetGuid != row.sourceAssetGuid ||
+                    slot.sourceAssetLocalFileId != row.sourceAssetLocalFileId || slot.atlasGuid != row.atlasGuid ||
+                    slot.atlasLocalFileId != row.atlasLocalFileId ||
+                    slot.textInfoMaterialFingerprint != row.textInfoMaterialFingerprint ||
+                    slot.sourceGraphicMaterialFingerprint != row.sourceGraphicMaterialFingerprint ||
+                    slot.characterAssetEvidenceSha256 != row.characterAssetEvidenceSha256 ||
+                    slot.sourceMeshSha256 != row.sourceMeshSha256 ||
+                    slot.textInfoVertexCount != row.textInfoVertexCount || slot.canvasVertexCount != row.canvasVertexCount ||
+                    slot.textInfoTriangleIndexCount != row.textInfoTriangleIndexCount ||
+                    slot.canvasTriangleIndexCount != row.canvasTriangleIndexCount ||
+                    slot.textInfoNondegenerateTriangleCount != row.textInfoNondegenerateTriangleCount ||
+                    slot.canvasNondegenerateTriangleCount != row.canvasNondegenerateTriangleCount ||
+                    slot.sourceGraphicMaterialGuid != row.sourceGraphicMaterialGuid ||
+                    slot.sourceGraphicMaterialLocalFileId != row.sourceGraphicMaterialLocalFileId ||
+                    slot.textInfoMaterialGuid != row.textInfoMaterialGuid ||
+                    slot.textInfoMaterialLocalFileId != row.textInfoMaterialLocalFileId ||
+                    slot.sourceShaderGuid != row.sourceShaderGuid || slot.sourceShaderLocalFileId != row.sourceShaderLocalFileId ||
+                    slot.sourceTextureGuid != row.sourceTextureGuid || slot.sourceTextureLocalFileId != row.sourceTextureLocalFileId)
+                    return false;
+            }
+            return true;
+        }
+
+        public static bool CaptureLifecycleReadyForRebind(NativeStaticSortTextCaptureLifecycle lifecycle,
+            string sourceComponentId, string sourceTextSha256, out string diagnostic)
+        {
+            diagnostic = null;
+            var denominatorDiagnostic = "not-evaluated";
+            var denominatorMatches = lifecycle != null && IsValidTextSlotEnumeration(lifecycle.initialEnumeration) &&
+                IsValidTextSlotEnumeration(lifecycle.finalEnumeration) &&
+                TextSlotDenominatorMatches(lifecycle.initialEnumeration, lifecycle.finalEnumeration, out denominatorDiagnostic);
+            if (lifecycle == null || lifecycle.schemaVersion != 1 ||
+                lifecycle.contract != "monkey-static-sort-text-capture-lifecycle/1" ||
+                lifecycle.sourceComponentId != sourceComponentId || lifecycle.sourceTextSha256 != sourceTextSha256 ||
+                !lifecycle.initialEnumerationVerified || !lifecycle.allInitialBindingsCaptured ||
+                !lifecycle.allFallbackProfilesCaptured || !lifecycle.allFallbackVariantsRegistered || !lifecycle.finalPrepareCompleted ||
+                !lifecycle.finalSlotSetVerified || !lifecycle.sourceTextAndFontRechecked ||
+                !lifecycle.persistentReferencesRechecked ||
+                !denominatorMatches)
+            {
+                diagnostic = "captureLifecycleNotReady;component=" + sourceComponentId + ";text=" + sourceTextSha256 +
+                    ";denominator=" + (lifecycle == null ? "null" : denominatorDiagnostic ?? "unavailable");
+                return false;
+            }
+            return true;
+        }
+
+        public static bool FinalizeCaptureLifecycle(NativeStaticSortTextCaptureLifecycle lifecycle,
+            out string diagnostic)
+        {
+            diagnostic = null;
+            if (lifecycle == null) return Fail("TMP_SORT_CAPTURE_LIFECYCLE_MISSING", out diagnostic);
+            lifecycle.allSlotsRebound = true;
+            lifecycle.status = "verified";
+            lifecycle.diagnostic = null;
+            lifecycle.verified = true;
+            lifecycle.evidenceSha256 = null;
+            lifecycle.evidenceSha256 = CaptureLifecycleHash(lifecycle);
+            if (!ValidateCaptureLifecycle(lifecycle))
+            {
+                lifecycle.verified = false;
+                lifecycle.status = "partial";
+                lifecycle.diagnostic = "TMP_SORT_CAPTURE_LIFECYCLE_INTEGRITY_FAILED";
+                lifecycle.evidenceSha256 = null;
+                diagnostic = lifecycle.diagnostic;
+                return false;
+            }
+            return true;
+        }
+
         static NativeStaticSortTextSlotEvidence BuildTextInfoSlotEvidence(TMP_Text owner, int slot,
             Graphic sourceGraphic, TMP_SubMeshUI generated, TextSlotBinding binding,
-            int characterReferences, int visibleCharacterReferences, string disposition)
+            int characterReferences, int visibleCharacterReferences, string disposition, string evidenceContract)
         {
             var info = owner.textInfo;
             var slotMesh = info.meshInfo[slot].mesh;
@@ -2445,6 +2966,11 @@ namespace Monkey.StaticSortQueueProxy
             var textInfoMaterial = info.meshInfo[slot].material;
             AssetIdentity(sourceAsset, out var sourceAssetGuid, out var sourceAssetFileId);
             AssetIdentity(atlas, out var atlasGuid, out var atlasFileId);
+            AssetIdentity(sourceGraphicMaterial, out var sourceGraphicMaterialGuid, out var sourceGraphicMaterialFileId);
+            AssetIdentity(textInfoMaterial, out var textInfoMaterialGuid, out var textInfoMaterialFileId);
+            AssetIdentity(sourceGraphicMaterial == null ? null : sourceGraphicMaterial.shader,
+                out var sourceShaderGuid, out var sourceShaderFileId);
+            AssetIdentity(atlas, out var sourceTextureGuid, out var sourceTextureFileId);
             var textInfoMaterialFingerprint = MaterialFingerprint(textInfoMaterial);
             var graphicMaterialFingerprint = MaterialFingerprint(sourceGraphicMaterial);
             var characterProof = binding != null ? binding.textInfoCharacterEvidenceSha256
@@ -2452,6 +2978,7 @@ namespace Monkey.StaticSortQueueProxy
             var characterAssetProof = binding != null ? binding.textInfoCharacterAssetEvidenceSha256
                 : HashText(owner.text + "|slot=" + slot + "|assetrefs=" + characterReferences + "|visible=" + visibleCharacterReferences);
             var row = new NativeStaticSortTextSlotEvidence {
+                evidenceContract = evidenceContract,
                 slot = slot,
                 characterReferences = characterReferences,
                 visibleCharacterReferences = visibleCharacterReferences,
@@ -2468,6 +2995,14 @@ namespace Monkey.StaticSortQueueProxy
                 sourceAssetLocalFileId = sourceAssetFileId,
                 atlasGuid = atlasGuid,
                 atlasLocalFileId = atlasFileId,
+                sourceGraphicMaterialGuid = sourceGraphicMaterialGuid,
+                sourceGraphicMaterialLocalFileId = sourceGraphicMaterialFileId,
+                textInfoMaterialGuid = textInfoMaterialGuid,
+                textInfoMaterialLocalFileId = textInfoMaterialFileId,
+                sourceShaderGuid = sourceShaderGuid,
+                sourceShaderLocalFileId = sourceShaderFileId,
+                sourceTextureGuid = sourceTextureGuid,
+                sourceTextureLocalFileId = sourceTextureFileId,
                 textInfoMaterialFingerprint = textInfoMaterialFingerprint,
                 sourceGraphicMaterialFingerprint = graphicMaterialFingerprint,
                 characterEvidenceSha256 = characterProof,
@@ -2551,7 +3086,7 @@ namespace Monkey.StaticSortQueueProxy
                 readback.diagnostic = prepareDiagnostic;
                 return false;
             }
-            if (!GetCurrentSlots(expectedOwner, expectedSourceComponentId, out var slots,
+            if (!GetCurrentEmptyTextSlots(expectedOwner, expectedSourceComponentId, identity, out var slots,
                 out var currentEnumeration, out var slotDiagnostic))
             {
                 readback.diagnostic = slotDiagnostic;
@@ -2568,14 +3103,21 @@ namespace Monkey.StaticSortQueueProxy
         static string TextSlotRowHash(NativeStaticSortTextSlotEvidence row)
         {
             if (row == null) return null;
-            return HashText(row.slot + "|" + row.characterReferences + "|" + row.visibleCharacterReferences +
+            var legacyEvidence = row.slot + "|" + row.characterReferences + "|" + row.visibleCharacterReferences +
                 "|" + row.textInfoMaterialMissing + "|" + row.textInfoVertexCount + "|" + row.textInfoTriangleIndexCount +
                 "|" + row.textInfoNondegenerateTriangleCount + "|" + row.canvasVertexCount + "|" + row.canvasTriangleIndexCount +
                 "|" + row.canvasNondegenerateTriangleCount + "|" + row.disposition + "|" + row.sourceAssetKind + "|" +
                 row.sourceAssetGuid + ":" + row.sourceAssetLocalFileId + "|" + row.atlasGuid + ":" + row.atlasLocalFileId + "|" +
                 row.textInfoMaterialFingerprint + "|" + row.sourceGraphicMaterialFingerprint + "|" + row.characterEvidenceSha256 + "|" +
                 row.characterAssetEvidenceSha256 + "|" +
-                row.sourceMeshSha256);
+                row.sourceMeshSha256;
+            if (String.IsNullOrEmpty(row.evidenceContract)) return HashText(legacyEvidence);
+            if (row.evidenceContract != TEXT_SLOT_EVIDENCE_CONTRACT_V2) return null;
+            return HashText(row.evidenceContract + "|" + legacyEvidence + "|" +
+                row.sourceGraphicMaterialGuid + ":" + row.sourceGraphicMaterialLocalFileId + "|" +
+                row.textInfoMaterialGuid + ":" + row.textInfoMaterialLocalFileId + "|" +
+                row.sourceShaderGuid + ":" + row.sourceShaderLocalFileId + "|" +
+                row.sourceTextureGuid + ":" + row.sourceTextureLocalFileId);
         }
 
         static string TextSlotEnumerationHash(NativeStaticSortTextSlotEnumeration enumeration)
@@ -2583,8 +3125,11 @@ namespace Monkey.StaticSortQueueProxy
             if (enumeration == null) return null;
             var rowHashes = (enumeration.rows ?? Array.Empty<NativeStaticSortTextSlotEvidence>())
                 .Select(row => row == null ? String.Empty : row.evidenceSha256 ?? String.Empty).ToArray();
-            return HashText(enumeration.sourceComponentId + "|" + enumeration.sourceTextSha256 + "|" + enumeration.slotCount + "|" +
-                String.Join("|", rowHashes));
+            var legacyEvidence = enumeration.sourceComponentId + "|" + enumeration.sourceTextSha256 + "|" + enumeration.slotCount + "|" +
+                String.Join("|", rowHashes);
+            if (String.IsNullOrEmpty(enumeration.evidenceContract)) return HashText(legacyEvidence);
+            if (enumeration.evidenceContract != TEXT_SLOT_ENUMERATION_CONTRACT_V2) return null;
+            return HashText(enumeration.evidenceContract + "|" + legacyEvidence);
         }
 
         static bool IsValidTextSlotEnumeration(NativeStaticSortTextSlotEnumeration enumeration)
@@ -2592,11 +3137,15 @@ namespace Monkey.StaticSortQueueProxy
             if (enumeration == null || !enumeration.verified || String.IsNullOrWhiteSpace(enumeration.sourceComponentId) ||
                 !IsSha256(enumeration.sourceTextSha256) || enumeration.slotCount <= 0 || enumeration.rows == null ||
                 enumeration.rows.Length != enumeration.slotCount || !IsSha256(enumeration.evidenceSha256) ||
+                !String.IsNullOrEmpty(enumeration.evidenceContract) && enumeration.evidenceContract != TEXT_SLOT_ENUMERATION_CONTRACT_V2 ||
                 TextSlotEnumerationHash(enumeration) != enumeration.evidenceSha256) return false;
+            var rowEvidenceContract = String.IsNullOrEmpty(enumeration.evidenceContract)
+                ? null : TEXT_SLOT_EVIDENCE_CONTRACT_V2;
             for (var index = 0; index < enumeration.rows.Length; index++)
             {
                 var row = enumeration.rows[index];
                 if (row == null || row.slot != index || !IsSha256(row.evidenceSha256) ||
+                    row.evidenceContract != rowEvidenceContract ||
                     TextSlotRowHash(row) != row.evidenceSha256 ||
                     (row.disposition != "drawable" && row.disposition != "empty-placeholder") ||
                     (row.sourceAssetKind != "font" && row.sourceAssetKind != "sprite") ||
@@ -2634,32 +3183,28 @@ namespace Monkey.StaticSortQueueProxy
                 capturedProof.materialSlot >= capturedProof.textSlotEnumeration.rows.Length ||
                 capturedProof.textSlotEnumeration.rows[capturedProof.materialSlot].disposition != "drawable")
                 return Fail("TMP_SORT_CAPTURE_REBIND_INPUT_INVALID", out diagnostic);
+            if (!CaptureLifecycleReadyForRebind(capturedProof.captureLifecycle, capturedProof.sourceComponentId,
+                    capturedProof.sourceTextSha256, out var lifecycleDiagnostic))
+                return Fail("TMP_SORT_CAPTURE_REBIND_LIFECYCLE_NOT_READY:" + lifecycleDiagnostic, out diagnostic);
             if (!GetCurrentSlots(currentOwner, capturedProof.sourceComponentId, out var currentSlots,
                 out var currentEnumeration, out diagnostic)) return false;
-            if (currentEnumeration == null || currentEnumeration.evidenceSha256 != capturedProof.textSlotEnumeration.evidenceSha256)
-                return Fail("TMP_SORT_CAPTURE_REBIND_SLOT_ENUMERATION_CHANGED:" +
-                    capturedProof.sourceComponentId + ";slot=" + capturedProof.materialSlot, out diagnostic);
+            if (currentEnumeration == null || currentEnumeration.evidenceSha256 != capturedProof.captureLifecycle.finalEnumeration.evidenceSha256)
+                return Fail("TMP_SORT_CAPTURE_REBIND_FINAL_ENUMERATION_CHANGED:" +
+                    capturedProof.sourceComponentId + ";slot=" + capturedProof.materialSlot +
+                    ";expected=" + capturedProof.captureLifecycle.finalEnumeration.evidenceSha256 +
+                    ";actual=" + (currentEnumeration == null ? "null" : currentEnumeration.evidenceSha256), out diagnostic);
             var current = currentSlots.SingleOrDefault(candidate => candidate.materialSlot == capturedProof.materialSlot);
             if (current == null || current.sourceGraphic != currentGraphic)
                 return Fail("TMP_SORT_CAPTURE_REBIND_CURRENT_SLOT_GRAPHIC_MISMATCH:" +
                     capturedProof.sourceComponentId + ";slot=" + capturedProof.materialSlot, out diagnostic);
-            if (current.sourceGraphic != currentGraphic || current.generatedSubmesh != capturedProof.generatedSubmesh ||
-                current.sourceMeshSha256 != capturedProof.sourceMeshSha256 || current.fontAsset != capturedProof.fontAsset ||
-                current.spriteAsset != capturedProof.spriteAsset || current.ownerFontSharedMaterial != capturedProof.ownerFontSharedMaterial ||
-                current.sourceTexture != capturedProof.sourceTexture || current.fallbackFontAsset != capturedProof.fallbackFontAsset ||
-                current.fallbackFontMaterial != capturedProof.fallbackFontMaterial ||
-                current.textInfoMaterialMissing != capturedProof.textInfoMaterialMissing ||
-                current.textInfoCharacterEvidenceSha256 != capturedProof.textInfoCharacterEvidenceSha256 ||
-                current.textInfoCharacterMaterialFingerprint != capturedProof.textInfoCharacterMaterialFingerprint ||
-                current.textInfoCharacterCount != capturedProof.textInfoCharacterCount ||
-                current.textInfoVisibleCharacterCount != capturedProof.textInfoVisibleCharacterCount ||
-                current.sourceTextSha256 != capturedProof.sourceTextSha256 ||
-                capturedProof.ownerStyle != null &&
-                    (capturedProof.ownerStyle.sourceComponentId != capturedProof.sourceComponentId ||
-                     capturedProof.ownerStyle.sourceFontAsset != currentOwner.font ||
-                     capturedProof.ownerStyle.sourceFontMaterial != currentOwner.font.material ||
-                     capturedProof.ownerStyle.profile != "native-static-text-outline-font-material-v1"))
-                return Fail("TMP_SORT_CAPTURE_REBIND_SOURCE_IDENTITY_OR_MESH_CHANGED", out diagnostic);
+            if (!ValidateCapturedSlotTransition(capturedProof, current, currentEnumeration, out var transitionDiagnostic))
+                return Fail("TMP_SORT_CAPTURE_REBIND_SOURCE_IDENTITY_OR_MATERIAL_TRANSITION_INVALID:" + transitionDiagnostic, out diagnostic);
+            if (capturedProof.ownerStyle != null &&
+                (capturedProof.ownerStyle.sourceComponentId != capturedProof.sourceComponentId ||
+                 capturedProof.ownerStyle.sourceFontAsset != currentOwner.font ||
+                 capturedProof.ownerStyle.sourceFontMaterial != currentOwner.font.material ||
+                 capturedProof.ownerStyle.profile != "native-static-text-outline-font-material-v1"))
+                return Fail("TMP_SORT_CAPTURE_REBIND_OWNER_STYLE_IDENTITY_CHANGED", out diagnostic);
 
             if (capturedProof.tmpFallbackMaterialBaked)
             {
@@ -2716,7 +3261,8 @@ namespace Monkey.StaticSortQueueProxy
                 return Fail("TMP_SORT_CAPTURE_REBIND_SOURCE_MATERIAL_CHANGED", out diagnostic);
 
             current.ownerStyle = capturedProof.ownerStyle;
-            current.textSlotEnumeration = capturedProof.textSlotEnumeration;
+            current.textSlotEnumeration = currentEnumeration;
+            current.captureLifecycle = capturedProof.captureLifecycle;
             current.tmpFallbackMaterialBaked = capturedProof.tmpFallbackMaterialBaked;
             current.persistentFallbackVariantRegistered = capturedProof.persistentFallbackVariantRegistered;
             current.tmpFallbackAlgorithm = capturedProof.tmpFallbackAlgorithm;
@@ -2732,7 +3278,6 @@ namespace Monkey.StaticSortQueueProxy
             current.fallbackAtlasGuid = capturedProof.fallbackAtlasGuid;
             current.fallbackAtlasLocalFileId = capturedProof.fallbackAtlasLocalFileId;
             current.transientFallbackFingerprint = capturedProof.transientFallbackFingerprint;
-            current.sourceMaterialFingerprint = capturedProof.sourceMaterialFingerprint;
             current.proxyMaterial = capturedProof.proxyMaterial;
             current.proxyMaterialFingerprint = capturedProof.proxyMaterialFingerprint;
             current.proxyMaterialGuid = capturedProof.proxyMaterialGuid;
@@ -2759,7 +3304,25 @@ namespace Monkey.StaticSortQueueProxy
         public static bool CaptureFallbackMaterial(TextSlotBinding binding, string persistentAssetPath,
             out string diagnostic)
         {
+            return CaptureFallbackMaterial(binding, persistentAssetPath, true, out diagnostic);
+        }
+
+        /// <summary>
+        /// Derive and persist every exact slot fallback profile without
+        /// registering it on a live owner. The caller captures all slots first,
+        /// then registers the complete set before the one final TMP rebuild.
+        /// </summary>
+        public static bool CaptureFallbackMaterialProfile(TextSlotBinding binding, string persistentAssetPath,
+            out string diagnostic)
+        {
+            return CaptureFallbackMaterial(binding, persistentAssetPath, false, out diagnostic);
+        }
+
+        static bool CaptureFallbackMaterial(TextSlotBinding binding, string persistentAssetPath,
+            bool registerPersistentVariants, out string diagnostic)
+        {
             diagnostic = null;
+            if (binding != null) binding.requiresPersistentFallbackRegistration = false;
             if (binding == null || binding.sourceMaterial == null || binding.sourceTexture == null)
                 return Fail("TMP_SORT_FALLBACK_CAPTURE_BINDING_INCOMPLETE", out diagnostic);
             if (PersistentAsset(binding.sourceMaterial, out var directGuid, out var directFileId))
@@ -2768,15 +3331,19 @@ namespace Monkey.StaticSortQueueProxy
                 if (binding.generatedSubmesh && binding.owner != null && binding.fallbackFontAsset != null && binding.fallbackFontAsset != binding.owner.font)
                 {
                     var outline = binding.owner.GetComponent<NativeStaticTextOutline>();
-                    if (outline != null && !outline.RegisterPersistentMaterialVariant(binding.fallbackFontAsset,
+                    if (outline != null && registerPersistentVariants && !outline.RegisterPersistentMaterialVariant(binding.fallbackFontAsset,
                         binding.sourceMaterial, binding.ownerFontSharedMaterial, binding.owner.fontSize,
                         binding.sourceTexture, out var registerDiagnostic))
                         return Fail("TMP_SORT_PERSISTENT_FALLBACK_VARIANT_REGISTRATION_FAILED:" + registerDiagnostic, out diagnostic);
                     if (outline != null)
                     {
-                        binding.persistentFallbackVariantRegistered = true;
-                        EditorUtility.SetDirty(outline);
-                        PrefabUtility.RecordPrefabInstancePropertyModifications(outline);
+                        if (registerPersistentVariants)
+                        {
+                            binding.persistentFallbackVariantRegistered = true;
+                            EditorUtility.SetDirty(outline);
+                            PrefabUtility.RecordPrefabInstancePropertyModifications(outline);
+                        }
+                        else binding.requiresPersistentFallbackRegistration = true;
                     }
                 }
                 binding.proxyMaterial = binding.sourceMaterial;
@@ -2924,16 +3491,46 @@ namespace Monkey.StaticSortQueueProxy
             binding.fallbackFontMaterialFingerprint = fallbackFingerprint;
             binding.transientFallbackFingerprint = transientFingerprint;
             binding.bakedProxyMaterialFingerprint = bakedFingerprint;
-            if (outlineDriver != null && fallbackFont != owner.font &&
+            if (outlineDriver != null && fallbackFont != owner.font && registerPersistentVariants &&
                 !outlineDriver.RegisterPersistentMaterialVariant(fallbackFont, baked, sourceBase, owner.fontSize,
                     binding.sourceTexture, out var persistentVariantDiagnostic))
                 return Fail("TMP_SORT_FALLBACK_PERSISTENT_VARIANT_REGISTRATION_FAILED:" + persistentVariantDiagnostic, out diagnostic);
             if (outlineDriver != null && fallbackFont != owner.font)
             {
-                binding.persistentFallbackVariantRegistered = true;
-                EditorUtility.SetDirty(outlineDriver);
-                PrefabUtility.RecordPrefabInstancePropertyModifications(outlineDriver);
+                if (registerPersistentVariants)
+                {
+                    binding.persistentFallbackVariantRegistered = true;
+                    EditorUtility.SetDirty(outlineDriver);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(outlineDriver);
+                }
+                else binding.requiresPersistentFallbackRegistration = true;
             }
+            return true;
+        }
+
+        public static bool RegisterCapturedFallbackVariant(TextSlotBinding binding, out string diagnostic)
+        {
+            diagnostic = null;
+            if (binding == null || binding.owner == null || binding.fallbackFontAsset == null ||
+                binding.fallbackFontAsset == binding.owner.font)
+                return Fail("TMP_SORT_CAPTURED_FALLBACK_REGISTRATION_INPUT_INVALID", out diagnostic);
+            if (!binding.requiresPersistentFallbackRegistration) return true;
+            var outline = binding.owner.GetComponent<NativeStaticTextOutline>();
+            if (outline == null)
+            {
+                binding.requiresPersistentFallbackRegistration = false;
+                return true;
+            }
+            var material = binding.tmpFallbackMaterialBaked ? binding.proxyMaterial : binding.sourceMaterial;
+            if (material == null || binding.ownerFontSharedMaterial == null || binding.sourceTexture == null)
+                return Fail("TMP_SORT_CAPTURED_FALLBACK_REGISTRATION_ASSETS_MISSING", out diagnostic);
+            if (!outline.RegisterPersistentMaterialVariant(binding.fallbackFontAsset, material,
+                    binding.ownerFontSharedMaterial, binding.owner.fontSize, binding.sourceTexture, out diagnostic))
+                return Fail("TMP_SORT_CAPTURED_FALLBACK_VARIANT_REGISTER_FAILED:" + diagnostic, out diagnostic);
+            binding.persistentFallbackVariantRegistered = true;
+            binding.requiresPersistentFallbackRegistration = false;
+            EditorUtility.SetDirty(outline);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(outline);
             return true;
         }
 
@@ -3054,6 +3651,7 @@ namespace Monkey.StaticSortQueueProxy
             identity.sourceGraphicEnabled = binding.sourceGraphicEnabled;
             identity.sourceGraphicActiveSelf = binding.sourceGraphicActiveSelf;
             identity.textSlotEnumeration = binding.textSlotEnumeration;
+            identity.captureLifecycle = binding.captureLifecycle;
             identity.textScaleContext = textScaleContext;
             identity.textInfoMaterialMissing = binding.textInfoMaterialMissing;
             identity.textInfoCharacterSlotVerified = binding.textInfoCharacterSlotVerified;
@@ -3153,6 +3751,7 @@ namespace Monkey.StaticSortQueueProxy
             readback.tmpFallbackAlgorithm = identity.tmpFallbackAlgorithm;
             readback.persistentFallbackVariantRegistered = identity.persistentFallbackVariantRegistered;
             readback.textSlotEnumeration = identity.textSlotEnumeration;
+            readback.captureLifecycle = identity.captureLifecycle;
             readback.transientFallbackFingerprint = identity.transientFallbackFingerprint;
             readback.sourceMaterialFingerprint = identity.sourceMaterialFingerprint;
             readback.textInfoMaterialMissing = identity.textInfoMaterialMissing;
@@ -3497,7 +4096,7 @@ namespace Monkey.StaticSortQueueProxy
             // those exact current source Graphics before checking slots.
             // Existing identities retain their originally observed cull state.
             if (presenter != null) presenter.RefreshSourceSuppression();
-            if (!GetCurrentSlots(expectedOwner, expectedSourceComponentId, presenter, presenter == null ? null : identity, out var currentSlots,
+            if (!GetCurrentSlots(expectedOwner, expectedSourceComponentId, presenter, identity, out var currentSlots,
                 out var currentEnumeration, out diagnostic)) return false;
             binding = currentSlots.SingleOrDefault(candidate => candidate.materialSlot == identity.materialSlot);
             if (binding == null)

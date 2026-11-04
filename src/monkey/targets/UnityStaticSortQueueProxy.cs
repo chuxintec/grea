@@ -251,7 +251,16 @@ namespace Monkey.StaticSortQueueProxy
     {
         public string sourceNode, readbackMode, sourceComponentId;
         public int materialSlot;
+        public NativeStaticSortTextCaptureLifecycle captureLifecycle;
         public TextSourceReadback evidence;
+    }
+    [Serializable] sealed class StaticSortTextCaptureFailureReadback
+    {
+        public int schemaVersion = 1;
+        public string contract = "monkey-static-sort-text-capture-failure/1";
+        public string code, sourceComponentId, phase, sourceTextSha256, diagnostic;
+        public NativeStaticSortTextSlotEnumeration expectedEnumeration, observedEnumeration;
+        public NativeStaticSortTextCaptureLifecycle lifecycle;
     }
     [Serializable] public sealed class ProxyEmptyRendererReadback
     {
@@ -865,9 +874,14 @@ namespace Monkey.StaticSortQueueProxy
             if (owner == null) throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_OWNER_MISSING: " + row.sourceComponentId);
             if (!UnityStaticSortTextSource.GetCurrentSlots(owner, row.sourceComponentId, out var initialSlots,
                     out slotEnumeration, out var initialDiagnostic))
-                throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_CAPTURE_FAILED: " + row.sourceComponentId +
-                    ";diagnostic=" + initialDiagnostic);
-            ValidateTextSlotEnumeration(slotEnumeration, row.sourceComponentId);
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SLOT_CAPTURE_FAILED", row, null,
+                    null, slotEnumeration, initialDiagnostic);
+            try { ValidateTextSlotEnumeration(slotEnumeration, row.sourceComponentId); }
+            catch (Exception error)
+            {
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SLOT_ENUMERATION_INVALID", row, null,
+                    slotEnumeration, slotEnumeration, error.Message);
+            }
             if (initialSlots.Count == 0)
             {
                 if (!IsExactEmptyTextSource(row, owner) ||
@@ -880,68 +894,357 @@ namespace Monkey.StaticSortQueueProxy
             var slotIds = initialSlots.Select(binding => binding.materialSlot).OrderBy(slot => slot).ToArray();
             if (slotIds.Distinct().Count() != slotIds.Length)
                 throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_DENOMINATOR_DUPLICATED: " + row.sourceComponentId);
+            var drawableIds = UnityStaticSortTextSource.TextSlotDrawableIds(slotEnumeration);
+            if (!slotIds.SequenceEqual(drawableIds))
+                throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_CAPTURE_BINDING_DENOMINATOR_MISMATCH: " +
+                    row.sourceComponentId + ";bindings=" + String.Join(",", slotIds) +
+                    ";drawable=" + String.Join(",", drawableIds) + ";initial=" + TextSlotEnumerationSummary(slotEnumeration));
+
+            var sourceText = owner.text ?? String.Empty;
+            var sourceTextSha = HashText(sourceText);
+            var sourceFont = owner.font;
+            var sourceFontMaterial = owner.fontSharedMaterial;
+            var sourceFontIdentity = CapturePersistentUnityIdentity(sourceFont);
+            var sourceFontMaterialIdentity = CapturePersistentUnityIdentity(sourceFontMaterial);
+            var lifecycle = UnityStaticSortTextSource.BeginCaptureLifecycle(row.sourceComponentId, owner, slotEnumeration);
+            if (lifecycle == null)
+                throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_CAPTURE_LIFECYCLE_INIT_FAILED: " + row.sourceComponentId);
+            var initialEnumerationSha256 = slotEnumeration.evidenceSha256;
+            lifecycle.initialDrawableSlotIds = drawableIds;
+            lifecycle.allInitialBindingsCaptured = initialSlots.Count == drawableIds.Length &&
+                initialSlots.All(binding => binding != null && binding.owner == owner && binding.textSlotEnumeration != null &&
+                    binding.textSlotEnumeration.evidenceSha256 == initialEnumerationSha256);
+            UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                UnityStaticSortTextSource.CaptureLifecyclePhase("initial-after-prepare-source", -1, owner,
+                    row.sourceComponentId, initialSlots, slotEnumeration));
+            if (!lifecycle.allInitialBindingsCaptured)
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_CAPTURE_INITIAL_BINDINGS_INCOMPLETE", row,
+                    lifecycle, slotEnumeration, slotEnumeration, "initial binding ownership/source enumeration did not match");
+
             var captureProofs = new Dictionary<int, TextSlotBinding>();
             foreach (var slot in slotIds)
             {
-                if (!UnityStaticSortTextSource.GetCurrentSlots(owner, row.sourceComponentId, out var liveSlots,
-                        out var liveEnumeration, out var liveDiagnostic))
-                    throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_REFRESH_FAILED: " + row.sourceComponentId +
-                        ";slot=" + slot + ";diagnostic=" + liveDiagnostic);
-                if (!SameTextSlotEnumeration(slotEnumeration, liveEnumeration))
-                    throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_EVIDENCE_CHANGED_DURING_CAPTURE: " +
-                        row.sourceComponentId + ";slot=" + slot);
-                var live = liveSlots.SingleOrDefault(binding => binding.materialSlot == slot);
-                if (live == null)
-                    throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_DISAPPEARED_DURING_CAPTURE: " + row.sourceComponentId +
-                        ";slot=" + slot);
+                var live = initialSlots.Single(binding => binding.materialSlot == slot);
+                var inputPhase = UnityStaticSortTextSource.CaptureLifecyclePhase("capture-fallback-input", slot, owner,
+                    row.sourceComponentId, new[] { live }, slotEnumeration);
+                UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle, inputPhase);
                 live.ownerStyle = ownerStyle;
                 var materialPath = spec.meshAssetFolder.TrimEnd('/') + "/TMPTextMaterial_" +
                     HashText(row.sourceComponentId + "|" + slot + "|" +
                         (live.transientFallbackFingerprint ?? live.sourceMaterialFingerprint ?? String.Empty)).Substring(0, 24) + ".mat";
-                if (!UnityStaticSortTextSource.CaptureFallbackMaterial(live, materialPath, out var captureDiagnostic))
-                    throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_FALLBACK_MATERIAL_CAPTURE_FAILED: " + row.sourceComponentId +
-                        ";slot=" + slot + ";diagnostic=" + captureDiagnostic);
+                if (!UnityStaticSortTextSource.CaptureFallbackMaterialProfile(live, materialPath, out var captureDiagnostic))
+                {
+                    var refused = UnityStaticSortTextSource.CaptureLifecyclePhase("capture-fallback-refused", slot, owner,
+                        row.sourceComponentId, new[] { live }, slotEnumeration);
+                    if (refused != null) { refused.status = "refused"; refused.diagnostic = captureDiagnostic; }
+                    UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle, refused);
+                    throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FALLBACK_MATERIAL_CAPTURE_FAILED", row,
+                        lifecycle, slotEnumeration, null, "slot=" + slot + ";diagnostic=" + captureDiagnostic);
+                }
+                UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                    UnityStaticSortTextSource.CaptureLifecyclePhase("capture-fallback-output", slot, owner,
+                        row.sourceComponentId, new[] { live }, slotEnumeration));
                 captureProofs.Add(slot, live);
-                // The registered primary/fallback material must take effect in
-                // TMP's current mesh before another slot is resolved.
-                if (!UnityStaticSortTextSource.PrepareSource(owner, row.sourceComponentId, out var prepareDiagnostic))
-                    throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_REPREPARE_FAILED: " + row.sourceComponentId +
-                        ";slot=" + slot + ";diagnostic=" + prepareDiagnostic);
-                Canvas.ForceUpdateCanvases();
+                if (!CaptureOwnerSourceStateMatches(lifecycle, owner, sourceText, sourceFont, sourceFontMaterial,
+                        sourceFontIdentity, sourceFontMaterialIdentity, out var ownerDrift))
+                    throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SOURCE_CHANGED_DURING_FALLBACK_CAPTURE", row,
+                        lifecycle, slotEnumeration, null, "phase=capture-fallback-output;slot=" + slot + ";" + ownerDrift);
             }
 
+            lifecycle.allFallbackProfilesCaptured = captureProofs.Count == drawableIds.Length && captureProofs.All(pair =>
+                pair.Value != null && pair.Value.owner == owner && pair.Value.textSlotEnumeration != null &&
+                pair.Value.textSlotEnumeration.evidenceSha256 == initialEnumerationSha256 &&
+                (pair.Value.tmpFallbackMaterialBaked || pair.Value.proxyMaterial != null));
+            UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                UnityStaticSortTextSource.CaptureLifecyclePhase("after-all-fallback-profiles-before-registration", -1,
+                    owner, row.sourceComponentId, captureProofs.Values.OrderBy(binding => binding.materialSlot).ToArray(), slotEnumeration));
+            if (!lifecycle.allFallbackProfilesCaptured)
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FALLBACK_PROFILE_DENOMINATOR_INCOMPLETE", row,
+                    lifecycle, slotEnumeration, null, "captured=" + String.Join(",", captureProofs.Keys.OrderBy(slot => slot)) +
+                    ";drawable=" + String.Join(",", drawableIds));
+
+            foreach (var slot in slotIds)
+            {
+                var binding = captureProofs[slot];
+                UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                    UnityStaticSortTextSource.CaptureLifecyclePhase("register-fallback-variant-input", slot, owner,
+                        row.sourceComponentId, new[] { binding }, slotEnumeration));
+                if (!UnityStaticSortTextSource.RegisterCapturedFallbackVariant(binding, out var registerDiagnostic))
+                {
+                    var refused = UnityStaticSortTextSource.CaptureLifecyclePhase("register-fallback-variant-refused", slot,
+                        owner, row.sourceComponentId, new[] { binding }, slotEnumeration);
+                    if (refused != null) { refused.status = "refused"; refused.diagnostic = registerDiagnostic; }
+                    UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle, refused);
+                    throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FALLBACK_VARIANT_REGISTRATION_FAILED", row,
+                        lifecycle, slotEnumeration, null, "slot=" + slot + ";diagnostic=" + registerDiagnostic);
+                }
+                UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                    UnityStaticSortTextSource.CaptureLifecyclePhase("register-fallback-variant-output", slot, owner,
+                        row.sourceComponentId, new[] { binding }, slotEnumeration));
+                if (!CaptureOwnerSourceStateMatches(lifecycle, owner, sourceText, sourceFont, sourceFontMaterial,
+                        sourceFontIdentity, sourceFontMaterialIdentity, out var registerOwnerDrift))
+                    throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SOURCE_CHANGED_DURING_FALLBACK_REGISTRATION", row,
+                        lifecycle, slotEnumeration, null, "slot=" + slot + ";" + registerOwnerDrift);
+            }
+            lifecycle.allFallbackVariantsRegistered = captureProofs.Count == drawableIds.Length &&
+                captureProofs.Values.All(binding => binding != null && !binding.requiresPersistentFallbackRegistration);
+            UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                UnityStaticSortTextSource.CaptureLifecyclePhase("after-all-fallback-registrations-before-final-prepare", -1,
+                    owner, row.sourceComponentId, captureProofs.Values.OrderBy(binding => binding.materialSlot).ToArray(), slotEnumeration));
+            if (!lifecycle.allFallbackVariantsRegistered)
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FALLBACK_VARIANT_REGISTRATION_INCOMPLETE", row,
+                    lifecycle, slotEnumeration, null, "not all captured profiles were registered or proven not to require registration");
+            if (!CaptureOwnerSourceStateMatches(lifecycle, owner, sourceText, sourceFont, sourceFontMaterial,
+                    sourceFontIdentity, sourceFontMaterialIdentity, out var prePrepareDrift))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SOURCE_CHANGED_BEFORE_FINAL_PREPARE", row,
+                    lifecycle, slotEnumeration, null, prePrepareDrift);
+
+            // TMP's cached fallback material registry is mutated by capture.
+            // Re-prepare only after every original slot binding has been saved,
+            // then require two identical full final enumerations before rebind.
             if (!UnityStaticSortTextSource.PrepareSource(owner, row.sourceComponentId, out var finalPrepareDiagnostic))
-                throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_FINAL_REPREPARE_FAILED: " + row.sourceComponentId +
-                    ";diagnostic=" + finalPrepareDiagnostic);
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_REPREPARE_FAILED", row, lifecycle,
+                    slotEnumeration, null, "phase=final-prepare-pass1;diagnostic=" + finalPrepareDiagnostic);
+            Canvas.ForceUpdateCanvases();
+            if (!UnityStaticSortTextSource.GetCurrentSlots(owner, row.sourceComponentId, out var firstFinalSlots,
+                    out var firstFinalEnumeration, out var firstFinalDiagnostic))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_SLOTS_FAILED", row, lifecycle,
+                    slotEnumeration, null, "phase=final-prepare-pass1;diagnostic=" + firstFinalDiagnostic);
+            UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                UnityStaticSortTextSource.CaptureLifecyclePhase("final-prepare-pass1", -1, owner,
+                    row.sourceComponentId, firstFinalSlots, firstFinalEnumeration));
+            if (!UnityStaticSortTextSource.PrepareSource(owner, row.sourceComponentId, out var repeatedPrepareDiagnostic))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_REPEATED_PREPARE_FAILED", row, lifecycle,
+                    firstFinalEnumeration, null, "phase=final-prepare-pass2;diagnostic=" + repeatedPrepareDiagnostic);
             Canvas.ForceUpdateCanvases();
             if (!UnityStaticSortTextSource.GetCurrentSlots(owner, row.sourceComponentId, out var finalSlots,
                     out var finalEnumeration, out var finalDiagnostic))
-                throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_FINAL_SLOTS_FAILED: " + row.sourceComponentId +
-                    ";diagnostic=" + finalDiagnostic);
-            if (!SameTextSlotEnumeration(slotEnumeration, finalEnumeration))
-                throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_EVIDENCE_CHANGED_AFTER_REGISTRATION: " + row.sourceComponentId);
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_REPEATED_SLOTS_FAILED", row, lifecycle,
+                    firstFinalEnumeration, null, "phase=final-prepare-pass2;diagnostic=" + finalDiagnostic);
+            UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                UnityStaticSortTextSource.CaptureLifecyclePhase("final-prepare-pass2", -1, owner,
+                    row.sourceComponentId, finalSlots, finalEnumeration));
+            if (!SameTextSlotEnumeration(firstFinalEnumeration, finalEnumeration))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_SLOT_SNAPSHOT_NOT_STABLE", row, lifecycle,
+                    firstFinalEnumeration, finalEnumeration, "two consecutive final TMP preparations changed slot material or mesh evidence");
+            if (!UnityStaticSortTextSource.TextSlotDenominatorMatches(slotEnumeration, finalEnumeration, out var denominatorDiff))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_SOURCE_DENOMINATOR_CHANGED", row, lifecycle,
+                    slotEnumeration, finalEnumeration, denominatorDiff);
             if (!slotIds.SequenceEqual(finalSlots.Select(binding => binding.materialSlot).OrderBy(slot => slot)))
-                throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_DENOMINATOR_CHANGED_AFTER_REGISTRATION: " + row.sourceComponentId);
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_DRAWABLE_SLOT_SET_CHANGED", row, lifecycle,
+                    slotEnumeration, finalEnumeration, "initial=" + String.Join(",", slotIds) +
+                    ";final=" + String.Join(",", finalSlots.Select(binding => binding.materialSlot).OrderBy(slot => slot)));
+            if (!CaptureOwnerSourceStateMatches(lifecycle, owner, sourceText, sourceFont, sourceFontMaterial,
+                    sourceFontIdentity, sourceFontMaterialIdentity, out var postPrepareDrift))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SOURCE_CHANGED_AFTER_FINAL_PREPARE", row,
+                    lifecycle, slotEnumeration, finalEnumeration, postPrepareDrift);
+
+            lifecycle.finalEnumeration = finalEnumeration;
+            lifecycle.finalSlotCount = finalEnumeration.slotCount;
+            lifecycle.finalDrawableSlotIds = UnityStaticSortTextSource.TextSlotDrawableIds(finalEnumeration);
+            lifecycle.finalPrepareCompleted = true;
+            lifecycle.finalSlotSetVerified = slotIds.SequenceEqual(lifecycle.finalDrawableSlotIds);
+            lifecycle.sourceTextAndFontRechecked = true;
+            lifecycle.persistentReferencesRechecked = captureProofs.Values.All(TextBindingPersistentReferencesVerified);
+            if (!lifecycle.finalSlotSetVerified || !lifecycle.persistentReferencesRechecked)
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_SLOT_OR_PERSISTENT_REFERENCE_PROOF_FAILED", row,
+                    lifecycle, slotEnumeration, finalEnumeration, "finalDrawable=" + String.Join(",", lifecycle.finalDrawableSlotIds) +
+                    ";initialDrawable=" + String.Join(",", slotIds) + ";persistentReferences=" + lifecycle.persistentReferencesRechecked);
+
             var result = new List<TextSlotBinding>();
             foreach (var slot in slotIds)
             {
+                var captured = captureProofs[slot];
                 var current = finalSlots.Single(binding => binding.materialSlot == slot);
-                if (!UnityStaticSortTextSource.RebindCapturedSlot(captureProofs[slot], owner, current.sourceGraphic,
+                captured.captureLifecycle = lifecycle;
+                if (!CapturedTextSlotSourceIdentityMatches(captured, current, slotEnumeration, finalEnumeration,
+                        out var identityDiff))
+                    throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SLOT_SOURCE_IDENTITY_CHANGED", row, lifecycle,
+                        slotEnumeration, finalEnumeration, "slot=" + slot + ";" + identityDiff);
+                UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                    UnityStaticSortTextSource.CaptureLifecyclePhase("final-before-rebind", slot, owner,
+                        row.sourceComponentId, new[] { current }, finalEnumeration));
+                captured.captureLifecycle = lifecycle;
+                if (!UnityStaticSortTextSource.RebindCapturedSlot(captured, owner, current.sourceGraphic,
                         out var rebound, out var rebindDiagnostic))
-                    throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_REBIND_FAILED: " + row.sourceComponentId +
-                        ";slot=" + slot + ";diagnostic=" + rebindDiagnostic);
+                    throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SLOT_REBIND_FAILED", row, lifecycle,
+                        finalEnumeration, current.textSlotEnumeration, "slot=" + slot + ";diagnostic=" + rebindDiagnostic);
                 if (!SameTextSlotEnumeration(finalEnumeration, current.textSlotEnumeration) ||
-                    rebound.sourceTextSha256 != finalEnumeration.sourceTextSha256)
-                    throw new InvalidOperationException("STATIC_SORT_PROXY_TEXT_SLOT_REBIND_ENUMERATION_MISMATCH: " +
-                        row.sourceComponentId + ";slot=" + slot);
+                    rebound.sourceTextSha256 != finalEnumeration.sourceTextSha256 || rebound.sourceMeshSha256 != finalEnumeration.rows[slot].sourceMeshSha256)
+                    throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_SLOT_REBIND_ENUMERATION_MISMATCH", row,
+                        lifecycle, finalEnumeration, current.textSlotEnumeration, "slot=" + slot);
                 // Rebind resolves a fresh slot object; carry the enumeration
                 // captured by that final pass onto the exact rebound binding
                 // that Attach persists.
                 rebound.textSlotEnumeration = finalEnumeration;
                 rebound.ownerStyle = ownerStyle;
+                rebound.captureLifecycle = lifecycle;
                 result.Add(rebound);
+                UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
+                    UnityStaticSortTextSource.CaptureLifecyclePhase("final-after-rebind", slot, owner,
+                        row.sourceComponentId, new[] { rebound }, finalEnumeration));
             }
+            if (!UnityStaticSortTextSource.FinalizeCaptureLifecycle(lifecycle, out var lifecycleDiagnostic))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_CAPTURE_LIFECYCLE_FINALIZE_FAILED", row,
+                    lifecycle, slotEnumeration, finalEnumeration, lifecycleDiagnostic);
+            foreach (var binding in result) binding.captureLifecycle = lifecycle;
+            slotEnumeration = finalEnumeration;
             return result;
+        }
+
+        static bool CaptureOwnerSourceStateMatches(NativeStaticSortTextCaptureLifecycle lifecycle, TMPro.TMP_Text owner,
+            string sourceText, TMPro.TMP_FontAsset sourceFont, Material sourceFontMaterial,
+            KeyValuePair<string, long> sourceFontIdentity, KeyValuePair<string, long> sourceFontMaterialIdentity,
+            out string diagnostic)
+        {
+            diagnostic = null;
+            var differences = new List<string>();
+            if (owner == null) differences.Add("ownerMissing");
+            else
+            {
+                if ((owner.text ?? String.Empty) != sourceText) differences.Add("sourceText=" + HashText(sourceText) + "->" + HashText(owner.text ?? String.Empty));
+                if (owner.font != sourceFont) differences.Add("ownerFontObjectChanged");
+                if (owner.fontSharedMaterial != sourceFontMaterial) differences.Add("ownerFontMaterialObjectChanged");
+                var fontIdentity = CapturePersistentUnityIdentity(owner.font);
+                var fontMaterialIdentity = CapturePersistentUnityIdentity(owner.fontSharedMaterial);
+                if (!fontIdentity.Equals(sourceFontIdentity)) differences.Add("ownerFontGuidLocal=" + IdentitySummary(sourceFontIdentity) + "->" + IdentitySummary(fontIdentity));
+                if (!fontMaterialIdentity.Equals(sourceFontMaterialIdentity)) differences.Add("ownerFontMaterialGuidLocal=" + IdentitySummary(sourceFontMaterialIdentity) + "->" + IdentitySummary(fontMaterialIdentity));
+                if (lifecycle != null && HashText(owner.text ?? String.Empty) != lifecycle.sourceTextSha256)
+                    differences.Add("lifecycleSourceTextShaMismatch=" + HashText(owner.text ?? String.Empty) + "!=" + lifecycle.sourceTextSha256);
+            }
+            diagnostic = differences.Count == 0 ? null : String.Join(";", differences);
+            return differences.Count == 0;
+        }
+
+        static KeyValuePair<string, long> CapturePersistentUnityIdentity(UnityEngine.Object value)
+        {
+            if (value == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out string guid, out long fileId) ||
+                String.IsNullOrWhiteSpace(guid) || fileId == 0 || String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(value)))
+                return new KeyValuePair<string, long>(null, 0);
+            return new KeyValuePair<string, long>(guid, fileId);
+        }
+
+        static string IdentitySummary(KeyValuePair<string, long> identity)
+        {
+            return (identity.Key ?? "null") + ":" + identity.Value;
+        }
+
+        static bool TextBindingPersistentReferencesVerified(TextSlotBinding binding)
+        {
+            if (binding == null || binding.owner == null || binding.sourceTexture == null ||
+                binding.owner.font == null || binding.ownerFontSharedMaterial == null) return false;
+            if (String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(binding.sourceTexture)) ||
+                String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(binding.owner.font)) ||
+                String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(binding.ownerFontSharedMaterial))) return false;
+            if (binding.fontAsset != null && String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(binding.fontAsset))) return false;
+            if (binding.spriteAsset != null && String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(binding.spriteAsset))) return false;
+            if (binding.fallbackFontAsset != null && String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(binding.fallbackFontAsset))) return false;
+            if (binding.fallbackFontMaterial != null && String.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(binding.fallbackFontMaterial))) return false;
+            return binding.tmpFallbackMaterialBaked
+                ? !String.IsNullOrWhiteSpace(binding.bakedProxyMaterialGuid) && binding.bakedProxyMaterialLocalFileId != 0 &&
+                  !String.IsNullOrWhiteSpace(binding.bakedProxyMaterialFingerprint)
+                : !String.IsNullOrWhiteSpace(binding.sourceMaterialFingerprint);
+        }
+
+        static bool CapturedTextSlotSourceIdentityMatches(TextSlotBinding captured, TextSlotBinding current,
+            NativeStaticSortTextSlotEnumeration initial, NativeStaticSortTextSlotEnumeration final,
+            out string diagnostic)
+        {
+            if (captured == null || initial == null || captured.textSlotEnumeration == null ||
+                initial.evidenceSha256 != captured.textSlotEnumeration.evidenceSha256)
+            {
+                diagnostic = "initial-slot-snapshot-not-pinned";
+                return false;
+            }
+            return UnityStaticSortTextSource.ValidateCapturedSlotTransition(captured, current, final, out diagnostic);
+        }
+
+        static string TextSlotBindingSummary(TextSlotBinding binding)
+        {
+            return "slot=" + binding.materialSlot + ",text=" + binding.sourceTextSha256 +
+                ",asset=" + (binding.fontAsset == null ? "sprite" : "font") + ":" +
+                (binding.fontAsset == null ? binding.spriteAssetGuid : binding.fontAssetGuid) + ":" +
+                (binding.fontAsset == null ? binding.spriteAssetLocalFileId : binding.fontAssetLocalFileId) +
+                ",atlas=" + binding.sourceTextureGuid + ":" + binding.sourceTextureLocalFileId +
+                ",graphicMaterial=" + binding.sourceMaterialGuid + ":" + binding.sourceMaterialLocalFileId + ":" + binding.sourceMaterialFingerprint +
+                ",textInfoMaterial=" + binding.textInfoCharacterMaterialFingerprint +
+                ",characters=" + binding.textInfoCharacterCount + "/" + binding.textInfoVisibleCharacterCount +
+                ",characterAssets=" + binding.textInfoCharacterAssetEvidenceSha256 +
+                ",mesh=" + binding.sourceMeshSha256 + ",scaleContext=" +
+                (binding.currentTextScaleContext == null ? "null" : binding.currentTextScaleContext.evidenceSha256);
+        }
+
+        static InvalidOperationException TextSlotCaptureRefusal(string code, ProxyRendererSpec row,
+            NativeStaticSortTextCaptureLifecycle lifecycle, NativeStaticSortTextSlotEnumeration expected,
+            NativeStaticSortTextSlotEnumeration actual, string diagnostic)
+        {
+            var sourceComponentId = row == null ? lifecycle == null ? null : lifecycle.sourceComponentId : row.sourceComponentId;
+            var phase = lifecycle == null || lifecycle.phases == null || lifecycle.phases.Length == 0
+                ? "initial" : lifecycle.phases[lifecycle.phases.Length - 1].phase;
+            if (lifecycle != null)
+            {
+                lifecycle.status = "refused";
+                lifecycle.verified = false;
+                lifecycle.diagnostic = code + ";phase=" + phase + ";" + (diagnostic ?? "unspecified");
+                lifecycle.evidenceSha256 = UnityStaticSortTextSource.CaptureLifecycleHash(lifecycle);
+            }
+            WriteTextSlotCaptureFailure(code, sourceComponentId, phase,
+                lifecycle == null ? null : lifecycle.sourceTextSha256, diagnostic, expected, actual, lifecycle);
+            return new InvalidOperationException(code + ": " + (row == null ? "unknown-source" : row.sourceComponentId) +
+                ";phase=" + phase +
+                ";sourceTextSha=" + (lifecycle == null ? "null" : lifecycle.sourceTextSha256) +
+                ";initialEnumeration=" + TextSlotEnumerationSummary(expected) +
+                ";observedEnumeration=" + TextSlotEnumerationSummary(actual) +
+                ";diagnostic=" + (diagnostic ?? "unspecified"));
+        }
+
+        static void WriteTextSlotCaptureFailure(string code, string sourceComponentId, string phase,
+            string sourceTextSha256, string diagnostic, NativeStaticSortTextSlotEnumeration expected,
+            NativeStaticSortTextSlotEnumeration actual, NativeStaticSortTextCaptureLifecycle lifecycle)
+        {
+            try
+            {
+                var candidateRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                var outputDirectory = Path.GetFullPath(Path.Combine(candidateRoot, "Analysis", "Readback", "StaticSortTextCapture"));
+                var candidatePrefix = candidateRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                if (!outputDirectory.StartsWith(candidatePrefix, StringComparison.Ordinal)) return;
+                var componentHash = HashText(sourceComponentId ?? "unknown-source");
+                if (String.IsNullOrWhiteSpace(componentHash)) return;
+                Directory.CreateDirectory(outputDirectory);
+                var path = Path.Combine(outputDirectory, componentHash + "-" + Guid.NewGuid().ToString("N") + ".json");
+                var report = new StaticSortTextCaptureFailureReadback {
+                    code = code,
+                    sourceComponentId = sourceComponentId,
+                    phase = phase,
+                    sourceTextSha256 = sourceTextSha256 ?? (expected == null ? null : expected.sourceTextSha256),
+                    diagnostic = diagnostic,
+                    expectedEnumeration = expected,
+                    observedEnumeration = actual,
+                    lifecycle = lifecycle,
+                };
+                File.WriteAllText(path, JsonUtility.ToJson(report, true), new UTF8Encoding(false));
+            }
+            catch
+            {
+                // Never mask the original lifecycle refusal with evidence-write failures.
+            }
+        }
+
+        static string TextSlotEnumerationSummary(NativeStaticSortTextSlotEnumeration enumeration)
+        {
+            if (enumeration == null) return "null";
+            var rows = (enumeration.rows ?? Array.Empty<NativeStaticSortTextSlotEvidence>()).OrderBy(slot => slot.slot).Select(slot =>
+                "slot=" + slot.slot + ",disp=" + slot.disposition + ",refs=" + slot.characterReferences + "/" + slot.visibleCharacterReferences +
+                ",asset=" + slot.sourceAssetKind + ":" + slot.sourceAssetGuid + ":" + slot.sourceAssetLocalFileId +
+                ",atlas=" + slot.atlasGuid + ":" + slot.atlasLocalFileId +
+                ",graphicMat=" + slot.sourceGraphicMaterialGuid + ":" + slot.sourceGraphicMaterialLocalFileId + ":" + slot.sourceGraphicMaterialFingerprint +
+                ",textMat=" + slot.textInfoMaterialGuid + ":" + slot.textInfoMaterialLocalFileId + ":" + slot.textInfoMaterialFingerprint +
+                ",shader=" + slot.sourceShaderGuid + ":" + slot.sourceShaderLocalFileId +
+                ",texture=" + slot.sourceTextureGuid + ":" + slot.sourceTextureLocalFileId +
+                ",character=" + slot.characterEvidenceSha256 + ",characterAssets=" + slot.characterAssetEvidenceSha256 +
+                ",mesh=" + slot.sourceMeshSha256 + ",evidence=" + slot.evidenceSha256).ToArray();
+            return "source=" + enumeration.sourceComponentId + ",text=" + enumeration.sourceTextSha256 +
+                ",slotCount=" + enumeration.slotCount + ",sha=" + enumeration.evidenceSha256 + ",[" + String.Join("|", rows) + "]";
         }
 
         static void ValidateTextSlotEnumeration(NativeStaticSortTextSlotEnumeration enumeration, string sourceComponentId)
@@ -5285,6 +5588,7 @@ namespace Monkey.StaticSortQueueProxy
                 textSourceReadbacks.Add(new ProxyTextSourceReadback { sourceNode = sourceTextSpec == null ? null : sourceTextSpec.node,
                     readbackMode = verifyRuntimeGeometry ? "loaded" : "persistent",
                     sourceComponentId = textReadback.sourceComponentId, materialSlot = textReadback.materialSlot,
+                    captureLifecycle = identity.captureLifecycle,
                     evidence = textReadback });
                 textSourceEvidence[identity] = textReadback;
                 textSourceVerified[identity] = textVerified;

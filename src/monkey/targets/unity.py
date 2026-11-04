@@ -621,6 +621,7 @@ def export(plan_path, output):
     instruction['staticSortQueue']=p.get('staticSortQueue')
     instruction['staticSortContinuation']=p.get('staticSortContinuation')
     instruction['staticTextContinuationJson']=encoded(p['staticTextContinuation']).decode('utf-8') if p.get('staticTextContinuation') else None
+    instruction['staticTextSlotCaptureLifecycleContract']=p.get('staticTextSlotCaptureLifecycleContract')
     instruction['bitmapMissingGlyphs']=p.get('bitmapMissingGlyphs')
     instruction['staticParticleBoundary']=p.get('staticParticleBoundary')
     instruction['staticAnimationEvidence']=p.get('staticAnimationEvidence')
