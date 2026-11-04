@@ -44,18 +44,17 @@
       "name": "beaver",
       "role": "Candidate or existing engineering project -> maintainable project and deliverable artifacts (Unity native operations, resources, JSON/C#, Go, validation, build). Also runs GREA engineering/media/evidence tools: beaver tool <id>.",
       "distribution": "beaver-game-tools",
-      "version": "0.6.0",
+      "version": "0.7.0.dev1",
       "import": "beaver",
       "console": "beaver",
       "entry": "beaver.cli:main",
       "requiresPython": ">=3.10",
       "wheel": {
-        "file": "beaver_game_tools-0.6.0-py3-none-any.whl",
-        "sha256": "297155dd9a6e9d3bd76b3583b51fd9372473e569ba6d496a2060c1819b02e2d1",
-        "bytes": 564672,
-        "url": "https://github.com/chuxintec/beaver/releases/download/v0.6.0/beaver_game_tools-0.6.0-py3-none-any.whl"
+        "file": "beaver_game_tools-0.7.0.dev1-py3-none-any.whl",
+        "sha256": "706f2a5c35c6fd5d4ac5cee6c750932f49037ff1c1142d662b282c20a51cee30",
+        "bytes": 566787
       },
-      "implementationSha256": "cf372a0a11256f44d512580ab42aba5cff8f02e53f2008818235314c2b2fe76e",
+      "implementationSha256": "5a4d5599c7e37f373d31290e150d3ac2048b82a91aa7904a2adfe38a7572bb88",
       "dependencies": [],
       "optionalDependencies": {
         "images": [
@@ -71,12 +70,12 @@
       ],
       "source": {
         "repository": "https://github.com/chuxintec/beaver",
-        "tag": "v0.6.0",
-        "commit": "1074816d0e4c22940dea415754e587a6e8d29c3d",
-        "published": "2026-11-04T07:03:12Z"
+        "tag": null,
+        "commit": "7b8453a14f5e358ed5024a9fbd47dce899b40960",
+        "published": "not published; local development candidate"
       },
-      "releaseStatus": "official_release",
-      "inFlight": "none"
+      "releaseStatus": "local_fixed_candidate",
+      "inFlight": "explicit consumer adoption only"
     }
   ]
 }

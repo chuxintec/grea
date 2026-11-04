@@ -409,3 +409,16 @@ native=true或native state event不能证明人为来源，也不能倒推事件
 pin/probe/invoke核对producer、完整capabilities、包树及launcher，要求intake合同`beaver-additive-intake/5`及spec1–5。intake.apply最多5原生阶段、额外310秒；rollback最多2阶段、额外160秒，每阶段timeout最多280秒，外层预算不足即拒绝。SDK配对hash、项目profile校验、输入实例归属和有限后端选项守卫继续有效；版本更高不放开任意argv或执行方法。
 
 公开CLI/MCP静态plan不等于apply/build/Player通过。原生构建与无输入启动证据按未变实现及明确中性工程范围复用，视觉、玩法、Windows原生Editor与普遍真人接管未验；虚拟光标为有界备选。历史fixed17构建、fixed29采用和fixed31 QA继续按原锁运行，本次分发不替换它们。
+
+
+## 固定0.7观测启动候选
+
+`0.7.0.dev1`固定源码`7b8453a14f5e358ed5024a9fbd47dce899b40960`，wheel SHA `706f2a5c35c6fd5d4ac5cee6c750932f49037ff1c1142d662b282c20a51cee30`，producer `5a4d5599c7e37f373d31290e150d3ac2048b82a91aa7904a2adfe38a7572bb88`。GREA仅开放`debug.start/inspect/stop/tail`；不因此开放该候选的工程构建、采用或QA/input操作，旧固定链保持。
+
+`debug.start`沿用manifest/expected/duration及可选配对width/height，新增可选且必须配对的`observation-spec`绝对JSON路径与`expected-observation`原字节SHA256。可选`deadline-utc`必须为UTC ISO8601秒，允许最多6位小数，结尾Z或+00:00；不接受任意argv/env/回调/PID覆盖。观测spec的闭合结构和冻结复制由beaver校验，GREA不复制解析器或执行器。
+
+观测spec合同为`beaver-debug-observation/1`，以rootArgument将工具生成的独立runDirectory传入项目，可绑定expectedBundleIdentifier；其他项目业务和输入仍留原责任方。外部截止与duration取较短有效预算；业务观测路径须由消费者选在其项目允许位置。
+
+start返回exit1、partial且data.status=starting时，worker已派发，保留回执并用`debug.inspect --session RUN/session.json`观察，禁止自动重复start。worker PID不等于App PID。`debug.stop`或该runDirectory的STOP只请求自有worker清理；正常退出与预算停止分别保留，启动/日志存在不证明业务、输入或视觉通过。检查不可用的进程探针保持unknown，不放松身份守卫。
+
+候选须安装到有明确GREA保管责任、解释器/依赖身份和保留条件的独立本地前缀；beaver验证venv不是消费者长期入口。安装、接口检查、僵尸实际采用与第二消费者适用性分别记录，不据中性进程验证退役项目旧可用脚本。

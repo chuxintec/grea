@@ -1,5 +1,5 @@
 """Request schema generated from the same named beaver forwarding table."""
-from .integrations.beaver_operations import OPERATIONS, operation_versions
+from .integrations.beaver_operations import OPERATIONS, operation_versions, UTC_DEADLINE_PATTERN
 from .integrations.beaver import SUPPORTED_VERSIONS
 
 
@@ -53,7 +53,10 @@ def documents():
         if name=='image.compress':options['allOf']=[{'if':{'required':['apply'],'properties':{'apply':{'const':True}}},'then':{'required':['expected-source']}}]
         if name=='adoption.plan':options['dependentRequired']={'sdk-migration':['expected-sdk-migration'],'expected-sdk-migration':['sdk-migration']}
         if name=='structure.inspect':options['dependentRequired']={'product-root':['profile'],'profile':['product-root']}
-        if name=='debug.start':options['dependentRequired']={'width':['height'],'height':['width']}
+        if name=='debug.start':
+            options['dependentRequired']={'width':['height'],'height':['width'],
+                'observation-spec':['expected-observation'],'expected-observation':['observation-spec']}
+            options['properties']['deadline-utc']['pattern']='^'+UTC_DEADLINE_PATTERN+'$'
         for option,versions in spec.get('option_versions',{}).items():
             options['properties'][option]['x-beaver-versions']=sorted(versions)
         for option,values in spec.get('value_versions',{}).items():

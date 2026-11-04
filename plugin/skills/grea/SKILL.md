@@ -25,6 +25,7 @@ GREA 维护流程与判断，monkey 恢复原游戏为独立候选，beaver 执�
 
 - 每次执行的共同规则：[共同约束与执行入口](references/共同约束与执行入口.md)（含术语定义）。
 - 准备执行或工具身份变化：[monkey与beaver调用](references/monkey与beaver调用.md)、[monkey恢复工具合同](references/monkey恢复工具合同.md)、[beaver工程操作合同](references/beaver工程操作合同.md)。
+- 工具改进交付、消费者采用或运行时保留：[固定候选与运行连续性](references/固定候选与运行连续性.md)。
 - 参数与证据：[接口调用与证据记录](references/接口调用与证据记录.md)、[工具选择与调用](references/工具选择与调用.md)。工具存在不等于 Editor 连接或任务成功。
 - 核查结果：[测试与结果交付](references/测试与结果交付.md)、[实际体验与画面对照](references/实际体验与画面对照.md)。只复测真实修改和未决风险。
 - 计划、协作或异常：[开发计划与进度管理](references/开发计划与进度管理.md)、[功能模块并行协作](references/功能模块并行协作.md)、[故障排查与重试规则](references/故障排查与重试规则.md)。

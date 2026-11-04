@@ -11,6 +11,7 @@ V03_VERSION = '0.3.0.dev1'
 V03_IMPLEMENTATION = 'b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0'
 V05_VERSION = '0.5.0'
 STABLE_VERSION = '0.6.0'
+OBSERVATION_VERSION = '0.7.0.dev1'
 P0_VERSION = '0.5.1.dev20261028'
 P0_FIX1_VERSION = '0.5.1.dev20261028+fix1'
 P0_FIX2_VERSION = '0.5.1.dev20261028+fix2'
@@ -53,11 +54,13 @@ SCOPED_OPERATIONS = {P0_FIX31_VERSION: VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OP
                      P0_FIX24_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'}),
                      P0_FIX25_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'}),
                      P0_FIX26_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'})}
+SCOPED_OPERATIONS[OBSERVATION_VERSION] = frozenset({'debug.start','debug.inspect','debug.stop','debug.tail'})
 P0_SUMMARY_VERSIONS = {*P0_RETIRE_VERSIONS, P0_FIX22_VERSION, STABLE_VERSION}
 P0_VERSIONS = {P0_VERSION, P0_FIX1_VERSION, P0_FIX2_VERSION, P0_FIX3_VERSION, *P0_RETIRE_VERSIONS}
 P0_GROUPS = {'structure.inspect/plan', 'build-filter.collect/plan', 'native.readback'}
 # The historical name is retained; entries pin compatible lineage, never a version range.
 V03_CANDIDATES = {
+    OBSERVATION_VERSION:dict(candidate='player-observation-v0.7.0.dev1-7b8453a',implementation_sha256='5a4d5599c7e37f373d31290e150d3ac2048b82a91aa7904a2adfe38a7572bb88'),
     STABLE_VERSION:dict(candidate='official-v0.6.0-1074816',implementation_sha256='cf372a0a11256f44d512580ab42aba5cff8f02e53f2008818235314c2b2fe76e'),
     V03_VERSION:dict(candidate='07',implementation_sha256=V03_IMPLEMENTATION),
     '0.3.0':dict(candidate='08',implementation_sha256='e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882'),

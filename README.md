@@ -2,7 +2,7 @@
 
 GREA 以 Skill、规范与方法为主，编排两个随版本统一发布的模块：**monkey 恢复原游戏为独立候选，beaver 操作可开发工程**。游戏开发者负责具体业务与实际可玩结果。CLI、stdio MCP 与轻量脚本只提供发现、版本锁定、模块委托和调用回执。
 
-本版本 **v1.0.0** 固定 monkey **v0.7.0** 与 beaver **v0.6.0**，精确制品身份以 [modules.lock.json](modules.lock.json) 及发布验收索引为准。完整插件包含两个模块wheel，通过`grea_modules`校验和隔离安装；平台与CLI/MCP实际验收结果见Release附件。既有工具ID及partial/unsupported/not_run语义保持。
+当前本地开发候选 **v1.1.0.dev1** 基于已发布 v1.0.0，有限接入 beaver **0.7.0.dev1** 的四个 debug 操作；新增 observation-spec/expected-observation/deadline-utc 受精确版本与有限参数校验。未发布或全局启用；项目已有构建、QA及采用锁不切换。开发组合身份以 [modules.lock.json](modules.lock.json) 为准，`partial/starting` 表示 worker 已派发，不能自动重试 start。
 
 五技能覆盖总入口、调研、恢复、开发和发布。原始资源恢复由monkey负责，工程采用、SDK/程序集、JSON配置、构建验证与有限输入由beaver负责。monkey v0.8 Unity来源开发线及游戏现用固定链保持独立；本版不承诺任意原包完整业务恢复。见[本版说明](validation/release-notes/v1.0.0.md)、[beaver接入](docs/providers/beaver.md)。
 

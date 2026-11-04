@@ -1,5 +1,6 @@
 """Finite named forwarding to explicitly pinned beaver implementations."""
 import json
+import datetime
 import os
 import platform
 from contextlib import contextmanager
@@ -192,6 +193,14 @@ for _name in ('intake.apply', 'intake.rollback'):
     OPERATIONS[_name]['version_budgets'][beaver.STABLE_VERSION] = dict(
         OPERATIONS[_name]['version_budgets'][beaver.P0_FIX29_VERSION])
 
+UTC_DEADLINE_PATTERN = r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)'
+OPERATIONS['debug.start']['paths'].add('observation-spec')
+OPERATIONS['debug.start']['hashes'].add('expected-observation')
+OPERATIONS['debug.start']['text'] = {'deadline-utc'}
+OPERATIONS['debug.start']['option_versions'] = {
+    name:{beaver.OBSERVATION_VERSION}
+    for name in ('observation-spec','expected-observation','deadline-utc')}
+
 
 def operation_versions(operation, spec=None):
     spec=OPERATIONS[operation] if spec is None else spec
@@ -261,6 +270,14 @@ def validate(request):
         raise ValueError('Image apply requires expected-source')
     if request['operation']=='debug.start' and (('width'in values)!=('height'in values)):
         raise ValueError('Debug width and height must be provided together')
+    if request['operation']=='debug.start':
+        if ('observation-spec'in values)!=('expected-observation'in values):
+            raise ValueError('Observation spec and expected hash must be provided together')
+        if 'deadline-utc' in values:
+            deadline=values['deadline-utc']
+            if not re.fullmatch(UTC_DEADLINE_PATTERN,deadline):
+                raise ValueError('Expected an explicit UTC ISO8601 deadline')
+            datetime.datetime.fromisoformat(deadline.replace('Z','+00:00'))
     return spec,values
 
 
@@ -434,6 +451,10 @@ def invoke(lock, request_file, output):
                 result['provider_result']=actual
                 if status not in codes or invocation.get('exit_code')!=codes[status]:raise ValueError('Provider status/exit contract mismatch')
                 result.update(status=status,verification=actual.get('verification',{}),native=actual.get('verification',{}).get('native','not_run'),transport_error=error.as_dict()if error else None)
+                if (cfg['version']==beaver.OBSERVATION_VERSION and request['operation']=='debug.start'
+                        and status=='partial' and actual.get('data',{}).get('status')=='starting'):
+                    result.update(worker_dispatched=True,automatic_replay_allowed=False,
+                        next_action='Inspect the preserved debug session; do not repeat start. Worker PID is not the App PID.')
     except (OSError,ValueError,KeyError,TypeError,GreaError) as error:
         result.update(status='needs_action',diagnostic=str(error))
         if result['executed']:
