@@ -16,8 +16,8 @@ beaver intake prepare-bindings --plan FRESH_PLAN_DIRECTORY/binding-plan.json \
 The first command is read-only apart from its new plan directory. The second
 copies only the source's Assets, Packages and ProjectSettings to an independent
 project, without source Library, caches or an inherited owning manifest. Neither
-command writes the retained target. Preparation is not adoption or an owning
-export and makes no baseline claim.
+command writes the retained target. Preparation makes no adoption or baseline claim. After both native gates it
+produces its own bounded, provenance-bearing consumer export.
 
 The closed `beaver-intake-bindings/1` input has `schemaVersion: 1`, operation
 `prepare-script-bindings`, `bindings`, `prefabs`, and `bridgeReferences`. Each of
@@ -51,9 +51,15 @@ cold Editor process must reproduce the normalized snapshot and resolve mapped
 components through the preparation assembly. These are execution requirements;
 compiling the helper alone does not prove Unity accepts m_Script migration.
 
-A successful preparation removes its owned helper and writes a receipt plus
-`intake-binding-inputs.json`. Those exact same-GUID externalScript rows can feed
-ordinary intake after GREA freezes the saved native selection with provenance.
+A successful preparation removes its owned helper and writes a receipt,
+`intake-binding-inputs.json`, and a separately frozen consumer candidate. The
+consumer candidate has an owning manifest produced by this preparation operation,
+with original-source, saved-source-product and rebound-state lineage and a typed
+native oracle. A pure monkey candidate should first use monkey's existing saved-state
+freeze. The beaver-derived candidate is not passed off as a monkey export or its
+old readback. Same-GUID externalScript rows feed ordinary intake from the frozen
+consumer candidate; the temporary bridge compilation scope is explicitly kept out
+of the target import set.
 The receipt's other compiler omissions are only a partial input: all remaining
 compiler inputs, selected asset closure, typed target oracle, package dependencies
 and destination mappings must still be declared. Ordinary target native preflight
@@ -63,6 +69,13 @@ Subtree mapping already exists: each intake `additions` row explicitly maps its
 source asset to an absent target path, preserving the incoming GUID and metadata.
 The target owner chooses the subtree and fresh-plans before applying; preparation
 never overwrites a same-path old root. No new adopter or YAML mapping is required.
+
+Reports are compact headers capped at 1 MiB. Each complete compact snapshot is
+independently pinned by raw UTF-8 SHA256 and byte count, capped at 64 MiB and
+8 million JSON nodes. Native capture additionally caps 250000 properties,
+50000 owners, 32 MiB of captured text and individual property text at 1 MiB.
+Apply/cold-verify snapshot hashes must equal the original before checkpoint.
+Large inline pretty-printed reports are not accepted as a fallback.
 
 Each native preparation phase has a 1–1200 second budget. With `--timeout 280`,
 allow at least 650 seconds for the two phases, cleanup and process exit. On

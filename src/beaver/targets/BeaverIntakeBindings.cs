@@ -16,17 +16,45 @@ public static class BeaverIntakeBindings {
         public long sourceLocalId,targetLocalId;
     }
     [Serializable] public class Job { public string projectRoot,stage,planSha256,mode,bridgeRoot,bridgeAssembly; public Binding[] bindings; public string[] prefabs; }
-    [Serializable] public class Property { public string path,type,value; }
-    [Serializable] public class Owner { public string guid,type; public long localId; public List<Property> properties=new List<Property>(); }
+    [Serializable] public class NativeReference { public string guid="",type="",assembly="",name="",assetPath="",scriptType="",scriptAssembly=""; public long localId; }
+    [Serializable] public class Property { public string path,type,value; public NativeReference reference; }
+    [Serializable] public class Owner { public string guid,type,name; public long localId; public List<Property> properties=new List<Property>(); }
     [Serializable] public class Prefab { public string path,guid; public List<Owner> owners=new List<Owner>(); }
     [Serializable] public class Snapshot { public string planSha256; public List<Prefab> prefabs=new List<Prefab>(); }
-    [Serializable] public class Report { public string status,error,planSha256,mode; public int referencesMapped; public List<string> mappedSourceGuids=new List<string>(); public Snapshot snapshot; }
+    [Serializable] public class Report { public string status,error,planSha256,mode,snapshotFile,snapshotSha256; public long snapshotBytes; public int referencesMapped; public List<string> mappedSourceGuids=new List<string>(); }
     [Serializable] class Box<T> { public T value; }
     [Serializable] class Curve { public Keyframe[] keys; public int pre,post; }
     [Serializable] class GradientValue { public GradientColorKey[] colors; public GradientAlphaKey[] alphas; public int mode; }
     static Job job; static Report report;
     static readonly CultureInfo Culture=CultureInfo.InvariantCulture;
     static readonly Dictionary<string,MonoScript> replacements=new Dictionary<string,MonoScript>(StringComparer.Ordinal);
+    const long SnapshotBytes=64L*1024*1024;
+    static NativeReference Reference(UnityEngine.Object value) {
+        if(value==null)return new NativeReference();
+        string guid;long local;
+        if(!EditorUtility.IsPersistent(value)||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out guid,out local)||String.IsNullOrEmpty(guid)||local==0)throw new Exception("Nonpersistent or unidentified reference");
+        var runtime=value.GetType();var r=new NativeReference{guid=guid,localId=local,type=runtime.FullName,assembly=runtime.Assembly.GetName().Name,name=value.name,assetPath=AssetDatabase.GetAssetPath(value)};
+        var semantic=job.bindings.SingleOrDefault(b=>b.sourceType==runtime.FullName&&(b.sourceAssembly==r.assembly||job.bridgeAssembly==r.assembly));
+        if(semantic!=null){r.type=semantic.targetType;r.assembly=semantic.targetAssembly;}
+        var script=value as MonoScript;
+        if(script!=null) {
+            var resolved=script.GetClass();if(resolved==null)throw new Exception("MonoScript reference class is unresolved");
+            r.scriptType=resolved.FullName;r.scriptAssembly=resolved.Assembly.GetName().Name;
+            var b=job.bindings.SingleOrDefault(x=>x.sourceGuid==guid||x.targetGuid==guid);
+            if(b!=null) {
+                if(local!=b.sourceLocalId||resolved.FullName!=b.sourceType||(r.scriptAssembly!=b.sourceAssembly&&r.scriptAssembly!=job.bridgeAssembly))throw new Exception("MonoScript persistent type/localID differs");
+                r.guid=b.targetGuid;r.localId=b.targetLocalId;r.scriptType=b.targetType;r.scriptAssembly=b.targetAssembly;r.assetPath=b.target;
+            }
+        }
+        return r;
+    }
+    static string ReferenceKey(NativeReference r) { return r.localId==0?"null":r.guid+"#"+r.localId.ToString(Culture)+"|"+r.type+"@"+r.assembly+"|script:"+r.scriptType+"@"+r.scriptAssembly; }
+    static string WriteSnapshot(string name,Snapshot snapshot) {
+        var text=JsonUtility.ToJson(snapshot);var encoding=new System.Text.UTF8Encoding(false,true);
+        if(encoding.GetByteCount(text)>SnapshotBytes)throw new Exception("64MiB compact snapshot budget exceeded");
+        var path=Path.Combine(job.stage,name);if(File.Exists(path))throw new Exception("Snapshot exists; do not replay native preparation");
+        File.WriteAllText(path,text,encoding);return path;
+    }
     static string Full(string relative) {
         if(String.IsNullOrEmpty(relative)||!relative.StartsWith("Assets/",StringComparison.Ordinal)||relative.Contains("\\")||relative.Split('/').Any(x=>x==""||x=="."||x==".."))throw new Exception("Unsafe preparation asset path");
         var result=Path.GetFullPath(Path.Combine(job.projectRoot,relative));
@@ -36,23 +64,10 @@ public static class BeaverIntakeBindings {
     static string Hash(string path) { using(var s=File.OpenRead(path))using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(s)).Replace("-","").ToLowerInvariant(); }
     static string Id(UnityEngine.Object value,bool normalize=true) {
         if(value==null)return "null";
+        if(normalize)return ReferenceKey(Reference(value));
         string guid;long local;
         if(!EditorUtility.IsPersistent(value)||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out guid,out local)||String.IsNullOrEmpty(guid)||local==0)throw new Exception("Nonpersistent or unidentified reference");
-        if(!normalize)return guid+"#"+local.ToString(Culture);
-        var runtime=value.GetType();
-        var semantic=job.bindings.SingleOrDefault(b=>b.sourceType==runtime.FullName&&(b.sourceAssembly==runtime.Assembly.GetName().Name||job.bridgeAssembly==runtime.Assembly.GetName().Name));
-        var type=semantic==null?runtime.FullName+"@"+runtime.Assembly.GetName().Name:"binding:"+semantic.targetAssembly+"/"+semantic.targetType;
-        var script=value as MonoScript;
-        if(script!=null) {
-            var resolved=script.GetClass();if(resolved==null)throw new Exception("MonoScript reference class is unresolved");
-            var b=job.bindings.SingleOrDefault(r=>r.sourceGuid==guid||r.targetGuid==guid);
-            if(b!=null) {
-                if(local!=b.sourceLocalId||resolved.FullName!=b.sourceType||(resolved.Assembly.GetName().Name!=b.sourceAssembly&&resolved.Assembly.GetName().Name!=job.bridgeAssembly))throw new Exception("MonoScript persistent type/localID differs");
-                return b.targetGuid+"#"+b.targetLocalId+"|"+type+"|binding:"+b.targetAssembly+"/"+b.targetType;
-            }
-            type+="|script:"+resolved.FullName+"@"+resolved.Assembly.GetName().Name;
-        }
-        return guid+"#"+local.ToString(Culture)+"|"+type;
+        return guid+"#"+local.ToString(Culture);
     }
     static string Json<T>(T value) { return JsonUtility.ToJson(new Box<T>{value=value}); }
     static string Value(SerializedProperty p) {
@@ -127,7 +142,7 @@ public static class BeaverIntakeBindings {
         return found[0];
     }
     static Snapshot Capture(bool cold) {
-        var snap=new Snapshot{planSha256=job.planSha256};int count=0;
+        var snap=new Snapshot{planSha256=job.planSha256};int count=0,totalProperties=0;long textBytes=0;
         foreach(var path in job.prefabs.OrderBy(x=>x,StringComparer.Ordinal)) {
             var asset=Load(path);var prefab=new Prefab{path=path,guid=AssetDatabase.AssetPathToGUID(path)};snap.prefabs.Add(prefab);
             foreach(var value in Objects(asset)) {
@@ -135,7 +150,9 @@ public static class BeaverIntakeBindings {
                 string guid;long local;
                 if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out guid,out local)||local==0)throw new Exception("Object identity unavailable");
                 var type=value.GetType();var binding=job.bindings.SingleOrDefault(b=>b.sourceType==type.FullName&&(b.sourceAssembly==type.Assembly.GetName().Name||job.bridgeAssembly==type.Assembly.GetName().Name));
-                var owner=new Owner{guid=guid,localId=local,type=binding==null?type.AssemblyQualifiedName:"binding:"+binding.targetAssembly+"/"+binding.targetType};prefab.owners.Add(owner);
+                var owner=new Owner{guid=guid,localId=local,name=value.name,type=binding==null?type.AssemblyQualifiedName:"binding:"+binding.targetAssembly+"/"+binding.targetType};prefab.owners.Add(owner);
+                if(owner.name.Length>16384||owner.type.Length>4096)throw new Exception("Snapshot owner text budget exceeded");
+                textBytes+=System.Text.Encoding.UTF8.GetByteCount(owner.name)+System.Text.Encoding.UTF8.GetByteCount(owner.type)+guid.Length;
                 using(var so=new SerializedObject(value)) {
                     so.UpdateIfRequiredOrScript();var p=so.GetIterator();int properties=0;bool enterChildren=true;
                     while(p.Next(enterChildren)) {
@@ -143,7 +160,7 @@ public static class BeaverIntakeBindings {
                         // internal m_FileID below it is a transient instance
                         // handle, not its AssetDatabase file/local identifier.
                         enterChildren=p.propertyType!=SerializedPropertyType.ObjectReference;
-                        if(++properties>250000)throw new Exception("Serialized property budget exceeded");
+                        if(++properties>250000||++totalProperties>250000)throw new Exception("Serialized property budget exceeded");
                         if(p.propertyPath=="m_Script"&&binding!=null) {
                             var actual=Id(p.objectReferenceValue,false);
                             if(cold&&(actual!=binding.targetGuid+"#"+binding.targetLocalId||type.Assembly.GetName().Name!=job.bridgeAssembly))throw new Exception("Cold reopened component retained the old script identity");
@@ -153,7 +170,19 @@ public static class BeaverIntakeBindings {
                             var v=p.stringValue;
                             if(v!=""&&v!=binding.sourceAssembly+"::"+binding.sourceType&&v!=job.bridgeAssembly+"::"+binding.sourceType)throw new Exception("Unexpected Editor class identifier");
                             owner.properties.Add(new Property{path=p.propertyPath,type=p.propertyType.ToString(),value="binding:"+binding.targetType});
+                        } else if(p.propertyType==SerializedPropertyType.ObjectReference) {
+                            if(p.objectReferenceValue==null&&p.objectReferenceEntityIdValue!=EntityId.None)throw new Exception("Unresolved serialized reference "+p.propertyPath);
+                            var reference=Reference(p.objectReferenceValue);owner.properties.Add(new Property{path=p.propertyPath,type=p.propertyType.ToString()+":"+p.type,value=ReferenceKey(reference),reference=reference});
                         } else owner.properties.Add(new Property{path=p.propertyPath,type=p.propertyType.ToString()+":"+p.type,value=Value(p)});
+                        var captured=owner.properties[owner.properties.Count-1];
+                        if(captured.path.Length>4096||captured.type.Length>4096||captured.value.Length>1024*1024)throw new Exception("Individual snapshot property budget exceeded");
+                        textBytes+=System.Text.Encoding.UTF8.GetByteCount(captured.path)+System.Text.Encoding.UTF8.GetByteCount(captured.type)+System.Text.Encoding.UTF8.GetByteCount(captured.value);
+                        if(captured.reference!=null) {
+                            var r=captured.reference;
+                            if(r.name.Length>16384||r.type.Length>4096||r.assembly.Length>1024||r.assetPath.Length>4096||r.scriptType.Length>4096||r.scriptAssembly.Length>1024)throw new Exception("Snapshot reference text budget exceeded");
+                            textBytes+=System.Text.Encoding.UTF8.GetByteCount(JsonUtility.ToJson(r));
+                        }
+                        if(textBytes>32L*1024*1024)throw new Exception("32MiB captured text budget exceeded");
                     }
                 }
                 owner.properties=owner.properties.OrderBy(p=>p.path,StringComparer.Ordinal).ToList();
@@ -178,7 +207,7 @@ public static class BeaverIntakeBindings {
                         MonoScript replacement;if(!replacements.TryGetValue(guid,out replacement))continue;
                         var b=job.bindings.Single(x=>x.sourceGuid==guid);
                         if(local!=b.sourceLocalId)throw new Exception("Source MonoScript reference localID differs");
-                        p.objectReferenceValue=replacement;report.referencesMapped++;report.mappedSourceGuids.Add(guid);edit=true;
+                        p.objectReferenceValue=replacement;report.referencesMapped++;if(!report.mappedSourceGuids.Contains(guid))report.mappedSourceGuids.Add(guid);edit=true;
                     }
                     if(edit&&!so.ApplyModifiedPropertiesWithoutUndo())throw new Exception("Native serialized binding was not applied");
                 }
@@ -197,23 +226,24 @@ public static class BeaverIntakeBindings {
             var path=new System.Text.UTF8Encoding(false,true).GetString(Convert.FromBase64String(encoded));job=JsonUtility.FromJson<Job>(File.ReadAllText(path));
             if(Application.unityVersion!="6000.6.2f1"||job.bridgeAssembly!="Beaver.IntakeBindings"||job.bridgeRoot!="Assets/BeaverIntakeBindings"||Path.GetFullPath(job.projectRoot)!=Path.GetFullPath(Directory.GetParent(Application.dataPath).FullName)||job.bindings==null||job.bindings.Length==0||job.bindings.Length>16||job.prefabs==null||job.prefabs.Length==0||job.prefabs.Length>256)throw new Exception("Wrong preparation project/version/bounds");
             if(job.mode!="apply"&&job.mode!="verify"||Path.GetFullPath(job.stage)!=Directory.GetParent(Path.GetFullPath(job.projectRoot)).FullName||!Directory.Exists(job.stage)||(File.GetAttributes(job.stage)&FileAttributes.ReparsePoint)!=0)throw new Exception("Wrong isolated preparation stage/mode");
-            foreach(var name in new[]{"binding-before.json","apply-report.json","verify-report.json"}) {
+            foreach(var name in new[]{"binding-before.json","apply-report.json","verify-report.json","apply-snapshot.json","verify-snapshot.json"}) {
                 var file=Path.Combine(job.stage,name);
                 if(File.Exists(file)&&(File.GetAttributes(file)&FileAttributes.ReparsePoint)!=0)throw new Exception("Preparation evidence path is a link");
             }
             writableJob=true;
             report=new Report{planSha256=job.planSha256,mode=job.mode,status="running"};Scripts();
             var checkpoint=Path.Combine(job.stage,"binding-before.json");Snapshot before;
-            if(job.mode=="apply") { before=Capture(false);File.WriteAllText(checkpoint,JsonUtility.ToJson(before));Apply(); }
-            else if(job.mode=="verify")before=JsonUtility.FromJson<Snapshot>(File.ReadAllText(checkpoint));
+            if(job.mode=="apply") { before=Capture(false);WriteSnapshot("binding-before.json",before);Apply(); }
+            else if(job.mode=="verify") { if(new FileInfo(checkpoint).Length>SnapshotBytes)throw new Exception("Before snapshot exceeds64MiB");before=JsonUtility.FromJson<Snapshot>(File.ReadAllText(checkpoint)); }
             else throw new Exception("Unknown preparation mode");
             if(before.planSha256!=job.planSha256)throw new Exception("Foreign preparation checkpoint");
-            report.snapshot=Capture(job.mode=="verify");
-            if(JsonUtility.ToJson(before)!=JsonUtility.ToJson(report.snapshot))throw new Exception("Native fields/references/object IDs changed beyond the declared script bindings");
+            var after=Capture(job.mode=="verify");report.snapshotFile=job.mode+"-snapshot.json";
+            var snapshotPath=WriteSnapshot(report.snapshotFile,after);report.snapshotSha256=Hash(snapshotPath);report.snapshotBytes=new FileInfo(snapshotPath).Length;
+            if(JsonUtility.ToJson(before)!=JsonUtility.ToJson(after))throw new Exception("Native fields/references/object IDs changed beyond the declared script bindings");
             if(job.mode=="apply"&&report.referencesMapped==0)throw new Exception("No declared references were rebound");
             report.status="verified";exit=0;
         }catch(Exception e){if(report==null)report=new Report();report.status="failed";report.error=e.ToString();}
-        finally {if(writableJob)File.WriteAllText(Path.Combine(job.stage,job.mode+"-report.json"),JsonUtility.ToJson(report,true));EditorApplication.Exit(exit);}
+        finally {if(writableJob)File.WriteAllText(Path.Combine(job.stage,job.mode+"-report.json"),JsonUtility.ToJson(report));EditorApplication.Exit(exit);}
     }
 }
 #endif

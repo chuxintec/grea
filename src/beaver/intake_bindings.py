@@ -23,6 +23,22 @@ BRIDGE = 'Assets/BeaverIntakeBindings'
 ASSEMBLY = 'Beaver.IntakeBindings'
 HELPER = 'Assets/BeaverIntakeBindingTools'
 VERSION = '6000.6.2f1'
+SNAPSHOT_BYTES = 64*1024*1024
+SNAPSHOT_NODES = 8_000_000
+REPORT_BYTES = 1024*1024
+
+
+def snapshot_reference(stage, report, mode):
+    """A small native report binds one compact, independently bounded snapshot."""
+    name = mode+'-snapshot.json'
+    if (mode not in ('apply','verify') or report.get('snapshotFile') != name or type(report.get('snapshotBytes')) is not int
+            or not 0 < report['snapshotBytes'] <= SNAPSHOT_BYTES
+            or not isinstance(report.get('snapshotSha256'),str) or not re.fullmatch('[0-9a-f]{64}', report['snapshotSha256'])):
+        fail('INTAKE_BINDING_SNAPSHOT', str(stage), 'Exact bounded native snapshot identity required')
+    path = inside(stage, name)
+    if not path.is_file() or path.stat().st_size != report['snapshotBytes'] or digest_file(path, max_bytes=SNAPSHOT_BYTES) != report['snapshotSha256']:
+        fail('INTAKE_BINDING_SNAPSHOT', str(path), 'Native snapshot differs from its report')
+    return path
 
 
 def validate_spec(doc):
@@ -138,7 +154,24 @@ def build_plan(source, target, spec):
             fail('INTAKE_BINDING_CLOSURE', path, 'Select nested Prefab dependencies too: '+', '.join(sorted(nested-selected)))
     if used != {r['sourceGuid'] for r in doc['bindings']}:
         fail('INTAKE_BINDING_UNUSED', 'bindings', 'Every explicit mapping must occur in the selected Prefabs')
-    return dict(contract=CONTRACT, implementationSha256=identity(), sourceRoot=str(source), targetRoot=str(target),
+    origin = dict(productSnapshotSha256=sha(encoded(files)), owningManifest=None, owningStatus='not_supplied', evidence=[])
+    from .candidate_snapshot import snapshot as owning_snapshot, verify as owning_verify
+    from .errors import BeaverError
+    for name in ('manifest.json', 'recovery-manifest.json'):
+        path=source/name
+        if path.is_file():
+            raw=read(path);claims=load(raw)
+            origin['owningManifest']=dict(path=str(path),sha256=sha(raw),bytes=len(raw),claims={k:claims.get(k) for k in ('namespace','native','diagnostics','source','producer')})
+    if origin['owningManifest']:
+        try:
+            owned_root, owned_manifest, owned_files, _ = owning_snapshot(source);owning_verify(owned_root, owned_files)
+            origin['owningStatus']='verified'
+        except BeaverError as error:
+            origin['owningStatus']='unverified_diagnostic_source';origin['diagnostic']=error.as_dict()
+    for name in ('Analysis/Readback/source-prefabs-readback.json', 'Analysis/Readback/editor-readback.json'):
+        path=source/name
+        if path.is_file():origin['evidence'].append(dict(path=str(path),sha256=digest_file(path),bytes=path.stat().st_size))
+    return dict(contract=CONTRACT, implementationSha256=identity(), sourceRoot=str(source), targetRoot=str(target), sourceOrigin=origin,
                 specPath=str(spec), specSha256=digest_file(spec), spec=doc, sourceFiles=files, targetPins=target_pins,
                 native='not_run', targetWrites=False, purpose='native preparation copy; GREA owning export and ordinary intake still required')
 
@@ -174,9 +207,10 @@ def _run(stage, project, editor, mode, budget):
     if process.poll() is None:
         fail('INTAKE_BINDING_EXIT_PENDING', str(stage), 'Owned preparation Editor has not exited; preserve output, do not replay')
     report = stage/(mode+'-report.json')
-    result = load(read(report)) if report.is_file() else {}
+    result = load(read(report, max_bytes=REPORT_BYTES), max_nodes=10000) if report.is_file() else {}
     if interrupted or process.returncode != 0 or result.get('status') != 'verified' or result.get('planSha256') != job['planSha256'] or result.get('mode') != mode:
         fail('INTAKE_BINDING_NATIVE_FAILED', str(stage), 'Preparation gate failed; preserve isolated copy/logs; no target writes')
+    snapshot_reference(stage, result, mode)
     return result
 
 
@@ -223,9 +257,11 @@ def execute(plan_path, expected, output, editor, budget=600):
     write_json(stage/'binding-job.json', job)
     write_json(stage/'preparation-plan.json', plan)
     applied = _run(stage, project, editor, 'apply', budget)
-    checkpoint = digest_file(stage/'binding-before.json')
+    if not 0 < (stage/'binding-before.json').stat().st_size <= SNAPSHOT_BYTES:
+        fail('INTAKE_BINDING_SNAPSHOT', str(stage), 'Native before snapshot exceeds64MiB')
+    checkpoint = digest_file(stage/'binding-before.json', max_bytes=SNAPSHOT_BYTES)
     verified = _run(stage, project, editor, 'verify', budget)
-    if digest_file(stage/'binding-before.json') != checkpoint or applied.get('snapshot') != verified.get('snapshot'):
+    if digest_file(stage/'binding-before.json', max_bytes=SNAPSHOT_BYTES) != checkpoint or applied['snapshotSha256'] != verified['snapshotSha256'] or checkpoint != verified['snapshotSha256']:
         fail('INTAKE_BINDING_CHECKPOINT', str(stage), 'Native preparation snapshots/checkpoint changed across cold reopen')
     # Only the disposable copy may change; source, target and ordinary intake
     # state are never mutated. Recheck original pins after both native gates.
@@ -271,6 +307,9 @@ def execute(plan_path, expected, output, editor, budget=600):
                    originalSourceAndTargetUnchanged=True, sourceFilesSha256=sha(encoded(plan['sourceFiles'])),
                    preparedFiles=current, targetWrites=False, adoption='not_run', owningExport='required_GREA_freeze_native_selection')
     receipt['intakeBindingInputs'] = str(stage/'intake-binding-inputs.json')
+    snapshot = load(read(snapshot_reference(stage, verified, 'verify'), max_bytes=SNAPSHOT_BYTES), max_nodes=SNAPSHOT_NODES)
+    from .intake_binding_export import export_prepared
+    receipt['consumerExport'] = export_prepared(stage, project, plan, current, snapshot)
     write_json(stage/'preparation-receipt.json', receipt)
     return dict(status='prepared', report=str(stage/'preparation-receipt.json'), project=str(project),
                 bindings=len(plan['spec']['bindings']), prefabs=len(plan['spec']['prefabs']), native='verified-preparation-subset', targetWrites=False)

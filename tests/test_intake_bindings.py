@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from beaver.errors import BeaverError
 from beaver.io import sha, write_json
-from beaver.intake_bindings import build_plan, preview, validate_spec, execute, failed_native_attempts, BRIDGE
+from beaver.intake_bindings import build_plan, preview, validate_spec, execute, failed_native_attempts, snapshot_reference, BRIDGE
 from test_intake import _project, _write_asset
 
 
@@ -122,6 +122,35 @@ class BindingTests(unittest.TestCase):
             self.assertEqual(failed_native_attempts(Path(d).resolve()),[])
             write_json(Path(d)/'apply-process.json',dict(pid=True,exited=True))
             self.error('INTAKE_BINDING_PROCESS_RECEIPT',failed_native_attempts,Path(d).resolve())
+
+    def test_snapshot_header_pins_bytes_and_rejects_budget_alias_and_drift(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d).resolve();raw=b'{"planSha256":"test","prefabs":[]}';(root/'apply-snapshot.json').write_bytes(raw)
+            header=dict(snapshotFile='apply-snapshot.json',snapshotBytes=len(raw),snapshotSha256=sha(raw))
+            self.assertEqual(snapshot_reference(root,header,'apply'),root/'apply-snapshot.json')
+            for bad in [dict(header,snapshotBytes=64*1024*1024+1),dict(header,snapshotBytes=True),dict(header,snapshotSha256=0),dict(header,snapshotFile='../outside.json')]:
+                self.error('INTAKE_BINDING_SNAPSHOT',snapshot_reference,root,bad,'apply')
+            (root/'apply-snapshot.json').write_bytes(raw+b' ');self.error('INTAKE_BINDING_SNAPSHOT',snapshot_reference,root,header,'apply')
+
+    def test_source_owning_identity_and_unowned_working_copy_are_distinguished(self):
+        from helpers import finish
+        with tempfile.TemporaryDirectory() as d:
+            s,t,p,doc=self.fixture(Path(d).resolve())
+            finish(s,dict(schemaVersion=1,targetProfile='unity-6000.6.2f1-ugui',namespace='neutral-source',native='verified',diagnostics=[]))
+            origin=build_plan(s,t,p)['sourceOrigin'];self.assertEqual(origin['owningStatus'],'verified')
+            self.assertEqual(origin['owningManifest']['sha256'],sha((s/'manifest.json').read_bytes()))
+            (s/'Library').mkdir();(s/'Library/cache.txt').write_text('unowned working cache')
+            origin=build_plan(s,t,p)['sourceOrigin'];self.assertEqual(origin['owningStatus'],'unverified_diagnostic_source')
+            self.assertEqual(origin['diagnostic']['code'],'CANDIDATE_UNOWNED')
+
+    def test_origin_manifest_change_is_pinned_even_when_product_files_unchanged(self):
+        from helpers import finish
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d).resolve();s,t,p,doc=self.fixture(root)
+            finish(s,dict(schemaVersion=1,targetProfile='unity-6000.6.2f1-ugui',namespace='neutral-source'))
+            result=preview(s,t,p,root/'plan');manifest=json.loads((s/'manifest.json').read_text());manifest['namespace']='changed-origin';write_json(s/'manifest.json',manifest)
+            self.error('INTAKE_BINDING_PRECONDITION',execute,result['report'],result['planSha256'],root/'uncreated','unused')
+            self.assertFalse((root/'uncreated').exists())
 
 
 if __name__=='__main__': unittest.main()

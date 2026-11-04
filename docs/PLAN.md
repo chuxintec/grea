@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "beaver",
-  "updatedAt": "2026-11-04T21:36:17.622530+08:00",
+  "updatedAt": "2026-11-04T22:24:13.251821+08:00",
   "sourceOfTruth": "/Users/wangmeng/MyProjects/Tools/beaver/docs/PLAN.md",
   "projectionPolicy": "This block records Beaver module identity and completed local history only. GREA lifecycle roadmap is the sole source for current task status and assignment; handoff maps preserved inputs without duplicating task state.",
   "currentVersion": "0.6.0",
@@ -100,7 +100,7 @@
     "nextTarget": "No Beaver-local target; await GREA task assignment."
   },
   "releasedVersion": "0.6.0",
-  "developmentCheckoutVersion": "0.7.0.dev4",
+  "developmentCheckoutVersion": "0.7.0.dev5",
   "governance": {
     "effectiveAt": "2026-11-04T18:35:00.866278+08:00",
     "moduleOf": "grea",
@@ -342,8 +342,8 @@
     }
   ],
   "moduleTechnicalEvidence": {
-    "intakeBindingCandidate": "/Users/wangmeng/MyProjects/Tools/beaver/.private/intake-bindings-20261104/dev4/candidate-delivery.json",
-    "version": "0.7.0.dev4",
+    "intakeBindingCandidate": "/Users/wangmeng/MyProjects/Tools/beaver/.private/intake-bindings-20261104/dev5/candidate-delivery.json",
+    "version": "0.7.0.dev5",
     "greaTaskId": "grea:T-foodstreet-four-activity-bulk",
     "note": "Fixed implementation identity is in candidate index. GREA owns live native/consumer acceptance; dev2 failed native copy retained unchanged. No independent development task authority."
   }
