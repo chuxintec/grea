@@ -51,7 +51,7 @@ _SCHEMA={
 35:("u2","u2","u2","u2","u4","blob","str","str","blob"),
 36:("u4","table:AssemblyRef"), 37:("u4","u4","u4","table:AssemblyRef"),
 38:("u4","str","blob"), 39:("u4","u4","str","str","coded:Implementation"),
-40:("u4","u4","str","str","coded:Implementation"),
+40:("u4","u4","str","coded:Implementation"),
 41:("table:TypeDef","table:TypeDef"),
 42:("u2","u2","coded:TypeOrMethodDef","str"),
 43:("coded:MethodDefOrRef","blob"), 44:("table:GenericParam","coded:TypeDefOrRef"),

@@ -14,19 +14,21 @@ def _align4(value): return (value + 3) & ~3
 
 def managed_dll(name="Fixture.One", namespace="Demo", type_name="Widget", nested_type_name=None, type_visibility=1,
                 mvid="12345678-1234-5678-90ab-cdef12345678", truncate_guid_heap=False,
-                mvid_index=1,module_count=1) -> bytes:
+                mvid_index=1,module_count=1,with_resource=False) -> bytes:
     """Build a small, valid PE/CLI image containing real ECMA metadata tables."""
     strings=bytearray(b"\0")
     def add_string(value):
         idx=len(strings);strings.extend(value.encode("utf-8")+b"\0");return idx
     mod_idx=add_string("Fixture.dll");type_idx=add_string(type_name);ns_idx=add_string(namespace);asm_idx=add_string(name)
     nested_idx=add_string(nested_type_name) if nested_type_name else None
+    resource_idx=add_string("Fixture.Embedded.txt") if with_resource else None
     blob=b"\0"
     # #~: Module(0), TypeDef(2), Assembly(32), one row each.
     type_count=2 if nested_type_name else 1
-    valid=(1<<0)|(1<<2)|(1<<32)|((1<<41) if nested_type_name else 0)
+    valid=(1<<0)|(1<<2)|(1<<32)|((1<<40) if with_resource else 0)|((1<<41) if nested_type_name else 0)
     tables=struct.pack("<IBBBBQQ",0,2,0,0,1,valid,0)
     tables+=struct.pack("<III",module_count,type_count,1)
+    if with_resource: tables+=struct.pack("<I",1)
     if nested_type_name: tables+=struct.pack("<I",1)
     for _ in range(module_count): tables+=struct.pack("<HHHHH",0,mod_idx,mvid_index,0,0)
     # TypeDef row: flags, name, namespace, Extends(TypeDefOrRef), FieldList, MethodList.
@@ -34,6 +36,8 @@ def managed_dll(name="Fixture.One", namespace="Demo", type_name="Widget", nested
     if nested_type_name: tables+=struct.pack("<IHHHHH",2,nested_idx,0,0,1,1)
     # Assembly row: hash algorithm, version, flags, public key, name, culture.
     tables+=struct.pack("<IHHHHIHHH",0x8004,1,0,0,0,0,0,asm_idx,0)
+    # ECMA-335 ManifestResource: Offset, Flags, Name, Implementation (no namespace).
+    if with_resource: tables+=struct.pack("<IIHH",0,1,resource_idx,0)
     if nested_type_name: tables+=struct.pack("<HH",2,1)
 
     version=b"v4.0.30319\0"
@@ -66,6 +70,10 @@ def managed_dll(name="Fixture.One", namespace="Demo", type_name="Widget", nested
 
 
 class ManagedMetadataTests(unittest.TestCase):
+    def test_embedded_resource_row_keeps_following_nested_table_aligned(self):
+        result=inspect_managed(managed_dll(nested_type_name="Inner",with_resource=True))
+        self.assertEqual(result["types"],["Demo.Widget","Demo.Widget+Inner"])
+
     def test_assembly_identity_comes_from_metadata_not_renamed_filename(self):
         with tempfile.TemporaryDirectory() as temp:
             renamed=Path(temp)/"unrelated-name.dll"
