@@ -342,8 +342,8 @@
     }
   ],
   "moduleTechnicalEvidence": {
-    "intakeBindingCandidate": "/Users/wangmeng/MyProjects/Tools/beaver/.private/intake-bindings-20261104/dev6/candidate-delivery.json",
-    "version": "0.7.0.dev6",
+    "intakeBindingCandidate": "/Users/wangmeng/MyProjects/Tools/beaver/.private/intake-bindings-20261104/dev7/candidate-delivery.json",
+    "version": "0.7.0.dev7",
     "greaTaskId": "grea:T-foodstreet-four-activity-bulk",
     "note": "Fixed implementation identity is in candidate index. GREA owns live native/consumer acceptance; dev2 failed native copy retained unchanged. No independent development task authority."
   }
