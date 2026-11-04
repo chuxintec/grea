@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-04T22:44:45.701908+08:00",
+  "updatedAt": "2026-11-05T00:31:39.112049+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "GREA v1.1统一任务源已实际迁移，模块6个未完任务及旧两根待办归并；两批优先级1，先肥鹅四页、后僵尸有源全量，均总监验收。统一monkey0.8dev10实际字体已通过，11业务Prefab/668节点保存重开，尚165静态引用差异待通用修复；beaver正在实现既有采用链脚本GUID重绑定。binary暂停。",
@@ -424,7 +424,8 @@
       ],
       "evidence": [
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-03-toggle-index.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-08-dev12-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-08-dev12-index.json",
+        "../beaver/.private/intake-bindings-20261104/dev9/candidate-delivery.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -457,7 +458,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey修全源回读消费者/持久身份并通过通用工具恢复可见Spine静态呈现，保未知业务边界；beaver修resolved包核验与自动类型批次。不能以retained-only或诊断减少代替完整静态/视觉验收。",
+      "nextAction": "monkey完成全源回读身份与可见Spine静态恢复；最终源验收后，按dev9工具重新生成当前身份固定计划→六绑定原生保存重开/拥有导出→纯脚本逐批采用后重规划→2Shader身份与完整资源消费。旧partial不重复native、不提前写正式工程。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
@@ -477,7 +478,8 @@
           "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/ugui-resolved-identity-dev7.json"
         ],
         "consumerExport": "939 owned files; sourceNative and typedCoverage remain partial; intake apply not_run",
-        "consumerPlan": "dev7工具生成spec4(152资产/4复用)实跑intake.plan；manifest声明UGUI2.0/2.6触发阻塞，但GREA只读核实双方lock/cache均builtin2.6，1395文件哈希全等。工具需完善声明/解析身份合同及101编译输入分类；不改正式包配置。"
+        "consumerPlan": "dev9/17718a0，13交付文件SHA已由GREA核对全等。109源码按编译/序列化依赖分类；47新增脚本生成16/16/15纯脚本批次，无padding纹理，计划独立重验过（非实际采用）。六绑定11Prefab新计划已生成未原生执行。152资源整扫剩2Shader实际原生对象身份待最终候选/当前目标只读检查。",
+        "continuationPlan": "../beaver/.private/intake-bindings-20261104/dev9/installed-complete-01/continuation-plan.json"
       }
     },
     {
