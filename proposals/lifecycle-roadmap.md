@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-04T13:51:33.053496+00:00",
+  "updatedAt": "2026-11-04T22:44:45.701908+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "GREA v1.1统一任务源已实际迁移，模块6个未完任务及旧两根待办归并；两批优先级1，先肥鹅四页、后僵尸有源全量，均总监验收。统一monkey0.8dev10实际字体已通过，11业务Prefab/668节点保存重开，尚165静态引用差异待通用修复；beaver正在实现既有采用链脚本GUID重绑定。binary暂停。",
@@ -407,12 +407,13 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "统一monkey0.8.0.dev10/84d3451已实际导出与Unity保存重开11业务Prefab/668节点，无Missing Script。字体136静态字形及52系统标签已有原生产物；311→165静态字段/引用差异（39载体/63对象/63持久引用）仍阻塞native静态验收与freeze。beaver扩既有采用工具的受控脚本GUID重绑定；正式项目采用和视觉未完成。",
+      "description": "dev11固定0223060实际continuation与export产772文件；native07在3/11处因NativeStaticSpineReference缺少嵌套实例对应而失败，PID63308已退出。dev10的165静态差异尚未获新原生证据关闭。beaver dev5单项两原生门通过，dev6修复signed64导出并由模块实际只读导出933文件；full11保存/冷重开/拥有导出已实际通过，939文件且原始partial保留。正式采用/视觉未完成。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
         "四页完整静态布局/组件/图片及同版本UI对照/适配/正常输入通过",
-        "接原有业务并退役覆盖性替代作者，不复跑未变已过业务"
+        "接原有业务并退役覆盖性替代作者，不复跑未变已过业务",
+        "按全部源组件与真实原生诊断验收；retained-only非静态可见完成，Player未执行不得报通过；审计A1–A4修复并核受影响候选。"
       ],
       "sourceRefs": [
         "Manager/decisions/20261104-foodstreet-activity-bulk-recovery/PLAN.md",
@@ -455,24 +456,25 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey交三族增量续接固定入口，实际闭合Animation/Spine/材质剩余165静态引用；beaver修11批次报告预算并交消费者拥有导出接口后实际冷重开。单PrefabGUID重绑定两门已过；正式项目采用未运行。",
+      "nextAction": "monkey修嵌套实例共因并贯通审计结果合同；beaver用真实939文件拥有候选核既有intake.plan及剩余编译覆盖，不写正式目标。非渲染Spine保中间态，源可见内容必须另经工具实际恢复/验证。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
-        "grea:B-foodstreet-static-reference-materialization"
+        "grea:B-foodstreet-static-reference-materialization",
+        "grea:B-monkey-audit-result-contract"
       ],
       "priority": 1,
       "bindingToolActual": {
-        "version": "beaver 0.7.0.dev4",
-        "sourceCommit": "f724c60",
+        "version": "beaver 0.7.0.dev6",
+        "sourceCommit": "be80a8fc62458ad847c67b230dc9fd4f14fb2c7f",
         "singlePrefab": "actual native apply + independent reopen passed; field/reference/object IDs preserved; source/target unchanged",
-        "elevenPrefabBatch": "actual apply verified 60 script references, Unity exit0; 36572825-byte report exceeded reader budget; cold reopen not_run",
+        "elevenPrefabBatch": "actual apply+independent reopen+owned export passed; 4 bindings,11 Prefabs,60 references; PID68196/68720 exit0 and reaped; fields/references preserved; original source/target unchanged",
         "formalAdoption": "not_run",
         "sourceInputScope": "native03 partial source used only for binding tool verification; final adoption must use fresh complete source",
         "sourceRefs": [
-          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/beaver-native-bindings-single-03-dev4/provider-output/preparation-receipt.json",
-          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/beaver-native-bindings-four-01-dev4/provider-output/apply-report.json"
-        ]
+          "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/beaver-native-bindings-four-02-dev6/provider-output/preparation-receipt.json"
+        ],
+        "consumerExport": "939 owned files; sourceNative and typedCoverage remain partial; intake apply not_run"
       }
     },
     {
@@ -551,7 +553,9 @@
         "grea:T-monkey-dev8-consumer-handoff"
       ],
       "retainedPendingScope": "dev8完整BattleMain491节点1380组件59291字段及独立根4/8/4297原生保存冷读通过，仍须固定身份/采用；归入本批，不计已经全量恢复。",
-      "blockerIds": [],
+      "blockerIds": [
+        "grea:B-monkey-audit-result-contract"
+      ],
       "priority": 1,
       "acceptanceCriteria": [
         "monkey程序核清全部已取得且可识别源Prefab根、嵌套根及静态依赖，逐项区分缺源/未解析；161仅起始已知根，不以527目标文件充当源分母。",
@@ -559,7 +563,8 @@
         "全批次实际Unity6000.6.2f1导入、保存/重开和静态层级/字段/引用检查；每根生成/原生/静态状态可回读，失败共因修工具后重跑受影响批次。",
         "按组件族及首关实际消费者做代表视觉对照，未覆盖视觉明确，不从少量样本推全量一致；纯动态缺口与静态完整性分开。",
         "beaver实际采用通过的固定候选，保原业务/GUID/JSON/存档/WIP，明确采用结果；缺源和纯动态未恢复如实保留。",
-        "在肥鹅四活动实际收口后推进本批，工具产物与消费者采用由总监验收；两批缺任一项不得将GREA v1.1.0标完成。"
+        "在肥鹅四活动实际收口后推进本批，工具产物与消费者采用由总监验收；两批缺任一项不得将GREA v1.1.0标完成。",
+        "按全部源组件与真实原生诊断验收；retained-only非静态可见完成，Player未执行不得报通过；审计A1–A4修复并核受影响候选。"
       ]
     }
   ],
@@ -742,6 +747,21 @@
       "sourceRefs": [
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-06-dev10-index.json"
       ]
+    },
+    {
+      "id": "grea:B-monkey-audit-result-contract",
+      "taskIds": [
+        "grea:T-foodstreet-four-activity-bulk",
+        "grea:T-zombie-bulk-static-prefabs"
+      ],
+      "owner": "monkey implementation; GREA acceptance",
+      "description": "双审A1/A2/A4在固定dev11源复核仍存在：原生诊断未完整传播，partial可汇总nativeStatic/runtime pass；imported被freeze早拒；Spine非渲染载体只保留数据，不能证明完整静态呈现。A3通用Creator分母路径同列修复，不恢复Cocos项目。",
+      "releaseCondition": "源组件全分母处置与原生诊断贯通；生成/保留/静态呈现/Player独立，未知非pass；freeze接受合法imported同时保完整门；retained-only不关闭可见源缺图。受影响集成反例与真实候选验证通过，仍需视觉验收。",
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json"
+      ],
+      "workflowStatus": "blocked",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
     }
   ],
   "currentVersionKind": "published_stable",
