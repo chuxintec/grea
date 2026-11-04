@@ -1,3 +1,11 @@
+2026-11-04 latest user override human01a1a68e-cacd-79f1-a284-b10ddae38551, natively verified in GREA chat: consolidate monkey into the single v0.8.0 series; no new v0.7 iteration. Preserve prior fixed Cocos/Unity artifacts and tags. Integrate Toggle/font commits through a87dde2 and current strict static-reference null-contract fix into next v0.8.0.dev9, keep Unity-source recovery, run affected checks, then migrate default and retire covered prior heads. Root tracked PLAN/TEAM WIP is checkpointed before isolated detached integration; opaque .codex remains untouched. GREA alone runs actual four-page import/adoption.
+
+2026-11-04 branch cleanup completed under natively verified human01a1a685/67a/67c: local18heads→3 and remote3oldheads retired after new exact heads verified; default v0.7.0, retained v0.7.0@86d47f35744a/v0.7.1.dev3@a87dde2c2725/v0.8.0.dev8@203161f122b4. All old heads ancestors of retained history;5 worktrees HEAD/index/trackedWIP unchanged and alltags unchanged. Paused binary and historicalv0.4.1 worktrees retained detached; no publication/protection relaxation. Source .private/repository-cleanup-20261104/result.json. Current fontdev3 resolves explicit fallback-static policy vs Unity unavailable-family actual04;35checks pass, actual static generation/native rerun is GREA-owned. Static ref module now has native21ArgumentNullException failures matching absent staticRetainedAssets phantom Contract before resource routes; schema guard under module single-writer.
+
+2026-11-04 GREA actual-native03-toggle (fixed0da189a) exited0 and saved11 business Prefabs/668nodes, missingScripts0, sceneReopened/editableRoundtrip true; adoption/visual not_run, acceptance partial with311 STATIC_FIELD_NATIVE_MISMATCH. Fixed0.7.1.dev2 source9ee0f95 exposes prepare/generate-source-system-fonts;32 focused checks pass, package-owned Swift unchanged. Frozen source snapshot and52-label actual02 request delivered in .private/foodstreet-four-activity-20261104/source-system-font-dev2-handoff.json; GREA alone runs actual preparation/generation/plan/export/native-import. Legacy font fixture tests unavailable in isolated worktree (3errors/3failures) are excluded from pass count. Next task fixes generic static carrier/ref assignment/readback; no business script expansion or page edits.
+
+2026-11-04 Foodstreet priority: binary work paused_by_user; fixed v0.8 dev8 two-root public CLI handoff is complete (dev8-fixed-two-root-handoff-index.json), adoption remains GREA-owned. GREA is the sole Foodstreet actual convert/native-import caller. Current actual02 failed at896/903 components with missing_toggle_spec despite zero source Toggles: JSON null Spec was materialized by Unity. Isolated stable-line worktree .private/worktrees/cocos-system-font-v071 commit0da189a (0.7.1.dev1) fixes explicit presence/source-type gating in creation and saved readback, preserving missing-spec strict refusal.16 focused checks pass including1 optional skip; fixed source and runnable argv delivered to GREA. No monkey Editor/duplicate batch. Next module exposes existing pinned system-font resolver/SDF preparation;52 system labels/47 dependent outlines remain separate. No publication/global upgrade/game writes.
+
 # monkey — v0.7.0 stable release / v0.8.0 independent development
 
 ## Full-parent native continuation — 2026-11-04
@@ -295,6 +303,21 @@ Actual production native verifier/refusal fixture15 passes12 materialized native
       ],
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Tools/grea/.private/development/binary-distribution-20261104/binary-provider-contract-v1.json"
+      ]
+    },
+    {
+      "id": "monkey:foodstreet-four-activity-closure",
+      "primaryReleaseId": "monkey:v0.7.0",
+      "title": "肥鹅四活动Cocos→Unity完整静态闭包与离线候选",
+      "workflowStatus": "in_progress",
+      "description": "由独立模块核最新固定Cocos链路，四根和已证动态源计算完整闭包，经GREA公开请求生成独立Analysis输出；8项不是分母。仅离线，原生由负责人另交资源，不写产品/WIP。",
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/FOUR-ACTIVITY-RECOVERY-CONSUMER-INPUTS.json"
+      ],
+      "acceptanceCriteria": [
+        "固定producer身份和实际公共GREA请求可复查",
+        "完整四根静态闭包、动态源证据/未知引用、sourceID→目标映射与实际纯输出",
+        "不采用/覆盖现有活动页WIP；原生/视觉/业务维持未验；缺适配仅交准确接口差异给GREA"
       ]
     }
   ],
