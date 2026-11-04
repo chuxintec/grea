@@ -6,11 +6,11 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-04T12:44:27.632395+00:00",
+  "updatedAt": "2026-11-04T12:47:54.238179+00:00",
   "authority": "original-plan-owner; read-only projection, not canonical cutover",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "立即处理GREA旧根120未提交文件：有效代码/契约/测试由当前开发线覆盖；49历史验收记录已脱敏入Git，36一次性清理文件退休；统一根目录到v1.1.0.dev2并收干净。monkey归并唯一v0.8.0线仍执行，四页原生产物保留、二进制暂停。",
-  "activeImplementationTask": "grea:T-repository-root-wip",
+  "currentStage": "三仓库版本分支整改已实际执行回读：本地51→5，远端14→5。monkey已合并为唯一v0.8.0.dev9/265a123；GREA根目录旧120文件已收口，当前v1.1.0.dev2、工作区干净。四页下一步仅使用统一0.8工具继续真实字体/引用及采用核验；binary暂停。",
+  "activeImplementationTask": "grea:T-foodstreet-four-activity-bulk",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -320,7 +320,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "经GREA公开run-tool调用固定monkey0.7.1.dev1/0da189a，实际native03产出四根及必要子Prefab共11个、668节点，Unity exit0、missingScripts0、保存重开/可编辑回读true。ASTC依赖与Toggle空可选配置工具修复已实测解除。验收仍partial：311静态字段/引用共因与52字体转换缺口由monkey修复，不能以完整业务脚本/全警告清零为前置；beaver实际采用尚未运行。禁止逐页人工修改纯输出。",
+      "description": "此前经公开run-tool实际产11业务Prefab/668节点并保存重开，missingScripts0。按用户单线要求，monkey已将字体、Toggle及静态引用共因修复统一到v0.8.0.dev9/265a123；下一工具实际验证只用该线，旧0.7快照作历史复现。字体静态生成、引用实际核验与beaver采用仍未完成，不以源测试/分支合并代替真实出口。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -364,8 +364,8 @@
       "id": "grea:T-repository-version-branches",
       "title": "立即清理三仓库废弃分支并统一版本命名",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
-      "description": "GREA已完成本地21→2/远端9→2，默认v1.0.0，53ff3bc已推；标签/5工作树WIP未变。monkey首轮18→3已独立回读，后被本聊天最新人类指令覆盖：必须合并为唯一v0.8.0系列，先归并0.7修复再删除0.7系列heads，owner执行中。beaver仍在执行，不能报三仓库完成。",
+      "workflowStatus": "done",
+      "description": "GREA本地/远端仅v1.0.0、v1.1.0.dev2，默认v1.0.0。monkey归并全部Unity/Cocos及0.7有效修复到v0.8.0.dev9/265a123，本地/远端仅单头且相同，默认已切。beaver仅v0.6.0、v0.7.0.dev1，默认v0.6.0；dev本地保留旧历史合并b848，远端7b8453a，源码tree一致，历史未上传。三仓库旧非版本heads均删除，标签/固定制品保持。",
       "sourceRefs": [
         "../../Manager/decisions/20261104-grea-repository-cleanup/PLAN.md",
         ".private/development/repository-cleanup-20261104/branch-migration.json"
@@ -375,8 +375,8 @@
       "id": "grea:T-repository-root-wip",
       "title": "收口旧根120未提交文件并统一当前开发工作区",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
-      "description": "核对120文件：代码/契约/测试由现行版本覆盖，无需把旧实现覆盖新版；现行计划归入本开发线，49份历史消费者记录脱敏后保存在Git历史，36份过期维护脚本/日志直接退休。最后根目录切换v1.1.0.dev2，核工作区干净；不改固定运行时与已发布标签。",
+      "workflowStatus": "done",
+      "description": "根目录120文件已逐项处理：19已跟踪修改和13旧测试由新版覆盖；49消费者历史记录脱敏入Git 1c7e677后退休当前树；36无调用方维护脚本/日志直接删除；其余已在dev。现行计划由159KB收敛25KB并纳入开发线，根目录切到v1.1.0.dev2，git status无未提交文件。无全局安装或运行时修改。",
       "sourceRefs": [
         ".private/development/repository-cleanup-20261104/root-wip-classification.json"
       ]
@@ -439,7 +439,7 @@
 
 ## 当前约束与实际结果
 
-- monkey 按用户最新指令归并为唯一 `v0.8.0` 系列；旧 0.7 标签和消费者制品保留，不再迭代 0.7 分支。
+- monkey 已归并为唯一 `v0.8.0.dev9`，提交 `265a1235dfb8084428810567045307e24bf819bc`；旧 0.7 标签和消费者制品保留，不再迭代 0.7 分支。
 - 肥鹅四活动由 monkey 程序成组转换；已实际保存 11 个业务 Prefab、668 节点，无 Missing Script。字体与静态引用仍在工具修复，采用和视觉未验，不以报告或人工改 Prefab 替代。
 - 二进制编译/打包仍由用户暂停；本次源码与分支整改不恢复该线，不新增 Release 或安装。
 - 旧固定消费者、源码提交、锁、输入和运行时保留；路径型 sourceRefs 以仓库根为基准，私有执行证据不纳入公开源码。
