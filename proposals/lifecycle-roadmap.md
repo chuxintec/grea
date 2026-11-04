@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "dev21/6f66c5d实际refresh16、仅Mask续接16、导出16完成，6Mask/5队列且纹理未解码；native16在嵌套Spine排序交接失败controlled-prefab-owner-pair-not-registered，PID13761退出。新上下文/裁剪/文字尚未完成原生验收，旧证据保留，正式采用未跑。",
+      "description": "dev22/663078d实际refresh/export17后native17越过旧owner pair异常，在嵌套文字slot1采集枚举变化处失败STATIC_SORT_PROXY_TEXT_SLOT_EVIDENCE_CHANGED_DURING_CAPTURE；PID18813退出。未达全75/36生命周期或完整UI验收；纹理/字体/Mask复用，正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -433,7 +433,8 @@
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-13-dev18-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-14-dev19-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-15-dev20-index.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-16-dev21-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-16-dev21-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-17-dev22-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -466,7 +467,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey按75组件/36嵌套实例全生命周期核注册→模板替换→clone→保存/重开owner配对，实际native16输入完整链路回归；避免单实例补丁。固定刷新复用完整Mask计划、18PNG与字体，GREA唯一Editor再验。",
+      "nextAction": "monkey用native17实际多材质文字输入复现采集→注册→重建→再绑定全链，字段级枚举差异定位并修稳定采集，覆盖fallback/outline/inactive/嵌套，保全槽与身份门。固定refresh后GREA唯一Editor再验。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
