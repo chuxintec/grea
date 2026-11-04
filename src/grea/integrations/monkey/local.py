@@ -101,6 +101,24 @@ def readiness(output, ensure=False, install_missing=False):
     if out.exists() or not out.parent.is_dir():raise ValueError('Use a fresh readiness output')
     out.mkdir();found=discover()
     try:
+        # Explicit launcher-bound locks describe custom launchers without guessing
+        # that a shell shebang is a Python installation. All existing identity
+        # and capability checks still run, with no auto-binding or installation.
+        explicit_lock = os.environ.get('GREA_MONKEY_LOCK')
+        if explicit_lock:
+            if not os.environ.get('GREA_PROVIDERS'):
+                raise ValueError('Explicit monkey lock requires matching GREA_PROVIDERS')
+            lock_path = canonical_path(explicit_lock)
+            lock_identity = hash_file(lock_path)
+            cfg, _ = probe(lock_path, out/'capabilities')
+            if hash_file(lock_path) != lock_identity:
+                raise ValueError('Explicit monkey lock changed during readiness')
+            value = dict(status='ready', ready=True, version=cfg['version'],
+                         command=cfg['command'], package_root=cfg['identity_root'],
+                         lock=str(lock_path), lock_identity=lock_identity,
+                         identity_mode='explicit-launcher-bound-lock', installed=False)
+            write_new(out/'result.json', value)
+            return value
         # Explicit caller overrides remain authoritative and never trigger fallback installation.
         if os.environ.get('GREA_PROVIDERS'):
             config=json.loads(Path(os.environ['GREA_PROVIDERS']).read_text())

@@ -30,8 +30,14 @@ def main(argv=None):
     selection.add_argument('--prefab',action='append',required=True)
     native=commands.add_parser('native-step')
     for name in ('config','request','output'):native.add_argument('--'+name,required=True)
+    unity=commands.add_parser('freeze-unity-prefabs',help='Freeze an exact completed Unity-source native save; does not start Editor')
+    for name in ('config','native-output','expected-execution','output'):unity.add_argument('--'+name,required=True)
     args=parser.parse_args(argv)
     try:
+        if args.action=='freeze-unity-prefabs':
+            from grea.integrations.monkey.unity_prefabs import freeze
+            result=freeze(args.config,args.native_output,args.expected_execution,args.output)
+            print(json.dumps(dict(status=result['status'],output=args.output,executed=result['executed'])));return 1
         if args.action=='native-step':
             from grea.integrations.monkey.native_steps import run
             result=run(args.config,args.request,args.output)
@@ -70,7 +76,7 @@ def main(argv=None):
             from grea.safe_paths import disjoint
             from pathlib import Path
             cfg=pinned(args.config);out=disjoint(args.output,args.workspace,args.config,*[r['path'] for r in cfg['identity_files']])
-            if cfg['version'] in (pipeline.DEV1_VERSION,pipeline.DEV2_VERSION,pipeline.DEV3_VERSION,pipeline.DEV4_VERSION):
+            if cfg['version'] in (pipeline.DEV1_VERSION,pipeline.DEV2_VERSION,pipeline.DEV3_VERSION,pipeline.DEV4_VERSION,pipeline.STABLE_VERSION,*pipeline.UNITY_PREFAB_VERSIONS):
                 raise ValueError('Fixed dev1 audit requires explicit --level static/editor and expected hashes')
             if out.exists() or not out.parent.is_dir():raise ValueError('Use a fresh audit output')
             result=audit(args.workspace,cfg['version']);out.mkdir();write_new(out/'result.json',result)

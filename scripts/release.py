@@ -17,15 +17,15 @@ from pathlib import Path, PurePosixPath
 from audit_public_tree import inspect
 
 ROOT = Path(__file__).resolve().parents[1]
-TAG = re.compile(r'v(\d+\.\d+\.\d+)(?:-rc([1-9]\d*))?')
+TAG = re.compile(r'v(\d+\.\d+\.\d+)(?:(?:-rc([1-9]\d*))|(?:\.dev([1-9]\d*)))?')
 
 
 def version(tag):
     match = TAG.fullmatch(tag)
     if not match:
-        raise ValueError('Use vX.Y.Z or vX.Y.Z-rcN (N >= 1).')
+        raise ValueError('Use vX.Y.Z or vX.Y.Z.devN; legacy -rcN remains accepted.')
     base = '.'.join(str(int(n)) for n in match[1].split('.'))
-    return base + ('rc' + match[2] if match[2] else ''), bool(match[2])
+    return base + ('rc' + match[2] if match[2] else '.dev' + match[3] if match[3] else ''), bool(match[2] or match[3])
 
 
 def git(*args):
@@ -104,7 +104,7 @@ def prepare(tag, out, require_tag=False):
         f'GREA {tag}\n\n'+('预发行版本。' if prerelease else '正式版本。')+
         f'版本 `{package}`，源码提交 `{sha}`。\n\n'+
         changes+'\n\n完整插件自带 Python、MCP、'+str(sum(n.startswith('plugin/skills/') and n.endswith('/SKILL.md') for n in files))+' 个技能、参考和许可证。源码由 Git/GitHub 自动下载提供。\n\n'+
-        'Windows x64 通过 Windows Server 原生 CI、隔离工具执行、重复构建及临时 Codex 安装发现验证。'
+        'Windows x64的Windows Server原生CI、隔离执行、重复构建及临时Codex安装发现结果见本轮随包验收报告。'
         'Windows 11 桌面、Unity Editor/Player、图形性能和人工输入未实机验收（本轮范围明确排除）。'
         '可选第三方供应方仍需独立安装及验证。\n\n'
         '解压对应平台插件，进入 grea 目录后运行 `codex plugin marketplace add .`、'

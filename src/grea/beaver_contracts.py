@@ -1,5 +1,5 @@
 """Request schema generated from the same named beaver forwarding table."""
-from .integrations.beaver_operations import OPERATIONS
+from .integrations.beaver_operations import OPERATIONS, operation_versions
 from .integrations.beaver import SUPPORTED_VERSIONS
 
 
@@ -45,14 +45,24 @@ def documents():
         properties.update({k:{'type':'integer','minimum':b[0],'maximum':b[1]}for k,b in spec.get('integers',{}).items()})
         properties.update({k:{'type':'string','minLength':1,'maxLength':4096}for k in spec.get('text',())})
         properties.update({k:{'type':'boolean'}for k in spec.get('flags',())})
+        for key,values in spec.get('enums',{}).items():properties[key]['enum']=sorted(values)
+        if name in ('qa.launch','qa.collect','qa.inspect-instance','qa.bind','qa.virtual-bind'):
+            for key in ('project','build','profile','run'):
+                if key in properties:properties[key].update(pattern='^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$',maxLength=64)
         options={'type':'object','additionalProperties':False,'required':sorted(spec['required']),'properties':dict(sorted(properties.items()))}
         if name=='image.compress':options['allOf']=[{'if':{'required':['apply'],'properties':{'apply':{'const':True}}},'then':{'required':['expected-source']}}]
+        if name=='adoption.plan':options['dependentRequired']={'sdk-migration':['expected-sdk-migration'],'expected-sdk-migration':['sdk-migration']}
         if name=='structure.inspect':options['dependentRequired']={'product-root':['profile'],'profile':['product-root']}
         if name=='debug.start':options['dependentRequired']={'width':['height'],'height':['width']}
         for option,versions in spec.get('option_versions',{}).items():
             options['properties'][option]['x-beaver-versions']=sorted(versions)
+        for option,values in spec.get('value_versions',{}).items():
+            options['properties'][option]['x-beaver-value-versions']={value:sorted(versions) for value,versions in values.items()}
         variants.append({'type':'object','additionalProperties':False,'required':['schema_version','operation','options','timeout_seconds'],
-            'x-beaver-versions':sorted(spec.get('versions',SUPPORTED_VERSIONS)),
+            **({'x-beaver-budget':{'nativePhases':spec['native_phases'],'overheadSeconds':spec['budget_overhead'],'durationOption':'timeout'}} if 'native_phases' in spec else {}),
+            **({'x-beaver-version-budgets':{v:{'nativePhases':b['native_phases'],'overheadSeconds':b['budget_overhead'],
+                'maximumTimeout':b['maximum_timeout'],'durationOption':'timeout'} for v,b in spec['version_budgets'].items()}} if 'version_budgets' in spec else {}),
+            'x-beaver-versions':sorted(operation_versions(name,spec)),
             'x-beaver-capability':spec.get('capability',name),
             'properties':{'schema_version':{'const':1},'operation':{'const':name},'options':options,
                           'timeout_seconds':{'type':'integer','minimum':1,'maximum':1800}}})

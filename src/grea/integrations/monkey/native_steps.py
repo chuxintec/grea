@@ -4,7 +4,7 @@ from grea import runner
 from grea.common import hash_file, write_new
 from grea.safe_paths import canonical_path, disjoint, relative_name, unique_paths
 from .identity import read, pinned
-from .pipeline import probe, snapshot, DEV3_VERSION, DEV4_VERSION
+from .pipeline import probe, snapshot, DEV3_VERSION, DEV4_VERSION, DEV9_VERSION, STABLE_VERSION
 
 SPECS = {
     'audit-native-code-dependencies': {'candidate':'path','expected-manifest':'hash','producer-candidate':'path','expected-producer-manifest':'hash'},
@@ -54,8 +54,9 @@ def audit_dependency_result(report, options, identity_root):
 
 def run(config, request_path, output):
     request_identity=hash_file(request_path);q=read(request_path);argv,roots=validate(q);cfg=pinned(config)
-    if cfg['schema_version']!=2 or cfg['version'] not in (DEV3_VERSION,DEV4_VERSION):raise ValueError('Exact dev3/dev4 launcher lock required')
-    if q['operation']=='audit-native-code-dependencies' and cfg['version']!=DEV4_VERSION:raise ValueError('Code dependency audit requires fixed dev4')
+    if cfg['schema_version']!=2 or cfg['version'] not in (DEV3_VERSION,DEV4_VERSION,DEV9_VERSION,STABLE_VERSION):raise ValueError('Exact supported native-step launcher lock required')
+    if q['operation']=='audit-native-code-dependencies' and cfg['version'] not in (DEV4_VERSION,DEV9_VERSION,STABLE_VERSION):raise ValueError('Code dependency audit requires fixed dev4/dev9 or stable0.7')
+    if cfg['version'] in (DEV9_VERSION,STABLE_VERSION) and q['operation']!='audit-native-code-dependencies':raise ValueError('This fixed provider supports code dependency audit only')
     out=disjoint(output,config,request_path,*roots,*[x['path'] for x in cfg['identity_files']])
     if out.exists() or not out.parent.is_dir():raise ValueError('Fresh output required')
     before=snapshot(roots)

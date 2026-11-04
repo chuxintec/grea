@@ -98,7 +98,8 @@ class BundleTests(unittest.TestCase):
     def test_version_syntax(self):
         self.assertEqual(release.version('v2026.10.13'), ('2026.10.13', False))
         self.assertEqual(release.version('v1.2.3-rc2'), ('1.2.3rc2', True))
-        for tag in ['v1.2', 'v1.2.3-rc0', 'v1.2.3-beta1', 'v1.2.3;id', '../v1.2.3']:
+        self.assertEqual(release.version('v1.0.0.dev1'), ('1.0.0.dev1', True))
+        for tag in ['v1.2', 'v1.2.3-rc0', 'v1.2.3-beta1', 'v1.0.0.dev0', 'v1.0.0.dev01', 'v1.2.3;id', '../v1.2.3']:
             with self.assertRaises(ValueError):release.version(tag)
 
     def test_exact_target_set_and_reports_required(self):

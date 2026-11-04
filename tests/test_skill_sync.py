@@ -31,6 +31,7 @@ class SkillSyncTests(unittest.TestCase):
         root = Path('/workspace')
         self.assertEqual(sync.workspace_root(root / 'grea'), root)
         self.assertEqual(sync.workspace_root(root / 'tools/grea'), root)
+        self.assertEqual(sync.workspace_root(root / 'Tools/grea'), root)
         self.assertEqual(sync.workspace_root(root / 'tools/grea') / '.agents/skills',
                          root / '.agents/skills')
 

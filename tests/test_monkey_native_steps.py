@@ -27,3 +27,20 @@ class NativeStepsTests(unittest.TestCase):
 
     def test_dependency_supplement_cannot_change_parent_identity(self):
         with self.assertRaises(ValueError):n.audit_dependency_result({'schema':'monkey-native-code-dependency-supplement/1','targetManifestSha256':'b'*64},{'expected-manifest':'a'*64,'expected-producer-manifest':'c'*64},Path('/fixture'))
+
+    def test_dev9_cannot_expand_into_generation(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t);q=root/'request.json';q.write_text(json.dumps(dict(schema_version=1,operation='upgrade-native-runtime',options={'candidate':str(root),'expected-manifest':'a'*64},input_roots=[str(root)],timeout_seconds=30)))
+            with patch.object(n,'pinned',return_value={'schema_version':2,'version':n.DEV9_VERSION}),patch.object(n.runner,'execute') as execute:
+                with self.assertRaisesRegex(ValueError,'audit only'):n.run('lock',q,root/'out')
+                execute.assert_not_called()
+
+    def test_dev9_lock_checks_package_and_capabilities(self):
+        from grea.integrations.monkey import pipeline
+        from grea.common import digest
+        cfg=dict(version=pipeline.DEV9_VERSION,identity_root='/fixed',package_files={'/fixed/cli.py':'a'*64})
+        cap=dict(implemented=['verify'])
+        with patch.object(pipeline,'DEV9_PACKAGE_SHA256',digest({'cli.py':'a'*64})),patch.object(pipeline,'DEV9_CAPABILITIES_SHA256',digest(cap)):
+            pipeline.validate_fixed_candidate(cfg,cap)
+            with self.assertRaises(ValueError):pipeline.validate_fixed_candidate(dict(cfg,package_files={'/fixed/cli.py':'b'*64}),cap)
+            with self.assertRaises(ValueError):pipeline.validate_fixed_candidate(cfg,dict(cap,nativeSdkDeclarations=False))

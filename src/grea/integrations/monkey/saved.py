@@ -8,7 +8,7 @@ from grea import runner
 from grea.common import GreaError, hash_file, write_new
 from grea.safe_paths import canonical_path, disjoint
 from .identity import pinned, read
-from .pipeline import DEV1_VERSION, probe
+from .pipeline import DEV1_VERSION, STABLE_VERSION, probe
 
 
 def verify(config, candidate, output, level, expected_manifest, expected_readback=None):
@@ -22,8 +22,8 @@ def verify(config, candidate, output, level, expected_manifest, expected_readbac
         raise ValueError('Expected readback SHA256')
     candidate = canonical_path(candidate)
     cfg = pinned(config)
-    if cfg['schema_version'] != 2 or cfg['version'] != DEV1_VERSION:
-        raise ValueError('Explicit launcher-bound fixed dev1 lock required for this audit level')
+    if cfg['schema_version'] != 2 or cfg['version'] not in (DEV1_VERSION,STABLE_VERSION):
+        raise ValueError('Exact supported launcher-bound lock required for this audit level')
     inputs = [hash_file(config), hash_file(candidate / 'manifest.json', 128*1024**2)]
     if inputs[-1]['sha256'] != expected_manifest:
         raise ValueError('Candidate generated manifest differs from expected identity')

@@ -114,7 +114,7 @@ OPERATIONS.update({
 
 OPERATIONS['structure.inspect']['paths'].update({'product-root','profile'})
 OPERATIONS['structure.inspect']['scope_roots']={'product-root'}
-OPERATIONS['structure.inspect']['option_versions']={k:{beaver.P0_FIX3_VERSION,*beaver.P0_RETIRE_VERSIONS} for k in ('product-root','profile')}
+OPERATIONS['structure.inspect']['option_versions']={k:{beaver.P0_FIX3_VERSION,*beaver.P0_RETIRE_VERSIONS,beaver.STABLE_VERSION} for k in ('product-root','profile')}
 
 
 # fix6 transports SHA-bound full reports via an explicit compact envelope.
@@ -131,9 +131,72 @@ OPERATIONS['unity.recover']=dict(command=['unity','recover'],required={'transact
 OPERATIONS['unity.recover-font-source']=dict(command=['unity','recover-font-source'],required={'transaction','expected-plan','review'},paths={'transaction','review'},hashes={'expected-plan'},output='out',versions={beaver.P0_FIX12_VERSION},capability='unity.build.macos')
 
 
-OPERATIONS['qa.prepare']=dict(command=['qa','prepare'],required={'spec','expected-spec'},paths={'spec'},hashes={'expected-spec'},output='out',versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION},capability='qa.prepare')
-OPERATIONS['qa.launch']=dict(command=['qa','launch'],required={'project','build','profile','expected-owner'},text={'project','build','profile','run'},hashes={'expected-owner'},integers={'duration':(1,1700)},versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION},capability='qa.launch')
-OPERATIONS['qa.collect']=dict(command=['qa','collect'],required={'project','build','profile','expected-owner','run'},text={'project','build','profile','run'},hashes={'expected-owner'},output='out',versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION},capability='qa.collect')
+OPERATIONS['qa.prepare']=dict(command=['qa','prepare'],required={'spec','expected-spec'},paths={'spec'},hashes={'expected-spec'},output='out',versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION,beaver.P0_FIX18_VERSION,beaver.P0_FIX19_VERSION,beaver.P0_FIX21_VERSION},capability='qa.prepare')
+OPERATIONS['qa.launch']=dict(command=['qa','launch'],required={'project','build','profile','expected-owner'},text={'project','build','profile','run'},hashes={'expected-owner'},integers={'duration':(1,1700)},versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION,beaver.P0_FIX18_VERSION,beaver.P0_FIX19_VERSION,beaver.P0_FIX21_VERSION},capability='qa.launch')
+OPERATIONS['qa.collect']=dict(command=['qa','collect'],required={'project','build','profile','expected-owner','run'},text={'project','build','profile','run'},hashes={'expected-owner'},output='out',versions={beaver.P0_FIX14_VERSION,beaver.P0_FIX15_VERSION,beaver.P0_FIX16_VERSION,beaver.P0_FIX17_VERSION,beaver.P0_FIX18_VERSION,beaver.P0_FIX19_VERSION,beaver.P0_FIX21_VERSION},capability='qa.collect')
+
+# SDK/native QA extensions are confined to the fixed producer, never inferred
+# from CLI names or offered to older pinned plans.
+OPERATIONS['adoption.plan']['paths'].add('sdk-migration')
+OPERATIONS['adoption.plan']['hashes']={'expected-sdk-migration'}
+OPERATIONS['adoption.plan']['option_versions']={name:{beaver.P0_FIX18_VERSION,beaver.P0_FIX19_VERSION,beaver.P0_FIX20_VERSION} for name in ('sdk-migration','expected-sdk-migration')}
+for _name in ('inspect-instance','bind'):
+    OPERATIONS['qa.'+_name]=dict(command=['qa',_name],required={'project','build','profile','expected-owner','run'},text={'project','build','profile','run'},hashes={'expected-owner'},output='out',versions={beaver.P0_FIX18_VERSION,beaver.P0_FIX19_VERSION,beaver.P0_FIX21_VERSION},capability='qa.'+_name)
+OPERATIONS['qa.bind'].update(integers={'window':(1,4294967295)},enums={'backend':{'macos-native-ax-pid/1','macos-native-ax-pid-pointer-sync/1'}},value_versions={'backend':{'macos-native-ax-pid-pointer-sync/1':{beaver.P0_FIX19_VERSION,beaver.P0_FIX21_VERSION}}})
+OPERATIONS['qa.bind']['text'].add('backend')
+OPERATIONS['qa.input']=dict(command=['qa','input'],required={'session','expected-session','spec','expected-spec'},paths={'session','spec'},hashes={'expected-session','expected-spec'},output='out',versions={beaver.P0_FIX18_VERSION,beaver.P0_FIX19_VERSION,beaver.P0_FIX21_VERSION},capability='qa.input')
+
+# Application-only input has independent names and an exact producer gate.
+OPERATIONS['qa.virtual-prepare']=dict(command=['qa','virtual-prepare'],required={'spec','expected-spec'},paths={'spec'},hashes={'expected-spec'},output='out',versions=set(beaver.VIRTUAL_VERSIONS),capability='qa.virtual-prepare')
+OPERATIONS['qa.virtual-bind']=dict(command=['qa','virtual-bind'],required={'project','build','profile','expected-owner','run','channel','expected-channel'},text={'project','build','profile','run'},paths={'channel'},hashes={'expected-owner','expected-channel'},output='out',versions=set(beaver.VIRTUAL_VERSIONS),capability='qa.virtual-bind')
+for _action in ('input','status','stop'):
+    OPERATIONS['qa.virtual-'+_action]=dict(command=['qa','virtual-'+_action],required={'session','expected-session'},paths={'session'},hashes={'expected-session'},output='out',versions=set(beaver.VIRTUAL_VERSIONS),capability='qa.virtual-'+_action)
+OPERATIONS['qa.virtual-input']['required'].update({'spec','expected-spec'})
+OPERATIONS['qa.virtual-input']['paths'].add('spec')
+OPERATIONS['qa.virtual-input']['hashes'].add('expected-spec')
+for _name in beaver.VIRTUAL_BOOTSTRAP_OPERATIONS:
+    OPERATIONS[_name]['versions'].update(beaver.VIRTUAL_VERSIONS)
+
+
+OPERATIONS['build-filter.collect']['versions'].add(beaver.P0_FIX22_VERSION)
+OPERATIONS['build-filter.collect']['option_versions']['summary'].add(beaver.P0_FIX22_VERSION)
+
+
+OPERATIONS.update({
+    'intake.plan':dict(command=['intake','plan'],required={'candidate','target','spec'},paths={'candidate','target','spec'},output='out',versions={beaver.P0_FIX23_VERSION},capability='intake.plan/apply/rollback'),
+    'intake.apply':dict(command=['intake','apply'],required={'plan','expected-plan','editor-path','timeout'},paths={'plan','editor-path'},hashes={'expected-plan'},integers={'timeout':(1,500)},output='out',versions={beaver.P0_FIX23_VERSION},capability='intake.plan/apply/rollback',native_phases=3,budget_overhead=130),
+    'intake.rollback':dict(command=['intake','rollback'],required={'transaction','expected-plan','editor-path','timeout'},paths={'transaction','editor-path'},hashes={'expected-plan'},integers={'timeout':(1,500)},versions={beaver.P0_FIX23_VERSION},capability='intake.plan/apply/rollback',native_phases=2,budget_overhead=130),
+})
+for _name in ('intake.plan','intake.apply','intake.rollback'):
+    OPERATIONS[_name]['versions'].update({beaver.P0_FIX24_VERSION,beaver.P0_FIX25_VERSION,beaver.P0_FIX26_VERSION,beaver.P0_FIX27_VERSION,beaver.P0_FIX28_VERSION,beaver.P0_FIX29_VERSION})
+for _name,_phases,_overhead in [('intake.apply',5,310),('intake.rollback',2,160)]:
+    OPERATIONS[_name]['version_budgets']={beaver.P0_FIX26_VERSION:
+        dict(native_phases=_phases,budget_overhead=_overhead,maximum_timeout=280)}
+    for _version in (beaver.P0_FIX27_VERSION,beaver.P0_FIX28_VERSION,beaver.P0_FIX29_VERSION):
+        OPERATIONS[_name]['version_budgets'][_version]=dict(OPERATIONS[_name]['version_budgets'][beaver.P0_FIX26_VERSION])
+
+
+# Stable0.6 is an exact unified producer, independently accepted from its wheel.
+# Extend only this finite registered surface; historical versions retain their scopes.
+for _name, _spec in OPERATIONS.items():
+    if _name == 'unity.recover-font-source':
+        continue  # Historical transaction repair remains tied to its original producer.
+    if 'versions' in _spec:
+        _spec['versions'].add(beaver.STABLE_VERSION)
+    for _versions in _spec.get('option_versions', {}).values():
+        _versions.add(beaver.STABLE_VERSION)
+    for _values in _spec.get('value_versions', {}).values():
+        for _versions in _values.values():
+            _versions.add(beaver.STABLE_VERSION)
+for _name in ('intake.apply', 'intake.rollback'):
+    OPERATIONS[_name]['version_budgets'][beaver.STABLE_VERSION] = dict(
+        OPERATIONS[_name]['version_budgets'][beaver.P0_FIX29_VERSION])
+
+
+def operation_versions(operation, spec=None):
+    spec=OPERATIONS[operation] if spec is None else spec
+    return {v for v in spec.get('versions',beaver.SUPPORTED_VERSIONS) if beaver.operation_allowed(v,operation)}
+
 
 def read_json(path, max_bytes=8*1024**2):
     path=canonical_path(path)
@@ -158,12 +221,18 @@ def validate(request):
     if set(options)-allowed or not spec['required']<=options.keys():raise ValueError('Unknown or missing named options')
     if request['operation']=='structure.inspect' and (('product-root' in options)!=('profile' in options)):
         raise ValueError('product-root and profile must be supplied together')
-    if request['operation'] in ('qa.launch','qa.collect'):
+    timeout=request['timeout_seconds']
+    if type(timeout)is not int or not 1<=timeout<=1800:raise ValueError('timeout_seconds must be 1..1800')
+    if 'native_phases' in spec:
+        inner=options.get('timeout')
+        if type(inner)is not int or timeout < spec['native_phases']*inner+spec['budget_overhead']:
+            raise ValueError('Outer budget must cover all native phases plus 130 seconds')
+    if request['operation']=='adoption.plan' and (('sdk-migration' in options)!=('expected-sdk-migration' in options)):
+        raise ValueError('SDK migration path and hash must be supplied together')
+    if request['operation'] in ('qa.launch','qa.collect','qa.inspect-instance','qa.bind','qa.virtual-bind'):
         for key in ('project','build','profile','run'):
             if key in options and (not isinstance(options[key],str) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9._-]{0,63}',options[key])):raise ValueError('Expected stable QA identifier')
         if request['operation']=='qa.launch' and 'duration' not in options and request['timeout_seconds']<70:raise ValueError('Default QA duration requires outer budget >=70')
-    timeout=request['timeout_seconds']
-    if type(timeout)is not int or not 1<=timeout<=1800:raise ValueError('timeout_seconds must be 1..1800')
     values={}
     for name,value in options.items():
         if name in spec.get('path_lists',{}):
@@ -186,6 +255,7 @@ def validate(request):
             value=str(canonical_path(value))
         elif name in spec.get('hashes',()) and not re.fullmatch('[a-f0-9]{64}',value):raise ValueError('Expected a complete SHA256')
         elif name in spec.get('text',()) and len(value)>4096:raise ValueError('Option text too long')
+        if name in spec.get('enums',{}) and value not in spec['enums'][name]:raise ValueError('Unsupported explicit option: '+name)
         values[name]=value
     if request['operation']=='image.compress' and values.get('apply') and not values.get('expected-source'):
         raise ValueError('Image apply requires expected-source')
@@ -196,11 +266,21 @@ def validate(request):
 
 def validate_provider_version(request, version):
     spec,_=validate(request)
-    if version not in spec.get('versions',beaver.SUPPORTED_VERSIONS):
+    if version not in operation_versions(request['operation'],spec):
         raise ValueError('Operation is not supported by pinned beaver '+str(version))
+    budget=spec.get('version_budgets',{}).get(version)
+    if budget:
+        inner=request['options']['timeout']
+        if inner>budget['maximum_timeout'] or request['timeout_seconds']<budget['native_phases']*inner+budget['budget_overhead']:
+            raise ValueError('Outer budget must cover pinned provider native phases and overhead; inner timeout exceeds budget or outer is too short')
     for option,versions in spec.get('option_versions',{}).items():
         if option in request['options'] and version not in versions:
             raise ValueError('Option '+option+' is not supported by pinned beaver '+str(version))
+
+    for option,values in spec.get('value_versions',{}).items():
+        value=request['options'].get(option)
+        if value in values and version not in values[value]:
+            raise ValueError('Option value '+option+' is not supported by pinned beaver '+str(version))
 
 
 def argv_for(request, output):
@@ -322,7 +402,7 @@ def invoke(lock, request_file, output):
             cfg=read_json(lock)
             probe=read_json(out/'beaver-check/probe/run.json')['parsed_stdout']
             validate_provider_version(request,cfg['version'])
-            profile_identity=structure_profile(values) if request['operation']=='structure.inspect' and cfg['version'] in {beaver.P0_FIX3_VERSION,*beaver.P0_RETIRE_VERSIONS} else None
+            profile_identity=structure_profile(values) if request['operation']=='structure.inspect' and cfg['version'] in {beaver.P0_FIX3_VERSION,*beaver.P0_RETIRE_VERSIONS,beaver.STABLE_VERSION} else None
             if profile_identity:result['profile_schema_validation']=profile_identity
             if cfg['version']!=probe['producer']['version']:raise ValueError('Probe version differs from lock')
             needed=required_capability(request)
@@ -348,7 +428,7 @@ def invoke(lock, request_file, output):
                     validate_result(actual)
                 if actual['producer'].get('implementationSha256')!=probe['producer'].get('implementationSha256'):
                     raise ValueError('Producer identity differs from capability probe')
-                if values.get('summary') and cfg['version'] in beaver.P0_RETIRE_VERSIONS:
+                if values.get('summary') and cfg['version'] in beaver.P0_SUMMARY_VERSIONS:
                     result['provider_artifacts_verified']=verify_summary_artifacts(actual)
                 status=actual.get('status');codes={'ok':0,'partial':1,'blocked':3,'failed':2,'not_run':3}
                 result['provider_result']=actual

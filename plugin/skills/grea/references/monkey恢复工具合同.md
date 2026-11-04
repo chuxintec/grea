@@ -1,6 +1,6 @@
 # monkey 批量恢复与开发交接
 
-当前转换工作流有限适配 **monkey 0.4.0 / 0.4.1 / 0.6.0**；固定 **0.7.0.dev1** 仅支持下述候选只读复核，不据版本号放开转换。源码模块锁指定正式 **0.6.0** 的精确 wheel（`modules.lock.json`），旧版本继续按原 lock 使用。既有来源工具通过 `monkey tool <id>` 委托：Laya 契约、ELF 常量、XAPK/wxapkg、配置表和 Shader 探针。GREA 不复制转换器、不放开任意 CLI 参数；实际 launcher、包树、完整 capabilities 摘要与所选操作均须匹配。显式 ensure 可安装缺失工具，已有安装不自动升级。候选完整性、原生回读与游戏业务分层验收；新工程布局以实际产物 `projectLayout` 为准。
+当前通用转换计划有限适配 **monkey 0.4.0 / 0.4.1 / 0.6.0**；正式目标 **0.7.0** 的精确模块候选已接入显式静态/既有Editor记录复核及代码依赖审计，实际分发身份见 `modules.lock.json`。不据版本号放开通用转换计划，旧版本继续按原 lock 使用。既有来源工具通过 `monkey tool <id>` 委托：Laya 契约、ELF 常量、XAPK/wxapkg、配置表和 Shader 探针。GREA 不复制转换器、不放开任意 CLI 参数；实际 launcher、包树、完整 capabilities 摘要与所选操作均须匹配。显式 ensure 可安装缺失工具，已有安装不自动升级。候选完整性、原生回读与游戏业务分层验收；新工程布局以实际产物 `projectLayout` 为准。
 
 <!-- grea:tool monkey_pipeline -->
 <!-- grea:tool monkey_bridge -->
@@ -39,7 +39,7 @@ bin/grea legacy monkey_pipeline audit --workspace /path/new-run/provider-output 
 
 默认绑定和 GREA 管理的缺失安装位于 `~/.local/share/grea/providers/monkey/`；测试或受控部署可设置 `GREA_PROVIDER_STATE_DIR`。新安装用独立 venv；从插件自带 Python 安装时另保留独立 Python 副本，不让 provider 依赖会被替换的插件缓存。文件夹已存在但安装不完整、绑定失效、发现歧义均保留并报错，不自动重装。已有外部 monkey 安装只绑定，不移动文件或替换日常入口。
 
-安装最新版不等于适配器支持所有新版本：当前转换适配接受 0.4.0 / 0.4.1 / 0.6.0；0.7.0.dev1仅接受精确候选的只读复核。若 GitHub 最新版超出范围，安装结果保留、ready=false，不降级或冒称可转换。已固定计划继续使用旧身份，执行前后检查变化。
+安装最新版不等于适配器支持所有新版本：当前通用转换计划接受 0.4.0 / 0.4.1 / 0.6.0；0.7正式身份及开发候选只接受本文列出的精确操作。若 GitHub 最新版超出范围，安装结果保留、ready=false，不降级或冒称可转换。已固定计划继续使用旧身份，执行前后检查变化。
 
 lock v2 固定实际安装包文件集、launcher、解释器文件、command/probe 与 capabilities 摘要；pyc 缓存不纳入产品身份，非全部第三方依赖认证。计划 `--config` 可显式固定旧 lock；省略时读取当前已验证绑定。历史 bridge 保留 v1/v2 显式 lock 接口。自定义 provider 仍可按[安装与平台](monkey与beaver调用.md)配置，再用 `pin --package-root <安装包目录> --output <新目录>` 固定；多参数自定义 launcher 不自动推断包位置。
 
@@ -200,3 +200,45 @@ editor级读取固定`Analysis/Readback/editor-readback.json`的nativeFiles实�
 `0.7.0.dev4`固定提交`19d51d4dbe7971bb14c5724963c42dfdbd9ddaca`、wheel SHA `590241cef89fa460090088318002c355187235eee2cbe21a471d8bbc34ac7a26`，435文件摘要`5689b6dc039c4f9aafbda9dbdeaf634c25f1013c9ef09cc91fa53377a113baf1`、规范capabilities摘要`b8c1e66b8215c3133c8f0ba4e2bf5d1ae9a9d2632979f41c3c80106ee00ae252`。支持同形freeze/native-step有限入口；新operation `audit-native-code-dependencies`只接受dev4，options恰为candidate、expected-manifest、producer-candidate、expected-producer-manifest。按native-step v1提供输入根和预算，两个项目manifest预核SHA，输出独立目录，不改旧候选/诊断。
 
 补证报告schema=monkey-native-code-dependency-supplement/1；GREA核目标与producer父清单身份、originalDiagnostics未变、逐script/requires/package SHA及固定包中的producerImplementation SHA。模板profile/可再生carrier证明由monkey实现，不另建C#分析器。uncovered为0只指这份目标库存中的精确producer证明范围，不代表任意C#分析、原生编译、业务或真实输入完成；旧warning不删除。已有相同目标、provider与报告时复用冻结补证，不强制重跑大producer树或字体/Editor。
+
+### 固定dev9的SDK生产者声明
+
+`0.7.0.dev9`固定`735a87ebbc194590c39a6ecd3984b74c4c23c029`，436包文件规范摘要`d2534c9bd4240b231ba992e066b2980a92b4aa9b590125dd243fc9cc5970e479`、capabilities规范摘要`0dd7f9b9af2462ced9224ee4642e9ac3f23da80f3e8277a45f29b8026744bea0`。仅接受上述native-step的audit-native-code-dependencies，选项与dev4相同；不放开freeze、转换或字体生成。旧链保持。
+
+原始补证报告增加sdkProducerDeclarations，声明DLL/meta/GUID、Editor/Player角色、构建声明身份、许可证和literal m_Script引用。GREA保留完整报告及SHA，原stdout只提供报告路径，不复制DLL分析器。每DLL的nativeMonoScriptTable.status=not_run且scripts=[]表示未测，不能解释成没有脚本、兼容历史localID或迁移通过；实际PE/public types、Player引用与原生GetClass/assembly/localID由beaver及消费者验收。SDK声明不覆盖冲突守卫，迁移完成与实例输入另验。
+
+### Unity来源Prefab的固定保存态冻结
+
+`0.8.0.dev2`固定提交`c4b984f3ce10e492554d318ace8dba9a85f2dc37`，441文件wheel包摘要`b12528b0ec63ecf7a1498ba94ef5530bf1057a7653931ac5938554667c7969ed`、规范能力摘要`64082896453ab0d3a272864b932a57146545f9ec755fb0c751a8a99e23e7b9f4`。只开放`monkey_pipeline freeze-unity-prefabs --config LOCK --native-output NATIVE --expected-execution SHA --output NEW`，MCP通过同一tool_id/arguments调用，外层预算至少覆盖300秒provider预算及字节核验。LOCK须为对应providers配置生成的v2锁；独立wheel运行时与源码额外文件分别记录，不按版本号放行其他入口。
+
+`0.8.0.dev4`固定`2ddb7a912aa0186168c19947fff340988a446d17`，446文件wheel包摘要`25ded3d292e999a55f3766c9d4c995e9889cff16ef8354b6df0b9489e01c22a9`、规范能力摘要`aadfdd818e55d50628b79558fc3e86c0715a018b72db8513a68a6df943ee48c6`，同样只开放上述保存态冻结，不开放dev3或其他命令。多根交接按完整sourceId核对源→目标及冷重开证据，禁止按列表位置配对；共享依赖在同一候选闭包去重，不能因拆根复制而丢引用或重复计根。历史排序错配失败保留；新候选只覆盖其固定源根及依赖，缺图等其他候选不混入，也不由无诊断推断渲染/Shader兼容通过。
+
+`0.8.0.dev5`固定`a55d88a8045fe081fd732e29cdc05fca9988ce2c`，450文件wheel包摘要`81e0f6f7be15f472b4ff5c0306eb3c264615f952f7b9e5cc48ab72542d6cff8b`、规范能力摘要`0eb6a382f9957fe6a183fce4e63fb794d86689447214c47505a8c1f2c2ca2ead`，仍仅同一保存态冻结入口。原生创建的嵌入Sprite/Texture须保sourceTuple、像素与几何、格式/可读性归一化和真实GUID/localID的首读/冷重开证据；新增目标身份不能冒称原版builtin身份。此能力存在于固定provider，不因此公开新assets/recover/verify命令。历史生成阶段pending-rebind诊断与后来实际MonoScript观察分别记录，不能抹掉旧warning，也不能把已验证的绑定仍笼统写未测；缺失原图的像素和禁用自定义行为另列。已有九根加一根的headless记录只在精确源身份去重后计数，不等于十根完整依赖、显示或业务闭环。
+
+`0.8.0.dev6`固定`3fb450c51b8e3a04c1bd8c71aaea0cee71befea1`，452文件wheel包摘要`302f4ada206cb3462a6d95d7a5af37deee2742cc7b99b595d0058a62fc8a3dad`、规范能力摘要`a9ff89dcb4796318cad3dfd44627528355ef3c5410a22fa603a7ad6b3356cc82`，同样仅保存态冻结。原图集恢复采用新不可变候选：逐Sprite保原sourceTuple、GUID/localID/meta、几何/轮廓及原像素证明，声明新Texture引用和归一化；首读/冷重开观察须一致。旧404/缺图失败原样保留，新图集修复不回写旧候选、也不豁免仍不支持的trimmed atlas/字段类型。普通unpacked路径另核回归，不能把一种profile通过推定为全部atlas类型支持。
+
+完整模块的编译依赖含独立enum时，采用方必须证明其真实目标定义、数值及使用字段兼容；同名MonoBehaviour存在不代表enum已经覆盖。保留完整候选，再按受支持合同声明保留/不导入及原生字段验收，不删enum、脚本或其他依赖缩closure、不直接复制compiler。freeze保持source partial/exit1，不产生intakeStatus=verified；实际采用结果由beaver和消费者另验，headless唯一剩余limit也不能改记可见静态pass。
+
+该操作只转发provider的`freeze-unity-prefabs --native-output --expected-execution --out`。预核原生execution-result SHA、完成保存及独立重开、sourceCodeExecuted=false、source manifest及有界savedFiles/readback；按清单核输入，不扫描Library。只写NEW中的冻结副本，不启动Editor、不运行游戏方法。结束复核锁/包/输入未变、输出清单逐件匹配保存字节、execution/source manifest父身份及源根/诊断未改，保留provider exit1/needs_action/native-partial，不提升为静态显示pass。
+
+当前GREA仅准备了`recover-unity-prefabs`真实请求ABI的内部校验，尚未开放恢复生成、verify-unity-prefabs或其他0.8命令。已有保存态不重跑原生；原生身份稳定不证明画面、可见编辑、Player或业务通过。采用仍须由beaver核namespace、精确baseline、程序集/GUID及Resources键冲突，owner明确保留/映射与真实消费者后再执行，冻结副本不是自动采用授权。
+
+
+### dev7 固定 effect 保存态选择
+
+`0.8.0.dev7`固定source `2e88bc95fbe9cf82d61ad0a192715f334a242695`，458运行文件包摘要`ef4d3ad75d9395788efe0b857782feb33549c4114fb4f7582ca1c3f63e669c2d`、规范能力摘要`85eca6fb100dfd734fc7ca337fe28b0915c187015620109d938b6ae178ef1853`。沿既有recover/verify/freeze保存态合同，不扩大任意旧pipeline操作。消费者使用已给固定saved selection及manifest，不重生成或重冻已验候选；新正式采用仍经beaver精确plan/写集及独立cold核验。
+
+effect实例64字段/2owners/4components和保存/冷重开引用通过，仅证明声明静态数据。原source mesh `engine-reference-unverified`及deadbeef provider诊断保留，recover/verify/freeze的partial/exit1/needs_action不转为完整成功；不得删失败manifest依赖来闭包。Shader仅核既有native引用，不能声称原compiledShader语义或视觉一致；Player、视觉、业务仍待验。BattleMain UV曲线严格拒绝独立保留，不因effect通过推定其支持，也不重跑已验Login/既有根。
+
+### 显式固定launcher的readiness
+
+已固定的自定义launcher（包括shell包装器）不能将其shebang猜作Python安装解释器。调用方可同时设置`GREA_PROVIDERS`及`GREA_MONKEY_LOCK`，后者指向既有launcher-bound v2精确锁；readiness必须执行原有pinned校验（command/probe、全部package_files及identity_files）、支持版本、真实capabilities摘要和固定候选包门，并核锁在探测前后未变，全部通过才ready。缺匹配配置、身份/包/能力漂移均失败，不回自动发现、不换provider、不自动安装或写全局binding。未提供显式锁时保留原installed-console自动探测及ensure规则。
+
+QA-only provider的readiness通过不扩大工程操作面；如unity.plan须使用实际声明该操作的工程provider固定锁，不能经qa-invoke固定QA锁调用。项目wrapper由其owner显式配置build/QA不同入口，旧锁及事务保持原身份。该路径只证明工具依赖可用，不等于Unity编译、Player或产品验收。
+
+
+### 正式0.7精确模块
+
+`0.7.0`固定源码`86d47f35744a5af91614c417b00c8eaa2345baad`，wheel SHA `cb7eed60ff00085260657d2362e5fc60ee46a5d258a748c75770d0e337964dd0`；436包文件规范摘要`5295b0f24f763cf1e9ffabe7feb3027a29d53eb51c7fccedf533945671448c64`，capabilities规范摘要`602c0006da911014f850657d731c292bd2ce95b8239e6d9518ab228414463267`。来源为固定dev9稳定线，不含Unity来源0.8增量。正式远端发布状态以模块锁及随包发行记录为准。
+
+GREA的`pin`、`audit --level static/editor`、`native-step`的`audit-native-code-dependencies`核对此身份；后者沿上述四个选项及独立输入根合同。省略audit level、通用plan/run、freeze及字体/运行时生成操作不因此开放。原生选择生成仍由monkey的版本化公开CLI负责，GREA不重写恢复器；生成态中性夹具不得伪造原生回执。输出保留`needs_action`与独立的静态/原生/业务状态，既有游戏锁和历史固定候选不升级。

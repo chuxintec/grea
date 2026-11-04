@@ -19,7 +19,7 @@ REFERENCE_LINK = re.compile(r"(^[ \t]{0,3}\[[^\]]+\]:[ \t]*)(<[^>]+>|[^\s]+)()",
 ROOT = Path(__file__).resolve().parents[1]
 # tools/grea remains a product repo; shared skills belong to the enclosing workspace.
 def workspace_root(product_root: Path) -> Path:
-    return product_root.parent.parent if product_root.parent.name == 'tools' else product_root.parent
+    return product_root.parent.parent if product_root.parent.name.casefold() == 'tools' else product_root.parent
 
 
 WORKSPACE = workspace_root(ROOT)

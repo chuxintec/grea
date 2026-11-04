@@ -10,6 +10,7 @@ from grea.safe_paths import disjoint
 V03_VERSION = '0.3.0.dev1'
 V03_IMPLEMENTATION = 'b6400dbd7ca13426ce68a2c4034fb647795e3876d38b26c98d2a98e4ee8bc3c0'
 V05_VERSION = '0.5.0'
+STABLE_VERSION = '0.6.0'
 P0_VERSION = '0.5.1.dev20261028'
 P0_FIX1_VERSION = '0.5.1.dev20261028+fix1'
 P0_FIX2_VERSION = '0.5.1.dev20261028+fix2'
@@ -25,15 +26,59 @@ P0_FIX14_VERSION = '0.5.1.dev20261031+fix14'
 P0_FIX15_VERSION = '0.5.1.dev20261031+fix15'
 P0_FIX16_VERSION = '0.5.1.dev20261031+fix16'
 P0_FIX17_VERSION = '0.5.1.dev20261101+fix17'
-P0_RETIRE_VERSIONS = {P0_FIX17_VERSION, P0_FIX16_VERSION, P0_FIX15_VERSION, P0_FIX14_VERSION, P0_FIX12_VERSION, P0_FIX11_VERSION, P0_FIX6_VERSION, P0_FIX7_VERSION, P0_FIX8_VERSION, P0_FIX9_VERSION, P0_FIX10_VERSION}
+P0_FIX18_VERSION = '0.5.1.dev20261101+fix18'
+P0_FIX19_VERSION = '0.5.1.dev20261101+fix19'
+P0_FIX20_VERSION = '0.5.1.dev20261101+fix20'
+P0_FIX21_VERSION = '0.5.1.dev20261101+fix21'
+P0_RETIRE_VERSIONS = {P0_FIX21_VERSION, P0_FIX20_VERSION, P0_FIX19_VERSION, P0_FIX18_VERSION, P0_FIX17_VERSION, P0_FIX16_VERSION, P0_FIX15_VERSION, P0_FIX14_VERSION, P0_FIX12_VERSION, P0_FIX11_VERSION, P0_FIX6_VERSION, P0_FIX7_VERSION, P0_FIX8_VERSION, P0_FIX9_VERSION, P0_FIX10_VERSION}
+P0_FIX22_VERSION = '0.5.1.dev20261102+fix22'
+P0_FIX23_VERSION = '0.5.1.dev20261102+fix23'
+P0_FIX24_VERSION = '0.5.1.dev20261102+fix24'
+P0_FIX25_VERSION = '0.5.1.dev20261102+fix25'
+P0_FIX26_VERSION = '0.5.1.dev20261102+fix26'
+P0_FIX31_VERSION = '0.6.0.dev20261103+fix31'
+P0_FIX30_VERSION = '0.6.0.dev20261103+fix30'
+P0_FIX29_VERSION = '0.6.0.dev20261102+fix29'
+P0_FIX28_VERSION = '0.6.0.dev20261102+fix28'
+P0_FIX27_VERSION = '0.6.0.dev20261102+fix27'
+VIRTUAL2_VERSION = '0.6.0.dev20261102+virtual2'
+VIRTUAL4_VERSION = '0.6.0.dev20261102+virtual4'
+VIRTUAL_VERSIONS = {VIRTUAL2_VERSION, VIRTUAL4_VERSION, P0_FIX27_VERSION, P0_FIX30_VERSION, P0_FIX31_VERSION}
+VIRTUAL_OPERATIONS = frozenset('qa.virtual-'+name for name in ('prepare','bind','input','status','stop'))
+VIRTUAL_BOOTSTRAP_OPERATIONS = frozenset({'qa.prepare','qa.launch','qa.collect'})
+SCOPED_OPERATIONS = {P0_FIX31_VERSION: VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OPERATIONS,P0_FIX30_VERSION: VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OPERATIONS,P0_FIX29_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'}),P0_FIX28_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'}),P0_FIX27_VERSION: VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OPERATIONS | frozenset({'intake.plan','intake.apply','intake.rollback'}),P0_FIX22_VERSION: frozenset({'build-filter.collect'}),
+                     VIRTUAL2_VERSION: VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OPERATIONS,
+                     VIRTUAL4_VERSION: VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OPERATIONS,
+                     P0_FIX23_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'}),
+                     P0_FIX24_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'}),
+                     P0_FIX25_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'}),
+                     P0_FIX26_VERSION: frozenset({'intake.plan','intake.apply','intake.rollback'})}
+P0_SUMMARY_VERSIONS = {*P0_RETIRE_VERSIONS, P0_FIX22_VERSION, STABLE_VERSION}
 P0_VERSIONS = {P0_VERSION, P0_FIX1_VERSION, P0_FIX2_VERSION, P0_FIX3_VERSION, *P0_RETIRE_VERSIONS}
 P0_GROUPS = {'structure.inspect/plan', 'build-filter.collect/plan', 'native.readback'}
 # The historical name is retained; entries pin compatible lineage, never a version range.
 V03_CANDIDATES = {
+    STABLE_VERSION:dict(candidate='official-v0.6.0-1074816',implementation_sha256='cf372a0a11256f44d512580ab42aba5cff8f02e53f2008818235314c2b2fe76e'),
     V03_VERSION:dict(candidate='07',implementation_sha256=V03_IMPLEMENTATION),
     '0.3.0':dict(candidate='08',implementation_sha256='e6191235381d587870291b8a01ba492b4dac4b2f7faeced50590dbc1342f0882'),
     # 0.4.0 = 0.3.0 contracts plus the toolkit received from GREA; released as a GREA module.
     '0.4.0':dict(candidate='module-2026.10.27',implementation_sha256='06a710a70b8e9257e68e6e3b83a34db41e7e1f4e32b2810fe80367db518717f7'),
+    P0_FIX22_VERSION:dict(candidate='local-collect-fix22-ab64214',implementation_sha256='315db9ff12497eeb026e86f22d494395dcc228384212e9d16ed907cad8fc155a'),
+    P0_FIX23_VERSION:dict(candidate='local-intake-fix23-eccea05',implementation_sha256='c32043e594be592194b20f25c81b8a5624b16530dd5cb14287150ea99e4cc1ea'),
+    P0_FIX24_VERSION:dict(candidate='local-reuse-fix24-3565efc',implementation_sha256='0a2594ed2370418655c1ab126d4a9a4547bc1320f94bfb9b63395476f76061b4'),
+    P0_FIX25_VERSION:dict(candidate='local-font-walk-fix25-43adf74',implementation_sha256='3c3425936301e7a0c4b988b8d9405cff7a9cd61541c959cb3db76597750495ee'),
+    P0_FIX31_VERSION:dict(candidate='local-ownership-fix31-ba7281d',implementation_sha256='fe3c863caf3180382f48d0e01670b1a129a6361523062924322e4443f9d29714'),
+    P0_FIX30_VERSION:dict(candidate='local-takeover-diagnostic-fix30-62c400e',implementation_sha256='cc6a7800eb12bfed6b73f58333737554e50c678817cdaefb529971dae499d682'),
+    P0_FIX29_VERSION:dict(candidate='local-retained-assembly-fix29-722ebf2',implementation_sha256='24d91ac09ad2c9c49453f3743757d766b4632af51d5626d6cb083258634bb23a'),
+    P0_FIX28_VERSION:dict(candidate='local-engine-intake-fix28-347f106',implementation_sha256='ddc3b92126803069ce8029f01dc5fa451cd61c00beccebc94e499bcdbe850e33'),
+    P0_FIX27_VERSION:dict(candidate='local-fix27-8bb6bf3',implementation_sha256='88acc905abc700070e4b7761bf97416d0eb0c09966ceec2849c3a02ff32656eb'),
+    P0_FIX26_VERSION:dict(candidate='local-compiler-intake-fix26-8c26168',implementation_sha256='e62c40cf03d5be2eeba64bb11a8b4badef945df8cbe139aaea13f06323403fb3'),
+    VIRTUAL4_VERSION:dict(candidate='local-virtual4-5f38f07',implementation_sha256='795c717f7fe4a4d4ffc9336eb1dea5a88d95bb66b33f0278b7fea8389c2bd5ad'),
+    VIRTUAL2_VERSION:dict(candidate='local-virtual2-b8fd14f',implementation_sha256='e2c81d485ff3f5e6224ca7f5696101692660df8ea83b095592f64e5963354f57'),
+    P0_FIX21_VERSION:dict(candidate='local-p0-fix21-b690d00',implementation_sha256='5be43addbe78635ed4e760bc3989bd2e148ba865260d13307316c4a7b19e689b'),
+    P0_FIX20_VERSION:dict(candidate='local-p0-fix20-ec305d7',implementation_sha256='3e23e23450f16e5f9ea0073b5fc69126d88f13dc99ea169d01f44dc699ff3a28'),
+    P0_FIX19_VERSION:dict(candidate='local-p0-fix19-27d21d2',implementation_sha256='3b12ef5aa779d1e95033237346ab3d9fe248d77193d9f92347f3c31042ebf72c'),
+    P0_FIX18_VERSION:dict(candidate='local-p0-fix18-b5e9b03',implementation_sha256='878a710de4899861adf497f46bc56b8853c1725bcae5fec679d53008d1c2c1f2'),
     P0_FIX17_VERSION:dict(candidate='local-p0-fix17-9e587a7',implementation_sha256='912606877e9725ba1bd4dc3513b36f9dde80bb5321d7172dfc88e9533d2941af'),
     P0_FIX16_VERSION:dict(candidate='local-p0-fix16-ee13bdd',implementation_sha256='d2c25c5bbc6e21b48adae58c13801ea2edf217b35eee8a65b8a1f46b73853678'),
     P0_FIX15_VERSION:dict(candidate='local-p0-fix15-3096fde',implementation_sha256='7f32aaf491fed8a32168b1cb633b62209b350309b1e299ac1f06c9277745deb7'),
@@ -85,6 +130,34 @@ def validate_capabilities(cap):
         if version in {V05_VERSION} | P0_VERSIONS: required = required | V05_GROUPS
         if version in P0_VERSIONS: required = required | P0_GROUPS
         if version in P0_RETIRE_VERSIONS: required = required | {'unity.assets.retire/recover'}
+        if version==P0_FIX22_VERSION: required=required|{'build-filter.collect/plan'}
+        if version in VIRTUAL_VERSIONS: required=required|VIRTUAL_OPERATIONS|VIRTUAL_BOOTSTRAP_OPERATIONS
+        if version==P0_FIX23_VERSION:
+            required=required|{'intake.plan/apply/rollback'}
+            if cap.get('additiveIntakeContract')!='beaver-additive-intake/1':
+                raise ValueError('Unsupported additive intake contract')
+        if version in (P0_FIX24_VERSION,P0_FIX25_VERSION):
+            required=required|{'intake.plan/apply/rollback'}
+            versions=cap.get('additiveIntakeSpecVersions')
+            if cap.get('additiveIntakeContract')!='beaver-additive-intake/2' or versions!=[1,2] or any(type(v)is not int for v in versions):
+                raise ValueError('Unsupported additive intake v2 contract or spec versions')
+        if version in (P0_FIX26_VERSION,P0_FIX27_VERSION):
+            required=required|{'intake.plan/apply/rollback'}
+            versions=cap.get('additiveIntakeSpecVersions')
+            if cap.get('additiveIntakeContract')!='beaver-additive-intake/3' or versions!=[1,2,3] or any(type(v)is not int for v in versions):
+                raise ValueError('Unsupported additive intake v3 contract or spec versions')
+        if version==P0_FIX28_VERSION:
+            required=required|{'intake.plan/apply/rollback'}
+            versions=cap.get('additiveIntakeSpecVersions')
+            if cap.get('additiveIntakeContract')!='beaver-additive-intake/4' or versions!=[1,2,3,4] or any(type(v)is not int for v in versions):
+                raise ValueError('Unsupported additive intake v4 contract or spec versions')
+        if version in (P0_FIX29_VERSION,STABLE_VERSION):
+            required=required|{'intake.plan/apply/rollback'}
+            versions=cap.get('additiveIntakeSpecVersions')
+            if cap.get('additiveIntakeContract')!='beaver-additive-intake/5' or versions!=[1,2,3,4,5] or any(type(v)is not int for v in versions):
+                raise ValueError('Unsupported additive intake v5 contract or spec versions')
+        if version==STABLE_VERSION:
+            required |= V05_GROUPS | P0_GROUPS | VIRTUAL_OPERATIONS | VIRTUAL_BOOTSTRAP_OPERATIONS | {'unity.assets.retire/recover','qa.inspect-instance','qa.bind','qa.input'}
         if len(ids)!=len(set(ids)) or not required<=set(ids):
             raise ValueError('Missing or duplicated beaver capabilities')
         if version in V03_CANDIDATES and cap.get('producer_implementation_sha256')!=V03_CANDIDATES[version]['implementation_sha256']:
@@ -247,6 +320,10 @@ def check(output, lock=None, identity_root=None, pin=False):
     return result
 
 
+def operation_allowed(version, operation):
+    return version not in SCOPED_OPERATIONS or operation in SCOPED_OPERATIONS[version]
+
+
 def inspect_project(lock, project, output):
     """One typed read-only engineering call, matching beaver-result/1; no raw argv."""
     from grea import runner
@@ -257,7 +334,10 @@ def inspect_project(lock, project, output):
     monkey=readiness(out/'monkey-check')
     beaver=check(out/'beaver-check',lock=lock)
     result=dict(status='needs_action',executed=False,operation='project.inspect',providers={'monkey':monkey,'beaver':beaver},native='not_run',gameplay='not_run')
-    if monkey.get('ready') and beaver.get('ready'):
+    cfg=json.loads(Path(lock).read_text())
+    if not operation_allowed(cfg.get('version'), 'project.inspect'):
+        result['diagnostic']='Pinned version is scoped to other operations; project.inspect is not enabled'
+    elif monkey.get('ready') and beaver.get('ready'):
         # Use the complete parsed capture in runner receipt, not a guessed capability.
         receipt=json.loads((out/'beaver-check/probe/run.json').read_text())
         response=receipt.get('parsed_stdout',{})

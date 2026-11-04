@@ -40,7 +40,11 @@ class BeaverV03Tests(unittest.TestCase):
             with self.subTest(update=update),self.assertRaises(ValueError):beaver.validate_capabilities(dict(cap,**update))
 
     def test_finite_route_version_matrix_and_explicit_unsupported_operations(self):
-        for version in ('0.2.0',*beaver.V03_CANDIDATES):ops.validate_provider_version(request('references',project=fixture_path('project')),version)
+        for version in ('0.2.0',*beaver.V03_CANDIDATES):
+            q=request('references',project=fixture_path('project'))
+            if version in beaver.SCOPED_OPERATIONS:
+                with self.assertRaises(ValueError):ops.validate_provider_version(q,version)
+            else:ops.validate_provider_version(q,version)
         value=request(project=fixture_path('project'));ops.validate_provider_version(value,beaver.V03_VERSION)
         for version in ('0.1.0','0.2.0','0.3.1','0.3.0.dev2'):
             with self.subTest(version=version),self.assertRaises(ValueError):ops.validate_provider_version(value,version)

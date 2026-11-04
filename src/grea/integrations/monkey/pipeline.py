@@ -23,20 +23,50 @@ DEV3_CAPABILITIES_SHA256 = 'f6e67a8a6f4921a8ef265f2ae3cb250c7c01a5a1f0d3e888bdd1
 DEV4_VERSION = '0.7.0.dev4'
 DEV4_PACKAGE_SHA256 = '5689b6dc039c4f9aafbda9dbdeaf634c25f1013c9ef09cc91fa53377a113baf1'
 DEV4_CAPABILITIES_SHA256 = 'b8c1e66b8215c3133c8f0ba4e2bf5d1ae9a9d2632979f41c3c80106ee00ae252'
-SUPPORTED_VERSIONS = ('0.4.0', '0.4.1', '0.6.0', DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION)
+DEV9_VERSION = '0.7.0.dev9'
+DEV9_PACKAGE_SHA256 = 'd2534c9bd4240b231ba992e066b2980a92b4aa9b590125dd243fc9cc5970e479'
+DEV9_CAPABILITIES_SHA256 = '0dd7f9b9af2462ced9224ee4642e9ac3f23da80f3e8277a45f29b8026744bea0'
+# Stable 0.7 payload is the verified dev9 lineage with its own exact identity.
+STABLE_VERSION = '0.7.0'
+STABLE_PACKAGE_SHA256 = '5295b0f24f763cf1e9ffabe7feb3027a29d53eb51c7fccedf533945671448c64'
+STABLE_CAPABILITIES_SHA256 = '602c0006da911014f850657d731c292bd2ce95b8239e6d9518ab228414463267'
+UNITY_PREFAB_VERSION = '0.8.0.dev2'
+UNITY_PREFAB_PACKAGE_SHA256 = 'b12528b0ec63ecf7a1498ba94ef5530bf1057a7653931ac5938554667c7969ed'
+UNITY_PREFAB_CAPABILITIES_SHA256 = '64082896453ab0d3a272864b932a57146545f9ec755fb0c751a8a99e23e7b9f4'
+UNITY_PREFAB_DEV4_VERSION = '0.8.0.dev4'
+UNITY_PREFAB_DEV4_PACKAGE_SHA256 = '25ded3d292e999a55f3766c9d4c995e9889cff16ef8354b6df0b9489e01c22a9'
+UNITY_PREFAB_DEV4_CAPABILITIES_SHA256 = 'aadfdd818e55d50628b79558fc3e86c0715a018b72db8513a68a6df943ee48c6'
+UNITY_PREFAB_DEV5_VERSION = '0.8.0.dev5'
+UNITY_PREFAB_DEV5_PACKAGE_SHA256 = '81e0f6f7be15f472b4ff5c0306eb3c264615f952f7b9e5cc48ab72542d6cff8b'
+UNITY_PREFAB_DEV5_CAPABILITIES_SHA256 = '0eb6a382f9957fe6a183fce4e63fb794d86689447214c47505a8c1f2c2ca2ead'
+UNITY_PREFAB_DEV6_VERSION = '0.8.0.dev6'
+UNITY_PREFAB_DEV6_PACKAGE_SHA256 = '302f4ada206cb3462a6d95d7a5af37deee2742cc7b99b595d0058a62fc8a3dad'
+UNITY_PREFAB_DEV6_CAPABILITIES_SHA256 = 'a9ff89dcb4796318cad3dfd44627528355ef3c5410a22fa603a7ad6b3356cc82'
+UNITY_PREFAB_DEV7_VERSION = '0.8.0.dev7'
+UNITY_PREFAB_DEV7_PACKAGE_SHA256 = 'ef4d3ad75d9395788efe0b857782feb33549c4114fb4f7582ca1c3f63e669c2d'
+UNITY_PREFAB_DEV7_CAPABILITIES_SHA256 = '85eca6fb100dfd734fc7ca337fe28b0915c187015620109d938b6ae178ef1853'
+UNITY_PREFAB_VERSIONS = (UNITY_PREFAB_VERSION, UNITY_PREFAB_DEV4_VERSION, UNITY_PREFAB_DEV5_VERSION, UNITY_PREFAB_DEV6_VERSION, UNITY_PREFAB_DEV7_VERSION)
+SUPPORTED_VERSIONS = ('0.4.0', '0.4.1', '0.6.0', DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION, DEV9_VERSION, STABLE_VERSION, *UNITY_PREFAB_VERSIONS)
 
 
 def validate_fixed_candidate(cfg, cap):
-    if cfg['version'] not in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION):
+    if cfg['version'] not in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION, DEV9_VERSION, STABLE_VERSION, *UNITY_PREFAB_VERSIONS):
         return
     files = {Path(k).relative_to(cfg['identity_root']).as_posix(): v
              for k, v in cfg['package_files'].items()}
     package, capabilities = (DEV1_PACKAGE_SHA256, DEV1_CAPABILITIES_SHA256) if cfg['version']==DEV1_VERSION else (DEV2_PACKAGE_SHA256, DEV2_CAPABILITIES_SHA256)
     if cfg['version']==DEV3_VERSION:package,capabilities=DEV3_PACKAGE_SHA256,DEV3_CAPABILITIES_SHA256
     if cfg['version']==DEV4_VERSION:package,capabilities=DEV4_PACKAGE_SHA256,DEV4_CAPABILITIES_SHA256
+    if cfg['version']==DEV9_VERSION:package,capabilities=DEV9_PACKAGE_SHA256,DEV9_CAPABILITIES_SHA256
+    if cfg['version']==STABLE_VERSION:package,capabilities=STABLE_PACKAGE_SHA256,STABLE_CAPABILITIES_SHA256
+    if cfg['version']==UNITY_PREFAB_VERSION:package,capabilities=UNITY_PREFAB_PACKAGE_SHA256,UNITY_PREFAB_CAPABILITIES_SHA256
+    if cfg['version']==UNITY_PREFAB_DEV4_VERSION:package,capabilities=UNITY_PREFAB_DEV4_PACKAGE_SHA256,UNITY_PREFAB_DEV4_CAPABILITIES_SHA256
+    if cfg['version']==UNITY_PREFAB_DEV5_VERSION:package,capabilities=UNITY_PREFAB_DEV5_PACKAGE_SHA256,UNITY_PREFAB_DEV5_CAPABILITIES_SHA256
+    if cfg['version']==UNITY_PREFAB_DEV6_VERSION:package,capabilities=UNITY_PREFAB_DEV6_PACKAGE_SHA256,UNITY_PREFAB_DEV6_CAPABILITIES_SHA256
+    if cfg['version']==UNITY_PREFAB_DEV7_VERSION:package,capabilities=UNITY_PREFAB_DEV7_PACKAGE_SHA256,UNITY_PREFAB_DEV7_CAPABILITIES_SHA256
     if (digest(files) != package or digest(cap) != capabilities
             or 'verify' not in cap.get('implemented', [])):
-        raise ValueError('Expected exact monkey dev1 a458790 or dev2 c279a6a or dev3 4ad7498 or dev4 19d51d4 package and capabilities')
+        raise ValueError('Expected exact fixed monkey package and capabilities')
 # Options are transcribed from the versioned CLI, not passed through wholesale.
 OPERATIONS = {
     'convert': {
@@ -161,8 +191,8 @@ def plan(config, request_path, output):
     out.mkdir()
     try:
         cfg,cap=probe(config,out/'capabilities')
-        if cfg['version'] in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION):
-            raise ValueError('Fixed dev1 supports explicit audit --level static/editor only; conversion is not adapted')
+        if cfg['version'] in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION, DEV9_VERSION, STABLE_VERSION, *UNITY_PREFAB_VERSIONS):
+            raise ValueError('Generic pipeline planning is not adapted for this fixed version; use its named supported operation')
         if request['operation'] not in cap.get('implemented',[]):raise ValueError('Operation not advertised by pinned provider')
         record=dict(schema_version=1,kind='monkey-execution-plan',provider_version=cfg['version'],
                     lock=hash_file(config),request=hash_file(request_path),command_identity=command_identity(),
@@ -188,8 +218,8 @@ def execute(config, plan_path, output):
     out.mkdir()
     try:
         cfg,_=probe(config,out/'capabilities')
-        if cfg['version'] in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION):
-            raise ValueError('Fixed dev1 conversion execution is not adapted; use explicit saved-candidate audit')
+        if cfg['version'] in (DEV1_VERSION, DEV2_VERSION, DEV3_VERSION, DEV4_VERSION, DEV9_VERSION, STABLE_VERSION, *UNITY_PREFAB_VERSIONS):
+            raise ValueError('Generic pipeline execution is not adapted for this fixed version; use its named supported operation')
         value,_,error=runner.execute('monkey',argv+['--out',str(out/'provider-output')],out/'execution',
                                     timeout_seconds=request['timeout_seconds'],max_output_bytes=8*1024**2,max_inline_bytes=1024**2)
         pinned(config)
