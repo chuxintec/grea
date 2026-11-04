@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "monkey dev12/fd78d14已实际续接/export/native08，11Prefab/668节点、missingScripts0、保存重开true，嵌套崩溃解决。全源验证仍fail：覆盖消费者对接差异、Spine保留身份缺口及53可见Spine未渲染；Player/runtime not_run。beaver11批次保存重开拥有导出已过，实际intake.plan待解析包身份/类型分类修复。正式采用/视觉未完成。",
+      "description": "monkey dev13/273d127实际续接解码16必要Spine页，复用136字形/UI纹理；native09 PID87226退出，在parse_saved_atlas页名/材质身份回读门失败，未达静态/视觉验收。dev12已有11Prefab保存重开但全源fail，不以旧成功替代当前渲染门。beaver dev9六绑定/纯脚本批次/资源检查接续计划已具备，未正式采用。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -425,7 +425,8 @@
       "evidence": [
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-03-toggle-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-08-dev12-index.json",
-        "../beaver/.private/intake-bindings-20261104/dev9/candidate-delivery.json"
+        "../beaver/.private/intake-bindings-20261104/dev9/candidate-delivery.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-09-dev13-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -458,7 +459,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey完成全源回读身份与可见Spine静态恢复；最终源验收后，按dev9工具重新生成当前身份固定计划→六绑定原生保存重开/拥有导出→纯脚本逐批采用后重规划→2Shader身份与完整资源消费。旧partial不重复native、不提前写正式工程。",
+      "nextAction": "monkey定位保存Atlas页名或材质持久身份差异并修通用校验/映射，提供固定产物续接复用16已解码页；完成真实静态呈现/源验收后接beaver dev9，不重放旧partial或提前正式写入。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
