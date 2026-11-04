@@ -113,6 +113,9 @@ def prepare(
 
     if not isinstance(receipt, dict):
         return _needs_action("resolution receipt root must be a JSON object", receipt_sha256=receipt_sha256)
+    population_policy = receipt.get("unityPopulationPolicy", "dynamic-if-exact-v1")
+    if population_policy not in {"dynamic-if-exact-v1", "coretext-static-fallbacks-v1"}:
+        return _needs_action("unsupported explicit Unity font population policy", receipt_sha256=receipt_sha256)
     source_sample = receipt.get("sourceSample") if isinstance(receipt, dict) else None
     frozen_inputs = source_sample.get("frozenInputs") if isinstance(source_sample, dict) else None
     frozen_ir = frozen_inputs.get("ir") if isinstance(frozen_inputs, dict) else None
@@ -212,7 +215,10 @@ def prepare(
                            "targetSystemFontFileSha256": file_evidence.get("fileSha256"),
                            "matchingPhysicalFaces": physical.get("exactPostScriptFaces", []),
                            "fontFileCopiedOrExported": False}
-        if physical.get("exactPostScriptFaceCount") == 1:
+        # Physical file identity does not prove Unity's OS-family loader can
+        # open the face. An explicit policy may retain CoreText's exact fallback
+        # identity through the existing static generator instead.
+        if physical.get("exactPostScriptFaceCount") == 1 and not (role == "fallback" and population_policy == "coretext-static-fallbacks-v1"):
             asset_id = _font_key(family, style, role, fallback_ids if role == "primary" else [])
             mode = "DynamicOS"
         else:
@@ -348,6 +354,7 @@ def prepare(
         "fontAssetDirectory": "Assets/Game/Content/Fonts/System",
         "fontAssetPathRule": "DynamicOS: role/family/style/ordered fallback IDs; StaticSDFRequired: CoreText face, variation axes, and target system-font SHA-256",
         "populationMode": next(iter(modes)) if len(modes) == 1 else "Mixed",
+        "unityPopulationPolicy": population_policy,
         "pointSize": 90,
         "glyphCoverageScope": "only Unicode scalars present in the pinned source Label text receipt",
         "newCharacterBoundary": "characters outside the receipt have not been analyzed; DynamicOS runtime lookup does not prove source equivalence or coverage; StaticSDFRequired faces have no glyphs beyond the listed source text",
@@ -411,7 +418,7 @@ def prepare_static_coretext_sdf_plan(
             evidence = evidence_by_key.get((family, style, postscript, url))
             if not isinstance(evidence, dict):
                 return _needs_action(f"physical face evidence is missing for {scalar.get('codepoint')}", receipt_sha256=expected_resolution_sha256)
-            if evidence.get("exactPostScriptFaceCount") == 1:
+            if evidence.get("exactPostScriptFaceCount") == 1 and receipt.get("unityPopulationPolicy") != "coretext-static-fallbacks-v1":
                 continue
             file_evidence = files_by_path.get(url)
             if not isinstance(file_evidence, dict) or file_evidence.get("status") != "inspected":
@@ -486,6 +493,7 @@ def prepare_static_coretext_sdf_plan(
         "irSha256": ir_sha256,
         "sourceManifestSha256": receipt.get("sourceSample", {}).get("sourceManifestSha256"),
         "resolutionReceiptSha256": expected_resolution_sha256,
+        "unityPopulationPolicy": receipt.get("unityPopulationPolicy", "dynamic-if-exact-v1"),
         "sourceOSIdentityVerified": False,
         "visualEquivalent": False,
         "fontAssetDirectory": "Assets/Game/Content/Fonts/System/Static",

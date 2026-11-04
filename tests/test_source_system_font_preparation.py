@@ -110,6 +110,25 @@ class SourceSystemFontPreparationTests(unittest.TestCase):
         self.assertEqual(result.record["nextAction"]["code"], "GENERATE_STATIC_SDF_INPUTS")
         self.assertFalse((out / "glyph-atlas.png").exists())
 
+    def test_explicit_population_policy_preserves_original_coretext_receipt(self):
+        request=json.loads(self.request_path.read_bytes())
+        request['unityPopulationPolicy']='coretext-static-fallbacks-v1'
+        self.request_path.write_bytes(encoded(request))
+        request_sha=hashlib.sha256(self.request_path.read_bytes()).hexdigest()
+        original=self._resolution()
+        out=self.root/'explicit-static-policy'
+        with patch('monkey.source_system_font_preparation.resolve_ir_macos_system_font_files',return_value=original), \
+                patch('monkey.source_system_font_preparation.prepare_unity_system_fonts',return_value=self._binding()):
+            result=prepare(self.request_path,request_sha,out)
+        raw=json.loads((out/'coretext-resolution.json').read_bytes())
+        derived=json.loads((out/'resolution.json').read_bytes())
+        self.assertEqual(raw,original.record)
+        self.assertNotIn('unityPopulationPolicy',raw)
+        self.assertEqual(derived['unityPopulationPolicy'],'coretext-static-fallbacks-v1')
+        self.assertEqual(derived['unityPopulationPolicyRequestSha256'],request_sha)
+        self.assertEqual(derived['coreTextResolutionSha256'],hashlib.sha256((out/'coretext-resolution.json').read_bytes()).hexdigest())
+        self.assertEqual(result.record['unityPopulationPolicy'],'coretext-static-fallbacks-v1')
+
     def test_resolver_needs_action_is_preserved_without_binding(self):
         out = self.root / "out-needs-action"
         result_record = {"schema": "monkey-macos-system-font-resolution/1", "status": "needs_action", "reason": "No eligible labels"}

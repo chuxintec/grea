@@ -40,6 +40,18 @@ Top-level statuses:
 
 The manifest always keeps `sourceOSIdentityVerified=false` and `visualEquivalent=false`. The current host's CoreText choice does not identify the source device OS or establish visual equivalence.
 
+CoreText's exact physical-face identity also does not prove Unity's OS-family
+loader can load that face. If a native import reports that the resolved
+family/style is unavailable, the request can explicitly set
+`"unityPopulationPolicy": "coretext-static-fallbacks-v1"`. This generic policy
+routes every CoreText-resolved fallback face through the existing static SDF
+generator, retaining the same PostScript name, variation axes, file hash,
+source Label IDs and glyph set. Primary faces retain their existing policy.
+It never substitutes another font family. The default remains
+`dynamic-if-exact-v1`; unknown policies are rejected. `coretext-resolution.json`
+preserves the original resolver receipt, while `resolution.json` carries the
+request-pinned policy and original receipt hash for reproducible planning.
+
 ## Generate and stage one static SDF face
 
 Call `generate(preparation, expected_preparation_sha256, output, budget_seconds=240)` where `preparation` is the exact `manifest.json` from a `needs_static_generation` result. It rechecks the preparation manifest hash, every declared preparation output pin, and both frozen source inputs. It accepts exactly one `StaticSDFRequired` face whose plan and binding identities match.

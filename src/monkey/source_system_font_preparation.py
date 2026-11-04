@@ -140,6 +140,9 @@ def prepare(
     request = _json(request_raw, str(request_file))
     if request.get("schema") != SCHEMA or type(request.get("schemaVersion")) is not int or request["schemaVersion"] != SCHEMA_VERSION:
         _request_error("SOURCE_FONT_REQUEST_SCHEMA", str(request_file), "Unsupported source system-font preparation contract")
+    population_policy = request.get("unityPopulationPolicy", "dynamic-if-exact-v1")
+    if population_policy not in {"dynamic-if-exact-v1", "coretext-static-fallbacks-v1"}:
+        _request_error("SOURCE_FONT_POPULATION_POLICY", str(request_file), "Unsupported Unity population policy")
 
     ir_path, expected_ir_sha = _input_spec(request, "ir")
     manifest_path, expected_manifest_sha = _input_spec(request, "sourceManifest")
@@ -170,12 +173,21 @@ def prepare(
     # CoreText is a read-only query of this macOS host. Its own receipt freezes
     # the input hashes; these additional reads detect changes across the call.
     resolved = resolve_ir_macos_system_font_files(ir_path, manifest_path)
+    raw_resolution_path = out / "coretext-resolution.json"
+    io.write_json(raw_resolution_path, resolved.record)
+    raw_resolution = io.read(raw_resolution_path, max_bytes=INPUT_MAX_BYTES)
+    # Preserve the original CoreText evidence. The derived receipt carries the
+    # explicit request-pinned native import policy without changing font faces.
+    resolved_record = {**resolved.record, "unityPopulationPolicy": population_policy,
+                       "coreTextResolutionSha256": io.sha(raw_resolution),
+                       "unityPopulationPolicyRequestSha256": request_sha}
     resolution_path = out / "resolution.json"
-    io.write_json(resolution_path, resolved.record)
+    io.write_json(resolution_path, resolved_record)
     resolution_raw = io.read(resolution_path, max_bytes=INPUT_MAX_BYTES)
     resolution_sha = io.sha(resolution_raw)
     outputs: dict[str, dict[str, Any]] = {
         "resolution": {"path": "resolution.json", "bytes": len(resolution_raw), "sha256": resolution_sha},
+        "coreTextResolution": {"path": "coretext-resolution.json", "bytes": len(raw_resolution), "sha256": io.sha(raw_resolution)},
     }
     try:
         after_request_raw, after_request_sha = _digest_file(request_file, REQUEST_MAX_BYTES)
@@ -281,6 +293,7 @@ def prepare(
         "resolutionStatus": resolved.status,
         "unityBindingStatus": binding.status,
         "staticSdfPlanStatus": static_plan.status if static_plan is not None else "not_required",
+        "unityPopulationPolicy": population_policy,
         "outputs": outputs,
         "diagnostics": diagnostics,
         "nextAction": next_action,
