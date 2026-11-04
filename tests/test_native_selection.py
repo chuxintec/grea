@@ -139,6 +139,40 @@ def test_freeze_rejects_missing_declared_template_dependency(tmp_path, monkeypat
         selection.freeze(root, ["Assets/Selected.prefab"], tmp_path / "out", sha(raw), sha(rb_raw))
 
 
+def test_static_spine_carrier_freezes_its_compiled_data_type(tmp_path, monkeypatch):
+    root, _, _ = _fixture(tmp_path, monkeypatch)
+    reference = "Assets/Scripts/NativeStaticSpineReference.cs"
+    data = "Assets/Scripts/NativeStaticSpineData.cs"
+    guid = (root / (reference + ".meta")).read_text().split("guid: ")[1].strip()
+    prefab = (f"--- !u!114 &1\nMonoBehaviour:\n  m_Script: {{fileID: 11500000, guid: {guid}, type: 3}}\n").encode()
+    _put(root, "Assets/Selected.prefab", prefab)
+    manifest = json.loads((root / "manifest.json").read_text())
+    for row in manifest["files"]:
+        if row["path"] == "Assets/Selected.prefab":
+            row.update(sha256=sha(prefab), bytes=len(prefab))
+    rb = json.loads((root / "Analysis/Readback/editor-readback.json").read_text())
+    rb["nativeFiles"][0]["sha256"] = sha(prefab)
+    rb_raw = json.dumps(rb).encode()
+    _put(root, "Analysis/Readback/editor-readback.json", rb_raw)
+
+    def freeze(output):
+        raw = (json.dumps(manifest, sort_keys=True) + "\n").encode()
+        _put(root, "manifest.json", raw)
+        monkeypatch.setattr(selection, "_native_verification", lambda *args: (rb, rb_raw, dict(
+            candidateManifestSha256=sha(raw), staticValidation="pass", nativeStaticValidation="pass",
+            editorValidation="partial", diagnostics=[])))
+        return selection.freeze(root, ["Assets/Selected.prefab"], tmp_path / output, sha(raw), sha(rb_raw))
+
+    result = freeze("with-data")
+    assert data in {row["path"] for row in result["files"]}
+    assert not result["diagnostics"]
+    manifest["files"] = [row for row in manifest["files"] if row["path"] not in (data, data + ".meta")]
+    (root / data).unlink()
+    (root / (data + ".meta")).unlink()
+    with pytest.raises(ParseError, match="DECLARED_CODE_DEPENDENCY_MISSING"):
+        freeze("missing-data")
+
+
 def test_freeze_registers_unowned_package_lock_as_exact_supplemental_authority(tmp_path, monkeypatch):
     root, _, readback_sha = _fixture(tmp_path, monkeypatch)
     manifest = json.loads((root / "manifest.json").read_text())

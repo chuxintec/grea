@@ -26,7 +26,7 @@ public static partial class MonkeyImporter
             if(c.staticFieldBinding!=null&&!string.IsNullOrEmpty(c.staticFieldBinding.typeName))return StaticComponent(c,node);
             if(c.type=="cc.Graphics"&&plan.staticControlBindings!=null)return node.GetComponent<NativeStaticGraphics>();
             if(c.type=="cc.EditBox"&&plan.staticControlBindings!=null)return node.GetComponent<NativeStaticEditBox>();
-            if(c.type=="cc.Animation"&&plan.staticCompletionEnabled)return node.GetComponent<NativeStaticAnimationBinding>();
+            if(c.type=="cc.Animation"&&(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled))return node.GetComponent<NativeStaticAnimationBinding>();
             if(c.type=="cc.ProgressBar"&&!c.convertible&&c.staticProgressBinding!=null&&c.staticProgressBinding.policy=="native-static-progress-v1")return ResolveStaticProgress(plan,nodes,id);
             if(!c.convertible) {
                 // Optional native Spine components are created by their pinned

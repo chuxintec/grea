@@ -473,6 +473,8 @@ def export(plan_path, output):
         raise
     if p.get('targetProfile')!=PROFILE or p.get('schemaVersion')!=1:
         fail('UNSUPPORTED_PLAN','$','Expected Unity plan schema 1')
+    if p.get('staticSpineContinuation') and p.get('spineNativeStage'):
+        fail('STATIC_SPINE_CONTINUATION_STAGE_CONFLICT','spineNativeStage','Rendering and non-rendering Spine stages cannot share importer hooks')
     # Plan JSON itself must match its create-only manifest, not just copied images.
     pm=stage_manifest(plan_path.parent)
     expected={f['path']:f['sha256'] for f in pm['files']}
@@ -570,6 +572,9 @@ def export(plan_path, output):
     if p.get('spineNativeStage'):
         from ..prefab_spine_native_stage import emit_unity_stage
         emit_unity_stage(p['spineNativeStage'],plan_path.parent,out)
+    if p.get('staticSpineContinuation'):
+        from ..prefab_static_spine_continuation import emit as emit_static_spine
+        emit_static_spine(p,plan_path.parent,out)
     from ..prefab_static_carriers import emit as emit_static
     emit_static(p,plan_path.parent,'unity',out)
     if p.get('spriteOutlineBinding'):
@@ -594,6 +599,8 @@ def export(plan_path, output):
         for key in ('spineNativeStage','sourceManifestPath','sourceManifestSha256','sourceIrSha256'):
             instruction[key]=p.get(key)
     instruction['staticCompletionEnabled']=bool(p.get('staticCompletion'))
+    instruction['staticAnimationBindingsEnabled']=bool(p.get('staticAnimationBindingsEnabled'))
+    instruction['staticSpineContinuationJson']=encoded(p['staticSpineContinuation']).decode('utf-8') if p.get('staticSpineContinuation') else None
     instruction['staticRetainedAssets']=p.get('staticRetainedAssets')
     instruction['staticPresentation']=p.get('staticPresentation')
     instruction['layoutCompletion']=p.get('layoutCompletion')
@@ -788,6 +795,9 @@ def verify(candidate, output, level='static'):
                     diagnostics.append(diagnostic('NATIVE_FILE_CHANGED',relative,'Native file differs from saved readback'))
             instruction=load(read(root/standard.locate(m,'importPlan'),max_bytes=128*1024*1024),max_nodes=8_000_000)
             diagnostics.extend(gallery_readback(instruction,rb))
+            if instruction.get('staticSpineContinuationJson'):
+                from ..prefab_static_spine_continuation import verify as verify_static_spine
+                diagnostics.extend(verify_static_spine(load(instruction['staticSpineContinuationJson'].encode('utf-8')),root,rb))
             from ..prefab_spine_unity_readback import verify as verify_spine_saved
             diagnostics.extend(verify_spine_saved(instruction,root,rb))
             from ..prefab_static_completion_readback import verify_assets as verify_retained

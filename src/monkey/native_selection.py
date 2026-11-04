@@ -87,6 +87,8 @@ _CURRENT_TEMPLATE_DEPENDENCIES = {
     "NativeTextLineBox.cs": (),
     "NativeStaticLabelStyle.cs": (),
     "NativeStaticAnimationBinding.cs": (),
+    "NativeStaticSpineReference.cs": ("NativeStaticSpineData.cs", "NativeRetainedMaterial.cs"),
+    "NativeStaticSpineData.cs": (),
     "NativeRetainedMaterial.cs": (),
     "NativeHorizontalProgressFill.cs": (),
     "UnitySpineGraphicMaterialPresentation.cs": ("NativeStaticMaskIdentity.cs",),
