@@ -1,6 +1,6 @@
 # beaver v0.6.0 release scope
 
-Candidate: 0.6.0.dev1. Publication and combination acceptance are pending until their exact artifact records pass. This release consolidates the fixed development capabilities without upgrading existing game consumers.
+Release version: 0.6.0. Publication follows the exact component and combination acceptance records. This release consolidates the fixed development capabilities without upgrading existing game consumers.
 
 | Layer | Supported boundary | Evidence and limits |
 | --- | --- | --- |
@@ -18,3 +18,7 @@ The publication gate requires an installed-artifact check and a representative G
 Existing fixed17 build, fixed29 intake and fixed31 QA consumers remain pinned. Use original implementation identities for retained transactions; never substitute this release into an old transaction automatically.
 
 The public source and packages contain neutral tests, contracts, native companions, notices and templates. Private source indexes, logs, player archives and machine configuration are excluded. Build/source hashes, external dependencies, validation scope and unverified items are supplied in the candidate/release manifest.
+
+macOS instance/desktop bridges require the already-installed Xcode command-line compiler and the OS permissions required by the chosen operation. The package does not install compilers, grant permissions, change TCC/SIP or replace existing input guards.
+
+See [validation summary](VALIDATION-v0.6.0.json) for executed layers; the release manifest binds exact distributed artifacts.

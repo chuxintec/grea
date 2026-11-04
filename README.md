@@ -4,11 +4,11 @@ Controlled native game-project tooling: inspect a target, prepare an immutable p
 
 ## Install
 
-Current candidate: **0.6.0.dev1**, targeting **v0.6.0**. Verify the supplied SHA256SUMS, then install the downloaded wheel in an isolated environment:
+Release version: **v0.6.0**. Verify the supplied SHA256SUMS, then install the downloaded wheel in an isolated environment:
 
 ```sh
 python3 -m venv .venv
-.venv/bin/python -m pip install './beaver_game_tools-0.6.0.dev1-py3-none-any.whl[toolkit]'
+.venv/bin/python -m pip install './beaver_game_tools-0.6.0-py3-none-any.whl[toolkit]'
 .venv/bin/beaver version
 .venv/bin/beaver capabilities
 ```

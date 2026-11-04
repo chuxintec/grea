@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "version": "0.6.0",
+  "scope": "Public finite validation summary; raw private evidence excluded",
+  "developmentArtifactVersion": "0.6.0.dev1",
+  "installedRelatedChecksPassed": 230,
+  "harnessCorrection": "Only10 erroring test cases retried after correcting tests namespace import; no product implementation change.",
+  "staticCliCalls": 11,
+  "staticScopes": [
+    "adoption explicit baseline",
+    "intake contracts1\u20135",
+    "build plan and unknown-option refusal",
+    "missing QA identity refusal"
+  ],
+  "distribution": {
+    "runtimeFiles": 143,
+    "wheelSdistRuntimeEqual": true,
+    "sdistRebuiltWheelEqualExceptRecord": true,
+    "nativeHelperAndNoticesIncluded": true,
+    "missingPillow": "Bare install reports a nonzero structured error; extras installed only in isolation."
+  },
+  "nativeBuild": {
+    "engine": "6000.6.2f1",
+    "platform": "macOS Apple silicon",
+    "fixture": "owned neutral project",
+    "execution": "installed dev wheel public unity plan/apply",
+    "result": "Succeeded",
+    "editorExitCode": 0,
+    "sourceVerifiedUnchanged": true,
+    "fontPolicy": "not exercised; no declared font inputs"
+  },
+  "runtimeSmoke": {
+    "execution": "private owned built artifact direct headless; not qa.launch coverage",
+    "normalExitCode": 0,
+    "budgetStopped": false,
+    "observedFrame": 91,
+    "inputEvents": 0,
+    "companionActive": false,
+    "visual": "not_run",
+    "business": "not_run"
+  },
+  "reuse": {
+    "fixed31Comparison": "142 runtime files unchanged; only version file differs",
+    "nativeIntake": "Exact existing engine-object/retained-assembly helper proofs reused; not Player/visual/business.",
+    "inputOwnership": "19 existing focused native cases, simulated logical target PID; not real human takeover.",
+    "virtualUi": "Existing fixed30 click/drag/scroll/cleanup proof reused by exact unchanged regions; no repeated input.",
+    "oldConsumers": "fixed17/29/31 original identities and transactions retained"
+  },
+  "finalTransition": "Final version metadata/public docs differ only; final artifact installation/identity/CLI checks bind the distributed package separately.",
+  "limits": [
+    "GREA records exact combination acceptance separately; static readiness is not native apply/build.",
+    "No Windows-native, arbitrary engine, complete script recovery, universal human takeover, visual parity or gameplay claim.",
+    "No games/player archives, global install, current consumer locks or production services changed."
+  ],
+  "rawEvidencePublished": false
+}

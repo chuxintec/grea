@@ -21,6 +21,7 @@ include docs/QA-BINDING.md
 include docs/QA-RUNTIME.md
 include docs/REFERENCE-GRAPH.md
 include docs/RELEASE-v0.6.0.md
+include docs/VALIDATION-v0.6.0.json
 include docs/RESOURCE-PRODUCTION.md
 include docs/RETIREMENT.md
 include docs/SCENE-MOVES.md
