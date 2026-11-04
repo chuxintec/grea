@@ -72,6 +72,7 @@ def capabilities():
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
         dict(id="adoption.rollback", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native normal/failed transaction restore; later-edit rejection"),
         dict(id='intake.plan/apply/rollback',state='requires_provider',provider='Unity 6000.6.2f1 for native phases',effects='create-only-reviewed-assets-and-guarded-owned-removal',verification='independent contract; exact before-state, explicit retained scripts, declared native fields; no existing adoption baseline override'),
+        dict(id='intake.bindings-plan/prepare-bindings',state='requires_provider',provider='Unity 6000.6.2f1 for preparation only',effects='new-isolated-source-copy; retained target read-only',verification='byte-identical source/target script pins; native GUID rebinding and full serialized comparison/cold reopen required; no adoption claim'),
         dict(id="unity.plan", state="implemented", effects="plan-output", verification="python; exact source and implementation identity"),
         dict(id="unity.ui.create", state="requires_provider", provider="Unity 6000.6.2f1 + uGUI/TMP Essentials + explicit font", effects="project-write", verification="native save/reopen/source audit"),
         dict(id="unity.prefab.inspect", state="requires_provider", provider="Unity 6000.6.2f1", effects="temporary-editor-helper", verification="native hierarchy/localID/component/importer readback"),
@@ -107,6 +108,7 @@ def capabilities():
     ]
     return dict(contract="beaver-capabilities/1", capabilities=capabilities, requiredProviders=[],
                 nativeOperationContract="beaver-unity/1", batchOperationContract='beaver-batch/2',batchTransactionContract='beaver-batch-transaction/2',adoptionContract="beaver-adopt/1",additiveIntakeContract='beaver-additive-intake/5',additiveIntakeSpecVersions=[1,2,3,4,5],
+                intakeBindingPreparationContract='beaver-intake-bindings/1',
                 productionOperationContract='beaver-production/3',productionTransactionContract='beaver-production-transaction/3',projectProfileContract='beaver-project/1',
                 limitations=["Provider readiness is not Editor connection or gameplay", "Native tests cover Unity 6000.6.2f1 only", "No source package parser; candidates are produced by monkey", "No global install, release, account/service/savegame writes", "Native receipts do not prove physical input, visual parity or game business acceptance"])
 
@@ -147,6 +149,11 @@ def parser():
     recover.add_argument("--editor-path", required=True)
     recover.add_argument("--timeout", type=int, default=600)
     intake = sub.add_parser('intake').add_subparsers(dest='action',required=True)
+    binding_plan = intake.add_parser('bindings-plan')
+    for option in ('source','target','spec','out'):binding_plan.add_argument('--'+option,required=True)
+    binding_prepare = intake.add_parser('prepare-bindings')
+    for option in ('plan','expected-plan','out','editor-path'):binding_prepare.add_argument('--'+option,required=True)
+    binding_prepare.add_argument('--timeout',type=int,default=600)
     intake_plan = intake.add_parser('plan')
     for option in ('candidate','target','spec','out'):intake_plan.add_argument('--'+option,required=True)
     intake_apply = intake.add_parser('apply')
@@ -400,6 +407,12 @@ def dispatch(a):
         from .adoption_native import recover
         return recover(a.transaction, a.editor_path, a.timeout)
     if a.command=='intake':
+        if a.action=='bindings-plan':
+            from .intake_bindings import preview
+            return preview(a.source,a.target,a.spec,a.out)
+        if a.action=='prepare-bindings':
+            from .intake_bindings import execute
+            return execute(a.plan,a.expected_plan,a.out,a.editor_path,a.timeout)
         if a.action=='plan':
             from .intake import preview
             return preview(a.candidate,a.target,a.spec,a.out)
@@ -560,6 +573,9 @@ def main(argv=None):
         if a.command=='intake' and a.action in ('apply','rollback'):
             base['actualChanges']=[dict(operation='intake.'+a.action,transaction=data.get('transaction',a.transaction if a.action=='rollback' else a.out),additions=data.get('additions'),restored=data.get('restored'))]
             base['verification']['native']=data.get('native','rolled_back' if a.action=='rollback' else 'verified-declared-intake-subset')
+        if a.command=='intake' and a.action=='prepare-bindings':
+            base['actualChanges']=[dict(operation='intake.prepare-bindings',preparationDirectory=a.out,targetProjectWrites=False)]
+            base['verification']['native']=data.get('native','not_run')
         if a.command == "unity" and a.action == "apply":
             base["actualChanges"] = data.get("changes", [])
         if a.command=='unity' and a.action=='recover':
@@ -624,6 +640,8 @@ def main(argv=None):
         if getattr(a,'command',None)=='unity' and a.action=='recover-font-source' and Path(a.out,'recovery-result.json').is_file():
             base['actualChanges']=[dict(status='inspect_recovery_receipt',report=str(Path(a.out,'recovery-result.json')),reason='Recovery can fail after partial writes; inspect the separate receipt')]
         if isinstance(error,BeaverError):
+            if getattr(a,'command',None)=='intake' and a.action=='prepare-bindings' and Path(a.out).is_dir():
+                base['actualChanges']=[dict(status='inspect_isolated_preparation_copy',preparationDirectory=a.out,targetProjectWrites=False,reason='Native preparation may have failed after isolated writes; preserve evidence; output is not adoptable')]
             if getattr(a,'command',None)=='intake' and a.action in ('apply','rollback'):
                 stage=Path(a.out if a.action=='apply' else a.transaction)
                 if (stage/'journal.json').is_file():

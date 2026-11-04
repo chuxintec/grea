@@ -17,7 +17,7 @@ class NativeEnvironmentTests(unittest.TestCase):
                   'HTTPS_PROXY': 'http://localhost:8000', 'LC_ALL': 'C.UTF-8'}
         with patch.dict(os.environ, parent, clear=True):
             before = dict(os.environ)
-            for control in ('BEAVER_BATCH_JOB', 'BEAVER_NATIVE_JOB', 'BEAVER_ADOPT_JOB', 'BEAVER_UI_JOB'):
+            for control in ('BEAVER_BATCH_JOB', 'BEAVER_NATIVE_JOB', 'BEAVER_ADOPT_JOB', 'BEAVER_UI_JOB', 'BEAVER_INTAKE_BINDINGS_JOB'):
                 env = editor_environment(control, job)
                 self.assertEqual(base64.b64decode(env[control + '_BASE64']).decode('utf-8'), str(job))
                 self.assertEqual(env['HTTPS_PROXY'], parent['HTTPS_PROXY'])
@@ -36,7 +36,8 @@ class NativeEnvironmentTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1] / 'src/beaver/targets'
         for name, control in [('BeaverBatch', 'BEAVER_BATCH_JOB'),
                               ('BeaverNative', 'BEAVER_NATIVE_JOB'),
-                              ('BeaverAdoption', 'BEAVER_ADOPT_JOB')]:
+                              ('BeaverAdoption', 'BEAVER_ADOPT_JOB'),
+                              ('BeaverIntakeBindings', 'BEAVER_INTAKE_BINDINGS_JOB')]:
             source = (root / (name + '.cs')).read_text()
             self.assertIn(control + '_BASE64', source)
             self.assertIn('Convert.FromBase64String(encoded)', source)

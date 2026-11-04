@@ -16,7 +16,7 @@ _KEYS = frozenset((
 
 
 def editor_environment(control, job_path):
-    if control not in ('BEAVER_BATCH_JOB', 'BEAVER_NATIVE_JOB', 'BEAVER_ADOPT_JOB', 'BEAVER_INTAKE_JOB', 'BEAVER_UI_JOB'):
+    if control not in ('BEAVER_BATCH_JOB', 'BEAVER_NATIVE_JOB', 'BEAVER_ADOPT_JOB', 'BEAVER_INTAKE_JOB', 'BEAVER_UI_JOB', 'BEAVER_INTAKE_BINDINGS_JOB'):
         fail('NATIVE_ENVIRONMENT_CONTROL', 'control', 'Known native job channel required')
     env = {k: v for k, v in os.environ.items() if k in _KEYS}
     for name, value in env.items():

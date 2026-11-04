@@ -1,6 +1,11 @@
 # beaver development
 
-Independent game-project tooling: Python CLI and native Unity Editor companions. Source-package recovery belongs to upstream tools.
+GREA's internal development-engineering module: Python CLI and native Unity Editor companions. Source-package recovery belongs to upstream modules.
+
+- Routine assignments, candidate/adoption reporting and cross-project coordination go through the GREA lead. Close existing direct technical handoffs at natural safe points; urgent safety/permission issues may go directly to the director.
+- Keep the independent private repository, working directory and existing WIP in place. GREA owns unified external binary distribution for new module implementations; private source stays here. Explicitly classify helper/SDK/user-template/third-party resources and preserve MIT/upstream notices, historical releases and exact frozen identities. No independent module publication or automatic consumer upgrade.
+
+- Branch heads use only `vX.Y.Z.devN` (development) or `vX.Y.Z` (released). Use full `refs/heads/` and `refs/tags/` in checks/pushes/deletions; published tags and fixed artifacts remain immutable. Current legacy/paused checkouts may be detached at their exact preserved commits; new product work uses its actual version worktree.
 
 - Keep product code, tests and public documentation self-contained; use docs/PLAN.md as the single progress entry and docs/CLI-CONTRACT.md for public contracts.
 - Default to inspect/plan. Native writes require an explicit target, immutable plan, implementation identity and content preconditions; preserve later manual edits.
