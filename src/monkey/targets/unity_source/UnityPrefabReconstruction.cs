@@ -16,7 +16,7 @@ namespace MonkeyUnitySource
     {
         // The caller owns the candidate and is responsible for reopening/checking it after this method.
         // Nothing is saved until the complete in-memory hierarchy has passed CheckTree.
-        static void ReconstructRoot(string projectRoot, RootPlan plan)
+        static void ReconstructRoot(string projectRoot, RootPlan plan, RootResult result)
         {
             if (String.IsNullOrWhiteSpace(projectRoot)) throw new InvalidOperationException("Candidate projectRoot is empty");
             ValidateAssetPrefabPath(projectRoot, plan == null ? null : plan.path);
@@ -119,10 +119,41 @@ namespace MonkeyUnitySource
                         throw new InvalidOperationException("Unity/RequireComponent inserted an undeclared extra component on " + node.sourceId + ": expected=" + expected.Length + ", actual=" + finalComponents.Length);
                 }
 
+                // Per-leaf writes may populate a constructor/default AnimationCurve even
+                // when the source array is empty. Preserve an imported built-in component
+                // only after every retained empty-curve field matches the original source.
+                // Remaining source fields and references are applied and checked below.
+                var seedRows = new List<BuiltinSeedEvidence>();
+                var seededSourceIds = new HashSet<string>(StringComparer.Ordinal);
+                GameObject originalAsset = AssetDatabase.LoadAssetAtPath<GameObject>(plan.path);
+                foreach (NodePlan node in orderedNodes)
+                for (int index = 0; index < node.components.Length; index++)
+                {
+                    ComponentPlan componentPlan = node.components[index];
+                    BuiltinSeedEvidence seed = SeedOriginalParticleState(plan, node, index,
+                        originalAsset, componentsById[componentPlan.sourceId], originalGuid);
+                    if (seed == null) continue;
+                    if (!String.IsNullOrEmpty(componentPlan.particleBounceProfile))
+                    {
+                        if (componentPlan.particleBounceProfile != ParticleBounceProfile || Application.unityVersion != "6000.6.2f1")
+                            throw new InvalidOperationException("Unknown native ParticleSystem reconstruction profile");
+                        var collision = ((ParticleSystem)componentsById[componentPlan.sourceId]).collision;
+                        if (collision.enabled) throw new InvalidOperationException("ParticleSystem Collision must remain disabled");
+                        collision.bounce = new ParticleSystem.MinMaxCurve(1f);
+                    }
+                    seedRows.Add(seed);
+                    seededSourceIds.Add(componentPlan.sourceId);
+                    result.builtinSeeds = seedRows.ToArray();
+                }
+
                 // Source references can point forward, so all node and component identities must exist first.
+                // Populate every scalar before references can activate native SDK drivers.
+                // A Slider can otherwise track a child RectTransform's constructor values.
+                foreach (bool referencesOnly in new[] {false, true})
                 foreach (NodePlan node in orderedNodes)
                 foreach (ComponentPlan componentPlan in node.components)
-                    ApplySourceFields(componentPlan, componentsById[componentPlan.sourceId], unityObjectBySourceId);
+                    ApplySourceFields(componentPlan, componentsById[componentPlan.sourceId], unityObjectBySourceId,
+                        seededSourceIds.Contains(componentPlan.sourceId), referencesOnly);
 
                 // All objects were inactive while being populated. Set children first and the root last,
                 // so activation follows only the source activeSelf values and cannot expose partial state.
@@ -131,14 +162,17 @@ namespace MonkeyUnitySource
 
                 var validationResult = new RootResult { failures = new Failure[0], limitations = new string[0] };
                 var failures = new List<Failure>();
-                CheckTree(plan, nodeObjects[nodesByIndex[String.Empty].sourceId],
+                MappedTree constructed = CheckTree(plan, nodeObjects[nodesByIndex[String.Empty].sourceId],
                     "reconstruction-before-save", false, false, validationResult, failures);
                 if (failures.Count != 0)
                     throw new InvalidOperationException("Constructed hierarchy failed CheckTree: " + String.Join(" | ", failures.Select(f => f.message).ToArray()));
 
+                result.reconstructionValidated = true;
+                result.reconstructionFieldsChecked = constructed.fieldsChecked;
+                result.particleRepresentations = validationResult.particleRepresentations;
                 bool saved;
-                GameObject savedAsset = PrefabUtility.SaveAsPrefabAsset(nodeObjects[nodesByIndex[String.Empty].sourceId], plan.path, out saved);
-                if (!saved || savedAsset == null) throw new InvalidOperationException("PrefabUtility.SaveAsPrefabAsset failed for isolated candidate: " + plan.path);
+                GameObject savedAsset = SavePlannedPrefab(plan, nodeObjects[nodesByIndex[String.Empty].sourceId],
+                    componentsById, unityObjectBySourceId, plan.path, out saved);
                 string savedGuid = AssetDatabase.AssetPathToGUID(plan.path);
                 if (!String.Equals(originalGuid, savedGuid, StringComparison.Ordinal))
                     throw new InvalidOperationException("Candidate Prefab GUID changed during reconstruction save: before=" + originalGuid + ", after=" + savedGuid);
@@ -146,6 +180,100 @@ namespace MonkeyUnitySource
             finally
             {
                 if (previewOpened && preview.IsValid()) EditorSceneManager.ClosePreviewScene(preview);
+            }
+        }
+
+        static GameObject SavePlannedPrefab(RootPlan plan, GameObject root,
+            Dictionary<string, Component> components, Dictionary<string, UnityEngine.Object> sourceObjects,
+            string path, out bool saved)
+        {
+            // Native SDK trackers may serialize pre-driven cached RectTransform values.
+            // Deactivate to clear drivers, then restore the already verified planned state.
+            // Restore source root activeSelf on the persistent asset, without scene activation.
+            root.SetActive(false);
+            foreach (NodePlan node in plan.nodes)
+            foreach (ComponentPlan componentPlan in node.components)
+                ApplySourceFields(componentPlan, components[componentPlan.sourceId], sourceObjects,
+                    NeedsEmptyParticleCurveSeed(componentPlan), false);
+            GameObject asset = PrefabUtility.SaveAsPrefabAsset(root, path, out saved);
+            if (!saved || asset == null || !AssetDatabase.Contains(asset))
+                throw new InvalidOperationException("SaveAsPrefabAsset failed for isolated planned Prefab: " + path);
+            asset.SetActive(plan.nodes.Single(n => n.indices.Length == 0).active);
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssets();
+            return asset;
+        }
+
+        static BuiltinSeedEvidence SeedOriginalParticleState(RootPlan plan, NodePlan node,
+            int componentIndex, GameObject originalAsset, Component target, string originalGuid)
+        {
+            ComponentPlan componentPlan = node.components[componentIndex];
+            if (!NeedsEmptyParticleCurveSeed(componentPlan)) return null;
+            Component source = ResolveOriginalBuiltin(plan, node, componentIndex, originalAsset);
+            if (target == null || target.GetType() != typeof(ParticleSystem) || source.GetType() != target.GetType() ||
+                target == source || AssetDatabase.Contains(target))
+                throw new InvalidOperationException("Builtin seed requires a distinct transient native ParticleSystem target");
+            string seedGuid; long seedLocalId;
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(source, out seedGuid, out seedLocalId) ||
+                seedGuid != originalGuid || seedLocalId == 0 || AssetDatabase.GetAssetPath(source) != plan.path)
+                throw new InvalidOperationException("Builtin seed source native identity differs");
+            var emptyCurves = componentPlan.fields.Where(f => f.kind == "integer" && f.intValue == 0 &&
+                f.path.EndsWith(".m_Curve.Array.size", StringComparison.Ordinal))
+                .Select(f => f.path.Substring(0, f.path.Length - ".m_Curve.Array.size".Length) + ".").ToArray();
+            var fields = componentPlan.fields.Where(f => emptyCurves.Any(prefix =>
+                f.path.StartsWith(prefix, StringComparison.Ordinal))).ToArray();
+            VerifyBuiltinSeedFields(componentPlan, source, fields);
+            EditorUtility.CopySerialized(source, target);
+            VerifyBuiltinSeedFields(componentPlan, target, fields);
+            return new BuiltinSeedEvidence { sourceId = componentPlan.sourceId,
+                sourceAssetPath = plan.path, sourceGuid = seedGuid,
+                sourceLocalId = seedLocalId.ToString(Invariant), type = source.GetType().FullName,
+                method = "EditorUtility.CopySerialized;source-empty-curve-fields-verified;remaining-source-fields-applied;references-rebound",
+                checkedSourceFields = fields.Length };
+        }
+
+        static bool NeedsEmptyParticleCurveSeed(ComponentPlan plan)
+        {
+            if (plan.type != "UnityEngine.ParticleSystem" || plan.assembly != "UnityEngine.ParticleSystemModule") return false;
+            return plan.fields.Any(field => field.kind == "integer" && field.intValue == 0 &&
+                field.path.EndsWith(".m_Curve.Array.size", StringComparison.Ordinal));
+        }
+
+        static Component ResolveOriginalBuiltin(RootPlan plan, NodePlan node, int componentIndex, GameObject original)
+        {
+            if (original == null) throw new InvalidOperationException("Original provider Prefab is absent for builtin seed");
+            Transform current = original.transform;
+            for (int depth = 0; depth <= node.indices.Length; depth++)
+            {
+                int[] prefix = node.indices.Take(depth).ToArray();
+                NodePlan[] matches = plan.nodes.Where(n => IndexKey(n.indices) == IndexKey(prefix)).ToArray();
+                if (matches.Length != 1 || current.name != matches[0].name)
+                    throw new InvalidOperationException("Original provider/source hierarchy identity differs for builtin seed;depth=" + depth.ToString(Invariant) + ";expected=" + (matches.Length == 1 ? matches[0].name : "ambiguous") + ";actual=" + current.name);
+                if (depth == node.indices.Length) break;
+                int index = node.indices[depth];
+                if (index < 0 || index >= current.childCount)
+                    throw new InvalidOperationException("Original provider child index is absent for builtin seed");
+                current = current.GetChild(index);
+            }
+            Component[] components = current.GetComponents<Component>();
+            if (components.Length != node.components.Length || componentIndex >= components.Length ||
+                components[componentIndex] == null || components[componentIndex].GetType() != typeof(ParticleSystem))
+                throw new InvalidOperationException("Original provider ordered component identity differs for builtin seed");
+            return components[componentIndex];
+        }
+
+        static void VerifyBuiltinSeedFields(ComponentPlan plan, Component component, FieldPlan[] fields)
+        {
+            if (fields.Length == 0) throw new InvalidOperationException("Builtin seed has no source fields");
+            var serialized = new SerializedObject(component);
+            serialized.UpdateIfRequiredOrScript();
+            foreach (FieldPlan field in fields)
+            {
+                FieldResult check = CheckField(plan, component, serialized, field,
+                    new Dictionary<string, UnityEngine.Object>(StringComparer.Ordinal),
+                    "source-builtin-seed", true, false);
+                if (!check.passed) throw new InvalidOperationException("Builtin seed/source field differs: " +
+                    plan.sourceId + "." + field.path + ";expected=" + check.expected + ";actual=" + check.actual);
             }
         }
 
@@ -282,7 +410,7 @@ namespace MonkeyUnitySource
         }
 
         static void ApplySourceFields(ComponentPlan plan, Component component,
-                                      Dictionary<string, UnityEngine.Object> sourceObjects)
+                                      Dictionary<string, UnityEngine.Object> sourceObjects, bool scalarStateSeeded, bool referencesOnly)
         {
             if (plan.disabledUnavailable && !(component is MonoBehaviour))
                 throw new InvalidOperationException("disabledUnavailable applies to a non-MonoBehaviour: " + plan.sourceId);
@@ -290,6 +418,7 @@ namespace MonkeyUnitySource
             serialized.UpdateIfRequiredOrScript();
             foreach (FieldPlan field in plan.fields)
             {
+                if ((field.kind == "reference") != referencesOnly) continue;
                 SerializedProperty property = serialized.FindProperty(field.path);
                 if (property == null)
                     throw new InvalidOperationException("SerializedProperty is absent: " + plan.sourceId + "." + field.path);
@@ -300,6 +429,14 @@ namespace MonkeyUnitySource
                 {
                     ValidateNativeScript(component, field);
                     continue;
+                }
+                if (scalarStateSeeded && field.kind != "reference")
+                {
+                    FieldResult retained = CheckField(plan, component, serialized, field, sourceObjects,
+                        "retained-native-builtin-scalar", true, false);
+                    // Avoid setters for already matching scalar state. Source differences still
+                    // use the normal typed setter; the full tree is checked before saving.
+                    if (retained.passed) continue;
                 }
                 if (field.kind == "character")
                 {

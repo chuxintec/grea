@@ -12,6 +12,7 @@ from .sources.compiled import fail
 from .unity_prefab_recovery import source_inputs
 from .native_selection import _guid_meta
 from .unity_prefab_renderer_profiles import renderer_scalar_mapping
+from .unity_prefab_particle_profiles import bounce_constant_profile
 
 
 _ASSEMBLIES = {
@@ -402,6 +403,7 @@ def prepare(project, expected_manifest):
         fail("UNITY_PREFAB_NATIVE_FIELD_SHAPE", loc, "Unsupported serialized source shape")
 
     root_plans = []
+    particle_mappings = []
     root_rows = bind_source_root_rows(graph["roots"], report["roots"], source_file_names)
     for index, root in enumerate(graph["roots"]):
         source_id = root["sourceObjectId"]
@@ -452,8 +454,12 @@ def prepare(project, expected_manifest):
                         fields.append(dict(path=key, kind="boolean", boolValue=bool(value)))
                         continue
                     fields.extend(flatten(cid, value, key, "$/" + key, children.get(key)))
+                fields, particle_mapping = bounce_constant_profile(obj, graph["sourceUnityVersions"], "6000.6.2f1", fields)
+                if particle_mapping is not None:
+                    particle_mappings.append(particle_mapping)
                 component_plans.append(dict(sourceId=cid, type=comp_type, assembly=assembly,
-                                            disabledUnavailable=unavailable, fields=fields))
+                                            disabledUnavailable=unavailable, fields=fields,
+                                            particleBounceProfile=particle_mapping["profile"] if particle_mapping else ""))
             node_plans.append(dict(sourceId=sid, indices=indices, name=node["name"], active=node["active"],
                                    layer=node["layer"], tag="Untagged", components=component_plans))
             for i, child in enumerate(node["childSourceObjectIds"]):
@@ -461,11 +467,17 @@ def prepare(project, expected_manifest):
 
         visit(source_id, [])
         root_plans.append(dict(path=path, sourceId=source_id, isRepresentative=index == 0, nodes=node_plans))
-    return dict(schemaVersion=1, targetUnityVersion="6000.6.2f1", outputRelative="Analysis/Readback/unity-prefab-static.json",
+    result = dict(schemaVersion=1, targetUnityVersion="6000.6.2f1", outputRelative="Analysis/Readback/unity-prefab-static.json",
                 sourceCandidateManifestSha256=expected_manifest, roots=root_plans,
-                reconstructRoots=bool(sdk_bindings or native_asset_bindings),
+                reconstructRoots=bool(sdk_bindings or native_asset_bindings or particle_mappings),
+                particleRepresentationMappings=particle_mappings,
                 fieldMappingExclusions=exclusions, resourceBindings=resource_bindings, sourceDrivenSliderPlan=slider_plan,
                 sourceBusiness="not_run", unavailablePresentation="not-accepted")
+    from .input_relocation import current_evidence
+    relocation = current_evidence()
+    if relocation is not None:
+        result["inputRelocation"] = relocation
+    return result
 
 
 def execute(project, expected_manifest, output, editor, budget_seconds=600, headless=False):

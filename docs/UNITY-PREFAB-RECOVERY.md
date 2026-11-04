@@ -16,6 +16,12 @@ Generation returns exit 1 with `needs_action`: generated output is not native ac
 
 `--headless` runs with `-batchmode -nographics`, defers rendering/visible edits and preserves partial status. A second independent headless process verifies the saved state without saving again and compares all native identity/reference tables across processes. Freeze requires both exited processes, exact original/source and readback hashes, and unchanged post-exit file bytes. It excludes Library and the Editor verifier and produces the existing target-profile/namespace/file-ownership manifest for adoption preflight. Source namespace is derived from the complete selected root identities; it does not imply compatibility with an existing consumer assembly or Resources key.
 
+## Explicit relocation of frozen inputs
+
+The recovery, native verification and freeze commands accept paired `--input-path-map MAP.json --expected-input-path-map SHA256` options. Use these only when frozen absolute input paths have moved to a canonical physical root. The descriptor uses `monkey-input-relocation/1`, `schemaVersion: 1`, and a `roots` array of 1–8 objects containing exactly `sourceRoot` and `targetRoot`.
+
+Both roots must be normalized absolute paths without traversal. Physical targets must already be directories; symlinks at the target or any descendant input remain rejected. Logical source roots must not overlap, and physical targets cannot lie under any logical source root. The output must use a physical path outside the mapped logical roots. The map is command-scoped, SHA-pinned and retained in request/native-plan evidence. Original evidence bytes and identities remain unchanged; all existing leaf-file hash checks still apply after explicit resolution. A map does not approve changed inputs or equate two reader implementations. Without both options, existing path behavior is unchanged.
+
 ## Request contract
 
 `monkey-unity-prefab-recovery-request/1`, schemaVersion 1, requires the exact target version, source roots `{sourceSha256,file,pathId}`, a pinned input index and a pinned provider export inventory/receipt/binding/prepared-job lineage. Optional source selection and metadata pins remain evidence, never implementation selectors. Type evidence pins DummyDLL bytes and prior static decompiler declarations per assembly. Declarations prove schema only; this command does not rerun the decompiler or recover methods. Explicit `allowDisabledUnavailableCarriers` permits only proven field carriers with disclosed source/target base differences and disabled unavailable behavior.
@@ -35,6 +41,14 @@ Provider selection uses exact original AssetBundle container paths and GUID clos
 The first development profile remains acceptance-pending. Compiled source shaders, unsupported source effects, target-native script mapping and non-UI render scope can require further work. Do not infer a complete module, ten-root exit or all-Unity support from generation, local tests or successful SDK compilation alone. Fixed producer/package identities and actual consumer receipts are separate handoff requirements.
 
 Source RectTransform stored Transform XY may be stale relative to anchoredPosition. Native expectations retain those stored source values as evidence and derive actual XY from the source parent size, anchors and pivots; all authoritative Rect fields remain checked. Source UInt8 fields become bool expectations only with proven declaration/native field profiles, including the bounded UI.FontData bool fields. Integers, enum storage and array lengths remain distinct from bool and float fields in actual readback.
+
+## Bounded ParticleSystem Constant storage profile
+
+For source Unity 2021.3.30f1 to target 6000.6.2f1, a ParticleSystem with disabled CollisionModule, Bounce Constant mode 0, scalar and minScalar 1, and two empty source curves uses one explicit native storage profile. The target retains disabled collision and public Constant 1, with scalar 1, minScalar 0, two default zero-value maxCurve keys at times 0/1 and an empty minCurve. Key slopes/tangents/modes/weights, curve wraps/rotation, serialization versions, public mode/value and evaluations at 0/0.5/1 must all match. UV curves remain subject to their original source-field expectations. Other versions, values, enabled modules or modes are rejected by this profile.
+
+This is an explicit representation mapping, not raw equality. The original source graph, full Bounce values, raw object hash and identity remain unchanged. The native plan records the complete source-to-target disposition; mapped field readbacks identify the comparison and original source expectation. Source Constant semantics are inferred from its mode/value; source runtime and future mode changes are not executed or proven.
+
+Empty native curves are retained through a strictly identified imported built-in ParticleSystem seed: exact source root address, hierarchy indices/names, ordered component type, native GUID/localID and retained empty-curve fields must verify. References are rebound after all scalar state exists. Native construction and subsequent verifier saves clear scene drivers while inactive, restore planned scalar state, save using Editor APIs and restore root activeSelf on the persistent asset. Saved assets and independently reopened contents must still pass the complete planned hierarchy/field/reference checks. No source methods are supplied by this profile.
 
 ## Independently created embedded Sprite resources
 

@@ -429,6 +429,10 @@ def recover(request_path, expected_request, output):
     write_json(project / "Analysis/Evidence/source-inputs.json", source_evidence)
     write_json(project / "Analysis/Evidence/type-evidence.json", type_evidence)
     write_json(project / "Analysis/Evidence/provider-lineage.json", lineage)
+    from .input_relocation import current_evidence
+    relocation = current_evidence()
+    if relocation is not None:
+        request_evidence["inputRelocation"] = relocation
     write_json(project / "Analysis/Evidence/request-evidence.json", request_evidence)
     native_asset_mappings = []
     for supplement in request.get("nativeAssetEvidence", []):

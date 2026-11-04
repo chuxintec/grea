@@ -1,8 +1,378 @@
-# monkey v0.8.0 — Unity-source static Prefab recovery
+# monkey — v0.7.0 stable release / v0.8.0 independent development
 
-## Fixed increment preparation — 2026-11-02
+## Full-parent native continuation — 2026-11-04
 
-Dev7 integrates the inherited bounded trim/Renderer/Slider work and selected Texture2D/Material repair.131 affected Prefab/CLI tests pass. The effect parent has64 source fields with actual save/independent reopen and stable references through the current implementation. The fixed wheel and supported saved-selection binding are being produced next; no public routing, formal consumer adoption, visual or version completion is inferred. BattleMain's empty UV curve refusal remains open.
+Original BattleMain still fails strict native reconstruction (Native11,13,14 retained). CopySerialized source-state preservation passes the two real-source UV-only save/cold fixtures; it does not accept the full root. The complete imported-particle audit covers19 particles/37,730 non-reference fields across BattleMain and an independent progress-effect root: only38 differences, source CollisionModule.m_Bounce scalar/minScalar1 versus native provider0, with CollisionModule disabled. Per-leaf scalar restoration repopulates empty curves. Bulk JSON probes are diagnostic only, not an accepted mapping. Native public-API probe12 completed two-source save/independent cold: Constant=1 uses two native default zero-value keys, raw scalar1/minScalar0, while UV arrays stay empty. The earlier proposed scalar0/key1 signature mixed two experiments and was wrong; no production mapping was adopted. Corrected full signatures passed saved and independent cold in two sources,8Prefab/meta files unchanged. Revised ruling by GREA lead remains pending before any production mapping; no resource window is reserved. Related Python checks73pass. No fixeddev8, consumer switch, source mutation or new publication.
+
+Source inventory join is complete:161 exact roots,10 matched through existing source/native identities and adopted GUIDs;151 source-parsed only. Index `.private/unity-prefab-v080-20261104/source-prefab-inventory-with-adoption-02.json`. Original10roots/59pairs are reused and not revalidated.
+
+## GREA internal-module routing — 2026-11-04
+
+Ordinary assignments, bounded technical rulings and candidate/consumer coordination now go through the GREA lead. monkey remains the single recovery-source writer and continues this v0.8 task in the existing repository/session; no WIP or fixed identity moved. The standalone repository is now private; external distribution is unified under GREA. A later explicit human decision switches new module distribution to binaries; the earlier complete-module-source choice is superseded, and old copies/licences are not revoked. No independent monkey publication is authorized. Historical v0.7 publication receipts remain unchanged.
+
+The wrong earlier Bounce target signature was withdrawn before implementation. Corrected v2 ruling and native-window coordination were handed to GREA with the exact current consumer/fixed-candidate/evidence index `.private/unity-prefab-v080-20261104/grea-lead-handoff-index.json`. The existing Foodstreet resource request stays in flight; no duplicate dispatch or ACK dependency.
+
+## Dev8 source checkpoint — 2026-11-04
+
+Corrected GREA-ratified Bounce v2 profile, unchanged original source/explicit target mapping and exact native signature/public evaluations are integrated. Native SDK-driven RectTransform serialization now clears scene drivers while inactive, restores planned scalar values, saves through Editor APIs and restores root activeSelf on the persistent asset in both reconstruction and verification. Full BattleMain Native19 passes491nodes/1,380components/59,291fields and independent progress-effect Native03 passes4nodes/8components/4,297fields across save/reopen/independent cold, with stable native identities/references. Both remain headless native-partial, with unknown behaviors disabled and visual/business not accepted.
+
+Actual production native verifier/refusal fixture15 passes12 materialized native-target refusals and28 captured-native-signature contract refusals.14 attempted curve edits normalized by Unity and caused no materialized target drift; they are recorded separately and are not claimed refused. Earlier fixture14 stopped on that ineffective mutant and is retained.116 related Python checks pass. The verbose full native report exceeded the unchanged128MiB readback cap in Native18; lossless compact JSON (all fields retained) resolves it in Native19. Fixeddev8 package/actual fixed entry handoff is being established; no consumer lock or original59pairs changed.
+
+## Manager 当前任务投影
+
+本块由monkey随原PLAN单写维护；历史段落与迁移记录不自动成为当前任务或完成率分母。
+
+```manager-task-view
+{
+  "schemaVersion": 1,
+  "projectId": "monkey",
+  "updatedOn": "2026-11-04",
+  "ownerSessionId": "01a19b7a-b22a-7ac1-88b0-4c3d3219718b",
+  "scope": "GREA内部monkey恢复模块：v0.8 Unity真实消费者静态恢复继续；Mac ARM64二进制从已验v0.7.0隔离。无独立发布/全局安装/旧锁切换。",
+  "releases": [
+    {
+      "id": "monkey:v0.7.0",
+      "title": "v0.7.0稳定线正式收口与验后发布",
+      "version": "0.7.0",
+      "workflowStatus": "done",
+      "description": "稳定dev9隔离收口，审核提交86d47f与原制品已发布；远端tag/Release及下载SHA回读一致。v0.8开发独立保留。",
+      "acceptanceCriteria": [
+        "稳定范围/公开文档/依赖/许可证和制品一致；不含私有载荷或本机路径依赖",
+        "制品隔离安装及相关公开入口/代表验证通过，GREA组合验收与总监核查完成",
+        "既有GitHub仓库正常发布，远端tag/commit/下载制品SHA回读一致，游戏入口不变"
+      ],
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261104-toolchain-stable-release/PLAN.md"
+      ],
+      "candidateCommit": "86d47f35744a5af91614c417b00c8eaa2345baad",
+      "candidateIndex": ".private/release-v070-20261104/86d47f35744a/candidate-index.json",
+      "verification": {
+        "result": "pass",
+        "scope": "组件包/安装/相关检查、GREA精确组合和总监核查、远端发布与下载身份；不扩大原生/视觉/业务范围"
+      },
+      "publication": {
+        "status": "published-remote-readback-verified",
+        "version": "0.7.0",
+        "commit": "86d47f35744a5af91614c417b00c8eaa2345baad",
+        "tag": "v0.7.0",
+        "tagObjectSha": "0bf88e365167103e8d4592a56f088f4551bc7a6a",
+        "tagPeeledCommit": "86d47f35744a5af91614c417b00c8eaa2345baad",
+        "releaseId": "RE_kwDOVVB5hs4Z2Esp",
+        "releaseUrl": "https://github.com/chuxintec/monkey/releases/tag/v0.7.0",
+        "publishedAt": "2026-11-04T07:03:25Z",
+        "draft": false,
+        "prerelease": false,
+        "downloadedAssets": [
+          {
+            "name": "SHA256SUMS",
+            "sha256": "d5bed89d7548d7999e476299416038c1e6ad9e7199c3cffba43d8c87781e297b",
+            "bytes": 196,
+            "url": "https://github.com/chuxintec/monkey/releases/download/v0.7.0/SHA256SUMS",
+            "apiDigest": "sha256:d5bed89d7548d7999e476299416038c1e6ad9e7199c3cffba43d8c87781e297b"
+          },
+          {
+            "name": "monkey_native-0.7.0-py3-none-any.whl",
+            "sha256": "cb7eed60ff00085260657d2362e5fc60ee46a5d258a748c75770d0e337964dd0",
+            "bytes": 1950487,
+            "url": "https://github.com/chuxintec/monkey/releases/download/v0.7.0/monkey_native-0.7.0-py3-none-any.whl",
+            "apiDigest": "sha256:cb7eed60ff00085260657d2362e5fc60ee46a5d258a748c75770d0e337964dd0"
+          },
+          {
+            "name": "monkey_native-0.7.0.tar.gz",
+            "sha256": "b9cef798cc758491bdffa53f46646fdb43cead771bc814d8046c68fec202a866",
+            "bytes": 2516298,
+            "url": "https://github.com/chuxintec/monkey/releases/download/v0.7.0/monkey_native-0.7.0.tar.gz",
+            "apiDigest": "sha256:b9cef798cc758491bdffa53f46646fdb43cead771bc814d8046c68fec202a866"
+          }
+        ],
+        "sourceBranch": "codex/release-v0.7.0",
+        "authorizationDecision": "/Users/wangmeng/MyProjects/Manager/decisions/20261104-toolchain-stable-release/component-publication-decision.json",
+        "boundary": "Original reviewed artifacts; no rebuild, game/global install/active plugin cache replacement or native revalidation."
+      }
+    },
+    {
+      "id": "monkey:v0.8.0-dev7",
+      "title": "Unity-source静态Prefab恢复开发候选",
+      "version": "0.8.0.dev7",
+      "workflowStatus": "done",
+      "description": "旧固定dev7与10个已采用静态子集保持，仅此有界候选范围完成；不代表完整BattleMain、整模块或v0.8正式版完成。",
+      "candidateCommit": "2e88bc95fbe9cf82d61ad0a192715f334a242695",
+      "acceptanceCriteria": [
+        "固定版本身份、既有静态保存/独立冷读/消费者采用证据保持",
+        "BattleMain仅在源字段严格一致的原生保存及独立冷读通过后接受；未支持能力继续明确拒绝",
+        "视觉、Player与业务验收单独记录，不由静态数量推导；正式发布范围尚未授权"
+      ],
+      "verification": {
+        "result": "partial",
+        "scope": "固定dev7与已采用静态子集；未签整版/视觉/Player/业务"
+      },
+      "sourceRefs": [
+        "docs/PLAN.md#current-consumer-milestone--2026-11-02",
+        "docs/PLAN.md#fixed-dev7-effect-handoff--2026-11-02",
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261104-product-driven-tooling/PLAN.md"
+      ],
+      "consumerProjectId": "zombie",
+      "consumerTaskIds": [
+        "zombie:T0001",
+        "zombie:T0002",
+        "zombie:T0003",
+        "zombie:T0006"
+      ]
+    },
+    {
+      "id": "monkey:v0.8.0-dev8",
+      "title": "Unity-source静态Prefab恢复开发候选",
+      "version": "0.8.0.dev8",
+      "workflowStatus": "in_progress",
+      "description": "正确Bounce v2+原生SDK驱动保存修复；完整BattleMain/独立根原型保存冷读通过，负向40拒绝、源条件及相关116检查过；现在固定内部候选并核同制品实际入口，交GREA组织采用。",
+      "candidateCommit": null,
+      "acceptanceCriteria": [
+        "固定版本身份、既有静态保存/独立冷读/消费者采用证据保持",
+        "BattleMain仅在源字段严格一致的原生保存及独立冷读通过后接受；未支持能力继续明确拒绝",
+        "视觉、Player与业务验收单独记录，不由静态数量推导；正式发布范围尚未授权"
+      ],
+      "verification": {
+        "result": "partial",
+        "scope": "两完整根原型全字段/引用保存与独立冷读过；headless/禁用未知行为保持，固定入口和消费尚待完成"
+      },
+      "sourceRefs": [
+        "docs/PLAN.md#current-consumer-milestone--2026-11-02",
+        "docs/PLAN.md#fixed-dev7-effect-handoff--2026-11-02",
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261104-product-driven-tooling/PLAN.md"
+      ],
+      "consumerProjectId": "zombie",
+      "consumerTaskIds": [
+        "zombie:T0001",
+        "zombie:T0002",
+        "zombie:T0003",
+        "zombie:T0006"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "monkey:release-v070-publish",
+      "primaryReleaseId": "monkey:v0.7.0",
+      "title": "核准后发布v0.7.0并回读远端制品",
+      "workflowStatus": "done",
+      "description": "组件与GREA组合通过，待总监本轮核查结论后创建tag/Release并远端下载回读。",
+      "acceptanceCriteria": [
+        "稳定范围/公开文档/依赖/许可证和制品一致；不含私有载荷或本机路径依赖",
+        "制品隔离安装及相关公开入口/代表验证通过，GREA组合验收与总监核查完成",
+        "既有GitHub仓库正常发布，远端tag/commit/下载制品SHA回读一致，游戏入口不变"
+      ],
+      "blockerIds": [],
+      "verification": {
+        "result": "pass",
+        "scope": "v0.7.0正常分支/tag/Release发布及3附件下载SHA核验"
+      }
+    },
+    {
+      "id": "monkey:release-v070-integration",
+      "primaryReleaseId": "monkey:v0.7.0",
+      "title": "交付GREA固定候选并通过组合验收",
+      "workflowStatus": "done",
+      "description": "精确候选索引直接给GREA；复用原生证据，受影响组合边界实际验证。",
+      "acceptanceCriteria": [
+        "稳定范围/公开文档/依赖/许可证和制品一致；不含私有载荷或本机路径依赖",
+        "制品隔离安装及相关公开入口/代表验证通过，GREA组合验收与总监核查完成",
+        "既有GitHub仓库正常发布，远端tag/commit/下载制品SHA回读一致，游戏入口不变"
+      ],
+      "blockerIds": [],
+      "verification": {
+        "result": "pass",
+        "scope": "GREA原包隔离组合10项及安装环境test_native_font_stage6项通过；复用owner证据，不重复验收"
+      }
+    },
+    {
+      "id": "monkey:release-v070-package",
+      "primaryReleaseId": "monkey:v0.7.0",
+      "title": "隔离稳定发布线并完成包与相关验证",
+      "workflowStatus": "done",
+      "description": "保全根WIP，从公开main提取固定dev9稳定源码；生成精确制品/隔离安装/公开入口证据。",
+      "acceptanceCriteria": [
+        "稳定范围/公开文档/依赖/许可证和制品一致；不含私有载荷或本机路径依赖",
+        "制品隔离安装及相关公开入口/代表验证通过，GREA组合验收与总监核查完成",
+        "既有GitHub仓库正常发布，远端tag/commit/下载制品SHA回读一致，游戏入口不变"
+      ],
+      "blockerIds": [],
+      "verification": {
+        "result": "pass",
+        "scope": "436包文件身份、制品隔离安装、44入口烟测、85相关检查和7步中性公开流程；1外部beaver测试未执行"
+      }
+    },
+    {
+      "id": "monkey:static-ten-samples",
+      "primaryReleaseId": "monkey:v0.8.0-dev7",
+      "title": "完成十个不同静态样本的正式接入",
+      "workflowStatus": "done",
+      "description": "项目owner已完成Widget第十个样本接入；正式59资产对，保留禁用载体和未验视觉等边界。此项完成仅限已声明后台静态目标。",
+      "acceptanceCriteria": [
+        "十个不同源样本经固定生产者及消费者公开流程接入",
+        "受影响源字段及独立冷读通过，既有正式文件保持",
+        "未知行为、源语义、视觉/Player/业务缺口明确保留"
+      ],
+      "blockerIds": [],
+      "verification": {
+        "result": "pass",
+        "scope": "已声明十个后台静态样本正式接入，复用项目owner现有证据"
+      },
+      "sourceRefs": [
+        "docs/PLAN.md#current-consumer-milestone--2026-11-02",
+        "/Users/wangmeng/MyProjects/Games/projects/21-zombie-cannon/Analysis/static-prefab-20261102/ten-root-static-milestone-01.json"
+      ]
+    },
+    {
+      "id": "monkey:battlemain-uv-empty-curve",
+      "primaryReleaseId": "monkey:v0.8.0-dev8",
+      "title": "解决BattleMain源空UV曲线的原生表示差异",
+      "workflowStatus": "in_progress",
+      "description": "完整BattleMain491节点1380组件59291字段及独立根4节点8组件4297字段原型save/cold通过；身份引用稳定。负向实际native目标12拒绝、捕获签名28拒绝；14次被引擎归一未形成漂移不计拒绝。固定dev8入口验证/消费未闭环。",
+      "acceptanceCriteria": [
+        "提供有源证据且保留严格字段校验的目标表示方案，不归一化源数据或放宽比较",
+        "鲜候选原生保存和独立冷读通过受影响字段及身份/引用检查",
+        "固定实现/同版或新批准候选及实际采用分层记录；失败证据保留"
+      ],
+      "blockerIds": [
+        "monkey:blocker-uv-empty-native-representation"
+      ],
+      "verification": {
+        "result": "partial",
+        "scope": "实际双源复制保存/冷读与完整根失败证据；通用修复未过完整根，不可采用"
+      },
+      "sourceRefs": [
+        "docs/PLAN.md#current-consumer-milestone--2026-11-02",
+        ".private/unity-prefab-v080-20261102/UVRepresentationProbe01/summary.json"
+      ],
+      "consumerProjectId": "zombie",
+      "consumerTaskIds": [
+        "zombie:T0001",
+        "zombie:T0002",
+        "zombie:T0003",
+        "zombie:T0006"
+      ],
+      "consumerPacket": "/Users/wangmeng/MyProjects/Games/projects/21-zombie-cannon/Analysis/product-driven-tooling-20261104/consumer-packet.json",
+      "nextAction": "区分原Provider原生导入与新AddComponent的曲线表示；若可保原值则实现通用修复，若需语义映射先形成有界裁定请求。固定下一dev后交项目自然采用。",
+      "fixedDelivery": null,
+      "adoption": null
+    },
+    {
+      "id": "monkey:unity-source-prefab-inventory",
+      "primaryReleaseId": "monkey:v0.8.0-dev8",
+      "title": "冻结来源Prefab根与依赖分母及首关消费者映射",
+      "workflowStatus": "done",
+      "description": "601冻结缓存/132文件名Prefab包/161精确地址根；按源identity和原生GUID关联既有10个正式采用静态子集，151仅来源解析；335粒子/77空TwoConstants/17来源根。未重导或重复验收。",
+      "consumerProjectId": "zombie",
+      "consumerTaskIds": [
+        "zombie:T0001",
+        "zombie:T0002",
+        "zombie:T0003",
+        "zombie:T0006"
+      ],
+      "acceptanceCriteria": [
+        "源存在/根身份/依赖/未解析与候选/原生/视觉/采用状态分列",
+        "复用10根59对原验收，不重导；人工运行时修补独立记录",
+        "首关完整模块优先，不以盘点替代修复和固定采用"
+      ],
+      "sourceRefs": [
+        ".private/unity-prefab-v080-20261104/source-prefab-inventory-with-adoption-02.json"
+      ],
+      "verification": {
+        "result": "pass",
+        "scope": "冻结来源分母与既有静态子集精确关联；不是整包获取、整模块或新增原生/视觉验收"
+      }
+    },
+    {
+      "id": "monkey:binary-macos-standalone",
+      "primaryReleaseId": "monkey:v0.7.0",
+      "title": "Mac ARM64稳定模块真实CLI二进制与源码资源边界",
+      "workflowStatus": "in_progress",
+      "description": "用户已批准二进制分发，覆盖同日完整模块源码包选择；专用稳定工作树86d47f，模块子Agent只写隔离环境。Nuitka standalone实际Mach-O、可搬迁验证与嵌套源码审计；只本地候选交GREA。",
+      "acceptanceCriteria": [
+        "真实Mach-O公共version/capabilities/help与可搬迁目录/完整文件身份",
+        "内部helper/模板/嵌入载荷源码完整审计，不删实际能力或用源码fallback",
+        "共同编译flock、最多2jobs、无Editor/产品/全局/发布操作；交GREA统筹"
+      ],
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Tools/grea/.private/development/binary-distribution-20261104/binary-provider-contract-v1.json"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "id": "monkey:blocker-uv-empty-native-representation",
+      "title": "两真实完整根的Bounce与SDK保存表示技术缺口已过原型门",
+      "workflowStatus": "resolved",
+      "taskIds": [
+        "monkey:battlemain-uv-empty-curve"
+      ],
+      "owner": "monkey",
+      "ownerSessionId": "01a19b7a-b22a-7ac1-88b0-4c3d3219718b",
+      "description": "Native19及独立Native03全静态字段/引用保存/冷读通过；NativeRefusal15共40拒绝，14未形成漂移的尝试单列。固定dev8/消费仍是后续工作，非整版/视觉/业务验收。",
+      "resolutionCondition": "完整BattleMain与独立真实根保存/冷读及目标全签名/负向变异拒绝通过，固定候选交GREA，再由消费者采用验收。",
+      "sourceRefs": [
+        ".private/unity-prefab-v080-20261104/BattleRendererNative19/execution-result.json",
+        ".private/unity-prefab-v080-20261104/IndependentProgressEffectNative03/execution-result.json",
+        ".private/unity-prefab-v080-20261104/ParticleProfileRefusal15/UnityProject/native-refusal-report.json"
+      ]
+    }
+  ]
+}
+```
+
+## Consumer-driven v0.8 continuation — 2026-11-04
+
+Authority: Manager decisions/20261104-product-driven-tooling/PLAN.md, human01a1a5d9-e8d2-7ab2-996a-4480d40150bf. Zombie T0001/T0002/T0003/T0006 consumes complete BattleMain, first-level models, projectile/effect/HP/damage carriers, in that order. Existing runtime HUD binding, compatible player/frame pools, overlays and business lifecycle fixes remain project work, not tool recovery. The received consumer-packet is the source of module priority and manual work.
+
+Current action uses existing601 frozen typed snapshots, preserving every original file:161 distinct explicitly addressed Prefab roots/dependencies;335ParticleSystems,77source empty TwoConstants cases in17independent Prefabs;36unparsedMonoBehaviours retained. This is the available cached-source denominator, not proof every original game package was obtained. The132 filename-Prefab bundles are distinct from root count. Source inventory and particle mechanism records: `.private/unity-prefab-v080-20261104/`.
+
+First failure and second independent sample are BattleMainUI and source eff_ui_jijiajunei_jindutiao01. UVSourceImportProbe01 preserves its guard/identity-resolution failure, no accepted readback: it incorrectly expected original source pathId to equal provider-native localID. Probe02 now resolves exact source root address, child indices and component order/type; source/native localIDs remain distinct. The corrected guard and launch share one Python control flow and redact unrelated process arguments. No semantics normalization/field omission or fixed candidate is accepted from these probes. RectTransform float32 repair remains separate existing evidence, not rerun as an entire matrix.
+
+## v0.7.0 published — 2026-11-04
+
+Actual GitHub release https://github.com/chuxintec/monkey/releases/tag/v0.7.0 publishedAt 2026-11-04T07:03:25Z; branch/tag peel to86d47f35744a5af91614c417b00c8eaa2345baad. Original reviewed wheel/source/SHA256SUMS downloaded and all match exact candidate hashes. GREA combination and director gate passed before release. Authority: `.private/release-v070-20261104/86d47f35744a/publication-verification.json`; original candidate index updated with remote identities. Current0.8 development/WIP/UV limitation and both game wrappers/locks remain independent and unchanged. Earlier pending release/gate paragraphs are historical checkpoints.
+
+## v0.7.0 stable release — 2026-11-04
+
+User-authorized package/verification-before-publication scope is Manager decisions/20261104-toolchain-stable-release/PLAN.md. Stable source735a87ebbc19 (0.7.0.dev9), public parent/main ff57c75. Isolated release worktree `.private/worktrees/release-v0.7.0`; preservation/checklist/evidence `.private/release-v070-20261104/`. Originalv0.8 branch/WIP/fixeddev7 and both game wrappers/locks remain unchanged. No global install or foreground/native rerun. Candidate and remote publication remain pending actual evidence; v0.8 UV gap is independent.
+
+GREA exact combination accepted (grea-monkey-combined-04): artifact-installed CLI/MCP combination10 checks and all6 external beaver integration checks pass. Existing candidate bytes remain unchanged. Candidate index now records owner evidence; no monkey repeat verification. Director review and actual tag/Release/download readback remain pending.
+
+Stable component candidate now prepared: commit86d47f35744a, final0.7.0 wheel/sdist and SHA256SUMS under `.private/release-v070-20261104/86d47f35744a/`; exact candidate-index.json is authority.436package bytes equal fixeddev9 exceptversion; isolated installation/44CLI checks/85focused checks(1external skip)/7neutral public pipeline steps pass. GREA combination/director review and actual remote publication pending. Historical private SDK audit is freshly refused for migrated symlink path; no guard/evidence rewrite.
+
+Migration path follow-up — 2026-11-03: Foodstreet actual root now available; mutable foodstreet-input-set resolves all4 original inputs/configs under new project root, and current-consumer-route points to .worktrees/v20-develop-delivery-20261103. The old integration-repo remains separately mapped preservedInputWorkspace; its input meaning is not replaced by the formal worktree. Research5 frozen JSONs remain unchanged;28 inputs have same-filesystem-object checks and separate resolved copies. Index: `.private/myprojects-migration-20261103/foodstreet-research-paths/VALIDATION.json`. Earlier pending-Foodstreet migration statements are historical; Manager/app/compatibility alias retirement remains external.
+
+Migration resumed at canonical new root — 2026-11-03: /Users/wangmeng/MyProjects/Tools/monkey. Pre-repair13 release pins match, HEAD/branch/WIP retained, nestedv0.4.1 Git paths repaired; dev6/dev7/dev9 new wrappers and UnityPy1.25.3 import pass. Dev7 all458 package bytes match fixed identity. Original frozen launchers/receipts unchanged; live wrappers and mutable environment/source-reader paths repaired. Completion/remaining old consumers: `.private/myprojects-migration-20261103/VALIDATION.json`. Foodstreet final root and Codex UI/settings still external pending; old aliases must remain until owners finish.
+
+Migration write release — 2026-11-03: owner has saved WIP and released old-root writing for ops migration to /Users/wangmeng/MyProjects/Tools/monkey. No active producer/native transaction or child process. See `.private/myprojects-migration-20261103/RELEASE.json`. Do not resume old-root writes after this checkpoint; resume only on ops new-path handoff, with targeted entry/path repairs and existing evidence preserved.
+
+## Current consumer milestone — 2026-11-02
+
+The project owner reports actual fixed29 Widget public spec4 plan/apply and independent native cold complete (journal `7590bd737aa20527bff9c34a7b8b56cea1b5b26a7202bf479a4017645836ca25`). The normal battle UI Widget is formally integrated as the tenth distinct static sample:2new resources and2directory metas preserve all126558 prior files, now126564;59pairs index SHA `99eb38eef1d3f5b4afe872e1ec8eb36193fb425ba593c9f5ac0402150999389a`. Font/atlas and existing adapter/official Outline bindings were reused with no new script or asmdef change.186fields/14Prefab objects pass owner independent cold. This closes the declared ten-sample background static integration target; it is not game completion or visible/interactive acceptance. GradientColor remains disabled and source semantics/visual/Player/business remain unverified. Authoritative product milestone: consumer `Analysis/static-prefab-20261102/ten-root-static-milestone-01.json`. This tool records the owner's integration result without receipt-triggered duplicate validation or report broadcasting.
+
+BattleMain strict UV follow-up has a completed neutral target probe: `.private/unity-prefab-v080-20261102/UVRepresentationProbe01/summary.json` SHA `65aedc1ec3076f63437e87a65fe7eddd43b46654da4d7352c2e964dc5fc72199`. On target6000.6.2f1, explicitly serialized empty curves and public empty/null/two-constant writes all expose max2/min0 through a fresh SerializedObject while still inactive. Activation/deactivation does not change it; native saved YAML contains the two keys. A second independent process confirms all four saved cases and all8Prefab/meta bytes remain unchanged. Source UV is enabled with mode3 and both source curves empty. This disproves the activation-only explanation; tested APIs still fail source max0. Same-object cache0 is not persistence evidence. Preserve the strict refusal and all failed source attempts; no source normalization, raw-field guard relaxation, target/game edit or producer change. The probe does not prove every possible native API is incapable. First CLI success/report are present, but its requested ../log path was rejected, so complete first-log provenance is not claimed; the cold absolute-path log is retained. No accepted-root reruns, count-driven matrix or Spine restoration.
+
+## Next root and actual consumer — 2026-11-02
+
+The owner reports fixed29/spec5 DamageTip fresh plan/apply/code-check/independent cold complete: current formal source pointer now pins journal `91fe5ee8fdb289a8e798bd57fdd176d599fe853a05865e09a778c6fafc7fc6f8`, after126558,9roots/57pairs. The current57-pair index SHA is `4642f1785a4095a1fb0bb10b996be049b4cfaef2577fc63516f127d77e916446`. GREA independently reviewed that consumer receipt; no producer rerun or refreeze was required. Existing GameBase asset/meta remain unchanged; DamageTip remains a disabled serialization carrier with no numeric-mesh/visual/Player/business claim. Source Shader dependency10753 is original, not native-added; target Sprites/Default identity is independently proven, source Shader semantics remain unverified.
+
+Next fixeddev7 Widget selection `FixedBattleWidgetSavedSelection01` has71 rehashed files, manifest `9ea3d685477c28ff9132e9783652c524c5cd6125de32487498608b88bda84ade`. Public recover/verify/headless/freeze actually ran:4nodes/10components/186fields before save, after reopen and independent cold; zero MissingScript/failures and stable references. All stages retain partial/exit1. Its single GradientColor carrier is disabled; source BaseMeshEffect methods are unavailable and no ModifyMesh stub is invented.
+
+Authoritative Widget diagnostic revision03 `.private/unity-prefab-v080-20261102/dev7-fixed-widget-handoff-03.json` SHA `d0d2352d5c8af3c1ad17d23995e2c11254237efa931fa8235e6870ce6e4480a8` corrects revisions01/02's incomplete path-based classification. All9 candidate GUIDs were joined to the pinned57-pair currentPath/originalIntakePath index plus separately pinned existing script bindings. The source atlas already exists at a relocated currentPath with identical asset/meta bytes; both current files were rehashed. Actual disposition is2new resources (Widget Prefab/Sprite)+2exact reuse (font/atlas)+3existing externalScripts bindings+2omitted compiler inputs (enum/asmdef). Existing target scripts/meta and three script GUID joins were independently checked; source GameBase versus target Assembly-CSharp remains explicit prior Login adapter evidence. No new producer feature, script movement, code/meta overwrite, assembly edit or refreeze is required. Revisions01/02 remain historical incomplete diagnoses; fixed saved selection/manifest stay unchanged. Owner subsequent spec4/native/cold adoption is complete as recorded in the current milestone above; this revision03 was its preceding diagnostic checkpoint. Gradient/visual/Player/business remain unverified. GUID review coverage is the indexed57pairs plus pinned existing scripts, not an exhaustive scan of every other unindexed formal asset.
+
+Active exact-source reader: `.private/unity-sprite-atlas-flip-20261028/Provider/bin/python`, verifiedUnityPy1.25.3; `.private/source-readers/active.json` pins its use. The retired GREA Python path was not restored. BattleMain empty UV curve remains strict source0/native2 refusal, independent of the Widget handoff.
+
+## Deep cleanup and current size — 2026-11-02
+
+Same-root measured usage is now39.828GiB, down from76.463GiB in this deep-cleanup pass. Current authority: `.private/deep-cleanup-20261102/REPORT.md` / summary.json / retention-audit.json. All older90.80GiB/76.323GiB values are historical. Exact deletion plans precede deletion and durable results, with duplicate source SHA pins recorded before removal. Current21/fallback10, source-freeze/font/SDK, fixeddev6/dev7, Gun/Renderer/TextureMaterial and formal consumer inputs retained. Earlier watched UnityProject106 font asset paths belong to retired historical requests; retained self-contained current font/source payloads are not claimed to make those old requests replayable.
+
+BattleMain Native10 still strictly rejects empty UV curve source0/native2; default target keys/tangents/weights/wrap were captured for bounded next-step modeling, with no relaxation. Effect remains fixeddev7/GREA-bound; formal consumer is resolving the builtin Quad intake contract with beaver.
+
+## Fixed dev7 effect handoff — 2026-11-02
+
+Producer `2e88bc95fbe9cf82d61ad0a192715f334a242695` fixes0.8.0.dev7. Its wheel `4def5301d94232937627ce567a711d7adf29628d5f30e54d0146f7c3ef7610dc` has458 package files equal to committed source;131 affected tests pass from that exact runtime. The fixed public CLI actually recover/verify/freeze selects `FixedEffectTextureMaterialSavedSelection01`, manifest `5a23b9dcece825fcb8ecec250663d51dac2237dca9365a5e2c0b34b8b72ce0ad`.64/64 fields,2owners/4components, zero MissingScript/failures, actual save/independent cold and stable references pass; all three CLI stages retain expected partial/exit1/needs_action. Original source mesh gap/provider diagnostics, Shader semantics, visual/Player/business boundaries remain explicit. Existing Login/other adopted roots were not rerun.
+
+Exact producer/source tuple/first+cold/76 saved files/4 new pairs and current48-pair comparison are in `.private/unity-prefab-v080-20261102/dev7-fixed-effect-handoff-01.json` SHA `6e1369a1a5163448b3f634109feff48152f6448d90e037c9fefff7cf87da06eb`. GREA has bound this fixed runtime through `.private/monkey-v08-dev7-integration-20261102/providers.json` (GREA-owned), independently reviewed pins and reused actual native evidence; its development report is `validation/development/monkey-dev7-effect-integration-20261102.json`. The formal consumer owner has received the exact saved selection; adoption remains pending their single-writer receipt. BattleMain UV empty-curve strict refusal remains independent.
 
 ## Current continuation — 2026-11-02
 
@@ -12,7 +382,7 @@ Development resumed directly: ParticleSystem UV source-empty curves still fail s
 
 ## Authorized payload retirement — 2026-11-02
 
-User-authorized aggressive cleanup retires historical generated payloads listed in `.private/aggressive-slim-20261102/REPORT.md` and batch manifests. Prior successful native/consumer statements remain historical observations; retired old work directories are no longer locally replayable evidence. Current v0.8 source pins, fixed Delivery, Gun/Renderer/TextureMaterial WIP and v0.7 frozen source pins remain. Whole workspace is now90.80GiB; this maintenance adds no version acceptance.
+User-authorized aggressive cleanup retires historical generated payloads listed in `.private/aggressive-slim-20261102/REPORT.md` and batch manifests. Prior successful native/consumer statements remain historical observations; retired old work directories are no longer locally replayable evidence. Current v0.8 source pins, fixed Delivery, Gun/Renderer/TextureMaterial WIP and v0.7 frozen source pins remain. The earlier90.80GiB observation is historical (current measured root is39.828GiB); this maintenance adds no version acceptance.
 
 ## Successor checkpoint — 2026-11-02
 

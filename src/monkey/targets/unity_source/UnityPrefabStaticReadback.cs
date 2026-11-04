@@ -54,6 +54,7 @@ namespace MonkeyUnitySource
             public string type;
             public string assembly;
             public bool disabledUnavailable;
+            public string particleBounceProfile;
             public FieldPlan[] fields;
         }
 
@@ -65,6 +66,9 @@ namespace MonkeyUnitySource
             public double floatValue;
             public string stringValue;
             public bool boolValue;
+            public string mapping;
+            public string sourcePath;
+            public string sourceExpected;
             public string refSourceId;
             public string refType;
             public string refName;
@@ -87,6 +91,90 @@ namespace MonkeyUnitySource
             public string businessBehavior = "not_run";
         }
 
+
+        const string ParticleBounceProfile = "ParticleSystem-Bounce-Constant-disabled-2021.3.30f1-to-6000.6.2f1-v2";
+        [Serializable] sealed class ParticleRepresentationEvidence
+        {
+            public string sourceId, profile, phase, comparison, serializedSignature;
+            public int publicMode;
+            public float publicConstant;
+            public float[] evaluations;
+            public bool collisionEnabled, passed;
+        }
+        [Serializable] sealed class ParticleJsonEnvelope { public ParticleJsonBody ParticleSystem; }
+        [Serializable] sealed class ParticleJsonBody { public ParticleCollisionJson CollisionModule; }
+        [Serializable] sealed class ParticleCollisionJson { public bool enabled; public ParticleBounceJson m_Bounce; }
+        [Serializable] sealed class ParticleBounceJson
+        {
+            public string serializedVersion;
+            public int minMaxState;
+            public float scalar, minScalar;
+            public ParticleCurveJson maxCurve, minCurve;
+        }
+        [Serializable] sealed class ParticleCurveJson
+        {
+            public string serializedVersion;
+            public ParticleKeyJson[] m_Curve;
+            public int m_PreInfinity, m_PostInfinity, m_RotationOrder;
+        }
+        [Serializable] sealed class ParticleKeyJson
+        {
+            public string serializedVersion;
+            public float time, value, inSlope, outSlope, inWeight, outWeight;
+            public int tangentMode, weightedMode;
+        }
+        static void VerifyParticleRepresentation(ComponentPlan plan, Component component, string phase, RootResult result)
+        {
+            if (String.IsNullOrEmpty(plan.particleBounceProfile)) return;
+            if (plan.particleBounceProfile != ParticleBounceProfile || component.GetType() != typeof(ParticleSystem) ||
+                plan.type != "UnityEngine.ParticleSystem" || plan.assembly != "UnityEngine.ParticleSystemModule" || Application.unityVersion != "6000.6.2f1")
+                throw new InvalidOperationException("Unsupported ParticleSystem representation profile/type/version");
+            var particle = (ParticleSystem)component;
+            var collision = particle.collision;
+            var bounce = collision.bounce;
+            var json = JsonUtility.FromJson<ParticleJsonEnvelope>(EditorJsonUtility.ToJson(particle));
+            var native = json == null || json.ParticleSystem == null ? null : json.ParticleSystem.CollisionModule;
+            var value = native == null ? null : native.m_Bounce;
+            if (collision.enabled || bounce.mode != ParticleSystemCurveMode.Constant || bounce.constant != 1f ||
+                bounce.Evaluate(0f) != 1f || bounce.Evaluate(0.5f) != 1f || bounce.Evaluate(1f) != 1f ||
+                native == null || native.enabled || value == null || value.serializedVersion != "3" ||
+                value.minMaxState != 0 || value.scalar != 1f || value.minScalar != 0f)
+                throw new InvalidOperationException("ParticleSystem Constant1 public/serialized representation differs: " + plan.sourceId);
+            VerifyParticleCurveSignature(value.maxCurve, 2);
+            VerifyParticleCurveSignature(value.minCurve, 0);
+            var evidence = new ParticleRepresentationEvidence { sourceId = plan.sourceId, profile = plan.particleBounceProfile,
+                phase = phase, comparison = "explicit-native-representation;source-runtime-semantics-inferred",
+                publicMode = (int)bounce.mode, publicConstant = bounce.constant,
+                evaluations = new float[] {bounce.Evaluate(0f),bounce.Evaluate(0.5f),bounce.Evaluate(1f)},
+                collisionEnabled = collision.enabled, serializedSignature = JsonUtility.ToJson(value), passed = true };
+            result.particleRepresentations = result.particleRepresentations.Concat(new[] {evidence}).ToArray();
+        }
+        static void VerifyParticleCurveSignature(ParticleCurveJson curve, int count)
+        {
+            if (curve == null || curve.serializedVersion != "2" || curve.m_Curve == null || curve.m_Curve.Length != count ||
+                curve.m_PreInfinity != 2 || curve.m_PostInfinity != 2 || curve.m_RotationOrder != 4)
+                throw new InvalidOperationException("ParticleSystem Constant1 native curve metadata/signature differs");
+            for (int i = 0; i < count; i++)
+            {
+                var key = curve.m_Curve[i];
+                if (key == null || key.serializedVersion != "3" || key.time != (float)i || key.value != 0f ||
+                    key.inSlope != 0f || key.outSlope != 0f || key.tangentMode != 0 || key.weightedMode != 0 ||
+                    key.inWeight != 1f/3f || key.outWeight != 1f/3f)
+                    throw new InvalidOperationException("ParticleSystem Constant1 native key signature differs");
+            }
+        }
+
+        [Serializable] sealed class BuiltinSeedEvidence
+        {
+            public string sourceId;
+            public string sourceAssetPath;
+            public string sourceGuid;
+            public string sourceLocalId;
+            public string type;
+            public string method;
+            public int checkedSourceFields;
+        }
+
         [Serializable] sealed class RootResult
         {
             public string sourceId;
@@ -104,6 +192,10 @@ namespace MonkeyUnitySource
             public bool reopened;
             public bool nativeIdentitiesStable;
             public bool reconstructedFromSource;
+            public bool reconstructionValidated;
+            public int reconstructionFieldsChecked;
+            public BuiltinSeedEvidence[] builtinSeeds = new BuiltinSeedEvidence[0];
+            public ParticleRepresentationEvidence[] particleRepresentations = new ParticleRepresentationEvidence[0];
             public NativeIdentity[] nativeIdentitiesBefore;
             public NativeIdentity[] nativeIdentitiesAfter;
             public DisabledBehavior[] disabledBehaviors;
@@ -160,6 +252,9 @@ namespace MonkeyUnitySource
             public string path;
             public string kind;
             public string propertyType;
+            public string comparison;
+            public string sourcePath;
+            public string sourceExpected;
             public bool passed;
             public string expected;
             public string actual;
@@ -292,7 +387,7 @@ namespace MonkeyUnitySource
                 bool anyFailed = report.roots.Any(r => r == null || r.status == "failed");
                 bool anyPartial = report.roots.Any(r => r != null && r.status == "partial");
                 report.status = anyFailed ? "failed" : (anyPartial ? "partial" : "completed");
-                File.WriteAllText(outputPath, JsonUtility.ToJson(report, true), new UTF8Encoding(false));
+                File.WriteAllText(outputPath, JsonUtility.ToJson(report, false), new UTF8Encoding(false));
                 exit = allPassed ? 0 : 1;
             }
             catch (Exception error)
@@ -301,7 +396,7 @@ namespace MonkeyUnitySource
                 if (report != null && !String.IsNullOrEmpty(outputPath))
                 {
                     report.status = "failed";
-                    try { File.WriteAllText(outputPath, JsonUtility.ToJson(report, true), new UTF8Encoding(false)); }
+                    try { File.WriteAllText(outputPath, JsonUtility.ToJson(report, false), new UTF8Encoding(false)); }
                     catch (Exception writeError) { Debug.LogError("Readback result write failed: " + writeError.Message); }
                 }
                 exit = 1;
@@ -381,7 +476,7 @@ namespace MonkeyUnitySource
                 RequireWithin(projectRoot, fullReadbackAsset, "candidate Prefab");
 
                 PreflightPlanCallbacks(plan);
-                if (reconstruct) ReconstructRoot(projectRoot, plan);
+                if (reconstruct) ReconstructRoot(projectRoot, plan, result);
 
                 GameObject sourceAsset = AssetDatabase.LoadAssetAtPath<GameObject>(plan.path);
                 if (sourceAsset == null) throw new InvalidOperationException("Candidate Prefab asset could not be loaded");
@@ -419,9 +514,12 @@ namespace MonkeyUnitySource
                 }
                 result.disabledBehaviors = disabledRows.ToArray();
 
+                var saveObjects = new Dictionary<string, UnityEngine.Object>(StringComparer.Ordinal);
+                foreach (var pair in beforeContents.nodes) saveObjects.Add(pair.Key, pair.Value);
+                foreach (var pair in beforeContents.components) saveObjects.Add(pair.Key, pair.Value);
                 bool saved;
-                GameObject savedAsset = PrefabUtility.SaveAsPrefabAsset(contents, readbackAsset, out saved);
-                if (!saved || savedAsset == null) throw new InvalidOperationException("SaveAsPrefabAsset failed for candidate Prefab");
+                GameObject savedAsset = SavePlannedPrefab(plan, contents, beforeContents.components,
+                    saveObjects, readbackAsset, out saved);
                 result.saved = true;
                 PrefabUtility.UnloadPrefabContents(contents);
                 contents = null;
@@ -581,6 +679,7 @@ namespace MonkeyUnitySource
                 foreach (ComponentPlan componentPlan in node.components ?? new ComponentPlan[0])
                 {
                     Component component = mapped.components[componentPlan.sourceId];
+                    VerifyParticleRepresentation(componentPlan, component, phase, result);
                     var serialized = new SerializedObject(component);
                     foreach (FieldPlan field in componentPlan.fields ?? new FieldPlan[0])
                     {
@@ -610,7 +709,9 @@ namespace MonkeyUnitySource
                                       FieldPlan field, Dictionary<string, UnityEngine.Object> sourceIdMap,
                                       string phase, bool verifySourceEnabled, bool captureNativeIdentity)
         {
-            var row = new FieldResult { sourceId = componentPlan.sourceId, path = field.path, kind = field.kind, passed = false };
+            var row = new FieldResult { sourceId = componentPlan.sourceId, path = field.path, kind = field.kind, passed = false,
+                comparison = String.IsNullOrEmpty(field.mapping) ? "raw-source-storage" : "explicit-native-representation:" + field.mapping,
+                sourcePath = field.sourcePath, sourceExpected = field.sourceExpected };
             try
             {
                 if (String.IsNullOrEmpty(field.path)) throw new InvalidOperationException("Expected field path is empty");
@@ -647,7 +748,14 @@ namespace MonkeyUnitySource
                     {
                         var curve = serialized.FindProperty(field.path.Substring(0, field.path.Length - curveSuffix.Length));
                         if (curve != null && curve.propertyType == SerializedPropertyType.AnimationCurve)
-                            row.actual += ";nativeCurveKeys=" + curve.animationCurveValue.length;
+                        {
+                            var nativeCurve = curve.animationCurveValue;
+                            row.actual += ";nativeCurveKeys=" + nativeCurve.length + ";preWrap=" + nativeCurve.preWrapMode + ";postWrap=" + nativeCurve.postWrapMode;
+                            row.actual += ";keyData=" + String.Join("/", nativeCurve.keys.Select(k =>
+                                k.time.ToString("R", Invariant) + "," + k.value.ToString("R", Invariant) + "," +
+                                k.inTangent.ToString("R", Invariant) + "," + k.outTangent.ToString("R", Invariant) + "," +
+                                k.inWeight.ToString("R", Invariant) + "," + k.outWeight.ToString("R", Invariant) + "," + (int)k.weightedMode).ToArray());
+                        }
                     }
                 }
                 else if (field.kind == "float")

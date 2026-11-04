@@ -12,7 +12,8 @@ def sha(data):
 
 
 def safe(path):
-    path = Path(path).absolute()
+    from .input_relocation import relocate
+    path = relocate(Path(path).absolute())
     if any(p.is_symlink() for p in (path, *path.parents)):
         fail('SYMLINK_PATH', str(path), 'Symbolic links are not accepted')
     return path.resolve()

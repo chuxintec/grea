@@ -403,6 +403,8 @@ def main(argv=None):
     p.add_argument('--request', required=True)
     p.add_argument('--expected-request', required=True)
     p.add_argument('--out', required=True)
+    p.add_argument('--input-path-map', help='Explicit input-root relocation descriptor; original input hashes remain mandatory')
+    p.add_argument('--expected-input-path-map', help='SHA256 of the explicit relocation descriptor')
     p = sub.add_parser('inspect-unity-prefab-schemas', help='Read exact built-in schemas from a pinned source bundle without executing game code')
     p.add_argument('--request', required=True)
     p.add_argument('--expected-request', required=True)
@@ -426,10 +428,14 @@ def main(argv=None):
     p.add_argument('--unity-editor', required=True)
     p.add_argument('--budget-seconds', type=int, default=600)
     p.add_argument('--out', required=True)
+    p.add_argument('--input-path-map', help='Explicit input-root relocation descriptor; original input hashes remain mandatory')
+    p.add_argument('--expected-input-path-map', help='SHA256 of the explicit relocation descriptor')
     p = sub.add_parser('freeze-unity-prefabs', help='Freeze exact independently reopened Unity-source candidate bytes')
     p.add_argument('--native-output', required=True)
     p.add_argument('--expected-execution', required=True)
     p.add_argument('--out', required=True)
+    p.add_argument('--input-path-map', help='Explicit input-root relocation descriptor; original input hashes remain mandatory')
+    p.add_argument('--expected-input-path-map', help='SHA256 of the explicit relocation descriptor')
     p = sub.add_parser('audit-native-code-dependencies', help='Supplement a frozen selection with exact producer code proofs without changing its warnings')
     p.add_argument('--candidate', required=True)
     p.add_argument('--expected-manifest', required=True)
@@ -509,7 +515,9 @@ def main(argv=None):
             return 0
         if args.command == 'recover-unity-prefabs':
             from .unity_prefab_recovery import recover
-            result = recover(args.request, args.expected_request, args.out)
+            from .input_relocation import command_context
+            with command_context(args):
+                result = recover(args.request, args.expected_request, args.out)
             print(json.dumps(dict(status=result['status'], report=str(args.out)+'/result.json', native=result['native']), ensure_ascii=False))
             return 1 if result['status'] == 'needs_action' else 0
         if args.command == 'inspect-unity-prefab-schemas':
@@ -535,12 +543,16 @@ def main(argv=None):
             return 0
         if args.command == 'verify-unity-prefabs':
             from .unity_prefab_native import execute
-            result = execute(args.candidate, args.expected_manifest, args.out, args.unity_editor, args.budget_seconds, headless=args.headless)
+            from .input_relocation import command_context
+            with command_context(args):
+                result = execute(args.candidate, args.expected_manifest, args.out, args.unity_editor, args.budget_seconds, headless=args.headless)
             print(json.dumps({k:v for k,v in result.items() if k != 'savedFiles'}, ensure_ascii=False))
             return 0 if result['status'] == 'native-verified-subset' else 1
         if args.command == 'freeze-unity-prefabs':
             from .unity_prefab_native import freeze
-            result = freeze(args.native_output, args.expected_execution, args.out)
+            from .input_relocation import command_context
+            with command_context(args):
+                result = freeze(args.native_output, args.expected_execution, args.out)
             print(json.dumps(result, ensure_ascii=False))
             return 1 if result['status'] == 'needs_action' else 0
         if args.command == 'capabilities':
