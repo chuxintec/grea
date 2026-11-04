@@ -84,6 +84,116 @@ def _source_payload(stage_root: Path, copy_row: dict) -> Path:
     return path
 
 
+def rewrite_native_atlas(raw: bytes, pages: list[dict]) -> tuple[bytes, list[dict]]:
+    """Change page headers only, to match the SDK's texture-file-name lookup.
+
+    Region names, coordinates, BOM and line endings remain byte-identical.
+    The immutable original atlas is retained by staticSpineContinuation.
+    """
+    lines = raw.splitlines(keepends=True)
+    headers = []
+    blank = True
+    for index, line in enumerate(lines):
+        content = line.rstrip(b'\r\n')
+        if index == 0:
+            content = content.removeprefix(b'\xef\xbb\xbf')
+        if not content.strip():
+            blank = True
+        elif blank:
+            headers.append((index, content.decode('utf-8')))
+            blank = False
+    expected = [page['nativeAtlasPage'] for page in pages]
+    if not pages or [name for _, name in headers] != expected:
+        raise StaticSpineRenderingError('native atlas page headers differ from the exact ordered page mapping')
+    targets = [Path(page['textureAssetPath']).name for page in pages]
+    if len(set(targets)) != len(targets):
+        raise StaticSpineRenderingError('native atlas texture file names are ambiguous')
+    mapping = []
+    for (index, previous), page, target in zip(headers, pages, targets):
+        if not target.endswith('.png') or any(c in target for c in '\r\n\\:'):
+            raise StaticSpineRenderingError('native atlas texture file name is invalid')
+        old = lines[index]
+        prefix = b'\xef\xbb\xbf' if index == 0 and old.startswith(b'\xef\xbb\xbf') else b''
+        ending = old[len(old.rstrip(b'\r\n')):]
+        lines[index] = prefix + target.encode('utf-8') + ending
+        mapping.append({'sourceAtlasPage': page['sourceAtlasPage'], 'previousNativeAtlasPage': previous,
+                        'nativeAtlasPage': target, 'textureAssetPath': page['textureAssetPath']})
+        page['nativeAtlasPage'] = target
+    return b''.join(lines), mapping
+
+
+def upgrade_atlas_mapping(plan: dict, stage_root: Path) -> list[dict]:
+    """Rebind native atlas text in a fresh owned stage; never decode textures."""
+    fragment = plan['staticSpineRendering']
+    module = inside(stage_root, fragment['moduleStage'])
+    payloads = fragment['payloads']
+    retained = plan['staticSpineContinuation']
+    retained_root = inside(stage_root, retained['moduleStage'])
+    evidence = []
+    for data in fragment['dataAssets']:
+        spec = data.get('factorySpec')
+        if not isinstance(spec, dict):
+            continue
+        target = spec['atlasTextAssetPath']
+        matches = [row for row in payloads if row['target'] == target]
+        if len(matches) != 1:
+            raise StaticSpineRenderingError('native atlas payload identity is ambiguous')
+        old = matches[0]
+        raw = read(_source_payload(module, old))
+        if sha(raw) != spec['atlasSha256']:
+            raise StaticSpineRenderingError('native atlas factory hash differs from payload')
+        sources = [row for row in retained['dataAssets'] if row['sourceDataAssetId'] == spec['sourceAssetId']]
+        if len(sources) != 1:
+            raise StaticSpineRenderingError('native atlas source data identity is ambiguous')
+        source = sources[0]
+        source_payloads = [row for row in retained['payloadCopies']
+                           if row['target'] == source['sourceAtlasTextAssetPath']]
+        if len(source_payloads) != 1:
+            raise StaticSpineRenderingError('native atlas original payload identity is ambiguous')
+        source_raw = read(_source_payload(retained_root, source_payloads[0]))
+        if sha(source_raw) != source['sourceAtlasSha256']:
+            raise StaticSpineRenderingError('native atlas original source hash differs')
+        if [(p['sourceAtlasPage'], p['sourceTextureSourceId']) for p in spec['pages']] != [
+            (p['sourcePageName'], p['sourceTextureSourceId']) for p in source['sourceAtlasPages']]:
+            raise StaticSpineRenderingError('native atlas page/texture source mapping differs')
+        for page in spec['pages']:
+            textures = [row for row in payloads if row['target'] == page['textureAssetPath']
+                        and row.get('role') == 'decoded-source-astc-spine-page']
+            if len(textures) != 1:
+                raise StaticSpineRenderingError('native atlas decoded texture identity is ambiguous')
+            _source_payload(module, textures[0])
+            page['textureSha256'] = textures[0]['sha256']
+        derived, mapping = rewrite_native_atlas(raw, spec['pages'])
+        original_pages = [{**page, 'nativeAtlasPage': page['sourceAtlasPage']} for page in spec['pages']]
+        source_derived, _ = rewrite_native_atlas(source_raw, original_pages)
+        if derived != source_derived:
+            raise StaticSpineRenderingError('native atlas rewrite differs beyond original page headers')
+        relative = f"spine-static-rendering-payloads/{sha(derived)}/{Path(target).name}"
+        destination = inside(module, relative)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists() and read(destination) != derived:
+            raise StaticSpineRenderingError('native atlas derived payload collision')
+        destination.write_bytes(derived)
+        replacement = {**old, 'source': relative, 'sha256': sha(derived), 'bytes': len(derived),
+                       'role': 'derived-native-spine-atlas-page-map'}
+        for row in [*payloads, *data.get('payloads', [])]:
+            if row.get('target') == target:
+                if row != old:
+                    raise StaticSpineRenderingError('native atlas duplicated payload pins differ')
+        # These are separate JSON objects after loading a frozen stage.
+        for collection in (payloads, data.get('payloads', [])):
+            for index, row in enumerate(collection):
+                if row.get('target') == target:
+                    collection[index] = replacement.copy()
+        spec['atlasSha256'] = sha(derived)
+        record = {'sourceDataAssetId': spec['sourceAssetId'], 'sourceAtlasSha256': source['sourceAtlasSha256'],
+                  'previousNativeAtlasSha256': sha(raw), 'nativeAtlasSha256': sha(derived),
+                  'pages': mapping, 'textureBytesChanged': False, 'textureDecodeInvoked': False}
+        data['nativeAtlasMapping'] = record
+        evidence.append(record)
+    return evidence
+
+
 def _source_field(component: dict, name: str):
     state = component.get("sourceFieldStates", {}).get(name)
     if not isinstance(state, dict):
@@ -481,9 +591,10 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
                              "dataAssetCount": len(data_render), "pmaOrScaleGapSourceDataIds": pma_gaps,
                              "sourceSlotBlendModeCounts": blend_totals,
                              "decodedPageCount": sum(1 for p in unique.values() if p.get("role") == "decoded-source-astc-spine-page")}}
-    write_json(output / "spine-static-rendering.json", rendering)
     patched = dict(plan)
     patched["staticSpineRendering"] = rendering
+    upgrade_atlas_mapping(patched, stage_root)
+    write_json(output / "spine-static-rendering.json", rendering)
     return {"plan": patched, "rendering": rendering, "status": rendering["status"]}
 
 

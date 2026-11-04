@@ -51,6 +51,8 @@ def test_prepare_and_emit_with_synthetic_resource_providers(tmp_path, monkeypatc
     fragment=result['rendering'];spec=fragment['dataAssets'][0]['factorySpec']
     assert spec['skeletonTextAssetPath'].endswith('.skel.bytes')
     assert spec['pages'][0]['sourceAtlasPage']=='page.png'
+    assert spec['pages'][0]['nativeAtlasPage']==Path(spec['pages'][0]['textureAssetPath']).name
+    assert spec['pages'][0]['textureSha256']
     assert spec['pages'][0]['variants'][0]['blendMode']=='additive'
     assert fragment['summary']['eligibleComponentCount']==2
     assert fragment['summary']['decodedPageCount']==1
@@ -60,6 +62,31 @@ def test_prepare_and_emit_with_synthetic_resource_providers(tmp_path, monkeypatc
     assert (candidate/spec['atlasTextAssetPath']).read_bytes()==(stage/fragment['moduleStage']/next(
         row['source']for row in fragment['payloads']if row['target']==spec['atlasTextAssetPath'])).read_bytes()
 from monkey.prefab_static_spine_rendering import prepare_rendering, StaticSpineRenderingError
+
+
+def test_native_atlas_rewrite_changes_only_ordered_page_headers():
+    from monkey.prefab_static_spine_rendering import rewrite_native_atlas
+    raw = (b'\xef\xbb\xbfsource.png\r\nsize: 8,8\r\nsource.png\r\n  xy: 1,2\r\n\r\n'
+           b'folder/second.png\nsize: 4,4\nregion\n  xy: 0,0\n')
+    pages = [{'sourceAtlasPage': name, 'nativeAtlasPage': name, 'textureAssetPath': 'Assets/pages/'+target}
+             for name, target in [('source.png','firsthash.png'), ('folder/second.png','secondhash.png')]]
+    result, mapping = rewrite_native_atlas(raw, pages)
+    assert result == raw.replace(b'\xef\xbb\xbfsource.png\r\n', b'\xef\xbb\xbffirsthash.png\r\n', 1).replace(
+        b'folder/second.png\n', b'secondhash.png\n', 1)
+    assert b'\r\nsource.png\r\n  xy: 1,2' in result  # region name is untouched
+    assert [p['nativeAtlasPage'] for p in pages] == ['firsthash.png', 'secondhash.png']
+    assert [p['sourceAtlasPage'] for p in mapping] == ['source.png', 'folder/second.png']
+
+
+def test_native_atlas_rewrite_rejects_missing_reordered_or_ambiguous_pages():
+    from monkey.prefab_static_spine_rendering import rewrite_native_atlas
+    import pytest
+    for pages in (
+        [{'sourceAtlasPage':'b.png','nativeAtlasPage':'b.png','textureAssetPath':'Assets/h.png'}],
+        [{'sourceAtlasPage':p,'nativeAtlasPage':p,'textureAssetPath':'Assets/h.png'} for p in ('a.png','b.png')],
+    ):
+        with pytest.raises(StaticSpineRenderingError):
+            rewrite_native_atlas(b'a.png\nsize: 8,8\n\nb.png\nsize: 4,4\n', pages)
 
 
 class StaticSpineRenderingVerificationTests(unittest.TestCase):

@@ -10,6 +10,16 @@ from monkey.cli import main
 
 
 class ExportDispatchTests(unittest.TestCase):
+    def test_static_spine_refresh_routes_exact_request_pin_without_decode(self):
+        report = {'preparationStatus':'prepared','planPath':'fresh/plan/plan.json','native':'not_run','visual':'not_run'}
+        with patch('monkey.prefab_static_spine_refresh.prepare', return_value=report) as prepare:
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                result = main(['refresh-static-spine-helpers', '--request', 'request.json',
+                               '--expected-request', 'a'*64, '--out', 'fresh'])
+        self.assertEqual(result, 0)
+        prepare.assert_called_once_with('request.json', 'a'*64, 'fresh')
+        self.assertEqual(json.loads(output.getvalue()), report)
+
     def test_native_project_export_is_not_shadowed_by_texture_export(self):
         with tempfile.TemporaryDirectory() as directory:
             plan = Path(directory).resolve() / 'plan.json'

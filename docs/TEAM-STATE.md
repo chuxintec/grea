@@ -1,3 +1,5 @@
+2026-11-05 dev14集成完成：两个复用模块已交回文件单写；root完成共享CLI/版本/C# Factory、渲染Atlas映射及hash续接整合。80项相关检查/10子用例、9项持久身份比较与116C#离线编译通过；实际16PNG哈希只读核验，源计划423文件/54载体payload/3support保持。均无Editor/ASTC/实际续接操作。GREA继续独占实际候选流水线，binary保持paused_by_user，任务源仍仅GREA roadmap。
+
 2026-11-05 dev13集成：两复用模块已释放；root收回C#渲染helper单写，完成持久身份/已保存UI上下文分离、unit观察、SDK实际加载字节、sidecar主回读封存、Python归并与完整合成provider准备/导出验证。原模块索引保留，集成差异归dev13统一handoff；实际批次仍GREA独占，binary仍paused。
 
 2026-11-04 GREA49模块接线：root单写共享Importer/StaticSpine保存身份、CLI续接/导出/版本/总验证；复用binary_macos_v070仅负责Python全源覆盖、合法disabled、诊断去重（binary仍paused）；复用foodstreet_four_activity_recovery负责独立Spine静态渲染模块与helper。基线fd78d14；两实例原配置复用，实际模型本轮未独立回读；均禁止Editor/实际批次/产品写/递归。GREA独占实际续接、解码批次与native import。

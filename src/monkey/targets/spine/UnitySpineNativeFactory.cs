@@ -57,6 +57,7 @@ namespace Monkey.Targets.Spine
             public string nativeAtlasPage;
             public string sourceTextureSourceId;
             public string textureAssetPath;
+            public string textureSha256;
             public string normalMaterialAssetPath;
             public string graphicNormalMaterialAssetPath;
             public MaterialVariantSpec[] variants;
@@ -122,6 +123,7 @@ namespace Monkey.Targets.Spine
 
         [Serializable] public sealed class PageMaterialReadback
         {
+            public AtlasPageIdentityReadback atlasPageIdentity;
             public string sourceAtlasPage;
             public string nativeAtlasPage;
             public string sourceTextureSourceId;
@@ -134,6 +136,71 @@ namespace Monkey.Targets.Spine
             public string[] graphicVariantMaterialPaths;
             public string[] graphicVariantMaterialGuids;
             public bool referencesVerified;
+        }
+
+        [Serializable] public sealed class PersistentAssetIdentity
+        {
+            public string type, name, assetPath, guid;
+            public long localId;
+            public bool persistent;
+        }
+
+        [Serializable] public sealed class AtlasPageIdentityReadback
+        {
+            public string sourceAtlasPage, expectedPageName, actualPageName;
+            public bool pageNameMatches, materialReferenceEquals, materialPersistentIdentityMatches;
+            public bool savedArrayMaterialIdentityMatches, textureReferenceMatches, textureBytesMatch;
+            public bool shaderReferenceMatches, blendMatches, verified;
+            public PersistentAssetIdentity actualMaterial, expectedMaterial, savedArrayMaterial;
+        }
+
+        static PersistentAssetIdentity AssetIdentity(UnityEngine.Object value)
+        {
+            var result = new PersistentAssetIdentity();
+            if (value == null) return result;
+            result.type = value.GetType().FullName; result.name = value.name;
+            result.assetPath = AssetDatabase.GetAssetPath(value);
+            result.persistent = EditorUtility.IsPersistent(value);
+            string guid; long localId;
+            if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out guid, out localId))
+            { result.guid = guid; result.localId = localId; }
+            return result;
+        }
+
+        static bool SamePersistentAsset(PersistentAssetIdentity actual, PersistentAssetIdentity expected)
+        {
+            return actual.persistent && expected.persistent && actual.localId != 0 && expected.localId != 0 &&
+                !String.IsNullOrEmpty(actual.guid) && !String.IsNullOrEmpty(expected.guid) &&
+                actual.guid == expected.guid && actual.localId == expected.localId && actual.type == expected.type &&
+                !String.IsNullOrEmpty(actual.assetPath) && actual.assetPath == expected.assetPath;
+        }
+
+        static AtlasPageIdentityReadback ReadAtlasPageIdentity(DataAssetSpec spec, int index,
+            AtlasPage page, Material savedArrayMaterial, Shader shader)
+        {
+            var pageSpec = spec.pages[index];
+            var actual = page == null ? null : page.rendererObject as Material;
+            var expected = AssetDatabase.LoadAssetAtPath<Material>(pageSpec.normalMaterialAssetPath);
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(pageSpec.textureAssetPath);
+            var result = new AtlasPageIdentityReadback {
+                sourceAtlasPage = pageSpec.sourceAtlasPage, expectedPageName = pageSpec.nativeAtlasPage,
+                actualPageName = page == null ? null : page.name,
+                actualMaterial = AssetIdentity(actual), expectedMaterial = AssetIdentity(expected),
+                savedArrayMaterial = AssetIdentity(savedArrayMaterial),
+                pageNameMatches = page != null && page.name == pageSpec.nativeAtlasPage,
+                materialReferenceEquals = ReferenceEquals(actual, expected),
+                textureReferenceMatches = actual != null && texture != null && actual.mainTexture == texture,
+                textureBytesMatch = String.IsNullOrEmpty(pageSpec.textureSha256) ||
+                    HashAsset(pageSpec.textureAssetPath) == pageSpec.textureSha256,
+                shaderReferenceMatches = actual != null && shader != null && actual.shader == shader,
+                blendMatches = actual != null && BlendMatches(actual, spec.premultipliedAlpha, "normal")
+            };
+            result.materialPersistentIdentityMatches = SamePersistentAsset(result.actualMaterial, result.expectedMaterial);
+            result.savedArrayMaterialIdentityMatches = SamePersistentAsset(result.savedArrayMaterial, result.expectedMaterial);
+            result.verified = result.pageNameMatches && result.materialPersistentIdentityMatches &&
+                result.savedArrayMaterialIdentityMatches && result.textureReferenceMatches && result.textureBytesMatch &&
+                result.shaderReferenceMatches && result.blendMatches;
+            return result;
         }
 
         [Serializable] public sealed class ComponentReadback
@@ -330,8 +397,9 @@ namespace Monkey.Targets.Spine
                 for (int index = 0; index < spec.pages.Length; index++)
                 {
                     var page = parsedAtlas.Pages[index];
-                    if (page.name != spec.pages[index].nativeAtlasPage || !ReferenceEquals(page.rendererObject, normalMaterials[index]))
-                        throw new InvalidOperationException("SPINE_ATLAS_NATIVE_PAGE_READBACK_MISMATCH: " + spec.pages[index].sourceAtlasPage);
+                    var identityReadback = ReadAtlasPageIdentity(spec, index, page, savedAtlasAsset.materials[index], shader);
+                    if (!identityReadback.verified)
+                        throw new InvalidOperationException("SPINE_ATLAS_NATIVE_PAGE_READBACK_MISMATCH: " + JsonUtility.ToJson(identityReadback));
                 }
 
                 phase = "create_skeleton_data_asset_instance";
@@ -718,11 +786,12 @@ namespace Monkey.Targets.Spine
             else for (int index = 0; index < spec.pages.Length; index++)
             {
                 var page = parsedAtlas.Pages[index];
-                var expected = atlas.materials[index];
-                if (page.name != spec.pages[index].nativeAtlasPage || !ReferenceEquals(page.rendererObject, expected) ||
-                    expected == null || expected.mainTexture != AssetDatabase.LoadAssetAtPath<Texture2D>(spec.pages[index].textureAssetPath) ||
-                    expected.shader != pinnedShader || !BlendMatches(expected, spec.premultipliedAlpha, "normal"))
+                var expected = atlas.materials != null && index < atlas.materials.Length ? atlas.materials[index] : null;
+                var pageIdentity = ReadAtlasPageIdentity(spec, index, page, expected, pinnedShader);
+                if (!pageIdentity.verified) {
                     materialReadback = false;
+                    AddGap(gaps, "source_profile_atlas_page_identity_mismatch:" + JsonUtility.ToJson(pageIdentity));
+                }
             }
             if (!VerifyBlendMaterials(saved, spec, variantMaterials)) materialReadback = false;
             if (!materialReadback) AddGap(gaps, "source_profile_native_material_readback_mismatch");
@@ -779,6 +848,8 @@ namespace Monkey.Targets.Spine
                 if (!pageRefs) AddGap(gaps, "atlas_page_material_native_identity_unverified:" + pageSpec.sourceAtlasPage);
                 pageReadbacks.Add(new PageMaterialReadback
                 {
+                    atlasPageIdentity = ReadAtlasPageIdentity(spec, index,
+                        parsedAtlas != null && index < parsedAtlas.Pages.Count ? parsedAtlas.Pages[index] : null, normal, pinnedShader),
                     sourceAtlasPage = pageSpec.sourceAtlasPage, nativeAtlasPage = pageSpec.nativeAtlasPage,
                     sourceTextureSourceId = pageSpec.sourceTextureSourceId, textureGuid = textureGuid,
                     normalMaterialGuid = normalGuid, graphicNormalMaterialPath = graphicNormalPath,
@@ -1178,6 +1249,12 @@ namespace Monkey.Targets.Spine
             if (texture != null)
             {
                 var objectPath = AssetDatabase.GetAssetPath(texture);
+                if (texture.name != Path.GetFileNameWithoutExtension(page.nativeAtlasPage))
+                    throw new InvalidOperationException("SPINE_PAGE_TEXTURE_NATIVE_LOOKUP_NAME_MISMATCH: sourcePage=" +
+                        page.sourceAtlasPage + " nativePage=" + page.nativeAtlasPage + " textureName=" + texture.name +
+                        " texture=" + JsonUtility.ToJson(AssetIdentity(texture)));
+                if (!String.IsNullOrEmpty(page.textureSha256) && HashAsset(path) != page.textureSha256)
+                    throw new InvalidOperationException("SPINE_PAGE_TEXTURE_BYTES_MISMATCH: " + path);
                 if (String.Equals(objectPath, path, StringComparison.Ordinal)) return texture;
                 throw new InvalidOperationException("SPINE_PAGE_TEXTURE_ASSET_PATH_MISMATCH: source=" +
                     page.sourceTextureSourceId + " expected=" + path + " actual=" + objectPath);

@@ -27,3 +27,15 @@ monkey export --plan /fresh/continuation/plan/plan.json --out /fresh/native-cand
 `spine` 族的非渲染静态载体保留原始数据、atlas 和未解码纹理页的真实 TextAsset 引用及哈希；未序列化的字段保留未知。它不依赖渲染 SDK，不代表动态 Spine 行为或视觉还原已完成。可选 `spineRuntime` 的 `manifest` 为同样的 `{path, sha256}`，`assetsRoot` 为 SDK 备份根目录绝对路径，用于显式 SDK 来源核查。
 
 准备完成的 `preparationStatus=prepared` 仅表示新 plan 已生成。已有诊断和部分恢复状态保留；必须继续 export、真实 native-import、保存重开回读与原有 `freeze-native-selection`。不能以续接报告替代原生验收或工程采用。
+
+显式 `spineRendering: true` 还要求已固定的 `spineRuntime` 与 `{path, sha256}` 格式的 `spineSourceEngine`。它保留原始数据载体，并准备独立 SkeletonGraphic 的时间零姿态；PMA 未知等缺口仍保留。原 Atlas 字节留在源数据载体，渲染 Atlas 仅将页名改为解码 PNG 的文件名，适配固定 SDK 按 `Material.mainTexture.name` 查找页纹理的规则。region 名、坐标和其他字节保持一致，计划记录原始及派生 SHA、逐页纹理身份。保存回读分别记录页名、材质 GUID/localID/类型/路径及纹理、Shader、混合参数检查；托管包装对象的 `ReferenceEquals` 仅作诊断。
+
+已有渲染计划需要更新原生 helper 时，使用 `refresh-static-spine-helpers`。请求 schema 为 `monkey-static-spine-helper-refresh/1`、`schemaVersion: 1`，只接收上例格式的 `plan` 和 `planManifest`。它验证完整自有清单、载体及渲染 payload 哈希，在新目录复制已有产物，仅更新包内白名单 helper 和可从原 Atlas 严格重算的原生页名映射。解码 PNG、SDK、骨骼、字体等字节复用，不调用 ASTC 解码或重新 normalize。输入篡改、映射不符及输出重叠均拒绝。
+
+```sh
+monkey refresh-static-spine-helpers --request /inputs/refresh.json \
+  --expected-request <request-sha256> --out /fresh/refresh
+monkey export --plan /fresh/refresh/plan/plan.json --out /fresh/native-candidate
+```
+
+刷新报告同样不表示 Editor、视觉或 Player 验收通过。
