@@ -39,3 +39,10 @@ monkey支持显式缺失安装，范围见其合同；不能把一次历史授�
 - 仅查工程上下文可用`beaver_pipeline inspect --config LOCK --project PROJECT --output NEW`；这是只读检查，不是采用、迁移或Editor连接。
 - 外层`finding/needs_action/error`可能发生在provider已经写入之后。先核`executed`、原stdout/退出码、`actualChanges`和journal；执行后消费校验失败不证明零写入，不自动重放apply或宣称回滚。修合同后的离线回读单独记录，不改旧原始回执。
 - 旧工具ID与接口继续存在；其执行归属看registry的`delegate`。接收方实现、消费者验证和切换未闭合时不退休旧实现，也不返回空成功。新能力先核实际capabilities与GREA适配，不能透传未登记命令。
+
+## 当前实现边界
+
+- `plan-workflow` 返回的 `business_development_requires_verified_bulk_handoff` 只是计划字段，不拦截后续调用。
+- `monkey_bridge --workflow handoff` 是独立的显式审计，不随计划或批量执行自动运行。采用新恢复候选前，操作者按固定 provider 支持的公开交接合同显式审计并读取结果；匹配的既有交接证据可复用，不把每次业务开发变成重新恢复或审计。缺口只阻断依赖该候选的部分。
+- GREA 尚无贯穿恢复到采用的阶段状态机；单项工具已有的身份、前置条件和写入检查保持，不据此声称能够自动阻止所有跨阶段误用、自动推进或同步任务状态；任务状态按[权威任务源](开发计划与进度管理.md#权威任务源与派生记录)维护。
+- `beaver_pipeline invoke/inspect` 当前每次都检查 monkey 和 beaver，任一未就绪即返回 `needs_action` 且不执行，工程操作尚不能只依赖 beaver。不绕过检查，也不回退旧实现。

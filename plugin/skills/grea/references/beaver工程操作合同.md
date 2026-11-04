@@ -1,6 +1,6 @@
 # beaver 工程开发工具接入
 
-GREA 维护 Skill 与方法，monkey 恢复独立候选，beaver 执行开发工程操作。完整执行链两者必选，按阶段使用；已有工程不为形式重导。旧 GREA 工具 ID 保留，未经完整合同和消费者验证不退休。
+GREA 维护 Skill 与方法，monkey 恢复独立候选，beaver 执行开发工程操作。完整执行链两者必选，按阶段使用；`beaver_pipeline` 当前仍统一检查两者，见[当前实现边界](monkey与beaver调用.md#当前实现边界)。已有工程不为形式重导。旧 GREA 工具 ID 保留，未经完整合同和消费者验证不退休。
 
 当前源码模块锁指定正式 beaver **0.5.0**（见 `modules.lock.json`）：保留 0.3/0.4 合同和 23 个 `beaver tool <id>` 工具，新增本页的五个 UI/接线/诊断入口。GREA 的委托工具通过已绑定 provider 或随包 wheel 执行。历史 0.1/0.2/0.3/0.4 精确实现仍可按原 lock 使用，不自动升级绑定或重放旧事务；0.3.x 无 `tool` 子命令，不能用于委托工具。
 
