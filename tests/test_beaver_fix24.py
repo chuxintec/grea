@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver,beaver_operations as ops
 from grea.beaver_contracts import documents
@@ -23,14 +24,14 @@ class Fix24Tests(unittest.TestCase):
         self.assertNotIn(beaver.P0_FIX24_VERSION,beaver.P0_SUMMARY_VERSIONS)
 
     def test_v2_fields_belong_in_provider_spec_not_argv(self):
-        q=dict(schema_version=1,operation='intake.plan',options={'candidate':'/fixture/c','target':'/fixture/t','spec':'/fixture/spec2.json'},timeout_seconds=60)
+        q=dict(schema_version=1,operation='intake.plan',options={'candidate':fixture_path('c'),'target':fixture_path('t'),'spec':fixture_path('spec2.json')},timeout_seconds=60)
         ops.validate_provider_version(q,beaver.P0_FIX24_VERSION)
         for name in ['externalAssets','packageScripts','namespace','summary']:
             with self.subTest(name=name),self.assertRaises(ValueError):ops.validate(dict(q,options=dict(q['options'],**{name:True})))
 
     def test_budget_and_old_runtime_boundaries_unchanged(self):
         for operation,minimum in [('intake.apply',1630),('intake.rollback',1130)]:
-            options={'plan' if operation.endswith('apply') else 'transaction':'/fixture/input','expected-plan':'a'*64,'editor-path':'/fixture/Editor','timeout':500}
+            options={'plan' if operation.endswith('apply') else 'transaction':fixture_path('input'),'expected-plan':'a'*64,'editor-path':fixture_path('Editor'),'timeout':500}
             q=dict(schema_version=1,operation=operation,options=options,timeout_seconds=minimum)
             ops.validate_provider_version(q,beaver.P0_FIX24_VERSION)
             with self.assertRaises(ValueError):ops.validate(dict(q,timeout_seconds=minimum-1))

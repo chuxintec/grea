@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver,beaver_operations as ops
 from grea.beaver_contracts import documents
@@ -20,7 +21,7 @@ class Fix25Tests(unittest.TestCase):
 
     def test_budgets_and_no_traversal_override(self):
         for operation,minimum in [('intake.apply',1630),('intake.rollback',1130)]:
-            options={'plan' if operation.endswith('apply') else 'transaction':'/fixture/input','expected-plan':'a'*64,'editor-path':'/fixture/Editor','timeout':500}
+            options={'plan' if operation.endswith('apply') else 'transaction':fixture_path('input'),'expected-plan':'a'*64,'editor-path':fixture_path('Editor'),'timeout':500}
             q=dict(schema_version=1,operation=operation,options=options,timeout_seconds=minimum)
             ops.validate_provider_version(q,beaver.P0_FIX25_VERSION)
             with self.assertRaises(ValueError):ops.validate(dict(q,timeout_seconds=minimum-1))

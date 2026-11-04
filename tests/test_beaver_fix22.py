@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import json
 import tempfile
 import unittest
@@ -18,9 +19,9 @@ class Fix22Tests(unittest.TestCase):
         self.assertNotIn(version,beaver.P0_RETIRE_VERSIONS)
 
     def test_collect_summary_and_fixed_producer(self):
-        q=dict(schema_version=1,operation='build-filter.collect',options={'project':'/fixture/project space','spec':'/fixture/spec.json','editor-path':'/fixture/Editor','timeout':20,'summary':True},timeout_seconds=30)
+        q=dict(schema_version=1,operation='build-filter.collect',options={'project':fixture_path('project space'),'spec':fixture_path('spec.json'),'editor-path':fixture_path('Editor'),'timeout':20,'summary':True},timeout_seconds=30)
         ops.validate_provider_version(q,beaver.P0_FIX22_VERSION)
-        argv=ops.argv_for(q,'/fixture/receipt');self.assertIn('--summary',argv);self.assertIn('/fixture/project space',argv)
+        argv=ops.argv_for(q,fixture_path('receipt'));self.assertIn('--summary',argv);self.assertIn(fixture_path('project space'),argv)
         self.assertIn(beaver.P0_FIX22_VERSION,beaver.P0_SUMMARY_VERSIONS)
         with self.assertRaises(ValueError):ops.validate(dict(q,options=dict(q['options'],includeObjectIdentities=True)))
         cap=dict(version=beaver.P0_FIX22_VERSION,**beaver.V03_CONTRACTS,producer_implementation_sha256=beaver.V03_CANDIDATES[beaver.P0_FIX22_VERSION]['implementation_sha256'],capabilities=[dict(id=n,state='implemented') for n in sorted(beaver.V02_OPERATIONS|beaver.V03_GROUPS|{'build-filter.collect/plan'})])

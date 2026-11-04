@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import json
 import tempfile
 import unittest
@@ -20,13 +21,13 @@ class Fix12Tests(unittest.TestCase):
         for name in ('native.readback', 'adoption.plan', 'adoption.apply', 'adoption.rollback',
                      'build-filter.collect', 'batch.plan', 'unity.recover'):
             spec = ops.OPERATIONS[name]
-            options = {k: 20 if k == 'timeout' else 'a' * 64 if k in spec.get('hashes', ()) else '/fixture/' + k for k in spec['required']}
+            options = {k: 20 if k == 'timeout' else 'a' * 64 if k in spec.get('hashes', ()) else fixture_path('') + k for k in spec['required']}
             ops.validate_provider_version(dict(schema_version=1, operation=name, options=options, timeout_seconds=30), version)
 
     def test_owner_selector_belongs_to_provider_spec_not_cli(self):
         request = dict(schema_version=1, operation='native.readback', timeout_seconds=30,
-            options=dict(project='/fixture/Unity', spec='/fixture/request.json',
-                         **{'editor-path': '/fixture/Editor'}, timeout=20))
+            options=dict(project=fixture_path('Unity'), spec=fixture_path('request.json'),
+                         **{'editor-path': fixture_path('Editor')}, timeout=20))
         with self.assertRaises(ValueError):
             ops.validate(dict(request, options=dict(request['options'], ownerIdentity={
                 'guid': 'a' * 32, 'localId': 123})))
@@ -43,7 +44,7 @@ class Fix12Tests(unittest.TestCase):
         self.assertTrue(all(type(q['ownerIdentity']['localId']) is int for q in actual['queries']))
 
     def test_reviewed_font_recovery_is_fix12_only(self):
-        req=dict(schema_version=1,operation='unity.recover-font-source',options={'transaction':'/fixture/transaction','review':'/fixture/review.json','expected-plan':'a'*64},timeout_seconds=30)
+        req=dict(schema_version=1,operation='unity.recover-font-source',options={'transaction':fixture_path('transaction'),'review':fixture_path('review.json'),'expected-plan':'a'*64},timeout_seconds=30)
         ops.validate_provider_version(req,beaver.P0_FIX12_VERSION)
         with self.assertRaises(ValueError):ops.validate_provider_version(req,beaver.P0_FIX11_VERSION)
-        with self.assertRaises(ValueError):ops.validate(dict(req,options=dict(req['options'],**{'editor-path':'/fixture/Editor'})))
+        with self.assertRaises(ValueError):ops.validate(dict(req,options=dict(req['options'],**{'editor-path':fixture_path('Editor')})))

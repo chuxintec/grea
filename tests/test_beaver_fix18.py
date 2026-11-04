@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import json
 import tempfile
 import unittest
@@ -23,7 +24,7 @@ class Fix18Tests(unittest.TestCase):
             Fix17Tests().test_fixed_producer_and_previous_surface()
 
     def test_sdk_options_paired_version_gated_and_schema_agrees(self):
-        q=self.request('adoption.plan',candidate='/fixture/candidate',target='/fixture/target',**{'sdk-migration':'/fixture/sdk.json','expected-sdk-migration':'a'*64})
+        q=self.request('adoption.plan',candidate=fixture_path('candidate'),target=fixture_path('target'),**{'sdk-migration':fixture_path('sdk.json'),'expected-sdk-migration':'a'*64})
         ops.validate_provider_version(q,beaver.P0_FIX18_VERSION)
         with self.assertRaises(ValueError):ops.validate_provider_version(q,beaver.P0_FIX17_VERSION)
         validator=Draft202012Validator(documents()['beaver-operation.schema.json']);validator.validate(q)
@@ -45,9 +46,9 @@ class Fix18Tests(unittest.TestCase):
         with self.assertRaises(ValueError):ops.validate_provider_version(self.request(),beaver.P0_FIX17_VERSION)
 
     def test_input_cannot_override_pid_or_owned_session(self):
-        q=self.request('qa.input',session='/fixture/session.json',spec='/fixture/input.json',**{'expected-session':'a'*64,'expected-spec':'b'*64})
+        q=self.request('qa.input',session=fixture_path('session.json'),spec=fixture_path('input.json'),**{'expected-session':'a'*64,'expected-spec':'b'*64})
         ops.validate_provider_version(q,beaver.P0_FIX18_VERSION)
-        argv=ops.argv_for(q,'/fixture/receipt');self.assertEqual(argv[:2],['qa','input']);self.assertEqual(argv[-2:],['--out','/fixture/receipt/provider-output'])
+        argv=ops.argv_for(q,fixture_path('receipt'));self.assertEqual(argv[:2],['qa','input']);self.assertEqual(argv[-2:],['--out',fixture_path('receipt/provider-output')])
         for changes in ({'pid':123},{'backend':'other'},{'expected-session':'bad'}):
             with self.assertRaises(ValueError):ops.validate(dict(q,options=dict(q['options'],**changes)))
 

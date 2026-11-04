@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver, beaver_operations as ops
 from grea.beaver_contracts import documents
@@ -7,8 +8,8 @@ class Fix28Tests(unittest.TestCase):
     def request(self, operation, inner, outer):
         key = 'plan' if operation == 'intake.apply' else 'transaction'
         return dict(schema_version=1, operation=operation, timeout_seconds=outer,
-                    options={key:'/fixture/input', 'expected-plan':'a'*64,
-                             'editor-path':'/fixture/Editor', 'timeout':inner})
+                    options={key:fixture_path('input'), 'expected-plan':'a'*64,
+                             'editor-path':fixture_path('Editor'), 'timeout':inner})
 
     def test_exact_v4_identity_and_contract(self):
         cap = dict(version=beaver.P0_FIX28_VERSION, **beaver.V03_CONTRACTS,
@@ -58,7 +59,7 @@ class Fix28Tests(unittest.TestCase):
         for key in ('newScripts','skipReferences','executeMethod','maximumNativePhases'):
             with self.assertRaises(ValueError):
                 ops.validate_provider_version(dict(q,options=dict(q['options'],**{key:True})),beaver.P0_FIX28_VERSION)
-        self.assertEqual(ops.argv_for(q,'/fixture/new')[:2],['intake','apply'])
+        self.assertEqual(ops.argv_for(q,fixture_path('new'))[:2],['intake','apply'])
 
     def test_qa_stays_on_fix27_and_cannot_enter_fix28(self):
         for name in sorted(beaver.VIRTUAL_OPERATIONS|beaver.VIRTUAL_BOOTSTRAP_OPERATIONS):

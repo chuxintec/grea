@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver, beaver_operations as ops
 from grea.beaver_contracts import documents
@@ -22,11 +23,11 @@ class Fix27Tests(unittest.TestCase):
     def test_same_intake_phase_budget_and_closed_stop_request(self):
         for operation,phases,overhead in [('intake.apply',5,310),('intake.rollback',2,160)]:
             key='plan' if operation=='intake.apply' else 'transaction'
-            q=dict(schema_version=1,operation=operation,options={key:'/fixture/input','expected-plan':'a'*64,'editor-path':'/fixture/Editor','timeout':180},timeout_seconds=phases*180+overhead)
+            q=dict(schema_version=1,operation=operation,options={key:fixture_path('input'),'expected-plan':'a'*64,'editor-path':fixture_path('Editor'),'timeout':180},timeout_seconds=phases*180+overhead)
             ops.validate_provider_version(q,beaver.P0_FIX27_VERSION)
             with self.assertRaises(ValueError):ops.validate_provider_version(dict(q,timeout_seconds=q['timeout_seconds']-1),beaver.P0_FIX27_VERSION)
             self.assertEqual(ops.OPERATIONS[operation]['version_budgets'][beaver.P0_FIX27_VERSION],ops.OPERATIONS[operation]['version_budgets'][beaver.P0_FIX26_VERSION])
-        q=dict(schema_version=1,operation='qa.virtual-stop',options={'session':'/fixture/original','expected-session':'a'*64},timeout_seconds=90)
+        q=dict(schema_version=1,operation='qa.virtual-stop',options={'session':fixture_path('original'),'expected-session':'a'*64},timeout_seconds=90)
         ops.validate_provider_version(q,beaver.P0_FIX27_VERSION)
         for key in ('force','pid','retiredAfterCleanExit','skipLifecycle','fallback'):
             with self.assertRaises(ValueError):ops.validate(dict(q,options=dict(q['options'],**{key:True})))

@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver,beaver_operations as ops
 from grea.beaver_contracts import documents
@@ -9,7 +10,7 @@ class Fix21Tests(unittest.TestCase):
         q=fixed18.Fix18Tests().request(backend='macos-native-ax-pid-pointer-sync/1')
         for version in (beaver.P0_FIX19_VERSION,beaver.P0_FIX21_VERSION):ops.validate_provider_version(q,version)
         with self.assertRaises(ValueError):ops.validate_provider_version(q,beaver.P0_FIX20_VERSION)
-        sdk=fixed18.Fix18Tests().request('adoption.plan',candidate='/fixture/candidate',target='/fixture/target',**{'sdk-migration':'/fixture/spec.json','expected-sdk-migration':'a'*64})
+        sdk=fixed18.Fix18Tests().request('adoption.plan',candidate=fixture_path('candidate'),target=fixture_path('target'),**{'sdk-migration':fixture_path('spec.json'),'expected-sdk-migration':'a'*64})
         ops.validate_provider_version(sdk,beaver.P0_FIX20_VERSION)
         with self.assertRaises(ValueError):ops.validate_provider_version(sdk,beaver.P0_FIX21_VERSION)
         branch=next(x for x in documents()['beaver-operation.schema.json']['oneOf'] if x['properties']['operation']['const']=='qa.bind')

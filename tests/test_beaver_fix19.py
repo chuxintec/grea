@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver,beaver_operations as ops
 from grea.beaver_contracts import documents
@@ -12,7 +13,7 @@ class Fix19Tests(unittest.TestCase):
         for version in (beaver.P0_FIX18_VERSION,beaver.P0_FIX19_VERSION):
             ops.validate_provider_version(fixed18.Fix18Tests().request(),version)
             ops.validate_provider_version(fixed18.Fix18Tests().request(backend='macos-native-ax-pid/1'),version)
-        self.assertNotIn('--backend',ops.argv_for(fixed18.Fix18Tests().request(),'/fixture/out'))
+        self.assertNotIn('--backend',ops.argv_for(fixed18.Fix18Tests().request(),fixture_path('out')))
 
     def test_contract_exposes_value_gate_and_does_not_allow_cursor_override(self):
         branch=next(x for x in documents()['beaver-operation.schema.json']['oneOf'] if x['properties']['operation']['const']=='qa.bind')

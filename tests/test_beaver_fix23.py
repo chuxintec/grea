@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver,beaver_operations as ops
 from grea.beaver_contracts import documents
@@ -5,9 +6,9 @@ from grea.beaver_contracts import documents
 
 class Fix23Tests(unittest.TestCase):
     def request(self,operation):
-        options=({'candidate':'/fixture/candidate','target':'/fixture/target','spec':'/fixture/spec.json'} if operation=='intake.plan' else
-                 {'plan':'/fixture/plan.json','expected-plan':'a'*64,'editor-path':'/fixture/Editor','timeout':500} if operation=='intake.apply' else
-                 {'transaction':'/fixture/transaction','expected-plan':'a'*64,'editor-path':'/fixture/Editor','timeout':500})
+        options=({'candidate':fixture_path('candidate'),'target':fixture_path('target'),'spec':fixture_path('spec.json')} if operation=='intake.plan' else
+                 {'plan':fixture_path('plan.json'),'expected-plan':'a'*64,'editor-path':fixture_path('Editor'),'timeout':500} if operation=='intake.apply' else
+                 {'transaction':fixture_path('transaction'),'expected-plan':'a'*64,'editor-path':fixture_path('Editor'),'timeout':500})
         return dict(schema_version=1,operation=operation,options=options,timeout_seconds=1630)
 
     def test_scoped_runtime_and_schema_surface_match(self):
@@ -32,7 +33,7 @@ class Fix23Tests(unittest.TestCase):
 
     def test_named_argv_and_no_output_on_rollback(self):
         for name in ('intake.plan','intake.apply','intake.rollback'):
-            q=self.request(name);argv=ops.argv_for(q,'/fixture/new')
+            q=self.request(name);argv=ops.argv_for(q,fixture_path('new'))
             self.assertEqual(argv[:2],['intake',name.split('.')[1]])
             self.assertEqual('--out' in argv,name!='intake.rollback')
             with self.assertRaises(ValueError):ops.validate(dict(q,options=dict(q['options'],summary=True)))

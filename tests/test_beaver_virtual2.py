@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import json
 import tempfile
 import unittest
@@ -10,8 +11,8 @@ from grea.beaver_contracts import documents
 class Virtual2Tests(unittest.TestCase):
     version = beaver.VIRTUAL2_VERSION
     def request(self,action):
-        options={'spec':'/fixture/spec','expected-spec':'a'*64} if action=='prepare' else ({'project':'demo','build':'build-a','profile':'qa-a','run':'run-a','expected-owner':'a'*64,'channel':'/fixture/channel','expected-channel':'b'*64} if action=='bind' else {'session':'/fixture/session','expected-session':'a'*64})
-        if action=='input':options.update(spec='/fixture/input',**{'expected-spec':'b'*64})
+        options={'spec':fixture_path('spec'),'expected-spec':'a'*64} if action=='prepare' else ({'project':'demo','build':'build-a','profile':'qa-a','run':'run-a','expected-owner':'a'*64,'channel':fixture_path('channel'),'expected-channel':'b'*64} if action=='bind' else {'session':fixture_path('session'),'expected-session':'a'*64})
+        if action=='input':options.update(spec=fixture_path('input'),**{'expected-spec':'b'*64})
         return dict(schema_version=1,operation='qa.virtual-'+action,options=options,timeout_seconds=90)
 
     def test_exact_producer_and_five_capabilities(self):
@@ -29,7 +30,7 @@ class Virtual2Tests(unittest.TestCase):
         for action in ('prepare','bind','input','status','stop'):
             q=self.request(action);ops.validate_provider_version(q,version)
             Draft202012Validator(documents()['beaver-operation.schema.json']).validate(q)
-            argv=ops.argv_for(q,'/fixture/new');self.assertEqual(argv[:2],['qa','virtual-'+action]);self.assertIn('--out',argv)
+            argv=ops.argv_for(q,fixture_path('new'));self.assertEqual(argv[:2],['qa','virtual-'+action]);self.assertIn('--out',argv)
             for old in (beaver.P0_FIX21_VERSION,beaver.P0_FIX26_VERSION,'0.6.0.dev20261102+virtual1'):
                 with self.assertRaises(ValueError):ops.validate_provider_version(q,old)
         self.assertFalse(beaver.operation_allowed(version,'qa.input'))
@@ -37,7 +38,7 @@ class Virtual2Tests(unittest.TestCase):
 
     def test_bootstrap_preserves_exact_owner_profile_and_no_raw_input(self):
         for name in ('qa.prepare','qa.launch','qa.collect'):
-            options=({'spec':'/fixture/prepare','expected-spec':'a'*64} if name=='qa.prepare' else dict(project='demo',build='build-a',profile='qa-a',run='run-a',**{'expected-owner':'a'*64}))
+            options=({'spec':fixture_path('prepare'),'expected-spec':'a'*64} if name=='qa.prepare' else dict(project='demo',build='build-a',profile='qa-a',run='run-a',**{'expected-owner':'a'*64}))
             q=dict(schema_version=1,operation=name,options=options,timeout_seconds=90)
             ops.validate_provider_version(q,self.version)
             with self.assertRaises(ValueError):ops.validate(dict(q,options=dict(options,pid=42)))

@@ -1,3 +1,4 @@
+from path_support import fixture_path
 import unittest
 from grea.integrations import beaver,beaver_operations as ops
 
@@ -14,7 +15,7 @@ class Fix8Tests(unittest.TestCase):
     def test_spec_features_are_not_new_cli_options(self):
         for operation,extra in [('build-filter.collect',{'includeObjectIdentities':True}),('batch.plan',{'checkpointPolicy':'move-delta-v1'})]:
             spec=ops.OPERATIONS[operation]
-            options={k:1 if k=='timeout' else '/synthetic-fixture/'+k for k in spec['required']}
+            options={k:1 if k=='timeout' else fixture_path(k) for k in spec['required']}
             req=dict(schema_version=1,operation=operation,options=options,timeout_seconds=30)
             ops.validate_provider_version(req,beaver.P0_FIX8_VERSION)
             with self.assertRaises(ValueError):ops.validate(dict(req,options=dict(options,**extra)))

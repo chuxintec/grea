@@ -1,3 +1,4 @@
+from path_support import fixture_path
 """Stable0.6 keeps exact producer and per-operation safety contracts."""
 import unittest
 from grea.integrations import beaver
@@ -27,8 +28,8 @@ class StableBeaverTests(unittest.TestCase):
 
     def test_intake_native_budget_and_unsafe_extra_option_refused(self):
         request = dict(schema_version=1, operation='intake.apply', timeout_seconds=1710,
-            options={'plan': '/fixture/plan', 'expected-plan': 'a' * 64,
-                     'editor-path': '/fixture/Editor', 'timeout': 280})
+            options={'plan': fixture_path('plan'), 'expected-plan': 'a' * 64,
+                     'editor-path': fixture_path('Editor'), 'timeout': 280})
         ops.validate_provider_version(request, beaver.STABLE_VERSION)
         for altered in (dict(request, timeout_seconds=1709),
                         dict(request, options=dict(request['options'], timeout=281)),
