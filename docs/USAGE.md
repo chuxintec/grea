@@ -294,7 +294,7 @@ bin/monkey convert --source /path/to/obtained-resources --target cocos38 --out o
 
 支持明文wxapkg的BE/ED头、索引和连续不重叠payload，APK ZIP及明确Cocos资源目录。资源目录默认全文件，保留`--package`强制全文件入口；旧asset-index/recipe只用于切片诊断。全量指本次明确输入内的全部可枚举文件；多输入根通过schema 1 input-set校验身份并合并。存在同名不同配置bundle时拒绝混拼。源Cocos版本无法确定时记录unknown，不伪称对象reader支持。非Cocos或未知加密容器明确报错。
 
-边界：最多50,000文件/目录、每文件128MiB、每个容器/目录展开1GiB、容器1GiB、目录深64。多输入合并默认仍为1GiB；显式input-set可用 `"limits":{"maxInputBytes":2147483648}` 声明2GiB的合并预算，严格整数、硬上限8GiB，不改变单文件、单根和数量限制。远端获取每轮仍固定1GiB；派生输入集保留显式合并预算。拒绝穿越、绝对路径、反斜线、symlink/特殊项、大小/哈希变化、同名及Unicode/casefold路径别名、wxapkg重叠或漏计payload。仅一层枚举，不递归解包内部容器；嵌套包原样待转。APK内动态库/dex及平台文件保留证据并排除目标运行时，不执行、不安装。
+边界：最多50,000文件/目录、每文件128MiB、每个容器/目录展开1GiB、容器1GiB、目录深64。整批输入合并默认2048 MiB；显式input-set可用 `"limits":{"maxInputBytes":2147483648}` 声明2GiB的合并预算，严格整数、硬上限8GiB，不改变单文件、单根和数量限制。远端获取每轮仍固定1GiB；派生输入集保留显式合并预算。拒绝穿越、绝对路径、反斜线、symlink/特殊项、大小/哈希变化、同名及Unicode/casefold路径别名、wxapkg重叠或漏计payload。仅一层枚举，不递归解包内部容器；嵌套包原样待转。APK内动态库/dex及平台文件保留证据并排除目标运行时，不执行、不安装。
 
 输出分别为UnityProject/CocosProject；移走其中一个工程不依赖另一个或InputCache。每个工程包含resource-ledger、cocos-assets、code-index、dynamic-keys、agent-work、生成文件hash/所有权，以及AGENTS、START-HERE、PROJECT-STRUCTURE和DEPENDENCIES。已识别PNG/JPEG、TTF/OTF、Ogg/MP3/WAV复制到规范内容目录（仍需引擎导入）；所有未知原件/序列化对象/配置/Spine等留SourceRecovery。数值未判明前不假造正式配置；JSON不是一律当数值表。
 
@@ -444,3 +444,6 @@ monkey export --plan NEW_STAGE/plan.json --out UNITY_PROJECT
 A bounded run exits 1 when paused. Complete sharding returns the index fingerprint and exits 0. Retries check existing content by SHA-256. The index covers the original manifest and every owned stage file, including source plan, scripts and resource copies. Restoration verifies each file and the original ownership table before publishing a fresh directory. The final export applies Unity's component and source-contract checks. External source evidence referenced by absolute path must still be available for checks that require it.
 
 For a source-linked diagnostic capture, run `monkey prepare-context-preview --project UNITY_COPY --source-manifest SOURCE_MANIFEST --parent-id PARENT --target-id TEMPLATE --out REQUEST_KIT`. The kit pins the actual import instruction, saved parent Prefab and each matching source occurrence. Use the request and included Editor helper in a fresh isolated batch copy and invoke `MonkeyImporter.CaptureContextPreview` in the shared Editor slot. Inspect the resulting frame in its parent context before assigning any visual verdict.
+
+
+用 `monkey capabilities --json` 查看 `byteBudgets` 三项默认限额。包转换回执记录整批展开字节数和最大条目的实测大小，Unity 验证回执记录导入指令文件大小。超额时 CLI 返回含对象、测量依据、实测字节数、有效上限及单位的 `byteBudget`。1 MiB = 1,048,576 bytes，恰等于上限时通过字节检查。单根展开及原始容器的独立上限为 1024 MiB。

@@ -9,6 +9,7 @@ from collections import Counter
 from io import BytesIO
 from pathlib import Path
 from PIL import Image
+from .byte_budgets import BATCH_INPUT, inventory_usage
 from . import __version__
 from .io import safe, read, load, sha, write_json, new_output, diagnostic,stage_manifest
 from .sources.containers import entries, fingerprint, Names, MAX_FILE
@@ -121,7 +122,7 @@ def convert_package(source, target, output, namespace='monkey-project',offline=F
             spool=out/'InputCache';tree=out/'InputTree'
             rows=resume_state['rows'];configs=resume_state['configs'];recovered=resume_state['recovered']
             cocos_evidence=resume_state['report']['cocosEvidence']
-            report.update(inputFiles=len(rows),inputBytes=sum(r['bytes'] for r in rows),cocosEvidence=cocos_evidence,
+            report.update(byteBudgets=inventory_usage(rows, selection['maxInputBytes'] if selection else BATCH_INPUT),inputFiles=len(rows),inputBytes=sum(r['bytes'] for r in rows),cocosEvidence=cocos_evidence,
                           inventorySha256=resume_state['report']['inventorySha256'],resumedFrom=resume_state['receiptSha256'],
                           resumeBackup=resume_state['backup'])
         else:
@@ -171,7 +172,7 @@ def convert_package(source, target, output, namespace='monkey-project',offline=F
                 after={name:sha(raw) for name,raw in _input_entries(unit)}
                 if after!={r['localPath']:r['sha256'] for r in rows if r['inputRoot']==unit['id']}:
                     fail('SOURCE_CHANGED',unit['id'],'Explicit input changed during inventory')
-            report.update(inputFiles=len(rows),inputBytes=sum(r['bytes'] for r in rows),cocosEvidence=cocos_evidence,
+            report.update(byteBudgets=inventory_usage(rows, selection['maxInputBytes'] if selection else BATCH_INPUT),inputFiles=len(rows),inputBytes=sum(r['bytes'] for r in rows),cocosEvidence=cocos_evidence,
                           inventorySha256=sha(json.dumps(rows,sort_keys=True).encode()))
             stage='source-code'
             recovered=[]
@@ -558,6 +559,8 @@ Neither target requires monkey, Python, the source tree, the other target or the
         from .post_format import run as post_format
         return post_format(report,out,format_profile)
     except Exception as error:
+        if hasattr(error, 'byte_budget'):
+            report['byteBudgetFailure'] = error.byte_budget
         report.update(status='failed',workflowStatus='failed',failedStage=stage,
                       error=dict(code=getattr(error,'code','PACKAGE_FAILED'),message=str(error)))
         write_json(out/'conversion-result.json',report)

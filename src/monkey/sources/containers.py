@@ -9,11 +9,13 @@ import unicodedata
 import zipfile
 from pathlib import Path, PurePosixPath
 from ..io import safe
+from ..byte_budgets import BATCH_INPUT, PACKAGE_FILE, enforce
 from .compiled import fail
 
 MAX_FILES = 50000
-MAX_FILE = 128 * 1024 * 1024
-MAX_TOTAL = 1024 * 1024 * 1024  # Bounded whole-input inventory, including provided CDN bundles.
+MAX_FILE = PACKAGE_FILE
+MAX_TOTAL = BATCH_INPUT
+MAX_EXPANDED_ROOT = 1024**3
 MAX_EXPLICIT_TOTAL = 8 * 1024 * 1024 * 1024
 MAX_CONTAINER = 1024 * 1024 * 1024
 
@@ -36,7 +38,8 @@ def relative(name, wx=False):
 
 
 class Names:
-    def __init__(self, max_total=None):
+    def __init__(self, max_total=None, *, scope="batchInput"):
+        self.scope = scope
         self.max_total = MAX_TOTAL if max_total is None else max_total
         if type(self.max_total) is not int or not 1 <= self.max_total <= MAX_EXPLICIT_TOTAL:
             fail('ARCHIVE_BUDGET',str(self.max_total),'Explicit byte budget must be an integer in 1..8GiB')
@@ -47,14 +50,18 @@ class Names:
         parents = [str(p) for p in PurePosixPath(key).parents if str(p) != '.']
         if key in self.files or key in self.parents or any(p in self.files for p in parents):
             fail('ARCHIVE_COLLISION',name,'Duplicate/case-folded/path-prefix collision')
-        self.files.add(key); self.parents.update(parents); self.total += size
-        if size > MAX_FILE or self.total > self.max_total or len(self.files) > MAX_FILES:
-            fail('ARCHIVE_BUDGET',name,'Input file/count/expanded-byte budget exceeded')
+        enforce('packageFile', size, MAX_FILE, name, 'ARCHIVE_BUDGET', basis='expanded entry')
+        enforce(self.scope, self.total + size, self.max_total, name, 'ARCHIVE_BUDGET', basis='cumulative expanded input')
+        if len(self.files) >= MAX_FILES:
+            fail('ARCHIVE_BUDGET', name, 'Input file count budget exceeded')
+        self.files.add(key)
+        self.parents.update(parents)
+        self.total += size
 
 
 def entries(source):
     """Yield (relative path, bytes); whole container identity is checked by caller."""
-    source = safe(source); names = Names()
+    source = safe(source); names = Names(MAX_EXPANDED_ROOT, scope='expandedRoot')
     if source.is_dir():
         pending = [source]; directories=0
         while pending:
@@ -76,7 +83,7 @@ def entries(source):
                 else:
                     fail('UNSUPPORTED_ENTRY',str(p),'Only regular files/directories are accepted')
         return
-    if source.stat().st_size > MAX_CONTAINER: fail('ARCHIVE_BUDGET',str(source),'Container too large')
+    enforce('physicalContainer', source.stat().st_size, MAX_CONTAINER, source, 'ARCHIVE_BUDGET', basis='archive file size')
     if source.suffix.lower() == '.apk':
         with zipfile.ZipFile(source) as archive:
             rows = archive.infolist()

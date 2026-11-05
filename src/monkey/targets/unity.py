@@ -900,6 +900,7 @@ def _static_sort_spine_bindings(plan, root):
 
 def verify(candidate, output, level='static'):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[]
+    from ..byte_budgets import record, UNITY_INSTRUCTION
     from ..export_plan import read_import_instruction
     instruction, instruction_sha = read_import_instruction(root, m, standard.locate(m, 'importPlan'))
     from ..sources.containers import fingerprint
@@ -1207,6 +1208,8 @@ def verify(candidate, output, level='static'):
                 visualValidation='not_run',businessValidation='not_run')
     from ..unity_verification_contract import unresolved_diagnostics
     current_diagnostics=unresolved_diagnostics(diagnostics,coverage)
+    result['byteBudgets'] = [record('unityImportInstruction', UNITY_INSTRUCTION,
+                                    (root / standard.locate(m, 'importPlan')).stat().st_size, basis='file size')]
     result['currentDiagnosticCounts']={key:len(rows)for key,rows in current_diagnostics.items()}
     result['verificationScope']=('resource-gallery' if locals().get('instruction',{}).get('galleryOnly')is True else 'saved-source-node-subset')if level=='editor' else 'generated-files'
     write_json(out/'verification.json',result)

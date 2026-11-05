@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import datetime,timezone,timedelta
 import os,re,shutil,subprocess,time,signal,threading
 from . import __version__
+from .byte_budgets import UNITY_INSTRUCTION, enforce, record
 from .io import safe,inside,stage_manifest,read,load,sha,write_json,new_output
 from .sources.containers import fingerprint
 from .sources.compiled import fail
@@ -32,6 +33,9 @@ def source(candidate,expected_manifest):
         fail('NATIVE_SOURCE_IDENTITY',str(root),'Frozen manifest differs from --expected-manifest')
     manifest=stage_manifest(root)
     if manifest.get('targetProfile')!=unity.PROFILE:fail('NATIVE_TARGET_UNSUPPORTED',str(root),'Expected supported Unity profile')
+    plan = inside(root, locate(manifest, 'importPlan'))
+    enforce('unityImportInstruction', plan.stat().st_size, UNITY_INSTRUCTION, plan,
+            'IMPORT_PLAN_BUDGET', basis='file size')
     expected={r['path'] for r in manifest['files']}|{'manifest.json'}
     actual={p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file()}
     if actual!=expected:fail('NATIVE_SOURCE_DRIFT',str(root),'Unknown or missing files in frozen candidate')
@@ -41,7 +45,6 @@ def source(candidate,expected_manifest):
     adapter=inside(root,locate(manifest,'importer'))
     if not adapter.exists() or 'public static void ImportBatchAsync()' not in adapter.read_text():
         fail('NATIVE_ASYNC_ENTRYPOINT_MISSING',str(root),'Regenerate with the async native adapter')
-    plan=inside(root,locate(manifest,'importPlan'))
     return root,manifest,fingerprint(plan)
 
 
@@ -82,7 +85,7 @@ def native_import(candidate,output,editor,expected_manifest,budget_seconds,deadl
     root,manifest,plan_hash=source(candidate,expected_manifest)
     out=safe(output)
     spec=dict(schemaVersion=1,toolVersion=__version__,launcherSha256=fingerprint(Path(__file__)),source=str(root),sourceManifestSha256=expected_manifest,
-              importPlanSha256=plan_hash,editor=str(executable),method='MonkeyImporter.ImportBatchAsync',
+              importPlanSha256=plan_hash,byteBudgets=[record('unityImportInstruction', UNITY_INSTRUCTION, (root/locate(manifest,'importPlan')).stat().st_size, basis='file size')],editor=str(executable),method='MonkeyImporter.ImportBatchAsync',
               budgetSeconds=budget_seconds,deadlineUtc=stamp(deadline),windowEndUtc=stamp(end),
               batchmode=True,noGraphics=not render_preview,renderPreview=render_preview,quitFlag=False,project='UnityProject',nativeResumeSupported=False)
     if out.exists():

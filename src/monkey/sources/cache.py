@@ -7,7 +7,13 @@ import re
 from urllib.parse import urlsplit,unquote
 from ..io import safe,inside,read,load,sha,diagnostic
 from .containers import relative,MAX_FILE
+from ..byte_budgets import enforce
 from .compiled import fail
+
+
+def _read_entry(path):
+    enforce('packageFile', path.stat().st_size, MAX_FILE, path, 'ARCHIVE_BUDGET', basis='file size')
+    return read(path, max_bytes=MAX_FILE)
 
 
 def plan(root,manifest,kind):
@@ -50,7 +56,7 @@ def plan(root,manifest,kind):
         info=dict(path=logical,disk=disk,sourceKeys=[key])
         if logical in seen:
             previous=seen[logical]
-            if sha(read(previous['disk'],max_bytes=MAX_FILE))!=sha(read(disk,max_bytes=MAX_FILE)):
+            if sha(_read_entry(previous['disk']))!=sha(_read_entry(disk)):
                 fail('CACHE_MAPPING_CONFLICT',logical,'Different local content claims the same bundle path')
             previous['sourceKeys'].append(key)
         else:
@@ -63,4 +69,4 @@ def entries(root,manifest,kind):
     mapping=plan(root,manifest,kind)
     yield 'CacheEvidence/'+mapping['manifest'].name,read(mapping['manifest'])
     for record in mapping['records']:
-        yield record['path'],read(record['disk'],max_bytes=MAX_FILE)
+        yield record['path'],_read_entry(record['disk'])

@@ -8,6 +8,7 @@ from .sources.compiled import ParseError, fail
 from .sources.project import inspect as inspect_project, catalog, PROFILE as PROJECT_PROFILE
 from .normalize import normalize
 from .targets.unity import plan, export, verify, handoff, PROFILE as UNITY_PROFILE
+from .byte_budgets import defaults as default_byte_budgets
 from .targets import cocos
 from . import incremental
 from pathlib import Path
@@ -79,7 +80,7 @@ def main(argv=None):
     p.add_argument('--transaction', required=True)
     p.add_argument('--editor-path', required=True)
     p.add_argument('--budget-seconds', type=int, default=1200)
-    p = sub.add_parser('convert', help='Convert a source project into an isolated native project candidate')
+    p = sub.add_parser('convert', description='Expanded input batch defaults to 2048 MiB; each package entry is limited to 128 MiB. An explicit input set can set its combined budget.', help='Convert a source project into an isolated native project candidate')
     p.add_argument('--source', help='Local wxapkg/APK, resource/project directory, project.json or bundle config.json')
     p.add_argument('--format',choices=['none','grea'],default=None,help='Deprecated: every output already uses monkey-project/2.0.0; grea is accepted as an alias.')
     p.add_argument('--layout',help='Game layout.json: module/rename/bundle-role overrides for monkey-project/2.0.0 paths (docs/PROJECT-SPEC.md section 7)')
@@ -420,7 +421,7 @@ def main(argv=None):
     p = sub.add_parser('export')
     p.add_argument('--plan',required=True)
     p.add_argument('--out',required=True)
-    p = sub.add_parser('verify')
+    p = sub.add_parser('verify', description='Unity import instructions are limited to 256 MiB and checked against the candidate manifest.')
     p.add_argument('--candidate',required=True)
     p.add_argument('--level',choices=['static','editor'],default='static')
     p.add_argument('--out',required=True)
@@ -599,7 +600,7 @@ def main(argv=None):
             from .output_limits import policy
             from .code_profiles import profile_capabilities
             legacy_profile_capabilities=profile_capabilities()
-            print(json.dumps(dict(version=__version__, profiles=[PROFILE,PROJECT_PROFILE,'cocos-2.4.11-bundle','cocos-3.8.7-bundle','cocos-3.4.1-bundle','cocos-2.1.2-resource','generic-image-resources-v1','egret-custom-resource-plist-v1'], targetProfiles=[UNITY_PROFILE,cocos.PROFILE], activeTargetProfiles=[UNITY_PROFILE], pausedCompatibilityTargetProfiles=[cocos.PROFILE],
+            print(json.dumps(dict(version=__version__, byteBudgets=default_byte_budgets(), profiles=[PROFILE,PROJECT_PROFILE,'cocos-2.4.11-bundle','cocos-3.8.7-bundle','cocos-3.4.1-bundle','cocos-2.1.2-resource','generic-image-resources-v1','egret-custom-resource-plist-v1'], targetProfiles=[UNITY_PROFILE,cocos.PROFILE], activeTargetProfiles=[UNITY_PROFILE], pausedCompatibilityTargetProfiles=[cocos.PROFILE],
                 ownership=dict(recoveryCandidates='monkey',developmentProjectOperations='beaver',workflow='GREA'),
                 unityPrefabRecovery=dict(command='recover-unity-prefabs',requestContract='monkey-unity-prefab-recovery-request/1',scope='selected-source-roots-and-provider-GUID-closure',nativeCommand='verify-unity-prefabs',native='implemented-acceptance-pending',sourceCodeExecuted=False),
                 nativeSdkDeclarations=dict(command='audit-native-code-dependencies',contract='monkey-native-sdk-declaration/1',schemaVersion=1,coverage='manifest-pinned-Spine-stage-and-literal-script-reference-tuples',assemblyInspectionOwner='beaver',migration='not-performed'),
@@ -1281,7 +1282,7 @@ def main(argv=None):
                               diagnostics=len(result['diagnostics']), report=str(args.out)+'/manifest.json'), ensure_ascii=False))
         return 1 if result['status'] == 'partial' else 0
     except (ParseError, OSError, ValueError, KeyError, TypeError, IndexError, RecursionError) as error:
-        print(json.dumps(dict(status='error', code=getattr(error,'code','INPUT_ERROR'), message=str(error)), ensure_ascii=False), file=sys.stderr)
+        print(json.dumps(dict(status='error', code=getattr(error,'code','INPUT_ERROR'), message=str(error), **({'byteBudget': error.byte_budget} if hasattr(error, 'byte_budget') else {})), ensure_ascii=False), file=sys.stderr)
         return 2
 
 if __name__ == '__main__':

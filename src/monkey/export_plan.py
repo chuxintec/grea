@@ -5,6 +5,7 @@ import re
 import tempfile
 from pathlib import Path
 
+from .byte_budgets import UNITY_INSTRUCTION, enforce
 from .io import fail, inside, load, read, safe, sha, new_output
 
 DOCUMENT_NODES = 16_000_000
@@ -22,11 +23,16 @@ def read_import_instruction(root, manifest, relative):
     entry = matches[0]
     size = entry.get('bytes')
     expected = entry.get('sha256')
-    if type(size) is not int or not 0 <= size <= DOCUMENT_LIMIT:
+    if type(size) is not int or size < 0:
         fail('IMPORT_PLAN_BUDGET', relative, 'Invalid or oversized import instruction')
+    instruction = inside(root, relative)
+    enforce('unityImportInstruction', instruction.stat().st_size, UNITY_INSTRUCTION, relative,
+            'IMPORT_PLAN_BUDGET', basis='file size')
+    enforce('unityImportInstruction', size, UNITY_INSTRUCTION, relative,
+            'IMPORT_PLAN_BUDGET', basis='manifest size')
     if not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected):
         fail('IMPORT_PLAN_PIN', relative, 'Invalid import instruction fingerprint')
-    raw = read(inside(root, relative), size)
+    raw = read(instruction, size)
     if len(raw) != size or sha(raw) != expected:
         fail('IMPORT_PLAN_CHANGED', relative, 'Import instruction differs from candidate manifest')
     return load(raw, max_nodes=DOCUMENT_NODES), expected

@@ -15,7 +15,7 @@ def input_set(path):
         fail('INPUT_SET_LIMITS',str(path),'Only limits.maxInputBytes is supported')
     max_input_bytes=limits.get('maxInputBytes',MAX_TOTAL)
     if type(max_input_bytes)is not int or not 1<=max_input_bytes<=MAX_EXPLICIT_TOTAL:
-        fail('INPUT_SET_LIMITS',str(path),'maxInputBytes must be an integer in 1..8GiB; default 1GiB')
+        fail('INPUT_SET_LIMITS',str(path),'maxInputBytes must be an integer in 1..8GiB; default 2048 MiB')
     inputs=data.get('inputs')
     if not isinstance(inputs,list) or not 1<=len(inputs)<=16:
         fail('INPUT_SET_SCHEMA',str(path),'Expected 1..16 explicit local inputs')

@@ -2,6 +2,7 @@
 from io import BytesIO
 from pathlib import Path
 from PIL import Image
+from .byte_budgets import BATCH_INPUT, inventory_usage
 from . import __version__
 from .io import safe,read,sha,write_json,new_output,finish,diagnostic
 from .inputs import input_set
@@ -56,7 +57,7 @@ def convert(source,target,output,namespace='monkey-project',offline=False,input_
             after={local:sha(raw)for local,raw in entries(root['path'])}
             before={r['path'][len(root['id'])+1:]:r['sha256']for r in rows if r['path'].startswith(root['id']+'/')}
             if before!=after:fail('SOURCE_CHANGED',root['id'],'Input changed during resource inventory')
-        report.update(inputFiles=len(rows),inputBytes=sum(r['bytes']for r in rows),derivedFullImageFrames=len(images))
+        report.update(byteBudgets=inventory_usage(rows, selection['maxInputBytes'] if selection else BATCH_INPUT),inputFiles=len(rows),inputBytes=sum(r['bytes']for r in rows),derivedFullImageFrames=len(images))
         egret=None
         if profile==EGRET_PROFILE:
             from .egret_recovery import inspect as inspect_egret
@@ -125,5 +126,7 @@ def convert(source,target,output,namespace='monkey-project',offline=False,input_
         from .post_format import run as post_format
         return post_format(report,out,format_profile)
     except Exception as error:
+        if hasattr(error, 'byte_budget'):
+            report['byteBudgetFailure'] = error.byte_budget
         report.update(status='failed',workflowStatus='failed',completed=False,error=dict(code=getattr(error,'code','RESOURCE_EXPORT_FAILED'),message=str(error)[:300]))
         save();raise
