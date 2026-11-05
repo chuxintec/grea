@@ -333,8 +333,11 @@ public static class BeaverBatch {
             guid=AssetDatabase.AssetPathToGUID(scriptPath);
             if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(component.gameObject,out nodeGuid,out nodeId)||nodeId==0||
                !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(component,out componentGuid,out componentId)||componentId==0||nodeGuid!=componentGuid||nodeGuid!=AssetDatabase.AssetPathToGUID(step.assetPath))throw new Exception("Persistent script instance identity missing");
-            var properties=new List<ScriptPropertyRow>();var serialized=new SerializedObject(component);var p=serialized.GetIterator();
-            while(p.Next(true)) {
+            var properties=new List<ScriptPropertyRow>();var serialized=new SerializedObject(component);var p=serialized.GetIterator();bool enterChildren=true;
+            while(p.Next(enterChildren)) {
+                // PPtr and strings are complete atomic values. Their implementation
+                // children include process-local IDs, not persistent serialized IDs.
+                enterChildren=p.propertyType!=SerializedPropertyType.ObjectReference&&p.propertyType!=SerializedPropertyType.String;
                 if(properties.Count>=65536)throw new Exception("Script property budget exceeded");
                 properties.Add(new ScriptPropertyRow{path=p.propertyPath,kind=p.propertyType.ToString(),type=p.type,value=ExactScriptValue(p)});
             }
