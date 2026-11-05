@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:26:36.267662+08:00",
+  "updatedAt": "2026-11-05T16:33:37.819109+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -757,9 +757,11 @@
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/post33-event/onClickTip-source-trace.json",
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/master-help-contract-20261105/MASTER-MATCH-HELP-ADAPTER-CONTRACT.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/beaver-tool37.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/beaver-tool37.json",
+        "../beaver/.private/master-help34/actual01/owner-handoff.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/foodstreet-visible45.json"
       ],
-      "nextAction": "肥鹅主开发已交帮助契约并转beaver。新派生副本实施零参btn_tip持久接线、打开状态、可空aid及等待真实关闭，编译冷重开与回退，再交项目一次操作验效。",
+      "nextAction": "help34-interactive-01 已交肥鹅主开发实点原帮助按钮和关闭按钮，等前/中/后图和完成计数。原按钮唯一持久调用及15字段冷读、5键3图在隔离Play探针通过。beaver单写修复公开冷验命令projectRoot读取并回归；正式采用HOLD。",
       "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
     },
     {
