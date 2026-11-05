@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T13:06:45.999189+08:00",
+  "updatedAt": "2026-11-05T13:09:46.163983+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "当前事件 foodstreet-monkey-parallel-20261105：两条独立 detached 工作树并行开发，Unity 串行，原主开发负责唯一 dev28 集成。退出须以同一固定候选交总监，正式采用继续 HOLD。 C线由现任beaver承接隔离目标副本改写、编译、撤销与真实行为交接。",
@@ -619,9 +619,10 @@
         ".private/development/audit-remediation-20261105/dev26-minimal/audit-result.json",
         ".private/development/audit-remediation-20261105/dev26-jsonutility-probe/receipt.json",
         ".private/development/audit-remediation-20261105/dev27-minimal/review-handoff.json",
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev27-dual-review/RESULT.md"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev27-dual-review/RESULT.md",
+        ".private/development/audit-remediation-20261105/dev28-review/RESULT.json"
       ],
-      "nextAction": "原 monkey 主开发单写 dev28 共享 CLI、Importer 接线、验证/冻结、打包与版本。集成两线提交，GREA 以单一源码 SHA 和制品摘要复核四页、受影响样本及门禁，再交独立双审。",
+      "nextAction": "a121821/7ee5e002 原生复核退修：Sprite真实正例和已解决正例在三个入口被错拒，Scroll另有可见性及静态回读缺陷，Creator3.8.8在场景组装时中止。原主开发已收单，修后固定新身份，复核三入口和三线集成。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
