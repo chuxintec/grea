@@ -6,11 +6,11 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:14:41.286178+08:00",
+  "updatedAt": "2026-11-05T15:24:19.721560+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
-  "activeImplementationTask": "grea:T-monkey-audit-remediation-dual-review",
+  "currentStage": "Unity 目标。dev32 保留历史 HOLD，dev33 双审已验收所测 Mask 多行校验、错误行隔离及 B 线冷读阶段反例。当前优先原40个源ID逐图整改与产品绑定验收，扩样和正式采用待人审。",
+  "activeImplementationTask": "grea:T-foodstreet-monkey-visual",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -599,7 +599,7 @@
       "id": "grea:T-monkey-audit-remediation-dual-review",
       "title": "monkey通用审计整改及总监/Claude独立双审",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "verification",
       "priority": 0,
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "description": "dev27/51a5e90双审退修。单Sprite原生/严格冻结正例已复现。错误归属及矛盾启用状态仍可通过，已解决诊断被拒；入口和Creator/Mask契约需修。",
@@ -630,9 +630,10 @@
         ".private/development/audit-remediation-20261105/dev31-review/RESULT.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev31-dual-review/RESULT.md",
         ".private/development/audit-remediation-20261105/dev32-review/RESULT.json",
-        ".private/development/audit-remediation-20261105/dev33-review/RESULT.json"
+        ".private/development/audit-remediation-20261105/dev33-review/RESULT.json",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev33-dual-review/RESULT.md"
       ],
-      "nextAction": "dev33/7fbf2cb固定包复用dev32真实PNG：1695单行/两行/三行通过，中间行三类篡改仅该行拒绝，四页6条裁剪通过。已交同字节独立双审；原40张人审单独执行。",
+      "nextAction": "dev33/7fbf2cb 的所测 Mask 多行和冷读阶段判定已由总监裁定通过。相关生产者、消费代码及证据无变化时复用；其他静态诊断及产品门槛按各自任务处理。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
@@ -712,9 +713,10 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev30-dual-review/RESULT.md",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/dev31-phase/handoff.json",
         ".private/development/foodstreet-monkey-parallel-20261105/B-phase-independent.json",
-        ".private/development/audit-remediation-20261105/dev32-review/RESULT.json"
+        ".private/development/audit-remediation-20261105/dev32-review/RESULT.json",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev33-dual-review/RESULT.md"
       ],
-      "nextAction": "dev32固定包公开destinations复核：正常51完整/42部分，仅篡改cold.phase后93项全拒；等同字节审查。"
+      "nextAction": "冷读阶段判定在已测反例范围通过。产品绑定依实际候选逐实例核验，沿用已证据化范围，正式采用待人审。"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
