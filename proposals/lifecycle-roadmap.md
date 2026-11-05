@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:01:00.462611+08:00",
+  "updatedAt": "2026-11-05T15:04:23.935093+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
@@ -686,7 +686,7 @@
       "id": "grea:T-foodstreet-monkey-bindings",
       "title": "肥鹅驱动 monkey 静态 MonoBehaviour 批量挂载",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "verification",
       "ownerSessionId": "01a1aa15-8791-7512-92df-1ab33a28d0de",
       "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
       "acceptanceCriteria": [
@@ -706,9 +706,11 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/final05/handoff-index.json",
         ".private/development/foodstreet-monkey-parallel-20261105/B-final05-check.json",
         ".private/development/audit-remediation-20261105/dev30-review/RESULT.json",
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev30-dual-review/RESULT.md"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev30-dual-review/RESULT.md",
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/dev31-phase/handoff.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/B-phase-independent.json"
       ],
-      "nextAction": "dev30删文件修复保留；新反例将cold阶段改为apply仍有51条成功。核独立进程、阶段和运行身份并交修复。"
+      "nextAction": "eaa228b归档模块入口四页51完整42部分；篡改cold.phase后93项全阻塞。已交原主开发，待新固定包公开入口复核。历史v1全量台账缺独立进程证据，沿用历史口径。"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
