@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:23:49.097096+08:00",
+  "updatedAt": "2026-11-05T16:26:36.267662+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -691,9 +691,10 @@
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/source-state-leads.json",
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/room-guide-source-context-20261105/ROOM-GUIDE-SOURCE-CONTEXT.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual-one42.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label27-source-control.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label27-source-control.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual-flip44.json"
       ],
-      "nextAction": "director-visual-visible-defect-41 → grea-visual-one-visible-42：先查原27下一处镜像x12，以同页上方正常x12作对照。源模板#28已带负X，需核骨骼挂点及首个源/Unity差异。静态不可证则换15一条有源静态文字。交付通用修复与同父级同状态前后图；人审0/40。17的状态缺口仅影响17。",
+      "nextAction": "27镜像已定位源运行态：refreshTrackLayout重挂#5并按状态设置scaleX。按裁定转原15。源Label #18「修理工」、父页#64「集齐奖励」在旧Unity计划均为convertible=false，已有字体工具优先复用；选择一个可证静态输入，核同父级同状态修前/后实图及正常对照。人审0/40。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
@@ -778,13 +779,14 @@
         ".private/development/foodstreet-monkey-parallel-20261105/budget2048-36.json",
         ".private/development/audit-remediation-20261105/dev35-review/whole-result.json",
         ".private/development/foodstreet-monkey-parallel-20261105/grea-monkey-whole-button-38.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/grea-native-whole-button-result-39.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/grea-native-whole-button-result-39.json",
+        ".private/development/audit-remediation-20261105/dev36-review/RESULT.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
       ],
-      "nextAction": "dev35 已在公开入口读通 171886205 字节指令；原候选整包 Unity 退出 1，FoodDeliveryTaskItem 按钮 #26 找不到目标图形；1677 个预期源 Prefab 均未落盘，冷重开 0。monkey 单写修复后用同一输入重试。monkey 单写落实整批默认 2048 MiB、单文件 128 MiB、导入指令 256 MiB 和分别超限诊断。",
+      "nextAction": "dev35 已在公开入口读通 171886205 字节指令；原候选整包 Unity 退出 1，FoodDeliveryTaskItem 按钮 #26 找不到目标图形；1677 个预期源 Prefab 均未落盘，冷重开 0。monkey 单写修复后用同一输入重试。dev36 的三项额度已独立复验。仅等待通用按钮修复后重试。",
       "resume": {
         "eventId": "foodstreet-monkey-parallel-20261105",
         "humanDirection": "总监传达本轮人类指令 director-whole-budget-2048-native：整批默认2048 MiB、包内单文件128 MiB、导入指令256 MiB。复用现有候选，在 Unity 核全量导入、保存、重开和缺失；视觉另验。",
@@ -796,7 +798,7 @@
         "missingPrefabList": ".private/development/audit-remediation-20261105/dev35-review/whole-result.json",
         "verifiedResult": "2026-11-05 16:12 +08:00，Unity 退出1。FoodDeliveryTaskItem 按钮 #26 的目标 #10 缺 Graphic。1677 个源 Prefab 中落盘 0、缺失 1677、冷重开 0。",
         "pendingDispatches": {
-          "monkey": "grea-monkey-budget-2048-36 / grea-monkey-whole-button-38 已发。monkey 单写额度实现、通用按钮修复、定向回归和固定交付。",
+          "monkey": "预算派工36已交付：dev36 5f6eaf0，GREA逐字节比对510个实现文件，复跑4个公开用例及3项边界测试通过。按钮派工38仍在执行，等待固定修复及适配器差异。",
           "grea": "固定修复交付后，GREA 核适配器差异及原候选身份，再用同一整包在隔离副本执行公开入口；核全量成功/失败/缺失、冷重开及日志后报总监。收到前复用 dev35 失败回执。"
         },
         "historicalClosedTasks": [
