@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:12:22.143296+08:00",
+  "updatedAt": "2026-11-05T16:13:47.285163+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -769,13 +769,14 @@
         "/Users/wangmeng/MyProjects/Tools/monkey/.private/audit-remediation-20261105/whole-mask-after-dev34/handoff-index.json",
         ".private/development/audit-remediation-20261105/dev34-review/whole-mask/RESULT.json",
         ".private/development/audit-remediation-20261105/dev35-review/before/verification.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/budget2048-36.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/budget2048-36.json",
+        ".private/development/audit-remediation-20261105/dev35-review/whole-result.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
       ],
-      "nextAction": "dev35 已在公开入口读通 171886205 字节指令；原候选在 Unity 原生导入中。核对整包保存重开与缺失清单。monkey 单写落实整批默认 2048 MiB、单文件 128 MiB、导入指令 256 MiB 和分别超限诊断。"
+      "nextAction": "dev35 已在公开入口读通 171886205 字节指令；原候选整包 Unity 退出 1，FoodDeliveryTaskItem 按钮 #26 找不到目标图形；1677 个预期源 Prefab 均未落盘，冷重开 0。monkey 单写修复后用同一输入重试。monkey 单写落实整批默认 2048 MiB、单文件 128 MiB、导入指令 256 MiB 和分别超限诊断。"
     }
   ],
   "blockers": [
