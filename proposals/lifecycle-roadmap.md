@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T14:03:38.357412+08:00",
+  "updatedAt": "2026-11-05T14:09:13.173431+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
@@ -660,21 +660,24 @@
       "id": "grea:T-foodstreet-monkey-visual",
       "title": "肥鹅驱动 monkey 转换修复和分层实图",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "verification",
+      "workflowStatus": "in_progress",
       "ownerSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42",
       "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
       "acceptanceCriteria": [
         "按全量底册对账，按共因修预算、原生失败和四页文字；其他原因逐根保留",
-        "首轮至少40个独立源ID，按4/12/12/8/4去重，固定样本与种子，实图逐张目检；保留前后截图、状态、文件身份、回执和剩余差异"
+        "首轮至少40个独立源ID，按4/12/12/8/4去重，固定样本与种子，实图逐张目检；保留前后截图、状态、文件身份、回执和剩余差异",
+        "同源40行图册含可直接打开的前后图、预期依据、修复身份和逐图判断。缺图、待证、主体不可辨或明显层级/缺字问题均不计通过。"
       ],
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey",
         ".private/development/foodstreet-monkey-parallel-20261105",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/handoff-index.json",
-        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/image-reviews.json"
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/image-reviews.json",
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/VISUAL-40-REWORK.md",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/baseline.json"
       ],
-      "nextAction": "A线eeb083c及40源ID视觉审查已交主开发；13复用27补拍，59直接Label有58回读。单线5失败根已重开，18个隔离图有计划、其中3个原生抽验；整包187MiB计划预算、显式Mask、PrivateNode等仍需统一候选复核。"
+      "nextAction": "human-visual40-reject-01：人审退回整批视觉，重新核原40项。按源还原主体、相对坐标、父子/遮挡、文字，修正通用转换或取图后以相同状态重拍。GREA逐图核实后交总监，40项全部通过才扩样。"
     },
     {
       "id": "grea:T-foodstreet-monkey-bindings",
