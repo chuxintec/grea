@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:04:23.935093+08:00",
+  "updatedAt": "2026-11-05T15:12:28.759217+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
@@ -627,9 +627,11 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
         ".private/development/audit-remediation-20261105/dev30-review/RESULT.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev30-dual-review/RESULT.md",
-        ".private/development/audit-remediation-20261105/dev31-review/RESULT.json"
+        ".private/development/audit-remediation-20261105/dev31-review/RESULT.json",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev31-dual-review/RESULT.md",
+        ".private/development/audit-remediation-20261105/dev32-review/RESULT.json"
       ],
-      "nextAction": "dev30独立双审HOLD。dev31实测1930矩形、四页5/6裁剪通过；白子图覆盖和float32阈值交主开发修，B线修冷读身份。已交同字节审查。",
+      "nextAction": "dev31双审HOLD。dev32四页6个矩形、1695三图、1930及额外真实禁用矩形的像素通过；消费端合并两条真实正例仍误拒，主开发已接退修，固定dev32已交双审。40项视觉仍需另验。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
@@ -708,9 +710,10 @@
         ".private/development/audit-remediation-20261105/dev30-review/RESULT.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev30-dual-review/RESULT.md",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/dev31-phase/handoff.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/B-phase-independent.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/B-phase-independent.json",
+        ".private/development/audit-remediation-20261105/dev32-review/RESULT.json"
       ],
-      "nextAction": "eaa228b归档模块入口四页51完整42部分；篡改cold.phase后93项全阻塞。已交原主开发，待新固定包公开入口复核。历史v1全量台账缺独立进程证据，沿用历史口径。"
+      "nextAction": "dev32固定包公开destinations复核：正常51完整/42部分，仅篡改cold.phase后93项全拒；等同字节审查。"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
