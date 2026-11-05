@@ -599,7 +599,7 @@
       "workflowStatus": "in_progress",
       "priority": 0,
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "description": "dev26/66bda9c源码/wheel500文件逐字节一致，2meta及可选Spine编译回归已修。GREA隔离wheel最小链inspect/normalize/plan/export0诊断，Unity编译通过；原生因无Mask且staticMasks=null仍触发STATIC_MASK_CONTRACT_ROWS_MISSING误拒，PID56659退出。尚无合法native基线，freeze/9controls未跑，双审未就绪。",
+      "description": "dev26/66bda9c源码/wheel500文件逐字节一致，2meta及可选Spine编译回归已修。GREA隔离wheel最小链inspect/normalize/plan/export0诊断，Unity编译通过；原生因无Mask且staticMasks=null仍触发STATIC_MASK_CONTRACT_ROWS_MISSING误拒，PID56659退出。尚无合法native基线，freeze/9controls未跑，双审未就绪。 GREA真实JsonUtility微检查16例已完成(PID58411 exit0)：null/absent/{}确实物化非null契约对象；无Mask误拒复现，6Mask正例接受及缺/坏合同反例拒绝，原196文件和输入pin不变。",
       "acceptanceCriteria": [
         "固定集成候选源码提交、工具版本/摘要、运行入口、A1–A8矩阵与关键差异一致",
         "未mock关键门正反例：缺组件/可见资源/错状态/哈希/引用/字段拒绝，合法imported与明确纯动态静态正例通过",
@@ -610,9 +610,10 @@
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-monkey-audit-remediation/PLAN.md",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json",
         ".private/development/audit-remediation-20261105/dev25-minimal/audit-result.json",
-        ".private/development/audit-remediation-20261105/dev26-minimal/audit-result.json"
+        ".private/development/audit-remediation-20261105/dev26-minimal/audit-result.json",
+        ".private/development/audit-remediation-20261105/dev26-jsonutility-probe/receipt.json"
       ],
-      "nextAction": "monkey用真实JsonUtility明确可选契约absent/null/empty语义，修存在性与源分母联合校验；有Mask需求仍严格拒缺证据。交固定候选后重跑最小正例→严格freeze/9controls，再交同字节双审。",
+      "nextAction": "monkey据真实引擎证据固定dev27存在标记/源分母校验，含false marker矛盾与有Mask无排序反例；同probe及最小完整链再核，通过后strict freeze/9controls，最后同字节双审。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": []
     }
