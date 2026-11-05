@@ -427,6 +427,8 @@ def main(argv=None):
     p = sub.add_parser('verify', description='Unity import instructions are limited to 256 MiB and checked against the candidate manifest.')
     p.add_argument('--candidate',required=True)
     p.add_argument('--level',choices=['static','editor'],default='static')
+    p.add_argument('--editor-readback-sha256', help='SHA-256 of the completed Unity editor-readback.json')
+    p.add_argument('--source-prefabs-readback-sha256', help='Matching source-prefabs-readback.json SHA-256')
     p.add_argument('--out',required=True)
     p = sub.add_parser('freeze-native-selection', help='Freeze selected saved Unity Prefabs with native identities and producer-declared compile dependencies')
     p.add_argument('--candidate', required=True)
@@ -1281,7 +1283,13 @@ def main(argv=None):
             from .io import safe, read, load
             from .io import stage_manifest
             profile=stage_manifest(safe(args.candidate)).get('targetProfile')
-            result = (cocos.verify if profile==cocos.PROFILE else verify)(args.candidate,args.out,args.level)
+            pins = (args.editor_readback_sha256, args.source_prefabs_readback_sha256)
+            if any(p is not None for p in pins):
+                if profile!=UNITY_PROFILE or args.level!='editor' or not all(pins):
+                    raise ValueError('Paired native receipt pins require Unity verify --level editor')
+                result=verify(args.candidate,args.out,args.level,readback_pins=pins)
+            else:
+                result=(cocos.verify if profile==cocos.PROFILE else verify)(args.candidate,args.out,args.level)
         else:
             result = handoff(args.candidate,args.out)
         print(json.dumps(dict(status=result['status'], assets=result.get('counts',{}).get('assets',len(result.get('assets',[]))),

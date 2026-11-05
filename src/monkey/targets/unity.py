@@ -898,7 +898,7 @@ def _static_sort_spine_bindings(plan, root):
     return read(path, max_bytes=128 * 1024 * 1024)
 
 
-def verify(candidate, output, level='static'):
+def verify(candidate, output, level='static', *, readback_pins=None):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[]
     from ..byte_budgets import record, UNITY_INSTRUCTION
     from ..export_plan import read_import_instruction
@@ -909,12 +909,19 @@ def verify(candidate, output, level='static'):
     from ..sources.containers import fingerprint
     native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None;text_family_proofs={}
     rendering_fragment=None;rendering_receipt=None;saved_meta_observations=[]
+    aggregate_proof = None
     if level=='editor':
         readback_path=find_analysis(root,'editor-readback.json')
+        if readback_pins is not None and not readback_path.is_file():
+            fail('NATIVE_AGGREGATE_INVALID',str(readback_path),'Pinned native receipt missing')
         if not readback_path.is_file():
             diagnostics.append(diagnostic('EDITOR_NOT_RUN','Analysis/Readback/editor-readback.json','Run native import in the declared Editor first'))
         else:
-            rb=load(read(readback_path,max_bytes=128*1024*1024),max_nodes=8_000_000)
+            if readback_pins is not None:
+                from ..unity_aggregate_readback import read_pair
+                rb, aggregate_proof = read_pair(root,instruction,instruction_sha,*readback_pins)
+            else:
+                rb=load(read(readback_path,max_bytes=128*1024*1024),max_nodes=8_000_000)
             if (rb.get('buttonMaterialProjectionSha256') or None) != (m.get('buttonMaterialProjection') or {}).get('sha256'):
                 diagnostics.append(diagnostic('BUTTON_MATERIAL_PROJECTION_READBACK_PIN',str(readback_path),'Native material adapter identity differs'))
             from ..unity_verification_contract import native_diagnostics
@@ -1215,6 +1222,8 @@ def verify(candidate, output, level='static'):
     current_diagnostics=unresolved_diagnostics(diagnostics,coverage)
     result['byteBudgets'] = [record('unityImportInstruction', UNITY_INSTRUCTION,
                                     (root / standard.locate(m, 'importPlan')).stat().st_size, basis='file size')]
+    if aggregate_proof is not None:
+        result['aggregateReadback']=aggregate_proof
     result['currentDiagnosticCounts']={key:len(rows)for key,rows in current_diagnostics.items()}
     result['verificationScope']=('resource-gallery' if locals().get('instruction',{}).get('galleryOnly')is True else 'saved-source-node-subset')if level=='editor' else 'generated-files'
     write_json(out/'verification.json',result)

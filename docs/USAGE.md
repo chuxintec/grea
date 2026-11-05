@@ -459,3 +459,12 @@ monkey prepare-button-material-retry --candidate ORIGINAL --expected-manifest SH
 工具按来源组件核对 Button 目标、平铺 Sprite、原始 SpriteFrame、材质和 Effect。成功回执列出目标数量、不同来源组件数和新候选指纹。导入指令沿用原始字节。用新指纹在共享 Editor 槽执行 native-import，然后检查保存重读的 Button.targetGraphic、Image、Sprite 和材质。
 
 Unity 保存每个来源 Prefab 后会在 `Analysis/Readback/Prefabs/<GUID>.json` 写入独立回执。dev38 回执含导入指令、来源清单、Prefab 和 .meta 的 SHA-256，以及准备、布局、保存和读回各阶段的毫秒数。保存阶段包含排序准备和初始节点采样，读回阶段包含独立预览。只有写完的回执才以 .json 发布。中断后可据此逐项核验已落盘文件；共享模板和实例的内存替换状态仍需在新的隔离执行中按顺序重建。整包验收继续要求最终场景和 Prefab 的重开证据。
+
+对于保存逐根回执的大型 Unity 导入，先记录 `Analysis/Readback/editor-readback.json` 与 `source-prefabs-readback.json` 的 SHA-256，再对已有执行副本运行：
+
+```sh
+monkey verify --level editor --candidate NATIVE/UnityProject --out NEW_REPORT \
+  --editor-readback-sha256 EDITOR_SHA256 --source-prefabs-readback-sha256 PREFABS_SHA256
+```
+
+两个指纹共同启用 JsonUtility 聚合回执读取，单份最多 1024 MiB、4000 万个结构标点，单行记录最多 32 MiB。工具核对两个阶段共有字段的签名，并按导入指令顺序将每个 Prefab 与独立回执、Prefab 及 .meta 指纹对应。报告的 aggregateReadback 记录两份文件的原始指纹和顺序签名。退出码 1 表示已有完整或部分验证结果，具体差异见报告。
