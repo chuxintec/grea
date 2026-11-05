@@ -6,10 +6,10 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T13:03:27.377312+08:00",
+  "updatedAt": "2026-11-05T13:06:45.999189+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "当前事件 foodstreet-monkey-parallel-20261105：两条独立 detached 工作树并行开发，Unity 串行，原主开发负责唯一 dev28 集成。退出须以同一固定候选交总监，正式采用继续 HOLD。",
+  "currentStage": "当前事件 foodstreet-monkey-parallel-20261105：两条独立 detached 工作树并行开发，Unity 串行，原主开发负责唯一 dev28 集成。退出须以同一固定候选交总监，正式采用继续 HOLD。 C线由现任beaver承接隔离目标副本改写、编译、撤销与真实行为交接。",
   "activeImplementationTask": "grea:T-monkey-audit-remediation-dual-review",
   "releases": [
     {
@@ -74,7 +74,8 @@
         "grea:T-zombie-bulk-static-prefabs",
         "grea:T-monkey-audit-remediation-dual-review",
         "grea:T-foodstreet-monkey-visual",
-        "grea:T-foodstreet-monkey-bindings"
+        "grea:T-foodstreet-monkey-bindings",
+        "grea:T-foodstreet-beaver-target-rewrite"
       ]
     }
   ],
@@ -685,6 +686,22 @@
         ".private/development/foodstreet-monkey-parallel-20261105"
       ],
       "nextAction": "专属树实施并提交本地 SHA、精确回执与剩余项；Unity 执行经共享独占锁串行。"
+    },
+    {
+      "id": "grea:T-foodstreet-beaver-target-rewrite",
+      "title": "肥鹅目标工程受限改写及可回退采用工具",
+      "ownerSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342",
+      "workflowStatus": "in_progress",
+      "primaryReleaseId": "grea:R1.1.0",
+      "description": "事件 foodstreet-monkey-parallel-20261105，start-beaver-target-rewrite-02。C线单写 beaver，隔离肥鹅副本。",
+      "acceptanceCriteria": [
+        "来源草稿和目标依赖驱动受限改写、可审查补丁、编译、拒绝和独立副本回退",
+        "同B线两个试点类型，固定载体后核实例/字段/引用/事件及冷重开，项目主开发真实操作一次及预期效果"
+      ],
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md"
+      ],
+      "nextAction": "先在独立副本实施，等待B线固定载体后完成跨产品原生验证。"
     }
   ],
   "blockers": [
