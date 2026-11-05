@@ -6,10 +6,10 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:24:19.721560+08:00",
+  "updatedAt": "2026-11-05T15:38:44.780052+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "Unity 目标。dev32 保留历史 HOLD，dev33 双审已验收所测 Mask 多行校验、错误行隔离及 B 线冷读阶段反例。当前优先原40个源ID逐图整改与产品绑定验收，扩样和正式采用待人审。",
+  "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
   "activeImplementationTask": "grea:T-foodstreet-monkey-visual",
   "releases": [
     {
@@ -474,7 +474,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "双审前不推进产品转换/采用；保留既有成果。总监明确放行同一固定身份后先肥鹅四页交付，再僵尸全量。",
+      "nextAction": "产品视觉交付及正式采用待原40逐图人审及项目绑定验收。独立工具整改并行。肥鹅四页正式交付后再安排僵尸全量。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
@@ -682,7 +682,8 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/handoff-index.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/image-reviews.json",
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/VISUAL-40-REWORK.md",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/baseline.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/baseline.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/owner-interim-15-17-27.json"
       ],
       "nextAction": "human-visual40-reject-01：人审退回整批视觉，重新核原40项。按源还原主体、相对坐标、父子/遮挡、文字，修正通用转换或取图后以相同状态重拍。GREA逐图核实后交总监，40项全部通过才扩样。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
@@ -691,7 +692,7 @@
       "id": "grea:T-foodstreet-monkey-bindings",
       "title": "肥鹅驱动 monkey 静态 MonoBehaviour 批量挂载",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "verification",
+      "workflowStatus": "in_progress",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
       "acceptanceCriteria": [
@@ -715,16 +716,17 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/dev31-phase/handoff.json",
         ".private/development/foodstreet-monkey-parallel-20261105/B-phase-independent.json",
         ".private/development/audit-remediation-20261105/dev32-review/RESULT.json",
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev33-dual-review/RESULT.md"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev33-dual-review/RESULT.md",
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md"
       ],
-      "nextAction": "冷读阶段判定在已测反例范围通过。产品绑定依实际候选逐实例核验，沿用已证据化范围，正式采用待人审。",
+      "nextAction": "原40范围内按源ID分解四页42条partial，选择一类来源充分的映射修复，验字段、引用、冷重开及错绑反例。",
       "moduleExecutorSessionId": "01a1aa15-8791-7512-92df-1ab33a28d0de"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
       "title": "肥鹅目标工程受限改写及可回退采用工具",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "workflowStatus": "verification",
+      "workflowStatus": "in_progress",
       "primaryReleaseId": "grea:R1.1.0",
       "description": "事件 foodstreet-monkey-parallel-20261105，start-beaver-target-rewrite-02。C线单写 beaver，隔离肥鹅副本。",
       "acceptanceCriteria": [
@@ -740,10 +742,27 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-closure-20261105.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
-        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-provenance-v2-20261105.json"
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-provenance-v2-20261105.json",
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md"
       ],
-      "nextAction": "总监已接受隔离临时预览中的一次非动画 hide 点击；正式工程持久按钮、Player及产品采用仍待独立授权与验收。",
+      "nextAction": "原两试点追溯一条源持久事件到目标、方法、参数和实例；条件齐备时在隔离副本编译、冷重开和回退，否则记录具体缺件与责任人。",
       "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
+    },
+    {
+      "id": "grea:T-monkey-large-plan-export",
+      "title": "大型展开计划的有界导出和续接",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "in_progress",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "moduleExecutorSessionId": "01a19b7a-b22a-7ac1-88b0-4c3d3219718b",
+      "description": "现任monkey主开发处理196238948字节计划及CLI探读。",
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md"
+      ],
+      "acceptanceCriteria": [
+        "用同一固定输入完成有界导出或验证可恢复分片",
+        "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
+      ]
     }
   ],
   "blockers": [
@@ -950,8 +969,8 @@
         "grea:T-zombie-bulk-static-prefabs"
       ],
       "owner": "GREA统筹；总监+Claude CLI独立复审",
-      "description": "用户要求审计整改并双审通过后才继续两批恢复采用；当前尚无放行身份。",
-      "releaseCondition": "固定候选必要验证及两份独立复审通过，总监记录精确源码/制品摘要放行。",
+      "description": "dev33所测Mask多行和冷读身份已签；待原40逐图人审、产品绑定和最终采用身份裁定。",
+      "releaseCondition": "原40视觉与产品绑定验收通过，总监按精确身份放行正式采用。",
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-monkey-audit-remediation/PLAN.md"
       ],
