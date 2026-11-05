@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T13:09:46.163983+08:00",
+  "updatedAt": "2026-11-05T13:18:28.948833+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "当前事件 foodstreet-monkey-parallel-20261105：两条独立 detached 工作树并行开发，Unity 串行，原主开发负责唯一 dev28 集成。退出须以同一固定候选交总监，正式采用继续 HOLD。 C线由现任beaver承接隔离目标副本改写、编译、撤销与真实行为交接。",
@@ -684,9 +684,10 @@
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey",
-        ".private/development/foodstreet-monkey-parallel-20261105"
+        ".private/development/foodstreet-monkey-parallel-20261105",
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/two-types-handoff-index.json"
       ],
-      "nextAction": "专属树实施并提交本地 SHA、精确回执与剩余项；Unity 执行经共享独占锁串行。"
+      "nextAction": "固定提交15fe2f0，four02载体已交C线及原主开发。11个Prefab、93个实例冷重开，43完整、50部分，61个错绑控制拒绝。继续按族输出5,681条去向；待A线修复#58/#44后重验。"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
@@ -700,9 +701,10 @@
         "同B线两个试点类型，固定载体后核实例/字段/引用/事件及冷重开，项目主开发真实操作一次及预期效果"
       ],
       "sourceRefs": [
-        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md"
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/two-types-handoff-index.json"
       ],
-      "nextAction": "先在独立副本实施，等待B线固定载体后完成跨产品原生验证。"
+      "nextAction": "已收到four02固定载体。克隆后先用ScaleBackEffect做受限改写、编译、回退及行为交接；Master两个Label仍待原生修复。"
     }
   ],
   "blockers": [
