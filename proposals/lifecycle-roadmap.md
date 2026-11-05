@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:41:55.078331+08:00",
+  "updatedAt": "2026-11-05T15:47:15.531500+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -683,9 +683,10 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/image-reviews.json",
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/VISUAL-40-REWORK.md",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/baseline.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/owner-interim-15-17-27.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/owner-interim-15-17-27.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/source-state-leads.json"
       ],
-      "nextAction": "human-visual40-reject-01：人审退回整批视觉，重新核原40项。按源还原主体、相对坐标、父子/遮挡、文字，修正通用转换或取图后以相同状态重拍。GREA逐图核实后交总监，40项全部通过才扩样。",
+      "nextAction": "继续原40通用修复。15/27有父级图仍缺字/镜像，17仍缺房间主体。已交A线1.9.1第3天主棋盘/教程截图及配置索引，请肥鹅主开发核真实房间/引导挂载和状态。Room16配置/Area1016是来源线索，未签玩家现场。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
