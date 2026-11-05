@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:00:51.474768+08:00",
+  "updatedAt": "2026-11-05T16:12:22.143296+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -684,9 +684,10 @@
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/VISUAL-40-REWORK.md",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/baseline.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/owner-interim-15-17-27.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/source-state-leads.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/source-state-leads.json",
+        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/room-guide-source-context-20261105/ROOM-GUIDE-SOURCE-CONTEXT.json"
       ],
-      "nextAction": "继续原40通用修复。15/27有父级图仍缺字/镜像，17仍缺房间主体。已交A线1.9.1第3天主棋盘/教程截图及配置索引，请肥鹅主开发核真实房间/引导挂载和状态。Room16配置/Area1016是来源线索，未签玩家现场。",
+      "nextAction": "原40继续静态修复。1.9.1 Room16 源位置、Build8069–8073 门槛、GuideMask/GuideHand 父级条件已收到；玩家装修状态和截图所处引导步骤仍缺同版运行证据。15/17/27 未通过。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
@@ -733,7 +734,8 @@
       "description": "事件 foodstreet-monkey-parallel-20261105，start-beaver-target-rewrite-02。C线单写 beaver，隔离肥鹅副本。",
       "acceptanceCriteria": [
         "来源草稿和目标依赖驱动受限改写、可审查补丁、编译、拒绝和独立副本回退",
-        "同B线两个试点类型，固定载体后核实例/字段/引用/事件及冷重开，项目主开发真实操作一次及预期效果"
+        "同B线两个试点类型，固定载体后核实例/字段/引用/事件及冷重开，项目主开发真实操作一次及预期效果",
+        "交付可重复的 beaver 公开命令、批量输入及预期/成功/失败数；工具变化、隔离验效、正式采用分别计数。同一工具和输入复用已有检查。"
       ],
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
@@ -747,7 +749,8 @@
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-provenance-v2-20261105.json",
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/post33-event/onClickTip-source-trace.json",
-        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/master-help-contract-20261105/MASTER-MATCH-HELP-ADAPTER-CONTRACT.json"
+        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/master-help-contract-20261105/MASTER-MATCH-HELP-ADAPTER-CONTRACT.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/beaver-tool37.json"
       ],
       "nextAction": "肥鹅主开发已交帮助契约并转beaver。新派生副本实施零参btn_tip持久接线、打开状态、可空aid及等待真实关闭，编译冷重开与回退，再交项目一次操作验效。",
       "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
@@ -764,13 +767,15 @@
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
         ".private/development/audit-remediation-20261105/dev34-review/RESULT.json",
         "/Users/wangmeng/MyProjects/Tools/monkey/.private/audit-remediation-20261105/whole-mask-after-dev34/handoff-index.json",
-        ".private/development/audit-remediation-20261105/dev34-review/whole-mask/RESULT.json"
+        ".private/development/audit-remediation-20261105/dev34-review/whole-mask/RESULT.json",
+        ".private/development/audit-remediation-20261105/dev35-review/before/verification.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/budget2048-36.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
       ],
-      "nextAction": "323个Mask合同续接并整包导出partial候选，GREA复核20952文件SHA及源ID。verify --level editor现被171886205字节导入指令的BYTE_BUDGET阻止；主开发接有界读取和负例。整包原生及视觉另验。"
+      "nextAction": "dev35 已在公开入口读通 171886205 字节指令；原候选在 Unity 原生导入中。核对整包保存重开与缺失清单。monkey 单写落实整批默认 2048 MiB、单文件 128 MiB、导入指令 256 MiB 和分别超限诊断。"
     }
   ],
   "blockers": [
