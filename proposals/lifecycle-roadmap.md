@@ -668,7 +668,7 @@
       "title": "肥鹅驱动 monkey 转换修复和分层实图",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "ownerSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
       "acceptanceCriteria": [
         "按全量底册对账，按共因修预算、原生失败和四页文字；其他原因逐根保留",
@@ -684,14 +684,15 @@
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/VISUAL-40-REWORK.md",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/baseline.json"
       ],
-      "nextAction": "human-visual40-reject-01：人审退回整批视觉，重新核原40项。按源还原主体、相对坐标、父子/遮挡、文字，修正通用转换或取图后以相同状态重拍。GREA逐图核实后交总监，40项全部通过才扩样。"
+      "nextAction": "human-visual40-reject-01：人审退回整批视觉，重新核原40项。按源还原主体、相对坐标、父子/遮挡、文字，修正通用转换或取图后以相同状态重拍。GREA逐图核实后交总监，40项全部通过才扩样。",
+      "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
       "id": "grea:T-foodstreet-monkey-bindings",
       "title": "肥鹅驱动 monkey 静态 MonoBehaviour 批量挂载",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "verification",
-      "ownerSessionId": "01a1aa15-8791-7512-92df-1ab33a28d0de",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
       "acceptanceCriteria": [
         "先验证 MasterMatchMainWindow 和 ScaleBackEffect 多实例，真实编译、GetClass、保存冷重开、字段/引用/节点与错绑反例",
@@ -716,12 +717,13 @@
         ".private/development/audit-remediation-20261105/dev32-review/RESULT.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev33-dual-review/RESULT.md"
       ],
-      "nextAction": "冷读阶段判定在已测反例范围通过。产品绑定依实际候选逐实例核验，沿用已证据化范围，正式采用待人审。"
+      "nextAction": "冷读阶段判定在已测反例范围通过。产品绑定依实际候选逐实例核验，沿用已证据化范围，正式采用待人审。",
+      "moduleExecutorSessionId": "01a1aa15-8791-7512-92df-1ab33a28d0de"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
       "title": "肥鹅目标工程受限改写及可回退采用工具",
-      "ownerSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "workflowStatus": "verification",
       "primaryReleaseId": "grea:R1.1.0",
       "description": "事件 foodstreet-monkey-parallel-20261105，start-beaver-target-rewrite-02。C线单写 beaver，隔离肥鹅副本。",
@@ -740,7 +742,8 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-provenance-v2-20261105.json"
       ],
-      "nextAction": "总监已接受隔离临时预览中的一次非动画 hide 点击；正式工程持久按钮、Player及产品采用仍待独立授权与验收。"
+      "nextAction": "总监已接受隔离临时预览中的一次非动画 hide 点击；正式工程持久按钮、Player及产品采用仍待独立授权与验收。",
+      "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
     }
   ],
   "blockers": [
