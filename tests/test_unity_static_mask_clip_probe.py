@@ -70,6 +70,15 @@ class StaticMaskClipProbeContractTests(unittest.TestCase):
         self.assertIn("maskGraphic.enabled=false;probeMask.enabled=false", self.source)
         self.assertIn("result.controlImagePath=\"Analysis/Readback/MaskClipping/\"+controlPngName", self.source)
 
+    def test_owned_white_quad_covers_rect_and_outside_for_any_pivot(self):
+        self.assertIn("childRect.anchoredPosition=new Vector2(rect.width*.125f,0f)", self.source)
+        self.assertIn("childRect.sizeDelta=new Vector2(rect.width*1.5f,rect.height*1.5f)", self.source)
+        self.assertIn("childMin.x<=-rect.width*.5f", self.source)
+        self.assertIn("childMax.x>=rect.width*.75f", self.source)
+        self.assertIn("result.stimulusCoverageVerified", self.source)
+        self.assertLess(self.source.index("controlPngBytes=readbackTexture.EncodeToPNG()"),
+                        self.source.index("if(!result.unmaskedControlVerified)"))
+
     def test_source_geometry_and_original_activity_are_independent_gates(self):
         self.assertIn("sourceRect.sizeDelta,source.size", self.source)
         self.assertIn("sourceRect.anchorMin-expectedAnchor", self.source)

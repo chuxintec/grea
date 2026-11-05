@@ -393,6 +393,25 @@ def _native_closure(request, apply, cold, plan, candidate):
     return expected, indexed, rejected, issues
 
 
+def _phase_gaps(request, apply, cold, version, apply_sha):
+    gaps = []
+    if request.get("schemaVersion") != "monkey-static-code-bindings-request/1" or not request.get("stageId"):
+        gaps.append("invalid_request_identity")
+    for phase, receipt in (("apply", apply), ("cold", cold)):
+        if (receipt.get("schemaVersion") != "monkey-static-code-native/2" or
+                receipt.get("phase") != phase or receipt.get("stageId") != request.get("stageId") or
+                not version or receipt.get("unityVersion") != version):
+            gaps.append(phase + "_receipt_identity_mismatch")
+        values = [receipt.get(k) for k in ("processId", "processStartUtcTicks", "observedUtcTicks")]
+        if not all(type(v) is int and v > 0 for v in values) or values[2] < values[1]:
+            gaps.append(phase + "_process_identity_invalid")
+    if not gaps and (cold["processId"] == apply["processId"] or cold["processStartUtcTicks"] <= apply["observedUtcTicks"]):
+        gaps.append("cold_editor_not_newly_started")
+    if cold.get("priorApplySha256") != apply_sha:
+        gaps.append("cold_apply_receipt_pin_mismatch")
+    return gaps
+
+
 def record_destinations(prepared, candidates, output, *, compatible_preparations=()):
     """Join cold evidence without changing the original mapping denominator."""
     prepared = Path(prepared).resolve()
@@ -441,6 +460,13 @@ def record_destinations(prepared, candidates, output, *, compatible_preparations
             if r != original_rows.get(r["sourceComponent"]):
                 raise ValueError("Native request changed a generated source mapping")
         expected, receipts, closure_gaps, contract_issues = _native_closure(request, apply, cold, json.loads(plan_raw), candidate)
+        version_file = candidate / "ProjectSettings/ProjectVersion.txt"
+        versions = re.findall(r"(?m)^m_EditorVersion: (\S+)$", version_file.read_text()) if version_file.is_file() else []
+        phase_gaps = _phase_gaps(request, apply, cold, versions[0] if len(versions) == 1 else None,
+                                 _sha((folder / "apply.json").read_bytes()))
+        contract_issues.extend(dict(code=reason) for reason in phase_gaps)
+        for reasons in closure_gaps.values():
+            reasons.extend(phase_gaps)
         stage = {"candidate": str(candidate), "stageId": request["stageId"], "requestSha256": _sha(request_raw),
                  "bindingsSha256": candidate_pin,
                  "applySha256": _sha((folder / "apply.json").read_bytes()), "coldSha256": _sha((folder / "cold.json").read_bytes()),

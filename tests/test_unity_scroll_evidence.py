@@ -177,6 +177,8 @@ def test_source_gap_aggregate_is_nonblocking_only_when_exact_source_indices_are_
 
 
 @pytest.mark.parametrize(('count', 'indexes', 'static_code'), [
+    ("9" * 5000, [0], None),  # invalid oversized decimal remains blocking
+    (10**15, [0], None),  # an untrusted count must never allocate its declared range
     (2, [0], None),  # absent raw source index must keep the aggregate blocking
     (1, [0], 'UNKNOWN_STATIC_SOURCE_SEMANTIC'),
 ])

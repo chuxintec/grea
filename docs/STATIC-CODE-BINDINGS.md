@@ -116,3 +116,10 @@ acceptance remain with their single writer. An integration can call
 `prepare_from_paths`, `stage_candidate` and `record_destinations`, or register
 these independent module commands. No existing export changes behavior unless
 this optional stage is explicitly selected.
+
+Native receipt schema `monkey-static-code-native/2` records the Editor PID,
+UTC process start ticks and observation ticks. The cold receipt pins the exact
+apply receipt bytes. Both receipts must match the requested stage, their own
+phase and the project's Unity version. Cold verification requires a different
+PID whose process started after the apply observation. Historical v1 receipts
+remain readable and yield blocked observations under this check.

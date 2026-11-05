@@ -28,7 +28,7 @@ public static partial class MonkeyImporter
             stencilClipVerified, disabledNoClipVerified, probeMaskActiveInHierarchy, probeChildActiveInHierarchy,
             sourceAppFrame, sourceVisualParityClaimed, verified, stimulusSpriteVerified, stimulusObjectsDestroyed,
             graphicsBackendAvailable, probeCameraSceneBound, unmaskedControlRenderCompleted,
-            unmaskedControlVerified, unmaskedControlSameRenderContext;
+            unmaskedControlVerified, unmaskedControlSameRenderContext, stimulusCoverageVerified;
         public bool sourceTextureAlphaVerified, sourceMaskMaterialVerified, alphaSamplesVerified;
         public string sourceSpriteFrameId, sourceSpriteGuid, sourceTextureId, sourceTexturePath, sourceTextureGuid,
             sourceTextureSha256, sourceTextureFormat, sourceTextureImportMode, sourceTextureMeshType,
@@ -36,10 +36,12 @@ public static partial class MonkeyImporter
             sourceMaterialShaderSha256, alphaDiscardPolicy;
         public long sourceSpriteLocalFileId;
         public int sourceTextureWidth, sourceTextureHeight;
+        public float probeCanvasSide;
         public float sourceAlphaThreshold;
         public MaskClipAlphaSample[] sourceAlphaSamples;
         public int imageWidth, imageHeight;
         public float[] insideLocalPoint, outsideLocalPoint, insideWorldPoint, outsideWorldPoint;
+        public float[] stimulusChildCenter, stimulusChildSize;
         public float[] insideViewportPoint, outsideViewportPoint;
         public int[] insidePixel, outsidePixel, insideRgba, outsideRgba;
         public int[] unmaskedControlInsideRgba, unmaskedControlOutsideRgba;
@@ -424,6 +426,7 @@ public static partial class MonkeyImporter
             var spanX=Mathf.Abs(rect.width*worldScale.x)+Mathf.Abs(rect.height*worldScale.y);
             var spanY=Mathf.Abs(rect.width*worldScale.x)+Mathf.Abs(rect.height*worldScale.y);
             var canvasSide=Mathf.Max((imageInput!=null?2.5f:4f)*Mathf.Max(spanX,spanY),4f);
+            result.probeCanvasSide=canvasSide;
             const int probeLayer=31;
             probeScene=EditorSceneManager.NewPreviewScene();result.probeSceneCreated=probeScene.IsValid();
             if(!result.probeSceneCreated){diagnostics.Add("disposable-preview-scene-unavailable");break;}
@@ -481,7 +484,16 @@ public static partial class MonkeyImporter
             var childRect=(RectTransform)childObject.transform;
             childRect.anchorMin=childRect.anchorMax=new Vector2(.5f,.5f);childRect.pivot=new Vector2(.5f,.5f);
             childRect.sizeDelta=new Vector2(rect.width*1.5f,rect.height*1.5f);
-            childRect.anchoredPosition=new Vector2(rect.center.x+rect.width*.5f,rect.center.y);
+            // Cover the whole source Rect and the outside sample for every pivot.
+            childRect.anchoredPosition=new Vector2(rect.width*.125f,0f);
+            var childLocalRect=childRect.rect;
+            var childMin=childRect.anchoredPosition+childLocalRect.min;
+            var childMax=childRect.anchoredPosition+childLocalRect.max;
+            result.stimulusChildCenter=new[]{childRect.anchoredPosition.x,childRect.anchoredPosition.y};
+            result.stimulusChildSize=new[]{childRect.rect.width,childRect.rect.height};
+            result.stimulusCoverageVerified=childMin.x<=-rect.width*.5f+0.0001f&&childMax.x>=rect.width*.75f-0.0001f&&
+                childMin.y<=-rect.height*.5f+0.0001f&&childMax.y>=rect.height*.5f-0.0001f;
+            if(!result.stimulusCoverageVerified){diagnostics.Add("owned-white-child-does-not-cover-source-rect-and-outside-point");break;}
             childRect.localScale=Vector3.one;childRect.localRotation=Quaternion.identity;
             childGraphic=childObject.AddComponent<Image>();childGraphic.color=Color.white;
             childGraphic.type=Image.Type.Simple;childGraphic.preserveAspect=false;childGraphic.useSpriteMesh=false;
@@ -525,6 +537,7 @@ public static partial class MonkeyImporter
             RenderTexture.active=renderTexture;
             readbackTexture.ReadPixels(new Rect(0,0,probeSize,probeSize),0,0,false);
             readbackTexture.Apply(false,false);
+            controlPngBytes=readbackTexture.EncodeToPNG();result.controlImageSha256=MaskClipHash(controlPngBytes);
             var controlInside=(Color32)readbackTexture.GetPixel(ix,iy);
             var controlOutside=(Color32)readbackTexture.GetPixel(ox,oy);
             result.unmaskedControlInsideRgba=MaskClipPixel(controlInside);
@@ -547,7 +560,6 @@ public static partial class MonkeyImporter
             result.unmaskedControlVerified=MaskClipExpectedOpaqueWhite(controlInside)&&MaskClipExpectedOpaqueWhite(controlOutside)&&controlAlphaOk;
             if(!result.unmaskedControlVerified)
             {diagnostics.Add("unmasked-control-white-stimulus-not-visible");break;}
-            controlPngBytes=readbackTexture.EncodeToPNG();result.controlImageSha256=MaskClipHash(controlPngBytes);
             maskGraphic.enabled=spec.enabled;probeMask.enabled=spec.enabled;Canvas.ForceUpdateCanvases();
             result.maskedContextSha256=MaskClipRenderContextSha256(probeScene,probeCamera,probeCanvas,renderTexture);
             result.unmaskedControlSameRenderContext=!String.IsNullOrEmpty(result.controlContextSha256)&&
@@ -666,6 +678,7 @@ public static partial class MonkeyImporter
             result.probeObjectsDestroyed&&result.stimulusSpriteVerified&&result.stimulusObjectsDestroyed&&
             result.graphicsBackendAvailable&&result.probeCameraSceneBound&&result.unmaskedControlRenderCompleted&&
             result.unmaskedControlVerified&&result.unmaskedControlSameRenderContext&&
+            result.stimulusCoverageVerified&&
             result.renderCompleted&&result.pixelReadbackVerified&&
             result.insidePixelVerified&&result.outsidePixelVerified&&result.maskInsidePointAccepted&&
             (spec.enabled?result.maskOutsidePointRejected:!result.maskOutsidePointRejected)&&result.childGraphicInsideAccepted&&

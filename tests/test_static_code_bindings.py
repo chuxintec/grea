@@ -194,16 +194,37 @@ class StaticCodeBindingsTests(unittest.TestCase):
                 ownerVerified=True, persistent=True, identityStable=True, readback=read))
         plan = candidate / "Analysis/plan.json"
         plan.write_text(json.dumps(dict(sourcePrefabs=plan_rows)))
-        request = dict(stageId="protocol-test", planPath="Analysis/plan.json", planSha256=hashlib.sha256(plan.read_bytes()).hexdigest(),
+        request = dict(schemaVersion="monkey-static-code-bindings-request/1", stageId="protocol-test", planPath="Analysis/plan.json", planSha256=hashlib.sha256(plan.read_bytes()).hexdigest(),
                        bindingsSha256=hashlib.sha256((folder / "bindings.json").read_bytes()).hexdigest(),
                        prefabs=prefabs, mappings=report["mappings"], scripts=report["scripts"])
         request_path = folder / "request.json"
         request_path.write_text(json.dumps(request))
         receipt = dict(requestSha256=hashlib.sha256(request_path.read_bytes()).hexdigest(), prefabs=prefabs,
                        observations=observations, controls=[dict(sourceComponent=r["sourceComponent"], rejected=True) for r in report["mappings"]], errors=[])
-        for phase in ("apply", "cold"):
+        settings = candidate / "ProjectSettings"
+        settings.mkdir()
+        (settings / "ProjectVersion.txt").write_text("m_EditorVersion: 6000.6.2f1\n")
+        for ordinal, phase in enumerate(("apply", "cold"), 1):
+            receipt.update(schemaVersion="monkey-static-code-native/2", stageId="protocol-test", phase=phase,
+                           unityVersion="6000.6.2f1", processId=ordinal, processStartUtcTicks=ordinal*10,
+                           observedUtcTicks=ordinal*10+1)
+            if phase == "cold":
+                receipt["priorApplySha256"] = hashlib.sha256((folder/"apply.json").read_bytes()).hexdigest()
             (folder / (phase + ".json")).write_text(json.dumps(receipt))
         return prepared, candidate
+
+    def test_wrong_cold_identity_blocks_every_observation(self):
+        prepared, candidate = self._native_fixture()
+        path = candidate / "Analysis/StaticCodeBindings/cold.json"
+        original = json.loads(path.read_bytes())
+        for key, value in (("phase", "apply"), ("schemaVersion", "legacy"), ("stageId", "other"),
+                           ("unityVersion", "other"), ("processStartUtcTicks", 10), ("processId", 0), ("processId", 1),
+                           ("priorApplySha256", "forged")):
+            with self.subTest(key=key):
+                path.write_text(json.dumps(dict(original, **{key: value})))
+                ledger = record_destinations(prepared, [candidate], self.root / (key + ".json"))
+                self.assertEqual(ledger["counts"], {"blocked": 2})
+                self.assertTrue(ledger["hasEvidenceContractGaps"])
 
     def test_native_closure_positive_preserves_both_instances(self):
         prepared, candidate = self._native_fixture()
@@ -261,6 +282,8 @@ class StaticCodeBindingsTests(unittest.TestCase):
                     for receipt in (apply, cold):
                         receipt["prefabs"][0]["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
                 for phase, receipt in (("apply", apply), ("cold", cold)):
+                    if phase == "cold":
+                        receipt["priorApplySha256"] = hashlib.sha256((folder/"apply.json").read_bytes()).hexdigest()
                     (folder / (phase + ".json")).write_text(json.dumps(receipt))
                 result = record_destinations(prepared, [candidate], self.root / (change + ".json"))
                 dispositions = {r["sourceComponent"]: r["disposition"] for r in result["mappings"]}

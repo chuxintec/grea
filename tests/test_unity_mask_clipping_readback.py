@@ -2,13 +2,14 @@ import copy
 import hashlib
 import io
 import json
+import math
 import tempfile
 import unittest
 from pathlib import Path
 
 from PIL import Image
 
-from monkey.unity_mask_clipping_readback import CONTRACT, IMAGE_METHOD, METHOD, PREFIX, _TRUE, verify
+from monkey.unity_mask_clipping_readback import CONTRACT, IMAGE_METHOD, METHOD, PREFIX, _TRUE, _rotate_scale_local, verify
 
 
 class MaskClippingReadbackTests(unittest.TestCase):
@@ -20,7 +21,7 @@ class MaskClippingReadbackTests(unittest.TestCase):
                          sourceActiveSelf=True, sourceActive=False)
         self.plan = dict(staticMasks=dict(contract=CONTRACT,masks=[self.spec]),
                          components=[dict(sourceId=self.sid,node=self.node,type='cc.Mask')],
-                         nodes=[dict(sourceId=self.node,size=[200,100],anchor=[.5,.5])])
+                         nodes=[dict(sourceId=self.node,size=[200,100],anchor=[.5,.5],scale=[1,1,1],rotation=[0,0,0,1])])
         token=hashlib.sha256(self.sid.encode()).hexdigest()[:20]
         self.jp=PREFIX+'maskclip-'+token+'.json'; self.pp=PREFIX+'maskclip-'+token+'.png'
         self.cp=PREFIX+'maskclip-'+token+'-control.png'
@@ -36,14 +37,22 @@ class MaskClippingReadbackTests(unittest.TestCase):
             maskOutsidePointRejected=True,
             childGraphicOutsideRejected=True,disabledChildGraphicOutsideAccepted=False,
             diagnostics=[],insideLocalPoint=[0,0],outsideLocalPoint=[150,0],
-            imageWidth=256,imageHeight=256,insidePixel=[128,128],outsidePixel=[224,128],
-            insideViewportPoint=[.5,.5,10],outsideViewportPoint=[.875,.5,10],
+            imageWidth=256,imageHeight=256,probeCanvasSide=1200,
+            stimulusChildCenter=[25,0],stimulusChildSize=[300,150],
+            insidePixel=[128,128],outsidePixel=[160,128],
+            insideViewportPoint=[.5,.5,10],outsideViewportPoint=[.625,.5,10],
             insideRgba=[255]*4,outsideRgba=[0]*4)
         self.row=dict(sourceId=self.sid,verified=True,clipProbeVerified=True,persistentIdentityVerified=True,
                       persistentIdentityGuid='a'*32,persistentIdentityLocalFileId=42,clipProbe=self.probe)
         self.rb=dict(sourcePrefabs=[dict(guid='a'*32,staticMaskFields=[self.row])])
         image=Image.new('RGBA',(256,256)); image.putpixel((128,127),(255,255,255,255))
         self.image=image; self.sync()
+
+    def _project(self,local,size):
+        side=self.probe['probeCanvasSide']
+        world=_rotate_scale_local(self.plan['nodes'][0],local)
+        viewport=[.5+world[0]/side,.5+world[1]/side,10+world[2]]
+        return [int(viewport[0]*size),int(viewport[1]*size)],viewport
 
     def sync(self):
         (self.root/PREFIX).mkdir(parents=True,exist_ok=True)
@@ -66,7 +75,7 @@ class MaskClippingReadbackTests(unittest.TestCase):
                           maskOutsidePointRejected=False,
                           childGraphicOutsideRejected=False,disabledChildGraphicOutsideAccepted=True,
                           outsideRgba=[255]*4)
-        self.image.putpixel((224,127),(255,255,255,255));self.sync()
+        self.image.putpixel((160,127),(255,255,255,255));self.sync()
         self.assertEqual([],self.check())
 
     def test_legacy_plan_does_not_require_new_probe(self):
@@ -77,11 +86,11 @@ class MaskClippingReadbackTests(unittest.TestCase):
         self.assertTrue(self.check())
 
     def test_white_outside_cannot_pass_by_repinning_files(self):
-        self.image.putpixel((224,127),(255,255,255,255));self.probe['outsideRgba']=[255]*4;self.sync()
+        self.image.putpixel((160,127),(255,255,255,255));self.probe['outsideRgba']=[255]*4;self.sync()
         self.assertTrue(self.check())
 
     def test_forged_pixel_value_differs_from_png(self):
-        self.image.putpixel((224,127),(255,255,255,255));self.sync()
+        self.image.putpixel((160,127),(255,255,255,255));self.sync()
         self.assertTrue(self.check())
 
     def test_source_activity_cleanup_and_parity_flags_are_independent_gates(self):
@@ -140,6 +149,9 @@ class MaskClippingReadbackTests(unittest.TestCase):
         self.plan['textures']=[dict(id=texture_id,path=texture_path,size=[8,8],originalSize=[8,8],offset=[0,0],border=[0,0,0,0])]
         self.plan['nodes'][0]['size']=[80,80]
         self.plan['nodes'][0]['anchor']=[.5,.5]
+        self.probe['probeCanvasSide']=400
+        self.probe['stimulusChildCenter']=[10,0]
+        self.probe['stimulusChildSize']=[120,120]
         self.spec.update(maskType=2,inverted=False,enabled=enabled,sourceActiveSelf=True,sourceActive=True,
             spriteFrameUuid=frame,alphaThreshold=threshold,unityMaskMaterialGuid='c'*32,
             unityMaskShaderPath='Assets/Game/Content/Materials/StaticMasks/NativeStaticImageMask.shader',
@@ -148,16 +160,18 @@ class MaskClippingReadbackTests(unittest.TestCase):
                         unityMaskShaderSha256='d'*64)
         samples=[]
         for kind,texel,alpha,pixel in (
-            ('opaque',[6,6],255,[128,128]),
-            ('transparent-zero',[1,1],0,[100,100]),
-            ('low-nonzero',[3,3],1,[110,110]),
+            ('opaque',[6,6],255,[0,0]),
+            ('transparent-zero',[1,1],0,[0,0]),
+            ('low-nonzero',[3,3],1,[0,0]),
         ):
             alpha_pass=alpha/255.0>=threshold
             visible=(not enabled) or alpha_pass
-            local=[(texel[0]+.5)/8*80-40,(texel[1]+.5)/8*80-40]
+            anchor=self.plan['nodes'][0]['anchor']
+            local=[(texel[0]+.5)/8*80-anchor[0]*80,(texel[1]+.5)/8*80-anchor[1]*80]
+            pixel,viewport=self._project(local,512)
             samples.append(dict(kind=kind,sourceTexturePixel=texel,sourceAlphaByte=alpha,
                 sourceAlpha=alpha/255.0,sourceAlphaPass=alpha_pass,expectedVisible=visible,
-                localPoint=local,pixel=pixel,viewportPoint=[pixel[0]/512,pixel[1]/512,10],
+                localPoint=local,pixel=pixel,viewportPoint=viewport,
                 rgba=[255]*4 if visible else [0]*4,pixelVerified=True))
         self.probe.update(method=IMAGE_METHOD,probeProfile='sprite-alpha-threshold',
             sourceSpriteFrameId=frame,sourceSpriteGuid='b'*32,sourceSpriteLocalFileId=21300000,
@@ -168,10 +182,13 @@ class MaskClippingReadbackTests(unittest.TestCase):
             sourceMaterialGuid='c'*32,sourceMaterialShaderPath=self.spec['unityMaskShaderPath'],
             sourceMaterialShaderSha256='d'*64,alphaDiscardPolicy='discard-if-source-alpha-less-than-threshold',
             sourceAlphaThreshold=threshold,sourceAlphaSamples=samples,alphaSamplesVerified=True,
-            imageWidth=512,imageHeight=512,insideLocalPoint=samples[0]['localPoint'],outsideLocalPoint=[60,0],
+            imageWidth=512,imageHeight=512,probeCanvasSide=400,insideLocalPoint=samples[0]['localPoint'],outsideLocalPoint=[60,0],
             sourceNodeActiveSelf=True,sourceNodeActiveInHierarchy=True,
             insidePixel=samples[0]['pixel'],insideViewportPoint=samples[0]['viewportPoint'],insideRgba=samples[0]['rgba'],
-            outsidePixel=[480,256],outsideViewportPoint=[480/512,.5,10],
+            outsidePixel=self._project([(1.25-self.plan['nodes'][0]['anchor'][0])*80,
+                                        (.5-self.plan['nodes'][0]['anchor'][1])*80],512)[0],
+            outsideViewportPoint=self._project([(1.25-self.plan['nodes'][0]['anchor'][0])*80,
+                                                (.5-self.plan['nodes'][0]['anchor'][1])*80],512)[1],
             outsideRgba=[255]*4 if not enabled else [0]*4,insidePixelVerified=True,outsidePixelVerified=True,
             stencilClipVerified=enabled,disabledNoClipVerified=not enabled,sourceMaskEnabled=enabled,
             maskOutsidePointRejected=enabled,childGraphicOutsideRejected=enabled,
@@ -204,6 +221,12 @@ class MaskClippingReadbackTests(unittest.TestCase):
         self.assertFalse(self.probe['sourceAlphaSamples'][2]['expectedVisible'])
         self.assertEqual([],self.image_check())
 
+    def test_alpha_threshold_uses_float32_equality_at_source_byte_boundary(self):
+        self._image_mask_fixture(1/255)
+        one=next(row for row in self.probe['sourceAlphaSamples'] if row['kind']=='low-nonzero')
+        self.assertTrue(one['sourceAlphaPass'])
+        self.assertEqual([],self.image_check())
+
     def test_image_mask_requires_generated_owned_source_texture_bytes(self):
         self._image_mask_fixture(.1)
         self.assertTrue(verify(self.plan,self.rb,self.root,owned_files=None))
@@ -221,6 +244,34 @@ class MaskClippingReadbackTests(unittest.TestCase):
     def test_image_control_samples_must_match_masked_alpha_projection(self):
         self._image_mask_fixture(.1)
         self.probe['unmaskedControlAlphaSamples'][0]['pixel']=[127,128]
+        self.sync();self.assertTrue(self.image_check())
+
+    def test_image_alpha_projection_is_derived_for_arbitrary_pivot_rotation_and_scale(self):
+        self._image_mask_fixture(.1)
+        node=self.plan['nodes'][0]
+        node['anchor']=[.2,.75];node['scale']=[1.25,.75,1]
+        angle=.35;node['rotation']=[0,0,math.sin(angle/2),math.cos(angle/2)]
+        self.probe['outsideLocalPoint']=[(1.25-node['anchor'][0])*80,(.5-node['anchor'][1])*80]
+        for sample in self.probe['sourceAlphaSamples']:
+            texel=sample['sourceTexturePixel']
+            sample['localPoint']=[(texel[0]+.5)/8*80-node['anchor'][0]*80,
+                                  (texel[1]+.5)/8*80-node['anchor'][1]*80]
+            sample['pixel'],sample['viewportPoint']=self._project(sample['localPoint'],512)
+        opaque=next(x for x in self.probe['sourceAlphaSamples'] if x['kind']=='opaque')
+        self.probe.update(insideLocalPoint=opaque['localPoint'],insidePixel=opaque['pixel'],
+                          insideViewportPoint=opaque['viewportPoint'],insideRgba=opaque['rgba'])
+        self.probe['unmaskedControlAlphaSamples']=[dict(kind=row['kind'],pixel=list(row['pixel']),
+            viewportPoint=list(row['viewportPoint']),rgba=[255]*4) for row in self.probe['sourceAlphaSamples']]
+        self.probe['outsidePixel'],self.probe['outsideViewportPoint']=self._project(self.probe['outsideLocalPoint'],512)
+        self.probe['stimulusChildCenter']=[10,0];self.probe['stimulusChildSize']=[120,120]
+        self.image=Image.new('RGBA',(512,512),(0,0,0,0))
+        for sample in self.probe['sourceAlphaSamples']:
+            x,y=sample['pixel'];self.image.putpixel((x,511-y),tuple(sample['rgba']))
+        x,y=self.probe['outsidePixel'];self.image.putpixel((x,511-y),tuple(self.probe['outsideRgba']))
+        self.sync();self.assertEqual([],self.image_check())
+
+        sample=self.probe['sourceAlphaSamples'][1]
+        sample['pixel']=[127,128];sample['viewportPoint']=[127.5/512,128.5/512,10]
         self.sync();self.assertTrue(self.image_check())
 
     def test_image_sprite_frame_lookup_is_bundle_exact(self):

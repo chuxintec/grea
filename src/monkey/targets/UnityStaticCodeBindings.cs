@@ -40,7 +40,8 @@ public static partial class MonkeyImporter
     }
     [Serializable] public class StaticCodeControl { public string name, sourceComponent; public bool rejected; }
     [Serializable] public class StaticCodeReceipt {
-        public string schemaVersion="monkey-static-code-native/1", stageId, phase, unityVersion, requestSha256;
+        public string schemaVersion="monkey-static-code-native/2", stageId, phase, unityVersion, requestSha256;
+        public int processId; public long processStartUtcTicks, observedUtcTicks; public string priorApplySha256;
         public StaticCodeObservation[] observations;
         public StaticCodeControl[] controls;
         public StaticCodePrefab[] prefabs;
@@ -181,11 +182,17 @@ public static partial class MonkeyImporter
     public static void StaticCodeCold() { RunStaticCode(true); }
     static void RunStaticCode(bool cold) {
         var errors=new List<string>();var results=new List<StaticCodeObservation>();var controls=new List<StaticCodeControl>();var saved=new List<StaticCodePrefab>();
+        var process=System.Diagnostics.Process.GetCurrentProcess();
+        long started=process.StartTime.ToUniversalTime().Ticks;
+        string priorHash=null;
         StaticCodeRequest request=null;
         try {
             Plan plan;request=CodeRequest(out plan);
             var prior=cold?JsonUtility.FromJson<StaticCodeReceipt>(File.ReadAllText("Analysis/StaticCodeBindings/apply.json")):null;
-            if(cold)CodeRequire(prior.requestSha256==CodeSha(StaticCodeRequestPath),"COLD_REQUEST_CHANGED");
+            if(cold) {
+                priorHash=CodeSha("Analysis/StaticCodeBindings/apply.json");
+                CodeRequire(prior.requestSha256==CodeSha(StaticCodeRequestPath)&&prior.phase=="apply"&&prior.stageId==request.stageId&&prior.unityVersion==Application.unityVersion&&prior.schemaVersion=="monkey-static-code-native/2"&&prior.processId>0&&prior.observedUtcTicks>0&&started>prior.observedUtcTicks,"COLD_PROCESS_OR_PHASE_MISMATCH");
+            }
             foreach(var target in request.prefabs) {
                 try {
                     CodeRequire(AssetDatabase.AssetPathToGUID(target.path)==target.guid,"PREFAB_GUID");
@@ -223,6 +230,7 @@ public static partial class MonkeyImporter
             }
         } catch(Exception e) { errors.Add(e.ToString()); }
         var receipt=new StaticCodeReceipt{stageId=request==null?null:request.stageId,phase=cold?"cold":"apply",unityVersion=Application.unityVersion,
+            processId=process.Id,processStartUtcTicks=started,observedUtcTicks=DateTime.UtcNow.Ticks,priorApplySha256=priorHash,
             requestSha256=File.Exists(StaticCodeRequestPath)?CodeSha(StaticCodeRequestPath):null,observations=results.ToArray(),controls=controls.ToArray(),prefabs=saved.ToArray(),errors=errors.ToArray()};
         Directory.CreateDirectory("Analysis/StaticCodeBindings");
         File.WriteAllText("Analysis/StaticCodeBindings/"+(cold?"cold":"apply")+".json",JsonUtility.ToJson(receipt,true));

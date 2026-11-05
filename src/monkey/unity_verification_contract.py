@@ -399,7 +399,10 @@ def _source_gap_count(row):
     text=row.get('rawDiagnostic')or row.get('message')
     if not isinstance(text,str):return None
     match=re.fullmatch(r'\s*SOURCE_GAPS:\s*(\d+)\s*',text)
-    return int(match.group(1)) if match else None
+    if not match:
+        return None
+    digits = match.group(1).lstrip('0') or '0'
+    return int(digits) if len(digits) <= 19 else None
 
 
 def _has_source_diagnostic_origin(row):
@@ -478,7 +481,8 @@ def unresolved_diagnostics(diagnostics,coverage):
         # and every such row has an independent resolution/dynamic classification.
         aggregate_count=_source_gap_count(source_gap_rows[0])if len(source_gap_rows)==1 else None
         exact_source_indexes=(aggregate_count is not None and not source_evidence_invalid
-            and source_evidence_indexes==set(range(aggregate_count)))
+            and len(source_evidence_indexes)==aggregate_count
+            and all(0 <= index < aggregate_count for index in source_evidence_indexes))
         aggregate_resolved=(len(source_gap_rows)==1
             and aggregate_count is not None
             and exact_source_indexes

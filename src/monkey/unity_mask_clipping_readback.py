@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import io
 import math
+import struct
 from pathlib import Path
 
 from PIL import Image
@@ -22,7 +23,7 @@ _TRUE = ('supported', 'sourceGeometryVerified', 'sourceGeometryPreserved', 'sour
          'probeMaskActiveInHierarchy', 'probeChildActiveInHierarchy', 'stimulusSpriteVerified',
          'stimulusObjectsDestroyed', 'graphicsBackendAvailable', 'probeCameraSceneBound',
          'unmaskedControlRenderCompleted', 'unmaskedControlVerified',
-         'unmaskedControlSameRenderContext', 'verified')
+         'unmaskedControlSameRenderContext', 'stimulusCoverageVerified', 'verified')
 
 
 def _file(root, relative):
@@ -55,6 +56,55 @@ def _pair(value, numeric=False):
 
 def _close(a, b):
     return type(a) in (int, float) and math.isfinite(a) and abs(a-b) <= .001
+
+
+def _f32(value):
+    return struct.unpack('<f', struct.pack('<f', float(value)))[0]
+
+
+def _rotate_scale_local(node, local):
+    size=node.get('size');anchor=node.get('anchor');scale=node.get('scale');rotation=node.get('rotation')
+    if (not _pair(size,True) or not _pair(anchor,True) or not isinstance(scale,list) or len(scale)<3 or
+            not isinstance(rotation,list) or len(rotation)<4 or
+            any(type(value) not in (int,float) or not math.isfinite(value) for value in scale[:3]+rotation[:4])):
+        raise ValueError('source rotation/scale is unavailable for probe projection')
+    pivot_center=[(.5-anchor[0])*size[0],(.5-anchor[1])*size[1],0.0]
+    value=[(local[0]-pivot_center[0])*scale[0],(local[1]-pivot_center[1])*scale[1],0.0]
+    x,y,z,w=rotation[:4]
+    if abs(x*x+y*y+z*z+w*w-1.0)>.001:
+        raise ValueError('source rotation quaternion is not normalized')
+    # Unity quaternion-vector rotation: v + 2*w*(q.xyz x v) + 2*(q.xyz x (q.xyz x v)).
+    qv=(x,y,z)
+    cross1=(qv[1]*value[2]-qv[2]*value[1],qv[2]*value[0]-qv[0]*value[2],qv[0]*value[1]-qv[1]*value[0])
+    cross2=(qv[1]*cross1[2]-qv[2]*cross1[1],qv[2]*cross1[0]-qv[0]*cross1[2],qv[0]*cross1[1]-qv[1]*cross1[0])
+    return [value[i]+2*w*cross1[i]+2*cross2[i] for i in range(3)]
+
+
+def _validate_projection(probe, label, local, node, width, height):
+    canvas_side=probe.get('probeCanvasSide')
+    if type(canvas_side) not in (int,float) or not math.isfinite(canvas_side) or canvas_side<=0:
+        raise ValueError('probe canvas span is absent')
+    world=_rotate_scale_local(node,local)
+    viewport=[.5+world[0]/canvas_side,.5+world[1]/canvas_side,10.0+world[2]]
+    recorded=probe.get(label+'ViewportPoint')
+    if (not isinstance(recorded,list) or len(recorded)!=3 or
+            any(type(v) not in (int,float) or not math.isfinite(v) for v in recorded) or
+            any(not _close(a,b) for a,b in zip(recorded,viewport))):
+        raise ValueError(label+' viewport projection differs from source geometry')
+    pixel=probe.get(label+'Pixel')
+    expected=[math.floor(viewport[0]*width),math.floor(viewport[1]*height)]
+    if pixel!=expected or not _pair(pixel) or not all(0<=v<limit for v,limit in zip(pixel,(width,height))):
+        raise ValueError(label+' pixel differs from source geometry projection')
+
+
+def _expected_canvas_side(node, profile):
+    size=node.get('size');scale=node.get('scale')
+    if (not _pair(size,True) or not isinstance(scale,list) or len(scale)<2 or
+            any(type(x) not in (int,float) or not math.isfinite(x) for x in scale[:2])):
+        raise ValueError('source size/scale unavailable for probe canvas bounds')
+    factor=2.5 if profile=='sprite-alpha-threshold' else 4.0
+    span=abs(size[0]*scale[0])+abs(size[1]*scale[1])
+    return max(factor*span,4.0)
 
 
 def _texture_owner_row(owned_files, texture_path):
@@ -94,9 +144,10 @@ def _alpha_source_point(sample, image, node, threshold, enabled):
     alpha_byte = image.convert('RGBA').getpixel((texel[0], image.height-1-texel[1]))[3]
     if type(sample.get('sourceAlphaByte')) is not int or sample['sourceAlphaByte'] != alpha_byte:
         raise ValueError('source alpha byte differs from the manifest-owned PNG')
-    if not _close(sample.get('sourceAlpha'), alpha_byte/255.0):
+    normalized_alpha=_f32(alpha_byte/255.0)
+    if type(sample.get('sourceAlpha')) not in (int,float) or _f32(sample['sourceAlpha']) != normalized_alpha:
         raise ValueError('normalized source alpha differs from the manifest-owned PNG')
-    alpha_pass = alpha_byte/255.0 >= threshold
+    alpha_pass = normalized_alpha >= _f32(threshold)
     if sample.get('sourceAlphaPass') is not alpha_pass:
         raise ValueError('source alpha comparison differs from the pinned threshold')
     expected_visible = (enabled is False) or alpha_pass
@@ -149,6 +200,7 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
     nodes = {x['sourceId']: x for x in instruction.get('nodes', [])}
     for sid, spec in expected.items():
         try:
+            node=nodes[spec['node']]
             row = actual[sid]
             if (row.get('verified') is not True or row.get('clipProbeVerified') is not True or
                 row.get('persistentIdentityVerified') is not True or not row.get('persistentIdentityGuid') or
@@ -178,6 +230,12 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
                 raise ValueError('probe identity/method differs')
             if probe.get('stimulus') != 'owned-white-sprite-child-on-transparent-world-space-canvas':
                 raise ValueError('controlled stimulus is absent')
+            child_center=probe.get('stimulusChildCenter');child_size=probe.get('stimulusChildSize')
+            if (not _pair(child_center,True) or not _pair(child_size,True) or
+                    not _pair(node.get('size'),True) or
+                    not all(_close(a,b) for a,b in zip(child_center,[node['size'][0]*.125,0])) or
+                    not all(_close(a,b) for a,b in zip(child_size,[node['size'][0]*1.5,node['size'][1]*1.5]))):
+                raise ValueError('owned white child bounds do not cover the full source rect and outside point')
             if any(probe.get(key) is not True for key in _TRUE) or probe.get('diagnostics'):
                 raise ValueError('probe has incomplete execution/cleanup checks')
             if probe.get('sourceAppFrame') is not False or probe.get('sourceVisualParityClaimed') is not False:
@@ -196,6 +254,10 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
             expected_profile = 'rect' if spec['maskType'] == 0 else 'sprite-alpha-threshold'
             if probe.get('probeProfile') != expected_profile:
                 raise ValueError('probe profile differs from mask type')
+            canvas_side=probe.get('probeCanvasSide')
+            if (type(canvas_side) not in (int,float) or not math.isfinite(canvas_side) or
+                    not _close(canvas_side,_expected_canvas_side(node,expected_profile))):
+                raise ValueError('probe camera span differs from source node geometry')
             enabled = spec['enabled']
             if (probe.get('status') != ('native-stencil-clipping-verified' if enabled else 'disabled-mask-no-clip-verified') or
                 probe.get('stencilClipVerified') is not enabled or probe.get('disabledNoClipVerified') is not (not enabled) or
@@ -203,7 +265,7 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
                 probe.get('childGraphicOutsideRejected') is not enabled or
                 probe.get('disabledChildGraphicOutsideAccepted') is not (not enabled)):
                 raise ValueError('enabled/disabled clipping semantics differ')
-            node = nodes[spec['node']]; width, height = node['size']; px, py = node['anchor']
+            width, height = node['size']; px, py = node['anchor']
             inside = [(0.5-px)*width, (0.5-py)*height]
             outside = [(1.25-px)*width, inside[1]]
             if spec['maskType'] == 0:
@@ -215,6 +277,10 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
                     continue
                 if not _pair(probe.get(key), True) or not all(_close(x,y) for x,y in zip(probe[key],value)):
                     raise ValueError('sample local point differs from frozen source geometry')
+            expected_probe_size=(256,256) if spec['maskType']==0 else (512,512)
+            if spec['maskType']==0:
+                _validate_projection(probe,'inside',inside,node,*expected_probe_size)
+            _validate_projection(probe,'outside',outside,node,*expected_probe_size)
             png = read(_file(root, png_path), max_bytes=8*1024*1024)
             if hashlib.sha256(png).hexdigest() != probe.get('imageSha256'):
                 raise ValueError('PNG SHA differs from probe')
@@ -302,7 +368,8 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
                                 probe.get('sourceMaterialGuid') != spec.get('unityMaskMaterialGuid') or
                                 probe.get('sourceMaterialShaderPath') != spec.get('unityMaskShaderPath') or
                                 probe.get('sourceMaterialShaderSha256') != spec.get('unityMaskShaderSha256') or
-                                probe.get('sourceAlphaThreshold') != spec.get('alphaThreshold') or
+                                type(probe.get('sourceAlphaThreshold')) not in (int,float) or
+                                _f32(probe.get('sourceAlphaThreshold')) != _f32(spec.get('alphaThreshold')) or
                                 probe.get('alphaDiscardPolicy') != 'discard-if-source-alpha-less-than-threshold' or
                                 probe.get('alphaSamplesVerified') is not True):
                             raise ValueError('image Mask import, material, threshold or alpha-proof profile differs')
@@ -327,10 +394,15 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
                                 raise ValueError('transparent sample is not source alpha zero')
                             point = sample.get('pixel')
                             viewport = sample.get('viewportPoint')
+                            expected_world=_rotate_scale_local(node,sample['localPoint'])
+                            canvas_side=probe.get('probeCanvasSide')
+                            expected_viewport=[.5+expected_world[0]/canvas_side,.5+expected_world[1]/canvas_side,10.0+expected_world[2]]
+                            expected_pixel=[math.floor(expected_viewport[0]*image.width),math.floor(expected_viewport[1]*image.height)]
                             if (not _pair(point) or not all(0 <= x < image.width for x in point) or
                                     not isinstance(viewport,list) or len(viewport)!=3 or
                                     any(type(x) not in (int,float) or not math.isfinite(x) for x in viewport) or
-                                    viewport[2]<=0 or point != [math.floor(viewport[0]*image.width),math.floor(viewport[1]*image.height)]):
+                                    viewport[2]<=0 or point != [math.floor(viewport[0]*image.width),math.floor(viewport[1]*image.height)] or
+                                    point!=expected_pixel or any(not _close(a,b) for a,b in zip(viewport,expected_viewport))):
                                 raise ValueError('source alpha sample output pixel differs from the probe projection')
                             actual_pixel=list(rgba.getpixel((point[0],image.height-1-point[1])))
                             if actual_pixel != sample.get('rgba'):
