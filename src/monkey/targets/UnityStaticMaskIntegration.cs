@@ -34,6 +34,28 @@ public static partial class MonkeyImporter
             .Select(c=>c.sourceId).ToArray();
     }
 
+    static bool IsLegacyStaticMaskContract(StaticMaskContract contract) =>
+        contract!=null&&contract.schemaVersion==1&&String.IsNullOrEmpty(contract.contract)&&contract.masks!=null;
+
+    // JsonUtility may materialize an empty nested object for a JSON null. The
+    // explicit plan marker owns new contracts; only the recognized schema-1
+    // legacy shape is inferred for old instructions that predate the marker.
+    static bool HasStaticMasks(Plan plan) => plan!=null&&
+        (plan.staticMasksPresent||IsLegacyStaticMaskContract(plan.staticMasks));
+
+    static bool HasStaticMaskContractPayload(StaticMaskContract contract)
+    {
+        if(contract==null)return false;
+        if(contract.schemaVersion!=0||!String.IsNullOrEmpty(contract.contract)||
+            !String.IsNullOrEmpty(contract.sourceManifestSha256)||!String.IsNullOrEmpty(contract.sourceProfile)||
+            !String.IsNullOrEmpty(contract.sourceVersion))return true;
+        var engine=contract.sourceEngine;
+        if(engine!=null&&(!String.IsNullOrEmpty(engine.path)||!String.IsNullOrEmpty(engine.sha256)||
+            !String.IsNullOrEmpty(engine.url)))return true;
+        return contract.sourceDefaults!=null&&contract.sourceDefaults.Length>0||
+            contract.masks!=null&&contract.masks.Length>0;
+    }
+
     static bool StaticMaskSourceActivity(Plan plan,string nodeId,out bool activeSelf)
     {
         var nodes=(plan.nodes??Array.Empty<NodeSpec>()).Where(n=>n!=null).ToDictionary(n=>n.sourceId,StringComparer.Ordinal);
@@ -53,18 +75,27 @@ public static partial class MonkeyImporter
     {
         if(plan==null)throw new InvalidOperationException("STATIC_MASK_CONTRACT_PLAN_MISSING");
         var source=StaticMaskSourceIds(plan);var contract=plan.staticMasks;
-        if(contract==null)
+        if(source.Any(String.IsNullOrEmpty)||source.Distinct(StringComparer.Ordinal).Count()!=source.Length)
+            throw new InvalidOperationException("STATIC_MASK_SOURCE_COMPONENT_IDENTITY_INVALID");
+        var legacy=IsLegacyStaticMaskContract(contract);
+        if(!plan.staticMasksPresent&&!legacy)
         {
-            if(source.Length>0&&plan.staticSortQueue!=null&&plan.staticSortQueue.Length>0)
+            if(source.Length>0)
                 throw new InvalidOperationException("STATIC_MASK_CONTRACT_REQUIRED: sourceMaskCount="+source.Length);
+            if(HasStaticMaskContractPayload(contract))
+                throw new InvalidOperationException("STATIC_MASK_CONTRACT_PRESENCE_MARKER_MISMATCH");
             return;
         }
+        if(contract==null)throw new InvalidOperationException("STATIC_MASK_CONTRACT_DECLARED_BUT_NULL");
         if(contract.masks==null)throw new InvalidOperationException("STATIC_MASK_CONTRACT_ROWS_MISSING");
         if(String.IsNullOrEmpty(plan.sourceManifestSha256)||contract.sourceManifestSha256!=plan.sourceManifestSha256)
             throw new InvalidOperationException("STATIC_MASK_SOURCE_MANIFEST_PIN_MISMATCH");
-        if(String.IsNullOrEmpty(contract.contract)) {
-            if(contract.schemaVersion!=1||contract.masks.Any(row=>row==null||String.IsNullOrEmpty(row.sourceId))||
-                contract.masks.Select(row=>row.sourceId).Distinct(StringComparer.Ordinal).Count()!=contract.masks.Length)
+        if(contract.masks.Length!=source.Length||contract.masks.Any(row=>row==null||String.IsNullOrEmpty(row.sourceId))||
+            contract.masks.Select(row=>row.sourceId).Distinct(StringComparer.Ordinal).Count()!=contract.masks.Length||
+            !new HashSet<string>(contract.masks.Select(row=>row.sourceId),StringComparer.Ordinal).SetEquals(source))
+            throw new InvalidOperationException("STATIC_MASK_COMPONENT_IDENTITY_DENOMINATOR_MISMATCH");
+        if(legacy) {
+            if(contract.schemaVersion!=1||!String.IsNullOrEmpty(contract.contract))
                 throw new InvalidOperationException("STATIC_MASK_LEGACY_CONTRACT_INVALID");
             return;
         }
@@ -73,8 +104,6 @@ public static partial class MonkeyImporter
             contract.sourceEngine==null||contract.sourceEngine.path!=StaticMaskSourceEnginePath||
             contract.sourceEngine.sha256!=StaticMaskSourceEngineSha256||contract.sourceEngine.url!=StaticMaskSourceEngineUrl)
             throw new InvalidOperationException("STATIC_MASK_SOURCE_DEFAULTS_PIN_MISMATCH");
-        if(source.Any(String.IsNullOrEmpty)||source.Distinct(StringComparer.Ordinal).Count()!=source.Length)
-            throw new InvalidOperationException("STATIC_MASK_SOURCE_COMPONENT_IDENTITY_INVALID");
         var expected=plan.components.Where(c=>c!=null&&c.type=="cc.Mask").ToDictionary(c=>c.sourceId,StringComparer.Ordinal);
         var actual=contract.masks;
         if(actual.Length!=expected.Count||actual.Any(m=>m==null||String.IsNullOrEmpty(m.sourceId))||
@@ -180,18 +209,18 @@ public static partial class MonkeyImporter
     static void CreateStaticMasks(Plan plan,Dictionary<string,GameObject> nodes,Dictionary<string,Sprite> sprites)
     {
         ValidateStaticMaskContract(plan);
-        if(plan.staticMasks==null)return;
+        if(!HasStaticMasks(plan))return;
         ApplyStaticMasks(plan,plan.staticMasks.masks,nodes,sprites);
     }
     static partial void RefreshOptionalStaticMasksForPrefab(Plan plan,SourcePrefabSpec prefab,Dictionary<string,GameObject> nodes,Dictionary<string,Sprite> sprites)
     {
-        if(plan?.staticMasks==null)return;
         CreateStaticMasksForPrefab(plan,prefab,nodes,sprites);
     }
     static void CreateStaticMasksForPrefab(Plan plan,SourcePrefabSpec prefab,Dictionary<string,GameObject> nodes,Dictionary<string,Sprite> sprites)
     {
         ValidateStaticMaskContract(plan);
-        if(plan.staticMasks==null||prefab==null)throw new InvalidOperationException("STATIC_MASK_PREFAB_SCOPE_INVALID");
+        if(!HasStaticMasks(plan))return;
+        if(prefab==null)throw new InvalidOperationException("STATIC_MASK_PREFAB_SCOPE_INVALID");
         var scope=new HashSet<string>(prefab.nodes??Array.Empty<string>(),StringComparer.Ordinal);
         if(!String.IsNullOrEmpty(prefab.root))scope.Add(prefab.root);
         var rows=plan.staticMasks.masks.Where(m=>m!=null&&scope.Contains(m.node)).ToArray();
@@ -235,7 +264,8 @@ public static partial class MonkeyImporter
     static MaskReadback[] ReadStaticMasks(Plan plan,Dictionary<string,GameObject> loaded,Dictionary<string,GameObject> persistent,Dictionary<string,Sprite> sprites)
     {
         ValidateStaticMaskContract(plan);
-        return (plan.staticMasks==null?Array.Empty<MaskSpec>():plan.staticMasks.masks).Where(s=>loaded.ContainsKey(s.node)).Select(spec=>{
+        if(!HasStaticMasks(plan))return Array.Empty<MaskReadback>();
+        return plan.staticMasks.masks.Where(s=>loaded.ContainsKey(s.node)).Select(spec=>{
             if(!persistent.TryGetValue(spec.node,out var savedNode)||savedNode==null)
                 throw new InvalidOperationException("STATIC_MASK_PERSISTENT_NODE_MISSING: "+spec.sourceId);
             var saved=savedNode.GetComponent<NativeStaticMaskIdentity>();

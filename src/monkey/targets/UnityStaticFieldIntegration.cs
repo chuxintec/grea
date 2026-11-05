@@ -6,9 +6,10 @@ using UnityEngine;
 
 public static partial class MonkeyImporter
 {
-    static bool HasStaticMaskBinding(Plan plan,string sourceId) =>
-        plan!=null&&plan.staticMasks!=null&&plan.staticMasks.masks!=null&&
-        plan.staticMasks.masks.Any(row=>row!=null&&row.sourceId==sourceId);
+    static bool HasStaticMaskBinding(Plan plan,string sourceId) {
+        ValidateStaticMaskContract(plan);
+        return HasStaticMasks(plan)&&plan.staticMasks.masks.Any(row=>row!=null&&row.sourceId==sourceId);
+    }
     [Serializable] public class StaticReferenceIdentity { public string field,fieldPath,sourceId,guid,recordField; public int recordIndex; public long localFileId; public bool persistent; }
     [Serializable] public class StaticFieldResult { public UnityStaticFields.Readback binding; public string assetGuid; public long localFileId; public StaticReferenceIdentity[] references; }
     static MonoBehaviour StaticComponent(ComponentSpec c, GameObject node) {

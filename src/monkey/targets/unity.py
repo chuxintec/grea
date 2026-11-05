@@ -650,6 +650,7 @@ def export(plan_path, output):
     instruction['layoutCompletion']=p.get('layoutCompletion')
     instruction['staticLayoutContinuation']=p.get('staticLayoutContinuation')
     instruction['staticMasks']=p.get('staticMasks')
+    instruction['staticMasksPresent']=p.get('staticMasks') is not None
     if isinstance(instruction['staticMasks'],dict)and instruction['staticMasks'].get('contract')=='monkey-static-mask-continuation/1':
         mask_ids={row['sourceId']for row in instruction['staticMasks']['masks']}
         instruction['components']=[dict(row,nativeType='UnityEngine.UI.Mask')if row.get('sourceId')in mask_ids

@@ -12,7 +12,7 @@ public static partial class MonkeyImporter
 {
     [Serializable] public class Plan {
         public UnityStaticToggle.Spec toggleBinding;
-        public bool toggleBindingPresent;
+        public bool toggleBindingPresent, staticMasksPresent;
         public StaticLayoutCompletionContract layoutCompletion; public StaticMaskContract staticMasks; public Monkey.StaticSortQueueProxy.ProxyQueueSpec[] staticSortQueue;
         public BitmapMissingGlyphContract bitmapMissingGlyphs;
         public string spriteOutlineBindingJson;
