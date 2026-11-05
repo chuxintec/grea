@@ -13,11 +13,9 @@ from pathlib import Path, PurePosixPath
 
 from .io import encoded, inside, load, new_output, read, safe, sha, write_json
 from .sources.compiled import fail
-from .unity_verification_contract import NATIVE_IMPORT_STATUSES, SAVED_SOURCE_SCOPES
 
 _GUID_REF = re.compile(r"\bguid:\s*([0-9a-fA-F]{32})\b")
 _ZERO_GUIDS = {"0" * 32, "0" * 16 + "e000000000000000"}
-_DYNAMIC_ONLY = {"SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE", "ANIMATION_DYNAMIC_CURVES_NOT_LOWERED"}
 _BUILTIN_SHADER_INCLUDES = {'UnityCG.cginc', 'UnityUI.cginc', 'HLSLSupport.cginc',
     'UnityShaderVariables.cginc', 'Lighting.cginc', 'AutoLight.cginc', 'UnityPBSLighting.cginc',
     'UnityStandardUtils.cginc', 'UnityStandardBRDF.cginc', 'UnityStandardConfig.cginc'}
@@ -215,11 +213,22 @@ def _native_verification(root, output, expected_manifest, expected_readback):
     if sha(rb_raw) != expected_readback:
         fail("READBACK_SHA_MISMATCH", str(rb_path), "Readback differs from the pinned SHA256")
     rb = load(rb_raw, max_nodes=8_000_000)
-    if (rb.get("unityVersion") != "6000.6.2f1" or type(rb.get("missingScripts")) is not int or rb.get("missingScripts") != 0
-            or rb.get("status") not in NATIVE_IMPORT_STATUSES
-            or rb.get("nativeScope") not in SAVED_SOURCE_SCOPES
-            or rb.get("sourceGraphVerification") != "saved-source-node-subset"):
-        fail("NATIVE_READBACK_INVALID", str(rb_path), "Unity version, import status, missing-script count or saved source-graph scope is invalid")
+    from .native_readback_contract import saved_readback_admission
+    initial=saved_readback_admission(rb)
+    if not initial['valid']:
+        fail("NATIVE_READBACK_INVALID",str(rb_path),
+             "Saved source-state admission failed: "+'; '.join(row['field'] for row in initial['issues']))
+    from .layout import standard
+    from .io import stage_manifest
+    owner=stage_manifest(root)
+    import_path=root/standard.locate(owner,'importPlan')
+    import_raw=read(import_path,max_bytes=128*1024**2)
+    instruction=load(import_raw,max_nodes=8_000_000)
+    admission=saved_readback_admission(rb,expected_plan_sha256=sha(import_raw),
+        expected_source_manifest_sha256=instruction.get('sourceManifestSha256'))
+    if not admission['valid']:
+        fail("NATIVE_READBACK_INVALID",str(rb_path),
+             "Saved source-state admission failed: "+'; '.join(row['field'] for row in admission['issues']))
     native_files = rb.get("nativeFiles")
     if not isinstance(native_files, list) or not native_files:
         fail("NATIVE_READBACK_INCOMPLETE", str(rb_path), "Native saved-file inventory is empty")
@@ -261,10 +270,11 @@ def _native_verification(root, output, expected_manifest, expected_readback):
                  "Full source component coverage and static presentation must be independently verified")
         if result.get("editorValidation") not in ("pass", "partial"):
             fail("NATIVE_EDITOR_VERIFY_FAILED", str(verify_out / "verification.json"), "Unity Editor verification failed")
-        unexpected = [d for d in result.get("diagnostics", []) if d.get("code") not in _DYNAMIC_ONLY]
-        if unexpected:
+        from .unity_verification_contract import unresolved_diagnostics
+        current=unresolved_diagnostics(result.get('diagnostics',[]),coverage)
+        if current['blocking']:
             fail("NATIVE_VERIFY_DIAGNOSTICS", str(verify_out / "verification.json"),
-                 "Only the known dynamic Spine/animation boundaries may remain")
+                 "Unresolved static diagnostics remain after checking current evidence")
         verification = load(read(verify_out / "verification.json"), max_nodes=8_000_000)
     return rb, rb_raw, verification
 

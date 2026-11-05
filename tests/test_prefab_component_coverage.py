@@ -1,6 +1,143 @@
 import unittest
 
-from monkey.prefab_component_coverage import assess
+from copy import deepcopy
+from monkey.prefab_component_coverage import assess as _assess
+
+
+def assess(plan, readback, engine):
+    """Construct mirrored protocol rows for legacy Unity unit fixtures."""
+    if engine == "creator":
+        if not any(key in readback for key in ("components", "sourceComponentCoverage", "sourcePrefabs")):
+            return _assess(plan, readback, engine)
+        plan = deepcopy(plan)
+        readback = deepcopy(readback)
+        if not isinstance(plan.get("sourcePrefabs"), list):
+            nodes = [row.get("sourceId") for row in plan.get("nodes", []) if isinstance(row, dict)]
+            plan["sourcePrefabs"] = [{"sourceId": "test-owner", "path": "Assets/test-owner.prefab", "nodes": nodes}]
+        if not isinstance(readback.get("sourcePrefabs"), list):
+            source_ids = [row.get("sourceId") for row in plan.get("components", []) if isinstance(row, dict)]
+            readback["sourcePrefabs"] = [{"sourceId": owner["sourceId"], "uuid": "owner-uuid",
+                "components": source_ids} for owner in plan["sourcePrefabs"]]
+        return _assess(plan, readback, engine)
+    if engine != "unity":
+        return _assess(plan, readback, engine)
+    if not any(key in readback for key in ("components", "retainedComponents", "disabledComponents", "sourcePrefabs")):
+        return _assess(plan, readback, engine)
+    plan = deepcopy(plan)
+    readback = deepcopy(readback)
+    if not isinstance(plan.get("sourcePrefabs"), list):
+        nodes = [row.get("sourceId") for row in plan.get("nodes", []) if isinstance(row, dict)]
+        plan["sourcePrefabs"] = [{"sourceId": "test-owner", "path": "Assets/test-owner.prefab", "nodes": nodes}]
+    owner_by_id = {row.get("sourceId"): row for row in plan.get("sourcePrefabs", []) if isinstance(row, dict)}
+    source_by_id = {row.get("sourceId"): row for row in plan.get("components", []) if isinstance(row, dict)}
+    root_rows = []
+    for key in ("components", "retainedComponents", "disabledComponents"):
+        normalized = []
+        for index, raw in enumerate(readback.get(key, [])):
+            if not isinstance(raw, dict):
+                continue
+            row = dict(raw)
+            source = source_by_id.get(row.get("sourceId"), {})
+            row.setdefault("node", source.get("node"))
+            row.setdefault("type", source.get("type"))
+            row.setdefault("nativeType", source.get("nativeType") or source.get("type"))
+            row.setdefault("status", "retained" if key == "retainedComponents" else
+                           "disabled" if key == "disabledComponents" else "native")
+            if key == "retainedComponents" and row.get("status") == "verified":
+                row["status"] = "retained"
+            row.setdefault("representation", "disabled-source-data-carrier" if key == "retainedComponents" else
+                           "native-component")
+            row.setdefault("sourceIdentityVerified", True)
+            row.setdefault("persistent", True)
+            row.setdefault("sourceEnabled", source.get("enabled"))
+            row.setdefault("nativeEnabled", row.get("status") != "disabled")
+            visible = source.get("type") in ("cc.Sprite", "cc.Label", "cc.RichText", "cc.LabelOutline", "sp.Skeleton")
+            if source.get("type") == "cc.Sprite" and source.get("spriteFrame") in (None, ""):
+                visible = False
+            if source.get("enabled") is False:
+                visible = False
+            row.setdefault("sourceVisible", visible)
+            if row.get("guid") is None:
+                import hashlib
+                row["guid"] = hashlib.md5(str(row.get("sourceId")).encode()).hexdigest()
+            if type(row.get("localFileId")) is not int or row["localFileId"] == 0:
+                row["localFileId"] = index + 1
+            row.setdefault("componentUuid", f"{row['guid']}:{row['localFileId']}")
+            normalized.append(row)
+        readback[key] = normalized
+        root_rows.extend(normalized)
+
+    # Flat historical fixtures are made into a valid two-scope owner fixture
+    # here. Explicit owner fixtures remain untouched so a negative owner case
+    # cannot be silently repaired.
+    plan_nodes = [dict(row) for row in plan.get("nodes", []) if isinstance(row, dict)]
+    readback.setdefault("nodes", plan_nodes)
+    if not isinstance(readback.get("sourcePrefabs"), list):
+        owner_rows = []
+        for owner_id, planned_owner in owner_by_id.items():
+            owned_nodes = {item.get("sourceId") if isinstance(item, dict) else item
+                           for item in planned_owner.get("nodes", [])}
+            owned_node_rows = [dict(row) for row in plan_nodes if row.get("sourceId") in owned_nodes]
+            owned_components = [dict(row) for row in root_rows if row.get("node") in owned_nodes]
+            owner_rows.append({"sourceId": owner_id, "path": planned_owner.get("path"),
+                               "nodes": owned_node_rows, "components": owned_components})
+        readback["sourcePrefabs"] = owner_rows
+    else:
+        # Keep explicit owner fields for adversarial tests; only test fixtures
+        # which predate the owner schema omit them entirely.
+        pass
+    if isinstance(readback.get("sourcePrefabs"), list):
+        for owner in readback["sourcePrefabs"]:
+            if isinstance(owner, dict) and owner.get("sourceId") in owner_by_id:
+                owner.setdefault("path", owner_by_id[owner["sourceId"]].get("path"))
+    # Supply the protocol's full physical Component inventory in ordinary
+    # Unity fixture setup. Negative identity/inventory cases are built in the
+    # dedicated component identity tests and mutate these actual fixture rows.
+    plan_nodes = {row.get("sourceId"): row for row in plan.get("nodes", []) if isinstance(row, dict)}
+    for node_id, node_spec in plan_nodes.items():
+        physical = {}
+        for row in root_rows:
+            if row.get("node") != node_id or row.get("guid") is None or row.get("localFileId") is None:
+                continue
+            key = (row["guid"].lower(), row["localFileId"])
+            physical_row = physical.setdefault(key, {"guid": row["guid"], "localFileId": row["localFileId"],
+                "componentUuid": row.get("componentUuid"), "nativeType": row.get("nativeType"),
+                "persistent": True, "enabledKnown": True, "enabled": row.get("nativeEnabled"),
+                "nativeBaseTypes": row.get("nativeBaseTypes") or [row.get("nativeType")],
+                "sourceComponentIds": [], "role": "source-component", "identityOrigin": "direct-observation",
+                "identityPath": [str(row.get("componentUuid"))]})
+            if row.get("sourceId") not in physical_row["sourceComponentIds"]:
+                physical_row["sourceComponentIds"].append(row.get("sourceId"))
+        for local, type_name in ((100, "UnityEngine.RectTransform"), (101, "UnityEngine.CanvasRenderer")):
+            guid = "f" * 32
+            physical[(guid, local)] = {"guid": guid, "localFileId": local, "componentUuid": f"{guid}:{local}",
+                "nativeType": type_name, "persistent": True, "enabledKnown": True, "enabled": True,
+                "nativeBaseTypes": [type_name, "UnityEngine.Component", "UnityEngine.Object"],
+                "sourceComponentIds": [], "role": "unmapped", "identityOrigin": "direct-observation",
+                "identityPath": [f"{guid}:{local}"]}
+        node_spec.setdefault("componentTypes", [row["nativeType"] for row in physical.values()])
+        node_spec.setdefault("physicalObservationScope", "saved-scene-correspondence")
+        node_spec.setdefault("physicalInventoryContract", "monkey-unity-node-physical-components/1")
+        node_spec.setdefault("physicalInventoryPhase", "persistent-saved-reopened-node")
+        node_spec.setdefault("physicalComponents", list(physical.values()))
+        top_node = next((row for row in readback.get("nodes", []) if isinstance(row, dict) and row.get("sourceId") == node_id), None)
+        if isinstance(top_node, dict):
+            top_node.setdefault("componentTypes", list(node_spec["componentTypes"]))
+            top_node.setdefault("physicalObservationScope", "saved-scene-correspondence")
+            top_node.setdefault("physicalInventoryContract", node_spec["physicalInventoryContract"])
+            top_node.setdefault("physicalInventoryPhase", node_spec["physicalInventoryPhase"])
+            top_node.setdefault("physicalComponents", deepcopy(node_spec["physicalComponents"]))
+        for owner in readback.get("sourcePrefabs", []):
+            if not isinstance(owner, dict):
+                continue
+            for owned_node in owner.get("nodes", []):
+                if isinstance(owned_node, dict) and owned_node.get("sourceId") == node_id:
+                    owned_node.setdefault("componentTypes", list(node_spec["componentTypes"]))
+                    owned_node.setdefault("physicalObservationScope", "saved-source-prefab")
+                    owned_node.setdefault("physicalInventoryContract", node_spec["physicalInventoryContract"])
+                    owned_node.setdefault("physicalInventoryPhase", node_spec["physicalInventoryPhase"])
+                    owned_node.setdefault("physicalComponents", deepcopy(node_spec["physicalComponents"]))
+    return _assess(plan, readback, engine)
 
 
 class ComponentCoverageTests(unittest.TestCase):
@@ -102,10 +239,11 @@ class ComponentCoverageTests(unittest.TestCase):
             }]},
         }
         result = assess(self.plan, readback, "creator")
-        self.assertEqual(result["staticPresentationValidation"]["status"], "pass")
+        self.assertEqual(result["staticPresentationValidation"]["status"], "partial")
         self.assertEqual(result["nativeStaticValidation"], "pass")
-        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["status"], "partial")
         self.assertEqual(result["runtimeCheck"], "not_run")
+        self.assertTrue(any(row["code"] == "CREATOR_PRESENTATION_ENVELOPE_INVALID" for row in result["diagnostics"]))
 
     def test_source_visible_nonrendering_spine_stays_partial_even_if_retained(self):
         plan = {
@@ -181,8 +319,9 @@ class ComponentCoverageTests(unittest.TestCase):
         }]}
         result = assess(self.plan, readback, "creator")
         self.assertEqual(result["sourceComponentCount"], 1)
-        self.assertEqual(result["components"][0]["nativeComponentReadback"]["componentUuid"], "actual-uuid")
-        self.assertEqual(result["nativeStaticValidation"], "pass")
+        self.assertIsNone(result["components"][0]["nativeComponentReadback"])
+        self.assertNotEqual(result["nativeStaticValidation"], "pass")
+        self.assertTrue(any(row["code"] == "COMPONENT_UNJOINED_NATIVE_COMPONENT_OBSERVATION" for row in result["diagnostics"]))
 
         readback["components"] = [{"sourceId": "component-a", "type": "cc.Sprite",
                                    "nativeType": "cc.Sprite", "componentUuid": "actual-uuid"}]
@@ -203,7 +342,8 @@ class ComponentCoverageTests(unittest.TestCase):
             "componentUuid": "prefab-native-uuid",
         }]}]}
         result = assess(self.plan, readback, "creator")
-        self.assertEqual(result["components"][0]["disposition"], "native")
+        self.assertNotEqual(result["components"][0]["disposition"], "native")
+        self.assertTrue(any(row["code"] == "CREATOR_COMPONENT_OWNER_IDENTITY_INVALID" for row in result["diagnostics"]))
 
     def test_explicit_source_empty_sprite_is_business_disabled_not_missing(self):
         plan={"nodes":self.plan["nodes"],"components":[{
@@ -275,8 +415,12 @@ class ComponentCoverageTests(unittest.TestCase):
         from monkey.unity_verification_contract import coverage_readback
         binding={"sourceComponentId":"progress","sourceEnabled":True,"mode":0,"progress":0.5,
                  "reverse":False,"barSpriteSourceId":"bar-sprite"}
-        plan={"components":[{"sourceId":"progress","type":"cc.ProgressBar","enabled":True,
-                             "staticProgressBinding":binding}]}
+        plan={"nodes":[{"sourceId":"progress-node","active":True},{"sourceId":"bar-node","active":True}],
+              "sourcePrefabs":[{"sourceId":"progress-owner","path":"Assets/progress.prefab","nodes":["progress-node","bar-node"]}],
+              "components":[{"sourceId":"progress","node":"progress-node","type":"cc.ProgressBar","enabled":True,
+                             "staticProgressBinding":binding},
+                            {"sourceId":"bar-sprite","node":"bar-node","type":"cc.Sprite","enabled":True,
+                             "spriteFrame":"frame","nativeType":"UnityEngine.UI.Image"}]}
         row={"sourceComponentId":"progress","verified":True,"carrierDisabled":True,
              "carrierGuid":"0123456789abcdef0123456789abcdef","carrierLocalFileId":12,
              "sourceEnabled":True,"mode":0,"progress":0.5,"reverse":False,
@@ -358,16 +502,16 @@ class ComponentCoverageTests(unittest.TestCase):
                  "status":"retained","representation":"disabled-source-data-carrier","coverageRole":"retained-carrier",
                  "guid":"0123456789abcdef0123456789abcdef","localFileId":30,"componentUuid":"0123456789abcdef0123456789abcdef:30",
                  "sourceIdentityVerified":True,"persistent":True,"verified":True,"fieldsVerified":True,
-                 "sourceEnabled":True,"nativeEnabled":False}
+                 "sourceEnabled":True,"nativeEnabled":False,"sourceVisible":True}
         renderer={"sourceId":sid,"node":"node-a","type":"sp.Skeleton","nativeType":"Spine.Unity.SkeletonGraphic",
                   "status":"native","representation":"native-component","coverageRole":"native-renderer",
                   "guid":"fedcba9876543210fedcba9876543210","localFileId":31,
                   "componentUuid":"fedcba9876543210fedcba9876543210:31","sourceIdentityVerified":True,
-                  "persistent":True,"nativeStaticFieldsVerified":True,"sourceEnabled":True,"nativeEnabled":True}
-        plan={"nodes":self.plan["nodes"],"components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
+                  "persistent":True,"nativeStaticFieldsVerified":True,"sourceEnabled":True,"nativeEnabled":True,"sourceVisible":True}
+        plan={"nodes":self.plan["nodes"],"sourcePrefabs":[{"sourceId":"test-owner","path":"Assets/test-owner.prefab","nodes":["node-a"]}],
+              "components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
               "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
-        raw_copy={key:value for key,value in carrier.items() if key!="coverageRole"}
-        readback={"components":[dict(carrier),dict(renderer)],"sourcePrefabs":[{"components":[raw_copy]}],
+        readback={"components":[dict(carrier),dict(renderer)],
                   "staticSpineContinuation":{"status":"verified","sourceComponentIds":[sid]},
                   "staticSpineRendering":{"status":"verified","sourceComponentIds":[sid]}}
         result=assess(plan,readback,"unity")
@@ -389,7 +533,7 @@ class ComponentCoverageTests(unittest.TestCase):
         readback={"components":[renderer,duplicate],"staticSpineRendering":{"status":"verified","sourceComponentIds":[sid]}}
         result=assess(plan,readback,"unity")
         self.assertEqual(result["components"][0]["disposition"],"missing")
-        self.assertTrue(any(row["code"]=="NATIVE_COMPONENT_READBACK_AMBIGUOUS" for row in result["diagnostics"]))
+        self.assertTrue(any(row["code"] in ("NATIVE_COMPONENT_READBACK_AMBIGUOUS", "COMPONENT_OWNER_ROLE_AMBIGUOUS") for row in result["diagnostics"]))
 
     def test_same_role_retained_duplicates_still_fail_retention(self):
         sid="spine-retained-duplicate"
@@ -403,7 +547,7 @@ class ComponentCoverageTests(unittest.TestCase):
                   "staticSpineContinuation":{"status":"verified","sourceComponentIds":[sid]}}
         result=assess(plan,readback,"unity")
         self.assertEqual(result["retentionValidation"],"partial")
-        self.assertTrue(any(row["code"]=="STATIC_RETENTION_READBACK_AMBIGUOUS" for row in result["diagnostics"]))
+        self.assertTrue(any(row["code"] in ("STATIC_RETENTION_READBACK_AMBIGUOUS", "COMPONENT_OWNER_ROLE_AMBIGUOUS") for row in result["diagnostics"]))
 
     def test_normalized_peer_duplicate_survives_pipeline_and_fails_native_role(self):
         from monkey.unity_verification_contract import coverage_readback
@@ -438,7 +582,8 @@ class ComponentCoverageTests(unittest.TestCase):
                  "coverageRole":"native-renderer","nativeType":"NativeStaticSpineReference",
                  "sourceIdentityVerified":True,"persistent":True,"verified":True,"fieldsVerified":True,
                  "guid":"0123456789abcdef0123456789abcdef","localFileId":70}
-        plan={"components":[{"sourceId":sid,"type":"sp.Skeleton","enabled":True}],
+        plan={"nodes":[{"sourceId":"node-a","active":True}],
+              "components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
               "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
         result=assess(plan,{"components":[carrier]},"unity")
         self.assertTrue(any(item["code"]=="COMPONENT_ROLE_MISMATCH" for item in result["diagnostics"]))

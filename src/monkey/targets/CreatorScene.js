@@ -45,10 +45,134 @@ function describe(root, plan) {
     const visit=n=>{nodes.push(n);for(const child of sourceChildren(n))visit(child);};visit(root);
     return {nodeCount:plan.nodes.length, treeNodeCount:nodes.length};
 }
+const PRESENTATION_CONTRACT='monkey-creator-saved-renderer-evidence/1';
+const PRESENTATION_TYPES=new Set(['cc.Sprite','cc.Label','cc.RichText','cc.LabelOutline','sp.Skeleton',
+    'cc.Graphics','cc.ParticleSystem','cc.TiledMap']);
+function sourcePresentationVisibility(spec,plan) {
+    if(!PRESENTATION_TYPES.has(spec.type))return {visible:false,reasonCode:'source-component-not-visual'};
+    if(spec.type==='cc.Sprite') {
+        if(!Object.prototype.hasOwnProperty.call(spec,'spriteFrame'))return {visible:null,reasonCode:'source-sprite-frame-unknown'};
+        if(spec.spriteFrame===null||spec.spriteFrame==='')return {visible:false,reasonCode:'source-empty-sprite-frame'};
+    }
+    if(spec.enabled===false)return {visible:false,reasonCode:'source-component-disabled'};
+    const nodes=new Map((plan.nodes||[]).map(row=>[row.sourceId,row]));
+    let cursor=spec.node;const seen=new Set();
+    while(cursor!==null&&cursor!==undefined) {
+        if(seen.has(cursor)||!nodes.has(cursor))return {visible:null,reasonCode:'source-node-hierarchy-unproven'};
+        seen.add(cursor);const row=nodes.get(cursor);
+        if(typeof row.active!=='boolean')return {visible:null,reasonCode:'source-node-activity-unproven'};
+        if(row.active===false)return {visible:false,reasonCode:'source-node-inactive'};
+        if(typeof row.opacity==='number'&&row.opacity<=0)return {visible:false,reasonCode:'source-opacity-zero'};
+        cursor=row.parent;
+    }
+    return {visible:true,reasonCode:'source-visible'};
+}
+function presentationRenderer(spec,node) {
+    if(spec.type==='cc.Sprite')return node.getComponent(cc.Sprite);
+    if(spec.type==='cc.Label')return node.getComponent(cc.Label);
+    if(spec.type==='cc.RichText')return node.getComponent(cc.RichText);
+    if(spec.type==='cc.LabelOutline')return node.getComponent(cc.Label);
+    if(spec.type==='sp.Skeleton'&&cc.sp&&cc.sp.Skeleton)return node.getComponent(cc.sp.Skeleton);
+    if(spec.type==='cc.Graphics'&&cc.Graphics)return node.getComponent(cc.Graphics);
+    if(spec.type==='cc.ParticleSystem'&&cc.ParticleSystem)return node.getComponent(cc.ParticleSystem);
+    if(spec.type==='cc.TiledMap'&&cc.TiledMap)return node.getComponent(cc.TiledMap);
+    return null;
+}
+function readPresentationGeometry(renderer,spec) {
+    if(!renderer)return null;
+    try {
+        if(spec.type==='cc.Sprite') {
+            if(!renderer.renderData&&typeof renderer._flushAssembler==='function')renderer._flushAssembler();
+            const data=renderer.renderData||renderer._renderData;
+            if(data&&renderer._assembler&&typeof renderer._assembler.updateRenderData==='function') {
+                data.vertDirty=true;renderer._assembler.updateRenderData(renderer);
+            }
+        } else if(spec.type==='cc.Label'||spec.type==='cc.RichText') {
+            const data=renderer.renderData||renderer._renderData;
+            if(!data&&typeof renderer._flushAssembler==='function')renderer._flushAssembler();
+            if(typeof renderer.updateRenderData==='function')renderer.updateRenderData(true);
+        }
+        const data=renderer.renderData||renderer._renderData;
+        if(!data||!Number.isInteger(data.vertexCount)||!Number.isInteger(data.indexCount))return null;
+        return {vertexCount:data.vertexCount,indexCount:data.indexCount};
+    } catch(_) { return null; }
+}
+function readStaticPresentation(plan,mapped,refs,sourcePrefabs) {
+    const sourceComponents=(plan.components||[]).filter(spec=>PRESENTATION_TYPES.has(spec.type));
+    const refsById=new Map();for(const row of refs||[]) {
+        if(!refsById.has(row.sourceId))refsById.set(row.sourceId,[]);
+        refsById.get(row.sourceId).push(row);
+    }
+    const owners=new Map();
+    for(const owner of sourcePrefabs||[])for(const sid of owner.components||[]) {
+        if(!owners.has(sid))owners.set(sid,[]);owners.get(sid).push(owner);
+    }
+    const components=sourceComponents.map(spec=> {
+        const visibility=sourcePresentationVisibility(spec,plan),node=mapped.get(spec.node),nativeRows=refsById.get(spec.sourceId)||[];
+        const ownerRows=owners.get(spec.sourceId)||[],owner=ownerRows.length===1?ownerRows[0]:null;
+        const renderer=node&&presentationRenderer(spec,node),geometry=readPresentationGeometry(renderer,spec);
+        const nodeUuid=node&&node.uuid||null,componentUuid=renderer&&renderer.uuid||null;
+        const nativeType=renderer&&cc.js&&typeof cc.js.getClassName==='function'?cc.js.getClassName(renderer):null;
+        const matchingNative=nativeRows.length===1&&nativeRows[0].nodeUuid===nodeUuid&&
+            nativeRows[0].componentUuid===componentUuid&&nativeRows[0].nativeType===nativeType;
+        const nodeActive=!!node&&typeof node.activeInHierarchy==='boolean'?node.activeInHierarchy:null;
+        const enabled=renderer&&typeof renderer.enabled==='boolean'?renderer.enabled:null;
+        let expectedSpriteFrameUuid=null,actualSpriteFrameUuid=null,textureUuid=null,renderedText=null;
+        if(spec.type==='cc.Sprite') {
+            const asset=(plan.assets||[]).find(row=>row.sourceId===spec.spriteFrame);
+            expectedSpriteFrameUuid=asset&&(asset.spriteFrameUuid||asset.uuid)||null;
+            const frame=renderer&&renderer.spriteFrame;
+            actualSpriteFrameUuid=frame&&frame._uuid||null;textureUuid=frame&&frame.texture&&frame.texture._uuid||null;
+        }
+        if(spec.type==='cc.Label'||spec.type==='cc.RichText')renderedText=renderer&&typeof renderer.string==='string'?renderer.string:null;
+        const sourceExpectedText=spec.staticRichText&&typeof spec.staticRichText.creatorMarkup==='string'?
+            spec.staticRichText.creatorMarkup:spec.text;
+        let rendered=false;
+        if(visibility.visible===true&&nodeActive===true&&enabled===true&&geometry&&geometry.vertexCount>0&&geometry.indexCount>0) {
+            if(spec.type==='cc.Sprite')rendered=!!expectedSpriteFrameUuid&&actualSpriteFrameUuid===expectedSpriteFrameUuid&&!!textureUuid;
+            else if(spec.type==='cc.Label'||spec.type==='cc.RichText')rendered=typeof sourceExpectedText==='string'&&renderedText===sourceExpectedText;
+            else if(spec.type==='cc.LabelOutline')rendered=renderer.enableOutline===true&&
+                renderer.outlineWidth===spec.width&&renderer.outlineColor&&Array.isArray(spec.outlineColor)&&
+                [renderer.outlineColor.r,renderer.outlineColor.g,renderer.outlineColor.b,renderer.outlineColor.a].every((value,index)=>value===spec.outlineColor[index]);
+        }
+        let verified=!!node&&!!renderer&&matchingNative&&nodeUuid&&componentUuid&&nativeType&&nodeActive!==null&&enabled!==null;
+        if(visibility.visible===null)verified=false;
+        if(visibility.visible===true)verified=!!verified&&!!geometry;
+        if(visibility.visible===false) {
+            if(visibility.reasonCode==='source-node-inactive')verified=!!verified&&nodeActive===false;
+            else if(visibility.reasonCode==='source-component-disabled')verified=!!verified&&enabled===false;
+            else if(visibility.reasonCode==='source-empty-sprite-frame')verified=!!verified&&spec.type==='cc.Sprite'&&actualSpriteFrameUuid===null;
+            else verified=false;
+        }
+        const reasonCode=rendered?'saved-renderer-geometry-read':verified?
+            visibility.visible===false?visibility.reasonCode:'saved-renderer-not-drawing':
+            !owner?'source-prefab-owner-ambiguous-or-absent':!renderer?'native-renderer-unavailable':
+            !matchingNative?'saved-native-component-identity-mismatch':'saved-renderer-observation-incomplete';
+        const evidence={phase:'saved-scene-reopened',sourceId:spec.sourceId,sourceNodeId:spec.node,
+            sourceType:spec.type,sourcePrefabId:owner&&owner.sourceId||null,sourcePrefabUuid:owner&&owner.uuid||null,
+            nodeUuid,componentUuid,nativeType,nodeActiveInHierarchy:nodeActive,componentEnabled:enabled,
+            rendererKind:spec.type==='cc.Sprite'?'sprite':(spec.type==='cc.Label'||spec.type==='cc.RichText')?'label':spec.type==='cc.LabelOutline'?'label-outline':'unsupported',
+            renderDataVertexCount:geometry?geometry.vertexCount:null,renderDataIndexCount:geometry?geometry.indexCount:null};
+        if(spec.type==='cc.Sprite')Object.assign(evidence,{sourceSpriteFrameId:spec.spriteFrame,
+            expectedSpriteFrameUuid,actualSpriteFrameUuid,textureUuid});
+        if(spec.type==='cc.Label'||spec.type==='cc.RichText')evidence.renderedText=renderedText;
+        if(spec.type==='cc.LabelOutline')Object.assign(evidence,{outlineEnabled:!!renderer&&renderer.enableOutline===true,
+            outlineWidth:renderer&&renderer.outlineWidth,outlineColor:renderer&&renderer.outlineColor?
+                [renderer.outlineColor.r,renderer.outlineColor.g,renderer.outlineColor.b,renderer.outlineColor.a]:null});
+        return {sourceId:spec.sourceId,sourceNodeId:spec.node,sourceNodeUuid:nodeUuid,
+            sourcePrefabId:owner&&owner.sourceId||null,sourcePrefabUuid:owner&&owner.uuid||null,
+            componentUuid,nativeType,sourceType:spec.type,sourceVisible:visibility.visible,
+            verified:!!verified,rendered:!!rendered,reasonCode,evidence};
+    });
+    for(const owner of sourcePrefabs||[])owner.staticPresentationComponents=components.filter(row=>row.evidence.sourcePrefabId===owner.sourceId);
+    return {schemaVersion:1,contract:PRESENTATION_CONTRACT,sourceManifestSha256:plan.sourceManifestSha256,
+        phase:'saved-scene-reopened',components};
+}
 module.exports = {
     load() { staticSortSerialization.install(cc, EditorExtends, globalThis, require); },
     unload() { ownedUndo.finish(); if(saveCallProbe){saveCallProbe.uninstall();saveCallProbe=null;} if(undoSnapshotProbe){undoSnapshotProbe.uninstall();undoSnapshotProbe=null;} staticSortSerialization.uninstall(); },
     methods: {
+        readStaticPresentation(plan,mapped,refs,sourcePrefabs) { return readStaticPresentation(plan,mapped,refs,sourcePrefabs); },
         beginOwnedImportUndo() { return ownedUndo.start(globalThis.cce,globalThis,require); },
         finishOwnedImportUndo() { return ownedUndo.finish(); },
         inspectOrdinarySaveApi() {
@@ -361,7 +485,7 @@ module.exports = {
                 if(c.codeClassName)numericCodeBindings.push(numeric.read(comp,c));
                 if(c.type==='cc.Label'&&comp.overflow!==(c.nativeOverflow??c.overflow))throw Error('Saved Label overflow policy differs: '+c.sourceId);
                 if(c.type==='cc.Sprite'&&comp.sizeMode!==(c.nativeSizeMode??c.sizeMode))throw Error('Saved Sprite sizing policy differs: '+c.sourceId);
-                refs.push({sourceId:c.sourceId,nodeUuid:n.uuid,componentUuid:comp.uuid,type:c.type,nativeType:cc.js.getClassName(comp)});
+                refs.push({sourceId:c.sourceId,nodeUuid:n.uuid,componentUuid:comp.uuid,type:c.type,nativeType:cc.js.getClassName(comp),enabled:comp.enabled});
                 if(c.type==='cc.Label'||c.type==='cc.RichText')labels.push({sourceId:c.sourceId,text:comp.string,fontUuid:comp.font&&comp.font._uuid,useSystemFont:comp.useSystemFont,fontFamily:comp.fontFamily});
             }
             const frames=[];
@@ -438,6 +562,7 @@ module.exports = {
                 if(!info)throw Error('Saved prefab identity absent');
                 sourcePrefabs.push(prefabs.read(templates.get(spec.sourceId),spec,plan,info,templates,staticAssets,animationContext));
             }
+            const staticPresentationValidation=readStaticPresentation(plan,mapped,refs,sourcePrefabs);
             const dynamicUiProbes=await dynamic.probe(plan,design,(done,total)=>jobs.progress('native-readback',sourcePrefabs.length+done,sourcePrefabs.length+total));
             const spineSpecs=plan.components.filter(c=>c.convertible&&c.spineBinding);
             const spineModule=require('./spine-bindings.js'),spineById=new Map(spineSpecs.map(c=>[c.sourceId,c]));
@@ -446,7 +571,7 @@ module.exports = {
             },id=>({sourceActivity:spineModule.sourceNodeActivity(plan,spineById.get(id).node),readbackScope:'saved_scene_mapped'}));
             const sourceComponentCoverage=plan.components.map((spec,sourceIndex)=>({sourceIndex,sourceId:spec.sourceId||null,sourceType:spec.type||null,
                 nativeComponentReadback:refs.filter(row=>row.sourceId===spec.sourceId).map(row=>({sourceId:row.sourceId,type:row.type,nativeType:row.nativeType,componentUuid:row.componentUuid,nodeUuid:row.nodeUuid}))}));
-            return {sourceDiagnostics:plan.sourceDiagnostics||[],staticRetainedAssetReadback,spineBindings,staticTimeMaterials,resourceProbes:await resources.read(plan,scene),tiledRenderer:tiledReadback(plan,mapped),dynamicUiProbes,nativeInitialNodes:plan.nativeInitialNodes,sourcePrefabs,prefabInstances,jsonAssets,audioAssets,fontPages,animations,numericCodeBindings,nodeCount:saved.length,sourceComponentCoverage,nodes:[...mapped].map(([sourceId,n])=>({sourceId,nodeUuid:n.uuid,name:n.name,
+            return {sourceDiagnostics:plan.sourceDiagnostics||[],staticPresentationValidation,staticRetainedAssetReadback,spineBindings,staticTimeMaterials,resourceProbes:await resources.read(plan,scene),tiledRenderer:tiledReadback(plan,mapped),dynamicUiProbes,nativeInitialNodes:plan.nativeInitialNodes,sourcePrefabs,prefabInstances,jsonAssets,audioAssets,fontPages,animations,numericCodeBindings,nodeCount:saved.length,sourceComponentCoverage,nodes:[...mapped].map(([sourceId,n])=>({sourceId,nodeUuid:n.uuid,activeInHierarchy:n.activeInHierarchy,name:n.name,
                 position:[n.position.x,n.position.y,n.position.z],size:[n.getComponent(cc.UITransform).width,n.getComponent(cc.UITransform).height],
                 pivot:[n.getComponent(cc.UITransform).anchorX,n.getComponent(cc.UITransform).anchorY],scale:[n.scale.x,n.scale.y,n.scale.z],
                 rotation:[n.rotation.x,n.rotation.y,n.rotation.z,n.rotation.w],active:n.active,...prefabs.uiState(n,sourceNodes.get(sourceId))})),components:refs,labels,frames};

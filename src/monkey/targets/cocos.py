@@ -536,7 +536,7 @@ _CREATOR_NATIVE_DYNAMIC_BOUNDARIES = _CREATOR_STATIC_DYNAMIC_BOUNDARIES | frozen
 })
 
 
-def _creator_validation_summary(component_coverage, diagnostics, editor_validation):
+def _creator_validation_summary(component_coverage, diagnostics, editor_validation, plan=None):
     """Join whole-source coverage with execution/readback diagnostics.
 
     Only the named dynamic-only gaps are excluded. Unknown/raw diagnostics,
@@ -548,12 +548,8 @@ def _creator_validation_summary(component_coverage, diagnostics, editor_validati
     presentation_status = presentation.get('status', 'not_run') if isinstance(presentation, dict) else 'not_run'
     rows = diagnostics if isinstance(diagnostics, list) else []
 
-    def blocks(row, allowed):
-        code = row.get('code') if isinstance(row, dict) else None
-        return code not in allowed
-
-    native_blockers = [row for row in rows if blocks(row, _CREATOR_NATIVE_DYNAMIC_BOUNDARIES)]
-    presentation_blockers = [row for row in rows if blocks(row, _CREATOR_STATIC_DYNAMIC_BOUNDARIES)]
+    native_blockers = [row for row in rows if not _creator_dynamic_boundary(row, component_coverage, 'native', plan)]
+    presentation_blockers = [row for row in rows if not _creator_dynamic_boundary(row, component_coverage, 'presentation', plan)]
 
     if editor_validation == 'not_run':
         return {'nativeStaticValidation': 'not_run', 'staticPresentationStatus': 'not_run'}
@@ -567,6 +563,78 @@ def _creator_validation_summary(component_coverage, diagnostics, editor_validati
     if presentation_status == 'pass' and presentation_blockers:
         presentation_status = 'partial'
     return {'nativeStaticValidation': native_status, 'staticPresentationStatus': presentation_status}
+
+
+def _creator_dynamic_boundary(row, component_coverage, scope='presentation', plan=None):
+    """Recognize only source-typed dynamic gaps after static native evidence passes."""
+    if not isinstance(row, dict):
+        return False
+    code = row.get('code')
+    source_id = row.get('sourceId') or row.get('sourceComponentId')
+    rows = component_coverage.get('components', []) if isinstance(component_coverage, dict) else []
+    matches = [item for item in rows if isinstance(item, dict) and item.get('sourceId') == source_id]
+    covered = matches[0] if len(matches) == 1 else None
+    if code == 'SCROLL_PHYSICS_NOT_VERIFIED':
+        if not isinstance(covered, dict) or covered.get('sourceType') != 'cc.ScrollView':
+            return False
+        native = covered.get('nativeComponentReadback')
+        spec = next((item for item in (plan or {}).get('components', [])
+                     if isinstance(item, dict) and item.get('sourceId') == source_id), None)
+        evidence = native.get('staticScrollFields') if isinstance(native, dict) else None
+        return bool(spec and isinstance(evidence, dict) and evidence.get('verified') is True and
+                    evidence.get('sourceId') == source_id and
+                    evidence.get('horizontal') is spec.get('horizontal') and
+                    evidence.get('vertical') is spec.get('vertical') and
+                    evidence.get('contentNodeId') == spec.get('content') and
+                    isinstance(spec.get('viewport'), str) and evidence.get('viewportNodeId') == spec.get('viewport') and
+                    covered.get('nativeStatus') == 'pass' and covered.get('nativeStaticFieldsVerified') is True)
+    if code == 'BUTTON_BUSINESS_UNBOUND':
+        from ..unity_diagnostic_resolution import is_dynamic_boundary
+        return bool(covered and is_dynamic_boundary(row, covered) and
+                    covered.get('sourceType') == 'cc.Button' and covered.get('nativeStatus') == 'pass' and
+                    covered.get('disposition') == 'native' and covered.get('nativeStaticFieldsVerified') is True and
+                    isinstance(covered.get('nativeComponentReadback'), dict))
+    spine_codes = {'SPINE_SOURCE_UNBOUND_DYNAMIC_NOT_RUN', 'SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE',
+                   'SPINE_RUNTIME_UNVERIFIED'}
+    if code in spine_codes:
+        return bool(covered and covered.get('sourceType') == 'sp.Skeleton' and
+                    covered.get('nativeStatus') == 'pass' and covered.get('disposition') == 'native' and
+                    covered.get('nativeStaticFieldsVerified') is True and
+                    isinstance(covered.get('nativeComponentReadback'), dict) and
+                    (scope == 'native' or code != 'SPINE_RUNTIME_UNVERIFIED'))
+    if code == 'ANIMATION_DYNAMIC_CURVES_NOT_LOWERED':
+        animations = (plan or {}).get('animations', []) if isinstance(plan, dict) else []
+        matches = [item for item in animations if isinstance(item, dict) and
+                   (item.get('sourceId') or item.get('id')) == source_id]
+        return (len(matches) == 1 and isinstance(matches[0].get('curves'), list) and
+                scope in ('native', 'presentation'))
+    return False
+
+
+def _creator_blocking_diagnostics(report, component_coverage, diagnostics, plan=None):
+    """Keep full diagnostic history while honoring verified dynamic boundaries.
+
+    A pure dynamic warning may remain in the report without changing the
+    candidate exit status only when the actual saved native coverage and
+    presentation gates pass. Unknown or static failures always remain blockers.
+    """
+    rows = diagnostics if isinstance(diagnostics, list) else []
+    editor = report.get('editorValidation')
+    native = report.get('nativeStaticValidation')
+    presentation = report.get('staticPresentationValidation')
+    presentation_status = presentation.get('status') if isinstance(presentation, dict) else None
+    expected_visible = presentation.get('expectedSourceVisibleCount') if isinstance(presentation, dict) else None
+    presentation_ok = presentation_status in ('pass', 'not_applicable') or (
+        presentation_status == 'not_run' and expected_visible == 0)
+    accepted = (report.get('staticValidation') == 'pass' and editor in ('pass', 'partial') and
+                native in ('pass', 'not_applicable') and presentation_ok)
+    if not accepted:
+        blockers = [row for row in rows if not _creator_dynamic_boundary(row, component_coverage, 'presentation', plan)]
+        if not blockers:
+            blockers = [diagnostic('CREATOR_VERIFICATION_INCOMPLETE', 'verification',
+                                   'Editor/static component/presentation gates are not all satisfied')]
+        return blockers
+    return [row for row in rows if not _creator_dynamic_boundary(row, component_coverage, 'presentation', plan)]
 
 
 def verify(candidate,output,level='static'):
@@ -765,7 +833,7 @@ def verify(candidate,output,level='static'):
         diagnostics.extend(component_coverage['diagnostics'])
     from ..unity_verification_contract import deduplicate_diagnostics
     diagnostics=deduplicate_diagnostics(diagnostics)
-    creator_summary=_creator_validation_summary(component_coverage,diagnostics,editor)
+    creator_summary=_creator_validation_summary(component_coverage,diagnostics,editor,plan)
     integrity_codes={'GENERATED_FILE_CHANGED','NATIVE_FILE_CHANGED','DUPLICATE_TARGET_GUID','TARGET_REFERENCE_MISSING','TARGET_LAYOUT_INVALID','ASSIGNED_NATIVE_IDENTITY_CHANGED','LAYOUT_FORBIDDEN_NAME'}
     static_integrity='conflict' if any(d.get('code') in integrity_codes for d in diagnostics) else 'pass'
     out=new_output(output,[root]);report=dict(schemaVersion=1,toolVersion=__version__,diagnostics=diagnostics,
@@ -781,4 +849,5 @@ def verify(candidate,output,level='static'):
                                      else {'status':creator_summary['staticPresentationStatus']}),
         runtimeCheck='not_run',playerValidation='not_run',
         counts=dict(scope='candidate-import-plan',assets=len(plan['assets']),spriteFrames=sum(a['kind']=='sprite'for a in plan['assets']),nodes=len(plan['nodes']),plannedPrefabs=len(plan.get('sourcePrefabs',[]))))
-    write_json(out/'verification.json',report);return finish(out,report)
+    write_json(out/'verification.json',report)
+    return finish(out,report,blocking_diagnostics=_creator_blocking_diagnostics(report,component_coverage,diagnostics,plan))

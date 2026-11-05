@@ -5,6 +5,8 @@ from pathlib import Path
 from .prefab_component_coverage import _unity_persistent_identity
 from .io import inside,read,sha,load
 
+_OWNER_RENDERER_CONTRACT = 'monkey-unity-saved-spine-renderer-owner/1'
+
 
 def _retained_spine_carrier(row):
     if not isinstance(row,dict):return False
@@ -51,7 +53,7 @@ def merge(readback, rendering, receipt):
     if (not isinstance(rows,list)or any(not isinstance(row,dict)for row in rows)
             or len(rows)!=len(expected)or {row.get('sourceComponentId')for row in rows}!=set(expected)):
         raise ValueError('SPINE_RENDERING_COVERAGE_DENOMINATOR_INVALID')
-    source_ids=[]
+    source_ids=[];owner_rows=[]
     presentation=result.get('staticPresentationValidation')or{}
     if not isinstance(presentation,dict):raise ValueError('SPINE_RENDERING_PRESENTATION_CONTRACT_INVALID')
     presentations={row['sourceId']:row for row in presentation.get('components',[])if isinstance(row,dict)and row.get('sourceId')}
@@ -60,6 +62,9 @@ def merge(readback, rendering, receipt):
         if source.get('eligible')is not True:
             if row.get('rendererCreated')is True:raise ValueError('SPINE_RENDERING_INELIGIBLE_RENDERER')
             continue
+        if (not isinstance(source.get('sourcePrefabId'),str)or not source['sourcePrefabId']or
+                not isinstance(source.get('sourceNodeId'),str)or not source['sourceNodeId']):
+            raise ValueError('SPINE_RENDERING_OWNER_NODE_IDENTITY_REQUIRED: '+sid)
         identity=_unity_persistent_identity({'guid':row.get('rendererGuid'),'localFileId':row.get('rendererLocalId')})
         data_identity=_unity_persistent_identity({'guid':row.get('dataAssetGuid'),'localFileId':row.get('dataAssetLocalId')})
         flags=('verified','rendererCreated','persistent','dataPersistent','serializedFieldsVerified',
@@ -93,11 +98,23 @@ def merge(readback, rendering, receipt):
             if _retained_spine_carrier(existing):
                 existing.setdefault('coverageRole','retained-carrier')
         result.setdefault(collection,[]).append(native)
+        # Preserve the verified receipt as a separately typed owner proof. The
+        # generic component summary above is derived; assess joins this record
+        # to its frozen sourcePrefab/node and exact physical inventory identity.
+        owner_rows.append(dict(row,contract=_OWNER_RENDERER_CONTRACT,phase='saved-prefab-reopen',
+            sourceId=sid,sourceComponentId=sid,sourcePrefabId=source.get('sourcePrefabId'),
+            sourceNodeId=source.get('sourceNodeId'),type='sp.Skeleton',nativeType='Spine.Unity.SkeletonGraphic',
+            guid=identity['guid'],localFileId=identity['localFileId'],
+            componentUuid=identity['guid']+':'+str(identity['localFileId']),
+            dataAssetLocalFileId=row.get('dataAssetLocalFileId',row.get('dataAssetLocalId')),
+            status='native'if enabled else'disabled',representation='native-component',coverageRole='native-renderer',
+            sourceIdentityVerified=True,persistent=True,sourceEnabled=source['sourceComponentEnabled'],
+            nativeEnabled=enabled,nativeStaticFieldsVerified=True))
         # This supplements the carrier receipt rather than replacing it.
         source_ids.append(sid)
         presentations[sid]=dict(sourceId=sid,sourceVisible=visible,verified=True,rendered=visible,
                                 reason='saved-native-renderer-and-source-time-zero-pose-verified')
-    result['staticSpineRendering']=dict(status='verified',sourceComponentIds=source_ids)
+    result['staticSpineRendering']=dict(status='verified',sourceComponentIds=source_ids,components=owner_rows)
     presentation.update(components=list(presentations.values()),
         status='pass'if presentations and all(row.get('verified')is True for row in presentations.values())else'partial')
     result['staticPresentationValidation']=presentation

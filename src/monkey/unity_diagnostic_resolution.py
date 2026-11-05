@@ -17,8 +17,6 @@ _DYNAMIC_CODES = {
     'ANIMATION_DYNAMIC_CURVES_NOT_LOWERED',
     'ANIMATION_PROPERTY_UNSUPPORTED',
     'ANIMATION_COMPONENT_CURVES_UNSUPPORTED',
-    'SCROLL_PHYSICS_NOT_VERIFIED',
-    'BUTTON_BUSINESS_UNBOUND',
 }
 
 # Codes whose meaning is a named, independently checkable static requirement.
@@ -35,6 +33,7 @@ _FAMILY_REQUIREMENTS = {
     'MULTIPLE_LAYOUT_HANDOFF': {'layout-context', 'layout-algorithm'},
     'WIDGET_CONTEXT_UNSUPPORTED': {'layout-context', 'layout-algorithm'},
     'MISSING_OUTLINE_LABEL': {'same-node-label'},
+    'SCROLL_PHYSICS_NOT_VERIFIED': {'scroll-axis', 'scroll-content', 'scroll-viewport'},
 }
 _HEX_GUID = re.compile(r'^[0-9a-fA-F]{32}$')
 
@@ -42,6 +41,28 @@ _HEX_GUID = re.compile(r'^[0-9a-fA-F]{32}$')
 def _source_id(row):
     value = row.get('sourceId') or row.get('sourceComponentId')
     return value if isinstance(value, str) and value else None
+
+
+def is_dynamic_boundary(row, covered=None):
+    """Recognize dynamic-only diagnostics without swallowing static gaps."""
+    if not isinstance(row, dict):
+        return False
+    code = row.get('code')
+    if code in _DYNAMIC_CODES:
+        return True
+    if code != 'BUTTON_BUSINESS_UNBOUND':
+        return False
+    if not isinstance(covered, dict) or covered.get('sourceType') != 'cc.Button':
+        return False
+    message = row.get('message')
+    if not isinstance(message, str):
+        return False
+    lowered = message.lower()
+    has_business_boundary = ('original click handlers remain' in lowered
+        or 'original handlers remain ai work' in lowered)
+    static_requirement = any(token in lowered for token in (
+        'target graphic', 'transition', 'static color', 'sprite', 'interactable'))
+    return has_business_boundary and not static_requirement
 
 
 def _identity(row):
@@ -111,7 +132,8 @@ def _family_proof(source_id, row, covered, proof):
     scope = proof.get('scope')
     if not isinstance(scope, str) or not scope:
         return None
-    identity = _native_proof(source_id, covered, require_static=False)
+    identity = _native_proof(source_id, covered,
+        require_static=code == 'SCROLL_PHYSICS_NOT_VERIFIED')
     evidence = proof.get('evidence')
     native = covered.get('nativeComponentReadback') if isinstance(covered, dict) else None
     if identity is None or not isinstance(evidence, dict):
@@ -169,12 +191,18 @@ def reconcile(diagnostics: list[dict], coverage: dict,
         scope = 'unresolved-requirement'
         evidence = None
 
-        if code in _DYNAMIC_CODES:
+        if is_dynamic_boundary(row, covered):
             classification, scope = 'remaining-dynamic', 'dynamic-behavior'
-        elif code=='SYSTEM_FONT_PLATFORM_UNVERIFIED':
-            # The historical device is provenance, not a missing serialized
-            # field. Controlled source-reference metrics have their own gates.
-            scope='historical-source-platform-provenance'
+        elif code == 'SCROLL_PHYSICS_NOT_VERIFIED':
+            proof = (None if source_id in duplicate_ids or not isinstance(covered, dict)
+                     or covered.get('sourceType') != 'cc.ScrollView' else
+                     _family_proof(source_id, row, covered, family_proofs.get(source_id)))
+            if proof:
+                # The static fields are resolved, while scrolling physics
+                # remains a distinct dynamic limitation.
+                classification, scope, evidence = 'remaining-dynamic', 'dynamic-scroll-physics', proof
+            else:
+                scope = 'static-scroll-axis-content-viewport'
         elif code == 'COMPONENT_NOT_IMPORTED' and row.get('phase') == 'initial-component-creation':
             identity = None if source_id in duplicate_ids else _native_proof(source_id, covered)
             if identity is not None:
@@ -217,11 +245,15 @@ def reconcile(diagnostics: list[dict], coverage: dict,
         row['resolutionClassification'] = classification
         row['resolutionScope'] = scope
         row['resolutionSourceId'] = source_id
-        if evidence is not None:
+        if evidence is not None and classification == 'resolved':
             row['currentResolutionEvidence'] = evidence
             # Compatibility fields are annotations; preserve prior raw/history.
             row['resolved'] = True
             row['resolution'] = 'saved-evidence-present'
+        elif evidence is not None and classification == 'remaining-dynamic':
+            row['currentResolutionEvidence'] = evidence
+            row['resolved'] = False
+            row['resolution'] = 'remaining-dynamic'
         else:
             row['resolved'] = False
             row['resolution'] = 'remaining-dynamic' if classification == 'remaining-dynamic' else 'remaining'

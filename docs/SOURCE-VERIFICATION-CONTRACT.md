@@ -21,3 +21,13 @@ Unity 与 Creator 的 `componentCoverage` 按完整 `plan.components` 逐项列�
 自定义 Unity UI schema carrier 的字段型 C# 声明不是原程序集完整方法清单。缺少独立原始方法来源时，即使目标原生基类能绘制，也不证明源类的渲染或生命周期语义已恢复。
 
 引擎版本常量摘要是声明的参考 pin，不能自证实际引擎文件身份；实际源 pack、shader 阶段、脚本、资源及 SDK 字节仍按各自来源核验。63 位参考摘要已统一到规范 64 位定义，未接线历史 helper 的独立来源问题不被此修改宣称解决。
+
+## 公开入口的保存状态与资源封存
+
+Unity 编辑器验证、选择冻结和资源封存共用保存状态准入：实际 producer 的 imported/pass/partial、精确 Editor版本、整数0 Missing Script、editable保存重读及场景重开、规范且非空的nativeFiles清单。源图计划要求saved-source范围；仅显式gallery计划可以使用resources-and-gallery-only/not_run组合。图库证据不产生源图恢复结论。文件、GUID、组件覆盖和呈现仍由各自生产校验核对。
+
+公开verify保留全部历史诊断，用当前证据重新判断尚未解决项。已解决诊断或已证明纯动态边界不因历史存在而使静态结果/公开退出码失败；未知诊断及静态前提缺口继续阻断。选择冻结要求完整静态分项、组件分母和身份/呈现闭包通过，不能用历史标签自行清除错误。
+
+freeze-resource-candidate 的输出是供模块组合复用的资源库存封存，sourceAcceptance固定为not_granted；它不授予选择/产品采用许可。结构保存状态、图范围、哈希或Missing Script错误拒绝封存，退出2。通过结构准入后，保存完整当前source verification回执与validationGaps：无静态缺口的封存退出0，存在未知/未解决静态缺口时仍保留资源库存但manifest/工作流标partial并退出1。后续组合工程仍须独立编译/导入/验证；已验收选择必须使用freeze-native-selection。原始readback状态和诊断不改写，Player仍为not_run。
+
+保存回读还须与当前拥有的import-plan字节SHA及source manifest SHA一致；这两个pin由真实Importer写出，不能由消费者把旧回读补成新证据。节点physicalInventoryContract v1记录实际GetComponents的类型继承、启用状态、GUID/localID、源角色映射及Prefab对应源链，源数据与所属Prefab明细分开核验。该库存限于源映射节点，未知自定义Graphic也按真实继承链核查；缺旧库存保持未验证。

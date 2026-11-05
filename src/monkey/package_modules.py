@@ -185,8 +185,27 @@ def freeze_native_resources(candidate, expected_manifest_sha256, expected_readba
     rb_path=find_analysis(root,'editor-readback.json');raw=read(rb_path,max_bytes=128*1024**2)
     if sha(raw)!=expected_readback_sha256:fail('RESOURCE_FREEZE_READBACK_CHANGED',str(rb_path),'Expected pinned saved Editor readback')
     rb=load(raw,max_nodes=8_000_000)
-    if rb.get('status') not in ('partial','passed') or rb.get('sceneReopened') is not True or rb.get('unityVersion')!='6000.6.2f1':
-        fail('RESOURCE_FREEZE_READBACK',str(rb_path),'Existing saved/reopened exact-version readback required')
+    from .layout import standard
+    from .native_readback_contract import saved_readback_admission
+    instruction=load(read(root/standard.locate(manifest,'importPlan'),max_bytes=128*1024**2),max_nodes=8_000_000)
+    admission=saved_readback_admission(rb,gallery=instruction.get('galleryOnly')is True,
+        expected_plan_sha256=sha(read(root/standard.locate(manifest,'importPlan'))),
+        expected_source_manifest_sha256=instruction.get('sourceManifestSha256'))
+    if not admission['valid']:
+        fail('RESOURCE_FREEZE_READBACK',str(rb_path),'Saved readback admission failed: '+
+             '; '.join(row['field'] for row in admission['issues']))
+    # Resource retention and source acceptance are different consumers. Retain a
+    # current full verification report, including every unresolved limitation.
+    from .targets.unity import verify as verify_unity
+    from .unity_verification_contract import unresolved_diagnostics
+    with tempfile.TemporaryDirectory(prefix='monkey-resource-verification-',dir=Path(tempfile.gettempdir()).resolve())as temporary:
+        verify_unity(root,Path(temporary)/'verification',level='editor')
+        source_verification=load(read(Path(temporary)/'verification/verification.json'),max_nodes=8_000_000)
+    current=unresolved_diagnostics(source_verification.get('diagnostics',[]),source_verification.get('componentCoverage',{}))
+    dimensions=('staticValidation','nativeStaticValidation','staticPresentationValidation')
+    validation_gaps=[dict(code=row.get('code'),sourceId=row.get('sourceId'),message=row.get('message'))for row in current['blocking']]
+    validation_gaps.extend(dict(code='RESOURCE_SOURCE_VALIDATION_INCOMPLETE',dimension=key,status=source_verification.get(key))
+                           for key in dimensions if source_verification.get(key)!='pass')
     native={}
     for row in rb.get('nativeFiles',[]):
         rel=row.get('path');inside(root,rel)
@@ -226,18 +245,26 @@ def freeze_native_resources(candidate, expected_manifest_sha256, expected_readba
             if state=='retainedEditorState':retained.append(dict(path=rel,sha256=actual,bytes=size,validation='retained_current_editor_state;not_independent_native_proof',previousSha256=(previous or {}).get('sha256')))
     missing=set(native)-paths
     if missing:fail('RESOURCE_FREEZE_NATIVE_MISSING',str(sorted(missing)[:3]),'Native readback file no longer exists')
-    proof=dict(schemaVersion=1,sourceManifestSha256=pin,nativeReadbackSha256=sha(raw),counts=counts,retainedEditorState=retained,
-               editorStarted=False,sourceExecuted=False,validation='Existing native identity hashes reused; complete current inventory newly sealed; no new native/gameplay validation')
+    verification_path='Analysis/Code/resource-source-verification.json'
+    if verification_path in paths:fail('RESOURCE_FREEZE_EXISTS',verification_path,'Never overwrite an earlier resource verification')
+    write_json(out/verification_path,source_verification)
+    verification_file=out/verification_path
+    files.append(dict(path=verification_path,bytes=verification_file.stat().st_size,sha256=sha(read(verification_file)),owner='generated'))
+    proof=dict(schemaVersion=1,contract='monkey-resource-inventory-seal/1',sourceManifestSha256=pin,nativeReadbackSha256=sha(raw),counts=counts,retainedEditorState=retained,
+               purpose='resource-inventory-for-module-composition',sourceAcceptance='not_granted',
+               sourceVerificationPath=verification_path,sourceVerificationSha256=sha(read(verification_file)),
+               nativeReadbackStatus=rb['status'],verificationScope=admission['scope'],validationGaps=validation_gaps,
+               editorStarted=False,sourceExecuted=False,validation='Saved resource inventory sealed; current verifier result retained; selection approval and Player not granted')
     path='Analysis/Code/resource-freeze.json';write_json(out/path,proof);f=out/path
     if path in paths:fail('RESOURCE_FREEZE_EXISTS',path,'Never overwrite an earlier native freeze')
     files.append(dict(path=path,bytes=f.stat().st_size,sha256=sha(read(f)),owner='generated'))
-    m=copy.deepcopy(manifest);m.pop('_manifestName',None);m.update(toolVersion=__version__,files=files,resourceFreeze=proof)
+    m=copy.deepcopy(manifest);m.pop('_manifestName',None);m.update(toolVersion=__version__,files=files,resourceFreeze=proof,status='partial'if validation_gaps else manifest.get('status','candidate'))
     m['limits']=check_inventory(files,m,str(out))
     from .identities import assigned
     assigned(out,m);write_json(out/'manifest.json',m)
     if sha(read(root/manifest['_manifestName'],max_bytes=128*1024**2))!=pin or sha(read(rb_path,max_bytes=128*1024**2))!=sha(raw):
         fail('RESOURCE_FREEZE_INPUT_CHANGED',str(root),'Input manifest/readback changed during freezing')
-    return dict(status='frozen_native_resources',candidate=str(out),manifestSha256=sha(read(out/'manifest.json',max_bytes=128*1024**2)),files=len(files),nativeFiles=counts['native'],retainedEditorState=counts['retainedEditorState'],editorStarted=False)
+    return dict(status='frozen_native_resources',workflowStatus='partial'if validation_gaps else'sealed',sourceAcceptance='not_granted',validationGaps=validation_gaps,candidate=str(out),manifestSha256=sha(read(out/'manifest.json',max_bytes=128*1024**2)),files=len(files),nativeFiles=counts['native'],retainedEditorState=counts['retainedEditorState'],editorStarted=False)
 
 
 def prepare_drafts(sources, *, reuse=None):

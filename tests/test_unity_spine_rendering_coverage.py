@@ -7,14 +7,35 @@ from monkey import io
 
 
 def fixture():
-    sid='source:prefab#1'
-    retained=dict(sourceId=sid,status='retained',representation='disabled-source-data-carrier',
-                  guid='d'*32,localFileId=1,persistent=True,sourceIdentityVerified=True,verified=True,fieldsVerified=True)
-    readback=dict(components=[],retainedComponents=[retained],staticSpineContinuation=dict(status='verified',sourceComponentIds=[sid]),
+    sid='source:prefab#1';owner='source:prefab';path='Assets/source.prefab';renderer_id=-(1<<63)+1
+    retained=dict(sourceId=sid,node='node',type='sp.Skeleton',status='retained',representation='disabled-source-data-carrier',
+                  nativeType='NativeStaticSpineReference',guid='d'*32,localFileId=1,componentUuid='d'*32+':1',
+                  persistent=True,sourceIdentityVerified=True,sourceEnabled=True,nativeEnabled=False,verified=True,fieldsVerified=True)
+    native_renderer=dict(sourceId=sid,node='node',type='sp.Skeleton',status='native',representation='native-component',
+                  nativeType='Spine.Unity.SkeletonGraphic',guid='e'*32,localFileId=renderer_id,componentUuid='e'*32+':'+str(renderer_id),
+                  persistent=True,sourceIdentityVerified=True,sourceEnabled=True,nativeEnabled=True,nativeStaticFieldsVerified=True,
+                  sourceVisible=True,coverageRole='native-renderer')
+    physical=[
+        dict(guid='d'*32,localFileId=1,componentUuid='d'*32+':1',nativeType='NativeStaticSpineReference',persistent=True,
+             enabledKnown=True,enabled=False,nativeBaseTypes=['NativeStaticSpineReference','UnityEngine.MonoBehaviour'],
+             sourceComponentIds=[sid],role='source-component',identityOrigin='direct-observation',identityPath=['d'*32+':1']),
+        dict(guid='e'*32,localFileId=renderer_id,componentUuid='e'*32+':'+str(renderer_id),nativeType='Spine.Unity.SkeletonGraphic',
+             persistent=True,enabledKnown=True,enabled=True,nativeBaseTypes=['Spine.Unity.SkeletonGraphic','UnityEngine.UI.Graphic'],
+             sourceComponentIds=[sid],role='source-component',identityOrigin='direct-observation',identityPath=['e'*32+':'+str(renderer_id)]),
+        dict(guid='a'*32,localFileId=2,componentUuid='a'*32+':2',nativeType='UnityEngine.RectTransform',persistent=True,
+             enabledKnown=True,enabled=True,nativeBaseTypes=['UnityEngine.RectTransform','UnityEngine.Component'],sourceComponentIds=[],role='unmapped',identityOrigin='direct-observation',identityPath=['a'*32+':2']),
+        dict(guid='a'*32,localFileId=3,componentUuid='a'*32+':3',nativeType='UnityEngine.CanvasRenderer',persistent=True,
+             enabledKnown=True,enabled=True,nativeBaseTypes=['UnityEngine.CanvasRenderer','UnityEngine.Component'],sourceComponentIds=[],role='unmapped',identityOrigin='direct-observation',identityPath=['a'*32+':3'])]
+    node=dict(sourceId='node',active=True,parent=None,componentTypes=[item['nativeType'] for item in physical],
+              physicalInventoryContract='monkey-unity-node-physical-components/1',
+              physicalInventoryPhase='persistent-saved-reopened-node',physicalObservationScope='saved-scene-correspondence',physicalComponents=physical)
+    readback=dict(nodes=[copy.deepcopy(node)],components=[],retainedComponents=[retained],
+                  sourcePrefabs=[dict(sourceId=owner,path=path,nodes=[dict(copy.deepcopy(node),physicalObservationScope='saved-source-prefab')],components=[retained,native_renderer])],
+                  staticSpineContinuation=dict(status='verified',sourceComponentIds=[sid]),
                   staticPresentationValidation=dict(status='partial',components=[dict(sourceId=sid,sourceVisible=True,verified=False,rendered=False)]))
-    rendering=dict(components=[dict(sourceComponentId=sid,sourceNodeId='node',sourceDataAssetId='source:data',
+    rendering=dict(components=[dict(sourceComponentId=sid,sourcePrefabId=owner,sourceNodeId='node',sourceDataAssetId='source:data',
                                    eligible=True,sourceVisible=True,sourceComponentEnabled=True)])
-    row=dict(sourceComponentId=sid,sourceDataAssetId='source:data',rendererGuid='e'*32,rendererLocalId=-(1<<63)+1,
+    row=dict(sourceComponentId=sid,sourcePrefabId=owner,sourceNodeId='node',sourceDataAssetId='source:data',rendererGuid='e'*32,rendererLocalId=renderer_id,
              dataAssetGuid='f'*32,dataAssetLocalId=11400000,sourceVisible=True,sourceComponentEnabled=True,
              rendererEnabled=True,sourceCodeExecuted=False,meshVertexCount=24,meshTriangleCount=12)
     row.update({key:True for key in ('verified','rendererCreated','persistent','dataPersistent','serializedFieldsVerified',
@@ -28,13 +49,90 @@ def test_saved_renderer_supplements_retained_proof_without_mutating_it():
     assert (readback,rendering,receipt)==before
     assert joined['retainedComponents']==readback['retainedComponents']
     sid=rendering['components'][0]['sourceComponentId']
-    plan=dict(nodes=[dict(sourceId='node',active=True,parent=None)],components=[dict(sourceId=sid,type='sp.Skeleton',node='node',enabled=True)],
-              staticSpineContinuation=dict(components=[dict(sourceComponentId=sid)]))
+    plan=dict(nodes=[dict(sourceId='node',active=True,parent=None)],
+              sourcePrefabs=[dict(sourceId='source:prefab',path='Assets/source.prefab',nodes=['node'])],
+              components=[dict(sourceId=sid,sourcePrefabId='source:prefab',type='sp.Skeleton',node='node',enabled=True)],
+              staticSpineContinuation=dict(components=[dict(sourceComponentId=sid)]),
+              staticSpineRendering=dict(components=[dict(sourceComponentId=sid,sourcePrefabId='source:prefab',
+                  sourceNodeId='node',sourceDataAssetId='source:data',eligible=True,sourceVisible=True,sourceComponentEnabled=True)]))
     coverage=assess(plan,joined,'unity')
     assert coverage['nativeStaticValidation']=='pass'
     assert coverage['retentionValidation']=='pass'
     assert coverage['staticPresentationValidation']['status']=='pass'
     assert coverage['runtimeCheck']=='not_run'
+
+
+def test_typed_renderer_sidecar_joins_unmapped_physical_graphic_without_mutating_raw_inventory():
+    readback,rendering,receipt=fixture()
+    readback['sourcePrefabs'][0]['components']=[readback['sourcePrefabs'][0]['components'][0]]
+    # The original source coverage sees only the retained data carrier. The
+    # independent saved renderer is present physically but has no raw source ID.
+    physical=readback['nodes'][0]['physicalComponents']
+    renderer_physical=next(row for row in physical if row['nativeType']=='Spine.Unity.SkeletonGraphic')
+    renderer_physical['sourceComponentIds']=[];renderer_physical['role']='unmapped'
+    readback['sourcePrefabs'][0]['nodes'][0]['physicalComponents']=copy.deepcopy(physical)
+    before=copy.deepcopy(readback)
+    joined=merge(readback,rendering,receipt)
+    assert readback==before
+    sidecar=joined['staticSpineRendering']['components'][0]
+    assert sidecar['contract']=='monkey-unity-saved-spine-renderer-owner/1'
+    assert sidecar['sourcePrefabId']=='source:prefab' and sidecar['sourceNodeId']=='node'
+    sid=rendering['components'][0]['sourceComponentId']
+    plan=dict(nodes=[dict(sourceId='node',active=True,parent=None)],
+              sourcePrefabs=[dict(sourceId='source:prefab',path='Assets/source.prefab',nodes=['node'])],
+              components=[dict(sourceId=sid,sourcePrefabId='source:prefab',type='sp.Skeleton',node='node',enabled=True)],
+              staticSpineContinuation=dict(components=[dict(sourceComponentId=sid)]),
+              staticSpineRendering=dict(components=[dict(sourceComponentId=sid,sourcePrefabId='source:prefab',
+                  sourceNodeId='node',sourceDataAssetId='source:data',eligible=True,sourceVisible=True,sourceComponentEnabled=True)]))
+    coverage=assess(plan,joined,'unity')
+    assert coverage['nativeStaticValidation']=='pass'
+    assert coverage['retentionValidation']=='pass'
+    assert coverage['staticPresentationValidation']['status']=='pass'
+    assert next(row for row in joined['nodes'][0]['physicalComponents']
+                if row['nativeType']=='Spine.Unity.SkeletonGraphic')['sourceComponentIds']==[]
+
+
+def test_typed_renderer_sidecar_wrong_owner_or_identity_does_not_bind_unmapped_graphic():
+    readback,rendering,receipt=fixture()
+    readback['sourcePrefabs'][0]['components']=[readback['sourcePrefabs'][0]['components'][0]]
+    physical=readback['nodes'][0]['physicalComponents']
+    renderer_physical=next(row for row in physical if row['nativeType']=='Spine.Unity.SkeletonGraphic')
+    renderer_physical['sourceComponentIds']=[];renderer_physical['role']='unmapped'
+    readback['sourcePrefabs'][0]['nodes'][0]['physicalComponents']=copy.deepcopy(physical)
+    joined=merge(readback,rendering,receipt)
+    joined['staticSpineRendering']['components'][0]['sourcePrefabId']='other-prefab'
+    sid=rendering['components'][0]['sourceComponentId']
+    plan=dict(nodes=[dict(sourceId='node',active=True,parent=None)],
+              sourcePrefabs=[dict(sourceId='source:prefab',path='Assets/source.prefab',nodes=['node'])],
+              components=[dict(sourceId=sid,sourcePrefabId='source:prefab',type='sp.Skeleton',node='node',enabled=True)],
+              staticSpineContinuation=dict(components=[dict(sourceComponentId=sid)]),
+              staticSpineRendering=dict(components=[dict(sourceComponentId=sid,sourcePrefabId='source:prefab',
+                  sourceNodeId='node',sourceDataAssetId='source:data',eligible=True,sourceVisible=True,sourceComponentEnabled=True)]))
+    coverage=assess(plan,joined,'unity')
+    assert coverage['nativeStaticValidation']!='pass'
+    assert coverage['staticPresentationValidation']['status']!='pass'
+    assert any(row['code']=='SPINE_RENDERER_OWNER_SIDECAR_INVALID' for row in coverage['diagnostics'])
+
+
+def test_typed_renderer_sidecar_wrong_persistent_identity_or_source_data_stays_partial():
+    for field,value in (("guid", "0"*32), ("sourceDataAssetId", "other-source-data")):
+        readback,rendering,receipt=fixture()
+        readback['sourcePrefabs'][0]['components']=[readback['sourcePrefabs'][0]['components'][0]]
+        for node in (readback['nodes'][0],readback['sourcePrefabs'][0]['nodes'][0]):
+            physical=next(row for row in node['physicalComponents'] if row['nativeType']=='Spine.Unity.SkeletonGraphic')
+            physical['sourceComponentIds']=[];physical['role']='unmapped'
+        joined=merge(readback,rendering,receipt)
+        joined['staticSpineRendering']['components'][0][field]=value
+        sid=rendering['components'][0]['sourceComponentId']
+        plan=dict(nodes=[dict(sourceId='node',active=True,parent=None)],
+                  sourcePrefabs=[dict(sourceId='source:prefab',path='Assets/source.prefab',nodes=['node'])],
+                  components=[dict(sourceId=sid,sourcePrefabId='source:prefab',type='sp.Skeleton',node='node',enabled=True)],
+                  staticSpineContinuation=dict(components=[dict(sourceComponentId=sid)]),
+                  staticSpineRendering=dict(components=[dict(sourceComponentId=sid,sourcePrefabId='source:prefab',
+                      sourceNodeId='node',sourceDataAssetId='source:data',eligible=True,sourceVisible=True,sourceComponentEnabled=True)]))
+        coverage=assess(plan,joined,'unity')
+        assert coverage['nativeStaticValidation']!='pass'
+        assert coverage['staticPresentationValidation']['status']!='pass'
 
 
 @pytest.mark.parametrize('changes',[{'rendererLocalId':True},{'rendererLocalId':1<<63},{'meshVertexCount':0},

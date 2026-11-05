@@ -194,7 +194,7 @@ def main(argv=None):
     p.add_argument('--numeric-field',action='append',default=[],help='Explicit numeric call-subdomain contract; not a global JS type inference')
     p.add_argument('--cocos-code-language',choices=['ts','js'],default='ts')
     p.add_argument('--out',required=True)
-    p = sub.add_parser('freeze-resource-candidate',help='Seal existing native readback assets and retained Editor state into a complete new resource candidate; no Editor launch')
+    p = sub.add_parser('freeze-resource-candidate',help='Seal saved resource inventory and retain current verification gaps; does not grant accepted selection; no Editor launch')
     p.add_argument('--candidate',required=True);p.add_argument('--expected-manifest',required=True);p.add_argument('--expected-readback',required=True);p.add_argument('--out',required=True)
     p = sub.add_parser('code-draft',help='Export every available source method/function as best-effort C# drafts; type/syntax/API gaps do not gate export')
     p.add_argument('--source',required=True);p.add_argument('--expected-source');p.add_argument('--out',required=True)
@@ -631,7 +631,8 @@ def main(argv=None):
             print(json.dumps(result,ensure_ascii=False));return 1
         if args.command == 'freeze-resource-candidate':
             from .package_modules import freeze_native_resources
-            print(json.dumps(freeze_native_resources(args.candidate,args.expected_manifest,args.expected_readback,args.out),ensure_ascii=False));return 0
+            result=freeze_native_resources(args.candidate,args.expected_manifest,args.expected_readback,args.out)
+            print(json.dumps(result,ensure_ascii=False));return 1 if result['workflowStatus']=='partial'else 0
         if args.command == 'code-draft':
             from .code_drafts import emit
             result=emit(args.source,args.out,expected_source_sha256=args.expected_source,reuse_from=args.reuse_from,expected_manifest_sha256=args.expected_manifest)

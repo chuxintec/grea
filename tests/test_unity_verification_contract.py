@@ -7,16 +7,60 @@ from unittest.mock import patch
 
 from monkey import io
 from monkey.native_selection import _native_verification
-from monkey.unity_verification_contract import native_diagnostics,coverage_readback,statuses,deduplicate_diagnostics
+from monkey.unity_verification_contract import native_diagnostics,coverage_readback,statuses,deduplicate_diagnostics,unresolved_diagnostics
+
+
+def _owned_component_fixture(component, native_row):
+    owner='prefab:source#0';path='Assets/Prefabs/Source.prefab';node=component['node']
+    planned={**component,'sourcePrefabId':owner}
+    plan={'nodes':[{'sourceId':node,'active':True,'parent':None}],
+        'sourcePrefabs':[{'sourceId':owner,'path':path,'nodes':[node]}],
+        'components':[planned],'diagnostics':[]}
+    row={**native_row,'sourceId':component['sourceId'],'node':node,'type':component['type']}
+    row['sourceEnabled']=component['enabled']
+    transform_guid='f'*32;transform_local=900
+    transform_uuid=f'{transform_guid}:{transform_local}'
+    target_guid=row.get('guid');target_local=row.get('localFileId')
+    target_uuid=f'{target_guid}:{target_local}' if target_guid and target_local is not None else None
+    target_type=row.get('nativeType')
+    target_bases=([target_type,'UnityEngine.UI.MaskableGraphic','UnityEngine.UI.Graphic',
+        'UnityEngine.EventSystems.UIBehaviour','UnityEngine.MonoBehaviour','UnityEngine.Behaviour',
+        'UnityEngine.Component','UnityEngine.Object','System.Object']
+        if target_type=='UnityEngine.UI.Image' else [target_type,'UnityEngine.Component','UnityEngine.Object','System.Object'])
+    physical=[{'nativeType':'UnityEngine.RectTransform','componentUuid':transform_uuid,
+        'guid':transform_guid,'localFileId':transform_local,'persistent':True,'enabledKnown':False,'enabled':True,
+        'nativeBaseTypes':['UnityEngine.RectTransform','UnityEngine.Transform','UnityEngine.Component','UnityEngine.Object','System.Object'],
+        'sourceComponentIds':[],'role':'unmapped','identityOrigin':'direct-observation',
+        'identityPath':[transform_uuid]},
+        {'nativeType':target_type,'componentUuid':target_uuid,'guid':target_guid,'localFileId':target_local,
+        'persistent':True,'enabledKnown':True,'enabled':row.get('nativeEnabled') is True,
+        'nativeBaseTypes':target_bases,'sourceComponentIds':[component['sourceId']],
+        'role':'source-components','identityOrigin':'direct-observation','identityPath':[target_uuid]}]
+    def node_record(scope):
+        node_physical=copy.deepcopy(physical)
+        if scope=='saved-scene-correspondence':
+            for item in node_physical:
+                item['identityOrigin']='corresponding-prefab-source'
+                item['identityPath']=['d'*32+':900',item['componentUuid']]
+        return {'sourceId':node,'active':True,
+            'physicalInventoryContract':'monkey-unity-node-physical-components/1',
+            'physicalInventoryPhase':'persistent-saved-reopened-node',
+            'physicalObservationScope':scope,'physicalComponents':node_physical,
+            'componentTypes':[item['nativeType'] for item in node_physical]}
+    readback={'components':[copy.deepcopy(row)],'diagnostics':[],
+        'nodes':[node_record('saved-scene-correspondence')],
+        'sourcePrefabs':[{'sourceId':owner,'path':path,'nodes':[node_record('saved-source-prefab')],
+            'components':[copy.deepcopy(row)]}]}
+    return plan,readback
 
 
 class UnityVerificationContractTests(unittest.TestCase):
-    def test_historical_platform_caveat_preserves_history_without_replacing_metric_gates(self):
+    def test_system_font_platform_gap_blocks_without_scoped_source_and_presentation_proof(self):
         coverage=dict(components=[],nativeStaticValidation='pass',retentionValidation='pass',
                       staticPresentationValidation=dict(status='pass'))
         historical=dict(code='SYSTEM_FONT_PLATFORM_UNVERIFIED',sourceId='label',message='original device unknown')
         result=statuses('pass',[historical],coverage,'editor')
-        self.assertEqual(result['nativeStaticValidation'],'pass')
+        self.assertEqual(result['nativeStaticValidation'],'partial')
         metrics=dict(code='LABEL_METRICS_NOT_VERIFIED',sourceId='label',message='source comparison pending')
         result=statuses('pass',[historical,metrics],coverage,'editor')
         self.assertEqual(result['nativeStaticValidation'],'partial')
@@ -74,17 +118,17 @@ class UnityVerificationContractTests(unittest.TestCase):
         field={'sourceId':'s','nativeIdentityVerified':True,'fieldsVerified':True,
                'fields':[{'sourceFieldName':'value','kind':'number','storageType':'float',
                           'referenceVerified':False,'referencesVerified':False}]}
-        plan={'nodes':[{'sourceId':'n','active':True,'parent':None}],
-              'components':[{'sourceId':'s','node':'n','type':'cc.Sprite','nativeType':'cc.Sprite',
-                             'spriteFrame':'sprite:a',
-                             'staticFieldBinding':{'fields':[{'sourceFieldName':'value'}]}}]}
-        row={'sourceId':'s','status':'native','nativeType':'UnityEngine.UI.Image',
+        component={'sourceId':'s','node':'n','type':'cc.Sprite','nativeType':'cc.Sprite',
+            'enabled':True,'spriteFrame':'sprite:a',
+            'staticFieldBinding':{'fields':[{'sourceFieldName':'value'}]}}
+        row={'sourceId':'s','status':'native','representation':'native-component',
+             'nativeType':'UnityEngine.UI.Image',
              'guid':'0123456789abcdef0123456789abcdef','localFileId':1,
              'componentUuid':'0123456789abcdef0123456789abcdef:1',
-             'sourceIdentityVerified':True,'persistent':True}
-        rb={'components':[row],'diagnostics':[],
-            'sourcePrefabs':[{'components':[row],'staticFieldBindings':[{'binding':field}]}],
-            'staticPresentationValidation':{'components':[{'sourceId':'s','sourceVisible':True,'verified':True,'rendered':True}]}}
+             'sourceIdentityVerified':True,'persistent':True,'nativeEnabled':True,'sourceVisible':True}
+        plan,rb=_owned_component_fixture(component,row)
+        rb['sourcePrefabs'][0]['staticFieldBindings']=[{'binding':field}]
+        rb['staticPresentationValidation']={'components':[{'sourceId':'s','sourceVisible':True,'verified':True,'rendered':True}]}
         normalized=coverage_readback(rb)
         result=assess(plan,normalized,'unity')
         self.assertEqual(result['nativeStaticValidation'],'pass')
@@ -96,12 +140,17 @@ class UnityVerificationContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp).resolve();(root/'Analysis/Readback').mkdir(parents=True)
             (root/'Assets').mkdir();(root/'Assets/a.prefab').write_bytes(b'neutral saved prefab fixture')
-            rb={'unityVersion':'6000.6.2f1','missingScripts':0,'status':'imported',
+            from monkey.layout import standard
+            plan_path=root/standard.unity('importPlan');plan_path.parent.mkdir(parents=True)
+            io.write_json(plan_path,{'sourceManifestSha256':'b'*64})
+            io.write_json(root/'manifest.json',{'projectLayout':standard.VERSION})
+            manifest_sha=io.sha((root/'manifest.json').read_bytes())
+            rb={'importPlanSha256':io.sha(plan_path.read_bytes()),'sourceManifestSha256':'b'*64,'unityVersion':'6000.6.2f1','missingScripts':0,'status':'imported',
                 'nativeScope':'saved-source-node-subset','sourceGraphVerification':'saved-source-node-subset',
                 'nativeFiles':[{'path':'Assets/a.prefab','sha256':io.sha((root/'Assets/a.prefab').read_bytes())}],
                 'editableRoundtrip':True,'sceneReopened':True,'diagnostics':[]}
             path=root/'Analysis/Readback/editor-readback.json';io.write_json(path,rb)
-            report={'candidateManifestSha256':'a'*64,'staticValidation':'pass','nativeStaticValidation':'pass',
+            report={'candidateManifestSha256':manifest_sha,'staticValidation':'pass','nativeStaticValidation':'pass',
                     'editorValidation':'pass','staticPresentationValidation':'pass',
                     'componentCoverage':{'schema':'monkey-prefab-component-coverage/1','sourceComponentCount':0,
                                          'uniqueSourceComponentCount':0,'components':[]},'diagnostics':[]}
@@ -110,19 +159,19 @@ class UnityVerificationContractTests(unittest.TestCase):
             # Only the downstream verifier is substituted. The production enum,
             # pinned readback, native-file and freeze admission gates run intact.
             with patch('monkey.targets.unity.verify',side_effect=verify):
-                actual,_,_=_native_verification(root,root/'out','a'*64,io.sha(path.read_bytes()))
+                actual,_,_=_native_verification(root,root/'out',manifest_sha,io.sha(path.read_bytes()))
                 self.assertEqual(actual['status'],'imported')
                 report['staticPresentationValidation']='partial'
                 with self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_COVERAGE_INCOMPLETE'):
-                    _native_verification(root,root/'out','a'*64,io.sha(path.read_bytes()))
+                    _native_verification(root,root/'out',manifest_sha,io.sha(path.read_bytes()))
                 report['staticPresentationValidation']='pass'
                 report['componentCoverage']['sourceComponentCount']=1
                 with self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_COVERAGE_INCOMPLETE'):
-                    _native_verification(root,root/'out','a'*64,io.sha(path.read_bytes()))
+                    _native_verification(root,root/'out',manifest_sha,io.sha(path.read_bytes()))
                 report['componentCoverage']['sourceComponentCount']=0
                 (root/'Assets/a.prefab').write_bytes(b'changed')
                 with self.assertRaisesRegex(ValueError,'NATIVE_READBACK_DRIFT'):
-                    _native_verification(root,root/'out','a'*64,io.sha(path.read_bytes()))
+                    _native_verification(root,root/'out',manifest_sha,io.sha(path.read_bytes()))
 
     def test_freeze_rejects_unexecuted_or_unknown_source_graph_before_full_verifier(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -141,15 +190,15 @@ class UnityVerificationContractTests(unittest.TestCase):
     def test_initial_missing_component_diagnostic_resolves_only_with_exact_persistent_coverage(self):
         from monkey.prefab_component_coverage import assess
         source='source:asset#4';guid='0123456789abcdef0123456789abcdef'
-        plan={'nodes':[{'sourceId':'node:asset#1','active':True}],
-              'components':[{'sourceId':source,'node':'node:asset#1','type':'cc.Button','enabled':True,
-                  'staticButtonBinding':{'behavior':'disabled','renderReady':True,'sourceEnabled':True}}],
-              'diagnostics':[]}
-        native={'sourceId':source,'status':'disabled','representation':'native-component',
-                'nativeType':'UnityEngine.UI.Button','sourceEnabled':True,'nativeEnabled':False,
+        component={'sourceId':source,'node':'node:asset#1','type':'cc.Button','nativeType':'cc.Button',
+            'enabled':True,'staticButtonBinding':{'behavior':'disabled','renderReady':True,'sourceEnabled':True}}
+        native={'status':'disabled','representation':'native-component','nativeType':'UnityEngine.UI.Button',
+                'nativeEnabled':False,
                 'disabledReason':'static-button-business-safety','nativeStaticFieldsVerified':True,
-                'sourceIdentityVerified':True,'persistent':True,'guid':guid,'localFileId':14}
-        coverage=assess(plan,{'components':[native]},'unity')
+                'sourceIdentityVerified':True,'persistent':True,'guid':guid,'localFileId':14,
+                'componentUuid':guid+':14'}
+        plan,readback=_owned_component_fixture(component,native)
+        coverage=assess(plan,coverage_readback(readback),'unity')
         diagnostic_row={'code':'COMPONENT_NOT_IMPORTED','sourceId':source,
             'phase':'initial-component-creation','resolved':True,'resolution':'native-counterpart-present',
             'resolutionEvidence':{'sourceId':source,'guid':guid,'localFileId':14,'disposition':'disabled',
@@ -161,6 +210,52 @@ class UnityVerificationContractTests(unittest.TestCase):
         result=statuses('pass',[changed],coverage,'editor')
         self.assertEqual(result['editorValidation'],'partial')
         self.assertEqual(result['resolvedNativeDiagnostics'],[])
+
+    def test_shared_blocking_helper_revalidates_resolved_creation_and_preserves_raw_history(self):
+        from monkey.unity_diagnostic_resolution import reconcile
+        from monkey.prefab_component_coverage import assess
+        sid='source:asset#9';guid='0123456789abcdef0123456789abcdef'
+        native={'sourceId':sid,'status':'native','representation':'native-component',
+            'nativeType':'UnityEngine.UI.Image','sourceIdentityVerified':True,'persistent':True,
+            'nativeStaticFieldsVerified':True,'nativeEnabled':True,'sourceVisible':True,
+            'guid':guid,'localFileId':70,'componentUuid':guid+':70'}
+        component={'sourceId':sid,'node':'node:source#1','type':'cc.Sprite','nativeType':'cc.Sprite',
+            'enabled':True,'spriteFrame':'frame:1'}
+        plan,readback=_owned_component_fixture(component,native)
+        readback['staticPresentationValidation']={'components':[{
+            'sourceId':sid,'sourceVisible':True,'verified':True,'rendered':True}]}
+        coverage=assess(plan,coverage_readback(readback),'unity')
+        self.assertEqual(coverage['nativeStaticValidation'],'pass')
+        self.assertEqual(coverage['staticPresentationValidation']['status'],'pass')
+        original={'code':'COMPONENT_NOT_IMPORTED','sourceId':sid,'phase':'initial-component-creation',
+            'rawDiagnostic':'COMPONENT_NOT_IMPORTED: original','history':[{'attempt':'initial'}]}
+        annotated=reconcile([original],coverage)['diagnostics']
+        state=unresolved_diagnostics(annotated,coverage)
+        self.assertEqual(state['blocking'],[])
+        self.assertEqual(state['resolved'][0]['history'],original['history'])
+        result=statuses('pass',annotated,coverage,'editor')
+        self.assertEqual(result['editorValidation'],'pass')
+        mutated=copy.deepcopy(annotated)
+        mutated[0]['currentResolutionEvidence']['guid']='f'*32
+        state=unresolved_diagnostics(mutated,coverage)
+        self.assertEqual(state['blocking'],mutated)
+        self.assertEqual(state['resolved'],[])
+
+    def test_system_font_code_is_not_globally_skipped_and_button_is_dynamic_only(self):
+        coverage={'nativeStaticValidation':'pass','staticPresentationValidation':'pass','components':[
+            {'sourceId':'label:1','sourceType':'cc.Label'}, {'sourceId':'button:1','sourceType':'cc.Button'}]}
+        font={'code':'SYSTEM_FONT_PLATFORM_UNVERIFIED','sourceId':'label:1','message':'source OS unknown'}
+        button={'code':'BUTTON_BUSINESS_UNBOUND','sourceId':'button:1',
+                'message':'Native Button generated; original handlers remain AI work'}
+        state=unresolved_diagnostics([font,button],coverage)
+        self.assertEqual(state['blocking'],[font])
+        self.assertEqual(state['remainingDynamic'],[button])
+
+    def test_shared_blocking_helper_fails_closed_on_malformed_diagnostics(self):
+        self.assertEqual(unresolved_diagnostics(None,{})['blocking'][0]['code'],
+                         'NATIVE_DIAGNOSTICS_INVALID')
+        self.assertEqual(unresolved_diagnostics(['not-a-row'],{})['blocking'][0]['code'],
+                         'NATIVE_DIAGNOSTIC_INVALID')
 
     def test_layout_slot_component_resolution_requires_exact_source_slot_and_binding(self):
         source = 'layout:asset#0/components/0'
@@ -248,13 +343,16 @@ class UnityVerificationContractTests(unittest.TestCase):
                'nativeType':'UnityEngine.UI.Image','sourceIdentityVerified':True,'persistent':True,
                'guid':guid,'localFileId':2}
         second={**first,'localFileId':3,'componentUuid':guid+':3'}
-        plan={'nodes':[{'sourceId':'n','active':True}],
-              'components':[{'sourceId':'s','node':'n','type':'cc.Sprite','spriteFrame':'f'}]}
-        normalized=coverage_readback({'components':[first],
-            'prefabInstances':[{'components':[second]}],'diagnostics':[]})
+        component={'sourceId':'s','node':'n','type':'cc.Sprite','nativeType':'cc.Sprite',
+                   'enabled':True,'spriteFrame':'f'}
+        first.update(node='n',type='cc.Sprite',sourceEnabled=True,nativeEnabled=True)
+        second.update(node='n',type='cc.Sprite',sourceEnabled=True,nativeEnabled=True)
+        plan,readback=_owned_component_fixture(component,first)
+        readback['components'].append(second)
+        normalized=coverage_readback(readback)
         result=assess(plan,normalized,'unity')
         self.assertEqual(result['components'][0]['disposition'],'missing')
-        self.assertTrue(any(row['code']=='NATIVE_COMPONENT_READBACK_AMBIGUOUS'
+        self.assertTrue(any(row['code']=='COMPONENT_OWNER_ROLE_AMBIGUOUS'
                             for row in result['diagnostics']))
 
     def test_static_progress_normalization_rejects_bad_carrier_identity(self):

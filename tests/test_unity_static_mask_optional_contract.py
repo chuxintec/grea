@@ -186,6 +186,12 @@ def test_production_export_preserves_optional_mask_presence(tmp_path, state):
         "files": [{"path": "plan.json", "sha256": sha(raw), "bytes": len(raw)}],
     })
     output = tmp_path / "export"
+    if state == "empty-object":
+        from monkey.sources.compiled import ParseError
+        with pytest.raises(ParseError, match="STATIC_MASK_CONTRACT_PRESENCE_MARKER_MISMATCH"):
+            unity.export(plan_path, output)
+        assert not output.exists()
+        return
     unity.export(plan_path, output)
     instruction = json.loads((output / "Assets/Game/Editor/Conversion/import-plan.json").read_text())
     assert instruction["staticMasksPresent"] is (state == "empty-object")

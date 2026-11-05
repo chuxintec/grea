@@ -513,6 +513,12 @@ def export(plan_path, output):
     if p.get('staticSpineContinuation') and p.get('spineNativeStage'):
         fail('STATIC_SPINE_CONTINUATION_STAGE_CONFLICT','spineNativeStage','Rendering and non-rendering Spine stages cannot share importer hooks')
     requires_static_spine_adapter=_requires_cocos_static_spine_adapter(p)
+    from ..prefab_static_mask_continuation import validate_export_contract,StaticMaskContinuationError
+    try:validate_export_contract(p)
+    except StaticMaskContinuationError as error:
+        prefix=str(error).partition(':')[0]
+        code=prefix if re.fullmatch(r'STATIC_MASK_[A-Z_]+',prefix)else'STATIC_MASK_CONTRACT_INVALID'
+        fail(code,'staticMasks',str(error))
     # Plan JSON itself must match its create-only manifest, not just copied images.
     pm=stage_manifest(plan_path.parent)
     expected={f['path']:f['sha256'] for f in pm['files']}
@@ -893,18 +899,20 @@ def verify(candidate, output, level='static'):
             diagnostics.append(diagnostic('EDITOR_NOT_RUN','Analysis/Readback/editor-readback.json','Run native import in the declared Editor first'))
         else:
             rb=load(read(readback_path,max_bytes=128*1024*1024),max_nodes=8_000_000)
-            from ..unity_verification_contract import native_diagnostics,NATIVE_IMPORT_STATUSES
+            from ..unity_verification_contract import native_diagnostics
+            from ..native_readback_contract import saved_readback_admission
             raw_native_diagnostics=rb.get('diagnostics')
-            if rb.get('status')not in NATIVE_IMPORT_STATUSES:
-                diagnostics.append(diagnostic('NATIVE_READBACK_STATUS_INVALID',str(readback_path),'Unsupported native import status'))
-            native={f['path']:f['sha256'] for f in rb.get('nativeFiles',[])}
-            if rb.get('unityVersion')!='6000.6.2f1' or type(rb.get('missingScripts'))is not int or rb.get('missingScripts')!=0:
-                diagnostics.append(diagnostic('EDITOR_READBACK_FAILED',str(readback_path),'Version/missing-script check failed'))
+            instruction=load(read(root/standard.locate(m,'importPlan'),max_bytes=128*1024*1024),max_nodes=8_000_000)
+            admission=saved_readback_admission(rb,gallery=instruction.get('galleryOnly')is True,
+                expected_plan_sha256=fingerprint(root/standard.locate(m,'importPlan')),
+                expected_source_manifest_sha256=instruction.get('sourceManifestSha256'))
+            for issue in admission['issues']:
+                diagnostics.append(diagnostic(issue['code'],str(readback_path)+'#'+issue['field'],issue['message']))
+            native=admission['nativeFiles']
             for relative,expected in native.items():
                 file=inside(root,relative)
                 if not file.is_file() or fingerprint(file)!=expected:
                     diagnostics.append(diagnostic('NATIVE_FILE_CHANGED',relative,'Native file differs from saved readback'))
-            instruction=load(read(root/standard.locate(m,'importPlan'),max_bytes=128*1024*1024),max_nodes=8_000_000)
             diagnostics.extend(gallery_readback(instruction,rb))
             spine_receipts_bound=True;pending_rendering_receipt=None
             if instruction.get('staticSpineRenderingJson'):
@@ -1168,6 +1176,10 @@ def verify(candidate, output, level='static'):
             except ValueError as error:
                 diagnostics.append(diagnostic('STATIC_SPINE_RENDERING_COVERAGE_INVALID','Analysis/Readback/SpineRendering',str(error)))
         coverage=assess(coverage_plan,normalized_readback,'unity')
+        from ..unity_scroll_evidence import verify as verify_scroll_static
+        scroll_static=verify_scroll_static(instruction,rb,coverage)
+        diagnostics.extend(scroll_static['diagnostics'])
+        family_proofs={**locals().get('family_proofs',{}),**scroll_static['familyProofs']}
         diagnostics.extend(native_diagnostics(raw_native_diagnostics))
         diagnostics.extend(coverage.get('diagnostics',[]))
     diagnostics=deduplicate_diagnostics(diagnostics)
@@ -1182,8 +1194,15 @@ def verify(candidate, output, level='static'):
                 diagnosticResolution=reconciliation['summary'],
                 savedGeneratedMetaReadback=saved_meta_observations,**dimensions,
                 visualValidation='not_run',businessValidation='not_run')
+    from ..unity_verification_contract import unresolved_diagnostics
+    current_diagnostics=unresolved_diagnostics(diagnostics,coverage)
+    result['currentDiagnosticCounts']={key:len(rows)for key,rows in current_diagnostics.items()}
+    result['verificationScope']=('resource-gallery' if locals().get('instruction',{}).get('galleryOnly')is True else 'saved-source-node-subset')if level=='editor' else 'generated-files'
     write_json(out/'verification.json',result)
-    return finish(out,result)
+    completion_blockers=list(current_diagnostics['blocking'])
+    required=('staticValidation','nativeStaticValidation','staticPresentationValidation')if level=='editor' else('staticValidation',)
+    completion_blockers.extend(key for key in required if result.get(key)!='pass')
+    return finish(out,result,blocking_diagnostics=completion_blockers)
 
 
 def handoff(candidate, output):

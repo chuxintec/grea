@@ -99,7 +99,7 @@ def diagnostic(code, location, message, source_id=None):
                 severity='error' if severe else 'warning', affectedScope=source_id or 'selection')
 
 
-def finish(out, report):
+def finish(out, report, *, blocking_diagnostics=None):
     from .output_limits import digest_file, check_inventory
     report['files'] = [dict(path=p.relative_to(out).as_posix(), sha256=digest_file(p),
                             bytes=p.stat().st_size, owner=('manual' if p.relative_to(out).as_posix().startswith(('Assets/Manual/','assets/manual/')) else 'generated'))
@@ -107,6 +107,6 @@ def finish(out, report):
     report['limits'] = check_inventory(report['files'], report, str(out))
     from .identities import assigned
     assigned(out,report)
-    report['status'] = 'partial' if report.get('diagnostics') else 'candidate'
+    report['status'] = 'partial' if (report.get('diagnostics') if blocking_diagnostics is None else blocking_diagnostics) else 'candidate'
     write_json(out / 'manifest.json', report)
     return report

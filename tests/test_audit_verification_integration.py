@@ -12,14 +12,35 @@ from monkey.unity_verification_contract import coverage_readback, deduplicate_di
 
 def fixture():
     source='audit:prefab#2'
-    plan={'nodes':[{'sourceId':'audit:prefab#1','active':True,'parent':None}],
-          'components':[{'sourceId':source,'node':'audit:prefab#1','type':'cc.Sprite',
-                         'convertible':True,'enabled':True,'spriteFrame':'audit:frame'}],
+    node='audit:prefab#1';owner='audit:prefab';path='Assets/audit.prefab'
+    base_components=[
+        {'guid':'2'*32,'localFileId':1,'componentUuid':'2'*32+':1','nativeType':'UnityEngine.RectTransform',
+         'persistent':True,'enabledKnown':True,'enabled':True,'nativeBaseTypes':['UnityEngine.RectTransform','UnityEngine.Component'],
+         'sourceComponentIds':[],'role':'unmapped','identityOrigin':'direct-observation','identityPath':['2'*32+':1']},
+        {'guid':'2'*32,'localFileId':2,'componentUuid':'2'*32+':2','nativeType':'UnityEngine.CanvasRenderer',
+         'persistent':True,'enabledKnown':True,'enabled':True,'nativeBaseTypes':['UnityEngine.CanvasRenderer','UnityEngine.Component'],
+         'sourceComponentIds':[],'role':'unmapped','identityOrigin':'direct-observation','identityPath':['2'*32+':2']},
+    ]
+    image_component={'guid':'1'*32,'localFileId':22,'componentUuid':'1'*32+':22','nativeType':'UnityEngine.UI.Image',
+         'persistent':True,'enabledKnown':True,'enabled':True,'nativeBaseTypes':['UnityEngine.UI.Image','UnityEngine.UI.Graphic'],
+         'sourceComponentIds':[source],'role':'source-component','identityOrigin':'direct-observation','identityPath':['1'*32+':22']}
+    physical=[image_component,*base_components]
+    node_row={'sourceId':node,'active':True,'parent':None,'componentTypes':[row['nativeType'] for row in physical],
+              'physicalInventoryContract':'monkey-unity-node-physical-components/1',
+              'physicalInventoryPhase':'persistent-saved-reopened-node','physicalObservationScope':'saved-scene-correspondence','physicalComponents':physical}
+    plan={'nodes':[{'sourceId':node,'active':True,'parent':None}],
+          'sourcePrefabs':[{'sourceId':owner,'path':path,'nodes':[node]}],
+          'components':[{'sourceId':source,'sourcePrefabId':owner,'node':node,'type':'cc.Sprite',
+                         'nativeType':'UnityEngine.UI.Image','convertible':True,'enabled':True,'spriteFrame':'audit:frame'}],
           'diagnostics':[]}
-    native={'sourceId':source,'type':'cc.Sprite','status':'native','representation':'native-component',
-            'nativeType':'UnityEngine.UI.Image','guid':'1'*32,'localFileId':22,
-            'sourceIdentityVerified':True,'persistent':True,'nativeStaticFieldsVerified':True}
-    readback={'components':[native],'diagnostics':[],
+    native={'sourceId':source,'node':node,'type':'cc.Sprite','status':'native','representation':'native-component',
+            'nativeType':'UnityEngine.UI.Image','guid':'1'*32,'localFileId':22,'componentUuid':'1'*32+':22',
+            'nativeBaseTypes':['UnityEngine.UI.Image','UnityEngine.UI.Graphic'],'sourceIdentityVerified':True,'persistent':True,
+            'sourceEnabled':True,'nativeEnabled':True,'sourceVisible':True,'nativeStaticFieldsVerified':True}
+    readback={'nodes':[copy.deepcopy(node_row)], 'components':[native],
+              'sourcePrefabs':[{'sourceId':owner,'path':path,'nodes':[dict(copy.deepcopy(node_row),physicalObservationScope='saved-source-prefab')],
+                                'components':[copy.deepcopy(native)]}],
+              'diagnostics':[],
               'staticPresentationValidation':{'components':[{'sourceId':source,'sourceVisible':True,
                                                             'verified':True,'rendered':True}]}}
     return plan,readback
@@ -54,12 +75,14 @@ def test_unimported_native_diagnostic_remains_visible_and_prevents_static_pass()
 def test_missing_source_component_and_unknown_nonconvertible_are_in_denominator():
     for missing in (True,False):
         plan,rb=fixture()
-        if missing:rb['components']=[]
+        if missing:
+            rb['components']=[]
+            rb['sourcePrefabs'][0]['components']=[]
         else:plan['components'].append({'sourceId':'audit:prefab#3','node':'audit:prefab#1',
             'type':'Audit.UnknownVisual','convertible':False,'enabled':True})
         coverage,result,_=pipeline(plan,rb)
         assert len(coverage['components'])==len(plan['components'])
-        assert result['nativeStaticValidation']=='fail'
+        assert coverage['nativeStaticValidation']=='fail'
 
 
 def test_missing_visible_proof_or_wrong_identity_cannot_promote_static_pass():
@@ -76,10 +99,19 @@ def test_retained_nonrendering_spine_cannot_close_missing_picture():
     plan,rb=fixture();source=plan['components'][0]['sourceId']
     plan['components'][0].update(type='sp.Skeleton',convertible=False)
     plan['staticSpineContinuation']={'components':[{'sourceComponentId':source}]}
-    retained=copy.deepcopy(rb['components'][0]);retained.update(status='retained',
+    retained=copy.deepcopy(rb['components'][0]);retained.update(type='sp.Skeleton',nativeBaseTypes=['NativeStaticSpineReference','UnityEngine.MonoBehaviour'],status='retained',
         nativeType='NativeStaticSpineReference',representation='disabled-source-data-carrier',
         nativeEnabled=False,verified=True,fieldsVerified=True)
     rb['components']=[retained]
+    rb['sourcePrefabs'][0]['components']=[copy.deepcopy(retained)]
+    retained_physical={'guid':retained['guid'],'localFileId':retained['localFileId'],
+        'componentUuid':retained['componentUuid'],'nativeType':retained['nativeType'],'persistent':True,
+        'enabledKnown':True,'enabled':False,'nativeBaseTypes':['NativeStaticSpineReference','UnityEngine.MonoBehaviour'],
+        'sourceComponentIds':[source],'role':'source-component','identityOrigin':'direct-observation','identityPath':['1'*32+':22']}
+    for saved_node in [rb['nodes'][0],rb['sourcePrefabs'][0]['nodes'][0]]:
+        saved_node['physicalComponents']=[retained_physical,*[row for row in saved_node['physicalComponents']
+            if row['nativeType'] in ('UnityEngine.RectTransform','UnityEngine.CanvasRenderer')]]
+        saved_node['componentTypes']=[row['nativeType'] for row in saved_node['physicalComponents']]
     coverage,result,_=pipeline(plan,rb,{'status':'verified','sourceComponentIds':[source]})
     assert coverage['retentionValidation']=='pass'
     assert result['nativeStaticValidation']!='pass'

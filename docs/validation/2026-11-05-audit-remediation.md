@@ -32,3 +32,16 @@ GREA68 在独立失败26副本用 Unity6000.6.2f1 执行固定微检查（回执
 生产 exporter 按原合同非null写 staticMasksPresent；{}保留显式声明并由校验拒绝，不能伪造空合同。创建、Prefab刷新、保存回读及字段绑定统一使用存在门与完整源cc.Mask分母，有源Mask时不因无队列免除合同。非空现代payload与false marker冲突拒绝；schema1旧合同仍检查源ID集合和manifest pin。纯managed门测试手工构造已观测DTO，仅证明生产门逻辑；真实JsonUtility由GREA回执及下一固定27复验说明。
 
 同类对象已核对：layoutCompletion/bitmapMissingGlyphs依schema短路，previewState依stateSha256，materialBinding依profile，systemFontBinding依prepared状态，staticRetainedAssets依精确schema，tmpResources依实际TMP需求。未发现同样的Mask空行崩溃；这不证明其他模块的source requiredness已完整，不扩大本轮实现。固定27仍须同微检查的26例扩展、最小全链、严格冻结和9拷贝控制，再由总监与Claude同字节独立复审。
+
+## dev28：同字节双审退修的四组出口
+
+原dev27归档、wheel、矩阵与总监/Claude意见保留。四组整改接到实际生产入口：
+
+| 组 | 行为与证明范围 | 验证边界 |
+| --- | --- | --- |
+| 组件身份/呈现 | 源ID、计划Prefab/节点、组件角色、真实GUID/localID双向核对；派生顶层摘要不能代替所属Prefab行。原生启用状态与源状态、呈现行必须一致。真实GetComponents库存记录类型继承、enabled、资产身份及实际Prefab对应源链。 | 库存仅涵盖源映射节点；不宣称覆盖整个生成子树。旧readback缺库存明确partial，保留原件。共享layout槽、Label/Outline及Mask附属Graphic单列来源；Spine renderer须原完整typed sidecar及实际物理库存交接，保留carrier数据不能代替图像。 |
+| 判定与退出码 | 共同unresolved_diagnostics复核当前保存身份及命名要求，原始诊断保留。精确解决的创建诊断与语义正确的纯Button业务限制不压静态；Scroll仅在轴/content/viewport与保存RectTransform身份闭包验证后保留动态物理限制。 | 原始resolution布尔不授予通过。Scroll实际字段在重证后漂移继续拒绝。系统字体平台限制只在独立字体/来源OS/Canvas/栅格化证明齐备时按已声明范围解决，没有新增来源时保留缺口。 |
+| 三个公开消费者 | verify、选择冻结、资源封存共用实际producer状态、精确版本、0 Missing Script、保存重读、场景重开、图范围、当前import-plan及source manifest pin。选择冻结还要求全源静态与呈现通过。 | 资源封存仅为模块组合保留库存：sourceAcceptance=not_granted。无缺口退出0；保留有验证缺口的库存标partial并退出1；错误保存状态/哈希/范围退出2。完整当前验证报告随封存固定，组合工程仍须重新验收。 |
+| Creator/Mask生产 | Creator真实readSaved产生绑定保存场景节点/组件UUID、活动状态、几何与Sprite/Text资源的typed renderer行，消费方不再接受几个布尔字段作正例；不支持的renderer保留gap。矩形Mask缺/错合同在export创建输出前拒绝，合法legacy与现代合同保留完整来源分母和可映射字段校验。 | 真实Creator SDK与必要Unity最小原生由GREA执行。Node对象模型/协议夹具不冒充Editor。源物理、原版视觉、Player及两批产品采用均不由这些静态证据授予。 |
+
+本轮源/协议回归为668项、102子检查；三组SDK引用编译通过（两个65源文件无Spine、既有121源文件Spine集合离线替换当前模板），另66源文件的物理库存微检查脚本编译通过。Creator Node检查6项通过。均不冒充新的Editor或Player结果。精确源码、逐案复现脚本、原始结果、安装wheel与SDK引用编译证据保存于私有dev28交接目录。新固定候选必须再经过GREA必要最小原生检查以及总监/Claude同字节复审。

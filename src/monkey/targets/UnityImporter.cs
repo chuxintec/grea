@@ -151,7 +151,7 @@ public static partial class MonkeyImporter
         public PrefabInstanceResult[] candidatePrefabInstances;
         public string nativeScope,sourceGraphVerification; public GalleryResult[] gallery;
         public MonkeyNumericCode.Result[] numericCodeBindings,numericCodeExercise;
-        public string status, unityVersion, prefabGuid, sceneGuid;
+        public string status, unityVersion, prefabGuid, sceneGuid,importPlanSha256,sourceManifestSha256;
         public int spriteCount, nodeCount, missingScripts; public bool editableRoundtrip,sceneReopened; public string previewPath,previewSha256,previewError,colorSpace;
         public UnityStaticRetainedAssets.Result[] staticRetainedAssetReadback; public DynamicUiResult[] dynamicUiProbes; public MotionResult[] animations; public string[] diagnostics; public NodeResult[] nodes,nativeInitialNodes; public SpriteResult[] sprites; public FileResult[] nativeFiles,staticSpineReadbackFiles,staticTextReadbackFiles,staticMaskReadbackFiles; public FontResult[] fonts; public LabelResult[] labels; public ViewReference[] viewReferences; public JsonResult[] jsonAssets; public SourcePrefabResult[] sourcePrefabs; public TmpResourceResult tmpResources;
     }
@@ -162,6 +162,7 @@ public static partial class MonkeyImporter
     [Serializable] public class NodeResult {
         public string sourceId, hierarchy; public float[] size, pivot, position,scale,rotation,color; public float opacity;
         public bool active; public string[] componentTypes;
+        public string physicalInventoryContract,physicalInventoryPhase,physicalObservationScope; public PhysicalComponentObservation[] physicalComponents;
     }
     [Serializable] public class SpriteResult {
         public string id, guid,alphaSource; public float[] size, border;
@@ -996,7 +997,11 @@ public static partial class MonkeyImporter
                             valid=StaticButtonMatches(c,savedNode.GetComponent<UnityEngine.UI.Button>(),string.IsNullOrEmpty(c.target)?savedNode:persistentMap[c.target].gameObject)&&button!=null&&!button.enabled;
                         } else valid=button!=null&&button.targetGraphic==go.GetComponent<UnityEngine.UI.Graphic>();
                     } else if(c.type=="cc.ScrollView") {
-                        var scroll=go.GetComponent<UnityEngine.UI.ScrollRect>();valid=scroll!=null&&mapped.ContainsKey(c.content)&&scroll.content==mapped[c.content];
+                        var scroll=go.GetComponent<UnityEngine.UI.ScrollRect>();
+                        var contentSpec=plan.nodes.SingleOrDefault(node=>node.sourceId==c.content);
+                        valid=scroll!=null&&scroll.enabled==c.enabled&&scroll.horizontal==c.horizontal&&scroll.vertical==c.vertical&&
+                            mapped.ContainsKey(c.content)&&scroll.content==mapped[c.content]&&contentSpec!=null&&
+                            !String.IsNullOrEmpty(contentSpec.parent)&&mapped.TryGetValue(contentSpec.parent,out var expectedViewport)&&scroll.viewport==expectedViewport;
                     } else if(c.type=="cc.ProgressBar") {
                         var slider=go.GetComponent<UnityEngine.UI.Slider>();
                         var driver=go.GetComponent<NativeHorizontalProgressFill>();
@@ -1021,12 +1026,14 @@ public static partial class MonkeyImporter
                 ReadSavedOptionalStaticTimeMaterials(persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spec.sourceId);
                 var numericBindings=plan.components.Where(c=>c.convertible&&!string.IsNullOrEmpty(c.codeClassName)&&persistentMap.ContainsKey(c.node)).Select(c=>MonkeyNumericCode.Read(c,persistentMap[c.node].gameObject)).ToArray();
                 var behaviorBindings=plan.components.Where(c=>c.convertible&&c.behaviorBinding!=null&&!string.IsNullOrEmpty(c.behaviorBinding.typeName)&&persistentMap.ContainsKey(c.node)).Select(c=>MonkeyBehaviorBindings.ReadPersistent(c.behaviorBinding,persistentMap[c.node].gameObject,c.sourceId,c.enabled)).ToArray();
-                sourcePrefabResults.Add(new SourcePrefabResult {components=ReadSourceComponentCoverage(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),new HashSet<string>(referenceFailures)),generatedSortNodeCount=generatedSortNodeCount,staticSortFields=plan.staticSortQueue==null||plan.staticSortQueue.Length==0?null:ReadStaticSortForPrefab(plan,spec,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),bitmapMissingGlyphFields=ReadBitmapMissingGlyphs(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),fonts),staticLayoutProbe=RunStaticLayoutPrefabProbe(plan,spec,contents),staticMaskFields=ReadStaticMasks(plan,mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spriteMap),staticLayoutFields=ReadStaticLayoutCompletion(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),toggleFields=ReadStaticToggles(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),prefabInstances=ReadNativeInstances(plan,mapped,spec.sourceId),numericCodeBindings=numericBindings,behaviorBindings=behaviorBindings,staticControlFields=plan.staticControlBindings==null?null:ReadStaticControls(plan.staticControlBindings.Where(x=>persistentMap.ContainsKey(x.node)).ToArray(),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticAnimationFields=!(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)?null:ReadSavedStaticAnimationBindings(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins),staticProgressFields=ReadStaticProgress(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticFieldBindings=ReadStaticFields(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),sourceId=spec.sourceId,path=spec.path,
+                var sourceComponentRows=ReadSourceComponentCoverage(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),new HashSet<string>(referenceFailures));
+                sourcePrefabResults.Add(new SourcePrefabResult {components=sourceComponentRows,generatedSortNodeCount=generatedSortNodeCount,staticSortFields=plan.staticSortQueue==null||plan.staticSortQueue.Length==0?null:ReadStaticSortForPrefab(plan,spec,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),bitmapMissingGlyphFields=ReadBitmapMissingGlyphs(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),fonts),staticLayoutProbe=RunStaticLayoutPrefabProbe(plan,spec,contents),staticMaskFields=ReadStaticMasks(plan,mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spriteMap),staticLayoutFields=ReadStaticLayoutCompletion(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),toggleFields=ReadStaticToggles(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),prefabInstances=ReadNativeInstances(plan,mapped,spec.sourceId),numericCodeBindings=numericBindings,behaviorBindings=behaviorBindings,staticControlFields=plan.staticControlBindings==null?null:ReadStaticControls(plan.staticControlBindings.Where(x=>persistentMap.ContainsKey(x.node)).ToArray(),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticAnimationFields=!(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)?null:ReadSavedStaticAnimationBindings(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins),staticProgressFields=ReadStaticProgress(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticFieldBindings=ReadStaticFields(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),sourceId=spec.sourceId,path=spec.path,
                     nativePrefabType=nativePrefabType.ToString(),nativeInitialNodes=initialPrefabNodes,
                     guid=AssetDatabase.AssetPathToGUID(spec.path),nodeCount=transforms.Length-generatedTextSubmeshCount-generatedSpineSubmeshCount-generatedSortNodeCount,generatedTextSubmeshCount=generatedTextSubmeshCount,generatedSpineSubmeshCount=generatedSpineSubmeshCount,missingScripts=missing,
                     savedReloaded=true,geometryPhase="native-layout-settled-v1",layoutSettlePasses=passes,
-                    nodes=spec.nodes.Select(id=>DescribeNode(nodeSpecs[id],mapped[id])).ToArray(),
+                    nodes=spec.nodes.Select(id=>DescribeNode(nodeSpecs[id],mapped[id],sourceComponentRows,persistentMap[id].gameObject,true)).ToArray(),
                     referencesVerified=referenceFailures.Count==0,referenceFailures=referenceFailures.ToArray()});
+                BindPhysicalNodeComponents(sourcePrefabResults[sourcePrefabResults.Count-1].nodes,sourceComponentRows);
                 CaptureSourcePrefabPreview(sourcePrefab,spec,plan,sourcePrefabResults[sourcePrefabResults.Count-1]);
                 // Preserve actual per-Prefab readback even if a later Prefab fails.
                 // This is a partial receipt, never the final aggregate verdict.
@@ -1077,9 +1084,18 @@ public static partial class MonkeyImporter
         NativeCheckpoint("native-readback",0,1);
         var gallery=plan.galleryOnly?ReadSavedGallery(plan,instance):new GalleryResult[0];
         var savedNodeMap=plan.galleryOnly?new Dictionary<string,RectTransform>():SavedNodeMap(plan.nodes,instance);
+        foreach(var result in sourcePrefabResults)BindPhysicalNodeComponents(result.nodes,result.components);
         var sourceComponents=sourcePrefabResults.SelectMany(x=>x.components??Array.Empty<SourceComponentCoverage>()).ToArray();
+        // Scene instances can have an intermediate Candidate.prefab source.
+        // Locate the actually observed owner asset in their prefab source chain,
+        // including infrastructure components that have no logical source ID.
+        var physicalIdentitySources=sourceComponents.Concat(sourcePrefabResults.SelectMany(prefab=>
+            (prefab.nodes??Array.Empty<NodeResult>()).SelectMany(node=>
+                (node.physicalComponents??Array.Empty<PhysicalComponentObservation>()).Select(physical=>
+                    new SourceComponentCoverage{node=node.sourceId,componentUuid=physical.componentUuid})))).ToArray();
         var readback = new Readback {
             components=sourceComponents,staticPresentationValidation=ReadSourcePresentationCoverage(plan,sourceComponents),
+            importPlanSha256=Hash(Paths.plan),sourceManifestSha256=plan.sourceManifestSha256,
             materialBinding=recoveredMaterial==null?null:recoveredMaterial.readback,
             prefabInstances=ReadNativeInstances(plan,savedNodeMap,null,PrefabPath),candidatePrefabInstances=candidatePrefabProofs,
             nativeScope=plan.galleryOnly?"resources-and-gallery-only":"source-node-subset",sourceGraphVerification=plan.galleryOnly?"not_run":"saved-source-node-subset",gallery=gallery,
@@ -1099,7 +1115,7 @@ public static partial class MonkeyImporter
             nodes=plan.nodes.Select(n=>{
                 // Resolve the reloaded scene once by sibling-index paths, independent of names.
                 var target=savedNodeMap[n.sourceId];
-                return DescribeNode(n,target);
+                return DescribeNode(n,target,physicalIdentitySources,null,true);
             }).ToArray(),
             fonts=fonts.Select(pair=>new FontResult { id=pair.Key,guid=AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(pair.Value)),
                 atlasGuid=pair.Value.atlasTextures.Length>0 && pair.Value.atlasTextures[0]!=null?AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(pair.Value.atlasTextures[0])):"",
@@ -1116,6 +1132,7 @@ public static partial class MonkeyImporter
                     border=new[]{s.border.x,s.border.y,s.border.z,s.border.w}};
             }).ToArray()
         };
+        BindPhysicalNodeComponents(readback.nodes,sourceComponents);
         var savedView=instance.GetComponent<ContentPreviewView>();
         readback.viewReferences=plan.components.Where(c=>c.convertible && new[]{"cc.Sprite","cc.Label","cc.Button"}.Contains(c.type)).Select(c=> {
             var node=savedNodeMap[c.node];
@@ -1240,7 +1257,7 @@ public static partial class MonkeyImporter
         button.transition=UnityEngine.UI.Selectable.Transition.Animation;
         EditorUtility.SetDirty(controller);AssetDatabase.SaveAssetIfDirty(controller);
     }
-    static NodeResult DescribeNode(NodeSpec source,RectTransform rect) {
+    static NodeResult DescribeNode(NodeSpec source,RectTransform rect,SourceComponentCoverage[] identitySources=null,GameObject physicalNode=null,bool savedReadback=false) {
         float opacity=255f;float[] color=null;
         if(!string.IsNullOrEmpty(source.sourceGeometryProfile)) {
             var group=rect.GetComponent<CanvasGroup>();opacity=(group!=null&&group.enabled?group.alpha:1f)*255f;
@@ -1256,7 +1273,10 @@ public static partial class MonkeyImporter
             pivot=new[]{rect.pivot.x,rect.pivot.y},position=new[]{rect.localPosition.x,rect.localPosition.y,rect.localPosition.z},
             scale=new[]{rect.localScale.x,rect.localScale.y,rect.localScale.z},
             rotation=new[]{rect.localRotation.x,rect.localRotation.y,rect.localRotation.z,rect.localRotation.w},
-            color=color,opacity=opacity,active=rect.gameObject.activeSelf,componentTypes=rect.GetComponents<Component>().Select(c=>c.GetType().FullName).ToArray()};
+            color=color,opacity=opacity,active=rect.gameObject.activeSelf,componentTypes=rect.GetComponents<Component>().Select(c=>c==null?"<missing-script>":c.GetType().FullName).ToArray(),
+            physicalInventoryContract="monkey-unity-node-physical-components/1",physicalInventoryPhase=savedReadback?"persistent-saved-reopened-node":"intermediate-node-observation",
+            physicalObservationScope=!savedReadback?"intermediate-node-observation":EditorUtility.IsPersistent(physicalNode??rect.gameObject)?"saved-source-prefab":"saved-scene-correspondence",
+            physicalComponents=ReadPhysicalNodeComponents(physicalNode??rect.gameObject,(identitySources??Array.Empty<SourceComponentCoverage>()).Where(row=>row.node==source.sourceId).ToArray())};
     }
     static void WarmNativeUiShaderVariants() {
         const string folder="Assets/Game/Content/Shaders";

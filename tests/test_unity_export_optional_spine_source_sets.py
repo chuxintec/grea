@@ -2,7 +2,7 @@
 
 The first two cases call the real exporter with create-only synthetic plans.
 The third reuses the frozen actual-export19 source tree, replaces only the
-eight listed current package templates under test, and keeps the plan-owned Spine 3.8
+nine listed current package templates under test, and keeps the plan-owned Spine 3.8
 factory/runtime closure byte-for-byte. No Editor or product stage is launched.
 """
 from __future__ import annotations
@@ -208,6 +208,7 @@ def test_real_exported_no_spine_source_set_compiles_without_spine_sdk(tmp_path, 
 def _copy_current_spine_templates(source_root: Path, temp_root: Path) -> list[dict]:
     """Substitute current package-owned Proxy/Spine binding templates offline."""
     mapping = {
+        "Assets/Game/Editor/Conversion/UnitySourceComponentCoverage.cs": REPO / "src/monkey/targets/UnitySourceComponentCoverage.cs",
         "Assets/Game/Editor/Conversion/MonkeyImporter.cs": REPO / "src/monkey/targets/UnityImporter.cs",
         "Assets/Game/Editor/Conversion/UnityStaticFieldIntegration.cs": REPO / "src/monkey/targets/UnityStaticFieldIntegration.cs",
         "Assets/Game/Editor/Conversion/UnityStaticMaskIntegration.cs": REPO / "src/monkey/targets/UnityStaticMaskIntegration.cs",
@@ -289,7 +290,7 @@ def test_real_spine_export_requires_and_compiles_with_pinned_runtime_factory_clo
         "sourceCountBeforeSubstitution": len(actual_sources),
         "substitutions": substitutions,
         "spineBackupManifestSha256": sha(backup_bytes),
-        "boundary": "source files are copied from existing actual-export19; only eight listed current package templates substituted; no new game plan export or Editor run",
+        "boundary": "source files are copied from existing actual-export19; only nine listed current package templates substituted; no new game plan export or Editor run",
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     no_sdk = _compile(temp_root, references=standard_references, case="ActualSpineWithoutSdk", evidence_dir=evidence_dir)
     assert no_sdk["exitCode"] != 0, "real Spine export unexpectedly compiled without Spine SDK references"
