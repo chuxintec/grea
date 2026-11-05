@@ -457,7 +457,10 @@ public static partial class MonkeyImporter
     const string distance="Assets/TextMesh Pro/Shaders/TMP_SDF.shader";
     const string mobile="Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader";
     const string settings="Assets/TextMesh Pro/Resources/TMP Settings.asset";
-    static bool NeedsTmp(Plan plan) {return plan.bitmapFonts.Length>0 || plan.assets.Any(a=>a.path.EndsWith(".ttf",StringComparison.OrdinalIgnoreCase));}
+    static bool NeedsTmp(Plan plan) {
+        return plan.bitmapFonts.Length>0 || plan.assets.Any(a=>a.path.EndsWith(".ttf",StringComparison.OrdinalIgnoreCase)) ||
+            (plan.systemFontBinding!=null && plan.systemFontBinding.status=="prepared");
+    }
     static bool TmpFilesPresent() {return File.Exists(bitmap) && File.Exists(distance) && File.Exists(mobile) && File.Exists(settings);}
     static string ResolveTmpArchive(TmpResourceSpec spec) {
         if(spec==null || spec.importMode!="package-completion-callback" || spec.packageName!="com.unity.ugui" || spec.packageVersion!="2.6.0" || spec.resource!="Package Resources/TMP Essential Resources.unitypackage")

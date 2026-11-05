@@ -84,7 +84,9 @@ def _input_entries(unit):
     return entries(unit['path'])
 
 
-def convert_package(source, target, output, namespace='monkey-project',offline=False,input_set_path=None,resume_state=None,reuse_source_stages=None,format_profile='none',code_contract=None,cocos_code_language='ts',layout_path=None,typed_modules=None):
+def convert_package(source, target, output, namespace='monkey-project',offline=False,input_set_path=None,resume_state=None,reuse_source_stages=None,format_profile='none',code_contract=None,cocos_code_language='ts',layout_path=None,typed_modules=None,system_fonts=False):
+    if system_fonts and target not in ('unity','unity6',unity.PROFILE):
+        fail('SOURCE_FONT_PROFILE_UNSUPPORTED',str(target),'CoreText font conversion requires Unity')
     if format_profile not in ('none','grea'):fail('FORMAT_PROFILE',str(format_profile),'Expected none or grea')
     from .layout import load_overrides,VERSION as LAYOUT_VERSION
     overrides,overrides_sha=load_overrides(safe(layout_path) if layout_path else None)
@@ -110,6 +112,8 @@ def convert_package(source, target, output, namespace='monkey-project',offline=F
                 inputSet=dict(sha256=selection['sha256'],identityStatus=selection['identityStatus'],frozenRelationVerified=selection['frozenRelationVerified'],maxInputBytes=selection['maxInputBytes']) if selection else None,
                 diagnostics=[],validation=dict(editor='not_run',visual='not_run',business='not_run'),projects=[],
                 layout=dict(version=LAYOUT_VERSION,overridesSha256=overrides_sha,rootNamespace=overrides.get('rootNamespace') or 'Game'))
+    if system_fonts:
+        report['unitySystemFonts']='coretext'
     try:
         cache_summaries=[]
         for unit in roots:
@@ -286,8 +290,10 @@ def convert_package(source, target, output, namespace='monkey-project',offline=F
             from .replan import reuse_source_stages as reuse_stages
             report['sourceStageReuse']=reuse_stages(reuse_source_stages,out,selection,namespace)
         from .structured import recover
-        structured=recover(tree,roots,configs,source_profile,out,profiles,namespace,code_emission=code_emission,layout=(overrides,overrides_sha))
+        structured=recover(tree,roots,configs,source_profile,out,profiles,namespace,code_emission=code_emission,layout=(overrides,overrides_sha),system_fonts=system_fonts)
         report['structuredRecovery']=structured
+        if system_fonts and unity.PROFILE not in structured.get('projects',{}):
+            fail('SOURCE_FONT_CONVERSION_FAILED',str(out/'Structured/recovery.json'),structured.get('message') or structured.get('reason') or 'Unity system-font plan was not emitted')
         if code_spec and (structured['status']=='failed' or set(structured.get('projects',{}))!=set(profiles)):
             fail('PACKAGE_CODE_BINDING_INCOMPLETE','Structured/recovery.json','Declared code projection was not exported for every requested target; retain failure evidence')
         if structured['status'] in ('failed','needs_action'):
@@ -665,6 +671,6 @@ def resume_package(output,input_set_path,offline=False,layout_path=None):
 
     target='both' if len(checked)==2 else prior['projects'][0]['targetProfile']
     state=dict(rows=rows,configs=configs,recovered=recovered,report=prior,receiptSha256=sha(raw_receipt),backup=str(backup.relative_to(out)))
-    result=convert_package(None,target,out,namespace,offline,input_set_path,state,layout_path=layout_path)
+    result=convert_package(None,target,out,namespace,offline,input_set_path,state,layout_path=layout_path,system_fonts=state['report'].get('unitySystemFonts')=='coretext')
     write_json(out/'resume-journal.json',dict(schemaVersion=1,status='completed',priorReceiptSha256=sha(raw_receipt),backup=state['backup']))
     return result

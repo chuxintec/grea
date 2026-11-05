@@ -28,7 +28,7 @@ def validated_ir(stage):
     return derived,ir
 
 
-def recover(tree, roots, configs, source_profile, out, profiles, namespace, code_emission=None, layout=None):
+def recover(tree, roots, configs, source_profile, out, profiles, namespace, code_emission=None, layout=None, system_fonts=False):
     from . import __version__
     stage=out/'Structured';stage.mkdir(exist_ok=True)
     result=dict(schemaVersion=1,status='pending',sourceProfile=source_profile,stages=[],projects={})
@@ -126,7 +126,12 @@ def recover(tree, roots, configs, source_profile, out, profiles, namespace, code
                 if plan.get('projectLayout')!=VERSION or plan.get('layoutOverridesSha256')!=(layout or ({},None))[1]:
                     raise ValueError('Target plan layout or layout.json changed; retained without overwrite')
                 result.setdefault('reused',[]).append(dict(stage=key+'-plan',sha256=sha(stage_bytes(plan_path))))
-            else:plan=adapter.plan(ir_path/'ir.json',namespace,plan_path.parent,layout=layout)
+            else:
+                font_inputs = {}
+                if system_fonts:
+                    from .source_system_font_preparation import conversion_plan_inputs
+                    font_inputs = conversion_plan_inputs(ir_path/'ir.json', stage/'inspect/source-manifest.json', stage/'SystemFonts')
+                plan=adapter.plan(ir_path/'ir.json',namespace,plan_path.parent,layout=layout,**font_inputs)
             temporary=stage/'Emitted'/key
             if temporary.exists():
                 import uuid

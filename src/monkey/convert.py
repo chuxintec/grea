@@ -33,7 +33,7 @@ def recipe(path):
 
 def convert(source, target, output, namespace='monkey-project', source_profile=None,
             selection=None, all_assets=False, dependencies=(), evidence=(), bindings=None,
-            animations=None, offline=False):
+            animations=None, offline=False, system_fonts=False):
     source = safe(source)
     if source.is_dir():
         if (source/'project.json').is_file():
@@ -53,6 +53,9 @@ def convert(source, target, output, namespace='monkey-project', source_profile=N
         if load(read(source)).get('engineVersion') != '2.4.15':
             fail('VERSION_EVIDENCE_REQUIRED', str(source), 'Declare --source-profile when engineVersion is absent')
     adapter = TARGETS[target]
+    if system_fonts and (adapter != unity or profile != bundle.PROFILE):
+        fail('SOURCE_FONT_PROFILE_UNSUPPORTED', str(source), 'CoreText font conversion requires a Unity target and a Cocos 2.4.15 bundle')
+
     inputs = [source.parent, *[safe(p).parent for p in dependencies], *[safe(p).parent for p in evidence]]
     if bindings:
         inputs.append(safe(bindings))
@@ -83,9 +86,16 @@ def convert(source, target, output, namespace='monkey-project', source_profile=N
         else:
             result = bundle.inspect(source, indices, out/'inspect', dependencies, evidence)
         receipt['stages'].append(dict(stage=stage, status=result['status'], report='inspect/manifest.json'))
+        def build_plan():
+            args = {}
+            if system_fonts:
+                from .source_system_font_preparation import conversion_plan_inputs
+                args = conversion_plan_inputs(out/'normalize/ir.json', out/'inspect/source-manifest.json', out/'SystemFonts')
+            return adapter.plan(out/'normalize/ir.json', namespace, out/'plan', bindings, animations, **args)
+
         for stage, run in (
             ('normalize', lambda: normalize(out/'inspect/source-manifest.json', out/'normalize')),
-            ('plan', lambda: adapter.plan(out/'normalize/ir.json', namespace, out/'plan', bindings, animations)),
+            ('plan', build_plan),
             ('export', lambda: adapter.export(out/'plan/plan.json', out/'project')),
             ('verify', lambda: adapter.verify(out/'project', out/'verify', 'static')),
             ('handoff', lambda: unity.handoff(out/'project', out/'handoff')),

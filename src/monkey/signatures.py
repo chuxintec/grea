@@ -12,7 +12,7 @@ def phase_signatures():
         'package':[*layout,'package.py','package_code.py','code_model.py','code_emit.py','code_math.py','code_presentation.py','code-facts.cjs','numeric-descriptors.cjs','module-context.cjs','inputs.py','sources/code.py','sources/index-modules.cjs','sources/containers.py','sources/cache.py','handoff_package.py','replan.py','post_format.py'],
         'inspect':['io.py','inputs.py',*[str(p.relative_to(root)) for p in sorted((root/'sources').glob('*.py'))]],
         'normalize':['io.py','normalize.py','prefab_completeness.py','sources/cocos34.py','sources/cocos34_graphs.py','sources/cocos38.py','sources/cocos38_graphs.py','sources/cocos38_prefabs.py',*[str(p.relative_to(root)) for p in sorted((root/'assets').glob('*.py'))]],
-        'UnityProject-plan':['io.py','targets/unity.py','targets/common.py','targets/prefabs.py','targets/progress.py','assets/animation.py',*prefab_profiles,*prefab_templates,*layout],
+        'UnityProject-plan':['source_system_font_preparation.py','targets/GenerateCoreTextSdf.swift','io.py','targets/unity.py','targets/common.py','targets/prefabs.py','targets/progress.py','assets/animation.py',*prefab_profiles,*prefab_templates,*layout],
         'CocosProject-plan':['io.py','targets/cocos.py','targets/common.py','targets/prefabs.py','targets/progress.py','assets/animation.py',*prefab_profiles,*prefab_templates,*layout],
         'emit':[*prefab_profiles,*prefab_templates,'targets/dynamic_ui.py','targets/layout.py','project_model.py']
     }

@@ -1003,7 +1003,8 @@ def verify(candidate, output, level='static', *, readback_pins=None):
             from ..prefab_material_pipeline import verify as verify_material
             diagnostics.extend(verify_material(instruction.get('materialBinding'),rb.get('materialBinding'),'unity'))
             diagnostics.extend(verify_numeric(instruction['components'],rb.get('numericCodeBindings'),'unity','scene',rb.get('numericCodeExercise',[])))
-            if instruction.get('bitmapFonts') or any(a['path'].lower().endswith('.ttf') for a in instruction['assets']):
+            if (instruction.get('bitmapFonts') or any(a['path'].lower().endswith('.ttf') for a in instruction['assets'])
+                    or (instruction.get('systemFontBinding') or {}).get('status')=='prepared'):
                 resources=rb.get('tmpResources') or {}
                 expected_resources=instruction.get('tmpResources',{})
                 if resources.get('status')!='ready' or resources.get('completionProof') not in ('package-completed-event','preexisting-files') or any(resources.get(k)!=expected_resources.get(k) for k in ('packageName','packageVersion','resource')) or not all(resources.get(k) for k in ('archiveSha256','bitmapGuid','distanceGuid','mobileGuid','settingsGuid')):

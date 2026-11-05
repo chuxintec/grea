@@ -41,6 +41,27 @@ class ConvertTests(unittest.TestCase):
             source.write_bytes(before[source])
             self.assertEqual(before, {p: p.read_bytes() for p in source.parent.rglob('*') if p.is_file()})
 
+    def test_requested_coretext_policy_reaches_unity_plan_with_digested_sources(self):
+        from monkey.sources.containers import fingerprint
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp).resolve()
+            source=fixture(root/'bundle')
+            out=root/'native-fonts'
+            seen=[]
+            def observe(ir, manifest, destination):
+                self.assertEqual(load(read(ir))['sourceManifestSha256'],fingerprint(manifest))
+                self.assertEqual(destination,out/'SystemFonts')
+                seen.append(manifest)
+                raise ValueError("font preparation unavailable in this fixture")
+            with patch("monkey.source_system_font_preparation.conversion_plan_inputs",side_effect=observe):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    code=main(['convert','--source',str(source),'--all-assets','--target','unity',
+                               '--unity-system-fonts','coretext','--offline','--out',str(out)])
+            self.assertEqual(code,2)
+            self.assertEqual(len(seen),1)
+            self.assertEqual(load(read(out/'conversion.json'))['failedStage'],'plan')
+            self.assertFalse((out/'project').exists())
+
     def test_project_default_selects_all_and_refuses_existing_or_source_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve(); source = root/'source'; (source/'assets').mkdir(parents=True)

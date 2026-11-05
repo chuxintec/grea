@@ -626,3 +626,31 @@ def _generation_failure(preparation_path: Path, preparation_sha: str, prep: dict
         "diagnostics": [{"code": code, "message": reason}],
         "nextAction": {"code": "REVIEW_STATIC_SDF_GENERATION", "message": reason},
     }
+
+
+def conversion_plan_inputs(ir_path, source_manifest, output):
+    """Prepare verified Unity plan arguments for an explicit CoreText conversion."""
+    from .sources.containers import fingerprint
+    output = io.new_output(output, [ir_path, source_manifest])
+    request = output / "request.json"
+    io.write_json(request, {
+        "schema": SCHEMA, "schemaVersion": SCHEMA_VERSION,
+        "unityPopulationPolicy": "coretext-static-fallbacks-v1",
+        "ir": {"path": str(ir_path), "sha256": fingerprint(ir_path)},
+        "sourceManifest": {"path": str(source_manifest), "sha256": fingerprint(source_manifest)},
+    })
+    preparation = output / "preparation"
+    prepared = prepare(request, fingerprint(request), preparation)
+    if prepared.status not in ("prepared", "needs_static_generation"):
+        _request_error("SYSTEM_FONT_BINDING_NOT_READY", str(request), prepared.record.get("reason") or prepared.status)
+    resolution = preparation / "resolution.json"
+    inputs = dict(system_font_resolution=resolution, expected_system_font_resolution=fingerprint(resolution))
+    if prepared.status == "needs_static_generation":
+        manifest = preparation / "manifest.json"
+        generation = output / "generation"
+        generated = generate(manifest, fingerprint(manifest), generation)
+        if generated.status != "prepared":
+            _request_error("STATIC_FONT_INPUTS_INVALID", str(manifest), generated.record.get("reason") or generated.status)
+        receipt = generation / "generation-receipt.json"
+        inputs.update(static_font_generation=receipt, expected_static_font_generation=fingerprint(receipt))
+    return inputs

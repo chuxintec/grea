@@ -81,6 +81,7 @@ def main(argv=None):
     p.add_argument('--editor-path', required=True)
     p.add_argument('--budget-seconds', type=int, default=1200)
     p = sub.add_parser('convert', description='Expanded input batch defaults to 2048 MiB; each package entry is limited to 128 MiB. An explicit input set can set its combined budget.', help='Convert a source project into an isolated native project candidate')
+    p.add_argument('--unity-system-fonts', choices=['coretext'], help='Resolve Cocos 2.4.15 system Labels on this Mac and generate required Unity SDF faces')
     p.add_argument('--source', help='Local wxapkg/APK, resource/project directory, project.json or bundle config.json')
     p.add_argument('--format',choices=['none','grea'],default=None,help='Deprecated: every output already uses monkey-project/2.0.0; grea is accepted as an alias.')
     p.add_argument('--layout',help='Game layout.json: module/rename/bundle-role overrides for monkey-project/2.0.0 paths (docs/PROJECT-SPEC.md section 7)')
@@ -913,6 +914,10 @@ def main(argv=None):
             print(json.dumps(discover(args.root,args.out),ensure_ascii=False))
             return 0
         if args.command == 'convert':
+            if args.unity_system_fonts and (args.target not in ('unity','unity6',UNITY_PROFILE) or
+                    args.source_family not in ('auto','cocos') or args.source_profile not in (None, PROFILE) or
+                    args.recipe or args.resume or args.reuse_candidate):
+                parser.error('--unity-system-fonts coretext requires a fresh Cocos bundle conversion to Unity')
             typed_requested=any((args.code_source,args.module_contract,args.module_selectors,args.configuration_table,args.reuse_candidate,args.expected_candidate))
             typed_settings=None
             if typed_requested:
@@ -946,6 +951,7 @@ def main(argv=None):
                 if generic_selection['sourceProfile']=='generic-image-resources-v1':generic_family='other'
                 elif generic_selection['sourceProfile']=='egret-custom-resource-plist-v1':generic_family='egret'
             if generic_family:
+                if args.unity_system_fonts:parser.error('CoreText system fonts require a Cocos bundle')
                 if typed_settings: parser.error('Typed JS modules require a Cocos package or an explicit frozen resource candidate')
                 if args.target not in ('unity','unity6',UNITY_PROFILE):parser.error('Non-Cocos sources target Unity 6 only')
                 if not all((args.source or args.input_set,args.target,args.out))or args.source and args.input_set:parser.error('Image-resource conversion requires --source or --input-set, --target unity6 and --out')
@@ -992,6 +998,7 @@ def main(argv=None):
                 from .sources.unity_serialized import container_kind
                 with safe_source(source_file).open('rb') as stream:unity_source=container_kind(stream.read(16)) is not None
             if unity_source:
+                if args.unity_system_fonts:parser.error('CoreText system fonts require a Cocos bundle')
                 if typed_settings: parser.error('Reuse the frozen Unity resource candidate for source-bound module assembly')
                 if args.numeric_code_contract or args.cocos_code_language!='ts':parser.error('Numeric JS code contracts/language selection require Cocos package sources')
                 if args.native and args.offline:parser.error('--native cannot combine with --offline')
@@ -1088,7 +1095,7 @@ def main(argv=None):
                     acquired=acquire(remote_settings,args.offline);conversion_input_set=str(acquired['inputSet'])
                     if args.reuse_source_stages and Path(conversion_input_set).resolve()!=Path(args.input_set).resolve():
                         raise ValueError('New acquired files require fresh source stages; acquired evidence is preserved')
-                result=convert_package(args.source,args.target,args.out,args.namespace or 'monkey-project',args.offline,conversion_input_set,reuse_source_stages=args.reuse_source_stages,format_profile=args.format or 'none',code_contract=args.numeric_code_contract,cocos_code_language=args.cocos_code_language,layout_path=args.layout,typed_modules=typed_settings)
+                result=convert_package(args.source,args.target,args.out,args.namespace or 'monkey-project',args.offline,conversion_input_set,reuse_source_stages=args.reuse_source_stages,format_profile=args.format or 'none',code_contract=args.numeric_code_contract,cocos_code_language=args.cocos_code_language,layout_path=args.layout,typed_modules=typed_settings,system_fonts=bool(args.unity_system_fonts))
                 if acquired:
                     from .acquisition import attach
                     attach(result,args.out,acquired)
@@ -1121,7 +1128,7 @@ def main(argv=None):
                     parser.error('convert requires --source, --target and --out (or --resume)')
                 result = convert(args.source,args.target,args.out,args.namespace or 'monkey-project',args.source_profile,
                              args.asset_index,args.all_assets,args.dependency_source,args.evidence_source,
-                             args.bindings,args.animation,args.offline)
+                             args.bindings,args.animation,args.offline,system_fonts=bool(args.unity_system_fonts))
             print(json.dumps(dict(status=result['workflowStatus'], resultKind=result['resultKind'], completed=result['completed'], project=result['project'],
                                   diagnostics=len(result['diagnostics']), validation=result['validation'],
                                   nextAction=result['nextAction'],report=result.get('report') or str(Path(args.out).resolve()/'manifest.json')), ensure_ascii=False))
