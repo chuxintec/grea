@@ -407,7 +407,7 @@
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "description": "dev23/a8ad990实际refresh/export18后native18失败SOURCE_IDENTITY_CHANGED，PID24866退出；新增完整快照定位final-prepare-pass2 slot1布局上下文validity False/False，文本/字体/字形/网格摘要一致，fallback临时→持久材质转换已记录。未达完整原生与静态验收，正式采用未跑。",
+      "description": "dev24/2ac8e5e refresh/export19后native19越过上轮上下文失败，在353b...#20主位图槽0的fallback注册前置拒绝，PID29919退出。失败快照已保留，需核requiresPersistentFallbackRegistration和角色分流。尚未完整原生/静态验收，正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
         "三层比较纯输出共因修工具，采用保既有GUID/WIP/存档",
@@ -435,7 +435,8 @@
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-15-dev20-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-16-dev21-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-17-dev22-index.json",
-        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-18-dev23-index.json"
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-18-dev23-index.json",
+        "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-19-dev24-index.json"
       ],
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "implementationModules": [
@@ -468,7 +469,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey修真实生产阶段textScaleContext采集时机和受控Canvas输入，保空占位/可绘制槽区分及严格fallback转换证据；实际失败快照回归并预检87队列/89槽，不把双无效当一致。固定refresh复用Mask/18PNG/字体。",
+      "nextAction": "monkey修primary/bitmap/fallback/sprite/empty槽注册契约，按实际87队列/89槽跑生产方法分流矩阵，保真正fallback身份/描边/材质门，避免逐类型首错。固定refresh复用Mask/18PNG/字体。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
