@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T13:59:03.857889+08:00",
+  "updatedAt": "2026-11-05T14:01:39.014409+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
@@ -623,9 +623,10 @@
         ".private/development/audit-remediation-20261105/dev28-review/RESULT.json",
         ".private/development/audit-remediation-20261105/dev29-review/RESULT.json",
         ".private/development/audit-remediation-20261105/dev29-review/dual-review-input.json",
-        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-grea-unity-target-only/DECISION.md"
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-grea-unity-target-only/DECISION.md",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md"
       ],
-      "nextAction": "修复 dev29 Unity 显式材质 Mask 保存重开与 Scroll 纯动态诊断冻结判断，并复核集成版本。Creator 失败保留为历史未通过，退出当前阻塞集。",
+      "nextAction": "dev29 总监/Claude 同字节双审均 HOLD。主开发修 Unity 显式/默认材质 Mask 的导入契约、持久回读与裁剪，修 Scroll 动态计数摘要；B 线修台账缺文件误报。原生正反例复验后以新固定身份交审。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
@@ -692,9 +693,10 @@
         ".private/development/foodstreet-monkey-parallel-20261105",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/two-types-handoff-index.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/label-fix01/bc-handoff-index.json",
-        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json"
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md"
       ],
-      "nextAction": "B线5cc8d73已交原主开发集成。Master两Label已原生重绑并冷重开，四页51/93完整、42部分，61反例拒绝。继续全量5,681条。"
+      "nextAction": "修请求、apply、cold、磁盘与所属实例的双向匹配；复验缺失Master文件的7条成功、保留其他实例准确去向，修正后再定全量台账。"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
@@ -714,9 +716,10 @@
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/final2/candidate-delivery.json",
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/beaver-dev10-visible-click-20261105/run01/owner-visible-click-result.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json",
-        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-closure-20261105.json"
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-closure-20261105.json",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md"
       ],
-      "nextAction": "C线隔离试点已完成并交总监。真实预览click一次，Master hide(null) 0→1，scale 1→0，两个对照未触发，1044文件一致。当前仅tweenHide=false；正式采用继续HOLD。"
+      "nextAction": "总监已接受隔离临时预览中的一次非动画 hide 点击；正式工程持久按钮、Player及产品采用仍待独立授权与验收。"
     }
   ],
   "blockers": [
