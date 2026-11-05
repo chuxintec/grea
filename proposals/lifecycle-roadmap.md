@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T14:23:03.655829+08:00",
+  "updatedAt": "2026-11-05T14:46:48.200663+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
@@ -624,9 +624,10 @@
         ".private/development/audit-remediation-20261105/dev29-review/RESULT.json",
         ".private/development/audit-remediation-20261105/dev29-review/dual-review-input.json",
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-grea-unity-target-only/DECISION.md",
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
+        ".private/development/audit-remediation-20261105/dev30-review/RESULT.json"
       ],
-      "nextAction": "dev29 总监/Claude 同字节双审均 HOLD。主开发修 Unity 显式/默认材质 Mask 的导入契约、持久回读与裁剪，修 Scroll 动态计数摘要；B 线修台账缺文件误报。原生正反例复验后以新固定身份交审。",
+      "nextAction": "dev30/16996ff已交同字节Unity双审。四页11 Prefab保存重开；Scroll及B缺文件反例修正。矩形与源图片Mask裁剪内部像素透明，缺可用正例，原主开发负责；采用HOLD。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
@@ -701,9 +702,10 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/final03/handoff-index.json",
         ".private/development/foodstreet-monkey-parallel-20261105/B-final03-check.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/final05/handoff-index.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/B-final05-check.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/B-final05-check.json",
+        ".private/development/audit-remediation-20261105/dev30-review/RESULT.json"
       ],
-      "nextAction": "当前台账入口final05。GREA独立复核bfd0efa删文件反例：误成功7→0，其他79项保真，模块退出1。23片/5681位置已核，增量已交主线；待新固定包公开入口复核。"
+      "nextAction": "dev30公开命令删文件7→0误成功、14阻塞、其余79保真；全dev30四页93实例冷重开，51完整，61拒绝控制。等总监双审。"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
