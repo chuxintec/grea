@@ -6,11 +6,11 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T00:31:39.112049+08:00",
+  "updatedAt": "2026-11-05T09:42:45.572320+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "GREA v1.1统一任务源已实际迁移，模块6个未完任务及旧两根待办归并；两批优先级1，先肥鹅四页、后僵尸有源全量，均总监验收。统一monkey0.8dev10实际字体已通过，11业务Prefab/668节点保存重开，尚165静态引用差异待通用修复；beaver正在实现既有采用链脚本GUID重绑定。binary暂停。",
-  "activeImplementationTask": "grea:T-foodstreet-four-activity-bulk",
+  "activeImplementationTask": "grea:T-monkey-audit-remediation-dual-review",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -61,7 +61,8 @@
         "仅适配已交且确有缺口的有限公开合同",
         "相关消费者有限验证通过，未验/无适用性明确",
         "先Mac后Windows独立编译身份/搬迁/代表流程验收",
-        "新GREA公开源码及完整包只含已审模块二进制和明确helper白名单，旧历史保持"
+        "新GREA公开源码及完整包只含已审模块二进制和明确helper白名单，旧历史保持",
+        "审计整改固定候选经总监与Claude CLI同字节独立双审并明确放行，才继续两批产品恢复采用。"
       ],
       "sourceRefs": [
         "Manager/decisions/20261104-product-driven-tooling/PLAN.md",
@@ -70,7 +71,8 @@
       "candidateVersion": "1.1.0.dev2",
       "requiredTaskIds": [
         "grea:T-foodstreet-four-activity-bulk",
-        "grea:T-zombie-bulk-static-prefabs"
+        "grea:T-zombie-bulk-static-prefabs",
+        "grea:T-monkey-audit-remediation-dual-review"
       ]
     }
   ],
@@ -406,7 +408,7 @@
       "id": "grea:T-foodstreet-four-activity-bulk",
       "title": "肥鹅四活动完整Prefab经GREA成组恢复与采用",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "blocked",
       "description": "dev24/2ac8e5e refresh/export19后native19越过上轮上下文失败，在353b...#20主位图槽0的fallback注册前置拒绝，PID29919退出。失败快照已保留，需核requiresPersistentFallbackRegistration和角色分流。尚未完整原生/静态验收，正式采用未跑。",
       "acceptanceCriteria": [
         "实际GREA公开入口批次请求/纯输出/完整依赖闭包和固定工具身份",
@@ -469,12 +471,13 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "monkey修primary/bitmap/fallback/sprite/empty槽注册契约，按实际87队列/89槽跑生产方法分流矩阵，保真正fallback身份/描边/材质门，避免逐类型首错。固定refresh复用Mask/18PNG/字体。",
+      "nextAction": "双审前不推进产品转换/采用；保留既有成果。总监明确放行同一固定身份后先肥鹅四页交付，再僵尸全量。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
         "grea:B-foodstreet-static-reference-materialization",
-        "grea:B-monkey-audit-result-contract"
+        "grea:B-monkey-audit-result-contract",
+        "grea:B-monkey-dual-review-release-gate"
       ],
       "priority": 1,
       "bindingToolActual": {
@@ -491,7 +494,11 @@
         "consumerExport": "939 owned files; sourceNative and typedCoverage remain partial; intake apply not_run",
         "consumerPlan": "dev9/17718a0，13交付文件SHA已由GREA核对全等。109源码按编译/序列化依赖分类；47新增脚本生成16/16/15纯脚本批次，无padding纹理，计划独立重验过（非实际采用）。六绑定11Prefab新计划已生成未原生执行。152资源整扫剩2Shader实际原生对象身份待最终候选/当前目标只读检查。",
         "continuationPlan": "../beaver/.private/intake-bindings-20261104/dev9/installed-complete-01/continuation-plan.json"
-      }
+      },
+      "dependsOnTaskIds": [
+        "grea:T-monkey-audit-remediation-dual-review"
+      ],
+      "executionStatus": "awaiting_audit_dual_review_release"
     },
     {
       "id": "grea:T-zombie-first-level-source-gap",
@@ -535,8 +542,8 @@
       "id": "grea:T-zombie-bulk-static-prefabs",
       "title": "monkey统一0.8线僵尸有源Prefab全量静态批处理与采用",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "todo",
-      "executionStatus": "queued_after_foodstreet_critical_path",
+      "workflowStatus": "blocked",
+      "executionStatus": "awaiting_audit_dual_review_release",
       "description": "已原生核验human01a1a696-898d-7d42-8b1c-b50f44dea54e。起始161唯一地址根/601缓存来源，10已采用静态子集、151仅解析；原游戏全部包完整性未知，527目标文件不是源分母。由monkey程序核完整有源/嵌套根和依赖后直接批量生成原生Prefab，复用dev8/已验子集，beaver采用；不逐根人工恢复，不把动态代码当全静态前置。肥鹅四页优先、二进制暂停。",
       "sourceRefs": [
         "../../Manager/decisions/20261104-zombie-bulk-prefab-recovery/PLAN.md",
@@ -562,15 +569,17 @@
         }
       ],
       "dependsOnTaskIds": [
-        "grea:T-foodstreet-four-activity-bulk"
+        "grea:T-foodstreet-four-activity-bulk",
+        "grea:T-monkey-audit-remediation-dual-review"
       ],
-      "nextAction": "肥鹅四活动实际恢复/采用并交验后，由monkey统一0.8公开工具核全有源分母并直接批量恢复，保已验dev8与10子集，不逐根人工拼装。",
+      "nextAction": "双审前不推进产品转换/采用；保留既有成果。总监明确放行同一固定身份后先肥鹅四页交付，再僵尸全量。",
       "supersededTaskIds": [
         "grea:T-monkey-dev8-consumer-handoff"
       ],
       "retainedPendingScope": "dev8完整BattleMain491节点1380组件59291字段及独立根4/8/4297原生保存冷读通过，仍须固定身份/采用；归入本批，不计已经全量恢复。",
       "blockerIds": [
-        "grea:B-monkey-audit-result-contract"
+        "grea:B-monkey-audit-result-contract",
+        "grea:B-monkey-dual-review-release-gate"
       ],
       "priority": 1,
       "acceptanceCriteria": [
@@ -582,6 +591,28 @@
         "在肥鹅四活动实际收口后推进本批，工具产物与消费者采用由总监验收；两批缺任一项不得将GREA v1.1.0标完成。",
         "按全部源组件与真实原生诊断验收；retained-only非静态可见完成，Player未执行不得报通过；审计A1–A4修复并核受影响候选。"
       ]
+    },
+    {
+      "id": "grea:T-monkey-audit-remediation-dual-review",
+      "title": "monkey通用审计整改及总监/Claude独立双审",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "in_progress",
+      "priority": 0,
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "description": "用户人类消息已原生核验；A1–A4优先，A5–A8逐项当前适用性/修复/有据处置。复用dev12–24修复，保dev25 WIP；两批产品推进挂起，只做整改必要定向转换/原生/冻结验证。",
+      "acceptanceCriteria": [
+        "固定集成候选源码提交、工具版本/摘要、运行入口、A1–A8矩阵与关键差异一致",
+        "未mock关键门正反例：缺组件/可见资源/错状态/哈希/引用/字段拒绝，合法imported与明确纯动态静态正例通过",
+        "总监独立审查及Claude CLI独立审查同一固定字节，分歧复核完成；总监记录精确放行身份",
+        "不伪造原生/视觉/Player结果；不强杀在途、不丢WIP、不恢复Cocos产品/发布或二进制"
+      ],
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-monkey-audit-remediation/PLAN.md",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json"
+      ],
+      "nextAction": "monkey保存并集成在途通用修复，交当前A1–A8矩阵/固定候选/定向正反例；GREA核必要实际调用再交总监双审。",
+      "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
+      "blockerIds": []
     }
   ],
   "blockers": [
@@ -777,6 +808,21 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-native-08-dev12-index.json",
         "../../Games/projects/20-foodstreet/Analysis/v050-development-20261104/four-activity-grea-recovery-20261104/actual-verify-11-dev15-index.json"
+      ],
+      "workflowStatus": "blocked",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
+    },
+    {
+      "id": "grea:B-monkey-dual-review-release-gate",
+      "taskIds": [
+        "grea:T-foodstreet-four-activity-bulk",
+        "grea:T-zombie-bulk-static-prefabs"
+      ],
+      "owner": "GREA统筹；总监+Claude CLI独立复审",
+      "description": "用户要求审计整改并双审通过后才继续两批恢复采用；当前尚无放行身份。",
+      "releaseCondition": "固定候选必要验证及两份独立复审通过，总监记录精确源码/制品摘要放行。",
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-monkey-audit-remediation/PLAN.md"
       ],
       "workflowStatus": "blocked",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf"
