@@ -713,7 +713,8 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/label-fix01/bc-handoff-index.json",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/final2/candidate-delivery.json",
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/beaver-dev10-visible-click-20261105/run01/owner-visible-click-result.json",
-        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json"
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json",
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-closure-20261105.json"
       ],
       "nextAction": "C线隔离试点已完成并交总监。真实预览click一次，Master hide(null) 0→1，scale 1→0，两个对照未触发，1044文件一致。当前仅tweenHide=false；正式采用继续HOLD。"
     }
