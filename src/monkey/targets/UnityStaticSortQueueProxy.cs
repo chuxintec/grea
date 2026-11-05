@@ -2253,6 +2253,100 @@ namespace Monkey.StaticSortQueueProxy
                 sourceManifestSha256,dataAssetType,atlasAssetPath,atlasAssetGuid;
             public long dataAssetLocalFileId;
         }
+        [Serializable] sealed class CocosStaticSpineImportPlanSignal
+        {
+            public string sourceManifestSha256, staticSpineRenderingJson;
+        }
+        [Serializable] sealed class CocosStaticSpineRenderingSignal
+        {
+            public int schemaVersion;
+            public string contract, sourceManifestSha256;
+            public CocosStaticSpineRenderingSignalComponent[] components;
+            public CocosStaticSpineRenderingSignalData[] dataAssets;
+        }
+        [Serializable] sealed class CocosStaticSpineRenderingSignalComponent
+        {
+            public string sourceComponentId, sourceDataAssetId;
+            public bool eligible;
+        }
+        [Serializable] sealed class CocosStaticSpineRenderingSignalData
+        {
+            public string sourceDataAssetId;
+            public bool eligible;
+        }
+        delegate bool CocosStaticSpineIdentityResolver(ProxyQueueSpec spec, string sourceComponentId,
+            UnityEngine.Object actualDataAsset, out SpineDataIdentityEvidence evidence,
+            out string diagnostic, Graphic sourceOwner);
+        static CocosStaticSpineIdentityResolver cocosStaticSpineIdentityResolver;
+        static partial void RegisterOptionalCocosStaticSpineIdentityResolver();
+
+        const string CocosStaticSpineImportPlanPath = "Assets/Game/Editor/Conversion/import-plan.json";
+        const string CocosStaticSpineRenderingContract = "monkey-static-spine-rendering/1";
+
+        static bool TryReadCocosStaticSpineDataIdentity(ProxyQueueSpec spec, string sourceComponentId,
+            UnityEngine.Object actualDataAsset, out SpineDataIdentityEvidence evidence,
+            out string diagnostic, out bool applicable, Graphic sourceOwner)
+        {
+            evidence = null;
+            diagnostic = null;
+            applicable = false;
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (String.IsNullOrWhiteSpace(projectRoot))
+            { applicable = true; diagnostic = "cocos-static-spine-project-root-unavailable"; return false; }
+            var importPlanPath = Path.Combine(projectRoot, CocosStaticSpineImportPlanPath);
+            if (!File.Exists(importPlanPath)) return false;
+
+            CocosStaticSpineImportPlanSignal importPlan;
+            try
+            {
+                importPlan = JsonUtility.FromJson<CocosStaticSpineImportPlanSignal>(
+                    Encoding.UTF8.GetString(File.ReadAllBytes(importPlanPath)));
+            }
+            catch (Exception error)
+            {
+                applicable = true;
+                diagnostic = "cocos-static-spine-import-plan-unreadable:" + error.GetType().Name;
+                return false;
+            }
+            if (importPlan == null || String.IsNullOrWhiteSpace(importPlan.sourceManifestSha256) || spec == null ||
+                String.IsNullOrWhiteSpace(spec.sourceManifestSha256) ||
+                importPlan.sourceManifestSha256 != spec.sourceManifestSha256)
+            {
+                applicable = true;
+                diagnostic = "cocos-static-spine-import-plan-manifest-invalid-or-different";
+                return false;
+            }
+            if (String.IsNullOrWhiteSpace(importPlan.staticSpineRenderingJson)) return false;
+
+            // Once the frozen Cocos rendering plan is present, it owns Spine
+            // identity resolution for this candidate. A missing adapter or
+            // absent component row must fail closed rather than fall through
+            // to the unrelated Unity-native Spine binding route.
+            applicable = true;
+            try
+            {
+                var rendering = JsonUtility.FromJson<CocosStaticSpineRenderingSignal>(
+                    importPlan.staticSpineRenderingJson);
+                if (rendering == null || rendering.schemaVersion != 1 ||
+                    rendering.contract != CocosStaticSpineRenderingContract ||
+                    rendering.sourceManifestSha256 != importPlan.sourceManifestSha256 ||
+                    rendering.components == null || rendering.components.Length == 0 ||
+                    rendering.dataAssets == null || rendering.dataAssets.Length == 0 ||
+                    rendering.components.Any(row => row == null) || rendering.dataAssets.Any(row => row == null))
+                { diagnostic = "cocos-static-spine-rendering-plan-signal-invalid"; return false; }
+            }
+            catch (Exception error)
+            {
+                diagnostic = "cocos-static-spine-rendering-plan-unreadable:" + error.GetType().Name;
+                return false;
+            }
+
+            RegisterOptionalCocosStaticSpineIdentityResolver();
+            var resolver = cocosStaticSpineIdentityResolver;
+            if (resolver == null)
+            { diagnostic = "cocos-static-spine-required-adapter-missing"; return false; }
+            return resolver(spec, sourceComponentId, actualDataAsset, out evidence, out diagnostic, sourceOwner);
+        }
         [Serializable] sealed class SpineImportPlanEnvelope { public SpineImportPlanStage spineNativeStage; }
         [Serializable] sealed class SpineImportPlanStage
         {

@@ -2,6 +2,7 @@
 from importlib.resources import files
 from pathlib import Path
 import uuid
+import re
 from .. import __version__
 from ..io import safe, inside, read, load, sha, encoded, new_output, finish, write_json, diagnostic, stage_document, stage_bytes, stage_manifest
 from ..sources.compiled import fail
@@ -464,6 +465,42 @@ def plan(ir_path, namespace, output, bindings_path=None,animation_selection=None
     return finish(out,result)
 
 
+def _native_source_evidence(plan):
+    """Carry source pins for every consuming module, independently of peers."""
+    if not any(plan.get(key)for key in ('spineNativeStage','spriteOutlineBinding',
+                                      'staticSpineRendering','staticSpineContinuation')):
+        return {}
+    evidence={key:plan.get(key)for key in ('spineNativeStage','sourceManifestPath',
+                                        'sourceManifestSha256','sourceIrSha256')}
+    rendering=plan.get('staticSpineRendering')
+    if isinstance(rendering,dict)and evidence['sourceManifestSha256']is None:
+        evidence['sourceManifestSha256']=rendering.get('sourceManifestSha256')
+    return evidence
+
+
+def _requires_cocos_static_spine_adapter(plan):
+    """Select the SDK bridge only for an explicit static Spine rendering module.
+
+    The ordinary importer/sort helpers remain SDK-independent. The rendering
+    module owns its real SDK/factory closure; an invalid declaration is refused
+    instead of being interpreted as an absent optional feature.
+    """
+    fragment=plan.get('staticSpineRendering')
+    if fragment is None:return False
+    if (not isinstance(fragment,dict) or type(fragment.get('schemaVersion'))is not int or fragment.get('schemaVersion')!=1 or
+            fragment.get('contract')!='monkey-static-spine-rendering/1' or
+            not isinstance(fragment.get('components'),list) or not fragment['components'] or
+            not isinstance(fragment.get('dataAssets'),list) or not fragment['dataAssets'] or
+            not isinstance(fragment.get('sourceManifestSha256'),str) or
+            re.fullmatch(r'[0-9a-f]{64}',fragment['sourceManifestSha256'])is None or
+            (plan.get('sourceManifestSha256')is not None and
+             fragment['sourceManifestSha256']!=plan['sourceManifestSha256']) or
+            any(not isinstance(row,dict) for row in fragment['components']+fragment['dataAssets'])):
+        fail('STATIC_SPINE_ADAPTER_CONTRACT_INVALID','staticSpineRendering',
+             'Optional SDK adapter requires the complete declared static Spine rendering contract')
+    return True
+
+
 def export(plan_path, output):
     plan_path=safe(plan_path)
     from ..sources.compiled import ParseError
@@ -475,6 +512,7 @@ def export(plan_path, output):
         fail('UNSUPPORTED_PLAN','$','Expected Unity plan schema 1')
     if p.get('staticSpineContinuation') and p.get('spineNativeStage'):
         fail('STATIC_SPINE_CONTINUATION_STAGE_CONFLICT','spineNativeStage','Rendering and non-rendering Spine stages cannot share importer hooks')
+    requires_static_spine_adapter=_requires_cocos_static_spine_adapter(p)
     # Plan JSON itself must match its create-only manifest, not just copied images.
     pm=stage_manifest(plan_path.parent)
     expected={f['path']:f['sha256'] for f in pm['files']}
@@ -569,6 +607,7 @@ def export(plan_path, output):
             ('UnityDynamicUi.cs',standard.unity('dynamicUi'),'native-ui/UnityDynamicUi.cs'),
             ('UnityButtonAnimations.cs',Path(standard.unity('importer')).with_name('NativeButtonAnimations.cs').as_posix(),'button-animations-editor'),
             ('UnityImporter.cs',standard.unity('importer'),'editor-adapter')]:
+        if template=='UnityStaticSortSpineBinding.cs' and not requires_static_spine_adapter:continue
         dest=out/relative;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(files('monkey.targets').joinpath(template).read_bytes())
         Path(str(dest)+'.meta').write_text('fileFormatVersion: 2\nguid: '+guid(p['namespace'],key)+'\n')
     from ..prefab_target_behaviors import emit as emit_behaviors
@@ -601,10 +640,7 @@ def export(plan_path, output):
 
     # Only the typed, finite import instruction subset is sent to the Editor.
     instruction={key:p.get(key,[]) for key in ('designSize','pixelsPerUnit','textures','assets','bitmapFonts','nodes','components','galleryOnly','animations','sourcePrefabs','prefabInstances')}
-    if p.get('spineNativeStage') or p.get('spriteOutlineBinding'):
-        # Editor-only evidence pins for independent native readback verifiers.
-        for key in ('spineNativeStage','sourceManifestPath','sourceManifestSha256','sourceIrSha256'):
-            instruction[key]=p.get(key)
+    instruction.update(_native_source_evidence(p))
     instruction['staticCompletionEnabled']=bool(p.get('staticCompletion'))
     instruction['staticAnimationBindingsEnabled']=bool(p.get('staticAnimationBindingsEnabled'))
     instruction['staticSpineContinuationJson']=encoded(p['staticSpineContinuation']).decode('utf-8') if p.get('staticSpineContinuation') else None

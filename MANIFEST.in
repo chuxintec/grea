@@ -3,7 +3,7 @@ include README.md
 include THIRD-PARTY-NOTICES.md
 recursive-include docs *.md *.json
 recursive-include src/monkey/licenses *.txt
-recursive-include src/monkey/targets *.cs *.js
+recursive-include src/monkey/targets *.cs *.cs.meta *.js
 recursive-include src/monkey/sources *.cjs
 prune .private
 prune outputs

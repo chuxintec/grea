@@ -18,3 +18,9 @@ dev25 字体角色修复按通用错误分类纳入本集成：主字体、跨�
 项目专用原件、候选和审计原始日志不进入源码包。兼容字段 `staticValidation` 表示生成文件完整性，不替代完整源组件覆盖、`nativeStaticValidation`、数据保留或静态呈现结论。
 
 本地完整证据索引在 `.private/audit-remediation-20261105/`；固定源码/包摘要、测试总数和实际原生结果以交付索引为准。
+
+## dev26：最小导出暴露的可选 Spine 依赖回归
+
+GREA 的 dev25 实际最小导入失败：无 Spine 来源的导出仍包含强依赖 Spine SDK/factory 的桥接脚本。dev26 从生产导出选择处修复，普通排序代理保持 SDK 独立；只有合法且完整的 staticSpineRendering 合同才选择真实适配器。声明需要适配器但未注册、合同损坏或对应组件缺失均拒绝。来源 pin 的传递独立于 outline 等其他模块。两份行为探针的 .cs.meta 使用原字节/GUID 纳入包，不作为非产品文件排除。
+
+569 项回归和91子例通过。另三组完整导出源码编译检查通过：两个无 Spine 夹具均由生产 exporter 生成65个 C# 文件，使用实际 Unity6000.6.2f1/TMP/uGUI 引用且无 Spine DLL；既有 actual-export19 的121个文件离线替换五个当前包模板，缺 SDK 时失败，加入其已固定的 Spine3.8.99 DLL 后通过。该重放未执行真实游戏 export 或 Editor，不替代 GREA 新最小导入、完整验证与冻结。dev25 的失败、固定源码和 wheel 保留；两批产品仍停止，双人同字节复审未放行。

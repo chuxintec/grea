@@ -19,7 +19,6 @@ namespace Monkey.StaticSortQueueProxy
     public static partial class UnityStaticSortQueueProxy
     {
         const string CocosStaticSpineRenderingPath = "Assets/Game/Editor/Conversion/spine-static-rendering.json";
-        const string CocosImportPlanPath = "Assets/Game/Editor/Conversion/import-plan.json";
 
         [Serializable] sealed class CocosImportPlanSpineEnvelope
         {
@@ -134,18 +133,21 @@ namespace Monkey.StaticSortQueueProxy
 
         /// <summary>
         /// Strictly bind an actual SkeletonDataAsset to a Cocos static rendering
-        /// row. Returns applicable=false when this source component has no
-        /// Cocos rendering row, allowing the existing Unity-native Spine route
-        /// to run unchanged. Once a row matches, any missing or inconsistent
-        /// source evidence is an applicable failure and must not fall through.
+        /// row. Applicability is owned by the SDK-free import-plan signal in the
+        /// queue proxy; once that plan is present, an absent or inconsistent
+        /// component row is an applicable failure and must not fall through.
         /// </summary>
-        static bool TryReadCocosStaticSpineDataIdentity(ProxyQueueSpec spec,
+        static partial void RegisterOptionalCocosStaticSpineIdentityResolver()
+        {
+            cocosStaticSpineIdentityResolver = TryReadCocosStaticSpineDataIdentityCore;
+        }
+
+        static bool TryReadCocosStaticSpineDataIdentityCore(ProxyQueueSpec spec,
             string sourceComponentId, UnityEngine.Object actualDataAsset,
-            out SpineDataIdentityEvidence evidence, out string diagnostic, out bool applicable, Graphic sourceOwner)
+            out SpineDataIdentityEvidence evidence, out string diagnostic, Graphic sourceOwner)
         {
             evidence = null;
             diagnostic = null;
-            applicable = false;
             if (spec == null || String.IsNullOrWhiteSpace(sourceComponentId))
             { diagnostic = "cocos-static-spine-proxy-or-component-id-missing"; return false; }
 
@@ -154,7 +156,7 @@ namespace Monkey.StaticSortQueueProxy
                 var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
                 if (String.IsNullOrWhiteSpace(projectRoot))
                 { diagnostic = "cocos-static-spine-project-root-unavailable"; return false; }
-                var importPlanPath = Path.Combine(projectRoot, CocosImportPlanPath);
+                var importPlanPath = Path.Combine(projectRoot, CocosStaticSpineImportPlanPath);
                 if (!File.Exists(importPlanPath))
                 { diagnostic = "cocos-static-spine-import-plan-missing"; return false; }
                 var importBytes = File.ReadAllBytes(importPlanPath);
@@ -173,7 +175,6 @@ namespace Monkey.StaticSortQueueProxy
                     .Where(row => row != null && row.templateComponentId == sourceComponentId).ToArray();
                 if (componentRows.Length == 0)
                 { diagnostic = "cocos-static-spine-component-not-in-rendering-contract"; return false; }
-                applicable = true;
                 if (componentRows.Length != 1)
                 { diagnostic = "cocos-static-spine-component-row-ambiguous"; return false; }
                 var renderComponent = componentRows[0];
