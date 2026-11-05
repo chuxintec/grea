@@ -166,7 +166,8 @@ def _sprite(component: dict, plan: dict, manifest: dict,
     row = {"sourceComponentId": sid, "sourceNodeId": component.get("node"),
            "sourceType": "cc.Sprite", "nativeComponent": "UnityEngine.UI.Image",
            "status": "blocked", "nativeFields": {}, "evidence": {}, "blockers": []}
-    use_original = component.get("trim") is False
+    use_original = (component.get("trim") is False and
+                    component.get("untrimmedGeometryPolicy") != "creator24-packed-frame-insets")
     texture = _texture(component, plan, original=use_original)
     source_frame = _texture(component, plan)
     if not isinstance(component.get("spriteFrame"), str) or texture is None or not texture.get("path"):

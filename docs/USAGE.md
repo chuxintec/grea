@@ -498,3 +498,11 @@ See [native outline regression](../tests/native_text_outline/README.md) for the
 reproducible sixteen-case pixel and mask/lifecycle checks. This validates static
 presentation; business behavior, original-device typography and product adoption
 require their own evidence.
+
+### Prefab 图片、层级与坐标验证
+
+在归一化的 Cocos IR 上执行 `monkey select-prefab-presentation --ir IR --limit 50 --out SAMPLE`。可用 `--pool` 限定已取得的候选，用 `--exclude` 排除上一批。两者都接受源 ID 数组或含 sourceId 的行数组。筛选器按裁切图框、平铺、九宫格、Layout、非中心锚点和层级分组，稳定选取有已绑定 Sprite、2 至 130 个节点的 Prefab。含 Spine 的对象仅在裁切图框专项中入选。
+
+通过现有 convert、export 和 native-import 入口保存重开，打开 `--render-preview`。每个有可见网格的样本同时生成设计视口截图和按网格边界取景的 `-framed.png`。后者用于查看通常需要父节点定位的部件。执行 `monkey audit-prefab-presentation --selection SAMPLE/selection.json --project SAVED_UNITY_PROJECT --out REPORT`，多批工程重复传入 `--project`。每个选中 ID 需要一份明确的回读。audit.json 区分序列化 Image GUID、继承实例的原生引用检查、未绑定图片、父节点文件 ID、兄弟顺序以及布局求值与保存重开的坐标变化。退出码 0 表示结构检查通过，图片缺口与视觉判断单列。
+
+Creator 2.4.15 的 sliced、tiled assembler 直接使用 SpriteFrame 的图框和 capInsets。对应非等尺寸裁切帧使用原图框切片及边距。源算法见 [sliced.js](https://github.com/cocos/cocos-engine/blob/v2.4.15/cocos2d/core/renderer/webgl/assemblers/sprite/2d/sliced.js) 和 [tiled.js](https://github.com/cocos/cocos-engine/blob/v2.4.15/cocos2d/core/renderer/webgl/assemblers/sprite/2d/tiled.js)。

@@ -31,8 +31,12 @@ public sealed class NativeRectConstraints : UIBehaviour
                 var edge=axis==0?Horizontal:Vertical;if(edge==Edge.Unconstrained)continue;
                 float parentSize=parent.rect.size[axis],size=rect.rect.size[axis],pivot=rect.pivot[axis];
                 float low=Minimum[axis]+MinimumFraction[axis]*parentSize,high=Maximum[axis]+MaximumFraction[axis]*parentSize;
+                float scale=rect.localScale[axis];
+                if(scale<0) pivot=1-pivot;
+                scale=Mathf.Abs(scale);
+                size*=scale;
                 float start=-parent.pivot[axis]*parentSize;
-                if(edge==Edge.Stretch){size=parentSize-low-high;rect.SetSizeWithCurrentAnchors((RectTransform.Axis)axis,size);position[axis]=start+low+pivot*size;}
+                if(edge==Edge.Stretch){size=parentSize-low-high;if(scale>0)rect.SetSizeWithCurrentAnchors((RectTransform.Axis)axis,size/scale);position[axis]=start+low+pivot*size;}
                 else if(edge==Edge.Minimum)position[axis]=start+low+pivot*size;
                 else if(edge==Edge.Maximum)position[axis]=start+parentSize-high-(1-pivot)*size;
                 else position[axis]=start+parentSize*.5f+Center[axis]+CenterFraction[axis]*parentSize+(pivot-.5f)*size;

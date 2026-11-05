@@ -173,6 +173,15 @@ public static partial class MonkeyImporter
     // the pinned SkeletonGraphic SDK must be the last mesh writer so its
     // actual clipped/polygon mesh is restored after any generic four-corner
     // RawImage population. Do not initialize/advance the animation here.
+    static partial void FinalizePreviewSpineMeshes(Canvas canvas)
+    {
+        var owners = canvas.GetComponentsInChildren<UnitySpineSourceIdentity>()
+            .Select(marker => marker.renderer as SkeletonGraphic)
+            .Where(graphic => graphic != null && graphic.isActiveAndEnabled && graphic.skeletonDataAsset != null)
+            .Cast<Graphic>().ToArray();
+        if (owners.Length > 0) FinalizeSavedStaticSortSpineMeshes(owners);
+    }
+
     static void FinalizeSavedStaticSortSpineMeshes(Graphic[] sourceOwners)
     {
         var owners = (sourceOwners ?? Array.Empty<Graphic>()).Distinct().ToArray();

@@ -278,8 +278,13 @@ def plan(ir_path, namespace, output, bindings_path=None,animation_selection=None
             if not c.get('trim',True) and c['mode'] in (1,2) and untrimmed_identity:
                 entry['untrimmedGeometryPolicy']='identity-full-frame-zero-offset'
             if not c.get('trim',True) and c['mode'] in (1,2) and not untrimmed_identity:
-                entry['convertible']=False
-                diagnostics.append(diagnostic('SLICED_UNTRIMMED_UNSUPPORTED',c['sourceId'],'Needs Cocos size-mode evidence',c['sourceId']))
+                if ir.get('sourceProfile') == 'cocos-2.4.15-bundle' and frame:
+                    # Creator 2.4 sliced/tiled assemblers consume frame UVs and
+                    # insets regardless of the simple-sprite trim switch.
+                    entry['untrimmedGeometryPolicy'] = 'creator24-packed-frame-insets'
+                else:
+                    entry['convertible']=False
+                    diagnostics.append(diagnostic('SLICED_UNTRIMMED_UNSUPPORTED',c['sourceId'],'Needs Cocos size-mode evidence',c['sourceId']))
         elif c['type']=='cc.Label':
             entry['nativeTextStylePolicy']='tmp-font-style-flags-v1'
             if c.get('font') not in resource_ids:
@@ -315,9 +320,9 @@ def plan(ir_path, namespace, output, bindings_path=None,animation_selection=None
             entry.setdefault('center',[0,0]);entry.setdefault('centerAbsolute',[True,True])
             flags=c['flags'];horizontal=flags&56;vertical=flags&7
             invalid=(flags&~63 or horizontal in(24,48,56)or vertical in(3,6,7)or c.get('alignMode',1)not in(0,1,2))
-            if invalid or c.get('target')not in(None,node.get('parent'))or node.get('scale',[1,1])[:2]!=[1,1]or node.get('rotation')!=[0,0,0,1]:
+            if invalid or c.get('target')not in(None,node.get('parent'))or (ir.get('sourceProfile')!='cocos-2.4.15-bundle' and node.get('scale',[1,1])[:2]!=[1,1]) or node.get('rotation')!=[0,0,0,1]:
                 entry['convertible']=False
-                diagnostics.append(diagnostic('WIDGET_CONTEXT_UNSUPPORTED',c['sourceId'],'Requires parent-relative target, valid edge/center flags and unrotated unit-scale node',c['sourceId']))
+                diagnostics.append(diagnostic('WIDGET_CONTEXT_UNSUPPORTED',c['sourceId'],'Requires parent-relative target, valid edge/center flags and supported local transform',c['sourceId']))
             if flags and node.get('parent')not in by_node:
                 entry['externalParentContext']='candidate-design-root'
                 diagnostics.append(diagnostic('WIDGET_EXTERNAL_PARENT_CONTEXT',c['sourceId'],'Prefab root keeps native constraints for its future parent; the candidate Scene uses its declared design root, not a recovered original game viewport',c['sourceId']))

@@ -56,6 +56,7 @@ public static partial class MonkeyImporter
         public MonkeyNumericCode.Result[] numericCodeBindings;
         public MonkeyBehaviorBindings.Result[] behaviorBindings; public StaticControlReadback[] staticControlFields; public StaticAnimationReadback[] staticAnimationFields; public StaticProgressResult[] staticProgressFields; public StaticFieldResult[] staticFieldBindings; public UnityStaticToggle.Readback toggleFields;
         public string sourceId,path,guid,geometryPhase,nativePrefabType,isolatedPreviewPath,isolatedPreviewSha256,isolatedPreviewError,isolatedPreviewScope; public int nodeCount,generatedTextSubmeshCount,generatedSpineSubmeshCount,generatedTextStrokeCount,missingScripts,layoutSettlePasses;
+        public string framedPreviewPath,framedPreviewSha256;
         public bool savedReloaded,referencesVerified; public NodeResult[] nodes,nativeInitialNodes; public string[] referenceFailures;
     }
     [Serializable] public class MotionKey { public float time,value; public string interpolation; }
@@ -100,6 +101,7 @@ public static partial class MonkeyImporter
     static partial void ResolveOptionalStaticTimeMaterial(Plan plan,string id,ref UnityEngine.Object value);
     static partial void IdentifyOptionalGeneratedSpineChild(Transform child,ref bool generated);
     static partial void InitializeSavedStaticSpine(GameObject root);
+    static partial void FinalizePreviewSpineMeshes(Canvas canvas);
     static partial void RefreshOptionalStaticMasksForPrefab(Plan plan,SourcePrefabSpec prefab,Dictionary<string,GameObject> nodes,Dictionary<string,Sprite> sprites);
     static partial void BindOptionalStaticSpineControlledCanvasContext(GameObject context,Plan plan);
     static partial void ForgetOptionalStaticSpineControlledCanvasContext(GameObject context);
@@ -179,7 +181,7 @@ public static partial class MonkeyImporter
     [Serializable] public class ViewReference { public string sourceId,field; public int index; public long prefabFileId; public bool bound; }
     [Serializable] public class FileResult { public string path, sha256; }
     [Serializable] public class NodeResult {
-        public string sourceId, hierarchy; public float[] size, pivot, position,scale,rotation,color; public float opacity;
+        public string sourceId, hierarchy, nativeParentName; public int nativeSiblingIndex; public float[] anchoredPosition, anchorMin, anchorMax; public float[] size, pivot, position,scale,rotation,color; public float opacity;
         public bool active; public string[] componentTypes;
         public string physicalInventoryContract,physicalInventoryPhase,physicalObservationScope; public PhysicalComponentObservation[] physicalComponents;
     }
@@ -715,7 +717,7 @@ public static partial class MonkeyImporter
             var color = new Color(node.color[0]/255f,node.color[1]/255f,node.color[2]/255f,node.color[3]/255f);
             if (spec.type == "cc.Sprite")
             {
-                var key = spec.spriteFrame + (spec.trim ? "" : "@original");
+                var key = SpriteKey(spec);
                 if (!string.IsNullOrEmpty(spec.spriteFrame) && !spriteMap.ContainsKey(key)) { diagnostics.Add("SPRITE_MISSING: " + spec.sourceId); continue; }
                 if (go.GetComponent<UnityEngine.UI.Graphic>() != null) {
                     diagnostics.Add("MULTIPLE_GRAPHICS_ON_NODE: " + spec.sourceId); continue;
@@ -774,7 +776,7 @@ public static partial class MonkeyImporter
             else if(spec.type=="cc.Widget")ConfigureWidget(go,spec);
             else if(spec.type=="cc.BlockInputEvents") {
                 var blocker=go.AddComponent<NativeInputBlocker>();
-                blocker.Configure(go.GetComponent<UnityEngine.UI.Graphic>());blocker.enabled=spec.enabled;
+                blocker.enabled=spec.enabled;
             }
             else if(spec.type=="cc.Mask") {
                 if(!HasStaticMaskBinding(plan,spec.sourceId)) {
@@ -877,6 +879,12 @@ public static partial class MonkeyImporter
         CreateStaticFields(plan,nodeMap);
         PrepareStaticSpine(plan,nodeMap);
         PrepareStaticSpineRendering(plan,nodeMap);
+        // A transparent input surface also occupies the node's single Graphic slot.
+        // Choose it only after Mask and Spine have installed their real renderers.
+        foreach(var spec in plan.components.Where(c=>c.convertible&&c.type=="cc.BlockInputEvents")) {
+            var owner=nodeMap[spec.node];
+            owner.GetComponent<NativeInputBlocker>().Configure(owner.GetComponent<UnityEngine.UI.Graphic>());
+        }
         // Optional native renderers are created after the ordinary UI pass.
         foreach(var spec in plan.components.Where(c=>c.convertible&&c.type=="cc.Button"&&c.staticButtonBinding!=null&&c.staticButtonBinding.renderReady)) {
             var target=string.IsNullOrEmpty(spec.target)?nodeMap[spec.node]:nodeMap[spec.target];
@@ -981,7 +989,7 @@ public static partial class MonkeyImporter
                     if(c.behaviorBinding!=null&&!string.IsNullOrEmpty(c.behaviorBinding.typeName))valid=MonkeyBehaviorBindings.Read(c.behaviorBinding,go,c.enabled);
                     else if(c.type=="cc.Sprite") {
                         var image=go.GetComponent<UnityEngine.UI.Image>();
-                        valid=image!=null && image.enabled==(c.enabled&&!string.IsNullOrEmpty(c.spriteFrame)) && (string.IsNullOrEmpty(c.spriteFrame)?image.sprite==null:image.sprite==spriteMap[c.spriteFrame+(c.trim?"":"@original")]);
+                        valid=image!=null && image.enabled==(c.enabled&&!string.IsNullOrEmpty(c.spriteFrame)) && (string.IsNullOrEmpty(c.spriteFrame)?image.sprite==null:image.sprite==spriteMap[SpriteKey(c)]);
                         if(recoveredMaterial!=null&&plan.materialBinding.spriteBindings.Any(b=>b.sourceId==c.sourceId))
                             valid=valid&&MonkeyUnityMaterialBindings.ReadBound(plan.materialBinding,recoveredMaterial.asset,image);
                     } else if(c.type=="cc.Label" || c.type=="cc.LabelOutline" || c.type=="cc.RichText") {
@@ -1228,6 +1236,9 @@ public static partial class MonkeyImporter
         }
         finally {PrefabUtility.UnloadPrefabContents(contents);}
     }
+    static string SpriteKey(ComponentSpec spec) {
+        return spec.spriteFrame + (spec.trim || spec.untrimmedGeometryPolicy == "creator24-packed-frame-insets" ? "" : "@original");
+    }
     static void CaptureSourcePrefabPreview(GameObject prefab,SourcePrefabSpec spec,Plan plan,SourcePrefabResult result) {
         // A separate throwaway scene prevents other windows from covering this
         // diagnostic image. Only root visibility is overridden and disclosed;
@@ -1235,24 +1246,44 @@ public static partial class MonkeyImporter
         Scene probe=default(Scene);
         result.isolatedPreviewScope="isolated-clone-root-active-source-child-state-no-business-execution";
         try {
-            probe=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Additive);
+            probe=EditorSceneManager.NewPreviewScene();
             var context=new GameObject("OwnedIsolatedPrefabPreview",typeof(RectTransform),typeof(Canvas));
             SceneManager.MoveGameObjectToScene(context,probe);
             var canvas=context.GetComponent<Canvas>();canvas.renderMode=RenderMode.WorldSpace;
             ((RectTransform)context.transform).sizeDelta=new Vector2(plan.designSize[0],plan.designSize[1]);
             var clone=UnityEngine.Object.Instantiate(prefab,context.transform,false);
-            clone.SetActive(true);SettleNativeLayout(context);
+            clone.SetActive(true);InitializeSavedStaticSpine(clone);SettleNativeLayout(context);
             var path="Analysis/Readback/Prefabs/"+AssetDatabase.AssetPathToGUID(spec.path)+".png";
             Capture(canvas,probe,(int)plan.designSize[0],(int)plan.designSize[1],path);
             result.isolatedPreviewPath=path;result.isolatedPreviewSha256=Hash(path);
+            // Keep the authored viewport as evidence. Fit a second camera to
+            // rendered geometry for fragments normally positioned by a host.
+            SettleNativeLayout(context);
+            Bounds? visible=null;
+            foreach(var graphic in clone.GetComponentsInChildren<UnityEngine.UI.Graphic>()) {
+                if(!graphic.isActiveAndEnabled || graphic.canvasRenderer.GetInheritedAlpha()<=0 || graphic.color.a<=0)continue;
+                var mesh=graphic.canvasRenderer.GetMesh();
+                if(mesh==null || mesh.vertexCount==0)continue;
+                var bounds=mesh.bounds;
+                foreach(var x in new[]{bounds.min.x,bounds.max.x})
+                    foreach(var y in new[]{bounds.min.y,bounds.max.y}) {
+                        var point=graphic.transform.TransformPoint(new Vector3(x,y,bounds.center.z));
+                        var total=visible??new Bounds(point,Vector3.zero);total.Encapsulate(point);visible=total;
+                    }
+            }
+            if(visible.HasValue && visible.Value.size.sqrMagnitude>0) {
+                var framed=Path.ChangeExtension(path,null)+"-framed.png";
+                Capture(canvas,probe,(int)plan.designSize[0],(int)plan.designSize[1],framed,false,visible);
+                result.framedPreviewPath=framed;result.framedPreviewSha256=Hash(framed);
+            }
         } catch(Exception error) {result.isolatedPreviewError=error.Message;}
-        finally {if(probe.IsValid())EditorSceneManager.CloseScene(probe,true);}
+        finally {if(probe.IsValid())EditorSceneManager.ClosePreviewScene(probe);}
     }
-    static void Capture(Canvas canvas,Scene scene,int width,int height,string output,bool preserveWorldSpace=false) {
+    static void Capture(Canvas canvas,Scene scene,int width,int height,string output,bool preserveWorldSpace=false,Bounds? framing=null) {
         if(SystemInfo.graphicsDeviceType==UnityEngine.Rendering.GraphicsDeviceType.Null)
             throw new InvalidOperationException("Native preview unavailable: Null graphics device; rerun native-import with --render-preview");
         var cameraObject=new GameObject("MonkeyPreviewCamera",typeof(Camera));SceneManager.MoveGameObjectToScene(cameraObject,scene);
-        var camera=cameraObject.GetComponent<Camera>();camera.enabled=false;camera.orthographic=true;camera.orthographicSize=height*.5f;
+        var camera=cameraObject.GetComponent<Camera>();camera.scene=scene;camera.enabled=false;camera.orthographic=true;camera.orthographicSize=height*.5f;
         camera.cullingMask=1<<5;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color(.1f,.11f,.13f,1);
         camera.transform.position=new Vector3(0,0,-10);camera.nearClipPlane=.1f;camera.farClipPlane=100;
         var target=new RenderTexture(width,height,24,RenderTextureFormat.ARGB32);target.Create();camera.targetTexture=target;
@@ -1260,12 +1291,19 @@ public static partial class MonkeyImporter
         var previousActive=RenderTexture.active;Texture2D image=null;
         try {
             foreach(var transform in canvas.GetComponentsInChildren<Transform>(true))transform.gameObject.layer=5;
-            if(preserveWorldSpace) {
+            if(framing.HasValue) {
+                var bounds=framing.Value;
+                camera.orthographicSize=Mathf.Max(.01f,Mathf.Max(bounds.extents.y,bounds.extents.x*height/width)*1.08f);
+                camera.transform.position=new Vector3(bounds.center.x,bounds.center.y,bounds.min.z-10);
+                camera.farClipPlane=Mathf.Max(100,bounds.size.z+20);
+            } else if(preserveWorldSpace) {
                 if(previousMode!=RenderMode.WorldSpace||previousCamera==null)throw new InvalidOperationException("STATIC_PREVIEW_CAMERA_CONTEXT_MISSING");
                 camera.transform.position=previousCamera.transform.position;
             } else {canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.planeDistance=1;}
             canvas.worldCamera=camera;
-            Canvas.ForceUpdateCanvases();camera.Render();RenderTexture.active=target;
+            Canvas.ForceUpdateCanvases();
+            if(EditorSceneManager.IsPreviewScene(scene))FinalizePreviewSpineMeshes(canvas);
+            camera.Render();RenderTexture.active=target;
             image=new Texture2D(width,height,TextureFormat.RGBA32,false);
             image.ReadPixels(new Rect(0,0,width,height),0,0);image.Apply();
             Directory.CreateDirectory(Path.GetDirectoryName(output));File.WriteAllBytes(output,image.EncodeToPNG());
@@ -1301,7 +1339,8 @@ public static partial class MonkeyImporter
                 if(color.Where((value,index)=>Math.Abs(value-source.color[index])>.001f).Any())throw new InvalidOperationException("Source UI renderer color differs: "+source.sourceId);
             }
         }
-        return new NodeResult {sourceId=source.sourceId,hierarchy=rect.name,size=new[]{rect.rect.width,rect.rect.height},
+        return new NodeResult {sourceId=source.sourceId,hierarchy=rect.name,nativeParentName=rect.parent==null?null:rect.parent.name,nativeSiblingIndex=rect.GetSiblingIndex(),
+            anchoredPosition=new[]{rect.anchoredPosition.x,rect.anchoredPosition.y},anchorMin=new[]{rect.anchorMin.x,rect.anchorMin.y},anchorMax=new[]{rect.anchorMax.x,rect.anchorMax.y},size=new[]{rect.rect.width,rect.rect.height},
             pivot=new[]{rect.pivot.x,rect.pivot.y},position=new[]{rect.localPosition.x,rect.localPosition.y,rect.localPosition.z},
             scale=new[]{rect.localScale.x,rect.localScale.y,rect.localScale.z},
             rotation=new[]{rect.localRotation.x,rect.localRotation.y,rect.localRotation.z,rect.localRotation.w},

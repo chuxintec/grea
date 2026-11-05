@@ -31,6 +31,16 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog='monkey')
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     sub = parser.add_subparsers(dest='command', required=True)
+    p = sub.add_parser('select-prefab-presentation', help='Freeze a representative Cocos UI Prefab sample')
+    p.add_argument('--ir', required=True)
+    p.add_argument('--limit', type=int, default=50)
+    p.add_argument('--pool')
+    p.add_argument('--exclude')
+    p.add_argument('--out', required=True)
+    p = sub.add_parser('audit-prefab-presentation', help='Verify saved prefab references, sibling order and layout coordinates')
+    p.add_argument('--project', action='append', required=True)
+    p.add_argument('--selection', required=True)
+    p.add_argument('--out', required=True)
     cap = sub.add_parser('capabilities')
     cap.add_argument('--json', action='store_true')
     sub.add_parser('static-code-bindings',help='Prepare source-proven inert MonoBehaviours, stage a fresh candidate, or audit static destinations; no gameplay acceptance')
@@ -560,6 +570,16 @@ def main(argv=None):
             except (zipfile.BadZipFile,EOFError) as error:fail('EVIDENCE_ARCHIVE',args.source or args.manifest,str(error))
             print(json.dumps(dict(status=result['status'],operation=result['operation'],report=str(args.out)+'/inspection.json'),ensure_ascii=False))
             return 0
+        if args.command == 'select-prefab-presentation':
+            from .prefab_presentation_audit import select
+            count = select(args.ir, args.limit, args.out, args.pool, args.exclude)
+            print(json.dumps(dict(selected=count)))
+            return 0
+        if args.command == 'audit-prefab-presentation':
+            from .prefab_presentation_audit import audit
+            report = audit(args.project, args.selection, args.out)
+            print(json.dumps({key: report[key] for key in ('selected', 'structuralIssues')}))
+            return 1 if report['structuralIssues'] else 0
         if args.command == 'recover-unity-prefabs':
             from .unity_prefab_recovery import recover
             from .input_relocation import command_context
