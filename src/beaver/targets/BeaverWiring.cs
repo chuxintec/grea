@@ -45,22 +45,24 @@ public static class BeaverWiring {
         var value=field.GetValue(p,null);
         return value!=null&&!value.Equals(Activator.CreateInstance(field.PropertyType));
     }
-    static bool CanvasGroupsAllowClick(Button button) {
-        for(var node=button.transform;node!=null;node=node.parent) {
+    static bool CanvasGroupsAllow(Transform start,bool checkInteractable,bool checkRaycasts) {
+        for(var node=start;node!=null;node=node.parent) {
             var groups=node.GetComponents<CanvasGroup>();bool stopAtParent=false;
             foreach(var group in groups) {
                 if(group==null||!group.isActiveAndEnabled)continue;
-                if(!group.interactable||!group.blocksRaycasts)return false;
+                if(checkInteractable&&!group.interactable||checkRaycasts&&!group.blocksRaycasts)return false;
                 stopAtParent|=group.ignoreParentGroups;
             }
             if(stopAtParent)break;
         }
         return true;
     }
-    public static bool StaticClickReady(Button button) {
+    public static bool StaticClickReady(Button button,GameObject prefabRoot) {
         var graphic=button==null?null:button.targetGraphic;
+        bool graphicOnPrefab=graphic!=null&&prefabRoot!=null&&(graphic.transform==prefabRoot.transform||graphic.transform.IsChildOf(prefabRoot.transform));
         return button!=null&&button.enabled&&button.interactable&&button.IsInteractable()&&button.gameObject.activeInHierarchy&&
-            graphic!=null&&graphic.isActiveAndEnabled&&graphic.raycastTarget&&CanvasGroupsAllowClick(button);
+            graphicOnPrefab&&graphic.isActiveAndEnabled&&graphic.raycastTarget&&CanvasGroupsAllow(button.transform,true,false)&&
+            CanvasGroupsAllow(graphic.transform,false,true);
     }
     public static void Apply(GameObject root,BeaverBatch.Action a) {
         if(a.kind=="binding.event"||a.kind=="binding.event.enable") {
@@ -77,7 +79,7 @@ public static class BeaverWiring {
             if(enable)button.enabled=true;
             UnityEventTools.AddPersistentListener(button.onClick,action);
             if(button.onClick.GetPersistentEventCount()!=1||button.onClick.GetPersistentTarget(0)!=target||button.onClick.GetPersistentMethodName(0)!=a.method)throw new Exception("WIRING_EVENT_READBACK");
-            if(enable&&!StaticClickReady(button))throw new Exception("WIRING_EVENT_ENABLE_CLICKABILITY: Button static clickability prerequisites failed");
+            if(enable&&!StaticClickReady(button,root))throw new Exception("WIRING_EVENT_ENABLE_CLICKABILITY: Button static clickability prerequisites failed");
             EditorUtility.SetDirty(button);return;
         }
         if(a.kind!="binding.reference"||String.IsNullOrEmpty(a.property)||a.property.Contains(".")||a.property=="m_Script")throw new Exception("WIRING_FIELD_CONTRACT: direct serialized ObjectReference only");

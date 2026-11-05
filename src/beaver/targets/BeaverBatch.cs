@@ -57,10 +57,10 @@ public static class BeaverBatch {
         public string assetPath,prefabGuid,buttonPath,targetNode,targetComponent,targetAssembly,scriptGuid,method,listenerMode,callState;
         public long buttonLocalId,buttonNodeLocalId,targetLocalId,targetNodeLocalId;public int expectedCount,observedCount;public bool verified;
         public bool requireInteractable,buttonEnabled,buttonInteractable,buttonIsInteractable,buttonActiveInHierarchy;
-        public bool targetGraphicExists,targetGraphicEnabled,targetGraphicActiveInHierarchy,targetGraphicRaycastTarget,canvasGroupsInteractable,canvasGroupsBlockRaycasts,staticClickReady;
+        public bool targetGraphicExists,targetGraphicEnabled,targetGraphicActiveInHierarchy,targetGraphicOnPrefab,targetGraphicRaycastTarget,canvasGroupsInteractable,canvasGroupsBlockRaycasts,staticClickReady;
         public CanvasGroupObservation[] canvasGroups;
     }
-    [Serializable] public class CanvasGroupObservation {public string nodePath;public bool enabled,interactable,blocksRaycasts,ignoreParentGroups;}
+    [Serializable] public class CanvasGroupObservation {public string scope,nodePath;public bool enabled,interactable,blocksRaycasts,ignoreParentGroups;}
     [Serializable] public class Report {
         public string status,planSha256,error,mode,editorVersion,checkpointPolicy,checkpointState;public int completedSteps,hashReadOperations,checkpointCount;public bool checkpointComplete;
         public List<string> checkpointPaths=new List<string>();
@@ -300,13 +300,13 @@ public static class BeaverBatch {
         if(matches.Length!=1)throw new Exception("Expected exactly one component: "+where);
         return matches[0];
     }
-    static CanvasGroupObservation[] ObserveCanvasGroups(Button button,Transform root,out bool interactable,out bool blocksRaycasts) {
+    static CanvasGroupObservation[] ObserveCanvasGroups(Transform start,Transform root,string scope,out bool interactable,out bool blocksRaycasts) {
         var rows=new List<CanvasGroupObservation>();interactable=true;blocksRaycasts=true;
-        for(var node=button.transform;node!=null;node=node.parent) {
+        for(var node=start;node!=null;node=node.parent) {
             var groups=node.GetComponents<CanvasGroup>();bool stopAtParent=false;
             foreach(var group in groups) {
                 if(group==null)continue;
-                rows.Add(new CanvasGroupObservation{nodePath=Relative(root,node),enabled=group.isActiveAndEnabled,
+                rows.Add(new CanvasGroupObservation{scope=scope,nodePath=Relative(root,node),enabled=group.isActiveAndEnabled,
                     interactable=group.interactable,blocksRaycasts=group.blocksRaycasts,ignoreParentGroups=group.ignoreParentGroups});
                 if(!group.isActiveAndEnabled)continue;
                 interactable&=group.interactable;blocksRaycasts&=group.blocksRaycasts;stopAtParent|=group.ignoreParentGroups;
@@ -317,19 +317,23 @@ public static class BeaverBatch {
         return rows.ToArray();
     }
     static bool StaticClickReady(Button button,Transform root,out EventInspectionRow row) {
-        bool groupInteractable,groupBlocks;
-        var groups=ObserveCanvasGroups(button,root,out groupInteractable,out groupBlocks);
         var graphic=button.targetGraphic;
+        bool groupInteractable,ignoredButtonRaycasts,ignoredGraphicInteractable,graphicBlocks;
+        var groups=new List<CanvasGroupObservation>();
+        groups.AddRange(ObserveCanvasGroups(button.transform,root,"button",out groupInteractable,out ignoredButtonRaycasts));
+        bool graphicOnPrefab=graphic!=null&&(graphic.transform==root||graphic.transform.IsChildOf(root));
+        if(graphicOnPrefab)groups.AddRange(ObserveCanvasGroups(graphic.transform,root,"targetGraphic",out ignoredGraphicInteractable,out graphicBlocks));
+        else {ignoredGraphicInteractable=true;graphicBlocks=false;}
         row=new EventInspectionRow {
             buttonEnabled=button.enabled,buttonInteractable=button.interactable,buttonIsInteractable=button.IsInteractable(),
             buttonActiveInHierarchy=button.gameObject.activeInHierarchy,targetGraphicExists=graphic!=null,
             targetGraphicEnabled=graphic!=null&&graphic.enabled,targetGraphicActiveInHierarchy=graphic!=null&&graphic.gameObject.activeInHierarchy,
-            targetGraphicRaycastTarget=graphic!=null&&graphic.raycastTarget,
-            canvasGroupsInteractable=groupInteractable,canvasGroupsBlockRaycasts=groupBlocks,canvasGroups=groups
+            targetGraphicOnPrefab=graphicOnPrefab,targetGraphicRaycastTarget=graphic!=null&&graphic.raycastTarget,
+            canvasGroupsInteractable=groupInteractable,canvasGroupsBlockRaycasts=graphicBlocks,canvasGroups=groups.ToArray()
         };
         row.staticClickReady=row.buttonEnabled&&row.buttonInteractable&&row.buttonIsInteractable&&row.buttonActiveInHierarchy&&
-            row.targetGraphicExists&&row.targetGraphicEnabled&&row.targetGraphicActiveInHierarchy&&row.targetGraphicRaycastTarget&&groupInteractable&&groupBlocks&&
-            BeaverWiring.StaticClickReady(button);
+            row.targetGraphicExists&&row.targetGraphicEnabled&&row.targetGraphicActiveInHierarchy&&row.targetGraphicOnPrefab&&
+            row.targetGraphicRaycastTarget&&groupInteractable&&graphicBlocks&&BeaverWiring.StaticClickReady(button,root.gameObject);
         return row.staticClickReady;
     }
     static void InspectButtonEvent(Step step) {
@@ -368,7 +372,7 @@ public static class BeaverBatch {
                 buttonEnabled=clickability.buttonEnabled,buttonInteractable=clickability.buttonInteractable,buttonIsInteractable=clickability.buttonIsInteractable,
                 buttonActiveInHierarchy=clickability.buttonActiveInHierarchy,targetGraphicExists=clickability.targetGraphicExists,
                 targetGraphicEnabled=clickability.targetGraphicEnabled,targetGraphicActiveInHierarchy=clickability.targetGraphicActiveInHierarchy,
-                targetGraphicRaycastTarget=clickability.targetGraphicRaycastTarget,
+                targetGraphicOnPrefab=clickability.targetGraphicOnPrefab,targetGraphicRaycastTarget=clickability.targetGraphicRaycastTarget,
                 canvasGroupsInteractable=clickability.canvasGroupsInteractable,canvasGroupsBlockRaycasts=clickability.canvasGroupsBlockRaycasts,
                 canvasGroups=clickability.canvasGroups,staticClickReady=staticClickReady};
             report.eventInspections.Add(row);
