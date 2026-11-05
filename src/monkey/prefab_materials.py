@@ -758,7 +758,7 @@ def generate_ui_color(source_manifest: str | Path, output_dir: str | Path,
 def _owned_file(target_path: str, source_path: str | None = None, content: bytes | None = None) -> dict:
     if (source_path is None) == (content is None):
         raise MaterialProfileError("owned file must have exactly one immutable source")
-    raw = content if content is not None else read(Path(__file__).parents[2] / source_path)
+    raw = content if content is not None else read(inside(_TARGET_DIR, Path(source_path).name))
     return {"path": target_path, "sourcePath": source_path, "sha256": _sha(raw), "byteLength": len(raw),
             **({"contentBase64": base64.b64encode(raw).decode("ascii")} if source_path is None else {})}
 
@@ -912,9 +912,9 @@ def plan_ui_color(source_manifest: str | Path, normalized_ir: str | Path, module
                                        "creator38": "cc.Material.initialize + EditorExtends.serialize + host assetdb save/reimport callback returning exact path, asset UUID and metadata UUID"},
             "nativeBindingHelpers": {
                 "unity": {"sourcePath": "src/monkey/targets/materials/ui_color/UnityMaterialBindings.cs",
-                          "sha256": _sha(read(Path(__file__).parents[2] / "src/monkey/targets/materials/ui_color/UnityMaterialBindings.cs"))},
+                          "sha256": _sha(read(_TARGET_DIR / "UnityMaterialBindings.cs"))},
                 "creator38": {"sourcePath": "src/monkey/targets/materials/ui_color/CreatorMaterialBindings.js",
-                              "sha256": _sha(read(Path(__file__).parents[2] / "src/monkey/targets/materials/ui_color/CreatorMaterialBindings.js"))}},
+                              "sha256": _sha(read(_TARGET_DIR / "CreatorMaterialBindings.js"))}},
             "readback": {"unity": "AssetDatabase GUID/localFileId, Shader GUID and all source properties",
                          "creator38": "reloaded cc.Material UUID, EffectAsset UUID, technique and source properties"}}
     _validate_binding_spec(spec)

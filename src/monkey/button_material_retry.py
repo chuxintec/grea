@@ -112,7 +112,7 @@ def prepare(candidate, expected_manifest, plan_path, ir_path, output):
                 row['frameId'] != proof['resolvedSpriteFrameSourceId']):
             fail('BUTTON_MATERIAL_SOURCE_ID',row['spriteId'],'Component does not own this material')
     by_sprite = {r['spriteId']:r for r in rows}
-    material = dict(spec, sourceComponentIds=sorted(by_sprite),
+    material = dict(spec, sourcePlanSha256=parent['planSha256'], sourceComponentIds=sorted(by_sprite),
                     spriteBindings=[dict(sourceId=sid) for sid in sorted(by_sprite)],
                     sourceComponentMaterialBindings=[dict(bindings[r['sourceOriginId']], sourceId=sid)
                         for sid,r in sorted(by_sprite.items())])
