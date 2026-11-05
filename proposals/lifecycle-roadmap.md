@@ -596,10 +596,10 @@
       "id": "grea:T-monkey-audit-remediation-dual-review",
       "title": "monkey通用审计整改及总监/Claude独立双审",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "verification",
       "priority": 0,
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "description": "dev26/66bda9c源码/wheel500文件逐字节一致，2meta及可选Spine编译回归已修。GREA隔离wheel最小链inspect/normalize/plan/export0诊断，Unity编译通过；原生因无Mask且staticMasks=null仍触发STATIC_MASK_CONTRACT_ROWS_MISSING误拒，PID56659退出。尚无合法native基线，freeze/9controls未跑，双审未就绪。 GREA真实JsonUtility微检查16例已完成(PID58411 exit0)：null/absent/{}确实物化非null契约对象；无Mask误拒复现，6Mask正例接受及缺/坏合同反例拒绝，原196文件和输入pin不变。",
+      "description": "固定dev27/51a5e900b70107fa23de3fe808e3869383a93947，wheel afc8f03d15a2df49e226da88e29217b203c9cdb24619667b0f499cfd0c46e1a8，500文件一致。26例真实JsonUtility全部符合预期；1Sprite最小公开源→原生 imported→verify静态/呈现pass→严格freeze13文件实际成功；9独立拷贝控制通过，原96pins不变。已交总监/Claude同字节独立双审，尚无放行。",
       "acceptanceCriteria": [
         "固定集成候选源码提交、工具版本/摘要、运行入口、A1–A8矩阵与关键差异一致",
         "未mock关键门正反例：缺组件/可见资源/错状态/哈希/引用/字段拒绝，合法imported与明确纯动态静态正例通过",
@@ -611,11 +611,18 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json",
         ".private/development/audit-remediation-20261105/dev25-minimal/audit-result.json",
         ".private/development/audit-remediation-20261105/dev26-minimal/audit-result.json",
-        ".private/development/audit-remediation-20261105/dev26-jsonutility-probe/receipt.json"
+        ".private/development/audit-remediation-20261105/dev26-jsonutility-probe/receipt.json",
+        ".private/development/audit-remediation-20261105/dev27-minimal/review-handoff.json"
       ],
-      "nextAction": "monkey据真实引擎证据固定dev27存在标记/源分母校验，含false marker矛盾与有Mask无排序反例；同probe及最小完整链再核，通过后strict freeze/9controls，最后同字节双审。",
+      "nextAction": "总监独立审查+Claude CLI对同字节独立复审，分歧复核后记录精确放行或退修；此前两批产品保持blocked。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
-      "blockerIds": []
+      "blockerIds": [],
+      "fixedReviewCandidate": {
+        "sourceCommit": "51a5e900b70107fa23de3fe808e3869383a93947",
+        "packageSha256": "afc8f03d15a2df49e226da88e29217b203c9cdb24619667b0f499cfd0c46e1a8",
+        "handoffSha256": "c3c75bb194a129a54d5d38e14075978b8e38195856a0e3592fc1911dcc3b28f7",
+        "approval": "pending independent dual review"
+      }
     }
   ],
   "blockers": [
