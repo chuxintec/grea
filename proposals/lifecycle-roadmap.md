@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:43:22.511528+08:00",
+  "updatedAt": "2026-11-05T16:49:08.159726+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -693,9 +693,11 @@
         ".private/development/foodstreet-monkey-parallel-20261105/visual-one42.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label27-source-control.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual-flip44.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label15-owner-pair.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label15-owner-pair.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual-outline49.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/source-card50.json"
       ],
-      "nextAction": "15号同父页「集齐奖励」已由GREA对图确认；源Label #64/node #24保存重开为TMP，文字区1145像素变化，6/9与x111两个对照区像素一致。按原40台账继续验其他缺陷，单处修复未晋升整页。27的镜像由源方法按状态控制，17缺同版运行状态。",
+      "nextAction": "原15「集齐奖励」可读已验。director-label15-font-outline：源系统字24粗体、白描边宽3；当前中文字由本机苹方回退，截图未显白边，样式未通过。A线同节点核描边开/关像素、实际子网格、绘制材质与取图时机，修通用工具后同倍率复拍。项目方查已有原版画面/设备依据；原40整项人审0/40。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
