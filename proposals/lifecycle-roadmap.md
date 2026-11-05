@@ -4,17 +4,17 @@
 
 ## 压缩后从这里接续
 
-首个只读动作：在本文件定位 `"id": "grea:T-monkey-large-plan-export"` 并读取其 `resume`。先对照本轮输入的时间、事件和最新裁定，再执行该条的下一步。其他在途任务沿各自条目继续。
+首个只读动作：在本文件定位 `"id": "grea:T-foodstreet-monkey-visual"` 并读取其 `resume`。先对照本轮输入的时间、事件和最新裁定，再执行该条的下一步。其他在途任务沿各自条目继续。
 
 ```manager-task-view
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T17:54:08.200825+08:00",
+  "updatedAt": "2026-11-05T18:18:27.009743+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
-  "activeImplementationTask": "grea:T-monkey-large-plan-export",
+  "activeImplementationTask": "grea:T-foodstreet-monkey-visual",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -703,10 +703,24 @@
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/source-outline-inventory.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual-stock64.json",
         "plugin/skills/grea-recover/references/Unity原生转换规范.md#目标能力选型与批量映射",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/stock-tmp/result/measurements.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/stock-tmp/result/measurements.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual-sub71.json"
       ],
       "nextAction": "纯原生TMP直接指定实用CJK字体通过：width3外扩L/R/T/B=3.094/2.987/3/3，661个深色字心保留，小数2.5/3.6最大误差0.307/0.202；开关/冷开图一致。有源参数可配置，继续仅核项目实际fallback绑定。原页仍待实图签收、正式不采用。",
-      "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
+      "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42",
+      "resume": {
+        "eventId": "foodstreet-monkey-parallel-20261105",
+        "humanDirection": "director-outline-source-pixels、director-label15-stock-tmp-baseline：按原宽度/样式的像素语义验收；先用TMP原生材质，修可证明的绑定差异。director-visual-native-subagents：现任视觉开发者用项目内原生子Agent。",
+        "latestRuling": "用户交11张1.9.8实图；样本15按同页同倍率对看，源设备字体身份未知。",
+        "verified": "GREA裸TMP基线width3最大误差0.094px、小数宽度通过、冷重开图一致。A线在父页slot1试接原生材质；最终fixture/公开映射与退化对照待签。",
+        "responsibility": "monkey-visual主开发单写，父会话01a1aa15-8661-7c92-8458-4779e19afc42；原生子Agent /root/outline_regression，01a1ab34-0a64-7cb1-8d9d-3bf6a089b331，Luna high已核。子Agent只做离线缺脚本/错材质回归。",
+        "nextAction": "复用已有stock-tmp/result、fixed03与用户原图。核A线实际公共工具导出和同页冷开像素；禁止重派原生基线。另有dev43独立11根回归。整包与帮助窄项已核，旧分支和120文件是历史。",
+        "evidence": [
+          ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/stock-tmp/result/measurements.json",
+          ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/reference-to-sample.json",
+          ".private/development/audit-remediation-20261105/dev42-review/RESULT.json"
+        ]
+      }
     },
     {
       "id": "grea:T-foodstreet-monkey-bindings",
@@ -788,7 +802,7 @@
       "id": "grea:T-monkey-large-plan-export",
       "title": "大型展开计划的有界导出和续接",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "done",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "moduleExecutorSessionId": "01a19b7a-b22a-7ac1-88b0-4c3d3219718b",
       "description": "现任monkey主开发处理196238948字节计划及CLI探读。",
@@ -812,13 +826,14 @@
         ".private/development/audit-remediation-20261105/dev38-review/whole/native/execution-result.json",
         ".private/development/foodstreet-monkey-parallel-20261105/aggregate-read65.json",
         ".private/development/audit-remediation-20261105/dev38-review/whole-cold/result.json",
-        ".private/development/audit-remediation-20261105/dev40-review/fixed-small/native/execution-result.json"
+        ".private/development/audit-remediation-20261105/dev40-review/fixed-small/native/execution-result.json",
+        ".private/development/audit-remediation-20261105/dev42-review/RESULT.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
       ],
-      "nextAction": "只在既有产物复核聚合读取和语义诊断。11根排序小例独立，dev40已过8根，另有实例身份差异（69）。",
+      "nextAction": "整包工具任务结束。公开验收语义失败已交总监，后续质量缺口由原审计/视觉条目另行接续；复用dev42完整报告。",
       "resume": {
         "eventId": "foodstreet-monkey-parallel-20261105",
         "humanDirection": "总监传达本轮人类指令 director-whole-budget-2048-native：整批默认2048 MiB、包内单文件128 MiB、导入指令256 MiB。复用现有候选，在 Unity 核全量导入、保存、重开和缺失；视觉另验。",
@@ -828,11 +843,8 @@
         "importPlanSha256": "f32fff1a4892713ef38181905d20959f91edef7193cf147cc7d4c5dc83bbb4d1",
         "nativeReceipt": ".private/development/audit-remediation-20261105/dev35-review/native/execution-result.json",
         "missingPrefabList": ".private/development/audit-remediation-20261105/dev35-review/whole-result.json",
-        "verifiedResult": "2026-11-05 16:12 +08:00，Unity 退出1。FoodDeliveryTaskItem 按钮 #26 的目标 #10 缺 Graphic。1677 个源 Prefab 中落盘 0、缺失 1677、冷重开 0。",
-        "pendingDispatches": {
-          "monkey": "65：修现有聚合回执读取与逐根交叉核验。dev40仅针对独立11根排序回归。",
-          "grea": "整包独立冷验完成：b420b060的1677/1677全部保存、冷读，0缺失、0失败，两场景可冷开；复用 .private/development/audit-remediation-20261105/dev38-review/whole-cold/result.json。等待65现有大回执的公开验收器修复；严禁重跑整包。"
-        },
+        "verifiedResult": "dev38 1677/1677保存、独立冷开、0缺失0失败、两场景可开。dev42公开读取两份聚合回执成功，GREA独立复跑exit1、static pass、editor fail、153319条blocking和3024条remainingDynamic。完整压缩报告SHA与提供方一致。",
+        "pendingDispatches": {},
         "historicalClosedTasks": [
           "grea:T-repository-root-wip",
           "grea:T-repository-version-branches"
