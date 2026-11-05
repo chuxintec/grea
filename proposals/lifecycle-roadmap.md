@@ -596,15 +596,18 @@
       "id": "grea:T-monkey-audit-remediation-dual-review",
       "title": "monkey通用审计整改及总监/Claude独立双审",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "verification",
+      "workflowStatus": "in_progress",
       "priority": 0,
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "description": "固定dev27/51a5e900b70107fa23de3fe808e3869383a93947，wheel afc8f03d15a2df49e226da88e29217b203c9cdb24619667b0f499cfd0c46e1a8，500文件一致。26例真实JsonUtility全部符合预期；1Sprite最小公开源→原生 imported→verify静态/呈现pass→严格freeze13文件实际成功；9独立拷贝控制通过，原96pins不变。已交总监/Claude同字节独立双审，尚无放行。",
+      "description": "dev27/51a5e90双审退修。单Sprite原生/严格冻结正例已复现。错误归属及矛盾启用状态仍可通过，已解决诊断被拒；入口和Creator/Mask契约需修。",
       "acceptanceCriteria": [
         "固定集成候选源码提交、工具版本/摘要、运行入口、A1–A8矩阵与关键差异一致",
         "未mock关键门正反例：缺组件/可见资源/错状态/哈希/引用/字段拒绝，合法imported与明确纯动态静态正例通过",
         "总监独立审查及Claude CLI独立审查同一固定字节，分歧复核完成；总监记录精确放行身份",
-        "不伪造原生/视觉/Player结果；不强杀在途、不丢WIP、不恢复Cocos产品/发布或二进制"
+        "不伪造原生/视觉/Player结果；不强杀在途、不丢WIP、不恢复Cocos产品/发布或二进制",
+        "双向核对源组件、所属Prefab/节点、角色、持久身份与呈现，显式合法共享通过",
+        "公开verify和冻结按当前未解决证据统一判定，覆盖已解决、纯动态、图范围与两种冻结入口",
+        "Creator实际呈现证据可消费，矩形Mask在导出时有可执行契约或明确报告缺口"
       ],
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-monkey-audit-remediation/PLAN.md",
@@ -612,16 +615,17 @@
         ".private/development/audit-remediation-20261105/dev25-minimal/audit-result.json",
         ".private/development/audit-remediation-20261105/dev26-minimal/audit-result.json",
         ".private/development/audit-remediation-20261105/dev26-jsonutility-probe/receipt.json",
-        ".private/development/audit-remediation-20261105/dev27-minimal/review-handoff.json"
+        ".private/development/audit-remediation-20261105/dev27-minimal/review-handoff.json",
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev27-dual-review/RESULT.md"
       ],
-      "nextAction": "总监独立审查+Claude CLI对同字节独立复审，分歧复核后记录精确放行或退修；此前两批产品保持blocked。",
+      "nextAction": "monkey修四组通用缺陷，沿用同一组审计反例，新增合法共享和必要组件正例。GREA核新固定制品后交总监与Claude CLI独立复审。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
         "sourceCommit": "51a5e900b70107fa23de3fe808e3869383a93947",
         "packageSha256": "afc8f03d15a2df49e226da88e29217b203c9cdb24619667b0f499cfd0c46e1a8",
         "handoffSha256": "c3c75bb194a129a54d5d38e14075978b8e38195856a0e3592fc1911dcc3b28f7",
-        "approval": "pending independent dual review"
+        "approval": "hold_after_independent_dual_review"
       }
     }
   ],
