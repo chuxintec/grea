@@ -6,11 +6,11 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T09:42:45.572320+08:00",
+  "updatedAt": "2026-11-05T12:45:01.847385+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "GREA v1.1统一任务源已实际迁移，模块6个未完任务及旧两根待办归并；两批优先级1，先肥鹅四页、后僵尸有源全量，均总监验收。统一monkey0.8dev10实际字体已通过，11业务Prefab/668节点保存重开，尚165静态引用差异待通用修复；beaver正在实现既有采用链脚本GUID重绑定。binary暂停。",
-  "activeImplementationTask": "grea:T-monkey-audit-remediation-dual-review",
+  "currentStage": "肥鹅全量隔离转换与逐源审计已交验，事件 foodstreet-full-conversion-audit-20261105；报告和逐源索引见当前任务。目录索引 SHA-256 1bdcbe708a5969a1aadb4fa9ba7c81f24f6dacff4bcf8357b2ab23ac98412d31。产品采用保持双审 HOLD。",
+  "activeImplementationTask": "grea:T-foodstreet-full-conversion-diagnostic",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -627,6 +627,25 @@
         "handoffSha256": "c3c75bb194a129a54d5d38e14075978b8e38195856a0e3592fc1911dcc3b28f7",
         "approval": "hold_after_independent_dual_review"
       }
+    },
+    {
+      "id": "grea:T-foodstreet-full-conversion-diagnostic",
+      "title": "肥鹅1.9.1已取得全包转Unity及独立结果审计",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "verification",
+      "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
+      "description": "本次直接人类授权隔离诊断转换，产品采用继续受双审门约束。 当前事件 foodstreet-full-conversion-audit-20261105，接续指令 restore-active-audit-03。运行目录见 sourceRefs 第二项。恢复时核对 materialize.py 进程、每批 execution-result 和已落盘源对象；只拆分缺失根，逐源核对文件、保存重开、引用和缺口。退出条件为逐源索引、问题报告和证据交付总监，或记录无法继续的关键阻塞。 逐源核对已完成，1,670 独立 Prefab、3 源 Scene 保存重开，26 个逻辑 Prefab 未生成。提交总监独立验收。",
+      "acceptanceCriteria": [
+        "复核原包和同版资源分母与SHA",
+        "GREA公开运行monkey，逐根对照真实生成/原生结果及缺口",
+        "制品索引、代表原生审计、共因报告交总监"
+      ],
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-full-conversion-audit/PLAN.md",
+        ".private/development/foodstreet-full-conversion-audit-20261105",
+        ".private/development/foodstreet-full-conversion-audit-20261105/delivery-index.json",
+        ".private/development/foodstreet-full-conversion-audit-20261105/REPORT.md"
+      ]
     }
   ],
   "blockers": [
