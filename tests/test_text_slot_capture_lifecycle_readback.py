@@ -1,9 +1,11 @@
 import copy
 import hashlib
+import json
+from pathlib import Path
 import unittest
 
 from monkey.prefab_static_sort_readback import _empty_text_slot_row_hash, _text_slot_enumeration_hash
-from monkey.text_slot_capture_lifecycle_readback import CONTRACT,verify_queue
+from monkey.text_slot_capture_lifecycle_readback import CONTRACT,verify_queue,_valid_scale_context
 
 
 def enumeration():
@@ -27,6 +29,21 @@ def rehash(value):
     value['evidenceSha256']=_text_slot_enumeration_hash(value)
 
 
+def scale_context(slot,text):
+    layout=dict(rectSize=dict(x=100,y=30),pivot=dict(x=.5,y=.5),margin=dict(x=0,y=0,z=0,w=0),
+                fontSize=28,fontSizeMin=1,fontSizeMax=72,fontStyle=0,autoSizing=False)
+    for key in ('characterSpacing','wordSpacing','lineSpacing','lineSpacingAdjustment','paragraphSpacing',
+                'textLineBoxLineHeight','textLineBoxExtraLineFraction','textLineBoxNativePreferredHeight'):layout[key]=0
+    return dict(sourceComponentId='label',sourceTextSha256=text,materialSlot=slot,
+                formula='TextMeshProUGUI.GenerateTextMesh.uv0.w-v1',canvasRenderMode=0,canvasScaleFactor=1,
+                worldCameraAssigned=False,ownerLossyScaleY=1,graphicLossyScaleY=1,ownerFontSize=28,
+                ownerFontSizeMin=1,ownerFontSizeMax=72,ownerFontStyle=0,ownerAutoSizing=False,
+                charWidthAdjustmentDelta=0,characterHorizontalScale=1,textLayoutInputs=layout,
+                operandEvidenceSha256='a'*64,textLayoutEvidenceSha256='b'*64,evidenceSha256='c'*64,
+                characters=[dict(characterIndex=i,materialSlot=slot,vertexIndex=i*4,scale=1,visible=True)for i in range(2)],
+                meshUv0W=[1]*8)
+
+
 def fixture():
     initial=enumeration();final=copy.deepcopy(initial)
     life=dict(schemaVersion=1,contract=CONTRACT,status='verified',diagnostic='',sourceComponentId='label',
@@ -47,8 +64,7 @@ def fixture():
                          bakedProxyMaterialGuid='5'*32,bakedProxyMaterialLocalFileId=7,bakedProxyMaterialFingerprint='d'*64,
                          ownerFontAssetGuid='4'*32,ownerFontAssetLocalFileId=2,
                          ownerFontMaterialGuid='7'*32,ownerFontMaterialLocalFileId=3,ownerFontMaterialFingerprint='8'*64,
-                         textScaleContext=dict(sourceComponentId='label',sourceTextSha256=life['sourceTextSha256'],
-                                               materialSlot=i,textLayoutInputs=dict(rectSize=[100,30])))for i in ([1,2]if slot==-1 else[slot])]))
+                         textScaleContext=scale_context(i,life['sourceTextSha256']))for i in ([1,2]if slot==-1 else[slot])]))
     phase('initial-after-prepare-source')
     for slot in [1,2]:phase('capture-fallback-input',slot);phase('capture-fallback-output',slot)
     phase('after-all-fallback-profiles-before-registration')
@@ -182,6 +198,34 @@ class CaptureLifecycleReadbackTests(unittest.TestCase):
         q,life=fixture();current=copy.deepcopy(life['finalEnumeration']);current['rows'][1]['sourceShaderGuid']='0'*32;rehash(current)
         for row in q['textSources']:row['evidence']['currentTextSlotEnumeration']=current
         self.assertTrue(verify_queue(q,'loaded',True))
+
+    def test_missing_default_or_nonfinite_context_never_counts_as_equal_valid_operands(self):
+        for bad in (None,{},dict(canvasScaleFactor=0),dict(canvasScaleFactor=float('nan'))):
+            q,life=fixture()
+            for phase in life['phases']:
+                for snapshot in phase['slots']:snapshot['textScaleContext']=copy.deepcopy(bad)
+            with self.subTest(context=bad):self.assertTrue(verify_queue(q,'persistent',True))
+
+    def test_valid_but_changed_character_scale_operands_are_not_frozen_inputs(self):
+        q,life=fixture()
+        for phase in life['phases']:
+            if phase['phase']in ('final-before-rebind','final-after-rebind'):
+                phase['slots'][0]['textScaleContext']['characters'][0]['scale']=2
+                phase['slots'][0]['textScaleContext']['operandEvidenceSha256']='0'*64
+        self.assertTrue(verify_queue(q,'persistent',True))
+
+    def test_actual18_default_contexts_are_rejected_without_rewriting_the_failure(self):
+        pins=Path(__file__).resolve().parents[1]/'.private/foodstreet-four-activity-20261104/dev24-text-context-capture/input-pins.json'
+        if not pins.is_file():self.skipTest('actual18 private input pins unavailable')
+        pin=next(x for x in json.loads(pins.read_text())if '/StaticSortTextCapture/'in x['path'])
+        path=Path(pin['path']);raw=path.read_bytes();self.assertEqual(pin['sha256'],hashlib.sha256(raw).hexdigest())
+        failure=json.loads(raw);life=failure['lifecycle'];observed=0
+        for phase in life['phases']:
+            for snapshot in phase['slots']:
+                slot=snapshot['slot'];observed+=1
+                self.assertFalse(_valid_scale_context(snapshot['textScaleContext'],life['sourceComponentId'],
+                    life['sourceTextSha256'],slot,phase['enumeration']['rows'][slot]))
+        self.assertGreater(observed,0);self.assertEqual(raw,path.read_bytes())
 
 
 if __name__=='__main__':unittest.main()

@@ -1,6 +1,7 @@
 """Check staged TMP capture evidence independently of its aggregate pass flags."""
 from __future__ import annotations
 import re
+import math
 
 CONTRACT='monkey-static-sort-text-capture-lifecycle/1'
 _SHA=re.compile(r'[0-9a-f]{64}\Z')
@@ -20,6 +21,49 @@ _V2_IDENTITIES=tuple(prefix+suffix for prefix in ('sourceGraphicMaterial','textI
 
 
 def _hash(value):return isinstance(value,str) and _SHA.fullmatch(value) is not None
+
+
+def _finite(value):
+    if type(value)not in (int,float):return False
+    try:return math.isfinite(value)
+    except OverflowError:return False
+
+
+def _valid_scale_context(context,sid,text,slot,row):
+    """Check sampled operands; the native producer separately rehashes its float evidence."""
+    if (not isinstance(context,dict)or context.get('sourceComponentId')!=sid or context.get('sourceTextSha256')!=text or
+        type(context.get('materialSlot'))is not int or context['materialSlot']!=slot or context.get('formula')!='TextMeshProUGUI.GenerateTextMesh.uv0.w-v1' or
+        type(context.get('canvasRenderMode'))is not int or context['canvasRenderMode']not in (0,1,2)or
+        type(context.get('worldCameraAssigned'))is not bool or type(context.get('ownerAutoSizing'))is not bool or
+        type(context.get('ownerFontStyle'))is not int):return False
+    numbers=('canvasScaleFactor','ownerLossyScaleY','graphicLossyScaleY','ownerFontSize','ownerFontSizeMin',
+             'ownerFontSizeMax','charWidthAdjustmentDelta','characterHorizontalScale')
+    if any(not _finite(context.get(k))for k in numbers)or context['canvasScaleFactor']<=0:return False
+    if any(not _hash(context.get(k))for k in ('operandEvidenceSha256','textLayoutEvidenceSha256','evidenceSha256')):return False
+    layout=context.get('textLayoutInputs')
+    if not isinstance(layout,dict):return False
+    for key,dimensions in (('rectSize','xy'),('pivot','xy'),('margin','xyzw')):
+        vector=layout.get(key)
+        if not isinstance(vector,dict)or any(not _finite(vector.get(axis))for axis in dimensions):return False
+    fields=('fontSize','fontSizeMin','fontSizeMax','characterSpacing','wordSpacing','lineSpacing',
+            'lineSpacingAdjustment','paragraphSpacing','textLineBoxLineHeight','textLineBoxExtraLineFraction',
+            'textLineBoxNativePreferredHeight')
+    if any(not _finite(layout.get(k))for k in fields):return False
+    for key,owner_key in (('fontSize','ownerFontSize'),('fontSizeMin','ownerFontSizeMin'),
+                          ('fontSizeMax','ownerFontSizeMax'),('fontStyle','ownerFontStyle'),('autoSizing','ownerAutoSizing')):
+        if layout.get(key)!=context[owner_key]:return False
+    characters=context.get('characters');uv=context.get('meshUv0W')
+    if not isinstance(characters,list)or not characters or not isinstance(uv,list)or not uv or any(not _finite(x)for x in uv):return False
+    if len(characters)!=row.get('characterReferences'):return False
+    seen=set();visible=0
+    for character in characters:
+        if (not isinstance(character,dict)or type(character.get('characterIndex'))is not int or character['characterIndex']<0 or
+            character['characterIndex']in seen or type(character.get('materialSlot'))is not int or character['materialSlot']!=slot or
+            type(character.get('vertexIndex'))is not int or character['vertexIndex']<0 or
+            not _finite(character.get('scale'))or type(character.get('visible'))is not bool):return False
+        seen.add(character['characterIndex']);visible+=character['visible']
+        if character['visible']and character['vertexIndex']+4>len(uv):return False
+    return visible==row.get('visibleCharacterReferences')
 
 
 def _valid_enum(value,sid,text):
@@ -128,6 +172,8 @@ def _verify_queue(queue,mode,required=False):
                     gap('binding snapshot slot is outside its phase enumeration')
                 elif any(snapshot.get(k)!=enumeration['rows'][number].get(k)for k in _V2_IDENTITIES):
                     gap('binding snapshot material/shader/texture identity differs from phase enumeration')
+                elif not _valid_scale_context(snapshot.get('textScaleContext'),sid,text,number,enumeration['rows'][number]):
+                    gap('binding snapshot has no valid sampled layout/scale operands')
             snapshots[key]=slot_rows
             if slot==-1:
                 if set(slot_rows)!=set(initial_ids):gap('aggregate binding denominator differs')
@@ -170,6 +216,7 @@ def _verify_queue(queue,mode,required=False):
                     'sourceTextureGuid','sourceTextureLocalFileId')
             if any(before.get(k)!=current.get(k)for k in stable):gap(f'slot {slot} binding source identity drifted')
             layout_keys=('sourceComponentId','sourceTextSha256','materialSlot','textLayoutInputs','textLayoutEvidenceSha256',
+                         'operandEvidenceSha256','characters',
                          'canvasRenderMode','canvasScaleFactor','worldCameraAssigned','ownerLossyScaleY','graphicLossyScaleY',
                          'ownerFontSize','ownerFontSizeMin','ownerFontSizeMax','ownerFontStyle','ownerAutoSizing',
                          'charWidthAdjustmentDelta','characterHorizontalScale')

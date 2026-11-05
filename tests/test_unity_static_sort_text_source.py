@@ -403,6 +403,21 @@ class UnityStaticSortTextSourceContractTests(unittest.TestCase):
         self.assertIn("VerifyTextScaleFormulaAgainstMesh(currentContext, binding.sourceMesh", verify)
         self.assertIn("operandEvidenceSha256 != currentContext.operandEvidenceSha256", verify)
 
+    def test_every_fresh_drawable_slot_gets_real_scale_context_before_capture_or_rebind(self):
+        capture = _body(self.editor, "public static bool CaptureCurrentTextScaleContext(")
+        slots = _body(self.editor, "static bool GetCurrentSlotsCore(")
+        rebind = _body(self.editor, "public static bool RebindCapturedSlot(")
+        self.assertIn("TryBuildTextScaleContext(binding.owner, binding.sourceGraphic, binding.sourceMesh", capture)
+        self.assertIn("TextScaleContextUvMatchesMesh(context, binding.sourceMesh", capture)
+        self.assertIn("binding.currentTextScaleContext = context", capture)
+        self.assertIn("binding.textSlotEnumeration = enumeration", slots)
+        self.assertIn("CaptureCurrentTextScaleContext(binding, out diagnostic)", slots)
+        self.assertLess(slots.index("if (textInfoReferences == 0 || visibleTextInfoReferences == 0)"),
+                        slots.index("CaptureCurrentTextScaleContext(binding, out diagnostic)"))
+        self.assertIn("GetCurrentSlots(currentOwner, capturedProof.sourceComponentId", rebind)
+        self.assertIn("current.textSlotEnumeration", rebind)
+        self.assertIn("current.currentTextScaleContext", self.editor)
+
     def test_changed_mesh_hash_is_normalized_only_after_sdk_scale_proof(self):
         normalize = _body(self.editor, "static bool TryNormalizeCurrentTextMeshRows(")
         self.assertIn("VerifyLoadedTextMeshContext(slotBinding, savedIdentity", normalize)

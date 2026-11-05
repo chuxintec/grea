@@ -720,6 +720,43 @@ namespace Monkey.StaticSortQueueProxy
             return true;
         }
 
+        /// <summary>
+        /// Capture the current live TMP layout/scale operands for one freshly
+        /// enumerated drawable slot. Call this after every ForceMeshUpdate /
+        /// GetCurrentSlots pass used by the fallback-material lifecycle. A
+        /// missing context is an error; two absent contexts are never treated
+        /// as equivalent evidence.
+        /// </summary>
+        public static bool CaptureCurrentTextScaleContext(TextSlotBinding binding, out string diagnostic)
+        {
+            diagnostic = null;
+            if (binding == null || binding.owner == null || binding.sourceGraphic == null || binding.sourceMesh == null ||
+                String.IsNullOrWhiteSpace(binding.sourceComponentId) || binding.materialSlot < 0 ||
+                !IsValidTextSlotEnumeration(binding.textSlotEnumeration) ||
+                binding.textSlotEnumeration.sourceComponentId != binding.sourceComponentId ||
+                binding.textSlotEnumeration.sourceTextSha256 != HashText(binding.owner.text ?? String.Empty) ||
+                binding.textSlotEnumeration.sourceTextSha256 != binding.sourceTextSha256 ||
+                binding.materialSlot >= binding.textSlotEnumeration.rows.Length ||
+                binding.textSlotEnumeration.rows[binding.materialSlot] == null ||
+                binding.textSlotEnumeration.rows[binding.materialSlot].disposition != "drawable" ||
+                binding.textSlotEnumeration.rows[binding.materialSlot].sourceMeshSha256 != MeshFingerprint(binding.sourceMesh))
+                return Fail("TMP_SORT_CURRENT_TEXT_SCALE_CONTEXT_SLOT_INPUT_INVALID:" +
+                    (binding == null ? "null" : binding.sourceComponentId + ":" + binding.materialSlot), out diagnostic);
+
+            if (!TryBuildTextScaleContext(binding.owner, binding.sourceGraphic, binding.sourceMesh,
+                    binding.sourceComponentId, binding.materialSlot, out var context, out diagnostic))
+                return false;
+            if (!IsValidTextScaleContext(context) || context.sourceComponentId != binding.sourceComponentId ||
+                context.sourceTextSha256 != binding.sourceTextSha256 || context.materialSlot != binding.materialSlot)
+                return Fail("TMP_SORT_CURRENT_TEXT_SCALE_CONTEXT_UNVERIFIED:" + binding.sourceComponentId + ":" +
+                    binding.materialSlot + ";context-identity-mismatch", out diagnostic);
+            if (!TextScaleContextUvMatchesMesh(context, binding.sourceMesh, out var uvDiagnostic))
+                return Fail("TMP_SORT_CURRENT_TEXT_SCALE_CONTEXT_UNVERIFIED:" + binding.sourceComponentId + ":" +
+                    binding.materialSlot + ";uv=" + uvDiagnostic, out diagnostic);
+            binding.currentTextScaleContext = context;
+            return true;
+        }
+
         static bool IsValidTextScaleContext(NativeStaticSortTextScaleContext context)
         {
             if (context == null || context.formula != "TextMeshProUGUI.GenerateTextMesh.uv0.w-v1" ||
@@ -2450,7 +2487,11 @@ namespace Monkey.StaticSortQueueProxy
             enumeration.verified = enumeration.verified && IsValidTextSlotEnumeration(enumeration);
             if (!enumeration.verified)
                 return Fail("TMP_SORT_TEXTINFO_SLOT_ENUMERATION_INCOMPLETE:" + rows.Count + "/" + info.materialCount, out diagnostic);
-            foreach (var binding in slots) binding.textSlotEnumeration = enumeration;
+            foreach (var binding in slots)
+            {
+                binding.textSlotEnumeration = enumeration;
+                if (!CaptureCurrentTextScaleContext(binding, out diagnostic)) return false;
+            }
             return true;
         }
 
@@ -2658,6 +2699,7 @@ namespace Monkey.StaticSortQueueProxy
             if (expected.sourceComponentId != actual.sourceComponentId) failed.Add("sourceComponentId");
             if (expected.sourceTextSha256 != actual.sourceTextSha256) failed.Add("sourceTextSha256");
             if (expected.materialSlot != actual.materialSlot) failed.Add("materialSlot");
+            if (expected.operandEvidenceSha256 != actual.operandEvidenceSha256) failed.Add("operandEvidenceSha256");
             if (expected.textLayoutEvidenceSha256 != actual.textLayoutEvidenceSha256) failed.Add("textLayoutEvidenceSha256:" +
                 TextLayoutEvidenceDifference(expected.textLayoutInputs, actual.textLayoutInputs));
             if (expected.canvasRenderMode != actual.canvasRenderMode) failed.Add("canvasRenderMode");
@@ -2871,6 +2913,10 @@ namespace Monkey.StaticSortQueueProxy
             foreach (var slot in phase.slots)
             {
                 if (slot == null || slot.slot < 0 || slot.slot >= phase.enumeration.rows.Length) return false;
+                if (!IsValidTextScaleContext(slot.textScaleContext) ||
+                    slot.textScaleContext.sourceComponentId != phase.sourceComponentId ||
+                    slot.textScaleContext.sourceTextSha256 != phase.sourceTextSha256 ||
+                    slot.textScaleContext.materialSlot != slot.slot) return false;
                 var row = phase.enumeration.rows[slot.slot];
                 if (row == null || row.disposition != "drawable" || slot.disposition != row.disposition ||
                     slot.characterReferences != row.characterReferences || slot.visibleCharacterReferences != row.visibleCharacterReferences ||
