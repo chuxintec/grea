@@ -2765,6 +2765,26 @@ namespace Monkey.StaticSortQueueProxy
             return true;
         }
 
+        // TMP may clear meshInfo[slot].material when it rebuilds a registered fallback.
+        // Its character material and rendered Graphic are independently verified.
+        static bool RegisteredFallbackCacheCleared(TextSlotBinding captured, TextSlotBinding current,
+            NativeStaticSortTextSlotEvidence initial, NativeStaticSortTextSlotEvidence final)
+        {
+            return captured.generatedSubmesh && captured.tmpFallbackMaterialBaked &&
+                captured.persistentFallbackVariantRegistered && current.persistentFallbackVariantRegistered &&
+                current.roleTransition == "transient-to-persistent-registered" &&
+                !captured.textInfoMaterialMissing && current.textInfoMaterialMissing &&
+                !initial.textInfoMaterialMissing && final.textInfoMaterialMissing &&
+                String.IsNullOrEmpty(initial.textInfoMaterialGuid) && initial.textInfoMaterialLocalFileId == 0 &&
+                String.IsNullOrEmpty(final.textInfoMaterialGuid) && final.textInfoMaterialLocalFileId == 0 &&
+                String.IsNullOrEmpty(final.textInfoMaterialFingerprint) &&
+                IsSha256(initial.textInfoMaterialFingerprint) &&
+                initial.textInfoMaterialFingerprint == captured.textInfoCharacterMaterialFingerprint &&
+                captured.textInfoCharacterMaterialFingerprint == current.textInfoCharacterMaterialFingerprint &&
+                captured.sourceMeshSha256 == current.sourceMeshSha256 &&
+                initial.sourceMeshSha256 == final.sourceMeshSha256;
+        }
+
         public static bool ValidateCapturedSlotTransition(TextSlotBinding captured, TextSlotBinding current,
             NativeStaticSortTextSlotEnumeration finalEnumeration, out string diagnostic)
         {
@@ -2879,7 +2899,8 @@ namespace Monkey.StaticSortQueueProxy
             if (current.sourceMeshSha256 != finalRow.sourceMeshSha256)
                 differences.Add("finalSourceMeshDoesNotMatchFinalEnumeration=" + current.sourceMeshSha256 + "!=" + finalRow.sourceMeshSha256);
             if (current.textInfoMaterialMissing != captured.textInfoMaterialMissing &&
-                !(captured.textInfoMaterialMissing && !current.textInfoMaterialMissing && fallbackProfileVerified))
+                !(fallbackProfileVerified && (captured.textInfoMaterialMissing && !current.textInfoMaterialMissing ||
+                    RegisteredFallbackCacheCleared(captured, current, initialRow, finalRow))))
                 differences.Add("textInfoMaterialMissing=" + captured.textInfoMaterialMissing + "->" + current.textInfoMaterialMissing);
 
             if (differences.Count > 0)

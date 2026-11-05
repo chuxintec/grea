@@ -1,6 +1,6 @@
 # monkey
 
-当前开发统一在 **0.8.0.dev42** 单线，包含 Unity 来源恢复、Cocos 来源转 Unity 静态 Prefab、
+当前开发统一在 **0.8.0.dev43** 单线，包含 Unity 来源恢复、Cocos 来源转 Unity 静态 Prefab、
 Toggle 空配置桥接、显式 CoreText 静态回退字体及严格静态引用恢复。
 新增导出、开发与验收统一以 Unity 为目标；Creator/Cocos 目标保留既有显式兼容入口及历史证据，暂停专项修复和验收。
 monkey 由 GREA 统一调度和分发；旧 0.7.0 发布与固定消费者只作兼容保留，

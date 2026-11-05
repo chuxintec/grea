@@ -381,6 +381,7 @@ def _csharp_program(proxy_source: str, text_source: str, native_source: str) -> 
         "static string TextSlotEvidenceSummary(",
         "public static bool TextLayoutContextMatches(",
         "static string TextLayoutEvidenceDifference(",
+        "static bool RegisteredFallbackCacheCleared(",
         "public static bool ValidateCapturedSlotTransition(",
         "static string SlotBindingTransitionSummary(",
         "public static bool CaptureLifecycleReadyForRebind(",
@@ -480,9 +481,10 @@ static class UnityStaticSortTextSource {
  static readonly FieldInfo CharacterWidthAdjustmentField=typeof(TMP_Text).GetField("m_charWidthAdjDelta",BindingFlags.Instance|BindingFlags.NonPublic);
  static readonly FieldInfo CharacterHorizontalScaleField=typeof(TMP_Text).GetField("m_characterHorizontalScale",BindingFlags.Instance|BindingFlags.NonPublic);
  public static int PrepareCalls, CaptureCalls, RegisterCalls, RebindCalls;
+ public static bool clearRegisteredCache, driftClearedCharacterMaterial;
  public static bool failRegistration, driftText, driftAtlas, driftCharacters, driftFont, driftLayout, driftMesh, driftMaterial, driftCount, driftScale;
  public static bool skipContextCapture;
- public static void ResetProvider(){PrepareCalls=CaptureCalls=RegisterCalls=RebindCalls=0;failRegistration=driftText=driftAtlas=driftCharacters=driftFont=driftLayout=driftMesh=driftMaterial=driftCount=driftScale=skipContextCapture=false;}
+ public static void ResetProvider(){PrepareCalls=CaptureCalls=RegisterCalls=RebindCalls=0;clearRegisteredCache=driftClearedCharacterMaterial=false;failRegistration=driftText=driftAtlas=driftCharacters=driftFont=driftLayout=driftMesh=driftMaterial=driftCount=driftScale=skipContextCapture=false;}
  public static bool GetCurrentSlots(TMP_Text owner,string sid,out List<TextSlotBinding> slots,
    out NativeStaticSortTextSlotEnumeration enumeration,out string diagnostic) {
    slots=owner.finalSnapshot?owner.finalBindings:owner.bindings; enumeration=owner.finalSnapshot?owner.finalEnumeration:owner.enumeration; diagnostic=null;
@@ -547,6 +549,11 @@ static class UnityStaticSortTextSource {
    var e=CloneEnum(b.owner.finalEnumeration??b.owner.enumeration);
    var r=e.rows[b.materialSlot];r.sourceGraphicMaterialGuid=b.bakedProxyMaterialGuid;
    r.sourceGraphicMaterialLocalFileId=b.bakedProxyMaterialLocalFileId;r.sourceGraphicMaterialFingerprint=b.bakedProxyMaterialFingerprint;
+   if(clearRegisteredCache && !b.textInfoMaterialMissing){
+    next.textInfoMaterialMissing=true;r.textInfoMaterialMissing=true;
+    r.textInfoMaterialGuid=null;r.textInfoMaterialLocalFileId=0;r.textInfoMaterialFingerprint=null;
+    if(driftClearedCharacterMaterial)next.textInfoCharacterMaterialFingerprint=HashText("foreign-character-material");
+   }
    Rehash(e);b.owner.finalEnumeration=e;return true;
  }
  public static bool RebindCapturedSlot(TextSlotBinding captured,TMP_Text owner,Graphic graphic,out TextSlotBinding rebound,out string d) {
@@ -822,6 +829,27 @@ class Program {
    totalDrawable+=result.Count;phaseRows+=result[0].captureLifecycle.phases.Length;
    foreach(var b in result)receiptRows.Add(new{sourceComponentId=sid,materialSlot=b.materialSlot,captureLifecycle=b.captureLifecycle});
   }
+  foreach(bool corrupt in new[]{false,true}){
+   UnityStaticSortTextSource.ResetProvider();
+   UnityStaticSortTextSource.clearRegisteredCache=true;
+   UnityStaticSortTextSource.driftClearedCharacterMaterial=corrupt;
+   const string id="fixture:owner#22::sync-component-cache";
+   var cacheOwner=Owner(id,"2日30分",2,new[]{1},new[]{0,2},new[]{0,2},GuidFor("cache-font"),GuidFor("cache-atlas"),H("cache-characters"));
+   var binding=cacheOwner.bindings.Single();
+   cacheOwner.outline=new NativeStaticTextOutline{Target=cacheOwner};
+   binding.outlineDriverPresent=binding.outlineTargetMatchesOwner=true;SetInitialProviderRoute(binding);
+   var cacheRow=cacheOwner.enumeration.rows[1];
+   cacheRow.textInfoMaterialGuid=null;cacheRow.textInfoMaterialLocalFileId=0;
+   cacheRow.textInfoMaterialFingerprint=binding.textInfoCharacterMaterialFingerprint;
+   RehashEnum(cacheOwner.enumeration);
+   try {
+    var rebound=ProxyHarness.Run(new ProxyQueueSpec(),new ProxyRendererSpec{sourceComponentId=id,sourceText=cacheOwner.text},cacheOwner,out _).Single();
+    Need(!corrupt && rebound.textInfoMaterialMissing && UnityStaticSortTextSource.ValidateCaptureLifecycle(rebound.captureLifecycle),"registered cache clearance must retain its complete lifecycle");
+   } catch(InvalidOperationException ex){
+    if(!corrupt || !ex.Message.Contains("textInfoMaterialMissing=False->True"))throw;
+   }
+  }
+  UnityStaticSortTextSource.ResetProvider();
   string actual18Refusal=null;
   if(args.Length>2){
    using var failureDoc=JsonDocument.Parse(File.ReadAllText(args[2]));var failureRoot=failureDoc.RootElement;var actualFailure=failureRoot.GetProperty("failure");
