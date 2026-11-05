@@ -274,13 +274,31 @@ internal static class Program
             .OrderBy(f => f.Name, StringComparer.Ordinal)
             .Select(f => new { name = f.Name, type = ReflectionFullName(f.Type), assembly = ContainingAssemblyIdentity(f.Type)?.Name,
                 serialized = IsSerializedField(f) }).ToArray();
+        var hierarchy = new List<INamedTypeSymbol>();
+        for (var current = type; current != null && current.ToDisplayString() != "UnityEngine.MonoBehaviour" &&
+             current.ToDisplayString() != "UnityEngine.ScriptableObject"; current = current.BaseType)
+            hierarchy.Add(current);
+        var serializedFields = hierarchy.SelectMany(t => t.GetMembers().OfType<IFieldSymbol>())
+            .Where(IsSerializedField).Select(f => new { name = f.Name, type = ReflectionFullName(f.Type),
+                assembly = ContainingAssemblyIdentity(f.Type)?.Name, declaringType = ReflectionFullName(f.ContainingType),
+                serializationMode = f.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == "UnityEngine.SerializeReference") ? "managed-reference" : "inline-or-unity-object",
+                formerlySerializedAs = f.GetAttributes().Where(a => a.AttributeClass?.ToDisplayString() == "UnityEngine.Serialization.FormerlySerializedAsAttribute")
+                    .Select(a => a.ConstructorArguments.Length == 1 ? a.ConstructorArguments[0].Value as string : null).Where(v => v != null).ToArray() })
+            .OrderBy(f => f.declaringType).ThenBy(f => f.name).ToArray();
+        var eventMethods = hierarchy.SelectMany(t => t.GetMembers().OfType<IMethodSymbol>())
+            .Where(m => m.MethodKind == MethodKind.Ordinary && !m.IsStatic && m.DeclaredAccessibility == Accessibility.Public)
+            .Select(m => new { name = m.Name, returnType = ReflectionFullName(m.ReturnType),
+                returnAssembly = ContainingAssemblyIdentity(m.ReturnType)?.Name,
+                parameters = m.Parameters.Select(p => new { type = ReflectionFullName(p.Type), assembly = ContainingAssemblyIdentity(p.Type)?.Name, refKind = p.RefKind.ToString() }).ToArray(),
+                genericArity = m.Arity }).OrderBy(m => m.name).ToArray();
         return new
         {
             fullName = ReflectionFullName(type), assembly = type.ContainingAssembly?.Identity.Name,
             baseType = baseType == null ? null : ReflectionFullName(baseType),
             baseAssembly = baseType?.ContainingAssembly?.Identity.Name,
             interfaces = type.Interfaces.Select(i => new { type = ReflectionFullName(i), assembly = i.ContainingAssembly?.Identity.Name }).ToArray(),
-            kind = type.TypeKind.ToString(), unityObject = IsUnityObject(type), fields, fieldCarrier = carrierReasons.Count == 0,
+            kind = type.TypeKind.ToString(), unityObject = IsUnityObject(type), fields, serializedFields, eventMethods,
+            fieldCarrier = carrierReasons.Count == 0,
             fieldCarrierReasons = carrierReasons.Distinct().ToArray(),
             schemaOnly = reasons.Count == 0, schemaOnlyReasons = reasons.Distinct().ToArray()
         };
@@ -777,6 +795,7 @@ internal static class Program
     static bool IsSerializedField(IFieldSymbol field)
     {
         if (field.IsStatic || field.IsConst || field.IsReadOnly || !IsUnityObject(field.ContainingType)) return false;
+        if (field.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == "System.NonSerializedAttribute")) return false;
         return field.DeclaredAccessibility == Accessibility.Public || field.GetAttributes().Any(a =>
             a.AttributeClass?.ToDisplayString() == "UnityEngine.SerializeField" ||
             a.AttributeClass?.ToDisplayString() == "UnityEngine.SerializeReference");

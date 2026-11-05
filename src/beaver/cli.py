@@ -53,6 +53,7 @@ def capabilities():
         dict(id='config3.validate/generate/compare',state='implemented',effects='read-and-create-only-generated-code',verification='strict shared schema; actual C# and Go JSON readers; caller must run generated consumer'),
         dict(id='csharp.inspect/rename/rename-sequence',state='requires_provider',provider='matching Unity Bee context + .NET Roslyn SDK',effects='read-and-create-only-source-candidates',verification='ordered semantic rename, analyzers/generators, exact final fileEdits; dynamic unknowns block'),
         dict(id='csharp.module',state='implemented',effects='create-only-module-candidate',verification='owned five-layer templates and strict flat JSON reader; no existing assembly mutation'),
+        dict(id='csharp.rewrite-prepare/rewrite-plan/rewrite-apply/rewrite-recover',state='requires_provider',provider='exact local Roslyn SDK; Unity 6000.6.2f1 for apply/recover',effects='bounded-agent-workspace-reviewed-script-patches-and-native-transaction',verification='source/API pins, exact write scope, real compile, unchanged GUID/type/schema/event signatures; behavior requires owner acceptance'),
         dict(id='resource.image-inspect/image-produce/validate-step',state='implemented',effects='read-and-create-only-image-variants',verification='closed resource contracts; Pillow required for image operations; native resource execution remains provider-bound'),
         dict(id='server.generate/module-generate/module-plan/protocol-diff/migration-plan',state='implemented',effects='create-only-go-candidate-and-plans',verification='six roles, explicit ownership, same JSON schema; no production deploy or payment success'),
         dict(id='server.toolchain/protocol-tools/check/build',state='requires_provider',provider='Go + protoc + pinned Go plugins',effects='local-toolchain-build-output',verification='actual compiler/protocol generation and atomic candidate binaries; no global install'),
@@ -246,6 +247,17 @@ def parser():
     cr=csharp.add_parser('rename');cr.add_argument('--project',required=True);cr.add_argument('--spec',required=True);cr.add_argument('--out',required=True);cr.add_argument('--toolchain')
     cs=csharp.add_parser('rename-sequence');cs.add_argument('--project',required=True);cs.add_argument('--spec',required=True);cs.add_argument('--out',required=True);cs.add_argument('--toolchain')
     cm=csharp.add_parser('module');cm.add_argument('--spec',required=True);cm.add_argument('--out',required=True)
+    rw=csharp.add_parser('rewrite-prepare')
+    for option in ('project','spec','out'):rw.add_argument('--'+option,required=True)
+    rw.add_argument('--toolchain')
+    rw=csharp.add_parser('rewrite-plan')
+    for option in ('workspace','expected-workspace','out'):rw.add_argument('--'+option,required=True)
+    rw=csharp.add_parser('rewrite-apply')
+    for option in ('plan','expected-plan','out','editor-path'):rw.add_argument('--'+option,required=True)
+    rw.add_argument('--timeout',type=int,default=600)
+    rw=csharp.add_parser('rewrite-recover')
+    for option in ('transaction','out','editor-path'):rw.add_argument('--'+option,required=True)
+    rw.add_argument('--timeout',type=int,default=600)
     resources=sub.add_parser('resource').add_subparsers(dest='action',required=True)
     ri=resources.add_parser('image-inspect');ri.add_argument('--input',required=True)
     rp=resources.add_parser('image-produce');rp.add_argument('--input',required=True);rp.add_argument('--out',required=True);rp.add_argument('--policy',required=True);rp.add_argument('--expected-source',required=True)
@@ -505,6 +517,13 @@ def dispatch(a):
         if a.action=='generate':return generate(a.schema,a.out)
         return compare(a.before_schema,a.after_schema,a.before_input,a.after_input)
     if a.command=='csharp':
+        if a.action.startswith('rewrite-'):
+            from . import csharp_rewrite as rewrite
+            from .io import load,read
+            if a.action=='rewrite-prepare':return rewrite.prepare(a.project,a.spec,a.out,load(read(a.toolchain)) if a.toolchain else None)
+            if a.action=='rewrite-plan':return rewrite.plan(a.workspace,a.expected_workspace,a.out)
+            if a.action=='rewrite-apply':return rewrite.apply(a.plan,a.expected_plan,a.out,a.editor_path,a.timeout)
+            return rewrite.recover(a.transaction,a.out,a.editor_path,a.timeout)
         from .csharp import inspect,rename_plan,rename_sequence_plan,module_generate
         from .io import load,read
         if a.action=='module':return module_generate(a.spec,a.out)

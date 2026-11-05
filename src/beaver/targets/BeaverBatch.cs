@@ -23,7 +23,7 @@ public static class BeaverBatch {
     }
     [Serializable] public class Step {
         public string kind,assetPath,source,target,oldGuid,newGuid,format,pointer,before,after,payload;
-        public long oldLocalId,newLocalId;public string[] consumers;public Action[] actions;
+        public long oldLocalId,newLocalId;public string[] consumers,types;public Action[] actions;
     }
     [Serializable] public class FileRow {public string path,source,sha256;public bool exists;public long bytes;}
     [Serializable] public class SceneMoveIdentity {public string source,target,guid;}
@@ -42,6 +42,13 @@ public static class BeaverBatch {
         public string path,guid,kind,basePath,contentSha256,serializedTreeSha256;public int missingScripts;public NodeRow[] nodes;
     }
     [Serializable] public class AssetObjectRow {public string guid,type,assembly,name;public long localId;}
+    [Serializable] public class ScriptPropertyRow {public string path,kind,type,value;}
+    [Serializable] public class ScriptInstanceRow {
+        public string prefabPath,prefabGuid,nodePath,fullType,assembly,scriptGuid,scriptPath,scriptSha256;
+        public long nodeLocalId,componentLocalId;public bool enabled,getClassVerified;
+        public ScriptPropertyRow[] properties;
+    }
+    [Serializable] public class ScriptCoverageRow {public string fullType;public string[] prefabPaths;public int instanceCount,scannedPrefabs;public bool complete;}
     [Serializable] public class AssetReadbackRow {public string path,guid,contentSha256,metaSha256,importerType,importerAssembly;public bool completeObjectSet;public AssetObjectRow[] objects;}
     [Serializable] public class Report {
         public string status,planSha256,error,mode,editorVersion,checkpointPolicy,checkpointState;public int completedSteps,hashReadOperations,checkpointCount;public bool checkpointComplete;
@@ -49,6 +56,8 @@ public static class BeaverBatch {
         public List<FileRow> files=new List<FileRow>();public List<PrefabRow> prefabs=new List<PrefabRow>();
         public List<string> resourceReadbacks=new List<string>();
         public List<AssetReadbackRow> assets=new List<AssetReadbackRow>();
+        public List<ScriptInstanceRow> scriptInstances=new List<ScriptInstanceRow>();
+        public List<ScriptCoverageRow> scriptCoverage=new List<ScriptCoverageRow>();
         public List<string> diagnostics=new List<string>();
         public List<DependencyRow> nativeConsumers=new List<DependencyRow>();
         public SceneSettingsReadback sceneSettingsReadback;
@@ -268,6 +277,73 @@ public static class BeaverBatch {
             report.diagnostics.AddRange(BeaverBatchUI.Diagnostics(root).Select(d=>path+":"+d));
         } finally {PrefabUtility.UnloadPrefabContents(root);}
     }
+    static string ExactScriptValue(SerializedProperty p) {
+        var culture=System.Globalization.CultureInfo.InvariantCulture;
+        switch(p.propertyType) {
+            case SerializedPropertyType.Generic:return p.type+(p.isArray?":"+p.arraySize.ToString(culture):"");
+            case SerializedPropertyType.Integer:return p.longValue.ToString(culture);
+            case SerializedPropertyType.Boolean:return p.boolValue?"true":"false";
+            case SerializedPropertyType.Float:return p.doubleValue.ToString("R",culture);
+            case SerializedPropertyType.String:return p.stringValue;
+            case SerializedPropertyType.Enum:case SerializedPropertyType.ArraySize:case SerializedPropertyType.Character:case SerializedPropertyType.LayerMask:return p.intValue.ToString(culture);
+            case SerializedPropertyType.ObjectReference:
+                var value=p.objectReferenceValue;
+                if(value==null) {
+                    if(p.objectReferenceEntityIdValue!=UnityEngine.EntityId.None)throw new Exception("Unresolved script reference: "+p.propertyPath);
+                    return "null";
+                }
+                string guid;long id;
+                if(!EditorUtility.IsPersistent(value)||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out guid,out id)||String.IsNullOrEmpty(guid)||id==0)throw new Exception("Nonpersistent script reference: "+p.propertyPath);
+                return guid+"#"+id.ToString(culture)+"|"+value.GetType().FullName+"@"+value.GetType().Assembly.GetName().Name;
+            default:throw new Exception("Script snapshot kind requires explicit support: "+p.propertyType+" at "+p.propertyPath);
+        }
+    }
+    static void DiscoverScriptCoverage() {
+        if(report.scriptCoverage.Count!=0)return;
+        var steps=(job.steps??new Step[0]).Where(s=>s.kind=="prefab.scripts.inspect").ToArray();
+        var types=steps.SelectMany(s=>s.types).Distinct(StringComparer.Ordinal).OrderBy(t=>t,StringComparer.Ordinal).ToArray();
+        if(types.Length==0)return;
+        var paths=AssetDatabase.FindAssets("t:Prefab",new[]{"Assets"}).Select(AssetDatabase.GUIDToAssetPath).Distinct(StringComparer.Ordinal).OrderBy(p=>p,StringComparer.Ordinal).ToArray();
+        if(paths.Length>10000)throw new Exception("Script consumer discovery Prefab budget exceeded");
+        foreach(var type in types) {
+            var consumers=new List<string>();int count=0;
+            foreach(var path in paths) {
+                var asset=AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if(asset==null)throw new Exception("Prefab discovery could not load: "+path);
+                var matches=asset.GetComponentsInChildren<MonoBehaviour>(true).Count(c=>c!=null&&c.GetType().FullName==type);
+                if(matches>0) {consumers.Add(path);count+=matches;}
+                if(count>250000)throw new Exception("Script consumer discovery instance budget exceeded");
+            }
+            var expected=steps.Where(s=>s.types.Contains(type,StringComparer.Ordinal)).Select(s=>s.assetPath).Distinct(StringComparer.Ordinal).OrderBy(p=>p,StringComparer.Ordinal).ToArray();
+            if(!consumers.SequenceEqual(expected))throw new Exception("Declared script Prefab set is incomplete: "+type);
+            report.scriptCoverage.Add(new ScriptCoverageRow{fullType=type,prefabPaths=consumers.ToArray(),instanceCount=count,scannedPrefabs=paths.Length,complete=true});
+        }
+    }
+    static void ReadScriptInstances(Step step) {
+        DiscoverScriptCoverage();
+        var asset=AssetDatabase.LoadAssetAtPath<GameObject>(step.assetPath);
+        if(asset==null)throw new Exception("Script inspection Prefab missing");
+        var types=new HashSet<string>(step.types,StringComparer.Ordinal);var seen=new HashSet<string>(StringComparer.Ordinal);
+        foreach(var component in asset.GetComponentsInChildren<MonoBehaviour>(true)) {
+            if(component==null)throw new Exception("Missing MonoBehaviour in script inspection");
+            var type=component.GetType();if(!types.Contains(type.FullName))continue;seen.Add(type.FullName);
+            string guid,nodeGuid,componentGuid;long nodeId,componentId;
+            var script=MonoScript.FromMonoBehaviour(component);var scriptPath=AssetDatabase.GetAssetPath(script);
+            if(script==null||script.GetClass()!=type||String.IsNullOrEmpty(scriptPath))throw new Exception("MonoScript.GetClass identity mismatch");
+            guid=AssetDatabase.AssetPathToGUID(scriptPath);
+            if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(component.gameObject,out nodeGuid,out nodeId)||nodeId==0||
+               !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(component,out componentGuid,out componentId)||componentId==0||nodeGuid!=componentGuid||nodeGuid!=AssetDatabase.AssetPathToGUID(step.assetPath))throw new Exception("Persistent script instance identity missing");
+            var properties=new List<ScriptPropertyRow>();var serialized=new SerializedObject(component);var p=serialized.GetIterator();
+            while(p.Next(true)) {
+                if(properties.Count>=65536)throw new Exception("Script property budget exceeded");
+                properties.Add(new ScriptPropertyRow{path=p.propertyPath,kind=p.propertyType.ToString(),type=p.type,value=ExactScriptValue(p)});
+            }
+            report.scriptInstances.Add(new ScriptInstanceRow{prefabPath=step.assetPath,prefabGuid=nodeGuid,nodePath=Relative(asset.transform,component.transform),
+                nodeLocalId=nodeId,componentLocalId=componentId,fullType=type.FullName,assembly=type.Assembly.GetName().Name,scriptGuid=guid,scriptPath=scriptPath,
+                scriptSha256=Hash(Full(scriptPath)),getClassVerified=true,enabled=component.enabled,properties=properties.ToArray()});
+        }
+        if(!seen.SetEquals(types))throw new Exception("Requested script type missing from selected Prefab");
+    }
     static void Folder(string path) {
         var parent=Path.GetDirectoryName(path).Replace('\\','/');if(parent=="Assets"||AssetDatabase.IsValidFolder(parent))return;
         Folder(parent);var grand=Path.GetDirectoryName(parent).Replace('\\','/');
@@ -411,6 +487,7 @@ public static class BeaverBatch {
                     var moveCheckpointPaths=new List<string>();
                     if(step.kind=="prefab.patch")Patch(step);
                     else if(step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
+                    else if(step.kind=="prefab.scripts.inspect") {ReadPrefab(step.assetPath);ReadScriptInstances(step);}
                     else if(step.kind=="asset.inspect")ReadAsset(step.assetPath);
                     else if(step.kind=="asset.move") {
                         if(job.checkpointPolicy=="move-delta-v1")moveCheckpointPaths.AddRange(NewDestinationParentMetaPaths(step.target));
@@ -459,6 +536,7 @@ public static class BeaverBatch {
                         if(state==null||String.IsNullOrEmpty(state.status)||new[]{"failed","blocked","needs_action","not_run","pending_editor_reopen"}.Contains(state.status))throw new Exception("Resource reopen verification rejected: "+step.kind);
                         report.resourceReadbacks.Add(evidence);
                     } else if(step.kind=="prefab.patch"||step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
+                    else if(step.kind=="prefab.scripts.inspect") {ReadPrefab(step.assetPath);ReadScriptInstances(step);}
                     else if(step.kind=="asset.inspect")ReadAsset(step.assetPath);
                     report.completedSteps++;
                 }

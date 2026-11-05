@@ -117,6 +117,8 @@ Variant允许可保存的属性、事件、组件与新增child override；继�
 
 `csharp inspect/rename/rename-sequence/module` 使用实际 Bee 编译上下文；sequence 的 `--spec` 为有序改名请求数组，合同 `beaver-csharp-rename-sequence/1`，在私有源码快照逐阶段编译，生成原工程旧哈希到最终候选的唯一 fileEdits，不直接写工程。模块严格 JSON 读取与序列化兼容边界见 CSHARP-MAINTENANCE.md。
 
+`csharp rewrite-prepare/rewrite-plan/rewrite-apply/rewrite-recover` 接受固定来源和目标 API 的受限 Agent 工作区，交真实编译的可审查补丁；复用 production 检查点/撤销，增加逐实例 GUID/类型/字段/引用/事件目标和独立 Editor 冷重开检查。首版只允许保持序列化结构的既有脚本改写；字段/类型迁移明确拒绝。行为及正式采用分别由项目 owner 与双审门控制，详见 CSHARP-REWRITE.md。
+
 `resource image-inspect/image-produce/validate-step` 为独立图片与封闭资源计划；原生切片/Atlas/TMP/Spine/音频/材质/SO引用按 RESOURCE-PRODUCTION.md。Spine闭包检查与真实播放分开。
 
 `server toolchain/protocol-tools/inspect/generate/module-generate/module-plan/protocol-diff/migration-plan/check/build/compose-plan/migration-state/migration-apply/runtime-inspect` 提供六服 Go 工具，详见 SERVER-GO.md。迁移要求固定候选、计划、Compose归属和当前 schema SHA；实际应用可能产生持久变化，未知/部分状态拒绝盲重放。Compose计划不启动容器，runtime检查不执行游戏业务。

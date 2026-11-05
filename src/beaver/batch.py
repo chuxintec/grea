@@ -184,6 +184,11 @@ def validate(spec):
             if set(step)!={'kind','assetPath'}:fail('BATCH_INSPECT','spec','Expected kind and assetPath only')
             from .intake_contract import _asset_path
             _asset_path(step['assetPath'],'assetPath',{'.asset','.mat','.png','.ttf','.otf','.shader','.txt','.json'})
+        elif kind=='prefab.scripts.inspect':
+            if set(step)!={'kind','assetPath','types'}:fail('BATCH_INSPECT','spec','Expected kind, assetPath, types only')
+            asset_path(step['assetPath'],'.prefab')
+            if not isinstance(step['types'],list) or not 1<=len(step['types'])<=16 or any(not isinstance(t,str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*',t) for t in step['types']) or len(set(step['types']))!=len(step['types']):
+                fail('BATCH_INSPECT_TYPES','types','1..16 distinct full C# type names required')
         elif kind=='prefab.inspect':
             if set(step)!={'kind','assetPath'}:fail('BATCH_INSPECT','spec','Expected kind and assetPath only')
             asset_path(step['assetPath'],'.prefab')
@@ -213,7 +218,6 @@ def validate(spec):
         elif kind=='reference.replace':
             if set(step)!={'kind','assetPath','oldGuid','oldLocalId','newGuid','newLocalId','consumers'}:fail('BATCH_REPLACE','spec','Explicit old/new GUID/localID and complete native consumer set required')
             for k in ('oldGuid','newGuid'):
-                import re
                 if not re.fullmatch('[a-f0-9]{32}',step[k]):fail('BATCH_GUID',k,'Expected GUID')
             if any(type(step[k])is not int for k in ('oldLocalId','newLocalId')):fail('BATCH_LOCAL_ID','spec','Explicit integer localIDs')
             if not isinstance(step['consumers'],list) or not step['consumers']:fail('BATCH_CONSUMERS','spec','Explicit consumers required')
@@ -311,8 +315,8 @@ def plan(project,spec_path,output):
     for step in spec['steps']:
         kind=step['kind']
         if kind.startswith('resource.'):continue
-        paths=[step['assetPath']] if kind in ('asset.inspect','prefab.inspect','prefab.patch','text.key','script.key') else step['consumers'] if kind=='reference.replace' else [step['source'],step['target']]
-        if kind not in ('asset.inspect','prefab.inspect'):writes.update(p+s for p in paths for s in ('','.meta'))
+        paths=[step['assetPath']] if kind in ('asset.inspect','prefab.inspect','prefab.scripts.inspect','prefab.patch','text.key','script.key') else step['consumers'] if kind=='reference.replace' else [step['source'],step['target']]
+        if kind not in ('asset.inspect','prefab.inspect','prefab.scripts.inspect'):writes.update(p+s for p in paths for s in ('','.meta'))
         roots.update(paths)
         if kind=='prefab.patch':explicit_guids.update(a['assetGuid'] for a in step['actions'] if a.get('assetGuid'))
         if kind=='reference.replace':explicit_guids.update((step['oldGuid'],step['newGuid']))
