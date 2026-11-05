@@ -6,11 +6,11 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T12:45:01.847385+08:00",
+  "updatedAt": "2026-11-05T12:46:38.048044+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "肥鹅全量隔离转换与逐源审计已交验，事件 foodstreet-full-conversion-audit-20261105；报告和逐源索引见当前任务。目录索引 SHA-256 1bdcbe708a5969a1aadb4fa9ba7c81f24f6dacff4bcf8357b2ab23ac98412d31。产品采用保持双审 HOLD。",
-  "activeImplementationTask": "grea:T-foodstreet-full-conversion-diagnostic",
+  "currentStage": "肥鹅隔离全量审计已通过总监验收，见 grea:T-foodstreet-full-conversion-diagnostic 的裁定、固定候选与交付索引。后续由既有 monkey 通用整改与独立双审处理缺口，产品采用保持 HOLD。",
+  "activeImplementationTask": "grea:T-monkey-audit-remediation-dual-review",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -632,9 +632,9 @@
       "id": "grea:T-foodstreet-full-conversion-diagnostic",
       "title": "肥鹅1.9.1已取得全包转Unity及独立结果审计",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "verification",
+      "workflowStatus": "done",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "description": "本次直接人类授权隔离诊断转换，产品采用继续受双审门约束。 当前事件 foodstreet-full-conversion-audit-20261105，接续指令 restore-active-audit-03。运行目录见 sourceRefs 第二项。恢复时核对 materialize.py 进程、每批 execution-result 和已落盘源对象；只拆分缺失根，逐源核对文件、保存重开、引用和缺口。退出条件为逐源索引、问题报告和证据交付总监，或记录无法继续的关键阻塞。 逐源核对已完成，1,670 独立 Prefab、3 源 Scene 保存重开，26 个逻辑 Prefab 未生成。提交总监独立验收。",
+      "description": "总监已独立验收肥鹅 1.9.1 隔离转换与问题审计，核对全部 1,701 个源根、1,670 个独立 Prefab、3 个 Scene 及 19 份索引制品。26 个未出件入口和静态、引用、脚本缺口归既有通用整改任务。正式采用继续 HOLD。",
       "acceptanceCriteria": [
         "复核原包和同版资源分母与SHA",
         "GREA公开运行monkey，逐根对照真实生成/原生结果及缺口",
@@ -644,7 +644,8 @@
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-full-conversion-audit/PLAN.md",
         ".private/development/foodstreet-full-conversion-audit-20261105",
         ".private/development/foodstreet-full-conversion-audit-20261105/delivery-index.json",
-        ".private/development/foodstreet-full-conversion-audit-20261105/REPORT.md"
+        ".private/development/foodstreet-full-conversion-audit-20261105/REPORT.md",
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-full-conversion-audit/result.json"
       ]
     }
   ],
