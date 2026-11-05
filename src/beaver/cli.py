@@ -252,6 +252,13 @@ def parser():
     rw.add_argument('--toolchain')
     rw=csharp.add_parser('rewrite-plan')
     for option in ('workspace','expected-workspace','out'):rw.add_argument('--'+option,required=True)
+    revent=csharp.add_parser('rewrite-event-plan')
+    for option in ('plan','expected-plan','events','expected-events','out','editor-path'):
+        revent.add_argument('--'+option,required=True)
+    revent.add_argument('--apply-out')
+    revent_verify=csharp.add_parser('rewrite-event-verify')
+    for option in ('plan','expected-plan','transaction','phase','out','editor-path'):
+        revent_verify.add_argument('--'+option,required=True)
     rw=csharp.add_parser('rewrite-apply')
     for option in ('plan','expected-plan','out','editor-path'):rw.add_argument('--'+option,required=True)
     rw.add_argument('--timeout',type=int,default=600)
@@ -522,6 +529,13 @@ def dispatch(a):
             from .io import load,read
             if a.action=='rewrite-prepare':return rewrite.prepare(a.project,a.spec,a.out,load(read(a.toolchain)) if a.toolchain else None)
             if a.action=='rewrite-plan':return rewrite.plan(a.workspace,a.expected_workspace,a.out)
+            if a.action=='rewrite-event-plan':
+                from . import csharp_rewrite_events
+                return csharp_rewrite_events.plan(a.plan,a.expected_plan,a.events,a.expected_events,a.out,
+                                                   a.editor_path,a.apply_out)
+            if a.action=='rewrite-event-verify':
+                from . import csharp_rewrite_events
+                return csharp_rewrite_events.verify(a.plan,a.expected_plan,a.transaction,a.phase,a.out,a.editor_path)
             if a.action=='rewrite-apply':return rewrite.apply(a.plan,a.expected_plan,a.out,a.editor_path,a.timeout)
             return rewrite.recover(a.transaction,a.out,a.editor_path,a.timeout)
         from .csharp import inspect,rename_plan,rename_sequence_plan,module_generate

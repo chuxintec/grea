@@ -4,11 +4,14 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Security.Cryptography;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
 public static class BeaverBatch {
     static string JobPath() {
@@ -22,8 +25,8 @@ public static class BeaverBatch {
         public long localId;public int index;public bool flag;public float[] numbers;public string[] items;
     }
     [Serializable] public class Step {
-        public string kind,assetPath,source,target,oldGuid,newGuid,format,pointer,before,after,payload;
-        public long oldLocalId,newLocalId;public string[] consumers,types;public Action[] actions;
+        public string kind,assetPath,source,target,oldGuid,newGuid,format,pointer,before,after,payload,path,targetNode,targetComponent,method,prefabGuid,targetAssembly,scriptGuid;
+        public long oldLocalId,newLocalId,buttonLocalId,buttonNodeLocalId,targetLocalId,targetNodeLocalId;public int expectedCount;public string[] consumers,types;public Action[] actions;
     }
     [Serializable] public class FileRow {public string path,source,sha256;public bool exists;public long bytes;}
     [Serializable] public class SceneMoveIdentity {public string source,target,guid;}
@@ -50,6 +53,10 @@ public static class BeaverBatch {
     }
     [Serializable] public class ScriptCoverageRow {public string fullType;public string[] prefabPaths;public int instanceCount,scannedPrefabs;public bool complete;}
     [Serializable] public class AssetReadbackRow {public string path,guid,contentSha256,metaSha256,importerType,importerAssembly;public bool completeObjectSet;public AssetObjectRow[] objects;}
+    [Serializable] public class EventInspectionRow {
+        public string assetPath,prefabGuid,buttonPath,targetNode,targetComponent,targetAssembly,scriptGuid,method,listenerMode,callState;
+        public long buttonLocalId,buttonNodeLocalId,targetLocalId,targetNodeLocalId;public int expectedCount,observedCount;public bool verified;
+    }
     [Serializable] public class Report {
         public string status,planSha256,error,mode,editorVersion,checkpointPolicy,checkpointState;public int completedSteps,hashReadOperations,checkpointCount;public bool checkpointComplete;
         public List<string> checkpointPaths=new List<string>();
@@ -58,6 +65,7 @@ public static class BeaverBatch {
         public List<AssetReadbackRow> assets=new List<AssetReadbackRow>();
         public List<ScriptInstanceRow> scriptInstances=new List<ScriptInstanceRow>();
         public List<ScriptCoverageRow> scriptCoverage=new List<ScriptCoverageRow>();
+        public List<EventInspectionRow> eventInspections=new List<EventInspectionRow>();
         public List<string> diagnostics=new List<string>();
         public List<DependencyRow> nativeConsumers=new List<DependencyRow>();
         public SceneSettingsReadback sceneSettingsReadback;
@@ -277,6 +285,70 @@ public static class BeaverBatch {
             report.diagnostics.AddRange(BeaverBatchUI.Diagnostics(root).Select(d=>path+":"+d));
         } finally {PrefabUtility.UnloadPrefabContents(root);}
     }
+    static long PersistentLocalId(UnityEngine.Object value,string expectedGuid,string where) {
+        string guid;long id;
+        if(value==null||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,out guid,out id)||guid!=expectedGuid||id==0)
+            throw new Exception("Persistent prefab identity mismatch: "+where);
+        return id;
+    }
+    static Component ExactComponent(GameObject node,Type type,string where) {
+        var matches=node.GetComponents(type).Where(c=>c!=null&&c.GetType()==type).ToArray();
+        if(matches.Length!=1)throw new Exception("Expected exactly one component: "+where);
+        return matches[0];
+    }
+    static void InspectButtonEvent(Step step) {
+        var asset=AssetDatabase.LoadAssetAtPath<GameObject>(step.assetPath);
+        if(asset==null)throw new Exception("Button event Prefab missing: "+step.assetPath);
+        var prefabGuid=AssetDatabase.AssetPathToGUID(step.assetPath);
+        if(prefabGuid!=step.prefabGuid)throw new Exception("Button event Prefab GUID mismatch");
+        var buttonType=typeof(Button);var targetType=TypeFor(step.targetComponent);
+        if(!typeof(MonoBehaviour).IsAssignableFrom(targetType))throw new Exception("Button receiver must be a MonoBehaviour script");
+        var assetButtonNode=Find(asset,step.path).gameObject;var assetTargetNode=Find(asset,step.targetNode).gameObject;
+        var assetButton=(Button)ExactComponent(assetButtonNode,buttonType,step.path+":UnityEngine.UI.Button");
+        var assetReceiver=ExactComponent(assetTargetNode,targetType,step.targetNode+":"+step.targetComponent);
+        var observedButtonNodeId=PersistentLocalId(assetButtonNode,prefabGuid,step.path+":button node");
+        var observedButtonId=PersistentLocalId(assetButton,prefabGuid,step.path+":button");
+        var observedTargetNodeId=PersistentLocalId(assetTargetNode,prefabGuid,step.targetNode+":receiver node");
+        var observedTargetId=PersistentLocalId(assetReceiver,prefabGuid,step.targetNode+":receiver");
+        var receiverType=assetReceiver.GetType();var assembly=receiverType.Assembly.GetName().Name;
+        var script=MonoScript.FromMonoBehaviour((MonoBehaviour)assetReceiver);var scriptPath=script==null?"":AssetDatabase.GetAssetPath(script);
+        var scriptGuid=String.IsNullOrEmpty(scriptPath)?"":AssetDatabase.AssetPathToGUID(scriptPath);
+        if(observedButtonNodeId!=step.buttonNodeLocalId||observedButtonId!=step.buttonLocalId||
+           observedTargetNodeId!=step.targetNodeLocalId||observedTargetId!=step.targetLocalId||
+           receiverType.FullName!=step.targetComponent||assembly!=step.targetAssembly||script==null||script.GetClass()!=receiverType||scriptGuid!=step.scriptGuid)
+            throw new Exception("Button or receiver persistent identity/type/script pin mismatch");
+
+        var root=PrefabUtility.LoadPrefabContents(step.assetPath);
+        try {
+            var button=(Button)ExactComponent(Find(root,step.path).gameObject,buttonType,step.path+":UnityEngine.UI.Button");
+            var receiver=ExactComponent(Find(root,step.targetNode).gameObject,targetType,step.targetNode+":"+step.targetComponent);
+            int count=button.onClick.GetPersistentEventCount();
+            if(count!=step.expectedCount||assetButton.onClick.GetPersistentEventCount()!=count)
+                throw new Exception("Button onClick persistent listener count differs from exact expectation");
+            var row=new EventInspectionRow{assetPath=step.assetPath,prefabGuid=prefabGuid,buttonPath=step.path,buttonLocalId=observedButtonId,
+                buttonNodeLocalId=observedButtonNodeId,targetNode=step.targetNode,targetComponent=receiverType.FullName,targetAssembly=assembly,
+                scriptGuid=scriptGuid,targetLocalId=observedTargetId,targetNodeLocalId=observedTargetNodeId,method=step.method,
+                expectedCount=step.expectedCount,observedCount=count};
+            if(count==1) {
+                if(button.onClick.GetPersistentTarget(0)!=receiver||button.onClick.GetPersistentMethodName(0)!=step.method)
+                    throw new Exception("Button onClick target/method differs from declared receiver");
+                var candidates=receiverType.GetMethods(BindingFlags.Public|BindingFlags.Instance)
+                    .Where(m=>m.Name==step.method&&!m.IsStatic&&!m.IsGenericMethod&&m.ReturnType==typeof(void)&&m.GetParameters().Length==0).ToArray();
+                if(candidates.Length!=1)throw new Exception("Button receiver requires exactly one public instance void() method");
+                var state=button.onClick.GetPersistentListenerState(0);
+                var so=new SerializedObject(button);so.UpdateIfRequiredOrScript();
+                var calls=so.FindProperty("m_OnClick.m_PersistentCalls.m_Calls");
+                if(calls==null||!calls.isArray||calls.arraySize!=1)throw new Exception("Native Button persistent call array is unavailable or ambiguous");
+                var mode=calls.GetArrayElementAtIndex(0).FindPropertyRelative("m_Mode");
+                if(mode==null||mode.propertyType!=SerializedPropertyType.Enum||
+                   (mode.enumValueIndex!=(int)PersistentListenerMode.EventDefined&&mode.enumValueIndex!=(int)PersistentListenerMode.Void))
+                    throw new Exception("Button onClick persistent mode must be parameterless EventDefined or Void");
+                if(state==UnityEventCallState.Off)throw new Exception("Button onClick persistent listener is Off");
+                row.callState=state.ToString();row.listenerMode=((PersistentListenerMode)mode.enumValueIndex).ToString();
+            }
+            row.verified=true;report.eventInspections.Add(row);
+        } finally {PrefabUtility.UnloadPrefabContents(root);}
+    }
     static string ExactScriptValue(SerializedProperty p) {
         var culture=System.Globalization.CultureInfo.InvariantCulture;
         switch(p.propertyType) {
@@ -284,6 +356,7 @@ public static class BeaverBatch {
             case SerializedPropertyType.Integer:return p.longValue.ToString(culture);
             case SerializedPropertyType.Boolean:return p.boolValue?"true":"false";
             case SerializedPropertyType.Float:return p.doubleValue.ToString("R",culture);
+            case SerializedPropertyType.Vector2:{var v=p.vector2Value;return v.x.ToString("R",culture)+","+v.y.ToString("R",culture);}
             case SerializedPropertyType.String:return p.stringValue;
             case SerializedPropertyType.Enum:case SerializedPropertyType.ArraySize:case SerializedPropertyType.Character:case SerializedPropertyType.LayerMask:return p.intValue.ToString(culture);
             case SerializedPropertyType.ObjectReference:
@@ -490,6 +563,7 @@ public static class BeaverBatch {
                     var moveCheckpointPaths=new List<string>();
                     if(step.kind=="prefab.patch")Patch(step);
                     else if(step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
+                    else if(step.kind=="prefab.event.inspect") {ReadPrefab(step.assetPath);InspectButtonEvent(step);}
                     else if(step.kind=="prefab.scripts.inspect") {ReadPrefab(step.assetPath);ReadScriptInstances(step);}
                     else if(step.kind=="asset.inspect")ReadAsset(step.assetPath);
                     else if(step.kind=="asset.move") {
@@ -539,6 +613,7 @@ public static class BeaverBatch {
                         if(state==null||String.IsNullOrEmpty(state.status)||new[]{"failed","blocked","needs_action","not_run","pending_editor_reopen"}.Contains(state.status))throw new Exception("Resource reopen verification rejected: "+step.kind);
                         report.resourceReadbacks.Add(evidence);
                     } else if(step.kind=="prefab.patch"||step.kind=="prefab.inspect")ReadPrefab(step.assetPath);
+                    else if(step.kind=="prefab.event.inspect") {ReadPrefab(step.assetPath);InspectButtonEvent(step);}
                     else if(step.kind=="prefab.scripts.inspect") {ReadPrefab(step.assetPath);ReadScriptInstances(step);}
                     else if(step.kind=="asset.inspect")ReadAsset(step.assetPath);
                     report.completedSteps++;

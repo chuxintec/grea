@@ -295,6 +295,10 @@ def plan(workspace, expected_workspace, output):
         edits.append(dict(path=p, source=str(dest), sha256=sha(raw), expectedSha256=original['sha256']))
     (out / 'changes.patch').write_text(''.join(patch), encoding='utf-8')
     write_json(out / 'compile.json', compiled)
+    compile_report = dict(path=str(out / 'compile.json'), sha256=sha(read(out / 'compile.json')),
+                         producerImplementationSha256=identity(),
+                         workspaceSha256=expected_workspace,
+                         fileEdits=[dict(path=row['path'], sha256=row['sha256']) for row in edits])
     groups = {}
     for row in spec['instances']: groups.setdefault(row['prefabPath'], set()).add(row['fullType'])
     steps = [dict(kind='prefab.scripts.inspect', assetPath=p, types=sorted(types)) for p, types in sorted(groups.items())]
@@ -305,14 +309,15 @@ def plan(workspace, expected_workspace, output):
     native = production_plan(project, out / 'production-spec.json', out / 'native-plan')
     report = dict(contract=PLAN, status='planned', implementationSha256=identity(), projectRoot=str(project),
                   workspace=dict(path=str(safe(workspace)), sha256=expected_workspace), pins=data['pins'],
-                  workerResult=result, compatibility=mappings, fileEdits=edits, production=native,
+                  workerResult=result, compatibility=mappings, fileEdits=edits,
+                  compileReport=compile_report, production=native,
                   instances=spec['instances'],
                   native='not_run', behavior='not_verified', formalAdoption='not_permitted_by_plan',
                   limitations=['Schema-preserving existing scripts only; type/field migration needs a separate native migration',
                                'Prefab instances, references and persistent events require native save and cold-reopen checks',
                                'Project owner must validate one visible action and effect on the fixed B-line candidate'])
     write_json(out / 'rewrite-plan.json', report)
-    return dict(status='planned', report=str(out / 'rewrite-plan.json'), planSha256=sha(encoded(report)),
+    return dict(status='planned', report=str(out / 'rewrite-plan.json'), planSha256=sha(read(out / 'rewrite-plan.json')),
                 patches=len(edits), native='not_run', behavior='not_verified')
 
 

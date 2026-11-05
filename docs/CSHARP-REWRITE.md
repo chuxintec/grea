@@ -12,6 +12,50 @@ beaver csharp rewrite-apply --plan PATCH/rewrite-plan.json --expected-plan SHA25
 beaver csharp rewrite-recover --transaction RUN/transaction --editor-path EDITOR --out RECOVERY
 ```
 
+## Persistent Button event group
+
+`csharp rewrite-event-plan` takes an existing successful `beaver-agent-rewrite-plan/1` report and a closed `beaver-csharp-rewrite-events/1` document. It reuses the rewrite plan's pinned successful Roslyn semantic report and original production spec; it does not compile again, launch Unity, or edit the project. A rewrite plan without `compileReport` is not eligible and must be regenerated with the current producer.
+
+```sh
+beaver csharp rewrite-event-plan \
+  --plan /candidate/rewrite-plan.json --expected-plan <rewrite-plan-sha256> \
+  --events /candidate/events.json --expected-events <events-file-sha256> \
+  --out /candidate/event-plan --editor-path /path/to/Unity \
+  [--apply-out /candidate/event-apply]
+beaver csharp rewrite-event-verify --plan EVENT-PLAN.json --expected-plan EVENT-PLAN-SHA \
+  --transaction APPLY-OUTPUT --phase applied|recovered --out VERIFY-PLAN --editor-path EDITOR
+```
+
+Input top-level fields are exactly `contract` and `events`; contract is `beaver-csharp-rewrite-events/1`, with 1–128 rows. Each row has exactly `source`, `prefab`, `button`, and `target`:
+
+```json
+{
+  "contract": "beaver-csharp-rewrite-events/1",
+  "events": [{
+    "source": {
+      "path": "/evidence/source.json", "sha256": "<64 lowercase hex>",
+      "recordId": "stable-source-record-id", "jsonPointer": "/document/records/0",
+      "recordSha256": "<SHA256 of canonical record JSON>"
+    },
+    "prefab": {"path": "Assets/UI/Panel.prefab", "guid": "<32 lowercase hex>"},
+    "button": {"nodePath": "Panel/HelpButton", "componentType": "UnityEngine.UI.Button",
+                "nodeLocalId": 1001, "componentLocalId": 1002},
+    "target": {"nodePath": "Panel", "componentType": "Example.HelpView",
+               "fullType": "Example.HelpView", "assembly": "Assembly-CSharp",
+               "scriptPath": "Assets/Example/HelpView.cs", "scriptGuid": "<32 lowercase hex>",
+               "method": "OpenHelp", "nodeLocalId": 1003, "componentLocalId": 1004}
+  }]
+}
+```
+
+`recordSha256` is SHA256 of `beaver.io.encoded(record)`: UTF-8 JSON with sorted object keys, two-space indentation, non-ASCII preserved, and one trailing newline. The RFC6901 pointer must resolve in the source file. Source file and record hashes are both checked. Each source `recordId` and `(source path, jsonPointer)` is unique; one source record cannot be aliased into the group twice.
+
+Every target must match exactly one changed script in the rewrite plan, its GUID/assembly/full type, a successful pinned compile report, one public instance `void()` method, and one exact Prefab component identity from the rewrite plan's native instance baseline. `componentType` must equal `fullType`. Button and target object/node IDs must be positive persistent Int64 local IDs. The Prefab path/GUID must match its current `.meta`. Destinations must be distinct by Prefab and Button component localID, and the serialized `Button.onClick` must be empty when the native plan applies. Every source file/SHA pair must also occur in the rewrite workspace's pinned source set.
+
+The generated production spec preserves all original rewrite-plan `steps`, `fileEdits`, package requirements and reads. Around each binding it inserts `prefab.event.inspect(expectedCount=0)`, one `binding.event` action, then `prefab.event.inspect(expectedCount=1)`. The report records per-event `expectedCount`, `planned`, `failed`, and `reason`. The group is atomic: any preflight failure blocks every event and emits no executable production transaction plan.
+
+The report includes ready-to-run `production apply` and `production recover` argv plus applied/recovered `rewrite-event-verify` templates. The apply output path is also the transaction path. `rewrite-event-verify` accepts only that exact transaction and requires its current project write set to match the journal's after (applied) or before (recovered) checkpoint and receipt. It then creates a fresh read-only persistent-event inspection plan and returns a ready-to-run `production apply` argv, intended to run in a new Editor process. The parent GREA caller may add its existing Editor-slot prefix to each argv. Native identity, listener target, Editor save/reopen, recovery, visible behavior and gameplay remain unverified until their respective commands are actually run.
+
 The request is closed `beaver-agent-rewrite/1` JSON with:
 
 - `sources`: 1–128 `{path,sha256,sourceId}` original drafts/source evidence. Each

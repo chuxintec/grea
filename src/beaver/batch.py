@@ -189,6 +189,30 @@ def validate(spec):
             asset_path(step['assetPath'],'.prefab')
             if not isinstance(step['types'],list) or not 1<=len(step['types'])<=16 or any(not isinstance(t,str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*',t) for t in step['types']) or len(set(step['types']))!=len(step['types']):
                 fail('BATCH_INSPECT_TYPES','types','1..16 distinct full C# type names required')
+        elif kind=='prefab.event.inspect':
+            keys={'kind','assetPath','path','targetNode','targetComponent','method','buttonLocalId','buttonNodeLocalId','targetLocalId','targetNodeLocalId','prefabGuid','targetAssembly','scriptGuid','expectedCount'}
+            if set(step)!=keys:fail('BATCH_EVENT_INSPECT','spec','Expected exact pinned Button event identity fields')
+            asset_path(step['assetPath'],'.prefab')
+            for field in ('path','targetNode'):
+                value=step[field]
+                if not isinstance(value,str) or value.startswith('/') or '\\' in value or any(p in ('','..','.') for p in value.split('/')) and value:
+                    fail('BATCH_NODE_PATH',value,'Expected canonical relative hierarchy path (empty selects Prefab root)')
+            for field in ('targetComponent',):
+                value=step[field]
+                if not isinstance(value,str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*',value):
+                    fail('BATCH_EVENT_INSPECT',field,'Expected exact qualified type or method identifier')
+            if not isinstance(step['method'],str) or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*',step['method']):
+                fail('BATCH_EVENT_INSPECT','method','Expected exact C# method identifier')
+            if (not isinstance(step['targetAssembly'],str) or step['targetAssembly'] in ('.','..')
+                    or not re.fullmatch(r'[A-Za-z0-9_.-]+',step['targetAssembly']) or step['targetAssembly'].lower().endswith('.dll')):
+                fail('BATCH_EVENT_INSPECT','targetAssembly','Expected exact assembly simple name')
+            for field in ('buttonLocalId','buttonNodeLocalId','targetLocalId','targetNodeLocalId'):
+                if type(step[field]) is not int or not -(1<<63) <= step[field] <= (1<<63)-1 or step[field]==0:
+                    fail('BATCH_LOCAL_ID',field,'Nonzero signed Int64 persistent localID required')
+            for field in ('prefabGuid','scriptGuid'):
+                if not isinstance(step[field],str) or not re.fullmatch('[a-f0-9]{32}',step[field]):fail('BATCH_GUID',field,'Lowercase exact GUID required')
+            if type(step['expectedCount']) is not int or step['expectedCount'] not in (0,1):
+                fail('BATCH_EVENT_INSPECT','expectedCount','Only exact empty or single-listener expectations are supported')
         elif kind=='prefab.inspect':
             if set(step)!={'kind','assetPath'}:fail('BATCH_INSPECT','spec','Expected kind and assetPath only')
             asset_path(step['assetPath'],'.prefab')
@@ -339,8 +363,8 @@ def plan(project,spec_path,output):
     for step in spec['steps']:
         kind=step['kind']
         if kind.startswith('resource.'):continue
-        paths=[step['assetPath']] if kind in ('asset.inspect','prefab.inspect','prefab.scripts.inspect','prefab.patch','text.key','script.key') else step['consumers'] if kind=='reference.replace' else [step['source'],step['target']]
-        if kind not in ('asset.inspect','prefab.inspect','prefab.scripts.inspect'):writes.update(p+s for p in paths for s in ('','.meta'))
+        paths=[step['assetPath']] if kind in ('asset.inspect','prefab.inspect','prefab.scripts.inspect','prefab.event.inspect','prefab.patch','text.key','script.key') else step['consumers'] if kind=='reference.replace' else [step['source'],step['target']]
+        if kind not in ('asset.inspect','prefab.inspect','prefab.scripts.inspect','prefab.event.inspect'):writes.update(p+s for p in paths for s in ('','.meta'))
         roots.update(paths)
         if kind=='prefab.patch':explicit_guids.update(a['assetGuid'] for a in step['actions'] if a.get('assetGuid'))
         if kind=='reference.replace':explicit_guids.update((step['oldGuid'],step['newGuid']))
