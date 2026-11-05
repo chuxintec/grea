@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from monkey.prefab_static_declarations import extract_declarations
-from monkey.static_code_bindings import prepare, _compatible_catalog, write_destination_index, _selected_mapping_ids, record_destinations
+from monkey.static_code_bindings import merge_declarations, prepare, _compatible_catalog, write_destination_index, _selected_mapping_ids, record_destinations
 
 
 class StaticCodeBindingsTests(unittest.TestCase):
@@ -43,6 +43,19 @@ class StaticCodeBindingsTests(unittest.TestCase):
     def run_prepare(self, **kwargs):
         return prepare(kwargs.get("ir", self.ir), kwargs.get("bindings", self.bindings), self.modules,
                        kwargs.get("files", {"file.js": self.raw}), self.declarations, self.root / "out")
+
+    def test_direct_string_accessor_follows_its_own_serialized_backing(self):
+        declaration = dict(gaps=[], fields=[dict(name="caption", value=None,
+            accessorBacking=dict(propertyName="caption", backingFieldName="_key"))],
+            propertyTypes=[dict(name="caption", types=["cc.String"])])
+        for value in ("first", "", "last"):
+            snapshot = dict(fields=[dict(name="_key", kind="string", value=value)], gaps=[])
+            output = merge_declarations(dict(staticFieldSnapshot=snapshot), declaration)["staticFieldSnapshot"]
+            self.assertEqual(next(f for f in output["fields"] if f["name"]=="caption")["value"], value)
+        snapshot["fields"].append(dict(name="caption", kind="string", value="different"))
+        output = merge_declarations(dict(staticFieldSnapshot=snapshot), declaration)["staticFieldSnapshot"]
+        self.assertIn("conflicting_serialized_accessor:caption", output["gaps"])
+        self.assertEqual(next(f for f in output["fields"] if f["name"]=="caption")["value"], "different")
 
     def test_one_type_multiple_instances_keep_values_and_source_ids(self):
         report = self.run_prepare()

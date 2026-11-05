@@ -428,3 +428,19 @@ Scene/Prefab/Animation 原生文件由 `native-import` 或 `convert --native` �
 ## 0.5.0.dev1 冻结证据查询
 
 新增流式 `query-methods`、带hash嵌套ZIP的 `query-tables` 和精确URL/内容身份的 `inspect-aliases`。只读来源、隔离输出；签名/映射不计方法体，listing不计全载荷验证。完整参数、预算和代码证据role见 [EVIDENCE-QUERIES](EVIDENCE-QUERIES.md)。这是显式开发入口能力，稳定安装0.4.0不自动升级。
+
+
+### Checkpoint a large Unity export plan
+
+The public export reads the manifest and plan once each. Each document has a 256 MiB limit, a 16-million-value budget (including keys), and depth limit 96. For resumable transfer, pin the original manifest and run:
+
+```sh
+monkey shard-unity-plan --plan STAGE/plan.json --expected-manifest MANIFEST_SHA256 --out SHARDS --max-new-chunks 100
+monkey shard-unity-plan --plan STAGE/plan.json --expected-manifest MANIFEST_SHA256 --out SHARDS
+monkey restore-unity-plan --index SHARDS/index.json --expected-index INDEX_SHA256 --out NEW_STAGE
+monkey export --plan NEW_STAGE/plan.json --out UNITY_PROJECT
+```
+
+A bounded run exits 1 when paused. Complete sharding returns the index fingerprint and exits 0. Retries check existing content by SHA-256. The index covers the original manifest and every owned stage file, including source plan, scripts and resource copies. Restoration verifies each file and the original ownership table before publishing a fresh directory. The final export applies Unity's component and source-contract checks. External source evidence referenced by absolute path must still be available for checks that require it.
+
+For a source-linked diagnostic capture, run `monkey prepare-context-preview --project UNITY_COPY --source-manifest SOURCE_MANIFEST --parent-id PARENT --target-id TEMPLATE --out REQUEST_KIT`. The kit pins the actual import instruction, saved parent Prefab and each matching source occurrence. Use the request and included Editor helper in a fresh isolated batch copy and invoke `MonkeyImporter.CaptureContextPreview` in the shared Editor slot. Inspect the resulting frame in its parent context before assigning any visual verdict.

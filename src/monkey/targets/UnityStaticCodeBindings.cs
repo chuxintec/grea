@@ -142,6 +142,26 @@ public static partial class MonkeyImporter
         var row=rows.FirstOrDefault(r=>(r.spec.fields??Array.Empty<UnityStaticFields.FieldSpec>()).Any(f=>f.storageType=="UnityEngine.Object"&&!f.nullExpected))??rows[0];
         var component=CodeComponent(row,nodes);if(component==null)return;
         Func<string,UnityEngine.Object> resolve=id=>StaticReference(plan,nodes,id);
+        // Prove that two instances of the same accessor type retain their own text.
+        foreach(var instance in rows) {
+            var field=(instance.spec.fields??Array.Empty<UnityStaticFields.FieldSpec>()).FirstOrDefault(f=>
+                f.kind=="string"&&!String.IsNullOrEmpty(f.accessorBackingJson));
+            if(field==null)continue;
+            var peer=rows.FirstOrDefault(r=>r.spec.typeName==instance.spec.typeName&&r.sourceNode!=instance.sourceNode&&
+                r.spec.fields.Any(f=>f.fieldName==field.fieldName&&f.stringValue!=field.stringValue));
+            if(peer==null)continue;
+            var owner=CodeComponent(instance,nodes);
+            var slot=owner.GetType().GetField(field.fieldName);
+            var original=slot.GetValue(owner);
+            var marker="field_readback_mismatch:"+field.sourceFieldName;
+            try {
+                bool valid=!UnityStaticFields.Read(instance.spec,owner,resolve).gaps.Contains(marker);
+                slot.SetValue(owner,slot.GetValue(CodeComponent(peer,nodes)));
+                controls.Add(new StaticCodeControl{name="wrong-accessor-instance-value",sourceComponent=instance.sourceComponent,
+                    rejected=valid&&UnityStaticFields.Read(instance.spec,owner,resolve).gaps.Contains(marker)});
+            } finally { slot.SetValue(owner,original); }
+            break;
+        }
         var wrong=nodes.Values.FirstOrDefault(n=>n!=component.gameObject);
         if(wrong!=null) {
             var copy=JsonUtility.FromJson<StaticCodeMapping>(JsonUtility.ToJson(row));

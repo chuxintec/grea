@@ -504,12 +504,24 @@ def _requires_cocos_static_spine_adapter(plan):
 
 
 def export(plan_path, output):
-    plan_path=safe(plan_path)
-    from ..sources.compiled import ParseError
-    try:p=stage_document(plan_path)
-    except ParseError as error:
-        if error.code=='STAGE_DOCUMENT_CHANGED':fail('PLAN_CHANGED',str(plan_path),'Plan differs from manifest')
-        raise
+    from ..export_plan import open_plan
+    plan_path = safe(plan_path)
+    plan, entries, _ = open_plan(plan_path)
+    return _export_verified(plan_path, output, plan, entries[plan_path.name]['sha256'])
+
+
+def dispatch_export(plan_path, output):
+    from ..export_plan import open_plan
+    from . import cocos
+    plan_path = safe(plan_path)
+    plan, entries, _ = open_plan(plan_path)
+    if plan.get('targetProfile') == cocos.PROFILE:
+        del plan, entries
+        return cocos.export(plan_path, output)
+    return _export_verified(plan_path, output, plan, entries[plan_path.name]['sha256'])
+
+
+def _export_verified(plan_path, output, p, plan_hash):
     if p.get('targetProfile')!=PROFILE or p.get('schemaVersion')!=1:
         fail('UNSUPPORTED_PLAN','$','Expected Unity plan schema 1')
     if p.get('staticSpineContinuation') and p.get('spineNativeStage'):
@@ -521,11 +533,6 @@ def export(plan_path, output):
         prefix=str(error).partition(':')[0]
         code=prefix if re.fullmatch(r'STATIC_MASK_[A-Z_]+',prefix)else'STATIC_MASK_CONTRACT_INVALID'
         fail(code,'staticMasks',str(error))
-    # Plan JSON itself must match its create-only manifest, not just copied images.
-    pm=stage_manifest(plan_path.parent)
-    expected={f['path']:f['sha256'] for f in pm['files']}
-    if expected.get(plan_path.name)!=sha(stage_bytes(plan_path)):
-        fail('PLAN_CHANGED',str(plan_path),'Plan differs from manifest')
     for c in p['copies']:
         if sha(read(inside(plan_path.parent,c['source'])))!=c['sha256']:
             fail('SOURCE_CHANGED',c['source'],'Plan resource differs')
@@ -607,6 +614,7 @@ def export(plan_path, output):
             ('UnityStaticSpriteFrames.cs',str(Path(standard.unity('importer')).with_name('UnityStaticSpriteFrames.cs')),'static-sprite-frames-editor'),
             ('UnityPreviewClones.cs',str(Path(standard.unity('importer')).with_name('UnityPreviewClones.cs')),'preview-clones-editor'),
             ('UnityStaticPreview.cs',str(Path(standard.unity('importer')).with_name('UnityStaticPreview.cs')),'static-preview-editor'),
+            ('UnityContextPreview.cs',str(Path(standard.unity('importer')).with_name('UnityContextPreview.cs')),'context-preview-editor'),
             ('UnityStaticRichText.cs',str(Path(standard.unity('importer')).with_name('UnityStaticRichText.cs')),'static-richtext-editor'),
             ('UnityStaticToggle.cs',str(Path(standard.unity('importer')).with_name('UnityStaticToggle.cs')),'static-toggle-editor'),
             ('UnitySystemFonts.cs',str(Path(standard.unity('importer')).with_name('UnitySystemFonts.cs')),'system-fonts-editor'),
@@ -760,7 +768,7 @@ def export(plan_path, output):
     write_json(find_analysis(out,'name-map.json'),p.get('naming',{}))
     report=dict(schemaVersion=1,toolVersion=__version__,targetProfile=PROFILE,namespace=p['namespace'],projectLayout=VERSION,
                 scopeMode=p.get('scopeMode','asset-selection'),
-                planSha256=sha(stage_bytes(plan_path)),sourceRoots=p.get('sourceRoots',{}),sourceManifestSha256=p.get('sourceManifestSha256'),diagnostics=p['diagnostics'],editorValidation='not_run',
+                planSha256=plan_hash,sourceRoots=p.get('sourceRoots',{}),sourceManifestSha256=p.get('sourceManifestSha256'),diagnostics=p['diagnostics'],editorValidation='not_run',
                 visualValidation='not_run',businessValidation='not_run',galleryOnly=p['galleryOnly'])
     write_json(find_analysis(out,'candidate.json'),report)
     return finish(out,report)

@@ -57,6 +57,19 @@ def merge_declarations(component, declaration):
     for name, f in fields.items():
         if name in types:
             f["sourceDeclaredType"] = types[name]
+    # A direct getter reads the serialized backing slot after construction.
+    # Project that instance value only when the parser proved both accessors.
+    for name, field in fields.items():
+        relation = field.get("declarationEvidence", {}).get("accessorBacking") or {}
+        backing = fields.get(relation.get("backingFieldName"), {})
+        if (relation.get("propertyName") != name or not backing.get("serializedOverride")
+                or field.get("sourceDeclaredType") not in ("cc.String", "String", "string")
+                or backing.get("kind") != "string" or not isinstance(backing.get("value"), str)):
+            continue
+        if field.get("serializedOverride") and (field.get("kind"), field.get("value")) != ("string", backing["value"]):
+            snapshot["gaps"].append("conflicting_serialized_accessor:" + name)
+            continue
+        field.update(kind="string", value=backing["value"], serializedOverride=True)
     snapshot["fields"] = [fields[n] for n in sorted(fields)]
     snapshot["declarationDefaults"] = "partial" if declaration["gaps"] else "verified"
     snapshot["gaps"] = [g for g in snapshot["gaps"] if g != "source_declaration_defaults_not_verified"]
