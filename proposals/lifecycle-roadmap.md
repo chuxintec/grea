@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:38:44.780052+08:00",
+  "updatedAt": "2026-11-05T15:40:26.228471+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -726,7 +726,7 @@
       "id": "grea:T-foodstreet-beaver-target-rewrite",
       "title": "肥鹅目标工程受限改写及可回退采用工具",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "blocked",
       "primaryReleaseId": "grea:R1.1.0",
       "description": "事件 foodstreet-monkey-parallel-20261105，start-beaver-target-rewrite-02。C线单写 beaver，隔离肥鹅副本。",
       "acceptanceCriteria": [
@@ -743,9 +743,10 @@
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-closure-20261105.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-provenance-v2-20261105.json",
-        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md"
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/post33-event/onClickTip-source-trace.json"
       ],
-      "nextAction": "原两试点追溯一条源持久事件到目标、方法、参数和实例；条件齐备时在隔离副本编译、冷重开和回退，否则记录具体缺件与责任人。",
+      "nextAction": "已核btn_tip→根组件onClickTip，无自定义参数。等待肥鹅主开发交付MasterMatch帮助打开状态、可空act.aid、TipAnim5Window打开与关闭完成接口及隔离资产依赖。GREA已申请，收到后转beaver实施持久事件、冷重开与回退。",
       "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
     },
     {
