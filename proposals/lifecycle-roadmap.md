@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:33:37.819109+08:00",
+  "updatedAt": "2026-11-05T16:43:22.511528+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -692,9 +692,10 @@
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/room-guide-source-context-20261105/ROOM-GUIDE-SOURCE-CONTEXT.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual-one42.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label27-source-control.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual-flip44.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual-flip44.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label15-owner-pair.json"
       ],
-      "nextAction": "27镜像已定位源运行态：refreshTrackLayout重挂#5并按状态设置scaleX。按裁定转原15。源Label #18「修理工」、父页#64「集齐奖励」在旧Unity计划均为convertible=false，已有字体工具优先复用；选择一个可证静态输入，核同父级同状态修前/后实图及正常对照。人审0/40。",
+      "nextAction": "15号同父页「集齐奖励」已由GREA对图确认；源Label #64/node #24保存重开为TMP，文字区1145像素变化，6/9与x111两个对照区像素一致。按原40台账继续验其他缺陷，单处修复未晋升整页。27的镜像由源方法按状态控制，17缺同版运行状态。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
@@ -759,9 +760,11 @@
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/master-help-contract-20261105/MASTER-MATCH-HELP-ADAPTER-CONTRACT.json",
         ".private/development/foodstreet-monkey-parallel-20261105/beaver-tool37.json",
         "../beaver/.private/master-help34/actual01/owner-handoff.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/foodstreet-visible45.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/foodstreet-visible45.json",
+        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/master-help-visible-20261105/run01/OWNER-HELP-VISIBLE-RESULT.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/beaver-visible47.json"
       ],
-      "nextAction": "help34-interactive-01 已交肥鹅主开发实点原帮助按钮和关闭按钮，等前/中/后图和完成计数。原按钮唯一持久调用及15字段冷读、5键3图在隔离Play探针通过。beaver单写修复公开冷验命令projectRoot读取并回归；正式采用HOLD。",
+      "nextAction": "项目实点原帮助按钮两次，调用0、完成0。原Button禁用；预览启动和Camera遮挡也需修。beaver单写修复、验证新manifest，再交真实输入。原15字段和唯一持久事件已冷读；正式采用HOLD。",
       "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
     },
     {
@@ -800,7 +803,7 @@
         "missingPrefabList": ".private/development/audit-remediation-20261105/dev35-review/whole-result.json",
         "verifiedResult": "2026-11-05 16:12 +08:00，Unity 退出1。FoodDeliveryTaskItem 按钮 #26 的目标 #10 缺 Graphic。1677 个源 Prefab 中落盘 0、缺失 1677、冷重开 0。",
         "pendingDispatches": {
-          "monkey": "预算派工36已交付：dev36 5f6eaf0，GREA逐字节比对510个实现文件，复跑4个公开用例及3项边界测试通过。按钮派工38仍在执行，等待固定修复及适配器差异。",
+          "monkey": "预算派工36已交付：dev36 5f6eaf0，GREA逐字节比对510个实现文件，复跑4个公开用例及3项边界测试通过。按钮派工38仍在执行，等待固定修复及适配器差异。 7个受影响目标的材质关系已定位。中断后按消息46接续dev37现有工作。",
           "grea": "固定修复交付后，GREA 核适配器差异及原候选身份，再用同一整包在隔离副本执行公开入口；核全量成功/失败/缺失、冷重开及日志后报总监。收到前复用 dev35 失败回执。"
         },
         "historicalClosedTasks": [
