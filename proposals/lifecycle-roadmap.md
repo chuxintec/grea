@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:54:31.482301+08:00",
+  "updatedAt": "2026-11-05T16:00:51.474768+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -762,13 +762,15 @@
       "description": "现任monkey主开发处理196238948字节计划及CLI探读。",
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
-        ".private/development/audit-remediation-20261105/dev34-review/RESULT.json"
+        ".private/development/audit-remediation-20261105/dev34-review/RESULT.json",
+        "/Users/wangmeng/MyProjects/Tools/monkey/.private/audit-remediation-20261105/whole-mask-after-dev34/handoff-index.json",
+        ".private/development/audit-remediation-20261105/dev34-review/whole-mask/RESULT.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
       ],
-      "nextAction": "dev34/a5ef5a8已解决196238948字节计划的阶段预算，10407文件逐SHA复核相同，重试新增0块。原计划公开导出拒绝323源Mask缺合同。主开发已接已还原阶段继续通用Mask来源续接/逐根处置。"
+      "nextAction": "323个Mask合同续接并整包导出partial候选，GREA复核20952文件SHA及源ID。verify --level editor现被171886205字节导入指令的BYTE_BUDGET阻止；主开发接有界读取和负例。整包原生及视觉另验。"
     }
   ],
   "blockers": [
