@@ -719,7 +719,8 @@
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/beaver-dev10-visible-click-20261105/run01/owner-visible-click-result.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-closure-20261105.json",
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-provenance-v2-20261105.json"
       ],
       "nextAction": "总监已接受隔离临时预览中的一次非动画 hide 点击；正式工程持久按钮、Player及产品采用仍待独立授权与验收。"
     }
