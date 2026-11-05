@@ -52,3 +52,19 @@ def test_changed_inputs_and_manifest_pin_refuse_publication(tmp_path):
     plan.write_bytes(plan.read_bytes()[:-1])
     with pytest.raises(ParseError,match='PLAN_CHANGED'):
         export.open_plan(plan)
+
+
+def test_import_instruction_rejects_ambiguous_or_invalid_manifest_record(tmp_path):
+    name = 'import-plan.json'
+    raw = b'{}'
+    (tmp_path/name).write_bytes(raw)
+    entry = dict(path=name, bytes=len(raw), sha256=export.sha(raw))
+    for rows, code in (
+        ([], 'IMPORT_PLAN_OWNERSHIP'),
+        ([entry, entry], 'IMPORT_PLAN_OWNERSHIP'),
+        ([dict(entry, bytes=export.DOCUMENT_LIMIT + 1)], 'IMPORT_PLAN_BUDGET'),
+        ([dict(entry, sha256='x')], 'IMPORT_PLAN_PIN'),
+        ([dict(entry, sha256='0'*64)], 'IMPORT_PLAN_CHANGED'),
+    ):
+        with pytest.raises(ParseError, match=code):
+            export.read_import_instruction(tmp_path, {'files': rows}, name)

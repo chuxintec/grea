@@ -900,6 +900,8 @@ def _static_sort_spine_bindings(plan, root):
 
 def verify(candidate, output, level='static'):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[]
+    from ..export_plan import read_import_instruction
+    instruction, instruction_sha = read_import_instruction(root, m, standard.locate(m, 'importPlan'))
     from ..sources.containers import fingerprint
     native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None;text_family_proofs={}
     rendering_fragment=None;rendering_receipt=None;saved_meta_observations=[]
@@ -912,9 +914,8 @@ def verify(candidate, output, level='static'):
             from ..unity_verification_contract import native_diagnostics
             from ..native_readback_contract import saved_readback_admission
             raw_native_diagnostics=rb.get('diagnostics')
-            instruction=load(read(root/standard.locate(m,'importPlan'),max_bytes=128*1024*1024),max_nodes=8_000_000)
             admission=saved_readback_admission(rb,gallery=instruction.get('galleryOnly')is True,
-                expected_plan_sha256=fingerprint(root/standard.locate(m,'importPlan')),
+                expected_plan_sha256=instruction_sha,
                 expected_source_manifest_sha256=instruction.get('sourceManifestSha256'))
             for issue in admission['issues']:
                 diagnostics.append(diagnostic(issue['code'],str(readback_path)+'#'+issue['field'],issue['message']))
@@ -1156,7 +1157,6 @@ def verify(candidate, output, level='static'):
                 if value in guids:
                     diagnostics.append(diagnostic('DUPLICATE_TARGET_GUID',str(path.relative_to(root)),'GUID duplicates '+guids[value]))
                 guids[value]=str(path.relative_to(root))
-    instruction=load(read(root/standard.locate(m,'importPlan'),max_bytes=128*1024*1024),max_nodes=8_000_000)
     for item in instruction['textures']+instruction['assets']:
         if not inside(root,item['path']).is_file():
             diagnostics.append(diagnostic('TARGET_REFERENCE_MISSING',item['path'],'Import resource does not exist'))

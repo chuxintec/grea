@@ -7,17 +7,36 @@ from pathlib import Path
 
 from .io import fail, inside, load, read, safe, sha, new_output
 
+DOCUMENT_NODES = 16_000_000
 DOCUMENT_LIMIT = 256 * 1024**2
 CHUNK = 4 * 1024**2
 MAX_FILES = 200_000
 MAX_TOTAL = 32 * 1024**3
 
 
+def read_import_instruction(root, manifest, relative):
+    """Bind parsing and saved-readback admission to the same owned bytes."""
+    matches = [entry for entry in manifest['files'] if entry['path'] == relative]
+    if len(matches) != 1:
+        fail('IMPORT_PLAN_OWNERSHIP', relative, 'Expected one import instruction in the candidate manifest')
+    entry = matches[0]
+    size = entry.get('bytes')
+    expected = entry.get('sha256')
+    if type(size) is not int or not 0 <= size <= DOCUMENT_LIMIT:
+        fail('IMPORT_PLAN_BUDGET', relative, 'Invalid or oversized import instruction')
+    if not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected):
+        fail('IMPORT_PLAN_PIN', relative, 'Invalid import instruction fingerprint')
+    raw = read(inside(root, relative), size)
+    if len(raw) != size or sha(raw) != expected:
+        fail('IMPORT_PLAN_CHANGED', relative, 'Import instruction differs from candidate manifest')
+    return load(raw, max_nodes=DOCUMENT_NODES), expected
+
+
 def open_plan(path):
     path = safe(path)
     manifest_raw = read(path.parent / 'manifest.json', DOCUMENT_LIMIT)
     manifest_hash = sha(manifest_raw)
-    manifest = load(manifest_raw, max_nodes=16_000_000)
+    manifest = load(manifest_raw, max_nodes=DOCUMENT_NODES)
     del manifest_raw
     rows = manifest.get('files')
     if not isinstance(rows, list) or len(rows) > MAX_FILES:
@@ -38,7 +57,7 @@ def open_plan(path):
     raw = read(path, entry['bytes'])
     if len(raw) != entry['bytes'] or sha(raw) != entry['sha256']:
         fail('PLAN_CHANGED', str(path), 'Plan differs from owning manifest')
-    return load(raw, max_nodes=16_000_000), entries, manifest_hash
+    return load(raw, max_nodes=DOCUMENT_NODES), entries, manifest_hash
 
 
 def _publish(path, data):
