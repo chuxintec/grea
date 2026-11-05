@@ -2,15 +2,19 @@
 
 本文件是 GREA 产品唯一计划。当前开发线为 `v1.1.0.dev2`；正式源码与固定运行时按各自身份保留。分支整理、工具实际运行、项目采用与发布分别验收。
 
+## 压缩后从这里接续
+
+首个只读动作：在本文件定位 `"id": "grea:T-monkey-large-plan-export"` 并读取其 `resume`。先对照本轮输入的时间、事件和最新裁定，再执行该条的下一步。其他在途任务沿各自条目继续。
+
 ```manager-task-view
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:13:47.285163+08:00",
+  "updatedAt": "2026-11-05T16:15:40.119253+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
-  "activeImplementationTask": "grea:T-foodstreet-monkey-visual",
+  "activeImplementationTask": "grea:T-monkey-large-plan-export",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -770,13 +774,35 @@
         ".private/development/audit-remediation-20261105/dev34-review/whole-mask/RESULT.json",
         ".private/development/audit-remediation-20261105/dev35-review/before/verification.json",
         ".private/development/foodstreet-monkey-parallel-20261105/budget2048-36.json",
-        ".private/development/audit-remediation-20261105/dev35-review/whole-result.json"
+        ".private/development/audit-remediation-20261105/dev35-review/whole-result.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/grea-monkey-whole-button-38.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/grea-native-whole-button-result-39.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
       ],
-      "nextAction": "dev35 已在公开入口读通 171886205 字节指令；原候选整包 Unity 退出 1，FoodDeliveryTaskItem 按钮 #26 找不到目标图形；1677 个预期源 Prefab 均未落盘，冷重开 0。monkey 单写修复后用同一输入重试。monkey 单写落实整批默认 2048 MiB、单文件 128 MiB、导入指令 256 MiB 和分别超限诊断。"
+      "nextAction": "dev35 已在公开入口读通 171886205 字节指令；原候选整包 Unity 退出 1，FoodDeliveryTaskItem 按钮 #26 找不到目标图形；1677 个预期源 Prefab 均未落盘，冷重开 0。monkey 单写修复后用同一输入重试。monkey 单写落实整批默认 2048 MiB、单文件 128 MiB、导入指令 256 MiB 和分别超限诊断。",
+      "resume": {
+        "eventId": "foodstreet-monkey-parallel-20261105",
+        "humanDirection": "总监传达本轮人类指令 director-whole-budget-2048-native：整批默认2048 MiB、包内单文件128 MiB、导入指令256 MiB。复用现有候选，在 Unity 核全量导入、保存、重开和缺失；视觉另验。",
+        "latestRuling": "director-compaction-resume-40，接 grea-native-whole-button-result-39。压缩后依据当前条目去重，旧分支、120文件和旧beaver采用检查已闭合。",
+        "candidate": "/Users/wangmeng/MyProjects/Tools/monkey/.private/audit-remediation-20261105/whole-mask-after-dev34/UnityProject",
+        "manifestSha256": "6bdafcfbce09c938c5659223d2f3075a4d0bd0d5693987b19c0e62c50ce580da",
+        "importPlanSha256": "f32fff1a4892713ef38181905d20959f91edef7193cf147cc7d4c5dc83bbb4d1",
+        "nativeReceipt": ".private/development/audit-remediation-20261105/dev35-review/native/execution-result.json",
+        "missingPrefabList": ".private/development/audit-remediation-20261105/dev35-review/whole-result.json",
+        "verifiedResult": "2026-11-05 16:12 +08:00，Unity 退出1。FoodDeliveryTaskItem 按钮 #26 的目标 #10 缺 Graphic。1677 个源 Prefab 中落盘 0、缺失 1677、冷重开 0。",
+        "pendingDispatches": {
+          "monkey": "grea-monkey-budget-2048-36 / grea-monkey-whole-button-38 已发。monkey 单写额度实现、通用按钮修复、定向回归和固定交付。",
+          "grea": "固定修复交付后，GREA 核适配器差异及原候选身份，再用同一整包在隔离副本执行公开入口；核全量成功/失败/缺失、冷重开及日志后报总监。收到前复用 dev35 失败回执。"
+        },
+        "historicalClosedTasks": [
+          "grea:T-repository-root-wip",
+          "grea:T-repository-version-branches"
+        ],
+        "parallelWork": "原40视觉整改、绑定恢复与beaver隔离工具用例沿原事件执行。"
+      }
     }
   ],
   "blockers": [
