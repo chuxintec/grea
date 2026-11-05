@@ -715,6 +715,7 @@ def _strict_unity_scene_component_join(plan: dict, readback: dict, owner_rows: l
         sid = _identity(row)
         if sid:
             owner_by_id[sid].append(row)
+    owner_index = _owner_index(plan.get("sourcePrefabs") or [])
     joined: list[dict] = []
     for sid, source_matches in source_by_id.items():
         if len(source_matches) != 1:
@@ -738,7 +739,7 @@ def _strict_unity_scene_component_join(plan: dict, readback: dict, owner_rows: l
             diagnostics.append(diagnostic("COMPONENT_SCENE_OBSERVATION_SCOPE_INVALID", sid,
                 "Scene component identity must come from the saved scene's observed prefab correspondence", sid))
             invalid.add(sid)
-        if (_planned_owner(plan, source)[0] is None or row.get("node") != source.get("node") or
+        if (_planned_owner(plan, source, owner_index)[0] is None or row.get("node") != source.get("node") or
                 row.get("type") != source.get("type")):
             diagnostics.append(diagnostic("COMPONENT_SCENE_SOURCE_MAPPING_MISMATCH", sid,
                 "Saved-scene component must retain the exact planned source owner node and component type", sid))
