@@ -1,9 +1,11 @@
 ---
 name: grea-recover
-description: 游戏恢复阶段：在授权范围内识别和提取原包证据，调用 monkey 将 Unity Mono/IL2CPP 或受支持的 Cocos/Laya/Egret/H5 来源恢复为独立 Unity/Cocos 候选，核对代码、资源身份与原生交接。只读取证不自动转换；已有可维护工程的功能迭代、换皮和去残留转开发阶段。
+description: 游戏恢复阶段：在授权范围内识别和提取原包证据，调用 monkey 将 Unity Mono/IL2CPP 或受支持的 Cocos/Laya/Egret/H5 来源恢复为独立 Unity 候选，核对代码、资源身份与原生交接。只读取证不自动转换；已有可维护工程的功能迭代、换皮和去残留转开发阶段。
 ---
 
 # GREA · 来源恢复与候选交接
+
+新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。
 
 先读[恢复阶段执行与交接](references/恢复阶段执行与交接.md)和[共同约束](../grea/references/共同约束与执行入口.md)。选择只读取证或获准完整恢复；输出范围由当前任务决定，缺少源引擎/目标时先辨识，不猜参数或替换目标。
 
@@ -16,7 +18,7 @@ description: 游戏恢复阶段：在授权范围内识别和提取原包证据�
 | 一组完整页面/Prefab批量恢复、布局组件图片整改及采用 | [成组Prefab恢复与采用](references/成组Prefab恢复与采用.md)；实际经GREA调用monkey，先静态完整再接既有业务 |
 | Unity 原包 → Unity 候选 | [Unity工程重建与恢复](references/Unity工程重建与恢复.md)；IL2CPP/DummyDLL/真实源码的可信度分别记录 |
 | 非 Unity 来源 → 原生 Unity | [Unity原生转换规范](references/Unity原生转换规范.md)、[跨引擎行为一致性](references/Unity跨引擎移植与行为一致性.md)；Cocos来源按[映射](references/Unity源引擎映射-Cocos.md) |
-| 明确恢复到 Cocos | [恢复阶段执行与交接的Cocos目标](references/恢复阶段执行与交接.md#cocos目标)；源版本、目标版本和固定provider能力分别核对 |
+| 查询既有 Cocos 目标兼容契约 | [恢复阶段执行与交接的Cocos目标](references/恢复阶段执行与交接.md#cocos目标)；源版本、目标版本和固定provider能力分别核对 |
 | Cocos 结构与源码证据 | [Cocos离线解析与模块证据](references/Cocos离线解析与模块证据.md)、[Creator序列化与CCON证据](references/Creator序列化与CCON证据.md) |
 | 工具或资源专项缺口 | [IL2CPP辅助解析器](references/IL2CPP辅助解析器.md)、[Shader检查工具](references/Shader检查工具.md)、[Android旧模拟器调用](references/Android旧模拟器调用.md)、[Frida配对与调用](references/Frida配对与调用.md)；只按需使用 |
 | 跨引擎候选的原生出口 | [Unity原生退出检查工具](references/Unity原生退出检查工具.md)；静态、Editor、Player证据分别记录 |

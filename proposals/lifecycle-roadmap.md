@@ -6,10 +6,10 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T13:49:48.619501+08:00",
+  "updatedAt": "2026-11-05T13:52:43.526629+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "当前事件 foodstreet-monkey-parallel-20261105：两条独立 detached 工作树并行开发，Unity 串行，原主开发负责唯一 dev28 集成。退出须以同一固定候选交总监，正式采用继续 HOLD。 C线由现任beaver承接隔离目标副本改写、编译、撤销与真实行为交接。",
+  "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
   "activeImplementationTask": "grea:T-monkey-audit-remediation-dual-review",
   "releases": [
     {
@@ -610,7 +610,7 @@
         "不伪造原生/视觉/Player结果；不强杀在途、不丢WIP、不恢复Cocos产品/发布或二进制",
         "双向核对源组件、所属Prefab/节点、角色、持久身份与呈现，显式合法共享通过",
         "公开verify和冻结按当前未解决证据统一判定，覆盖已解决、纯动态、图范围与两种冻结入口",
-        "Creator实际呈现证据可消费，矩形Mask在导出时有可执行契约或明确报告缺口"
+        "Unity 矩形Mask在导出时具可执行契约，原生保存重开核实。共享源身份与归属按Unity正反例验收。"
       ],
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-monkey-audit-remediation/PLAN.md",
@@ -622,9 +622,10 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev27-dual-review/RESULT.md",
         ".private/development/audit-remediation-20261105/dev28-review/RESULT.json",
         ".private/development/audit-remediation-20261105/dev29-review/RESULT.json",
-        ".private/development/audit-remediation-20261105/dev29-review/dual-review-input.json"
+        ".private/development/audit-remediation-20261105/dev29-review/dual-review-input.json",
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-grea-unity-target-only/DECISION.md"
       ],
-      "nextAction": "dev29/2c91ca5: Sprite实际九组三入口通过，Scroll六个篡改反例通过，动态汇总仍阻止严格冻结。Creator重开后可见源Sprite处于非活动层级；四页显式材质Mask保存重读失败。已交原主开发修复，同字节复审请求交总监，正式采用HOLD。",
+      "nextAction": "修复 dev29 Unity 显式材质 Mask 保存重开与 Scroll 纯动态诊断冻结判断，并复核集成版本。Creator 失败保留为历史未通过，退出当前阻塞集。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
@@ -696,7 +697,7 @@
       "id": "grea:T-foodstreet-beaver-target-rewrite",
       "title": "肥鹅目标工程受限改写及可回退采用工具",
       "ownerSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "verification",
       "primaryReleaseId": "grea:R1.1.0",
       "description": "事件 foodstreet-monkey-parallel-20261105，start-beaver-target-rewrite-02。C线单写 beaver，隔离肥鹅副本。",
       "acceptanceCriteria": [
@@ -707,9 +708,10 @@
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/two-types-handoff-index.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/label-fix01/bc-handoff-index.json",
-        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/final2/candidate-delivery.json"
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/final2/candidate-delivery.json",
+        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/beaver-dev10-visible-click-20261105/run01/owner-visible-click-result.json"
       ],
-      "nextAction": "dev10/1f55d2d完成受限改写与冷重开、1044文件撤销。delivery01已交项目主开发，在隔离预览实际点一次，核可见隐藏、局部缩放和计数0→1。show、动画及正式工程未验。"
+      "nextAction": "C线隔离试点已完成并交总监。真实预览click一次，Master hide(null) 0→1，scale 1→0，两个对照未触发，1044文件一致。当前仅tweenHide=false；正式采用继续HOLD。"
     }
   ],
   "blockers": [

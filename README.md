@@ -49,12 +49,14 @@ Claude Code 的安装入口和 stdio 清单也随包提供，按 [安装与平�
 
 ### 源码使用与开发
 
+新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。
+
 ```sh
 uv sync --frozen
 ./bin/grea session
 ./bin/grea list-tools
 ./bin/grea describe-tool '{"tool_id":"unity_player_audit"}'
-./bin/grea plan-workflow '{"mode":"assess","source_engine":"cocos"}'
+./bin/grea plan-workflow '{"mode":"assess","source_engine":"cocos","target_engine":"unity"}'
 ```
 
 上述规划只输出评估流程，不启动转换或游戏。Windows PowerShell 的源码入口为 `bin\grea.cmd session`；复杂 JSON 用 UTF-8 请求文件配合 `--input`，避免 shell 引号差异。命令行帮助为 `./bin/grea --help`；源码的 Python 最低版本与依赖以 [pyproject.toml](pyproject.toml) 和 [uv.lock](uv.lock) 为准，维护构建工具可能要求更高版本。
@@ -84,7 +86,7 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 | --- | --- | --- | --- |
 | 总入口 | [grea](plugin/skills/grea/SKILL.md) | 根据目标和现有工程状态路由，维护共享约束、证据及工具调用方法 | 按阶段选择 |
 | 调研 | [grea-research](plugin/skills/grea-research/SKILL.md) | 体验取证、玩法/系统分析、成本与立项建议 | 按需只读工具 |
-| 恢复 | [grea-recover](plugin/skills/grea-recover/SKILL.md) | 技术取证、来源冻结、Unity/Cocos恢复路线、独立候选与缺口交接 | monkey |
+| 恢复 | [grea-recover](plugin/skills/grea-recover/SKILL.md) | 技术取证、来源冻结、多种来源到 Unity 的恢复路线、独立候选与缺口交接 | monkey |
 | 开发 | [grea-develop](plugin/skills/grea-develop/SKILL.md) | 工程采用、功能/一致性修复、换皮、Go服务端、配置/资产/性能和Editor工作 | beaver |
 | 发布 | [grea-release](plugin/skills/grea-release/SKILL.md) | 构建、目标Player验收、打包校验、版本说明及获准发布 | beaver及已配置平台工具 |
 
@@ -143,7 +145,7 @@ Case 操作、严格 JSON Schema、退出码、预算、清理和审阅边界见
 
 Skill 维护源只在 `plugin/skills/`，发现/绑定/薄适配放 `src/grea/`，自身维护脚本放 `scripts/`。旧 `src/grea/tools/` 与 `tools/` 执行实现冻结交 beaver 接收，验证后再退休。保留工具 ID、调用契约和旧证据；改动按实际风险运行相关测试，发布前完成既有 CI 和制品门禁。
 
-开发候选工具：[调研归一与报告](docs/providers/research.md)、[Creator3.8.8五层示例与有限转换](docs/providers/cocos-target.md)、[Go六服虚构事务示例](docs/providers/server-go.md)。生成/编译不替代Editor、浏览器、数据库或六服运行；实际完成边界见 [本地开发记录](proposals/design/research-cocos-go.md)。
+开发候选工具：[调研归一与报告](docs/providers/research.md)、[存量 Creator 3.8.8 显式兼容示例](docs/providers/cocos-target.md)、[Go六服虚构事务示例](docs/providers/server-go.md)。生成/编译不替代Editor、浏览器、数据库或六服运行；实际完成边界见 [本地开发记录](proposals/design/research-cocos-go.md)。
 
 未发布生命周期增量：stage/work_mode/delivery_level规划与变更v2合同、固定[monkey候选接续](docs/providers/monkey.md)、静态资产联系表及尺寸/色数检查已实现；不代表原生可玩或生产运营。当前范围/待验只维护在[生命周期计划](proposals/lifecycle-roadmap.md)。
 
