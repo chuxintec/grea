@@ -1,0 +1,65 @@
+{
+  "configurationProfile": {
+    "generatorFiles": [
+      "extensions/legacy_foodstreet/extension.json",
+      "extensions/legacy_foodstreet/configuration.py",
+      "extensions/legacy_foodstreet/RecipeJsonConfiguration.cs"
+    ],
+    "maxIngredientsPerRow": 10000,
+    "maxRows": 10000,
+    "maxSafeInteger": 9007199254740991,
+    "maxSourceBytes": 8388608,
+    "maxTableBytes": 4194304,
+    "profileName": "foodstreet-main-js-element-multi-order-pool-v1",
+    "providerModule": "configuration",
+    "representativeRootDishId": 2015015,
+    "sourceSha256": "21af08e48846f6ad1a2e0673b0c945358136723b1664f0cd1f6ec9b3df6c5cb5",
+    "sourceSpans": {
+      "ElementMultiOrderPoolDecode": {
+        "byteLength": 122,
+        "byteOffset": 500621,
+        "sha256": "9248abc2cea6394d816f9338dc4773d6c3c84f69a6ea4fe2581f2b379354fb12"
+      },
+      "Kp": {
+        "byteLength": 358,
+        "byteOffset": 614964,
+        "sha256": "f1425b8b9d8b42224f26be870c3de2cc1edba512cee5cced092f9a4edd6c4703"
+      },
+      "dishMap": {
+        "byteLength": 129,
+        "byteOffset": 617107,
+        "sha256": "b5e76a38345aaca2015750744dbbac8cab9afe07a313b8306e07fc2bbd95c42e"
+      },
+      "flattenIngredientsOf": {
+        "byteLength": 176,
+        "byteOffset": 621011,
+        "sha256": "9bf3773ef1f94374aec1958e38f499b4ba698f73de73fd454ae0fe6701048061"
+      },
+      "mapConverter": {
+        "byteLength": 280,
+        "byteOffset": 454243,
+        "sha256": "12b3c0546058731011c48a36f1cbd3deec4b352f076835b1c3bb92b81121fce4"
+      }
+    },
+    "tableSha256": "ac76070e3347e32bb7149c049ab2477b1c46a8bb2768d21195100afd6d85e89d"
+  },
+  "defaultEnabled": false,
+  "explicitOptIn": true,
+  "extensionId": "legacy_foodstreet",
+  "profiles": [
+    {
+      "bytes": 5621,
+      "profileName": "foodstreet-demand-health-v1",
+      "resource": "code_profiles/foodstreet-demand-health-v1.json",
+      "sha256": "6efd62c952949993ad683503fa543fe0db284594a2ba46828ebeb2bf3ca25de0"
+    },
+    {
+      "bytes": 2011,
+      "profileName": "foodstreet-motion-math-v1",
+      "resource": "code_profiles/foodstreet-motion-math-v1.json",
+      "sha256": "4bfd7e3248cc4d27af23b9e4292cb340059b40cb65cf2c11b977bea71e3d81aa"
+    }
+  ],
+  "schemaVersion": 1,
+  "scope": "legacy-project-specific"
+}

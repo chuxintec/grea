@@ -127,14 +127,15 @@ def test_native_bridge_refuses_candidate_payload_drift_before_editor_launch(tmp_
     ("protected override void OnPopulateMesh(UnityEngine.UI.VertexHelper vh) { vh.Clear(); }",
      "source-ui-behavior-unverified"),
 ])
-def test_schema_only_custom_image_carries_hash_pinned_source_presentation_classification(tmp_path, member, expected):
+@pytest.mark.parametrize("base", ["Image", "Text", "RawImage"])
+def test_schema_only_custom_ui_carries_hash_pinned_source_presentation_classification(tmp_path, member, expected, base):
     from monkey.unity_prefab_recovery import script_proposals
-    source_text = "public class CustomImage : UnityEngine.UI.Image { " + member + " }"
-    source_path = tmp_path / "CustomImage.cs"
+    source_text = f"public class Custom{base} : UnityEngine.UI.{base} {{ " + member + " }"
+    source_path = tmp_path / f"Custom{base}.cs"
     source_path.write_text(source_text, encoding="utf-8")
     source_hash = sha(source_path.read_bytes())
     parsed, _ = type_models_for_test(source_text, source_path, source_hash)
-    script_id = {"assembly": "Assembly-CSharp.dll", "namespace": "", "name": "CustomImage"}
+    script_id = {"assembly": "Assembly-CSharp.dll", "namespace": "", "name": f"Custom{base}"}
     script_proposal = script_proposals([{
         "sourceSha256": "1" * 64,
         "document": {
@@ -152,6 +153,7 @@ def test_schema_only_custom_image_carries_hash_pinned_source_presentation_classi
     model = script_proposal[(script_id["assembly"], "", script_id["name"])]
     assert model["state"] == "native-base-schema-only"
     assert model["proposal"]["sourceUiStaticEvidence"]["status"] == expected
+    assert model["proposal"]["sourceUiStaticEvidence"]["staticSemanticsProven"] is False
 
 
 def type_models_for_test(source_text, source_path, source_hash):

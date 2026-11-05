@@ -237,7 +237,9 @@ class UnityStaticSortTextSourceContractTests(unittest.TestCase):
         self.assertIn("CaptureFallbackMaterial(binding, persistentAssetPath, false", profile)
         self.assertIn("requiresPersistentFallbackRegistration = true", capture)
         self.assertIn("registerPersistentVariants", capture)
-        self.assertIn("outline.RegisterPersistentMaterialVariant(binding.fallbackFontAsset, material", registration)
+        self.assertIn("driver.RegisterPersistentMaterialVariant(binding.fallbackFontAsset, material", registration)
+        self.assertIn("TryClassifyCaptureSlotRole(binding", registration)
+        self.assertIn("CapturedMaterialIdentityMatches(binding", registration)
         self.assertIn("binding.requiresPersistentFallbackRegistration = false", registration)
 
     def test_registered_fallback_capture_rebind_uses_fresh_slot_and_exact_baked_asset(self):

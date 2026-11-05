@@ -622,6 +622,7 @@ def export(plan_path, output):
     instruction['staticSortContinuation']=p.get('staticSortContinuation')
     instruction['staticTextContinuationJson']=encoded(p['staticTextContinuation']).decode('utf-8') if p.get('staticTextContinuation') else None
     instruction['staticTextSlotCaptureLifecycleContract']=p.get('staticTextSlotCaptureLifecycleContract')
+    instruction['staticTextSlotRoleRoutingContract']=p.get('staticTextSlotRoleRoutingContract')
     instruction['bitmapMissingGlyphs']=p.get('bitmapMissingGlyphs')
     instruction['staticParticleBoundary']=p.get('staticParticleBoundary')
     instruction['staticAnimationEvidence']=p.get('staticAnimationEvidence')
@@ -855,12 +856,12 @@ def verify(candidate, output, level='static'):
             diagnostics.append(diagnostic('EDITOR_NOT_RUN','Analysis/Readback/editor-readback.json','Run native import in the declared Editor first'))
         else:
             rb=load(read(readback_path,max_bytes=128*1024*1024),max_nodes=8_000_000)
-            from ..unity_verification_contract import native_diagnostics
+            from ..unity_verification_contract import native_diagnostics,NATIVE_IMPORT_STATUSES
             raw_native_diagnostics=rb.get('diagnostics')
-            if rb.get('status')not in ('imported','pass','partial'):
+            if rb.get('status')not in NATIVE_IMPORT_STATUSES:
                 diagnostics.append(diagnostic('NATIVE_READBACK_STATUS_INVALID',str(readback_path),'Unsupported native import status'))
             native={f['path']:f['sha256'] for f in rb.get('nativeFiles',[])}
-            if rb.get('unityVersion')!='6000.6.2f1' or rb.get('missingScripts')!=0:
+            if rb.get('unityVersion')!='6000.6.2f1' or type(rb.get('missingScripts'))is not int or rb.get('missingScripts')!=0:
                 diagnostics.append(diagnostic('EDITOR_READBACK_FAILED',str(readback_path),'Version/missing-script check failed'))
             for relative,expected in native.items():
                 file=inside(root,relative)
@@ -1005,7 +1006,7 @@ def verify(candidate, output, level='static'):
                 actual=by_node.get(spec['sourceId'])
                 if not node_geometry_matches(actual,spec,instruction.get('transformReadback')=='full-local-v1'):
                     diagnostics.append(diagnostic('NODE_READBACK_MISMATCH',spec['sourceId'],'Saved RectTransform differs from plan'))
-            if not rb.get('editableRoundtrip'):
+            if rb.get('editableRoundtrip')is not True:
                 diagnostics.append(diagnostic('EDITABLE_ROUNDTRIP_NOT_VERIFIED',standard.locate(m,'editableProbe'),'Native edit/save/reopen proof is absent or failed'))
             by_font={f['id']:f for f in rb.get('fonts',[])}
             for spec in instruction.get('bitmapFonts',[]):

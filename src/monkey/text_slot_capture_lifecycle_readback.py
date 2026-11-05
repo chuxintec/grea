@@ -89,13 +89,13 @@ def _valid_enum(value,sid,text):
     return value.get('evidenceSha256')==_text_slot_enumeration_hash(value)
 
 
-def verify_queue(queue,mode,required=False):
-    try:return _verify_queue(queue,mode,required)
+def verify_queue(queue,mode,required=False,role_required=False):
+    try:return _verify_queue(queue,mode,required,role_required)
     except (TypeError,ValueError,KeyError,IndexError,AttributeError) as error:
         return [f'{mode} TMP capture lifecycle malformed evidence: {error}']
 
 
-def _verify_queue(queue,mode,required=False):
+def _verify_queue(queue,mode,required=False,role_required=False):
     failures=[]
     actual=queue.get('textSources')
     if not isinstance(actual,list):return failures
@@ -105,7 +105,7 @@ def _verify_queue(queue,mode,required=False):
     for sid,rows in by_source.items():
         def gap(message):failures.append(f'{mode} TMP capture lifecycle {message}: {sid}')
         receipts=[row.get('captureLifecycle') for row in rows]
-        if not required and all(x is None for x in receipts):continue
+        if not required and not role_required and all(x is None for x in receipts):continue
         if not isinstance(sid,str) or not sid or any(not isinstance(x,dict)for x in receipts):
             gap('receipt is missing');continue
         life=receipts[0]
@@ -117,6 +117,8 @@ def _verify_queue(queue,mode,required=False):
             gap('contract, source or stage flags differ');continue
         initial=life.get('initialEnumeration');final=life.get('finalEnumeration')
         if not _valid_enum(initial,sid,text) or not _valid_enum(final,sid,text):gap('enumeration hash/denominator is invalid');continue
+        from .text_slot_role_routing_readback import verify_lifecycle as verify_roles
+        failures.extend(verify_roles(life,mode,role_required))
         initial_ids=[x['slot']for x in initial['rows']if x.get('disposition')=='drawable']
         final_ids=[x['slot']for x in final['rows']if x.get('disposition')=='drawable']
         if (life.get('initialSlotCount')!=initial['slotCount'] or life.get('finalSlotCount')!=final['slotCount'] or

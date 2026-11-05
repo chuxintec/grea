@@ -124,6 +124,20 @@ class UnityVerificationContractTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'NATIVE_READBACK_DRIFT'):
                     _native_verification(root,root/'out','a'*64,io.sha(path.read_bytes()))
 
+    def test_freeze_rejects_unexecuted_or_unknown_source_graph_before_full_verifier(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();path=root/'Analysis/Readback/editor-readback.json'
+            path.parent.mkdir(parents=True)
+            valid={'unityVersion':'6000.6.2f1','missingScripts':0,'status':'imported',
+                   'nativeScope':'source-node-subset','sourceGraphVerification':'saved-source-node-subset'}
+            for field,value in (('status','not_run'),('status','success'),('unityVersion','6000.6.1f1'),
+                    ('missingScripts',1),('missingScripts',False),('nativeScope','resources-and-gallery-only'),
+                    ('nativeScope','unknown'),('sourceGraphVerification','not_run'),
+                    ('sourceGraphVerification','invented')):
+                row={**valid,field:value};io.write_json(path,row)
+                with self.subTest(field=field,value=value),self.assertRaisesRegex(ValueError,'NATIVE_READBACK_INVALID'):
+                    _native_verification(root,root/'out','a'*64,io.sha(path.read_bytes()))
+
     def test_initial_missing_component_diagnostic_resolves_only_with_exact_persistent_coverage(self):
         from monkey.prefab_component_coverage import assess
         source='source:asset#4';guid='0123456789abcdef0123456789abcdef'

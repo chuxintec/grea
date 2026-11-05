@@ -53,34 +53,84 @@ class StaticFontCompletionTests(unittest.TestCase):
 
     def test_resolution_merge_preserves_pinned_source_and_false_policy(self):
         source = "gameAsset:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa#1/components/0"
+        old_source = "gameAsset:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb#2/components/0"
+        old_scalar_row = {"targetLabelId": old_source, "pointSize": 20, "character": "A", "codepoint": "U+0041",
+                          "scalarValue": 65, "requiredForVisualText": True, "glyphCovered": True,
+                          "family": "Arial", "styleName": "Regular", "postScriptName": "ArialMT",
+                          "systemFontFileUrl": "/Arial.ttf", "variationAxes": {}, "fallback": False,
+                          "glyphMappingChecked": True}
+        new_ascii_scalar_row = {**old_scalar_row, "targetLabelId": source, "pointSize": 24}
+        new_scalar_row = {"targetLabelId": source, "pointSize": 24, "character": "出", "codepoint": "U+51FA",
+                          "scalarValue": 20986, "requiredForVisualText": True, "glyphCovered": True,
+                          "family": "PingFang SC", "styleName": "Regular", "postScriptName": "PingFangSC-Regular",
+                          "systemFontFileUrl": "/PingFang.ttc", "variationAxes": {}, "fallback": True,
+                          "glyphMappingChecked": True}
         base = {"schema": "monkey-macos-system-font-resolution/1", "status": "resolved", "targetOS": "macOS",
-                "targetOSVersion": "27", "targetOSBuild": "B", "labels": [], "resolvedPrimaryFonts": [],
+                "targetOSVersion": "27", "targetOSBuild": "B", "labels": [{"targetLabelId": old_source,
+                    "text": "A", "pointSize": 20, "unicodeScalars": [old_scalar_row]}], "resolvedPrimaryFonts": [],
                 "fallbackFonts": [], "resolvedFontFiles": [], "coreTextToPhysicalFaceEvidence": [],
                 "glyphCoverage": {}, "sourceSample": {"sourceProfile": "cocos-2.4.15-bundle", "sourceVersion": "2.4.15",
                     "sourceManifestSha256": "m" * 64, "normalizedSystemFontLabelCount": 0,
                     "sourceStaticTextLabelCount": 0, "sourceFamilyBindings": []}}
-        added = {"labels": [{"targetLabelId": source, "text": "出", "pointSize": 24,
-                             "resolvedPrimaryFamily": "Arial", "unicodeScalars": []}],
+        added = {"labels": [{"targetLabelId": source, "text": "A出", "pointSize": 24,
+                             "resolvedPrimaryFamily": "Arial", "unicodeScalars": [new_ascii_scalar_row, new_scalar_row]}],
                  "resolvedPrimaryFonts": [], "fallbackFonts": [], "resolvedFontFiles": [],
-                 "coreTextToPhysicalFaceEvidence": [], "glyphCoverage": {"requiredUnicodeOccurrences": 1,
-                    "coveredUnicodeOccurrences": 1, "missingUnicodeOccurrences": 0, "missing": [], "perUnicodeScalar": []}}
-        label = {"sourceComponentId": source, "sourceText": "出", "fontSize": 24,
+                 "coreTextToPhysicalFaceEvidence": [], "glyphCoverage": {"requiredUnicodeOccurrences": 2,
+                    "coveredUnicodeOccurrences": 2, "missingUnicodeOccurrences": 0, "missing": [], "perUnicodeScalar": [
+                        {"scalarValue": 65, "codepoint": "U+0041", "character": "A",
+                         "requiredForVisualText": True, "targetLabelIds": [source], "resolutions": [
+                             {k: new_ascii_scalar_row[k] for k in ("family", "styleName", "postScriptName", "systemFontFileUrl",
+                                                                 "variationAxes", "fallback", "glyphCovered", "glyphMappingChecked")} ]},
+                        {"scalarValue": 20986, "codepoint": "U+51FA", "character": "出",
+                         "requiredForVisualText": True, "targetLabelIds": [source], "resolutions": [
+                             {k: new_scalar_row[k] for k in ("family", "styleName", "postScriptName", "systemFontFileUrl",
+                                                             "variationAxes", "fallback", "glyphCovered", "glyphMappingChecked")}]}]}}
+        label = {"sourceComponentId": source, "sourceText": "A出", "fontSize": 24,
                  "sourceFontFamilyEvidence": "creator-label-default-Arial"}
-        old_scalar={"unicodeScalar":65,"character":"A","resolutions":[{"styleName":"Regular"}]}
-        new_scalar={"unicodeScalar":20986,"character":"出","resolutions":[{"styleName":"Fallback"}]}
-        base['glyphCoverage']={"requiredUnicodeOccurrences":1,"coveredUnicodeOccurrences":1,
-                               "perUnicodeScalar":[old_scalar]}
-        added['glyphCoverage']['perUnicodeScalar']=[new_scalar]
-        ir = {"components": [label_component(source, "n", "出")]}
+        old_scalar={"scalarValue":65,"codepoint":"U+0041","character":"A","requiredForVisualText":True,
+                    "targetLabelIds":[old_source],"resolutions":[{k:old_scalar_row[k] for k in ("family","styleName","postScriptName",
+                        "systemFontFileUrl","variationAxes","fallback","glyphCovered","glyphMappingChecked")}]}
+        base['glyphCoverage']={"requiredUnicodeOccurrences":1,"coveredUnicodeOccurrences":1,"missingUnicodeOccurrences":0,
+                               "missing":[],"perUnicodeScalar":[old_scalar]}
+        ir = {"components": [label_component(source, "n", "A出")]}
         merged = _merge_resolution(base, added, [label], __import__("pathlib").Path("prep.json"),
                                    "i" * 64, __import__("pathlib").Path("manifest.json"), "m" * 64)
         binding = merged["sourceSample"]["sourceFamilyBindings"][0]
         self.assertFalse(binding["sourceSystemFont"])
         self.assertEqual(SOURCE_EFFECTIVE_POLICY, binding["sourceEffectiveFontPolicy"])
         self.assertFalse(merged["visualEquivalent"])
-        self.assertEqual(merged['glyphCoverage']['perUnicodeScalar'],[old_scalar,new_scalar])
+        self.assertEqual([r["scalarValue"] for r in merged['glyphCoverage']['perUnicodeScalar']], [65, 20986])
+        self.assertEqual(merged['glyphCoverage']['perUnicodeScalar'][0]["targetLabelIds"], sorted([old_source, source]))
+        self.assertEqual(merged['glyphCoverage']['requiredUnicodeOccurrences'], 3)
+        self.assertEqual(merged['glyphCoverage']['coveredUnicodeOccurrences'], 3)
         self.assertEqual(base['glyphCoverage']['perUnicodeScalar'],[old_scalar])
-        self.assertEqual(added['glyphCoverage']['perUnicodeScalar'],[new_scalar])
+        self.assertEqual([r["scalarValue"] for r in added['glyphCoverage']['perUnicodeScalar']], [65, 20986])
+
+    def test_resolution_merge_rejects_a_missing_new_character_despite_optimistic_aggregate(self):
+        source = "gameAsset:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa#1/components/0"
+        scalar = {"targetLabelId": source, "pointSize": 24, "character": "出", "codepoint": "U+51FA",
+                  "scalarValue": 20986, "requiredForVisualText": True, "glyphCovered": False,
+                  "family": "PingFang SC", "styleName": "Regular", "postScriptName": "PingFangSC-Regular",
+                  "systemFontFileUrl": "/PingFang.ttc", "variationAxes": {}, "fallback": True,
+                  "glyphMappingChecked": True}
+        aggregate = {"scalarValue": 20986, "codepoint": "U+51FA", "character": "出", "requiredForVisualText": True,
+                     "targetLabelIds": [source], "resolutions": [{k: scalar[k] for k in ("family", "styleName", "postScriptName",
+                         "systemFontFileUrl", "variationAxes", "fallback", "glyphCovered", "glyphMappingChecked")}]}
+        base = {"labels": [], "glyphCoverage": {"requiredUnicodeOccurrences": 0, "coveredUnicodeOccurrences": 0,
+                "missingUnicodeOccurrences": 0, "missing": [], "perUnicodeScalar": []},
+                "resolvedPrimaryFonts": [], "fallbackFonts": [], "resolvedFontFiles": [],
+                "coreTextToPhysicalFaceEvidence": [], "sourceSample": {"sourceProfile": "cocos-2.4.15-bundle",
+                    "sourceVersion": "2.4.15", "sourceManifestSha256": "m" * 64,
+                    "normalizedSystemFontLabelCount": 0, "sourceStaticTextLabelCount": 0, "sourceFamilyBindings": []}}
+        added = {"labels": [{"targetLabelId": source, "text": "出", "pointSize": 24, "unicodeScalars": [scalar]}],
+                 "glyphCoverage": {"requiredUnicodeOccurrences": 1, "coveredUnicodeOccurrences": 1,
+                    "missingUnicodeOccurrences": 0, "missing": [], "perUnicodeScalar": [aggregate]},
+                 "resolvedPrimaryFonts": [], "fallbackFonts": [], "resolvedFontFiles": [],
+                 "coreTextToPhysicalFaceEvidence": []}
+        with self.assertRaisesRegex(ValueError, "counts differ|missing glyph list"):
+            _merge_resolution(base, added, [{"sourceComponentId": source, "sourceText": "出", "fontSize": 24,
+                "sourceFontFamilyEvidence": "creator-label-default-Arial"}],
+                Path("prep.json"), "i" * 64, Path("manifest.json"), "m" * 64)
 
     def test_static_face_union_preserves_asset_identity_and_existing_glyphs(self):
         base_face = {"assetId": "coretext-static-sdf-123456789012345678901234",

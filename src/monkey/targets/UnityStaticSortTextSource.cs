@@ -74,10 +74,24 @@ namespace Monkey.StaticSortQueueProxy
         public bool tmpFallbackMaterialBaked;
         public bool requiresPersistentFallbackRegistration;
         public bool persistentFallbackVariantRegistered;
+        public string captureRole;
+        public bool captureRoleVerified;
+        public string observedRole;
+        public bool observedRoleVerified;
+        public string roleTransition;
+        public int fontAtlasRenderMode = -1;
+        public bool fontAssetIsRasterBitmap;
+        public string registrationDisposition;
+        public string registrationOutcome;
+        public string registrationSkipReason;
+        public bool outlineDriverPresent;
+        public bool outlineTargetMatchesOwner;
         public string tmpFallbackAlgorithm;
-        public int tmpFallbackAtlasIndex;
+        public int tmpFallbackAtlasIndex = -1;
         public string ownerFontMaterialGuid;
         public long ownerFontMaterialLocalFileId;
+        public string ownerFontAssetGuid;
+        public long ownerFontAssetLocalFileId;
         public string ownerFontMaterialFingerprint;
         public OwnerFontStyleDescriptor ownerStyle;
         public string fallbackFontAssetGuid;
@@ -2490,6 +2504,7 @@ namespace Monkey.StaticSortQueueProxy
             foreach (var binding in slots)
             {
                 binding.textSlotEnumeration = enumeration;
+                if (!TryClassifyCaptureSlotRole(binding, out _, out _, out _, out diagnostic)) return false;
                 if (!CaptureCurrentTextScaleContext(binding, out diagnostic)) return false;
             }
             return true;
@@ -2506,6 +2521,7 @@ namespace Monkey.StaticSortQueueProxy
             AssetIdentity(owner.font, out var fontGuid, out var fontLocalId);
             AssetIdentity(owner.fontSharedMaterial, out var materialGuid, out var materialLocalId);
             return new NativeStaticSortTextCaptureLifecycle {
+                slotRoleRoutingContract = "monkey-static-sort-text-slot-role-routing/1",
                 sourceComponentId = sourceComponentId,
                 sourceTextSha256 = HashText(owner.text ?? String.Empty),
                 ownerFontAssetGuid = fontGuid,
@@ -2515,6 +2531,15 @@ namespace Monkey.StaticSortQueueProxy
                 ownerFontMaterialFingerprint = MaterialFingerprint(owner.fontSharedMaterial),
                 initialSlotCount = initialEnumeration.slotCount,
                 initialDrawableSlotIds = TextSlotDrawableIds(initialEnumeration),
+                emptySlotRoutes = initialEnumeration.rows.Where(row => row != null && row.disposition == "empty-placeholder")
+                    .Select(row => new NativeStaticSortTextCaptureRoute {
+                        slot = row.slot,
+                        captureRole = "empty-placeholder",
+                        registrationDisposition = "not-required",
+                        registrationOutcome = "skipped",
+                        registrationSkipReason = "empty-placeholder-has-no-drawable-binding",
+                        captureRoleVerified = true,
+                    }).ToArray(),
                 initialEnumerationVerified = true,
                 initialEnumeration = initialEnumeration,
                 phases = Array.Empty<NativeStaticSortTextCapturePhase>(),
@@ -2577,6 +2602,20 @@ namespace Monkey.StaticSortQueueProxy
             return new NativeStaticSortTextCaptureSlot {
                 snapshotMoment = moment,
                 slot = binding.materialSlot,
+                captureRole = binding.captureRole,
+                observedRole = binding.observedRole,
+                roleTransition = binding.roleTransition,
+                captureRoleVerified = binding.captureRoleVerified,
+                observedRoleVerified = binding.observedRoleVerified,
+                fontAtlasRenderMode = binding.fontAtlasRenderMode,
+                fontAssetIsRasterBitmap = binding.fontAssetIsRasterBitmap,
+                fallbackAtlasIndex = binding.tmpFallbackAtlasIndex,
+                generatedSubmesh = binding.generatedSubmesh,
+                outlineDriverPresent = binding.outlineDriverPresent,
+                outlineTargetMatchesOwner = binding.outlineTargetMatchesOwner,
+                registrationDisposition = binding.registrationDisposition,
+                registrationOutcome = binding.registrationOutcome,
+                registrationSkipReason = binding.registrationSkipReason,
                 characterReferences = binding.textInfoCharacterCount,
                 visibleCharacterReferences = binding.textInfoVisibleCharacterCount,
                 disposition = "drawable",
@@ -2880,6 +2919,7 @@ namespace Monkey.StaticSortQueueProxy
         {
             return lifecycle != null && lifecycle.schemaVersion == 1 &&
                 lifecycle.contract == "monkey-static-sort-text-capture-lifecycle/1" &&
+                lifecycle.slotRoleRoutingContract == "monkey-static-sort-text-slot-role-routing/1" &&
                 lifecycle.verified && lifecycle.status == "verified" &&
                 lifecycle.initialEnumerationVerified && lifecycle.allInitialBindingsCaptured &&
                 lifecycle.allFallbackProfilesCaptured && lifecycle.allFallbackVariantsRegistered && lifecycle.finalPrepareCompleted &&
@@ -2897,6 +2937,7 @@ namespace Monkey.StaticSortQueueProxy
                 lifecycle.finalSlotCount == lifecycle.finalEnumeration.slotCount &&
                 (lifecycle.initialDrawableSlotIds ?? Array.Empty<int>()).SequenceEqual(TextSlotDrawableIds(lifecycle.initialEnumeration)) &&
                 (lifecycle.finalDrawableSlotIds ?? Array.Empty<int>()).SequenceEqual(TextSlotDrawableIds(lifecycle.finalEnumeration)) &&
+                EmptySlotRoutesMatch(lifecycle.emptySlotRoutes, lifecycle.initialEnumeration) &&
                 lifecycle.phases != null && lifecycle.phases.Length > 0 &&
                 lifecycle.phases.All(phase => phase != null && !String.IsNullOrWhiteSpace(phase.phase) &&
                     phase.sourceComponentId == lifecycle.sourceComponentId &&
@@ -2904,7 +2945,110 @@ namespace Monkey.StaticSortQueueProxy
                     phase.enumeration != null && IsValidTextSlotEnumeration(phase.enumeration) &&
                     phase.enumerationSha256 == phase.enumeration.evidenceSha256 && phase.slots != null &&
                     CapturePhaseSlotsMatchEnumeration(phase)) &&
+                CaptureLifecycleRoutesMatch(lifecycle) &&
                 IsSha256(lifecycle.evidenceSha256) && CaptureLifecycleHash(lifecycle) == lifecycle.evidenceSha256;
+        }
+
+        static bool EmptySlotRoutesMatch(NativeStaticSortTextCaptureRoute[] routes,
+            NativeStaticSortTextSlotEnumeration enumeration)
+        {
+            if (routes == null || !IsValidTextSlotEnumeration(enumeration)) return false;
+            var expected = enumeration.rows.Where(row => row != null && row.disposition == "empty-placeholder")
+                .Select(row => row.slot).OrderBy(slot => slot).ToArray();
+            if (routes.Length != expected.Length || !routes.Select(route => route == null ? -1 : route.slot)
+                    .OrderBy(slot => slot).SequenceEqual(expected)) return false;
+            return routes.All(route => route != null && route.captureRoleVerified &&
+                route.captureRole == "empty-placeholder" && route.registrationDisposition == "not-required" &&
+                route.registrationOutcome == "skipped" &&
+                route.registrationSkipReason == "empty-placeholder-has-no-drawable-binding");
+        }
+
+        static string ExpectedRegistrationSkipReason(string role)
+        {
+            if (role == "primary-font") return "primary-font-slot-does-not-use-fallback-variant";
+            if (role == "sprite") return "sprite-slot-does-not-use-font-fallback-variant";
+            if (role == "fallback-font-same-asset-multi-atlas")
+                return "same-font-multi-atlas-route-does-not-register-fallback-variant";
+            return "outline-driver-absent";
+        }
+
+        static bool CaptureLifecycleRoutesMatch(NativeStaticSortTextCaptureLifecycle lifecycle)
+        {
+            if (lifecycle == null || lifecycle.phases == null || lifecycle.initialEnumeration == null) return false;
+            var drawableIds = lifecycle.initialDrawableSlotIds ?? Array.Empty<int>();
+            foreach (var phase in lifecycle.phases)
+            {
+                if (phase == null || phase.slots == null || phase.slot < -1) return false;
+                if (phase.slot >= 0 && !drawableIds.Contains(phase.slot)) return false;
+                var expectedPhaseSlots = phase.slot < 0 ? drawableIds : new[] { phase.slot };
+                var actualPhaseSlots = phase.slots.Where(slot => slot != null).Select(slot => slot.slot).OrderBy(slot => slot).ToArray();
+                if (phase.slots.Any(slot => slot == null) || actualPhaseSlots.Distinct().Count() != actualPhaseSlots.Length ||
+                    !actualPhaseSlots.SequenceEqual(expectedPhaseSlots.OrderBy(slot => slot))) return false;
+            }
+            var sourceSlots = lifecycle.phases.FirstOrDefault(phase => phase != null && phase.phase == "initial-after-prepare-source")?.slots;
+            if (sourceSlots == null || sourceSlots.Any(slot => slot == null) ||
+                sourceSlots.GroupBy(slot => slot.slot).Any(group => group.Count() != 1)) return false;
+            var origin = sourceSlots.ToDictionary(slot => slot.slot);
+            foreach (var slotId in lifecycle.initialDrawableSlotIds ?? Array.Empty<int>())
+            {
+                if (!origin.TryGetValue(slotId, out var source) || source == null || !source.captureRoleVerified ||
+                    !source.observedRoleVerified || source.captureRole != source.observedRole ||
+                    source.roleTransition != "same")
+                    return false;
+                var requires = (source.captureRole == "fallback-font-transient" || source.captureRole == "fallback-font-persistent") &&
+                    source.outlineDriverPresent && source.outlineTargetMatchesOwner;
+                var expectedDisposition = requires ? "required" : "not-required";
+                var expectedSkip = requires ? null : ExpectedRegistrationSkipReason(source.captureRole);
+                if (source.registrationDisposition != expectedDisposition ||
+                    source.registrationOutcome != (requires ? "pending" : "skipped") ||
+                    source.registrationSkipReason != expectedSkip) return false;
+                foreach (var phase in lifecycle.phases.Where(value => value != null &&
+                    (value.slot < 0 || value.slot == slotId)))
+                {
+                    if (phase.slots == null || phase.slots.Count(value => value != null && value.slot == slotId) != 1) return false;
+                    var snapshot = phase.slots.First(value => value != null && value.slot == slotId);
+                    if (snapshot == null || snapshot.captureRole != source.captureRole || !snapshot.captureRoleVerified ||
+                        !snapshot.observedRoleVerified || snapshot.outlineDriverPresent != source.outlineDriverPresent ||
+                        snapshot.outlineTargetMatchesOwner != source.outlineTargetMatchesOwner ||
+                        snapshot.generatedSubmesh != source.generatedSubmesh ||
+                        snapshot.fontAtlasRenderMode != source.fontAtlasRenderMode ||
+                        snapshot.fontAssetIsRasterBitmap != source.fontAssetIsRasterBitmap ||
+                        snapshot.fallbackAtlasIndex != source.fallbackAtlasIndex ||
+                        snapshot.registrationDisposition != expectedDisposition ||
+                        snapshot.registrationSkipReason != expectedSkip) return false;
+                    if (requires)
+                    {
+                        var registeredPhase = phase.phase == "register-fallback-variant-output" ||
+                            phase.phase == "after-all-fallback-registrations-before-final-prepare" ||
+                            phase.phase == "final-prepare-pass1" || phase.phase == "final-prepare-pass2" ||
+                            phase.phase == "final-before-rebind" || phase.phase == "final-after-rebind";
+                        var registrationPending = phase.phase == "capture-fallback-output" ||
+                            phase.phase == "after-all-fallback-profiles-before-registration" ||
+                            phase.phase == "register-fallback-variant-input";
+                        var expectedOutcome = registeredPhase || !registrationPending &&
+                            phase.phase != "initial-after-prepare-source" && phase.phase != "capture-fallback-input"
+                            ? "registered" : "pending";
+                        var requiresFlag = registrationPending && expectedOutcome == "pending";
+                        if (snapshot.registrationOutcome != expectedOutcome ||
+                            snapshot.requiresPersistentFallbackRegistration != requiresFlag) return false;
+                    }
+                    else if (snapshot.registrationOutcome != "skipped" || snapshot.requiresPersistentFallbackRegistration)
+                        return false;
+                    if (snapshot.roleTransition == "same")
+                    {
+                        if (snapshot.captureRole != snapshot.observedRole) return false;
+                    }
+                    else if (snapshot.roleTransition != "transient-to-persistent-registered" ||
+                        snapshot.captureRole != "fallback-font-transient" || snapshot.observedRole != "fallback-font-persistent" ||
+                        snapshot.registrationOutcome != "registered" || !snapshot.tmpFallbackMaterialBaked ||
+                        !snapshot.persistentFallbackVariantRegistered || snapshot.sourceGraphicMaterialGuid != snapshot.bakedProxyMaterialGuid ||
+                        snapshot.sourceGraphicMaterialLocalFileId != snapshot.bakedProxyMaterialLocalFileId ||
+                        snapshot.sourceGraphicMaterialFingerprint != snapshot.bakedProxyMaterialFingerprint ||
+                        snapshot.transientFallbackFingerprint != snapshot.bakedProxyMaterialFingerprint)
+                        return false;
+                }
+            }
+            return true;
         }
 
         static bool CapturePhaseSlotsMatchEnumeration(NativeStaticSortTextCapturePhase phase)
@@ -2913,12 +3057,36 @@ namespace Monkey.StaticSortQueueProxy
             foreach (var slot in phase.slots)
             {
                 if (slot == null || slot.slot < 0 || slot.slot >= phase.enumeration.rows.Length) return false;
+                if (slot.ownerFontAssetGuid != phase.ownerFontAssetGuid ||
+                    slot.ownerFontAssetLocalFileId != phase.ownerFontAssetLocalFileId ||
+                    slot.ownerFontMaterialGuid != phase.ownerFontMaterialGuid ||
+                    slot.ownerFontMaterialLocalFileId != phase.ownerFontMaterialLocalFileId ||
+                    slot.ownerFontMaterialFingerprint != phase.ownerFontMaterialFingerprint) return false;
                 if (!IsValidTextScaleContext(slot.textScaleContext) ||
                     slot.textScaleContext.sourceComponentId != phase.sourceComponentId ||
                     slot.textScaleContext.sourceTextSha256 != phase.sourceTextSha256 ||
                     slot.textScaleContext.materialSlot != slot.slot) return false;
                 var row = phase.enumeration.rows[slot.slot];
                 if (row == null || row.disposition != "drawable" || slot.disposition != row.disposition ||
+                    !slot.captureRoleVerified || !slot.observedRoleVerified ||
+                    (slot.captureRole != "primary-font" && slot.captureRole != "fallback-font-transient" &&
+                     slot.captureRole != "fallback-font-persistent" && slot.captureRole != "fallback-font-same-asset-multi-atlas" &&
+                     slot.captureRole != "sprite") ||
+                    (slot.observedRole != "primary-font" && slot.observedRole != "fallback-font-transient" &&
+                     slot.observedRole != "fallback-font-persistent" && slot.observedRole != "fallback-font-same-asset-multi-atlas" &&
+                     slot.observedRole != "sprite") ||
+                    slot.generatedSubmesh != (slot.slot > 0) ||
+                    slot.outlineTargetMatchesOwner != slot.outlineDriverPresent ||
+                    (slot.captureRole == "sprite" && (row.sourceAssetKind != "sprite" || slot.fontAtlasRenderMode != -1 ||
+                        slot.fontAssetIsRasterBitmap || slot.fallbackAtlasIndex != -1)) ||
+                    (slot.captureRole != "sprite" && (row.sourceAssetKind != "font" || slot.fontAtlasRenderMode < 0 ||
+                        slot.fontAssetIsRasterBitmap != (slot.fontAtlasRenderMode == (int)UnityEngine.TextCore.LowLevel.GlyphRenderMode.RASTER))) ||
+                    (slot.captureRole == "primary-font" && slot.slot != 0) ||
+                    (slot.captureRole != "primary-font" && slot.slot == 0) ||
+                    ((slot.captureRole == "sprite") != (row.sourceAssetKind == "sprite")) ||
+                    (slot.captureRole == "fallback-font-same-asset-multi-atlas" && slot.fallbackAtlasIndex <= 0) ||
+                    ((slot.captureRole == "fallback-font-transient" || slot.captureRole == "fallback-font-persistent") && slot.fallbackAtlasIndex < 0) ||
+                    (slot.observedRole == "sprite") != (row.sourceAssetKind == "sprite") ||
                     slot.characterReferences != row.characterReferences || slot.visibleCharacterReferences != row.visibleCharacterReferences ||
                     slot.sourceAssetKind != row.sourceAssetKind || slot.sourceAssetGuid != row.sourceAssetGuid ||
                     slot.sourceAssetLocalFileId != row.sourceAssetLocalFileId || slot.atlasGuid != row.atlasGuid ||
@@ -2953,6 +3121,7 @@ namespace Monkey.StaticSortQueueProxy
                 TextSlotDenominatorMatches(lifecycle.initialEnumeration, lifecycle.finalEnumeration, out denominatorDiagnostic);
             if (lifecycle == null || lifecycle.schemaVersion != 1 ||
                 lifecycle.contract != "monkey-static-sort-text-capture-lifecycle/1" ||
+                lifecycle.slotRoleRoutingContract != "monkey-static-sort-text-slot-role-routing/1" ||
                 lifecycle.sourceComponentId != sourceComponentId || lifecycle.sourceTextSha256 != sourceTextSha256 ||
                 !lifecycle.initialEnumerationVerified || !lifecycle.allInitialBindingsCaptured ||
                 !lifecycle.allFallbackProfilesCaptured || !lifecycle.allFallbackVariantsRegistered || !lifecycle.finalPrepareCompleted ||
@@ -3243,6 +3412,8 @@ namespace Monkey.StaticSortQueueProxy
             if (current == null || current.sourceGraphic != currentGraphic)
                 return Fail("TMP_SORT_CAPTURE_REBIND_CURRENT_SLOT_GRAPHIC_MISMATCH:" +
                     capturedProof.sourceComponentId + ";slot=" + capturedProof.materialSlot, out diagnostic);
+            if (!CarryCaptureSlotRoute(capturedProof, current, out var routeDiagnostic))
+                return Fail("TMP_SORT_CAPTURE_REBIND_SLOT_ROLE_ROUTE_INVALID:" + routeDiagnostic, out diagnostic);
             if (!ValidateCapturedSlotTransition(capturedProof, current, currentEnumeration, out var transitionDiagnostic))
                 return Fail("TMP_SORT_CAPTURE_REBIND_SOURCE_IDENTITY_OR_MATERIAL_TRANSITION_INVALID:" + transitionDiagnostic, out diagnostic);
             if (capturedProof.ownerStyle != null &&
@@ -3364,6 +3535,201 @@ namespace Monkey.StaticSortQueueProxy
             return CaptureFallbackMaterial(binding, persistentAssetPath, false, out diagnostic);
         }
 
+        public static bool TryClassifyCaptureSlotRole(TextSlotBinding binding, out string role,
+            out int fontAtlasRenderMode, out bool fontAssetIsRasterBitmap, out string diagnostic)
+        {
+            role = null; fontAtlasRenderMode = -1; fontAssetIsRasterBitmap = false; diagnostic = null;
+            if (binding == null || binding.owner == null || binding.sourceGraphic == null || binding.sourceMaterial == null ||
+                binding.sourceTexture == null || !IsValidTextSlotEnumeration(binding.textSlotEnumeration) ||
+                binding.materialSlot < 0 || binding.materialSlot >= binding.textSlotEnumeration.rows.Length ||
+                binding.textSlotEnumeration.sourceComponentId != binding.sourceComponentId ||
+                binding.textSlotEnumeration.sourceTextSha256 != HashText(binding.owner.text ?? String.Empty))
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_INPUT_INVALID", out diagnostic);
+
+            var row = binding.textSlotEnumeration.rows[binding.materialSlot];
+            if (row == null || row.slot != binding.materialSlot || row.disposition != "drawable" ||
+                binding.owner.font == null || binding.owner.fontSharedMaterial == null ||
+                binding.ownerFontSharedMaterial != binding.owner.fontSharedMaterial ||
+                !PersistentAsset(binding.owner.font, out var ownerFontGuid, out var ownerFontLocalId) ||
+                !PersistentAsset(binding.owner.fontSharedMaterial, out var ownerMaterialGuid, out var ownerMaterialLocalId) ||
+                ownerFontLocalId == 0 ||
+                ownerMaterialGuid != binding.ownerFontMaterialGuid || ownerMaterialLocalId != binding.ownerFontMaterialLocalFileId)
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_OWNER_IDENTITY_INVALID:" + binding.materialSlot, out diagnostic);
+            if ((!String.IsNullOrEmpty(binding.ownerFontAssetGuid) && binding.ownerFontAssetGuid != ownerFontGuid) ||
+                (binding.ownerFontAssetLocalFileId != 0 && binding.ownerFontAssetLocalFileId != ownerFontLocalId))
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_OWNER_FONT_CHANGED:" + binding.materialSlot, out diagnostic);
+            binding.ownerFontAssetGuid = ownerFontGuid;
+            binding.ownerFontAssetLocalFileId = ownerFontLocalId;
+
+            if (!AssetIdentity(binding.sourceTexture, out var textureGuid, out var textureLocalId) ||
+                textureGuid != row.atlasGuid || textureLocalId != row.atlasLocalFileId)
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_ATLAS_IDENTITY_INVALID:" + binding.materialSlot, out diagnostic);
+            var outlineDriver = binding.owner.GetComponent<NativeStaticTextOutline>();
+            binding.outlineDriverPresent = outlineDriver != null;
+            binding.outlineTargetMatchesOwner = outlineDriver != null && outlineDriver.Target == binding.owner;
+            if (outlineDriver != null && !binding.outlineTargetMatchesOwner)
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_OUTLINE_TARGET_MISMATCH:" + binding.materialSlot, out diagnostic);
+
+            var sourceMaterialPersistent = PersistentAsset(binding.sourceMaterial, out var sourceMaterialGuid,
+                out var sourceMaterialLocalId);
+            if (sourceMaterialPersistent)
+            {
+                if (sourceMaterialGuid != row.sourceGraphicMaterialGuid ||
+                    sourceMaterialLocalId != row.sourceGraphicMaterialLocalFileId)
+                    return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_SOURCE_MATERIAL_IDENTITY_INVALID:" + binding.materialSlot, out diagnostic);
+            }
+            else if (!String.IsNullOrEmpty(row.sourceGraphicMaterialGuid) || row.sourceGraphicMaterialLocalFileId != 0)
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_TRANSIENT_MATERIAL_IDENTITY_CONFLICT:" + binding.materialSlot, out diagnostic);
+
+            if (binding.spriteAsset != null)
+            {
+                if (!binding.generatedSubmesh || binding.fontAsset != null || binding.fallbackFontAsset != null ||
+                    row.sourceAssetKind != "sprite" || !PersistentAsset(binding.spriteAsset, out var spriteGuid, out var spriteLocalId) ||
+                    spriteGuid != row.sourceAssetGuid || spriteLocalId != row.sourceAssetLocalFileId || !sourceMaterialPersistent)
+                    return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_SPRITE_IDENTITY_INVALID:" + binding.materialSlot, out diagnostic);
+                role = "sprite";
+            }
+            else
+            {
+                var font = binding.fontAsset;
+                if (font == null || row.sourceAssetKind != "font" ||
+                    !PersistentAsset(font, out var fontGuid, out var fontLocalId) ||
+                    fontGuid != row.sourceAssetGuid || fontLocalId != row.sourceAssetLocalFileId)
+                    return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_FONT_IDENTITY_INVALID:" + binding.materialSlot, out diagnostic);
+                var serializedFont = new SerializedObject(font);
+                var renderMode = serializedFont.FindProperty("m_AtlasRenderMode");
+                if (renderMode == null || renderMode.propertyType != SerializedPropertyType.Enum)
+                    return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_FONT_RENDER_MODE_UNAVAILABLE:" + binding.materialSlot, out diagnostic);
+                fontAtlasRenderMode = renderMode.intValue;
+                fontAssetIsRasterBitmap = fontAtlasRenderMode == (int)UnityEngine.TextCore.LowLevel.GlyphRenderMode.RASTER;
+                if (!binding.generatedSubmesh && binding.materialSlot == 0 && font == binding.owner.font && binding.fallbackFontAsset == null)
+                    role = "primary-font";
+                else if (binding.generatedSubmesh && font == binding.owner.font && binding.fallbackFontAsset == font)
+                    role = "fallback-font-same-asset-multi-atlas";
+                else if (binding.generatedSubmesh && font != binding.owner.font && binding.fallbackFontAsset == font)
+                    role = sourceMaterialPersistent ? "fallback-font-persistent" : "fallback-font-transient";
+                else return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_FONT_ROUTE_INVALID:" + binding.materialSlot, out diagnostic);
+                var fontAtlases = font.atlasTextures;
+                if (fontAtlases == null) return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_FONT_ATLAS_ARRAY_MISSING:" + binding.materialSlot, out diagnostic);
+                var atlasIndexes = Enumerable.Range(0, fontAtlases.Length)
+                    .Where(index => fontAtlases[index] == binding.sourceTexture).ToArray();
+                if (atlasIndexes.Length != 1 || (role == "primary-font" && atlasIndexes[0] != 0) ||
+                    (role == "fallback-font-same-asset-multi-atlas" && atlasIndexes[0] <= 0))
+                    return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_FONT_ATLAS_ROUTE_INVALID:" + binding.materialSlot + ":" +
+                        String.Join(",", atlasIndexes), out diagnostic);
+                binding.tmpFallbackAtlasIndex = atlasIndexes[0];
+            }
+
+            binding.observedRole = role;
+            binding.observedRoleVerified = true;
+            if (String.IsNullOrEmpty(binding.captureRole))
+            {
+                binding.captureRole = role;
+                binding.captureRoleVerified = true;
+                binding.roleTransition = "same";
+            }
+            binding.fontAtlasRenderMode = fontAtlasRenderMode;
+            binding.fontAssetIsRasterBitmap = fontAssetIsRasterBitmap;
+            if (String.IsNullOrEmpty(binding.registrationDisposition)) SetDesiredRegistrationRoute(binding);
+            return true;
+        }
+
+        public static bool CarryCaptureSlotRoute(TextSlotBinding captured, TextSlotBinding current,
+            out string diagnostic)
+        {
+            diagnostic = null;
+            if (captured == null || current == null || !captured.captureRoleVerified ||
+                !current.observedRoleVerified || captured.sourceComponentId != current.sourceComponentId ||
+                captured.materialSlot != current.materialSlot || captured.owner != current.owner ||
+                captured.generatedSubmesh != current.generatedSubmesh || captured.fontAsset != current.fontAsset ||
+                captured.spriteAsset != current.spriteAsset || captured.ownerFontSharedMaterial != current.ownerFontSharedMaterial ||
+                captured.ownerFontAssetGuid != current.ownerFontAssetGuid ||
+                captured.ownerFontAssetLocalFileId != current.ownerFontAssetLocalFileId ||
+                captured.fallbackFontAsset != current.fallbackFontAsset || captured.fallbackFontMaterial != current.fallbackFontMaterial ||
+                captured.sourceTexture != current.sourceTexture || captured.sourceTextSha256 != current.sourceTextSha256 ||
+                captured.outlineDriverPresent != current.outlineDriverPresent ||
+                captured.outlineTargetMatchesOwner != current.outlineTargetMatchesOwner ||
+                captured.fontAtlasRenderMode != current.fontAtlasRenderMode ||
+                captured.fontAssetIsRasterBitmap != current.fontAssetIsRasterBitmap ||
+                captured.tmpFallbackAtlasIndex != current.tmpFallbackAtlasIndex)
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROUTE_OWNER_OR_SOURCE_IDENTITY_CHANGED", out diagnostic);
+
+            var transition = "same";
+            if (captured.captureRole != current.observedRole)
+            {
+                var finalRow = current.textSlotEnumeration != null && current.materialSlot < current.textSlotEnumeration.rows.Length
+                    ? current.textSlotEnumeration.rows[current.materialSlot] : null;
+                var persistentFallbackTransition = captured.captureRole == "fallback-font-transient" &&
+                    current.observedRole == "fallback-font-persistent" && captured.tmpFallbackMaterialBaked &&
+                    captured.persistentFallbackVariantRegistered && !captured.requiresPersistentFallbackRegistration &&
+                    captured.registrationDisposition == "required" && captured.registrationOutcome == "registered" &&
+                    captured.proxyMaterial != null && current.sourceMaterial == captured.proxyMaterial &&
+                    finalRow != null && finalRow.disposition == "drawable" &&
+                    finalRow.sourceGraphicMaterialGuid == captured.bakedProxyMaterialGuid &&
+                    finalRow.sourceGraphicMaterialLocalFileId == captured.bakedProxyMaterialLocalFileId &&
+                    finalRow.sourceGraphicMaterialFingerprint == captured.bakedProxyMaterialFingerprint &&
+                    current.sourceMaterialFingerprint == captured.bakedProxyMaterialFingerprint &&
+                    captured.bakedProxyMaterialFingerprint == captured.transientFallbackFingerprint;
+                if (!persistentFallbackTransition)
+                    return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_TRANSITION_UNPROVEN:" + captured.captureRole + "->" + current.observedRole, out diagnostic);
+                transition = "transient-to-persistent-registered";
+            }
+            else if (captured.captureRole != "primary-font" && captured.captureRole != "fallback-font-transient" &&
+                captured.captureRole != "fallback-font-persistent" && captured.captureRole != "fallback-font-same-asset-multi-atlas" &&
+                captured.captureRole != "sprite")
+                return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_UNSUPPORTED:" + captured.captureRole, out diagnostic);
+
+            current.captureRole = captured.captureRole;
+            current.captureRoleVerified = true;
+            current.roleTransition = transition;
+            current.registrationDisposition = captured.registrationDisposition;
+            current.registrationOutcome = captured.registrationOutcome;
+            current.registrationSkipReason = captured.registrationSkipReason;
+            return true;
+        }
+
+        static void SetRegistrationRoute(TextSlotBinding binding, bool required, string outcome, string skipReason)
+        {
+            binding.registrationDisposition = required ? "required" : "not-required";
+            binding.registrationOutcome = outcome;
+            binding.registrationSkipReason = skipReason;
+        }
+
+        static bool RequiresFallbackVariantRegistration(TextSlotBinding binding)
+        {
+            return binding != null &&
+                (binding.captureRole == "fallback-font-transient" || binding.captureRole == "fallback-font-persistent") &&
+                binding.outlineDriverPresent && binding.outlineTargetMatchesOwner;
+        }
+
+        static string RegistrationSkipReason(TextSlotBinding binding)
+        {
+            if (binding.captureRole == "primary-font") return "primary-font-slot-does-not-use-fallback-variant";
+            if (binding.captureRole == "sprite") return "sprite-slot-does-not-use-font-fallback-variant";
+            if (binding.captureRole == "fallback-font-same-asset-multi-atlas")
+                return "same-font-multi-atlas-route-does-not-register-fallback-variant";
+            return "outline-driver-absent";
+        }
+
+        static void SetDesiredRegistrationRoute(TextSlotBinding binding)
+        {
+            if (RequiresFallbackVariantRegistration(binding)) SetRegistrationRoute(binding, true, "pending", null);
+            else SetRegistrationRoute(binding, false, "skipped", RegistrationSkipReason(binding));
+        }
+
+        static void SetRegistrationRouteAfterProfile(TextSlotBinding binding)
+        {
+            var required = RequiresFallbackVariantRegistration(binding);
+            binding.requiresPersistentFallbackRegistration = required && !binding.persistentFallbackVariantRegistered;
+            if (required)
+            {
+                SetRegistrationRoute(binding, true,
+                    binding.persistentFallbackVariantRegistered ? "registered" : "pending", null);
+                return;
+            }
+            SetRegistrationRoute(binding, false, "skipped", RegistrationSkipReason(binding));
+        }
+
         static bool CaptureFallbackMaterial(TextSlotBinding binding, string persistentAssetPath,
             bool registerPersistentVariants, out string diagnostic)
         {
@@ -3371,6 +3737,7 @@ namespace Monkey.StaticSortQueueProxy
             if (binding != null) binding.requiresPersistentFallbackRegistration = false;
             if (binding == null || binding.sourceMaterial == null || binding.sourceTexture == null)
                 return Fail("TMP_SORT_FALLBACK_CAPTURE_BINDING_INCOMPLETE", out diagnostic);
+            if (!TryClassifyCaptureSlotRole(binding, out _, out _, out _, out diagnostic)) return false;
             if (PersistentAsset(binding.sourceMaterial, out var directGuid, out var directFileId))
             {
                 binding.persistentFallbackVariantRegistered = false;
@@ -3400,6 +3767,7 @@ namespace Monkey.StaticSortQueueProxy
                 binding.bakedProxyMaterialLocalFileId = directFileId;
                 binding.bakedProxyMaterialFingerprint = binding.proxyMaterialFingerprint;
                 binding.tmpFallbackMaterialBaked = false;
+                SetRegistrationRouteAfterProfile(binding);
                 return !String.IsNullOrEmpty(binding.proxyMaterialFingerprint) ||
                     Fail("TMP_SORT_SOURCE_MATERIAL_FINGERPRINT_UNAVAILABLE", out diagnostic);
             }
@@ -3551,32 +3919,104 @@ namespace Monkey.StaticSortQueueProxy
                 }
                 else binding.requiresPersistentFallbackRegistration = true;
             }
+            SetRegistrationRouteAfterProfile(binding);
+            return true;
+        }
+
+        static bool CapturedMaterialIdentityMatches(TextSlotBinding binding, out string diagnostic)
+        {
+            diagnostic = null;
+            if (binding == null || binding.sourceMaterial == null || binding.proxyMaterial == null)
+                return Fail("TMP_SORT_CAPTURED_SLOT_MATERIAL_MISSING", out diagnostic);
+            var material = binding.tmpFallbackMaterialBaked ? binding.proxyMaterial : binding.sourceMaterial;
+            if (!PersistentAsset(material, out var guid, out var localId))
+                return Fail("TMP_SORT_CAPTURED_SLOT_MATERIAL_NOT_PERSISTENT", out diagnostic);
+            var fingerprint = MaterialFingerprint(material);
+            if (String.IsNullOrEmpty(fingerprint) || fingerprint != binding.proxyMaterialFingerprint)
+                return Fail("TMP_SORT_CAPTURED_SLOT_PROXY_MATERIAL_FINGERPRINT_MISMATCH", out diagnostic);
+            if (binding.tmpFallbackMaterialBaked)
+            {
+                if (material != binding.proxyMaterial || guid != binding.bakedProxyMaterialGuid ||
+                    localId != binding.bakedProxyMaterialLocalFileId || fingerprint != binding.bakedProxyMaterialFingerprint ||
+                    fingerprint != binding.transientFallbackFingerprint)
+                    return Fail("TMP_SORT_CAPTURED_SLOT_BAKED_PROFILE_IDENTITY_MISMATCH", out diagnostic);
+            }
+            else if (material != binding.sourceMaterial || binding.proxyMaterial != binding.sourceMaterial ||
+                guid != binding.sourceMaterialGuid || localId != binding.sourceMaterialLocalFileId ||
+                fingerprint != binding.sourceMaterialFingerprint || fingerprint != binding.bakedProxyMaterialFingerprint ||
+                guid != binding.bakedProxyMaterialGuid || localId != binding.bakedProxyMaterialLocalFileId)
+                return Fail("TMP_SORT_CAPTURED_SLOT_DIRECT_PROFILE_IDENTITY_MISMATCH", out diagnostic);
             return true;
         }
 
         public static bool RegisterCapturedFallbackVariant(TextSlotBinding binding, out string diagnostic)
         {
             diagnostic = null;
-            if (binding == null || binding.owner == null || binding.fallbackFontAsset == null ||
-                binding.fallbackFontAsset == binding.owner.font)
-                return Fail("TMP_SORT_CAPTURED_FALLBACK_REGISTRATION_INPUT_INVALID", out diagnostic);
-            if (!binding.requiresPersistentFallbackRegistration) return true;
-            var outline = binding.owner.GetComponent<NativeStaticTextOutline>();
-            if (outline == null)
+            if (!TryClassifyCaptureSlotRole(binding, out var role, out _, out _, out diagnostic)) return false;
+            var expectedRequired = RequiresFallbackVariantRegistration(binding);
+            if (!binding.captureRoleVerified || binding.captureRole != role ||
+                binding.registrationDisposition != (expectedRequired ? "required" : "not-required"))
+                return Fail("TMP_SORT_CAPTURED_SLOT_REGISTRATION_ROUTE_IDENTITY_MISMATCH:" + role, out diagnostic);
+
+            var fallbackRole = role == "fallback-font-transient" || role == "fallback-font-persistent";
+            if (!expectedRequired)
             {
-                binding.requiresPersistentFallbackRegistration = false;
+                if (binding.requiresPersistentFallbackRegistration)
+                    return Fail("TMP_SORT_CAPTURED_SLOT_UNEXPECTED_REGISTRATION_FLAG:" + role, out diagnostic);
+                if (!CapturedMaterialIdentityMatches(binding, out diagnostic)) return false;
+                if (fallbackRole && binding.outlineDriverPresent)
+                    return Fail("TMP_SORT_CAPTURED_SLOT_UNNECESSARY_REGISTRATION_ROUTE_UNPROVEN:" + role, out diagnostic);
+                var reason = RegistrationSkipReason(binding);
+                if (binding.registrationOutcome != "skipped" || binding.registrationSkipReason != reason)
+                    return Fail("TMP_SORT_CAPTURED_SLOT_REGISTRATION_SKIP_REASON_MISMATCH:" + role + ":" + reason, out diagnostic);
                 return true;
             }
+
+            if (!fallbackRole || !binding.generatedSubmesh || binding.fallbackFontAsset == null ||
+                binding.fallbackFontAsset == binding.owner.font || binding.fallbackFontAsset != binding.fontAsset)
+                return Fail("TMP_SORT_CAPTURED_SLOT_REQUIRED_FALLBACK_ROLE_INVALID:" + role, out diagnostic);
+            var driver = binding.owner.GetComponent<NativeStaticTextOutline>();
+            if (driver == null || driver.Target != binding.owner)
+                return Fail("TMP_SORT_CAPTURED_SLOT_REQUIRED_FALLBACK_OUTLINE_DRIVER_MISSING", out diagnostic);
+            if (binding.fallbackFontMaterial == null || binding.fallbackFontAsset.material != binding.fallbackFontMaterial ||
+                binding.ownerFontSharedMaterial != binding.owner.fontSharedMaterial ||
+                !PersistentAsset(binding.fallbackFontAsset, out var fallbackGuid, out var fallbackLocalId) ||
+                fallbackGuid != binding.fallbackFontAssetGuid || fallbackLocalId != binding.fallbackFontAssetLocalFileId ||
+                !PersistentAsset(binding.fallbackFontMaterial, out var fallbackMaterialGuid, out var fallbackMaterialLocalId) ||
+                fallbackMaterialGuid != binding.fallbackFontMaterialGuid || fallbackMaterialLocalId != binding.fallbackFontMaterialLocalFileId ||
+                !PersistentAsset(binding.ownerFontSharedMaterial, out var ownerMaterialGuid, out var ownerMaterialLocalId) ||
+                ownerMaterialGuid != binding.ownerFontMaterialGuid || ownerMaterialLocalId != binding.ownerFontMaterialLocalFileId ||
+                !PersistentAsset(binding.sourceTexture, out var atlasGuid, out var atlasLocalId) ||
+                atlasGuid != binding.fallbackAtlasGuid || atlasLocalId != binding.fallbackAtlasLocalFileId ||
+                binding.fallbackFontAsset.atlasTextures == null ||
+                !binding.fallbackFontAsset.atlasTextures.Contains(binding.sourceTexture))
+                return Fail("TMP_SORT_CAPTURED_SLOT_REQUIRED_FALLBACK_ASSET_CHAIN_INVALID", out diagnostic);
+            if (!CapturedMaterialIdentityMatches(binding, out diagnostic)) return false;
             var material = binding.tmpFallbackMaterialBaked ? binding.proxyMaterial : binding.sourceMaterial;
-            if (material == null || binding.ownerFontSharedMaterial == null || binding.sourceTexture == null)
-                return Fail("TMP_SORT_CAPTURED_FALLBACK_REGISTRATION_ASSETS_MISSING", out diagnostic);
-            if (!outline.RegisterPersistentMaterialVariant(binding.fallbackFontAsset, material,
+            if (binding.persistentFallbackVariantRegistered)
+            {
+                if (binding.requiresPersistentFallbackRegistration || binding.registrationOutcome != "registered" ||
+                    !String.IsNullOrEmpty(binding.registrationSkipReason) ||
+                    !driver.IsPersistentMaterialVariantSelected(binding.fallbackFontAsset, binding.ownerFontSharedMaterial,
+                        binding.sourceTexture, material))
+                    return Fail("TMP_SORT_CAPTURED_SLOT_EXISTING_FALLBACK_REGISTRATION_NOT_VERIFIED", out diagnostic);
+                return true;
+            }
+            if (!binding.requiresPersistentFallbackRegistration || binding.registrationOutcome != "pending" ||
+                !String.IsNullOrEmpty(binding.registrationSkipReason))
+                return Fail("TMP_SORT_CAPTURED_SLOT_REQUIRED_FALLBACK_ROUTE_NOT_PENDING", out diagnostic);
+            if (!driver.RegisterPersistentMaterialVariant(binding.fallbackFontAsset, material,
                     binding.ownerFontSharedMaterial, binding.owner.fontSize, binding.sourceTexture, out diagnostic))
                 return Fail("TMP_SORT_CAPTURED_FALLBACK_VARIANT_REGISTER_FAILED:" + diagnostic, out diagnostic);
+            if (!driver.IsPersistentMaterialVariantSelected(binding.fallbackFontAsset, binding.ownerFontSharedMaterial,
+                    binding.sourceTexture, material))
+                return Fail("TMP_SORT_CAPTURED_FALLBACK_VARIANT_SELECTION_NOT_VERIFIED", out diagnostic);
             binding.persistentFallbackVariantRegistered = true;
             binding.requiresPersistentFallbackRegistration = false;
-            EditorUtility.SetDirty(outline);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(outline);
+            binding.registrationOutcome = "registered";
+            binding.registrationSkipReason = null;
+            EditorUtility.SetDirty(driver);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(driver);
             return true;
         }
 

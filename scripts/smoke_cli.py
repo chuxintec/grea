@@ -33,7 +33,7 @@ def main():
         run(['-m','monkey.cli','tool','--help'])
         for tool in ('laya_contract_audit','read_elf_values','unpack_xapk','shader_probe','decrypt_v1mmwx_wxapkg','unpack_wxapkg','export_config_tables'):
             run(['-m','monkey.cli','tool',tool,'--help'])
-        run(['-c','from importlib.resources import files; p=files("monkey.targets"); assert all(p.joinpath(x).is_file() for x in ("CreatorResources.js","RecoveredSprite.shader","UnityShaderProbe.cs","CodeCollections.cs","RecipeJsonConfiguration.cs")); assert files("monkey").joinpath("code-graph.cjs").is_file(); assert all(files("monkey").joinpath("code_profiles",x+".json").is_file() for x in ("foodstreet-demand-health-v1","foodstreet-motion-math-v1"))'])
+        run(['-c','from importlib.resources import files; p=files("monkey.targets"); assert all(p.joinpath(x).is_file() for x in ("CreatorResources.js","RecoveredSprite.shader","UnityShaderProbe.cs","CodeCollections.cs")); assert files("monkey").joinpath("code-graph.cjs").is_file(); assert files("monkey.extensions.legacy_foodstreet").joinpath("RecipeJsonConfiguration.cs").is_file(); assert files("monkey.extensions.legacy_foodstreet").joinpath("extension.json").is_file(); assert all(files("monkey.extensions.legacy_foodstreet").joinpath("code_profiles",x+".json").is_file() for x in ("foodstreet-demand-health-v1","foodstreet-motion-math-v1"))'])
         code_status='not_run_node_unavailable'
         if shutil.which('node'):
             source=work/'original.js';source.write_text('var Rules=(function(){function e(){} e.Clamp=function(x){if(x<0)return 0;return x;};return e;})();',encoding='utf-8')

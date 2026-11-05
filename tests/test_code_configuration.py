@@ -3,6 +3,7 @@ import json
 import unittest
 
 import monkey.code_configuration as configuration
+from monkey.extensions.legacy_foodstreet import configuration as legacy_configuration
 from monkey.sources.compiled import ParseError
 
 
@@ -15,19 +16,19 @@ def row(row_id, dish_id, ingredients, *, cookware=-1, duration=12, cook_type=1):
 
 class ElementMultiOrderPoolTests(unittest.TestCase):
     def setUp(self):
-        self.original_table_sha = configuration.TABLE_SHA256
-        self.original_source_sha = configuration.SOURCE_SHA256
-        self.original_spans = configuration.SOURCE_SPANS
+        self.original_table_sha = legacy_configuration.TABLE_SHA256
+        self.original_source_sha = legacy_configuration.SOURCE_SHA256
+        self.original_spans = legacy_configuration.SOURCE_SPANS
         source = bytearray(b'fixture-source:')
         spans = {}
-        for name in configuration.SOURCE_SPANS:
+        for name in legacy_configuration.SOURCE_SPANS:
             fragment = ('static-fixture-span:' + name).encode()
             start = len(source)
             source.extend(fragment)
             spans[name] = dict(byteOffset=start, byteLength=len(fragment),
                                sha256=hashlib.sha256(fragment).hexdigest())
         self.source = bytes(source)
-        configuration.SOURCE_SPANS = spans
+        legacy_configuration.SOURCE_SPANS = spans
         self.document = {
             # The keys are deliberately non-numeric insertion order. The source
             # `for...in` decoder visits canonical integer keys in numeric order.
@@ -35,21 +36,21 @@ class ElementMultiOrderPoolTests(unittest.TestCase):
             '2': row(2, 901, [(4, 3), (5, 1)]),
         }
         self.table = json.dumps(self.document, separators=(',', ':')).encode()
-        configuration.TABLE_SHA256 = hashlib.sha256(self.table).hexdigest()
-        configuration.SOURCE_SHA256 = hashlib.sha256(self.source).hexdigest()
+        legacy_configuration.TABLE_SHA256 = hashlib.sha256(self.table).hexdigest()
+        legacy_configuration.SOURCE_SHA256 = hashlib.sha256(self.source).hexdigest()
 
     def tearDown(self):
-        configuration.TABLE_SHA256 = self.original_table_sha
-        configuration.SOURCE_SHA256 = self.original_source_sha
-        configuration.SOURCE_SPANS = self.original_spans
+        legacy_configuration.TABLE_SHA256 = self.original_table_sha
+        legacy_configuration.SOURCE_SHA256 = self.original_source_sha
+        legacy_configuration.SOURCE_SPANS = self.original_spans
 
     def map(self, document=None):
         table = self.table if document is None else json.dumps(document, separators=(',', ':')).encode()
         if document is not None:
-            configuration.TABLE_SHA256 = hashlib.sha256(table).hexdigest()
+            legacy_configuration.TABLE_SHA256 = hashlib.sha256(table).hexdigest()
         return configuration.map_payload(table, self.source,
-                    expected_table_sha256=configuration.TABLE_SHA256,
-                    expected_source_sha256=configuration.SOURCE_SHA256, root_dish_id=900)
+                    expected_table_sha256=legacy_configuration.TABLE_SHA256,
+                    expected_source_sha256=legacy_configuration.SOURCE_SHA256, root_dish_id=900)
 
     def test_maps_exact_recipe_fields_and_recursive_first_seen_leaf_order(self):
         result = self.map()
@@ -94,18 +95,45 @@ class ElementMultiOrderPoolTests(unittest.TestCase):
     def test_wrong_source_identity_and_unrecognized_code_shape_are_rejected(self):
         with self.assertRaises(ParseError) as caught:
             configuration.map_payload(self.table, self.source, expected_table_sha256='0' * 64,
-                expected_source_sha256=configuration.SOURCE_SHA256, root_dish_id=900)
+                expected_source_sha256=legacy_configuration.SOURCE_SHA256, root_dish_id=900)
         self.assertEqual(caught.exception.code, 'CODE_CONFIG_TABLE_IDENTITY')
-        span = configuration.SOURCE_SPANS['flattenIngredientsOf']
+        span = legacy_configuration.SOURCE_SPANS['flattenIngredientsOf']
         bad_source = bytearray(self.source)
         bad_source[span['byteOffset']] ^= 1
         bad_source = bytes(bad_source)
-        configuration.SOURCE_SHA256 = hashlib.sha256(bad_source).hexdigest()
+        legacy_configuration.SOURCE_SHA256 = hashlib.sha256(bad_source).hexdigest()
         with self.assertRaises(ParseError) as caught:
             configuration.map_payload(self.table, bad_source,
-                expected_table_sha256=configuration.TABLE_SHA256,
+                expected_table_sha256=legacy_configuration.TABLE_SHA256,
                 expected_source_sha256=hashlib.sha256(bad_source).hexdigest(), root_dish_id=900)
         self.assertEqual(caught.exception.code, 'CODE_CONFIG_SOURCE_CONTRACT')
+
+    def test_extension_binding_is_exact_and_returns_only_opt_in_output_contract(self):
+        from monkey.code_semantics import NUMBER, Type
+
+        catalog = {
+            'id': 'module-recipe-catalog',
+            'targetClass': 'RecipeCatalog',
+            '_class': {'name': 'qp'},
+            '_fields': {'_dishMap': Type('Map', (NUMBER, Type('Recipe')))},
+        }
+        context = {'records': {'Recipe': {'ingredients': Type('Map', (NUMBER, NUMBER))}}}
+        descriptor = configuration.validate_module_binding('Game.Domain.Recovered', [catalog], context)
+        self.assertEqual(descriptor['catalogModuleId'], 'module-recipe-catalog')
+        self.assertEqual(descriptor['extensionId'], 'legacy_foodstreet')
+        self.assertEqual(descriptor['scope'], 'legacy-project-specific')
+        self.assertIn('extensions/legacy_foodstreet/extension.json', descriptor['generatorFiles'])
+        self.assertIn('extensions/legacy_foodstreet/RecipeJsonConfiguration.cs', descriptor['generatorFiles'])
+
+        for bad_namespace, bad_class, bad_field, bad_record in (
+            ('Other.Namespace', 'qp', catalog['_fields'], context['records']),
+            ('Game.Domain.Recovered', 'other', catalog['_fields'], context['records']),
+            ('Game.Domain.Recovered', 'qp', {'_dishMap': Type('Map', (NUMBER, NUMBER))}, context['records']),
+            ('Game.Domain.Recovered', 'qp', catalog['_fields'], {'Recipe': {'ingredients': Type('List', (NUMBER,))}}),
+        ):
+            rejected = {**catalog, '_class': {'name': bad_class}, '_fields': bad_field}
+            with self.assertRaisesRegex(ParseError, 'CODE_CONFIG_MODULE_BINDING'):
+                configuration.validate_module_binding(bad_namespace, [rejected], {'records': bad_record})
 
 
 if __name__ == '__main__':

@@ -62,6 +62,7 @@ namespace Monkey.StaticSortQueueProxy
     {
         public int schemaVersion = 1;
         public string contract = "monkey-static-sort-text-capture-lifecycle/1";
+        public string slotRoleRoutingContract;
         public string sourceComponentId, sourceTextSha256, ownerFontAssetGuid,
             ownerFontMaterialGuid, ownerFontMaterialFingerprint, status, diagnostic, evidenceSha256;
         public long ownerFontAssetLocalFileId, ownerFontMaterialLocalFileId;
@@ -71,7 +72,16 @@ namespace Monkey.StaticSortQueueProxy
             allFallbackProfilesCaptured, allFallbackVariantsRegistered, finalPrepareCompleted, finalSlotSetVerified,
             allSlotsRebound, sourceTextAndFontRechecked, persistentReferencesRechecked, verified;
         public NativeStaticSortTextCapturePhase[] phases;
+        public NativeStaticSortTextCaptureRoute[] emptySlotRoutes;
         public NativeStaticSortTextSlotEnumeration initialEnumeration, finalEnumeration;
+    }
+
+    [Serializable]
+    public sealed class NativeStaticSortTextCaptureRoute
+    {
+        public int slot;
+        public string captureRole, registrationDisposition, registrationOutcome, registrationSkipReason;
+        public bool captureRoleVerified;
     }
 
     [Serializable]
@@ -91,6 +101,11 @@ namespace Monkey.StaticSortQueueProxy
     {
         public int slot, characterReferences, visibleCharacterReferences;
         public string snapshotMoment;
+        public string captureRole, observedRole, roleTransition, registrationDisposition, registrationOutcome, registrationSkipReason;
+        public bool captureRoleVerified, observedRoleVerified, fontAssetIsRasterBitmap;
+        public int fontAtlasRenderMode = -1;
+        public int fallbackAtlasIndex = -1;
+        public bool generatedSubmesh, outlineDriverPresent, outlineTargetMatchesOwner;
         public string disposition, sourceAssetKind, sourceAssetGuid, atlasGuid,
             textInfoMaterialFingerprint, textInfoCharacterMaterialFingerprint, sourceGraphicMaterialFingerprint,
             characterEvidenceSha256, characterAssetEvidenceSha256, sourceMeshSha256;

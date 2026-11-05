@@ -425,6 +425,19 @@ def propose_schema(parsed: dict[str, Any], script_identity: dict[str, str], type
     children = typed_schema.get("children")
     if not isinstance(children, list):
         return {"status": "gap", "identity": decl["identity"], "reason": "typed schema has no child field list"}
+    inputfield_profile = None
+    if base == "UnityEngine.UI.InputField":
+        # Keep the strict whole inherited-tree check on the production path.
+        # The per-child mapper below proves fields that are present, but alone
+        # it does not prove that a truncated TypeTree omitted no InputField
+        # behavior-bearing fields.
+        from .unity_prefab_input_profiles import InputFieldProfileError, validate_inputfield_type_tree
+        try:
+            inputfield_profile = validate_inputfield_type_tree(typed_schema, decl["fields"])
+        except InputFieldProfileError as error:
+            return {"status": "gap", "identity": decl["identity"],
+                    "reason": "InputField complete inherited profile failed: " + str(error),
+                    "inputFieldProfile": {"status": "gap", "profile": "unity-ugui-inputfield-selectable-static-profile/1"}}
     own = {field["name"]: field for field in decl["fields"]}
     enum_decls = [d for d in parsed.get("declarations", []) if d.get("kind") == "enum"]
     emitted_enums: list[dict[str, Any]] = []
@@ -525,6 +538,10 @@ def propose_schema(parsed: dict[str, Any], script_identity: dict[str, str], type
         gaps.append("native abstract base requires ModifyMesh(VertexHelper); original behavior unavailable, no fake override emitted")
     return {"status": "schema_only" if not gaps else "gap", "identity": decl["identity"], "base": base,
             "fields": output_fields, "inheritedFields": inherited, "gaps": gaps,
+            **({"inputFieldProfile": {"status": "matched", "profile": "unity-ugui-inputfield-selectable-static-profile/1",
+                                      "serializedFieldCount": inputfield_profile["serializedFieldCount"],
+                                      "sourceMethodBehavior": "not_recovered;disabled_unavailable_carrier_required"}}
+               if inputfield_profile is not None else {}),
             "enums": emitted_enums,
             "nativeSchemaVersion": NATIVE_SCHEMA_VERSION,
             "sourceBaseChain": _NATIVE_COMPONENT_CHAINS.get(base),

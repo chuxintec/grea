@@ -1,10 +1,14 @@
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from importlib.resources import files
 from pathlib import Path
+from unittest.mock import patch
 
-from monkey.code_profiles import load_profile
+from monkey.code_profiles import load_profile, profile_capabilities
 from monkey.io import encoded
 from monkey.sources.compiled import ParseError
 
@@ -20,7 +24,7 @@ class BuiltInCodeProfileTests(unittest.TestCase):
     def test_allowlisted_profiles_are_packaged_canonical_and_source_bound(self):
         for profile_name in COMPATIBILITY_PROFILE_IDS:
             with self.subTest(profile=profile_name):
-                raw = files("monkey").joinpath("code_profiles", profile_name + ".json").read_bytes()
+                raw = files("monkey.extensions.legacy_foodstreet").joinpath("code_profiles", profile_name + ".json").read_bytes()
                 profile = json.loads(raw)
                 self.assertEqual(encoded(profile), raw)
                 self.assertEqual(profile["profileName"], profile_name)
@@ -29,8 +33,15 @@ class BuiltInCodeProfileTests(unittest.TestCase):
                 text = raw.decode("utf-8")
                 for forbidden in (".private", "/Users/", "/private/", "game.js", "SourceRecovery"):
                     self.assertNotIn(forbidden, text)
-        demand = json.loads(files("monkey").joinpath("code_profiles", COMPATIBILITY_PROFILE_IDS[0] + ".json").read_bytes())
-        motion = json.loads(files("monkey").joinpath("code_profiles", COMPATIBILITY_PROFILE_IDS[1] + ".json").read_bytes())
+        extension = json.loads(files("monkey.extensions.legacy_foodstreet").joinpath("extension.json").read_bytes())
+        declared = {row["profileName"]: row for row in extension["profiles"]}
+        demand = json.loads(files("monkey.extensions.legacy_foodstreet").joinpath("code_profiles", COMPATIBILITY_PROFILE_IDS[0] + ".json").read_bytes())
+        motion = json.loads(files("monkey.extensions.legacy_foodstreet").joinpath("code_profiles", COMPATIBILITY_PROFILE_IDS[1] + ".json").read_bytes())
+        for profile_name, profile in ((COMPATIBILITY_PROFILE_IDS[0], demand), (COMPATIBILITY_PROFILE_IDS[1], motion)):
+            row = declared[profile_name]
+            raw = files("monkey.extensions.legacy_foodstreet").joinpath(row["resource"]).read_bytes()
+            self.assertEqual(row["bytes"], len(raw))
+            self.assertEqual(row["sha256"], __import__("hashlib").sha256(raw).hexdigest())
         self.assertEqual(len(demand["records"]), 3)
         self.assertEqual(sum(len(module["methods"]) for module in demand["modules"]), 12)
         self.assertEqual(len(motion["modules"]), 1)
@@ -48,6 +59,35 @@ class BuiltInCodeProfileTests(unittest.TestCase):
             with self.assertRaises(ParseError) as caught:
                 load_profile(COMPATIBILITY_PROFILE_IDS[0], wrong)
             self.assertEqual(caught.exception.code, "CODE_PROFILE_SOURCE_IDENTITY")
+
+    def test_exact_profile_selection_remains_explicit_and_refuses_source_drift(self):
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            wrong = Path(directory) / "wrong.js"
+            wrong.write_bytes(b"different extension source")
+            with self.assertRaises(ParseError) as caught:
+                load_profile(COMPATIBILITY_PROFILE_IDS[1], wrong)
+            self.assertEqual(caught.exception.code, "CODE_PROFILE_SOURCE_IDENTITY")
+
+    def test_capability_listing_reads_opt_in_metadata_without_importing_provider(self):
+        with patch("monkey.code_profiles.import_module", side_effect=AssertionError("provider activation")):
+            capabilities = profile_capabilities()
+        self.assertEqual(set(capabilities["profiles"]), set(COMPATIBILITY_PROFILE_IDS))
+        extension = next(row for row in capabilities["extensions"] if row["extensionId"] == "legacy_foodstreet")
+        self.assertEqual(extension["scope"], "legacy-project-specific")
+        self.assertFalse(extension["defaultEnabled"])
+        self.assertTrue(extension["explicitOptIn"])
+
+    def test_core_adapter_import_and_capabilities_do_not_activate_legacy_provider(self):
+        code = (
+            "import sys; import monkey.code_configuration; "
+            "from monkey.code_profiles import profile_capabilities; profile_capabilities(); "
+            "assert 'monkey.extensions.legacy_foodstreet.configuration' not in sys.modules"
+        )
+        env = dict(os.environ)
+        env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
+        completed = subprocess.run([sys.executable, "-c", code], cwd=Path(__file__).resolve().parents[1],
+                                   env=env, capture_output=True, text=True, check=False)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
 
 
 if __name__ == "__main__":

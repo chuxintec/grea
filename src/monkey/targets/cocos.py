@@ -87,6 +87,7 @@ def plan(ir_path,namespace,output,bindings_path=None,animation_selection=None,la
         +[(a['sourceId'],a['kind'],Path(a['path']).suffix if a['kind']=='cc.AudioClip' else {'cc.TTFFont':'.ttf','cc.JsonAsset':'.json'}[a['kind']],'',None,None) for a in ir['assets'] if a['kind'] in ('cc.TTFFont','cc.JsonAsset','cc.AudioClip')]
         +[r for f in ir.get('bitmapFonts',[]) for r in ((f['sourceId']+'@atlas','bitmap-atlas','.png','',None,None),(f['sourceId'],'bitmap','.fnt','',None,None))])
     diagnostics=list(ir['diagnostics']);assets=[];copies=[]
+    diagnostics.extend(spine_pipeline.material_origin_diagnostics(spine_profile))
     def add(sid,relative,kind,suffix,**fields):
         raw=resource(relative);uid=identity(namespace,sid);target=naming.path(sid,fields.get('role')=='bitmap-atlas-page' and 'bitmap-atlas' or planned[kind],suffix)
         item=dict(sourceId=sid,uuid=uid,path=target,kind=kind,sha256=sha(raw),**fields)
@@ -523,6 +524,51 @@ def _verify_creator_native_identity_contract(plan, readback, project_uuid, manif
     return gaps
 
 
+_CREATOR_STATIC_DYNAMIC_BOUNDARIES = frozenset({
+    'SPINE_SOURCE_UNBOUND_DYNAMIC_NOT_RUN',
+    'SPINE_DYNAMIC_BEHAVIOR_INCOMPLETE',
+    'ANIMATION_DYNAMIC_CURVES_NOT_LOWERED',
+})
+_CREATOR_NATIVE_DYNAMIC_BOUNDARIES = _CREATOR_STATIC_DYNAMIC_BOUNDARIES | frozenset({
+    # Runtime animation/resource assignment and visual comparison are outside
+    # native static field identity; they still block static presentation.
+    'SPINE_RUNTIME_UNVERIFIED',
+})
+
+
+def _creator_validation_summary(component_coverage, diagnostics, editor_validation):
+    """Join whole-source coverage with execution/readback diagnostics.
+
+    Only the named dynamic-only gaps are excluded. Unknown/raw diagnostics,
+    missing references, field discrepancies, failed native execution and
+    changed files cannot leave a passing native-static/presentation summary.
+    """
+    native_status = component_coverage.get('nativeStaticValidation', 'not_run')
+    presentation = component_coverage.get('staticPresentationValidation')
+    presentation_status = presentation.get('status', 'not_run') if isinstance(presentation, dict) else 'not_run'
+    rows = diagnostics if isinstance(diagnostics, list) else []
+
+    def blocks(row, allowed):
+        code = row.get('code') if isinstance(row, dict) else None
+        return code not in allowed
+
+    native_blockers = [row for row in rows if blocks(row, _CREATOR_NATIVE_DYNAMIC_BOUNDARIES)]
+    presentation_blockers = [row for row in rows if blocks(row, _CREATOR_STATIC_DYNAMIC_BOUNDARIES)]
+
+    if editor_validation == 'not_run':
+        return {'nativeStaticValidation': 'not_run', 'staticPresentationStatus': 'not_run'}
+    if editor_validation not in ('pass','partial'):
+        return {'nativeStaticValidation': 'fail',
+                'staticPresentationStatus': 'partial' if presentation_status != 'not_run' else 'not_run'}
+
+    if native_status == 'pass' and native_blockers:
+        native_status = 'fail' if any(isinstance(row, dict) and row.get('severity') == 'error'
+                                      for row in native_blockers) else 'partial'
+    if presentation_status == 'pass' and presentation_blockers:
+        presentation_status = 'partial'
+    return {'nativeStaticValidation': native_status, 'staticPresentationStatus': presentation_status}
+
+
 def verify(candidate,output,level='static'):
     root=safe(candidate);m=stage_manifest(root);diagnostics=[];component_coverage=None
     from ..sources.containers import fingerprint
@@ -719,16 +765,20 @@ def verify(candidate,output,level='static'):
         diagnostics.extend(component_coverage['diagnostics'])
     from ..unity_verification_contract import deduplicate_diagnostics
     diagnostics=deduplicate_diagnostics(diagnostics)
+    creator_summary=_creator_validation_summary(component_coverage,diagnostics,editor)
     integrity_codes={'GENERATED_FILE_CHANGED','NATIVE_FILE_CHANGED','DUPLICATE_TARGET_GUID','TARGET_REFERENCE_MISSING','TARGET_LAYOUT_INVALID','ASSIGNED_NATIVE_IDENTITY_CHANGED','LAYOUT_FORBIDDEN_NAME'}
     static_integrity='conflict' if any(d.get('code') in integrity_codes for d in diagnostics) else 'pass'
     out=new_output(output,[root]);report=dict(schemaVersion=1,toolVersion=__version__,diagnostics=diagnostics,
         staticValidation=static_integrity,editorValidation=editor,
-        nativeStaticValidation=(component_coverage['nativeStaticValidation'] if editor in ('pass','partial') and component_coverage else editor),
+        nativeStaticValidation=creator_summary['nativeStaticValidation'],
         componentCoverage=component_coverage['components'] if component_coverage else [],
         componentCoverageCounts=component_coverage['dispositionCounts'] if component_coverage else {},
         componentCoverageSourceCount=component_coverage['sourceComponentCount'] if component_coverage else None,
         retentionValidation=component_coverage['retentionValidation'] if component_coverage else 'not_run',
-        staticPresentationValidation=component_coverage['staticPresentationValidation'] if component_coverage else {'status':'not_run'},
+        staticPresentationValidation=({**component_coverage['staticPresentationValidation'],
+                                      'status':creator_summary['staticPresentationStatus']}
+                                     if component_coverage and isinstance(component_coverage.get('staticPresentationValidation'),dict)
+                                     else {'status':creator_summary['staticPresentationStatus']}),
         runtimeCheck='not_run',playerValidation='not_run',
         counts=dict(scope='candidate-import-plan',assets=len(plan['assets']),spriteFrames=sum(a['kind']=='sprite'for a in plan['assets']),nodes=len(plan['nodes']),plannedPrefabs=len(plan.get('sourcePrefabs',[]))))
     write_json(out/'verification.json',report);return finish(out,report)

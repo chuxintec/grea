@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 
 from .io import encoded, inside, load, new_output, read, safe, sha, write_json
 from .sources.compiled import fail
+from .unity_verification_contract import NATIVE_IMPORT_STATUSES, SAVED_SOURCE_SCOPES
 
 _GUID_REF = re.compile(r"\bguid:\s*([0-9a-fA-F]{32})\b")
 _ZERO_GUIDS = {"0" * 32, "0" * 16 + "e000000000000000"}
@@ -214,12 +215,11 @@ def _native_verification(root, output, expected_manifest, expected_readback):
     if sha(rb_raw) != expected_readback:
         fail("READBACK_SHA_MISMATCH", str(rb_path), "Readback differs from the pinned SHA256")
     rb = load(rb_raw, max_nodes=8_000_000)
-    if (rb.get("unityVersion") != "6000.6.2f1" or rb.get("missingScripts") != 0
-            or rb.get("status") not in ("imported", "pass", "partial")
-            or not isinstance(rb.get("nativeScope"), str) or not rb.get("nativeScope")
-            or not isinstance(rb.get("sourceGraphVerification"), str)
-            or not rb.get("sourceGraphVerification")):
-        fail("NATIVE_READBACK_INVALID", str(rb_path), "Unity version or missing-script count is invalid")
+    if (rb.get("unityVersion") != "6000.6.2f1" or type(rb.get("missingScripts")) is not int or rb.get("missingScripts") != 0
+            or rb.get("status") not in NATIVE_IMPORT_STATUSES
+            or rb.get("nativeScope") not in SAVED_SOURCE_SCOPES
+            or rb.get("sourceGraphVerification") != "saved-source-node-subset"):
+        fail("NATIVE_READBACK_INVALID", str(rb_path), "Unity version, import status, missing-script count or saved source-graph scope is invalid")
     native_files = rb.get("nativeFiles")
     if not isinstance(native_files, list) or not native_files:
         fail("NATIVE_READBACK_INCOMPLETE", str(rb_path), "Native saved-file inventory is empty")
@@ -235,7 +235,7 @@ def _native_verification(root, output, expected_manifest, expected_readback):
         actual, _, _ = _hash_file(root, relative)
         if actual != digest:
             fail("NATIVE_READBACK_DRIFT", relative, "Saved native file differs from the pinned readback")
-    if not rb.get("editableRoundtrip") or rb.get("sceneReopened") is not True:
+    if rb.get("editableRoundtrip") is not True or rb.get("sceneReopened") is not True:
         fail("NATIVE_READBACK_INCOMPLETE", str(rb_path), "Editable roundtrip and scene reopen are required")
 
     with tempfile.TemporaryDirectory(prefix="monkey-native-selection-", dir="/private/tmp") as temp:

@@ -155,6 +155,150 @@ def _merge_grouped_rows(base_rows: list[dict], add_rows: list[dict], identity_ke
     return sorted(groups.values(), key=lambda row: tuple(str(row.get(k, "")) for k in identity_keys))
 
 
+def _resolution_face_key(row: dict) -> tuple[str, str, str, str, str]:
+    variation_axes = row.get("variationAxes", {})
+    if not isinstance(variation_axes, dict):
+        raise FontCompletionError("CoreText glyph resolution has invalid variation axes")
+    return (str(row.get("family") or ""), str(row.get("styleName") or ""),
+            str(row.get("postScriptName") or ""), str(row.get("systemFontFileUrl") or ""),
+            json.dumps(variation_axes, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+
+
+def _validate_resolution_glyph_coverage(record: dict, label: str) -> dict:
+    """Check aggregate glyph counts against every resolved label scalar.
+
+    CoreText's ``perUnicodeScalar`` table is a unique-codepoint aggregate,
+    while the top-level counts and missing list are occurrence counts. Keep
+    those levels distinct and cross-check each against the per-label records.
+    """
+    coverage = record.get("glyphCoverage") if isinstance(record, dict) else None
+    labels = record.get("labels") if isinstance(record, dict) else None
+    if not isinstance(coverage, dict) or not isinstance(labels, list):
+        raise FontCompletionError(f"{label} resolution lacks glyph coverage or label rows")
+    label_ids: set[str] = set()
+    occurrences: dict[int, list[tuple[dict, dict]]] = {}
+    required = covered = 0
+    expected_missing: list[dict] = []
+    for label_row in labels:
+        if not isinstance(label_row, dict):
+            raise FontCompletionError(f"{label} resolution contains a malformed label")
+        target_id = label_row.get("targetLabelId")
+        if not isinstance(target_id, str) or not target_id or target_id in label_ids:
+            raise FontCompletionError(f"{label} resolution has missing or duplicate label identity")
+        label_ids.add(target_id)
+        scalars = label_row.get("unicodeScalars")
+        if not isinstance(scalars, list):
+            raise FontCompletionError(f"{label} label has no Unicode scalar observations: {target_id}")
+        for scalar in scalars:
+            if not isinstance(scalar, dict):
+                raise FontCompletionError(f"{label} label has a malformed Unicode scalar: {target_id}")
+            value = scalar.get("scalarValue")
+            character = scalar.get("character")
+            codepoint = scalar.get("codepoint")
+            if (type(value) is not int or value < 0 or value > 0x10FFFF or 0xD800 <= value <= 0xDFFF
+                    or not isinstance(character, str) or character != chr(value)
+                    or codepoint != f"U+{value:04X}"):
+                raise FontCompletionError(f"{label} label has inconsistent Unicode scalar identity: {target_id}")
+            if type(scalar.get("requiredForVisualText")) is not bool or type(scalar.get("glyphCovered")) is not bool:
+                raise FontCompletionError(f"{label} scalar lacks explicit required/coverage flags: {target_id}:{codepoint}")
+            occurrences.setdefault(value, []).append((label_row, scalar))
+            if scalar["requiredForVisualText"]:
+                required += 1
+                if scalar["glyphCovered"]:
+                    covered += 1
+                else:
+                    expected_missing.append({key: scalar.get(key) for key in
+                        ("targetLabelId", "pointSize", "character", "codepoint", "family", "postScriptName")})
+
+    count_rows = ("requiredUnicodeOccurrences", "coveredUnicodeOccurrences", "missingUnicodeOccurrences")
+    for key in count_rows:
+        if type(coverage.get(key)) is not int or coverage[key] < 0:
+            raise FontCompletionError(f"{label} resolution has an invalid glyph coverage count: {key}")
+    if (coverage["requiredUnicodeOccurrences"] != required or
+            coverage["coveredUnicodeOccurrences"] != covered or
+            coverage["missingUnicodeOccurrences"] != required - covered):
+        raise FontCompletionError(f"{label} glyph coverage counts differ from per-label scalar evidence")
+    missing = coverage.get("missing")
+    if not isinstance(missing, list):
+        raise FontCompletionError(f"{label} glyph coverage missing list is malformed")
+    identity_keys = ("targetLabelId", "pointSize", "character", "codepoint", "family", "postScriptName")
+    actual_missing = sorted(tuple(row.get(key) for key in identity_keys) for row in missing if isinstance(row, dict))
+    expected_missing_keys = sorted(tuple(row.get(key) for key in identity_keys) for row in expected_missing)
+    if len(actual_missing) != len(missing) or actual_missing != expected_missing_keys:
+        raise FontCompletionError(f"{label} missing glyph list differs from per-label scalar evidence")
+
+    aggregate = coverage.get("perUnicodeScalar")
+    if not isinstance(aggregate, list):
+        raise FontCompletionError(f"{label} per-Unicode coverage aggregate is malformed")
+    by_code: dict[int, dict] = {}
+    for row in aggregate:
+        if not isinstance(row, dict):
+            raise FontCompletionError(f"{label} per-Unicode coverage row is malformed")
+        value = row.get("scalarValue")
+        if type(value) is not int or value in by_code or value not in occurrences:
+            raise FontCompletionError(f"{label} per-Unicode coverage has duplicate or unobserved scalar")
+        group = occurrences[value]
+        ids = sorted({label_row["targetLabelId"] for label_row, _ in group})
+        required_flags = {scalar["requiredForVisualText"] for _, scalar in group}
+        if (row.get("codepoint") != f"U+{value:04X}" or row.get("character") != chr(value)
+                or row.get("targetLabelIds") != ids or len(required_flags) != 1
+                or row.get("requiredForVisualText") != next(iter(required_flags))):
+            raise FontCompletionError(f"{label} per-Unicode aggregate differs from label occurrences")
+        resolutions = row.get("resolutions")
+        if not isinstance(resolutions, list):
+            raise FontCompletionError(f"{label} per-Unicode scalar lacks resolution rows")
+        expected_faces: dict[tuple[str, str, str, str, str], dict] = {}
+        for _, scalar in group:
+            face_key = _resolution_face_key(scalar)
+            face = expected_faces.setdefault(face_key, {"glyphCovered": True, "glyphMappingChecked": False})
+            face["glyphCovered"] = face["glyphCovered"] and scalar["glyphCovered"]
+            face["glyphMappingChecked"] = face["glyphMappingChecked"] or scalar.get("glyphMappingChecked") is True
+        actual_faces: dict[tuple[str, str, str, str, str], dict] = {}
+        for face in resolutions:
+            if not isinstance(face, dict) or type(face.get("glyphCovered")) is not bool or type(face.get("glyphMappingChecked")) is not bool:
+                raise FontCompletionError(f"{label} per-Unicode face resolution flags are malformed")
+            face_key = _resolution_face_key(face)
+            if face_key in actual_faces:
+                raise FontCompletionError(f"{label} per-Unicode aggregate has duplicate resolved face")
+            actual_faces[face_key] = {"glyphCovered": face["glyphCovered"],
+                                      "glyphMappingChecked": face["glyphMappingChecked"]}
+        if actual_faces != expected_faces:
+            raise FontCompletionError(f"{label} per-Unicode face coverage differs from label scalars")
+        by_code[value] = row
+    if set(by_code) != set(occurrences):
+        raise FontCompletionError(f"{label} per-Unicode aggregate omits observed source scalars")
+    return coverage
+
+
+def _merge_unicode_coverage(base_rows: list[dict], added_rows: list[dict]) -> list[dict]:
+    merged: dict[int, dict] = {}
+    for row in base_rows + added_rows:
+        code = row["scalarValue"]
+        previous = merged.get(code)
+        if previous is None:
+            merged[code] = deepcopy(row)
+            continue
+        if any(previous.get(key) != row.get(key) for key in ("codepoint", "character", "requiredForVisualText")):
+            raise FontCompletionError("CoreText per-Unicode identity conflicts across resolution inputs")
+        previous["targetLabelIds"] = sorted(set(previous["targetLabelIds"]) | set(row["targetLabelIds"]))
+        faces = {_resolution_face_key(face): deepcopy(face) for face in previous.get("resolutions") or []}
+        for face in row.get("resolutions") or []:
+            key = _resolution_face_key(face)
+            if key not in faces:
+                faces[key] = deepcopy(face)
+                continue
+            existing = faces[key]
+            if (type(existing.get("glyphCovered")) is not bool or type(face.get("glyphCovered")) is not bool
+                    or type(existing.get("glyphMappingChecked")) is not bool
+                    or type(face.get("glyphMappingChecked")) is not bool):
+                raise FontCompletionError("CoreText per-Unicode face flags are malformed during merge")
+            existing["glyphCovered"] = existing["glyphCovered"] and face["glyphCovered"]
+            existing["glyphMappingChecked"] = existing["glyphMappingChecked"] or face["glyphMappingChecked"]
+            existing["fallback"] = existing.get("fallback") is True or face.get("fallback") is True
+        previous["resolutions"] = sorted(faces.values(), key=lambda face: _resolution_face_key(face))
+    return [merged[code] for code in sorted(merged)]
+
+
 def _merge_resolution(base: dict, added: dict, labels: list[dict],
                       source_ir_path: Path, source_ir_sha: str, source_manifest_path: Path,
                       source_manifest_sha: str) -> dict:
@@ -185,16 +329,19 @@ def _merge_resolution(base: dict, added: dict, labels: list[dict],
     merged["coreTextToPhysicalFaceEvidence"] = _merge_grouped_rows(
         merged.get("coreTextToPhysicalFaceEvidence") or [], added.get("coreTextToPhysicalFaceEvidence") or [],
         ("family", "styleName", "postScriptName", "systemFontFileUrl"), ())
-    old_cov, new_cov = merged.get("glyphCoverage") or {}, added.get("glyphCoverage") or {}
+    old_cov = _validate_resolution_glyph_coverage(base, "pinned")
+    new_cov = _validate_resolution_glyph_coverage(added, "new")
     merged["glyphCoverage"] = {
         "requiredUnicodeOccurrences": old_cov.get("requiredUnicodeOccurrences", 0) + new_cov.get("requiredUnicodeOccurrences", 0),
         "coveredUnicodeOccurrences": old_cov.get("coveredUnicodeOccurrences", 0) + new_cov.get("coveredUnicodeOccurrences", 0),
         "missingUnicodeOccurrences": old_cov.get("missingUnicodeOccurrences", 0) + new_cov.get("missingUnicodeOccurrences", 0),
         "missing": (old_cov.get("missing") or []) + (new_cov.get("missing") or []),
-        "perUnicodeScalar": (old_cov.get("perUnicodeScalar") or []) + (new_cov.get("perUnicodeScalar") or []),
+        "perUnicodeScalar": _merge_unicode_coverage(old_cov["perUnicodeScalar"], new_cov["perUnicodeScalar"]),
     }
     if merged["glyphCoverage"]["missingUnicodeOccurrences"]:
         raise FontCompletionError("CoreText did not resolve every required source character")
+    merged["labels"] = [base_labels[k] for k in sorted(base_labels)]
+    _validate_resolution_glyph_coverage(merged, "merged")
     source_sample = merged.get("sourceSample")
     if not isinstance(source_sample, dict):
         raise FontCompletionError("pinned CoreText receipt lacks sourceSample")

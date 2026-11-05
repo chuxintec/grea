@@ -1,6 +1,7 @@
 """Pinned Creator Spine component/resource stage; source assignments stay explicit."""
 from pathlib import Path
-from .io import read,load,sha,safe,inside,stage_manifest
+import re
+from .io import read,load,sha,safe,inside,stage_bytes,stage_manifest
 from .sources.compiled import fail
 from .prefab_spine_materials import TARGET_ENGINE_FILE_PINS
 
@@ -13,6 +14,12 @@ def load_binding(ir,ir_path,receipt_path,expected_sha,resources):
     pins=record.get('pins',{})
     if pins.get('normalizedIrSha256')!=sha(read(ir_path)) or pins.get('sourceManifestSha256')!=ir['sourceManifestSha256']:
         fail('SPINE_BINDING_SOURCE_MISMATCH','spine','Source manifest or current IR pin differs')
+    source_manifest_path=ir.get('sourceManifestPath')
+    if not isinstance(source_manifest_path,str) or not source_manifest_path:
+        fail('SPINE_BINDING_SOURCE_MANIFEST_MISSING','spine','Normalized IR has no pinned source-manifest byte path')
+    source_manifest_raw=stage_bytes(Path(source_manifest_path))
+    if sha(source_manifest_raw)!=pins.get('sourceManifestSha256'):
+        fail('SPINE_BINDING_SOURCE_MANIFEST_MISMATCH','spine','Original source-manifest bytes differ from the emission pin')
     root=safe(resources);manifest=stage_manifest(root)
     if sha(read(root/'manifest.json'))!=pins.get('creatorClosureReceiptSha256'):
         fail('SPINE_CLOSURE_CHANGED','spine','Frozen resource manifest differs')
@@ -23,7 +30,9 @@ def load_binding(ir,ir_path,receipt_path,expected_sha,resources):
                 or material_profile.get('targetMaterialUuid')!='default-spine-material'
                 or material_profile.get('targetEffect')!='builtin-spine'
                 or not isinstance(material_profile.get('contractSha256'),str)
-                or len(material_profile.get('contractSha256',''))!=64
+                or re.fullmatch(r"[0-9a-f]{64}", material_profile.get('contractSha256','')) is None
+                or not isinstance(pins.get('creatorMaterialContractSha256'),str)
+                or re.fullmatch(r"[0-9a-f]{64}", pins.get('creatorMaterialContractSha256','')) is None
                 or material_profile.get('contractSha256')!=pins.get('creatorMaterialContractSha256')):
             fail('SPINE_CREATOR_MATERIAL_PROFILE','spine','Creator built-in material profile is not consistently pinned')
     files={x['path']:x for x in manifest['files']};components={x['sourceId']:x for x in ir['components']}
@@ -77,7 +86,20 @@ def load_binding(ir,ir_path,receipt_path,expected_sha,resources):
             fail('SPINE_RESOURCE_IDENTITY',row['path'],'Resource is not owned by the pinned closure')
         raw=read(inside(root,row['path']))
         if sha(raw)!=row['sha256'] or len(raw)!=row['bytes']:fail('SPINE_RESOURCE_CHANGED',row['path'],'Source closure bytes differ')
-    return dict(record=record,root=root,receiptSha256=expected_sha)
+    return dict(record=record,root=root,receiptSha256=expected_sha,
+                materialProvenance=({'status':'receipt-pinned-source-origin-unverified',
+                    'contractBytesVerified':False,'originalEngineBytesVerified':False}
+                    if material_profile is not None else None))
+
+
+def material_origin_diagnostics(binding):
+    """A pinned provider claim is not an independent original SDK byte proof."""
+    if not binding or binding.get('materialProvenance') is None:return []
+    from .io import diagnostic
+    sources=[row.get('sourceComponentId')for row in binding['record'].get('components',[])]or[None]
+    return [diagnostic('SPINE_MATERIAL_ORIGIN_NOT_VERIFIED',sid or'spineMaterial',
+        'Emission receipt content is pinned; original material-contract/engine byte closure is not independently verified by this reader. Native field identity and resource retention do not close source static material provenance.',sid)
+        for sid in sources]
 
 
 def prepare(binding,output):
@@ -90,6 +112,7 @@ def prepare(binding,output):
         copies.append(dict(source=source,target=row['path'],sha256=row['sha256']))
     return dict(components=record['components'],assets=record['assets'],copies=copies,
                 creatorMaterialProfile=record.get('creatorMaterialProfile'),
+                materialProvenance=binding.get('materialProvenance'),
                 emissionReceiptSha256=binding['receiptSha256'],sourceComponentCount=record['sourceComponentCount'])
 
 

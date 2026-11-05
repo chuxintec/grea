@@ -38,6 +38,38 @@ def test_render_override_remains_partial_even_when_target_base_can_render(tmp_pa
     assert any(row["name"] == "OnPopulateMesh" for row in evidence["sourceMethods"])
 
 
+def test_all_supported_native_ui_bases_keep_empty_custom_subclasses_unverified(tmp_path):
+    # A base Graphic being drawable is independent from whether the source
+    # subclass had renderer/lifecycle behavior. Missing original method
+    # metadata keeps each generated native-base carrier partial.
+    for base in ("Image", "RawImage", "Text"):
+        class_name = "Custom" + base
+        source = f"public class {class_name} : UnityEngine.UI.{base} {{ }}\n"
+        raw = source.encode("utf-8")
+        path = tmp_path / (class_name + ".cs")
+        path.write_bytes(raw)
+        parsed = parse_declarations(raw.decode(), assembly="Assembly-CSharp.dll", source_path=str(path),
+                                    source_sha256=hashlib.sha256(raw).hexdigest())
+        evidence = classify_source_ui_static(
+            parsed, {"assembly": "Assembly-CSharp.dll", "namespace": "", "name": class_name},
+            "UnityEngine.UI." + base)
+        assert evidence["targetRenderingIsSeparate"] is True
+        assert evidence["staticSemanticsProven"] is False
+        assert evidence["status"] == "source-ui-behavior-unverified"
+        assert evidence["sourceMethodInventoryProvenanceStatus"] == "missing-independent-original-method-metadata"
+
+
+def test_native_readback_keeps_renderability_separate_and_blocks_static_pass_for_unknown_ui():
+    from pathlib import Path
+
+    path = Path(__file__).parents[1] / "src/monkey/targets/unity_source/UnityPrefabStaticReadback.cs"
+    source = path.read_text(encoding="utf-8")
+    assert "bool targetCanRender, sourceStaticSemanticsVerified;" in source
+    assert "if(!sourceVerified)limitations.Add(\"unverified-source-ui-static-semantics:\"" in source
+    assert '"partial-source-ui-static-semantics-unverified"' in source
+    assert 'v.StartsWith("unverified-source-ui-static-semantics:", StringComparison.Ordinal)' in source
+
+
 def test_external_method_declaration_is_unknown_not_assumed_inert(tmp_path):
     evidence = _classify(tmp_path, "public void Rebuild();")
     assert evidence["staticSemanticsProven"] is False

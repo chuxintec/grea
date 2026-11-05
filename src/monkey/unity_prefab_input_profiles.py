@@ -137,6 +137,9 @@ def validate_inputfield_type_tree(typed_schema: Mapping[str, Any],
             raise InputFieldProfileError("Duplicate direct TypeTree field: " + name)
         observed[name] = child["type"]
     core = {"m_GameObject", "m_Enabled", "m_Script", "m_Name"}
+    missing_core = sorted(core - set(observed))
+    if missing_core:
+        raise InputFieldProfileError("InputField TypeTree is missing Unity core fields: " + repr(missing_core))
     non_core = {name: value for name, value in observed.items() if name not in core}
     expected = {name: value[0] for name, value in UI_INHERITED_FIELDS[INPUTFIELD].items()}
     source_extra_fields = {}

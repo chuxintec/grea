@@ -354,6 +354,7 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
     refreshed_fragment["ownerContextLifecycleEvidenceContract"] = owner_lifecycle_contract
     if isinstance(refreshed.get("staticTextContinuation"), dict):
         refreshed["staticTextSlotCaptureLifecycleContract"] = "monkey-static-sort-text-capture-lifecycle/1"
+        refreshed["staticTextSlotRoleRoutingContract"] = "monkey-static-sort-text-slot-role-routing/1"
         from .prefab_static_text_continuation import SAMPLING_CONTRACT
         refreshed["staticTextContinuation"]["nativeSamplingContract"] = SAMPLING_CONTRACT
         refreshed["staticTextContinuationJson"] = json.dumps(
@@ -400,7 +401,7 @@ def prepare(request_path: str | Path, expected_request_sha256: str, output: str 
 
     owner_manifest = dict(manifest)
     owner_manifest["staticSpineRendering"] = refreshed_fragment
-    for key in ("staticTextContinuation", "staticTextContinuationJson", "staticTextSlotCaptureLifecycleContract"):
+    for key in ("staticTextContinuation", "staticTextContinuationJson", "staticTextSlotCaptureLifecycleContract", "staticTextSlotRoleRoutingContract"):
         if key in refreshed:
             owner_manifest[key] = refreshed[key]
     if "staticSpineRenderingTargetUnits" in refreshed:

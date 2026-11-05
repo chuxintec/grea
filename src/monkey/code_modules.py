@@ -1,6 +1,6 @@
 """Source-bound typed C# module assembly into a new owned candidate."""
 import copy
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tempfile
 
 from .io import safe, read, load, sha, encoded, write_json, new_output
@@ -134,23 +134,31 @@ def prepare(source, contract_path, configuration_table=None):
         requests.append(request); mappings += method_mappings; files.update(payload); owners.update({p:module['id'] for p in payload})
     configuration=None
     if configuration_table:
-        catalog=next((m for m in modules if m['targetClass']=='RecipeCatalog'),None)
-        from .code_semantics import Type,NUMBER
-        if (namespace!='Game.Domain.Recovered' or not catalog or catalog['_class']['name']!='qp'
-                or catalog['_fields'].get('_dishMap')!=Type('Map',(NUMBER,Type('Recipe')))
-                or context['records'].get('Recipe')!={'ingredients':Type('Map',(NUMBER,NUMBER))}):
-            fail('CODE_CONFIG_MODULE_BINDING','$','Recipe JSON profile requires its exact source class and record/field domain')
-        from .code_configuration import prepare_assets
+        from .code_configuration import prepare_assets, validate_module_binding
+        extension=validate_module_binding(namespace,modules,context)
+        if (not isinstance(extension,dict) or not isinstance(extension.get('extensionId'),str)
+                or not extension['extensionId'] or extension.get('catalogModuleId')not in {m['id']for m in modules}
+                or not isinstance(extension.get('ownerId'),str)or not extension['ownerId']
+                or not isinstance(extension.get('reportPath'),str)
+                or not extension['reportPath'].startswith('Analysis/')
+                or '..'in PurePosixPath(extension['reportPath']).parts
+                or not isinstance(extension.get('publicReportKeys'),list)
+                or not all(isinstance(k,str)for k in extension['publicReportKeys'])
+                or not isinstance(extension.get('generatorFiles'),list)or not extension['generatorFiles']
+                or not all(isinstance(k,str)and k.startswith('extensions/')and '..'not in PurePosixPath(k).parts
+                           for k in extension['generatorFiles'])):
+            fail('CODE_CONFIG_EXTENSION_CONTRACT','$','Explicit configuration provider descriptor is invalid')
         with tempfile.TemporaryDirectory(prefix='monkey-code-config-')as temp:
             staging=Path(temp).resolve()/'assets'
             configuration=prepare_assets(configuration_table,source,staging)
             config_files={row['path']:read(staging/row['path']) for row in configuration['files']}
-            config_files['Analysis/Code/recipe-json-configuration.json']=read(configuration['report'])
+            config_files[extension['reportPath']]=read(configuration['report'])
         if set(config_files).intersection(files): fail('CODE_CONFIG_OUTPUT_COLLISION','$','Configuration collides with generated code')
-        files.update(config_files);owners.update({p:'RecipeJsonConfiguration' for p in config_files})
-        requests.append(dict(id='RecipeJsonConfiguration',sourceFingerprint=sha(encoded({p:sha(v)for p,v in config_files.items()})),
-                             dependencies=['RecoveryTypes',catalog['id']],targetPaths=sorted(config_files)))
-        configuration={k:v for k,v in configuration.items()if k in ('tableSha256','sourceSha256','representative')}
+        files.update(config_files);owners.update({p:extension['ownerId'] for p in config_files})
+        requests.append(dict(id=extension['ownerId'],sourceFingerprint=sha(encoded({p:sha(v)for p,v in config_files.items()})),
+                             dependencies=['RecoveryTypes',extension['catalogModuleId']],targetPaths=sorted(config_files)))
+        configuration={**{k:v for k,v in configuration.items()if k in extension['publicReportKeys']},
+                       'extensionId':extension['extensionId'],'scope':extension.get('scope','explicit-extension')}
     evidence_path = 'SourceRecovery/Code/Source/RecoveredSource.js'
     files[evidence_path] = raw
     files['SourceRecovery/Code/code-contract.json'] = contract_raw
@@ -163,7 +171,7 @@ def prepare(source, contract_path, configuration_table=None):
                   methods=mappings,sourceExecuted=False,originalConstructorRecovered=False,sourceInheritanceRecovered=False,
                   fields=dict(initialization='explicit caller-supplied state; no original-constructor claim',staticMaps='caller must supply non-null maps before any entry call',recordShapes=records,recordShapeEvidence=witnesses),
                   callDomain=spec.get('callDomain'),configuration=configuration,validation=dict(compiled='not_run',behavior='not_run',unityBinding='not_run'),
-                  limitations=['Only selected source-proven typed methods are compiled candidates; unselected source is excluded.', 'Call-domain types narrow legal inputs; omitted arguments, coercing objects, unknown nulls and dynamic calls are rejected.', 'Recipe recursion requires finite acyclic input; collection mutation/deletion during traversal and callback mutation of captured collections are outside the domain.', 'Record and map/list values must be non-null; numeric IDs/counts are finite JS Numbers; callbacks retain source-proven timing only.', 'Generated state constructors are explicit adapters, not recovered source/base initialization.'])
+                  limitations=['Only selected source-proven typed methods are compiled candidates; unselected source is excluded.', 'Call-domain types narrow legal inputs; omitted arguments, coercing objects, unknown nulls and dynamic calls are rejected.', 'Declared recursion requires finite acyclic input; collection mutation/deletion during traversal and callback mutation of captured collections are outside the domain.', 'Record and map/list values must be non-null; numeric IDs/counts are finite JS Numbers; callbacks retain source-proven timing only.', 'Generated state constructors are explicit adapters, not recovered source/base initialization.'])
     report_path='Analysis/Code/code-modules.json'; files[report_path]=encoded(report)
     files['Docs/START-HERE.md']=(
         '# Source-bound C# module candidate\n\nRead Analysis/Code/code-modules.json and SourceRecovery first. Original JavaScript is data and is never executed. '
@@ -176,7 +184,7 @@ def prepare(source, contract_path, configuration_table=None):
     owners.update({p:'SourceEvidence' for p in evidence_files})
     requests.append(dict(id='SourceEvidence',sourceFingerprint=sha(encoded({p:sha(files[p]) for p in evidence_files})),dependencies=[],targetPaths=sorted(evidence_files)))
     generator_files=['code_modules.py','code_semantics.py','code_graph.py','code-graph.cjs','code_regeneration.py','targets/CodeCollections.cs']
-    if configuration_table:generator_files+=['code_configuration.py','targets/RecipeJsonConfiguration.cs']
+    if configuration_table:generator_files+=['code_configuration.py',*extension['generatorFiles']]
     signature=sha(encoded({p:sha(read(Path(__file__).parent/p)) for p in generator_files}))
     return dict(files=files,requests=requests,owners=owners,generatorSignature=signature,report=report,source=source,contractPath=contract_path,configurationTable=safe(configuration_table)if configuration_table else None)
 

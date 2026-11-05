@@ -91,8 +91,8 @@ class PersistentTextOutlineVariantTests(unittest.TestCase):
         profile = _body(editor_source, "public static bool CaptureFallbackMaterialProfile(")
         registration = _body(editor_source, "public static bool RegisterCapturedFallbackVariant(")
         self.assertIn("CaptureFallbackMaterial(binding, persistentAssetPath, false", profile)
-        self.assertIn("outline.RegisterPersistentMaterialVariant(binding.fallbackFontAsset, material", registration)
-        self.assertIn("EditorUtility.SetDirty(outline)", registration)
+        self.assertIn("driver.RegisterPersistentMaterialVariant(binding.fallbackFontAsset, material", registration)
+        self.assertIn("EditorUtility.SetDirty(driver)", registration)
 
     def test_module_remains_sample_neutral(self):
         self.assertNotIn(".private/", self.source)

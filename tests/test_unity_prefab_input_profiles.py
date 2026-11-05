@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 
 from monkey import unity_prefab_types
@@ -107,6 +108,58 @@ namespace NeutralFixture {
         child["type"] = "int"
         with self.assertRaisesRegex(ValueError, "changed=.*m_AsteriskChar"):
             validate_inputfield_type_tree(changed)
+        truncated = _neutral_typed_schema()
+        truncated["children"] = [row for row in truncated["children"] if row["name"] != "m_Script"]
+        with self.assertRaisesRegex(ValueError, "is missing Unity core fields:.*m_Script"):
+            validate_inputfield_type_tree(truncated)
+
+    def test_production_script_proposals_requires_complete_inputfield_tree(self):
+        # Exercise the actual script_proposals -> propose_schema route. The
+        # standalone validator passing is insufficient if recovery never calls it.
+        from monkey.unity_prefab_recovery import script_proposals
+
+        source = "using UnityEngine.UI; public class TextEntryControl : InputField { }"
+        source_path = "TextEntryControl.cs"
+        source_hash = hashlib.sha256(source.encode("utf-8")).hexdigest()
+        parsed = parse_declarations(source, assembly="Fixture.dll", source_path=source_path,
+                                    source_sha256=source_hash)
+        identity = {"assembly": "Fixture.dll", "namespace": "", "name": "TextEntryControl"}
+
+        def run(children):
+            schema = {"children": [
+                {"name": "m_GameObject", "type": "PPtr<GameObject>"},
+                {"name": "m_Enabled", "type": "UInt8"},
+                {"name": "m_Script", "type": "PPtr<MonoScript>"},
+                {"name": "m_Name", "type": "string"},
+                *children,
+            ]}
+            entry = {"sourceSha256": "b" * 64, "document": {
+                "files": [{"id": "0", "name": "CAB"}],
+                "objects": [
+                    {"type": "MonoBehaviour", "status": "parsed", "file": "0", "pathId": "1",
+                     "embeddedSchemaId": "input", "borrowedSchemaId": None,
+                     "data": {"m_Script": {"fileId": "0", "pathId": "2"}}},
+                    {"type": "MonoScript", "status": "parsed", "file": "0", "pathId": "2",
+                     "rawSha256": "c" * 64,
+                     "data": {"m_AssemblyName": identity["assembly"], "m_Namespace": "",
+                              "m_ClassName": identity["name"]}},
+                ], "embeddedSchemas": {"input": schema}, "borrowedSchemas": {},
+            }}
+            return script_proposals([entry], parsed, allow_disabled=False)
+
+        complete = [
+            {"name": name, "type": type_tree}
+            for name, (type_tree, _cs) in sorted(INPUT_UI_FIELDS[INPUTFIELD].items())
+        ]
+        recovered = run(complete)
+        model = recovered[(identity["assembly"], "", identity["name"])]
+        self.assertEqual("disabled-unavailable-carrier", model["state"])
+        self.assertEqual("matched", model["proposal"]["inputFieldProfile"]["status"])
+        self.assertEqual("not_recovered;disabled_unavailable_carrier_required",
+                         model["proposal"]["inputFieldProfile"]["sourceMethodBehavior"])
+
+        missing = run([row for row in complete if row["name"] != "m_OnSubmit"])
+        self.assertEqual({}, missing)
 
 
 if __name__ == "__main__":

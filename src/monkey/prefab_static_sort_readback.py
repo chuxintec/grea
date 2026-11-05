@@ -804,10 +804,14 @@ def _check_graphics(spec, queue_readback, owner, mode):
 
 def _check_text_sources(spec, queue_readback, mode, plan=None):
     from .text_slot_capture_lifecycle_readback import CONTRACT as capture_contract, verify_queue as verify_capture
+    from .text_slot_role_routing_readback import CONTRACT as role_contract
     failures = verify_capture(queue_readback, mode,
-        required=isinstance(plan,dict) and plan.get('staticTextSlotCaptureLifecycleContract')==capture_contract)
+        required=isinstance(plan,dict) and plan.get('staticTextSlotCaptureLifecycleContract')==capture_contract,
+        role_required=isinstance(plan,dict) and plan.get('staticTextSlotRoleRoutingContract')==role_contract)
     if isinstance(plan,dict) and plan.get('staticTextSlotCaptureLifecycleContract') not in (None,capture_contract):
         failures.append(f"{mode} TMP capture lifecycle contract is unsupported")
+    if isinstance(plan,dict) and plan.get('staticTextSlotRoleRoutingContract') not in (None,role_contract):
+        failures.append(f"{mode} TMP slot role routing contract is unsupported")
     non_draw_ids = {row.get("sourceComponentId") for row in spec.get("nonDrawRenderers", []) if isinstance(row, dict)}
     graphic_rows = queue_readback.get("graphics") or []
     drawable_ids = {row.get("sourceComponentId") for row in graphic_rows if isinstance(row, dict)}

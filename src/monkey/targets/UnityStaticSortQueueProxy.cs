@@ -1010,6 +1010,9 @@ namespace Monkey.StaticSortQueueProxy
                     out var firstFinalEnumeration, out var firstFinalDiagnostic))
                 throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_SLOTS_FAILED", row, lifecycle,
                     slotEnumeration, null, "phase=final-prepare-pass1;diagnostic=" + firstFinalDiagnostic);
+            if (!CarryTextCaptureRoutes(captureProofs, firstFinalSlots, out var firstRouteDiagnostic))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_SLOT_ROLE_ROUTE_FAILED", row, lifecycle,
+                    slotEnumeration, firstFinalEnumeration, "phase=final-prepare-pass1;" + firstRouteDiagnostic);
             UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
                 UnityStaticSortTextSource.CaptureLifecyclePhase("final-prepare-pass1", -1, owner,
                     row.sourceComponentId, firstFinalSlots, firstFinalEnumeration));
@@ -1021,6 +1024,9 @@ namespace Monkey.StaticSortQueueProxy
                     out var finalEnumeration, out var finalDiagnostic))
                 throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_REPEATED_SLOTS_FAILED", row, lifecycle,
                     firstFinalEnumeration, null, "phase=final-prepare-pass2;diagnostic=" + finalDiagnostic);
+            if (!CarryTextCaptureRoutes(captureProofs, finalSlots, out var finalRouteDiagnostic))
+                throw TextSlotCaptureRefusal("STATIC_SORT_PROXY_TEXT_FINAL_SLOT_ROLE_ROUTE_FAILED", row, lifecycle,
+                    firstFinalEnumeration, finalEnumeration, "phase=final-prepare-pass2;" + finalRouteDiagnostic);
             UnityStaticSortTextSource.AppendCaptureLifecyclePhase(lifecycle,
                 UnityStaticSortTextSource.CaptureLifecyclePhase("final-prepare-pass2", -1, owner,
                     row.sourceComponentId, finalSlots, finalEnumeration));
@@ -1157,6 +1163,26 @@ namespace Monkey.StaticSortQueueProxy
                 return false;
             }
             return UnityStaticSortTextSource.ValidateCapturedSlotTransition(captured, current, final, out diagnostic);
+        }
+
+        static bool CarryTextCaptureRoutes(Dictionary<int, TextSlotBinding> captured,
+            IList<TextSlotBinding> current, out string diagnostic)
+        {
+            diagnostic = null;
+            if (captured == null || current == null || captured.Count != current.Count)
+            {
+                diagnostic = "slot-count=" + (captured == null ? -1 : captured.Count) + "/" +
+                    (current == null ? -1 : current.Count);
+                return false;
+            }
+            foreach (var binding in current)
+            {
+                if (binding == null || !captured.TryGetValue(binding.materialSlot, out var source))
+                { diagnostic = "captured-route-missing-for-slot=" + (binding == null ? -1 : binding.materialSlot); return false; }
+                if (!UnityStaticSortTextSource.CarryCaptureSlotRoute(source, binding, out var routeDiagnostic))
+                { diagnostic = "slot=" + binding.materialSlot + ";" + routeDiagnostic; return false; }
+            }
+            return true;
         }
 
         static string TextSlotBindingSummary(TextSlotBinding binding)
