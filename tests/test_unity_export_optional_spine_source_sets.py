@@ -235,6 +235,9 @@ def _copy_current_spine_templates(source_root: Path, temp_root: Path) -> list[di
         "Assets/Game/Scripts/Presentation/StaticSort/NativeStaticSortTextSource.cs": REPO / "src/monkey/targets/NativeStaticSortTextSource.cs",
         "Assets/Game/Scripts/Presentation/StaticSort/NativeStaticSortTextSlotEnumerationIdentity.cs": REPO / "src/monkey/targets/NativeStaticSortTextSlotEnumerationIdentity.cs",
     }
+    outline_relative = next(path.relative_to(source_root).as_posix()
+                            for path in source_root.rglob("NativeStaticTextOutline.cs"))
+    mapping[outline_relative] = REPO / "src/monkey/targets/NativeStaticTextOutline.cs"
     rows = []
     for relative, template in mapping.items():
         source = source_root / relative

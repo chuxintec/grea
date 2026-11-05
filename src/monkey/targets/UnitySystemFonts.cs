@@ -407,6 +407,57 @@ public static class UnitySystemFonts
     /// The runtime component stores only presentation values and reapplies them on
     /// each TMP pre-render; source identity/text checks remain editor input checks.
     /// </summary>
+    // A separate, source-pinned static atlas gives the stroke enough distance
+    // range. The original face asset/material and its layout remain untouched.
+    static TMP_FontAsset PrepareStrokeFont(TMP_Text label, BindingSet bindings, LabelBindingSpec binding,
+        float width, Color color)
+    {
+        if (width <= 0f || color.a <= 0f || label.font.atlasPopulationMode == AtlasPopulationMode.Static)
+            return null;
+        var spec = bindings.systemFonts.fonts.Single(row => row.assetId == binding.nativeFontAssetId);
+        if (spec.matchingPhysicalFaces == null || spec.matchingPhysicalFaces.Length != 1)
+            throw new InvalidOperationException("SYSTEM_FONT_STROKE_FACE_NOT_UNIQUE: " + spec.assetId);
+        if (spec.requiredUnicode == null || spec.requiredUnicode.Length == 0) return null;
+        var uri = new Uri(spec.targetSystemFontFileUrl);
+        if (!uri.IsFile || Sha256(File.ReadAllBytes(uri.LocalPath)) != spec.targetSystemFontFileSha256)
+            throw new InvalidOperationException("SYSTEM_FONT_STROKE_FONT_PIN_MISMATCH: " + spec.assetId);
+        // Include half the full outline range, bold allowance, and antialiasing.
+        int padding = Math.Max(64, Mathf.CeilToInt(2f * width * label.font.faceInfo.pointSize / label.fontSize + 8f));
+        if (padding > 256) throw new InvalidOperationException("SYSTEM_FONT_STROKE_RANGE_EXCESSIVE");
+        var path = Path.ChangeExtension(spec.assetPath, null) + "-stroke-" + padding + ".asset";
+        var saved = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
+        if (saved != null) return saved;
+        var face = spec.matchingPhysicalFaces[0];
+        var font = TMP_FontAsset.CreateFontAsset(uri.LocalPath, face.faceIndex, spec.pointSize, padding,
+            GlyphRenderMode.SDFAA, 2048, 2048);
+        if (font == null || font.faceInfo.familyName != label.font.faceInfo.familyName ||
+            font.faceInfo.styleName != label.font.faceInfo.styleName ||
+            font.faceInfo.pointSize != label.font.faceInfo.pointSize)
+            throw new InvalidOperationException("SYSTEM_FONT_STROKE_FACE_MISMATCH: " + spec.assetId);
+        var required = spec.requiredUnicode ?? Array.Empty<uint>();
+        if (!font.TryAddCharacters(required, out uint[] missing) || (missing != null && missing.Length > 0))
+            throw new InvalidOperationException("SYSTEM_FONT_STROKE_GLYPHS_MISSING: " + spec.assetId);
+        float range = font.material.GetFloat("_GradientScale") - 1f;
+        float originalRange = label.font.material.GetFloat("_GradientScale") - 1f;
+        font.normalStyle = label.font.normalStyle * originalRange / range;
+        font.boldStyle = label.font.boldStyle * originalRange / range;
+        font.material.SetFloat("_WeightNormal", font.normalStyle);
+        font.material.SetFloat("_WeightBold", font.boldStyle);
+        font.fallbackFontAssetTable = new List<TMP_FontAsset>(label.font.fallbackFontAssetTable);
+        font.name = spec.assetId + " Stroke " + padding;
+        font.material.name = font.name + " Material";
+        font.atlasPopulationMode = AtlasPopulationMode.Static;
+        var serializedStrokeFont = new SerializedObject(font);
+        serializedStrokeFont.Update();
+        SetBoolProperty(serializedStrokeFont, "m_ClearDynamicDataOnBuild", false);
+        serializedStrokeFont.ApplyModifiedPropertiesWithoutUndo();
+        AssetDatabase.CreateAsset(font, path);
+        PersistFontSubassets(font);
+        EditorUtility.SetDirty(font);
+        AssetDatabase.SaveAssets();
+        return font;
+    }
+
     public static OutlineReadback ApplySourceOutline(TMP_Text label, BindingSet bindingSet,
         string sourceLabelId, float sourceOutlineWidth, Color sourceOutlineColor)
     {
@@ -428,7 +479,8 @@ public static class UnitySystemFonts
 
         var component = label.GetComponent<NativeStaticTextOutline>();
         if (component == null) component = label.gameObject.AddComponent<NativeStaticTextOutline>();
-        component.Configure(label, sourceOutlineWidth, sourceOutlineColor, sourceLabelId);
+        var expandedStrokeFont = PrepareStrokeFont(label, bindingSet, binding, sourceOutlineWidth, sourceOutlineColor);
+        component.ConfigurePaired(label, sourceOutlineWidth, sourceOutlineColor, sourceLabelId, expandedStrokeFont);
         EditorUtility.SetDirty(component);
         PrefabUtility.RecordPrefabInstancePropertyModifications(component);
         var serializedOutline = new SerializedObject(component);
@@ -447,7 +499,9 @@ public static class UnitySystemFonts
         bool noGlyphsByInactiveState = native != null && native.status == "not_visible_inactive"
             && native.sourceLabelId == sourceLabelId
             && (!label.enabled || !label.gameObject.activeInHierarchy);
-        if ((noGlyphsByEmptyText || noGlyphsByInactiveState)
+        bool noGlyphsByZeroCoverage = native != null && native.status == "not_visible_zero_coverage"
+            && (sourceOutlineWidth == 0f || sourceOutlineColor.a == 0f);
+        if ((noGlyphsByEmptyText || noGlyphsByInactiveState || noGlyphsByZeroCoverage)
             && Mathf.Approximately(native.sourceOutlineWidth, sourceOutlineWidth)
             && native.sourceOutlineColor == sourceOutlineColor)
             return new OutlineReadback {
@@ -466,6 +520,7 @@ public static class UnitySystemFonts
 
         var allowedPaths = new List<string> { binding.nativeFontAssetPath };
         allowedPaths.AddRange(binding.nativeFallbackAssetPaths ?? Array.Empty<string>());
+        if (expandedStrokeFont != null) allowedPaths.Add(AssetDatabase.GetAssetPath(expandedStrokeFont));
         var faces = new List<OutlineFaceReadback>();
         foreach (var row in native.faces)
         {

@@ -55,7 +55,7 @@ public static partial class MonkeyImporter
         public NativeBitmapMissingGlyphs.Readback[] bitmapMissingGlyphFields;
         public MonkeyNumericCode.Result[] numericCodeBindings;
         public MonkeyBehaviorBindings.Result[] behaviorBindings; public StaticControlReadback[] staticControlFields; public StaticAnimationReadback[] staticAnimationFields; public StaticProgressResult[] staticProgressFields; public StaticFieldResult[] staticFieldBindings; public UnityStaticToggle.Readback toggleFields;
-        public string sourceId,path,guid,geometryPhase,nativePrefabType,isolatedPreviewPath,isolatedPreviewSha256,isolatedPreviewError,isolatedPreviewScope; public int nodeCount,generatedTextSubmeshCount,generatedSpineSubmeshCount,missingScripts,layoutSettlePasses;
+        public string sourceId,path,guid,geometryPhase,nativePrefabType,isolatedPreviewPath,isolatedPreviewSha256,isolatedPreviewError,isolatedPreviewScope; public int nodeCount,generatedTextSubmeshCount,generatedSpineSubmeshCount,generatedTextStrokeCount,missingScripts,layoutSettlePasses;
         public bool savedReloaded,referencesVerified; public NodeResult[] nodes,nativeInitialNodes; public string[] referenceFailures;
     }
     [Serializable] public class MotionKey { public float time,value; public string interpolation; }
@@ -816,7 +816,7 @@ public static partial class MonkeyImporter
                 if(spec.transition==3&&spec.staticButtonBinding==null)ConfigureScaleButton(go,button,spec);
                 // No callback stubs: actual source handlers remain in the handoff.
             }
-            else if(spec.type=="cc.LabelOutline" && (spec.enabled||spec.staticPresentationPolicy=="source-evidenced-native-renderer-v1")) {
+            else if(spec.type=="cc.LabelOutline") {
                 var label=go.GetComponent<TMPro.TextMeshProUGUI>();
                 if(label==null) {diagnostics.Add("OUTLINE_LABEL_MISSING: "+spec.sourceId);continue;}
                 if(spec.staticBitmapOutline) {
@@ -828,7 +828,7 @@ public static partial class MonkeyImporter
                 if(!spec.enabled) {
                     var retainedOutline=go.GetComponent<NativeStaticTextOutline>()??go.AddComponent<NativeStaticTextOutline>();
                     retainedOutline.enabled=false;
-                    retainedOutline.Configure(label,spec.width,new Color(spec.outlineColor[0]/255f,spec.outlineColor[1]/255f,spec.outlineColor[2]/255f,spec.outlineColor[3]/255f));
+                    retainedOutline.ConfigurePaired(label,spec.width,new Color(spec.outlineColor[0]/255f,spec.outlineColor[1]/255f,spec.outlineColor[2]/255f,spec.outlineColor[3]/255f),spec.sourceId);
                     continue;
                 }
                 if(plan.bitmapFonts.Any(f=>fonts.ContainsKey(f.id) && fonts[f.id]==label.font))continue;
@@ -841,27 +841,12 @@ public static partial class MonkeyImporter
                         if(string.IsNullOrEmpty(sourceLabel.font)||!fonts.ContainsKey(sourceLabel.font)||label.font!=fonts[sourceLabel.font])
                             throw new InvalidOperationException("OUTLINE_EXPLICIT_FONT_IDENTITY_MISMATCH: "+spec.sourceId);
                         var outline=go.GetComponent<NativeStaticTextOutline>()??go.AddComponent<NativeStaticTextOutline>();
-                        outline.Configure(label,spec.width,outlineColor);
+                        outline.ConfigurePaired(label,spec.width,outlineColor,sourceLabel.sourceId);
                     }
-                    label.margin=new Vector4(spec.width,spec.width,spec.width,spec.width);label.UpdateMeshPadding();continue;
+                    continue;
                 }
-                var material=new Material(label.fontSharedMaterial);
-                var outlineFont=label.font;
-                if(!outlineFont.HasCharacters(label.text)) {
-                    var fallback=outlineFont.fallbackFontAssetTable.FirstOrDefault(f=>f!=null&&f.HasCharacters(label.text));
-                    if(fallback!=null)outlineFont=fallback;
-                }
-                var gradient=outlineFont.material.GetFloat("_GradientScale");
-                var width=spec.width*outlineFont.faceInfo.pointSize/Mathf.Max(label.fontSize,1)/Mathf.Max(gradient-1,1);
-                material.SetFloat("_OutlineWidth",Mathf.Clamp01(width));
-                material.EnableKeyword("OUTLINE_ON");
-                material.EnableKeyword("RATIOS_OFF");
-                material.SetFloat("_FaceDilate",Mathf.Clamp01(width));
-                material.SetColor("_OutlineColor",new Color(spec.outlineColor[0]/255f,spec.outlineColor[1]/255f,spec.outlineColor[2]/255f,spec.outlineColor[3]/255f));
-                var path=string.IsNullOrEmpty(spec.materialPath)?Paths.materialsRoot+"/"+spec.nativeId+".mat":spec.materialPath;AssetDatabase.CreateAsset(material,path);
-                label.fontSharedMaterial=material;
-                label.margin=new Vector4(spec.width,spec.width,spec.width,spec.width);
-                label.UpdateMeshPadding();
+                var nativeOutline=go.GetComponent<NativeStaticTextOutline>()??go.AddComponent<NativeStaticTextOutline>();
+                nativeOutline.ConfigurePaired(label,spec.width,new Color(spec.outlineColor[0]/255f,spec.outlineColor[1]/255f,spec.outlineColor[2]/255f,spec.outlineColor[3]/255f),spec.sourceId);
             }
         }
         foreach(var spec in plan.components.Where(c=>c.convertible&&c.type=="cc.Button"&&c.staticButtonBinding!=null&&c.staticButtonBinding.renderReady)) {
@@ -975,13 +960,14 @@ public static partial class MonkeyImporter
                 int generatedSortNodeCount=transforms.Count(IsWithinGeneratedSortProxy);
                 int generatedTextSubmeshCount=transforms.Count(t=>!IsWithinGeneratedSortProxy(t)&&IsGeneratedTextSubmesh(t));
                 int generatedSpineSubmeshCount=transforms.Count(t=>!IsWithinGeneratedSortProxy(t)&&IsGeneratedSpineSubmesh(t));
-                int reopenedSourceNodeCount=transforms.Length-generatedTextSubmeshCount-generatedSpineSubmeshCount-generatedSortNodeCount;
+                int generatedTextStrokeCount=transforms.Count(t=>!IsWithinGeneratedSortProxy(t)&&NativeStaticTextOutline.IsGeneratedStroke(t));
+                int reopenedSourceNodeCount=transforms.Length-generatedTextSubmeshCount-generatedSpineSubmeshCount-generatedSortNodeCount-generatedTextStrokeCount;
                 if(reopenedSourceNodeCount!=spec.nodeCount || missing!=0) {
                     var treeDiagnostic=DescribeSourcePrefabReopenMismatch(spec,nodeSpecs,contents.transform,transforms);
                     throw new InvalidOperationException("Source prefab reopen mismatch: "+spec.sourceId+
                         ";transforms="+transforms.Length+";expectedSourceNodes="+spec.nodeCount+
                         ";observedSourceNodes="+reopenedSourceNodeCount+";generatedTextSubmesh="+generatedTextSubmeshCount+
-                        ";generatedSpineSubmesh="+generatedSpineSubmeshCount+";generatedSort="+generatedSortNodeCount+
+                        ";generatedSpineSubmesh="+generatedSpineSubmeshCount+";generatedSort="+generatedSortNodeCount+";generatedTextStroke="+generatedTextStrokeCount+
                         ";missingScripts="+missing+";unclassifiedOrMissing="+treeDiagnostic);
                 }
                 var mapped=SavedNodeMap(plan.nodes,contents,spec,nodeSpecs);
@@ -1062,7 +1048,7 @@ public static partial class MonkeyImporter
                 var sourceComponentRows=ReadSourceComponentCoverage(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),new HashSet<string>(referenceFailures));
                 sourcePrefabResults.Add(new SourcePrefabResult {components=sourceComponentRows,generatedSortNodeCount=generatedSortNodeCount,staticSortFields=plan.staticSortQueue==null||plan.staticSortQueue.Length==0?null:ReadStaticSortForPrefab(plan,spec,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),bitmapMissingGlyphFields=ReadBitmapMissingGlyphs(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),fonts),staticLayoutProbe=RunStaticLayoutPrefabProbe(plan,spec,contents),staticMaskFields=ReadStaticMasks(plan,mapped.ToDictionary(x=>x.Key,x=>x.Value.gameObject),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),spriteMap),staticLayoutFields=ReadStaticLayoutCompletion(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),toggleFields=ReadStaticToggles(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),prefabInstances=ReadNativeInstances(plan,mapped,spec.sourceId),numericCodeBindings=numericBindings,behaviorBindings=behaviorBindings,staticControlFields=plan.staticControlBindings==null?null:ReadStaticControls(plan.staticControlBindings.Where(x=>persistentMap.ContainsKey(x.node)).ToArray(),persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticAnimationFields=!(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)?null:ReadSavedStaticAnimationBindings(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins),staticProgressFields=ReadStaticProgress(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),staticFieldBindings=ReadStaticFields(plan,persistentMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject)),sourceId=spec.sourceId,path=spec.path,
                     nativePrefabType=nativePrefabType.ToString(),nativeInitialNodes=initialPrefabNodes,
-                    guid=AssetDatabase.AssetPathToGUID(spec.path),nodeCount=transforms.Length-generatedTextSubmeshCount-generatedSpineSubmeshCount-generatedSortNodeCount,generatedTextSubmeshCount=generatedTextSubmeshCount,generatedSpineSubmeshCount=generatedSpineSubmeshCount,missingScripts=missing,
+                    guid=AssetDatabase.AssetPathToGUID(spec.path),nodeCount=reopenedSourceNodeCount,generatedTextStrokeCount=generatedTextStrokeCount,generatedTextSubmeshCount=generatedTextSubmeshCount,generatedSpineSubmeshCount=generatedSpineSubmeshCount,missingScripts=missing,
                     savedReloaded=true,geometryPhase="native-layout-settled-v1",layoutSettlePasses=passes,
                     nodes=spec.nodes.Select(id=>DescribeNode(nodeSpecs[id],mapped[id],sourceComponentRows,persistentMap[id].gameObject,true)).ToArray(),
                     referencesVerified=referenceFailures.Count==0,referenceFailures=referenceFailures.ToArray()});
@@ -1097,7 +1083,7 @@ public static partial class MonkeyImporter
         AssignStaticFields(plan,nodeMap);
         var view = canvas.AddComponent<ContentPreviewView>();
         view.Images = canvas.GetComponentsInChildren<UnityEngine.UI.Image>(true);
-        view.Labels = canvas.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true);
+        view.Labels = canvas.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true).Where(label=>!NativeStaticTextOutline.IsGeneratedStroke(label.transform)).ToArray();
         view.Buttons = canvas.GetComponentsInChildren<UnityEngine.UI.Button>(true);
         SettleNativeLayout(canvas);
         var initialSceneNodes=plan.nodes.Select(n=>DescribeNode(n,(RectTransform)nodeMap[n.sourceId].transform)).ToArray();
@@ -1401,7 +1387,7 @@ public static partial class MonkeyImporter
         bool generated=false;IdentifyOptionalGeneratedSpineChild(child,ref generated);return generated;
     }
     static bool IsWithinGeneratedSortProxy(Transform child) { for(var current=child;current!=null;current=current.parent)if(Monkey.StaticSortQueueProxy.UnityStaticSortQueueProxy.IsGeneratedSortProxyRoot(current))return true;return false; }
-    public static bool IsGeneratedNativePresentationChild(Transform child) => IsGeneratedTextSubmesh(child)||IsGeneratedSpineSubmesh(child)||Monkey.StaticSortQueueProxy.UnityStaticSortQueueProxy.IsGeneratedSortProxyRoot(child);
+    public static bool IsGeneratedNativePresentationChild(Transform child) => NativeStaticTextOutline.IsGeneratedStroke(child)||IsGeneratedTextSubmesh(child)||IsGeneratedSpineSubmesh(child)||Monkey.StaticSortQueueProxy.UnityStaticSortQueueProxy.IsGeneratedSortProxyRoot(child);
     static string SourcePrefabTransformPath(Transform node,Transform root) {
         if(node==null||root==null)return "<null>";
         var names=new Stack<string>();var current=node;
@@ -1427,7 +1413,7 @@ public static partial class MonkeyImporter
         }
         var unknown=new List<string>();
         foreach(var transform in transforms??Array.Empty<Transform>()) {
-            if(transform==null||IsWithinGeneratedSortProxy(transform)||IsGeneratedTextSubmesh(transform)||IsGeneratedSpineSubmesh(transform))continue;
+            if(transform==null||IsWithinGeneratedSortProxy(transform)||IsGeneratedNativePresentationChild(transform))continue;
             var path=SourcePrefabTransformPath(transform,sourceRoot);
             if(expectedPathCounts.TryGetValue(path,out var remaining)&&remaining>0) {expectedPathCounts[path]=remaining-1;continue;}
             var kinds=transform.GetComponents<Component>().Select(component=>component==null?"<missing-script>":component.GetType().FullName).ToArray();
@@ -1455,8 +1441,9 @@ public static partial class MonkeyImporter
         else {
             var roots=nodes.Where(n=>string.IsNullOrEmpty(n.parent) || !byId.ContainsKey(n.parent)).ToArray();
             var design=instance.transform.Find("DesignRoot");
-            if(design==null || design.childCount!=roots.Length)throw new InvalidOperationException("Saved source root boundary differs");
-            for(int i=roots.Length-1;i>=0;i--)pending.Push(new KeyValuePair<NodeSpec,Transform>(roots[i],design.GetChild(i)));
+            var sourceRoots=design==null?Array.Empty<Transform>():SourceChildren(design);
+            if(design==null || sourceRoots.Length!=roots.Length)throw new InvalidOperationException("Saved source root boundary differs: expected="+roots.Length+" observed="+sourceRoots.Length+" children="+(design==null?"<missing>":String.Join("|",Enumerable.Range(0,design.childCount).Select(i=>design.GetChild(i).name+":"+design.GetChild(i).gameObject.hideFlags+":"+IsGeneratedNativePresentationChild(design.GetChild(i))))));
+            for(int i=roots.Length-1;i>=0;i--)pending.Push(new KeyValuePair<NodeSpec,Transform>(roots[i],sourceRoots[i]));
         }
         while(pending.Count>0) {
             var pair=pending.Pop();var source=pair.Key;var target=pair.Value as RectTransform;

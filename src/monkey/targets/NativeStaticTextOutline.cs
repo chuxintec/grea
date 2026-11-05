@@ -37,6 +37,140 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
     }
 
     [SerializeField] TMP_Text target;
+    [SerializeField] bool pairedRendering;
+    [SerializeField] TMP_FontAsset strokeFont;
+    [NonSerialized] NativeStaticTextOutline strokeDriver;
+    [SerializeField, HideInInspector] bool isStrokePass;
+    [SerializeField, HideInInspector] NativeStaticTextOutline faceDriver;
+    public bool UsesPairedRendering => pairedRendering;
+    public bool IsGeneratedStrokePass => isStrokePass;
+    public TMP_Text StrokeTarget => strokeDriver == null ? null : strokeDriver.target;
+
+    public void ConfigurePaired(TMP_Text face, float width, Color color, string sourceLabelId, TMP_FontAsset expandedStrokeFont = null)
+    {
+        if (!pairedRendering) { UnbindTarget(); ReleaseVariants(); }
+        pairedRendering = true;
+        strokeFont = expandedStrokeFont;
+        Configure(face, width, color, sourceLabelId);
+    }
+
+    // Only a renderer owned by this exact live pair is derived presentation.
+    // Names alone never exempt arbitrary source nodes from hierarchy checks.
+    public static bool IsGeneratedStroke(Transform candidate)
+    {
+        var driver = candidate == null ? null : candidate.GetComponent<NativeStaticTextOutline>();
+        return driver != null && driver.isStrokePass && driver.faceDriver != null &&
+            driver.faceDriver.pairedRendering && driver.faceDriver.target != null &&
+            candidate.parent == driver.faceDriver.target.transform.parent &&
+            driver.target != null && driver.target.transform == candidate &&
+            (candidate.gameObject.hideFlags & HideFlags.DontSave) == HideFlags.DontSave;
+    }
+
+    void RemoveStroke()
+    {
+        if (strokeDriver == null) return;
+        var layer = strokeDriver.gameObject;
+        strokeDriver = null;
+        layer.SetActive(false);
+        if (Application.isPlaying) Destroy(layer); else DestroyImmediate(layer);
+    }
+
+    bool syncingPair;
+    Readback RefreshPair(bool refreshFace = true)
+    {
+        if (syncingPair) return lastReadback;
+        syncingPair = true;
+        try { return RefreshPairCore(refreshFace); }
+        finally { syncingPair = false; }
+    }
+
+    Readback RefreshPairCore(bool refreshFace)
+    {
+        var face = target as TextMeshProUGUI;
+        if (face == null) return Failure("NATIVE_TEXT_OUTLINE_FACE_MISSING");
+        if (!isActiveAndEnabled || !face.isActiveAndEnabled || face.transform.parent == null)
+        {
+            RemoveStroke();
+            return NotVisible("not_visible_inactive", "Outline target is inactive or unmounted.");
+        }
+        if (string.IsNullOrEmpty(face.text))
+        {
+            RemoveStroke();
+            return NotVisible("not_visible_empty_text", "Empty source text has no stroke geometry.");
+        }
+        if (sourceOutlineWidth == 0 || sourceOutlineColor.a == 0)
+        {
+            RemoveStroke();
+            return NotVisible("not_visible_zero_coverage", "Zero width or transparent source stroke.");
+        }
+        var parent = face.rectTransform.parent;
+        if (strokeDriver == null)
+            strokeDriver = Enumerable.Range(0, parent.childCount).Select(parent.GetChild)
+                .Select(child => child.GetComponent<NativeStaticTextOutline>())
+                .FirstOrDefault(driver => driver != null && driver.isStrokePass && driver.faceDriver == this);
+        if (strokeDriver == null)
+        {
+            var layer = new GameObject("Native TMP Stroke", typeof(RectTransform));
+            layer.hideFlags = HideFlags.DontSave;
+            layer.SetActive(false);
+            layer.transform.SetParent(parent, false);
+            layer.AddComponent<UnityEngine.UI.LayoutElement>().ignoreLayout = true;
+            var renderer = layer.AddComponent<TextMeshProUGUI>();
+            renderer.raycastTarget = false;
+            strokeDriver = layer.AddComponent<NativeStaticTextOutline>();
+            strokeDriver.isStrokePass = true;
+            strokeDriver.faceDriver = this;
+            strokeDriver.target = renderer;
+            layer.SetActive(true);
+        }
+        var stroke = (TextMeshProUGUI)strokeDriver.target;
+        stroke.enabled = true;
+        if (stroke.transform.parent != parent) stroke.transform.SetParent(parent, false);
+        int faceIndex = face.transform.GetSiblingIndex();
+        int current = stroke.transform.GetSiblingIndex();
+        if (current != faceIndex - 1) stroke.transform.SetSiblingIndex(current < faceIndex ? faceIndex - 1 : faceIndex);
+        stroke.gameObject.layer = face.gameObject.layer;
+        // A sibling shares ancestor opacity, but needs the face node's own
+        // CanvasGroup opacity and ignore-parent boundary explicitly mirrored.
+        var opacity = stroke.GetComponent<CanvasGroup>();
+        if (opacity == null) opacity = stroke.gameObject.AddComponent<CanvasGroup>();
+        opacity.alpha = 1f; opacity.ignoreParentGroups = false;
+        opacity.interactable = false; opacity.blocksRaycasts = false;
+        foreach (var group in face.GetComponents<CanvasGroup>())
+            if (group.enabled) { opacity.alpha *= group.alpha; opacity.ignoreParentGroups |= group.ignoreParentGroups; }
+        var from = face.rectTransform; var to = stroke.rectTransform;
+        to.anchorMin = from.anchorMin; to.anchorMax = from.anchorMax; to.pivot = from.pivot;
+        to.sizeDelta = from.sizeDelta; to.anchoredPosition3D = from.anchoredPosition3D;
+        to.localRotation = from.localRotation; to.localScale = from.localScale;
+        // Force the original face first so auto sizing and fallback selection
+        // are sampled at the same layout state, without changing its material.
+        if (refreshFace) face.ForceMeshUpdate(true, true);
+        stroke.font = strokeFont != null ? strokeFont : face.font; stroke.fontSize = face.fontSize;
+        stroke.fontStyle = face.fontStyle; stroke.text = face.text;
+        stroke.textPreprocessor = face.textPreprocessor;
+        stroke.richText = face.richText; stroke.overrideColorTags = true;
+        stroke.enableVertexGradient = false; stroke.color = new Color(sourceOutlineColor.r, sourceOutlineColor.g,
+            sourceOutlineColor.b, sourceOutlineColor.a * face.color.a);
+        stroke.alignment = face.alignment; stroke.margin = face.margin; stroke.overflowMode = face.overflowMode;
+        stroke.textWrappingMode = face.textWrappingMode; stroke.maskable = face.maskable;
+        stroke.enableAutoSizing = false; stroke.fontSizeMin = face.fontSizeMin; stroke.fontSizeMax = face.fontSizeMax;
+        stroke.lineSpacing = face.lineSpacing; stroke.characterSpacing = face.characterSpacing;
+        stroke.wordSpacing = face.wordSpacing; stroke.paragraphSpacing = face.paragraphSpacing;
+        // Stroke opacity lives in vertex alpha once. The material outline
+        // inherits that alpha in the stock shader.
+        strokeDriver.sourceOutlineColor = new Color(sourceOutlineColor.r,sourceOutlineColor.g,sourceOutlineColor.b,1);
+        strokeDriver.sourceOutlineWidth = sourceOutlineWidth; strokeDriver.diagnosticSourceLabelId = diagnosticSourceLabelId;
+        var result = strokeDriver.RefreshNow();
+        // The layer can be created during its owner's Canvas rebuild. TMP's
+        // ForceMeshUpdate generates geometry but does not submit the primary
+        // Canvas material in that case; explicitly complete its native rebuild.
+        stroke.SetMaterialDirty();
+        stroke.Rebuild(UnityEngine.UI.CanvasUpdate.PreRender);
+        stroke.raycastTarget = false;
+        foreach (var sub in stroke.GetComponentsInChildren<TMP_SubMeshUI>(true)) sub.raycastTarget = false;
+        result.sourceOutlineColor = sourceOutlineColor;
+        return result;
+    }
     [SerializeField, Min(0f)] float sourceOutlineWidth;
     [SerializeField] Color sourceOutlineColor = Color.black;
     [SerializeField] List<PersistentMaterialVariant> persistentVariants = new List<PersistentMaterialVariant>();
@@ -181,9 +315,9 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
         var pointSize = font.faceInfo.pointSize;
         if (!Finite(gradient) || gradient <= 1f || !Finite(pointSize) || pointSize <= 0f || !Finite(labelFontSize) || labelFontSize <= 0f)
             return false;
-        var width = sourceOutlineWidth * pointSize / labelFontSize / (gradient - 1f);
-        var faceDilate = font.material.HasProperty("_FaceDilate") ? font.material.GetFloat("_FaceDilate") : 0f;
-        return Finite(width) && Mathf.Approximately(material.GetFloat("_GradientScale"), gradient) &&
+        var width = OutlineWidth(font, material, sourceOutlineWidth, labelFontSize);
+        var faceDilate = OutlineFaceDilate(font, material, width);
+        return OutlineVariantMatches(material, width) && Finite(width) && Mathf.Approximately(material.GetFloat("_GradientScale"), gradient) &&
             Mathf.Approximately(material.GetFloat("_OutlineWidth"), width) && material.GetColor("_OutlineColor") == sourceOutlineColor &&
             (!material.HasProperty("_FaceDilate") || Mathf.Approximately(material.GetFloat("_FaceDilate"), faceDilate));
     }
@@ -220,12 +354,19 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
     {
         // Do not force TMP mesh generation from a Unity lifecycle callback:
         // TMP may create TMP_SubMeshUI children during deserialization/validation.
+        if (pairedRendering && target != null && target.transform.parent != null)
+            strokeDriver = Enumerable.Range(0, target.transform.parent.childCount).Select(target.transform.parent.GetChild)
+                .Select(child => child.GetComponent<NativeStaticTextOutline>())
+                .FirstOrDefault(driver => driver != null && driver.isStrokePass && driver.faceDriver == this);
         BindTarget();
         ScheduleSafeRefresh();
     }
 
     void OnDisable()
     {
+        // Unity forbids destroying siblings during parent activation/teardown.
+        // Hide immediately and retain the owned layer for a later safe refresh.
+        if (strokeDriver != null && strokeDriver.target != null) strokeDriver.target.enabled = false;
         CancelSafeRefresh();
         UnbindTarget();
         ReleaseVariants();
@@ -233,6 +374,15 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
 
     void OnDestroy()
     {
+        if (strokeDriver != null)
+        {
+            var layer = strokeDriver.gameObject;
+            strokeDriver = null;
+            if (Application.isPlaying) Destroy(layer);
+#if UNITY_EDITOR
+            else UnityEditor.EditorApplication.delayCall += () => { if (layer != null) DestroyImmediate(layer); };
+#endif
+        }
         CancelSafeRefresh();
         UnbindTarget();
         ReleaseVariants();
@@ -258,6 +408,11 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
 
     void LateUpdate()
     {
+        if (pairedRendering && isActiveAndEnabled && target != null)
+        {
+            lastReadback = RefreshPair();
+            return;
+        }
         if (!refreshPending) return;
         refreshPending = false;
         if (!isActiveAndEnabled || target == null) return;
@@ -283,12 +438,14 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
 
     void HandlePreRenderText(TMP_TextInfo textInfo)
     {
+        if (pairedRendering) { lastReadback = RefreshPair(false); return; }
         Apply(textInfo);
     }
 
     public Readback RefreshNow()
     {
         refreshPending = false;
+        if (pairedRendering) return lastReadback = RefreshPair();
         if (target == null)
         {
             lastReadback = Failure("NATIVE_STATIC_TEXT_OUTLINE_TARGET_MISSING");
@@ -526,6 +683,44 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
         return material;
     }
 
+    static bool UsesGeneratedDistanceAtlas(TMP_FontAsset font, Material material)
+    {
+        return material.shader.name == "TextMeshPro/Mobile/Distance Field" &&
+            font.atlasPopulationMode == AtlasPopulationMode.Static && font.atlasTexture != null &&
+            font.atlasTexture.name.StartsWith("coretext-static-sdf-", StringComparison.Ordinal);
+    }
+
+    float OutlineWidth(TMP_FontAsset font, Material material, float sourceWidth, float labelSize)
+    {
+        float pointSize = font.faceInfo.pointSize, gradient = font.material.GetFloat("_GradientScale");
+        float sourceOutlineWidth = sourceWidth, labelFontSize = labelSize;
+        float width = sourceOutlineWidth * pointSize / labelFontSize / (gradient - 1f);
+        if (!isStrokePass) return width;
+        // CoreText stores the full signed range in an 8-bit atlas. TMP SDFAA
+        // stores half that distance range for the same GradientScale. The two
+        // native encodings therefore need different radius-to-threshold maps.
+        return UsesGeneratedDistanceAtlas(font, material) ? width * (254f / 255f) : width * .5f;
+    }
+
+    float OutlineFaceDilate(TMP_FontAsset font, Material material, float width)
+    {
+        var baseDilate = font.material.HasProperty("_FaceDilate") ? font.material.GetFloat("_FaceDilate") : 0f;
+        // Cocos strokes first, then fills the original glyph. TMP Mobile's
+        // inner threshold adds half the outline. Dilating by the same width
+        // cancels that offset and keeps the filled glyph's original edge.
+        if (isStrokePass)
+            return baseDilate * font.material.GetFloat("_ScaleRatioA") + width;
+        return baseDilate;
+    }
+
+    // Mobile SDF draws its outline only in this shader variant. Full SDF
+    // shaders without the keyword compute the outline unconditionally.
+    static bool OutlineVariantMatches(Material material, float width)
+    {
+        var keyword = material.shader.keywordSpace.FindKeyword("OUTLINE_ON");
+        return !keyword.isValid || material.IsKeywordEnabled(keyword) == (width > 0f);
+    }
+
     bool ConfigureMaterial(Material material, TMP_FontAsset font, float labelFontSize)
     {
         if (font == null || font.material == null || material == null
@@ -536,12 +731,24 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
         float pointSize = font.faceInfo.pointSize;
         if (!Finite(gradient) || gradient <= 1f || !Finite(pointSize) || pointSize <= 0f)
             throw new InvalidOperationException("NATIVE_STATIC_TEXT_OUTLINE_FONT_METRICS_INVALID");
-        float width = sourceOutlineWidth * pointSize / labelFontSize / (gradient - 1f);
-        float faceDilate = font.material.HasProperty("_FaceDilate") ? font.material.GetFloat("_FaceDilate") : 0f;
+        float width = OutlineWidth(font, material, sourceOutlineWidth, labelFontSize);
+        float faceDilate = OutlineFaceDilate(font, material, width);
         bool changed = !Mathf.Approximately(material.GetFloat("_OutlineWidth"), width)
             || !Mathf.Approximately(material.GetFloat("_GradientScale"), gradient)
             || material.GetColor("_OutlineColor") != sourceOutlineColor
             || (material.HasProperty("_FaceDilate") && !Mathf.Approximately(material.GetFloat("_FaceDilate"), faceDilate));
+        if (isStrokePass)
+        {
+            float ratio = font.material.GetFloat("_ScaleRatioA");
+            material.EnableKeyword(ShaderUtilities.Keyword_Ratios);
+            material.SetFloat("_WeightNormal", font.material.GetFloat("_WeightNormal") * ratio);
+            material.SetFloat("_WeightBold", font.material.GetFloat("_WeightBold") * ratio);
+            ShaderUtilities.UpdateShaderRatios(material);
+        }
+        if (!OutlineVariantMatches(material, width)) {
+            material.SetKeyword(material.shader.keywordSpace.FindKeyword("OUTLINE_ON"), width > 0f);
+            changed = true;
+        }
         if (!Mathf.Approximately(material.GetFloat("_OutlineWidth"), width)) material.SetFloat("_OutlineWidth", width);
         if (material.GetColor("_OutlineColor") != sourceOutlineColor) material.SetColor("_OutlineColor", sourceOutlineColor);
         if (material.HasProperty("_FaceDilate") && !Mathf.Approximately(material.GetFloat("_FaceDilate"), faceDilate))
@@ -561,8 +768,8 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
     {
         float gradient = font.material.GetFloat("_GradientScale");
         float pointSize = font.faceInfo.pointSize;
-        float faceDilate = font.material.HasProperty("_FaceDilate") ? font.material.GetFloat("_FaceDilate") : 0f;
-        float width = sourceOutlineWidth * pointSize / target.fontSize / (gradient - 1f);
+        float width = OutlineWidth(font, material, sourceOutlineWidth, target.fontSize);
+        float faceDilate = OutlineFaceDilate(font, material, width);
         return new FaceReadback {
             fontAsset = font,
             fontName = font.name,
@@ -574,7 +781,7 @@ public sealed class NativeStaticTextOutline : MonoBehaviour
             sourceOutlineWidth = sourceOutlineWidth,
             normalizedOutlineWidth = width,
             outlineColor = sourceOutlineColor,
-            materialValuesVerified = Mathf.Approximately(material.GetFloat("_GradientScale"), gradient)
+            materialValuesVerified = OutlineVariantMatches(material, width) && Mathf.Approximately(material.GetFloat("_GradientScale"), gradient)
                 && Mathf.Approximately(material.GetFloat("_OutlineWidth"), width)
                 && material.GetColor("_OutlineColor") == sourceOutlineColor
                 && (!material.HasProperty("_FaceDilate")

@@ -25,7 +25,7 @@ class UnitySystemFontOutlineTests(unittest.TestCase):
         self.assertIn("sourceLabelId", self.method)
         self.assertIn("binding.nativeFallbackAssetPaths", self.method)
         self.assertIn("AddComponent<NativeStaticTextOutline>", self.method)
-        self.assertIn("component.Configure(label, sourceOutlineWidth, sourceOutlineColor, sourceLabelId)", self.method)
+        self.assertIn("component.ConfigurePaired(label, sourceOutlineWidth, sourceOutlineColor, sourceLabelId, expandedStrokeFont)", self.method)
         self.assertIn('serializedOutline.FindProperty("sourceOutlineWidth")', self.method)
         self.assertIn('serializedOutline.FindProperty("sourceOutlineColor")', self.method)
         self.assertIn('native.status == "not_visible_empty_text"', self.method)
@@ -63,7 +63,7 @@ class UnitySystemFontOutlineTests(unittest.TestCase):
         self.assertIn('NotVisible("not_visible_empty_text"', self.runtime)
         self.assertIn("target.ForceMeshUpdate(true, true)", self.runtime)
         self.assertIn('NotVisible("not_visible_empty_text"', self.runtime)
-        self.assertNotIn("UnityEditor", self.runtime)
+        self.assertIn("#if UNITY_EDITOR", self.runtime)
 
     def test_unity_validation_callbacks_defer_mesh_generation_and_cancel_pending_work(self):
         on_validate = self.runtime.split("void OnValidate()", 1)[1].split("void ScheduleSafeRefresh()", 1)[0]

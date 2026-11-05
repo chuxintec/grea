@@ -478,3 +478,23 @@ monkey convert --source /absolute/bundle/config.json --all-assets --target unity
 ```
 
 Unity 工程位于 `new-output/project`。包转换 `--target unity6` 也接受同一选项。字体解析与图集生成回执保存在此次转换的 SystemFonts 目录中，记录实际字体、来源文字和生成参数。
+
+### Unity Label outline conversion
+
+The normal Cocos-to-Unity conversion maps non-bitmap `cc.LabelOutline` to
+`NativeStaticTextOutline` paired rendering. The original TMP label retains its
+font, fill material, style, margins and input/layout identity. A nonpersistent,
+owned native TMP sibling draws the source stroke before the original fill; the
+serialized driver recreates it after reopening. Disabled, zero-width, transparent
+and empty strokes do not draw. Bitmap fonts retain their original baked outline.
+
+For source-bound system fonts use `--unity-system-fonts coretext` on the normal
+`monkey convert` command. When the DynamicOS primary atlas lacks stroke padding,
+the importer creates a separate static stroke atlas from the exact hash-verified
+physical face. It preserves the original fill atlas and copies no font file.
+TMP SDFAA and CoreText distance encodings use separate radius conversions.
+The operating-system/source-font equivalence limitation remains unchanged.
+See [native outline regression](../tests/native_text_outline/README.md) for the
+reproducible sixteen-case pixel and mask/lifecycle checks. This validates static
+presentation; business behavior, original-device typography and product adoption
+require their own evidence.
