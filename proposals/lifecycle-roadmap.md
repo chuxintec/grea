@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T18:30:20.158527+08:00",
+  "updatedAt": "2026-11-05T18:55:40.119354+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -709,15 +709,15 @@
         ".private/development/foodstreet-monkey-parallel-20261105/grea-outline-merge-74.json",
         ".private/development/foodstreet-monkey-parallel-20261105/grea-main-adopt-outline-75.json"
       ],
-      "nextAction": "用户明确要求通用转换工具交付并合入唯一 v0.8.0 主线。视觉主开发实现与回归，monkey主开发集成。核正式线源码、实际转换命令、同字形开关描边字重一致及3设计像素仅外扩，保留保存重开结果。15号失败且撤审。",
+      "nextAction": "接任者从0f5711f和现有描边WIP继续实际转换与16源回归，交固定提交、公开convert及冷开结果。15号撤审。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42",
       "resume": {
         "eventId": "foodstreet-monkey-parallel-20261105",
         "humanDirection": "用户明确要求通用转换工具交付并合入唯一 v0.8.0 主线。视觉主开发实现与回归，monkey主开发集成。核正式线源码、实际转换命令、同字形开关描边字重一致及3设计像素仅外扩，保留保存重开结果。15号失败且撤审。",
-        "latestRuling": "直接用户指令；74视觉修复、75主线集成已派。",
+        "latestRuling": "用户在01a1ab54-d75a-7802-b6db-779dced6b3d2直接指定该会话接替monkey。原视觉与主开发已分别确认停写、移交。",
         "verified": "原生TMP最小例建立了参数换算基线；真实父页试验同时改了回退材质轮廓与字心参数。15号结果按用户裁定失败。",
-        "responsibility": "monkey-visual主开发单写，父会话01a1aa15-8661-7c92-8458-4779e19afc42；原生子Agent /root/outline_regression，01a1ab34-0a64-7cb1-8d9d-3bf6a089b331，Luna high已核。子Agent只做离线缺脚本/错材质回归。",
-        "nextAction": "等待两位owner固定交付后，在主线版本独立复跑通用转换和数值/字形验例；15不送审。",
+        "responsibility": "接任会话01a1ab54-d75a-7802-b6db-779dced6b3d2单写Tools/monkey的v0.8.0.dev44；原两会话结束本轮写入。GREA按结果协调，无需重派。",
+        "nextAction": "接任者从0f5711f和现有描边WIP继续实际转换与16源回归，交固定提交、公开convert及冷开结果。15号撤审。",
         "evidence": [
           ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/stock-tmp/result/measurements.json",
           ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/reference-to-sample.json",
