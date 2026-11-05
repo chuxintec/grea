@@ -25,7 +25,7 @@ public static partial class MonkeyImporter
     }
     static UnityEngine.Object StaticReference(Plan plan, Dictionary<string,GameObject> nodes,string id) {
         if(nodes.TryGetValue(id,out var node))return node;
-        var c=plan.components.FirstOrDefault(x=>x.sourceId==id);
+        var c=plan.FindComponent(id);
         if(c!=null&&nodes.TryGetValue(c.node,out node)) {
             if(c.staticFieldBinding!=null&&!string.IsNullOrEmpty(c.staticFieldBinding.typeName))return StaticComponent(c,node);
             if(c.type=="cc.Graphics"&&plan.staticControlBindings!=null)return node.GetComponent<NativeStaticGraphics>();
@@ -81,8 +81,8 @@ public static partial class MonkeyImporter
         var prefab=(plan.sourcePrefabs??Array.Empty<SourcePrefabSpec>()).FirstOrDefault(x=>x.sourceId==id);
         return prefab==null?null:AssetDatabase.LoadAssetAtPath<GameObject>(prefab.path);
     }
-    static void AssignStaticFields(Plan plan, Dictionary<string,GameObject> nodes) {
-        foreach(var c in plan.components.Where(x=>x.staticFieldBinding!=null&&!string.IsNullOrEmpty(x.staticFieldBinding.typeName)&&nodes.ContainsKey(x.node))) {
+    static void AssignStaticFields(Plan plan, Dictionary<string,GameObject> nodes, ComponentSpec[] owners=null) {
+        foreach(var c in (owners??plan.components).Where(x=>x.staticFieldBinding!=null&&!string.IsNullOrEmpty(x.staticFieldBinding.typeName)&&nodes.ContainsKey(x.node))) {
             var component=StaticComponent(c,nodes[c.node]);
             if(component!=null)UnityStaticFields.Assign(c.staticFieldBinding,component,id=>StaticReference(plan,nodes,id));
         }

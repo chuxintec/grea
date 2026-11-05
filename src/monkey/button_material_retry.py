@@ -18,6 +18,25 @@ SIDECAR = 'Analysis/Mappings/button-material-projection.json'
 PREVIOUS_IMPORTER = 'f634083f43cb061f6ca045b8be2dc5cfceb9287ee432f6d2282dee443aff97fc'
 
 
+# The importer and its integration classes share the scoped assignment API.
+SAVE_HELPERS = {
+    'UnityStaticMaskIntegration.cs': '08947b3847c000fde70e29abc6ca0a310d4d0f58429bb73a0319887606ad8d97',
+    'UnityStaticFieldIntegration.cs': 'f4fa6eebe3a99bfb3c2bc72ca9c6a415df9eaddfef199d6f30532cc703d7d7ce',
+    'UnityStaticAnimationIntegration.cs': 'b15cc2cacb3d2ac7282dedeabca0dd8ddec77b8afa5c39c7d0e47c8e91e863c3',
+}
+
+
+def refresh_save_helpers(root, importer, owned):
+    templates = files('monkey.targets')
+    for name, previous in SAVE_HELPERS.items():
+        relative = str(Path(importer).with_name(name))
+        raw = templates.joinpath(name).read_bytes()
+        if owned[relative]['sha256'] not in (previous, sha(raw)):
+            fail('NATIVE_SAVE_HELPER_VERSION', relative, 'Unrecognized adapter')
+        inside(root, relative).write_bytes(raw)
+        owned[relative] = dict(owned[relative], bytes=len(raw), sha256=sha(raw))
+
+
 def _unique(rows, key):
     index = {row[key]:row for row in rows}
     if len(index) != len(rows):
@@ -132,7 +151,7 @@ def prepare(candidate, expected_manifest, plan_path, ir_path, output):
         importer = standard.locate(parent,'importer')
         templates = files('monkey.targets')
         importer_raw = templates.joinpath('UnityImporter.cs').read_bytes()
-        if owned[importer]['sha256'] not in {PREVIOUS_IMPORTER,sha(importer_raw)}:
+        if owned[importer]['sha256'] not in {PREVIOUS_IMPORTER,'46ee74e6425614366fb5211aa1f52c85c139a9347e99d9be6ef8bd8b13e65a60',sha(importer_raw)}:
             fail('BUTTON_MATERIAL_IMPORTER_VERSION',importer,'Unrecognized base adapter')
         adapter_path = str(Path(importer).with_name('UnityButtonMaterialProjection.cs'))
         adapter = templates.joinpath('UnityButtonMaterialProjection.cs').read_text()
@@ -143,6 +162,7 @@ def prepare(candidate, expected_manifest, plan_path, ir_path, output):
         if any(inside(derived,p).exists() for p in additions) or inside(derived,spec['materialPath']).exists():
             fail('BUTTON_MATERIAL_OUTPUT_COLLISION',str(derived),'Original candidate already owns projected output')
         emit(owned_payloads,temp,derived)
+        refresh_save_helpers(derived,importer,owned)
         inside(derived,importer).write_bytes(importer_raw)
         inside(derived,adapter_path).write_text(adapter.replace('__MONKEY_PROJECTION_SHA256__',sha(raw)))
         inside(derived,SIDECAR).write_bytes(raw)

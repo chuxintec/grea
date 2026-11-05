@@ -56,9 +56,8 @@ public static partial class MonkeyImporter
             contract.masks!=null&&contract.masks.Length>0;
     }
 
-    static bool StaticMaskSourceActivity(Plan plan,string nodeId,out bool activeSelf)
+    static bool StaticMaskSourceActivity(Dictionary<string,NodeSpec> nodes,string nodeId,out bool activeSelf)
     {
-        var nodes=(plan.nodes??Array.Empty<NodeSpec>()).Where(n=>n!=null).ToDictionary(n=>n.sourceId,StringComparer.Ordinal);
         if(!nodes.TryGetValue(nodeId,out var own))throw new InvalidOperationException("STATIC_MASK_SOURCE_NODE_MISSING: "+nodeId);
         activeSelf=own.active;var cursor=nodeId;var seen=new HashSet<string>(StringComparer.Ordinal);
         while(!String.IsNullOrEmpty(cursor))
@@ -127,6 +126,7 @@ public static partial class MonkeyImporter
             if(!queueEvents.TryGetValue(eventRow.sourceId,out var list))queueEvents[eventRow.sourceId]=list=new List<ProxyMaskSpec>();
             list.Add(eventRow);
         }
+        var nodes=(plan.nodes??Array.Empty<NodeSpec>()).Where(n=>n!=null).ToDictionary(n=>n.sourceId,StringComparer.Ordinal);
         foreach(var mask in actual)
         {
             var component=expected[mask.sourceId];
@@ -134,7 +134,7 @@ public static partial class MonkeyImporter
                 (mask.sourceMaterialResolution!="engine-default-builtin"||mask.sourceMaterialResolverPath!=StaticMaskSourceEnginePath||
                 mask.sourceMaterialResolverSha256!=StaticMaskSourceEngineSha256||String.IsNullOrEmpty(mask.sourceMaterialId)||String.IsNullOrEmpty(mask.sourceEffectId)))
                 throw new InvalidOperationException("STATIC_MASK_DEFAULT_MATERIAL_PROOF_INVALID: "+mask.sourceId);
-            var effectiveActive=StaticMaskSourceActivity(plan,mask.node,out var sourceActiveSelf);
+            var effectiveActive=StaticMaskSourceActivity(nodes,mask.node,out var sourceActiveSelf);
             if(mask.sourceOriginId==null||mask.node!=component.node||mask.nativeId!=component.nativeId||
                 mask.enabled!=component.enabled||mask.maskType!=component.maskType||mask.inverted!=component.inverted||
                 String.IsNullOrEmpty(mask.sourceFieldsJson)||String.IsNullOrEmpty(mask.sourceQueueDisposition)||

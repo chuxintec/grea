@@ -11,6 +11,16 @@ using UnityEngine.SceneManagement;
 public static partial class MonkeyImporter
 {
     [Serializable] public class Plan {
+        [NonSerialized] Dictionary<string,ComponentSpec> componentsById;
+        [NonSerialized] ILookup<string,ComponentSpec> componentsByNode;
+        public ComponentSpec[] ComponentsFor(SourcePrefabSpec prefab) {
+            if(componentsByNode==null)componentsByNode=components.ToLookup(c=>c.node);
+            return prefab.nodes.SelectMany(id=>componentsByNode[id]).ToArray();
+        }
+        public ComponentSpec FindComponent(string sourceId) {
+            if(componentsById==null)componentsById=components.ToDictionary(c=>c.sourceId);
+            return sourceId!=null&&componentsById.TryGetValue(sourceId,out var c)?c:null;
+        }
         public UnityStaticToggle.Spec toggleBinding;
         public bool toggleBindingPresent, staticMasksPresent;
         public StaticLayoutCompletionContract layoutCompletion; public StaticMaskContract staticMasks; public Monkey.StaticSortQueueProxy.ProxyQueueSpec[] staticSortQueue;
@@ -37,6 +47,8 @@ public static partial class MonkeyImporter
     static TmpResourceResult tmpResourceResult;
     [Serializable] public class SourcePrefabSpec { public string sourceId,root,path; public string[] nodes; public int nodeCount; }
     [Serializable] public class SourcePrefabResult {
+        public string importPlanSha256,sourceManifestSha256,prefabSha256,prefabMetaSha256;
+        public long prepareMilliseconds,layoutMilliseconds,saveMilliseconds,readbackMilliseconds;
         public SourceComponentCoverage[] components;
         public PrefabInstanceResult[] prefabInstances;
         public StaticSortPrefabReadback staticSortFields; public int generatedSortNodeCount; public StaticLayoutProbeResult staticLayoutProbe; public StaticLayoutNodeReadback[] staticLayoutFields; public Monkey.StaticMaskSort.MaskReadback[] staticMaskFields;
@@ -917,6 +929,8 @@ public static partial class MonkeyImporter
         }
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         foreach(var spec in plan.sourcePrefabs ?? new SourcePrefabSpec[0]) {
+            var timer=System.Diagnostics.Stopwatch.StartNew();
+            var owned=plan.ComponentsFor(spec);
             NativeCheckpoint("source-prefabs",sourcePrefabResults.Count,plan.sourcePrefabs.Length);
             if(!spec.path.StartsWith(Paths.sourcePrefabsRoot+"/",StringComparison.Ordinal) || spec.path.Contains("..") || File.Exists(spec.path))
                 throw new InvalidOperationException("Invalid or existing source prefab path: "+spec.path);
@@ -924,9 +938,15 @@ public static partial class MonkeyImporter
             RefreshOptionalStaticMasksForPrefab(plan,spec,nodeMap,spriteMap);
             // Native instances copy template identities. Configure their exact
             // instance Animation bindings before assigning business references.
-            if(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)AttachStaticAnimationBindings(plan,nodeMap,motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins);
-            AssignStaticFields(plan,nodeMap);
-            SettleNativeLayout(canvas);
+            if((plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)&&owned.Any(c=>c.type=="cc.Animation"))
+                AttachStaticAnimationBindings(plan,nodeMap,motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins,owned);
+            // The assignment owners are local, but reference resolution still sees the live global map.
+            AssignStaticFields(plan,nodeMap,owned);
+            long prepared=timer.ElapsedMilliseconds;
+            var liveRoot=nodeMap[spec.root];
+            // Direct siblings under the fixed DesignRoot have no common layout controller.
+            SettleNativeLayout(liveRoot.transform.parent==designRoot.transform?liveRoot:canvas);
+            long settled=timer.ElapsedMilliseconds;
             if(plan.staticSortQueue!=null && plan.staticSortQueue.Length>0)CreateStaticSortForPrefab(plan,spec,nodeMap);
             var initialPrefabNodes=spec.nodes.Select(id=>DescribeNode(nodeSpecs[id],(RectTransform)nodeMap[id].transform)).ToArray();
             // SaveAsPrefabAsset serializes this subtree without modifying it.
@@ -938,6 +958,7 @@ public static partial class MonkeyImporter
             bool rootVariant=(plan.prefabInstances??new PrefabInstanceSpec[0]).Any(p=>p.owner==spec.sourceId&&p.root==spec.root);
             if(nativePrefabType!=(rootVariant?PrefabAssetType.Variant:PrefabAssetType.Regular))throw new InvalidOperationException("Native Prefab/Variant type differs from source relationship");
             prefabTemplateHashes.Add(spec.sourceId,Hash(spec.path));
+            long savedAt=timer.ElapsedMilliseconds;
             var contents=PrefabUtility.LoadPrefabContents(spec.path);GameObject uiContext=null;
             try {
                 // A UI Prefab has no Canvas in LoadPrefabContents. Supply the
@@ -1046,10 +1067,21 @@ public static partial class MonkeyImporter
                 CaptureSourcePrefabPreview(sourcePrefab,spec,plan,sourcePrefabResults[sourcePrefabResults.Count-1]);
                 // Preserve actual per-Prefab readback even if a later Prefab fails.
                 // This is a partial receipt, never the final aggregate verdict.
+                var measured=sourcePrefabResults[sourcePrefabResults.Count-1];
+                measured.importPlanSha256=nativeProgress.planSha256;
+                measured.sourceManifestSha256=plan.sourceManifestSha256;
+                measured.prefabSha256=prefabTemplateHashes[spec.sourceId];
+                measured.prefabMetaSha256=Hash(spec.path+".meta");
+                measured.prepareMilliseconds=prepared;
+                measured.layoutMilliseconds=settled-prepared;
+                measured.saveMilliseconds=savedAt-settled;
+                measured.readbackMilliseconds=timer.ElapsedMilliseconds-savedAt;
                 var receiptPath="Analysis/Readback/Prefabs/"+AssetDatabase.AssetPathToGUID(spec.path)+".json";
                 Directory.CreateDirectory(Path.GetDirectoryName(receiptPath));
-                using(var receipt=new StreamWriter(new FileStream(receiptPath,FileMode.CreateNew,FileAccess.Write)))
-                    receipt.Write(JsonUtility.ToJson(sourcePrefabResults[sourcePrefabResults.Count-1],true));
+                var pendingReceipt=receiptPath+".tmp";
+                using(var receipt=new StreamWriter(new FileStream(pendingReceipt,FileMode.CreateNew,FileAccess.Write)))
+                    receipt.Write(JsonUtility.ToJson(measured,true));
+                File.Move(pendingReceipt,receiptPath);
             } finally {
                 if(uiContext!=null){ReleasePrefabUiContext(uiContext);contents.transform.SetParent(null,false);UnityEngine.Object.DestroyImmediate(uiContext);}
                 PrefabUtility.UnloadPrefabContents(contents);
@@ -1057,6 +1089,9 @@ public static partial class MonkeyImporter
         }
         foreach(var owner in (plan.prefabInstances??new PrefabInstanceSpec[0]).Select(p=>p.owner).Distinct().Where(s=>!prefabTemplateHashes.ContainsKey(s)))
             PrepareNativeInstances(plan,owner,nodeMap,nodeSpecs);
+        // Rebind all owners against the final node map after every template replacement.
+        if(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled)AttachStaticAnimationBindings(plan,nodeMap,motionReadback,plan.staticAnimationEvidence,plan.staticAnimationComponentOrigins);
+        AssignStaticFields(plan,nodeMap);
         var view = canvas.AddComponent<ContentPreviewView>();
         view.Images = canvas.GetComponentsInChildren<UnityEngine.UI.Image>(true);
         view.Labels = canvas.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true);

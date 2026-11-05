@@ -222,6 +222,7 @@ def _copy_current_spine_templates(source_root: Path, temp_root: Path) -> list[di
     mapping = {
         "Assets/Game/Editor/Conversion/UnitySourceComponentCoverage.cs": REPO / "src/monkey/targets/UnitySourceComponentCoverage.cs",
         "Assets/Game/Editor/Conversion/MonkeyImporter.cs": REPO / "src/monkey/targets/UnityImporter.cs",
+        "Assets/Game/Editor/Conversion/UnityStaticAnimationIntegration.cs": REPO / "src/monkey/targets/UnityStaticAnimationIntegration.cs",
         "Assets/Game/Editor/Conversion/UnityStaticFieldIntegration.cs": REPO / "src/monkey/targets/UnityStaticFieldIntegration.cs",
         "Assets/Game/Editor/Conversion/UnityStaticMaskIntegration.cs": REPO / "src/monkey/targets/UnityStaticMaskIntegration.cs",
         "Assets/Game/Editor/Conversion/UnityStaticMaskSort.cs": REPO / "src/monkey/targets/UnityStaticMaskSort.cs",

@@ -27,13 +27,13 @@ public static partial class MonkeyImporter
 
     public static StaticAnimationReadback[] AttachStaticAnimationBindings(
         Plan plan, Dictionary<string,GameObject> nodes, MotionResult[] motionResults,
-        StaticAnimationEvidenceSpec[] evidenceSpecs, StaticAnimationComponentOrigin[] componentOrigins)
+        StaticAnimationEvidenceSpec[] evidenceSpecs, StaticAnimationComponentOrigin[] componentOrigins, ComponentSpec[] owners=null)
     {
         var evidence = ResolveStaticAnimationEvidence(evidenceSpecs);
         var motions = motionResults ?? Array.Empty<MotionResult>();
         var origins = componentOrigins ?? Array.Empty<StaticAnimationComponentOrigin>();
         var results = new List<StaticAnimationReadback>();
-        foreach (var source in (plan.components ?? Array.Empty<ComponentSpec>()).Where(row => row.type == "cc.Animation")) {
+        foreach (var source in (owners ?? plan.components ?? Array.Empty<ComponentSpec>()).Where(row => row.type == "cc.Animation")) {
             if (!nodes.TryGetValue(source.node, out var node) || node == null)
                 throw new InvalidOperationException("STATIC_ANIMATION_TARGET_NODE_MISSING: " + source.sourceId);
             var slots = new List<UnityStaticAnimationBindings.ClipSpec>();

@@ -457,3 +457,5 @@ monkey prepare-button-material-retry --candidate ORIGINAL --expected-manifest SH
 ```
 
 工具按来源组件核对 Button 目标、平铺 Sprite、原始 SpriteFrame、材质和 Effect。成功回执列出目标数量、不同来源组件数和新候选指纹。导入指令沿用原始字节。用新指纹在共享 Editor 槽执行 native-import，然后检查保存重读的 Button.targetGraphic、Image、Sprite 和材质。
+
+Unity 保存每个来源 Prefab 后会在 `Analysis/Readback/Prefabs/<GUID>.json` 写入独立回执。dev38 回执含导入指令、来源清单、Prefab 和 .meta 的 SHA-256，以及准备、布局、保存和读回各阶段的毫秒数。保存阶段包含排序准备和初始节点采样，读回阶段包含独立预览。只有写完的回执才以 .json 发布。中断后可据此逐项核验已落盘文件；共享模板和实例的内存替换状态仍需在新的隔离执行中按顺序重建。整包验收继续要求最终场景和 Prefab 的重开证据。
