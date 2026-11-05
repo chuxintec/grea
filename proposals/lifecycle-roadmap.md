@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T17:14:48.902105+08:00",
+  "updatedAt": "2026-11-05T17:41:09.887020+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -698,9 +698,11 @@
         ".private/development/foodstreet-monkey-parallel-20261105/source-card50.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/reference-to-sample.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/label15-alignment.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/source-old-fixed-2x.png"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/source-old-fixed-2x.png",
+        ".private/development/foodstreet-monkey-parallel-20261105/outline-source59.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/source-outline-inventory.json"
       ],
-      "nextAction": "15目标静态可读，字形与白边未通过。新增用户原图11张均可读版本1.9.8，已与40根分类；卡册同页有白边、棕色字心。fixed01打开实际fallback材质关键字后白色盖住字心；A线修通用样式，保留正常对照并同倍率复验。设备字体身份未知。",
+      "nextAction": "director-outline-source-pixels：按源width小数保留、Canvas线宽2×、圆连接、先描后填验等倍率设计像素。原15文字可读；初修白色侵蚀字心、fixed02开关同图，均未通过。A线沿实际CJK子网格验证并排固定字形、不同宽度与禁用对照。整批1390源描边中1280启用、110禁用、281为小数宽度；非视觉验收数。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
@@ -771,9 +773,11 @@
         "../beaver/.private/master-help34/candidate03/delivery.json",
         ".private/development/foodstreet-monkey-parallel-20261105/foodstreet-fixed54.json",
         "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/master-help-visible-20261105/candidate03-run01/OWNER-CANDIDATE03-HELP-RESULT.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/beaver-close55.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/beaver-close55.json",
+        "../beaver/.private/master-help34/actual08/delivery.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/foodstreet-help63.json"
       ],
-      "nextAction": "candidate03项目实点已验打开：蓝问号调用1。原红叉两次真实按/放后仍pending，完成0；正文与排行叠绘。beaver接55查同次射线命中、源图层与坐标映射；复用已通过的启动/Camera/打开。",
+      "nextAction": "actual08修订版已经转项目接收方，真实检查原红叉与好的两条关闭路径及遮罩正文；candidate03已有打开通过、关闭与可读性失败。",
       "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
     },
     {
@@ -796,13 +800,17 @@
         ".private/development/foodstreet-monkey-parallel-20261105/grea-native-whole-button-result-39.json",
         ".private/development/audit-remediation-20261105/dev36-review/RESULT.json",
         "../monkey/.private/audit-remediation-20261105/dev37-button-material/handoff-index.json",
-        ".private/development/audit-remediation-20261105/dev37-review/throughput.json"
+        ".private/development/audit-remediation-20261105/dev37-review/throughput.json",
+        ".private/development/audit-remediation-20261105/dev37-review/retire-dev37.json",
+        ".private/development/audit-remediation-20261105/dev38-review/whole/import.request.json",
+        ".private/development/audit-remediation-20261105/dev39-review/fixed-small/native/execution-result.json",
+        "../monkey/.private/audit-remediation-20261105/dev40-text-rebind/handoff-index.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
       ],
-      "nextAction": "接续 dev37-review 的真实Unity整包验收，核保存/重开与1677个预期Prefab的缺失清单。",
+      "nextAction": "监测在途dev38 whole/native，完成后统计1677源根、原生保存与独立冷重开。dev40仅验证11根排序回归。",
       "resume": {
         "eventId": "foodstreet-monkey-parallel-20261105",
         "humanDirection": "总监传达本轮人类指令 director-whole-budget-2048-native：整批默认2048 MiB、包内单文件128 MiB、导入指令256 MiB。复用现有候选，在 Unity 核全量导入、保存、重开和缺失；视觉另验。",
@@ -814,8 +822,8 @@
         "missingPrefabList": ".private/development/audit-remediation-20261105/dev35-review/whole-result.json",
         "verifiedResult": "2026-11-05 16:12 +08:00，Unity 退出1。FoodDeliveryTaskItem 按钮 #26 的目标 #10 缺 Graphic。1677 个源 Prefab 中落盘 0、缺失 1677、冷重开 0。",
         "pendingDispatches": {
-          "monkey": "dev36额度复验通过；dev37 96019801 已交7按钮适配，固定派生 manifest dfb6c541c101ff06309fbe82e159b28a0a6e25534a54ce19abe043c7001c77c9，原导入指令保持 f32fff1a。 按56评估逐根保存时重复整图计算的规模问题。",
-          "grea": "dev37单次进程已启动并越过7个按钮阻塞，现保存source-prefabs。运行中 .private/development/audit-remediation-20261105/dev37-review/native，以该目录journal/result及逐Prefab回执接续；勿重复启动。"
+          "monkey": "dev38优化逐根保存，已超过dev37回执数。独立富文字排序小例含11根，dev38与旧版同初次槽错误、dev39前进至重绑终验，dev40已排队复核；整包不含该静态排序合同，独立执行。",
+          "grea": "dev37在72份有效回执边界收口。dev38已复用导入指令f32fff1a、派生候选b420b060，真实整包作业目录 .private/development/audit-remediation-20261105/dev38-review/whole/native。读取其journal/result与逐根回执，勿再次启动。结束后独立冷进程验真实资产身份与节点。"
         },
         "historicalClosedTasks": [
           "grea:T-repository-root-wip",
