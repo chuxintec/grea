@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T13:31:56.776433+08:00",
+  "updatedAt": "2026-11-05T13:49:48.619501+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "当前事件 foodstreet-monkey-parallel-20261105：两条独立 detached 工作树并行开发，Unity 串行，原主开发负责唯一 dev28 集成。退出须以同一固定候选交总监，正式采用继续 HOLD。 C线由现任beaver承接隔离目标副本改写、编译、撤销与真实行为交接。",
@@ -620,9 +620,11 @@
         ".private/development/audit-remediation-20261105/dev26-jsonutility-probe/receipt.json",
         ".private/development/audit-remediation-20261105/dev27-minimal/review-handoff.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev27-dual-review/RESULT.md",
-        ".private/development/audit-remediation-20261105/dev28-review/RESULT.json"
+        ".private/development/audit-remediation-20261105/dev28-review/RESULT.json",
+        ".private/development/audit-remediation-20261105/dev29-review/RESULT.json",
+        ".private/development/audit-remediation-20261105/dev29-review/dual-review-input.json"
       ],
-      "nextAction": "a121821/7ee5e002 原生复核退修：Sprite真实正例和已解决正例在三个入口被错拒，Scroll另有可见性及静态回读缺陷，Creator3.8.8在场景组装时中止。原主开发已收单，修后固定新身份，复核三入口和三线集成。",
+      "nextAction": "dev29/2c91ca5: Sprite实际九组三入口通过，Scroll六个篡改反例通过，动态汇总仍阻止严格冻结。Creator重开后可见源Sprite处于非活动层级；四页显式材质Mask保存重读失败。已交原主开发修复，同字节复审请求交总监，正式采用HOLD。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
@@ -704,9 +706,10 @@
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/two-types-handoff-index.json",
-        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/label-fix01/bc-handoff-index.json"
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/label-fix01/bc-handoff-index.json",
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/final2/candidate-delivery.json"
       ],
-      "nextAction": "C线已交label-fix01固定载体。独立副本上核实际改写、冷重开、一次操作与回退。"
+      "nextAction": "dev10/1f55d2d完成受限改写与冷重开、1044文件撤销。delivery01已交项目主开发，在隔离预览实际点一次，核可见隐藏、局部缩放和计数0→1。show、动画及正式工程未验。"
     }
   ],
   "blockers": [
