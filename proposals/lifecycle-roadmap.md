@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T18:18:27.009743+08:00",
+  "updatedAt": "2026-11-05T18:27:47.479298+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -704,17 +704,18 @@
         ".private/development/foodstreet-monkey-parallel-20261105/visual-stock64.json",
         "plugin/skills/grea-recover/references/Unity原生转换规范.md#目标能力选型与批量映射",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/stock-tmp/result/measurements.json",
-        ".private/development/foodstreet-monkey-parallel-20261105/visual-sub71.json"
+        ".private/development/foodstreet-monkey-parallel-20261105/visual-sub71.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/outline-tool73.json"
       ],
-      "nextAction": "纯原生TMP直接指定实用CJK字体通过：width3外扩L/R/T/B=3.094/2.987/3/3，661个深色字心保留，小数2.5/3.6最大误差0.307/0.202；开关/冷开图一致。有源参数可配置，继续仅核项目实际fallback绑定。原页仍待实图签收、正式不采用。",
+      "nextAction": "用户判定15号描边不合格，送审已撤回。monkey视觉负责修通用转换入口并向主线交接，说明源外扩宽度与TMP材质的换算及字重变化；用通用回归核稳定字心、启用/禁用、小数宽与透明度。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42",
       "resume": {
         "eventId": "foodstreet-monkey-parallel-20261105",
-        "humanDirection": "director-outline-source-pixels、director-label15-stock-tmp-baseline：按原宽度/样式的像素语义验收；先用TMP原生材质，修可证明的绑定差异。director-visual-native-subagents：现任视觉开发者用项目内原生子Agent。",
-        "latestRuling": "用户交11张1.9.8实图；样本15按同页同倍率对看，源设备字体身份未知。",
-        "verified": "GREA裸TMP基线width3最大误差0.094px、小数宽度通过、冷重开图一致。A线在父页slot1试接原生材质；最终fixture/公开映射与退化对照待签。",
+        "humanDirection": "本轮用户直接指令：15号描边不合格，不再送审。让monkey视觉修好通用转换工具，说清3像素如何映射到原生TMP、为何字重改变。",
+        "latestRuling": "visual15-withdraw-review-15 撤审；grea-tool-outline-face-73 已转原开发会话。",
+        "verified": "原生TMP最小例建立了参数换算基线；真实父页试验同时改了回退材质轮廓与字心参数。15号结果按用户裁定失败。",
         "responsibility": "monkey-visual主开发单写，父会话01a1aa15-8661-7c92-8458-4779e19afc42；原生子Agent /root/outline_regression，01a1ab34-0a64-7cb1-8d9d-3bf6a089b331，Luna high已核。子Agent只做离线缺脚本/错材质回归。",
-        "nextAction": "复用已有stock-tmp/result、fixed03与用户原图。核A线实际公共工具导出和同页冷开像素；禁止重派原生基线。另有dev43独立11根回归。整包与帮助窄项已核，旧分支和120文件是历史。",
+        "nextAction": "用户判定15号描边不合格，送审已撤回。monkey视觉负责修通用转换入口并向主线交接，说明源外扩宽度与TMP材质的换算及字重变化；用通用回归核稳定字心、启用/禁用、小数宽与透明度。",
         "evidence": [
           ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/stock-tmp/result/measurements.json",
           ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/userrefs-7b0e6f7d/reference-to-sample.json",
