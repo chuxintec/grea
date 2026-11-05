@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:40:26.228471+08:00",
+  "updatedAt": "2026-11-05T15:41:55.078331+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -692,7 +692,7 @@
       "id": "grea:T-foodstreet-monkey-bindings",
       "title": "肥鹅驱动 monkey 静态 MonoBehaviour 批量挂载",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
+      "workflowStatus": "verification",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
       "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
       "acceptanceCriteria": [
@@ -717,9 +717,10 @@
         ".private/development/foodstreet-monkey-parallel-20261105/B-phase-independent.json",
         ".private/development/audit-remediation-20261105/dev32-review/RESULT.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev33-dual-review/RESULT.md",
-        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md"
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/post33-bindings/handoff.json"
       ],
-      "nextAction": "原40范围内按源ID分解四页42条partial，选择一类来源充分的映射修复，验字段、引用、冷重开及错绑反例。",
+      "nextAction": "四页93实例：1055110通用i18nLabel访问器规则新增22个完整绑定，原51保真，现73完整/20部分；4个错节点值拒绝。增量已交主线集成。剩余18项依赖可验证的Animation/Spine/Sprite目标，2项List需事件构造或序列化依据。历史全库台账另计。",
       "moduleExecutorSessionId": "01a1aa15-8791-7512-92df-1ab33a28d0de"
     },
     {
