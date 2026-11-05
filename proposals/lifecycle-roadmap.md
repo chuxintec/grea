@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:47:15.531500+08:00",
+  "updatedAt": "2026-11-05T15:54:31.482301+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -728,7 +728,7 @@
       "id": "grea:T-foodstreet-beaver-target-rewrite",
       "title": "肥鹅目标工程受限改写及可回退采用工具",
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "workflowStatus": "blocked",
+      "workflowStatus": "in_progress",
       "primaryReleaseId": "grea:R1.1.0",
       "description": "事件 foodstreet-monkey-parallel-20261105，start-beaver-target-rewrite-02。C线单写 beaver，隔离肥鹅副本。",
       "acceptanceCriteria": [
@@ -746,9 +746,10 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
         "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/review-provenance-v2-20261105.json",
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
-        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/post33-event/onClickTip-source-trace.json"
+        "/Users/wangmeng/MyProjects/Tools/beaver/.private/target-rewrite-20261105/post33-event/onClickTip-source-trace.json",
+        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/master-help-contract-20261105/MASTER-MATCH-HELP-ADAPTER-CONTRACT.json"
       ],
-      "nextAction": "已核btn_tip→根组件onClickTip，无自定义参数。等待肥鹅主开发交付MasterMatch帮助打开状态、可空act.aid、TipAnim5Window打开与关闭完成接口及隔离资产依赖。GREA已申请，收到后转beaver实施持久事件、冷重开与回退。",
+      "nextAction": "肥鹅主开发已交帮助契约并转beaver。新派生副本实施零参btn_tip持久接线、打开状态、可空aid及等待真实关闭，编译冷重开与回退，再交项目一次操作验效。",
       "moduleExecutorSessionId": "01a19b7a-b50f-7fb0-9c2b-64e71cc9b342"
     },
     {
@@ -760,12 +761,14 @@
       "moduleExecutorSessionId": "01a19b7a-b22a-7ac1-88b0-4c3d3219718b",
       "description": "现任monkey主开发处理196238948字节计划及CLI探读。",
       "sourceRefs": [
-        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md"
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/DEPENDENCIES-AFTER-DEV33.md",
+        ".private/development/audit-remediation-20261105/dev34-review/RESULT.json"
       ],
       "acceptanceCriteria": [
         "用同一固定输入完成有界导出或验证可恢复分片",
         "截断输入拒绝，重试核身份并防重复，提交工具与真实回执"
-      ]
+      ],
+      "nextAction": "dev34/a5ef5a8已解决196238948字节计划的阶段预算，10407文件逐SHA复核相同，重试新增0块。原计划公开导出拒绝323源Mask缺合同。主开发已接已还原阶段继续通用Mask来源续接/逐根处置。"
     }
   ],
   "blockers": [
