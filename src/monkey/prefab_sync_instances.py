@@ -41,10 +41,10 @@ def load_verified_source_manifest(path, expected_sha256, expected_profile):
     if not isinstance(expected_sha256, str) or len(expected_sha256) != 64:
         _fail("SYNC_PREFAB_MANIFEST_PIN", str(path), "normalized IR has no valid sourceManifestSha256")
     manifest_path = safe(path)
-    raw = read(manifest_path)
+    raw = read(manifest_path, max_bytes=128 * 1024 * 1024)
     if sha(raw) != expected_sha256:
         _fail("SYNC_PREFAB_MANIFEST_HASH", str(manifest_path), "source manifest differs from the normalized IR pin")
-    manifest = load(raw)
+    manifest = load(raw, max_nodes=8_000_000)
     if manifest.get("sourceProfile") != expected_profile:
         _fail("SYNC_PREFAB_MANIFEST_PROFILE", str(manifest_path), "manifest source profile differs from the normalized IR")
     return manifest

@@ -5,13 +5,30 @@ const teardown = require('../src/monkey/targets/CreatorOwnedBuildSceneTeardown.j
 const ownedUndo = require('../src/monkey/targets/CreatorOwnedImportUndo.js');
 
 function fixture(options = {}) {
-    const directNodes = new Map(), directComponents = new Map();
+    const directNodes = new Map(), directComponents = new Map(), globalQueue=[];
     const recycleNode = Object.create(null), recycleComponent = Object.create(null);
     const calls = [];
     let serial = 0;
     class Scene {
-        constructor(name) { this.name=name; this.uuid='owned-scene-'+(++serial); this.children=[]; this._components=[]; this.parent=null; this.destroyCalls=0; }
-        destroy() { this.destroyCalls++; this.destroyRequested=true; return true; }
+        constructor(name) { this.name=name; this.uuid='owned-scene-'+(++serial); this.children=[]; this._components=[]; this.parent=null; this.destroyCalls=0; this.destroyImmediateCalls=0; }
+        destroy() { this.destroyCalls++;if(this.toDestroy||this.destroyed)return false;this.toDestroy=true;calls.push('destroy');return true; }
+        _destroyImmediate() {
+            this.destroyImmediateCalls++;calls.push('destroy-immediate');
+            if(options.immediateThrows)throw Error('immediate destroy failed');
+            const destroyNode=node=>{
+                for(const child of [...(node.children||[])])destroyNode(child);
+                for(const comp of node._components||[]) {
+                    if(comp.uuid===options.keepValidUuid)continue;
+                    comp.destroyed=true;comp.toDestroy=false;directComponents.delete(comp.uuid);
+                    if(!Object.hasOwn(recycleComponent,comp.uuid))recycleComponent[comp.uuid]=comp;
+                }
+                if(node.uuid!==options.keepValidUuid) {
+                    node.destroyed=true;node.toDestroy=false;directNodes.delete(node.uuid);
+                    if(!Object.hasOwn(recycleNode,node.uuid))recycleNode[node.uuid]=node;
+                }
+            };
+            destroyNode(this);
+        }
     }
     const general = {
         _recycleNode:recycleNode, _recycleComponent:recycleComponent,
@@ -27,22 +44,9 @@ function fixture(options = {}) {
     general._nodeMgr=nodeManager; general._compMgr=componentManager;
     const cce={SceneFacadeManager:{_facadeFSM:{currentState:{modeName:'general'},generalSceneFacade:general}},
         Node:{query:uuid=>nodeManager.query(uuid)},Component:{query:uuid=>componentManager.query(uuid)}};
-    const cc={Scene,isValid:(object,strict)=>!!object&&!(strict&&object.destroyed),
+    const cc={Scene,isValid:(object,strict)=>!!object&&!object.destroyed&&!(strict&&object.toDestroy),
         director:{getScene:()=>options.directorScene||{uuid:'active-user-scene'}},
-        CCObject:{_deferredDestroy(){calls.push('flush');if(options.flushThrows)throw Error('flush failed');
-            for(const [uuid,node] of [...directNodes]) {
-                const subtree=[];const walk=n=>{subtree.push(n);for(const child of n.children||[])walk(child);};walk(node);
-                if(node.destroyRequested||subtree.some(n=>n.destroyRequested))for(const n of subtree) {
-                    if(n.uuid===options.keepValidUuid)continue;
-                    n.destroyed=true;directNodes.delete(n.uuid);
-                    if(!Object.hasOwn(recycleNode,n.uuid))recycleNode[n.uuid]=n;
-                    for(const comp of n._components||[]) {
-                        comp.destroyed=true;directComponents.delete(comp.uuid);
-                        if(!Object.hasOwn(recycleComponent,comp.uuid))recycleComponent[comp.uuid]=comp;
-                    }
-                }
-            }
-        }}};
+        CCObject:{_deferredDestroy(){calls.push('global-deferred-destroy');for(const object of globalQueue){object.toDestroy=false;object.destroyed=true;}}}};
     const scene=teardown.create(cc,'Candidate');
     directNodes.set(scene.uuid,scene);
     const canvas={uuid:'owned-canvas-'+serial,children:[],_components:[],parent:scene};
@@ -50,22 +54,57 @@ function fixture(options = {}) {
     const transform={uuid:'owned-ui-'+serial,node:canvas};canvas._components.push(transform);directComponents.set(transform.uuid,transform);
     const foreignUuid=options.foreignUuid || null;
     if(foreignUuid)recycleNode[foreignUuid]={uuid:foreignUuid,children:[],_components:[],foreign:true};
-    return {cc,cce,general,scene,canvas,transform,directNodes,directComponents,recycleNode,recycleComponent,calls,
+    return {cc,cce,general,scene,canvas,transform,directNodes,directComponents,recycleNode,recycleComponent,globalQueue,calls,
         async cleanup(primaryError=null) { return teardown.cleanupAfterBuild(scene,{cc,cce,dynamicRelease:async value=>{assert.equal(value,scene);calls.push('release');}},primaryError); }};
 }
 
-test('normal owned build teardown releases, destroys, flushes, and removes only exact owned tombstones', async()=>{
+test('normal owned build teardown queues and immediately destroys only its exact owned root', async()=>{
     const value=fixture();
     value.recycleNode['unrelated-user-node']={uuid:'unrelated-user-node',foreign:true};
     const result=await value.cleanup();
     assert.equal(result.cleaned,true);assert.equal(result.error,null);
-    assert.deepEqual(value.calls,['release','flush']);
-    assert.equal(value.scene.destroyCalls,1);
+    assert.deepEqual(value.calls,['release','destroy','destroy-immediate']);
+    assert.equal(result.postCleanup.sceneDestroyQueued,true);
+    assert.equal(value.scene.destroyImmediateCalls,1);
     assert.equal(value.cce.Node.query(value.scene.uuid),null);
     assert.equal(value.cce.Node.query(value.canvas.uuid),null);
     assert.equal(value.cce.Component.query(value.transform.uuid),null);
     assert.ok(value.recycleNode['unrelated-user-node']);
     assert.equal(result.postCleanup.tombstonesRemovedCount,3);
+});
+
+test('Creator ToDestroy objects remain live and are safely retired through their exact owned root',async()=>{
+    const value=fixture();value.scene.toDestroy=true;value.canvas.toDestroy=true;value.transform.toDestroy=true;
+    const result=await value.cleanup();
+    assert.equal(result.cleaned,true);
+    assert.deepEqual(value.calls,['release','destroy-immediate']);
+    assert.equal(value.scene.destroyCalls,0);
+    assert.equal(result.postCleanup.sceneDestroyQueued,false);
+    assert.ok(result.postCleanup.beforeDestroy.some(row=>row.uuid===value.canvas.uuid&&row.state==='queued-to-destroy'));
+    assert.equal(value.cc.isValid(value.canvas,false),false);
+});
+
+test('already Destroyed owned members still block cleanup before release or tombstone purging',async()=>{
+    const value=fixture();value.transform.destroyed=true;
+    const direct=value.cce.Component.query(value.transform.uuid);
+    const result=await value.cleanup();
+    assert.equal(result.cleaned,false);
+    assert.equal(result.error.code,'CREATOR_BUILD_SCENE_TREE_NOT_LIVE_BEFORE_CLEANUP');
+    assert.deepEqual(value.calls,[]);
+    assert.strictEqual(value.cce.Component.query(value.transform.uuid),direct);
+});
+
+test('owned immediate destroy never flushes unrelated Creator destruction queue entries',async()=>{
+    const value=fixture();const unrelated={uuid:'unrelated-queued-object',toDestroy:true,destroyed:false};
+    const foreign={uuid:'foreign-recycle-object',foreign:true};value.recycleNode[unrelated.uuid]=unrelated;
+    value.globalQueue.push(unrelated);
+    value.recycleNode['foreign-recycle-object']=foreign;
+    const result=await value.cleanup();
+    assert.equal(result.cleaned,true);
+    assert.equal(unrelated.destroyed,false);assert.equal(unrelated.toDestroy,true);
+    assert.strictEqual(value.recycleNode['foreign-recycle-object'],foreign);
+    assert.equal(result.postCleanup.globalDeferredDestroyCalled,false);
+    assert.equal(value.calls.includes('global-deferred-destroy'),false);
 });
 
 test('foreign same-UUID recycle value is preserved', async()=>{
@@ -86,8 +125,8 @@ test('strict-valid tree members are never purged', async()=>{
     assert.equal(result.error.code,'CREATOR_BUILD_SCENE_TEARDOWN_FAILED');
 });
 
-test('deferred destroy failure preserves all exact and foreign cache entries', async()=>{
-    const value=fixture({flushThrows:true});
+test('exact immediate destroy failure preserves all exact and foreign cache entries', async()=>{
+    const value=fixture({immediateThrows:true});
     const nodeBefore=value.cce.Node.query(value.canvas.uuid);
     const result=await value.cleanup();
     assert.strictEqual(value.cce.Node.query(value.canvas.uuid),nodeBefore);
@@ -103,7 +142,7 @@ test('assemble error remains primary while its finally cleanup still runs', asyn
         dynamicRelease:async()=>value.calls.push('release')},caught); }
     assert.strictEqual(caught,assembleError);
     assert.equal(caught.cleanupError,undefined);
-    assert.deepEqual(value.calls,['release','flush']);
+    assert.deepEqual(value.calls,['release','destroy','destroy-immediate']);
     assert.equal(value.cce.Node.query(value.scene.uuid),null);
 });
 

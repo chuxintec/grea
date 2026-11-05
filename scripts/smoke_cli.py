@@ -27,9 +27,11 @@ def main():
         if 'site-packages'not in identity['module']:raise RuntimeError('Smoke requires an installed wheel outside the source checkout')
         run(['-m','monkey.cli','--version']);cap=json.loads(run(['-m','monkey.cli','capabilities','--json']))
         for command in ('acquire-resources','diagnose','doctor','space-preview','resource-probe','adopt','code-model','code-emit','code-select','wasm-code-source','wasm-code-candidate','unity-code-source','unity-code-candidate','code-native-probe',
-                        'code-native-prepare','code-native-run','code-native-status','code-native-continue','code-native-reassemble','code-native-revise','code-native-add-json',
+                        'static-code-bindings','code-native-prepare','code-native-run','code-native-status','code-native-continue','code-native-reassemble','code-native-revise','code-native-add-json',
                         'code-architecture-module-prepare','code-architecture-module-run','code-architecture-module-status','code-architecture-module-recheck','code-architecture-module-recover'):
             run(['-m','monkey.cli',command,'--help'])
+        run(['-m','monkey.cli','static-code-bindings','destinations','--prepared',str(work/'missing-prepared'),'--candidate',str(work/'missing-candidate'),'--output',str(work/'must-not-exist.json')],expected=2)
+        assert not (work/'must-not-exist.json').exists()
         run(['-m','monkey.cli','tool','--help'])
         for tool in ('laya_contract_audit','read_elf_values','unpack_xapk','shader_probe','decrypt_v1mmwx_wxapkg','unpack_wxapkg','export_config_tables'):
             run(['-m','monkey.cli','tool',tool,'--help'])

@@ -16,7 +16,24 @@ public static partial class MonkeyImporter
         public float progress, totalLength;
         public int mode;
         public bool reverse, sourceEnabled, carrierEnabled;
+        public bool contractPresent;
         public float[] sourceBarSize, sourceBarAnchor;
+    }
+
+    // JsonUtility can materialize absent/null optional objects as empty DTOs.
+    // An explicit producer marker or any legacy payload requires validation;
+    // the empty phantom is not a source-backed native progress contract.
+    static bool HasStaticProgressBinding(ComponentSpec source)
+    {
+        var value = source.staticProgressBinding;
+        return value != null && (value.contractPresent ||
+            !String.IsNullOrEmpty(value.policy) || !String.IsNullOrEmpty(value.sourceComponentId) ||
+            !String.IsNullOrEmpty(value.sourceNodeId) || !String.IsNullOrEmpty(value.barSpriteSourceId) ||
+            !String.IsNullOrEmpty(value.barNodeSourceId) || !String.IsNullOrEmpty(value.sourceTemplateId) ||
+            !String.IsNullOrEmpty(value.displayGeometryEvidence) || value.progress != 0 ||
+            value.totalLength != 0 || value.mode != 0 || value.reverse || value.sourceEnabled ||
+            value.carrierEnabled || (value.sourceBarSize != null && value.sourceBarSize.Length != 0) ||
+            (value.sourceBarAnchor != null && value.sourceBarAnchor.Length != 0));
     }
 
     [Serializable] public class StaticProgressResult
@@ -65,7 +82,7 @@ public static partial class MonkeyImporter
         }
         if (source.type == "cc.ProgressBar")
         {
-            if (source.staticProgressBinding != null && !source.convertible)
+            if (HasStaticProgressBinding(source) && !source.convertible)
             {
                 var carrier = StaticProgressComponent(source, node);
                 if (carrier == null) throw new InvalidOperationException("STATIC_PROGRESS_CARRIER_MISSING: " + sourceId);
@@ -92,7 +109,7 @@ public static partial class MonkeyImporter
     static IEnumerable<ComponentSpec> StaticProgressSources(Plan plan)
     {
         return (plan.components ?? Array.Empty<ComponentSpec>()).Where(c =>
-            c.type == "cc.ProgressBar" && c.staticProgressBinding != null && !c.convertible);
+            c.type == "cc.ProgressBar" && HasStaticProgressBinding(c) && !c.convertible);
     }
 
     static void CreateStaticProgress(Plan plan, Dictionary<string, GameObject> nodes)

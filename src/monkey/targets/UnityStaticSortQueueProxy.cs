@@ -38,13 +38,13 @@ namespace Monkey.StaticSortQueueProxy
         public bool inverted, enabled, convertible;
         public float alphaThreshold;
         public string sourceMaterialId, resolvedSourceMaterialId, sourceEffectId, sourceEffectName,
-            sourceEffectDocumentSha256, unityMaskShaderPath, unityMaskShaderSha256,
+            sourceEffectDocumentSha256, sourceMaterialResolution, sourceMaterialResolverPath, sourceMaterialResolverSha256, unityMaskShaderPath, unityMaskShaderSha256,
             unityMaskMaterialGuid, unityMaskMaterialPath;
     }
     [Serializable] public sealed class ProxySourceMaskIdentitySpec
     {
         public string sourceId, nativeId, node, sourceFieldsJson, spriteFrameUuid, sourceMaterialId,
-            resolvedSourceMaterialId, sourceEffectId, sourceEffectName, sourceEffectDocumentSha256,
+            resolvedSourceMaterialId, sourceEffectId, sourceEffectName, sourceEffectDocumentSha256, sourceMaterialResolution, sourceMaterialResolverPath, sourceMaterialResolverSha256,
             unityMaskShaderPath, unityMaskShaderSha256, unityMaskMaterialGuid, unityMaskMaterialPath;
         public int maskType;
         public bool enabled, inverted, sourceActiveSelf, sourceActive;
@@ -333,7 +333,7 @@ namespace Monkey.StaticSortQueueProxy
     {
         public string sourceId, nativeId, node, nativeMaskType, graphicType, sourceFieldsJson,
             spriteFrameUuid, sourceMaterialId, resolvedSourceMaterialId, sourceEffectId, sourceEffectName,
-            sourceEffectDocumentSha256, unityMaskMaterialGuid, unityMaskShaderPath, unityMaskShaderSha256,
+            sourceEffectDocumentSha256, sourceMaterialResolution, sourceMaterialResolverPath, sourceMaterialResolverSha256, unityMaskMaterialGuid, unityMaskShaderPath, unityMaskShaderSha256,
             sourceActivityStage;
         public int sourceMaskType;
         public bool sourceEnabled, sourceInverted, sourceActiveSelfExpected, sourceActiveExpected,
@@ -3583,7 +3583,7 @@ namespace Monkey.StaticSortQueueProxy
                     alphaThreshold = row.alphaThreshold, spriteFrameUuid = row.spriteFrameUuid,
                     sourceFieldsJson = row.sourceFieldsJson, sourceMaterialId = row.sourceMaterialId,
                     resolvedSourceMaterialId = row.resolvedSourceMaterialId, sourceEffectId = row.sourceEffectId,
-                    sourceEffectName = row.sourceEffectName, sourceEffectDocumentSha256 = row.sourceEffectDocumentSha256,
+                    sourceEffectName = row.sourceEffectName, sourceEffectDocumentSha256 = row.sourceEffectDocumentSha256, sourceMaterialResolution = row.sourceMaterialResolution, sourceMaterialResolverPath = row.sourceMaterialResolverPath, sourceMaterialResolverSha256 = row.sourceMaterialResolverSha256,
                     unityMaskShaderPath = row.unityMaskShaderPath, unityMaskShaderSha256 = row.unityMaskShaderSha256,
                     unityMaskMaterialGuid = row.unityMaskMaterialGuid, unityMaskMaterialPath = row.unityMaskMaterialPath };
                 var mask = node == null ? null : node.GetComponent<Mask>();
@@ -3601,7 +3601,7 @@ namespace Monkey.StaticSortQueueProxy
                     identity.spriteFrameUuid == row.spriteFrameUuid && identity.sourceMaterialId == row.sourceMaterialId &&
                     identity.resolvedSourceMaterialId == row.resolvedSourceMaterialId &&
                     identity.sourceEffectId == row.sourceEffectId && identity.sourceEffectName == row.sourceEffectName &&
-                    identity.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256 &&
+                    identity.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256 && identity.sourceMaterialResolution == row.sourceMaterialResolution && identity.sourceMaterialResolverPath == row.sourceMaterialResolverPath && identity.sourceMaterialResolverSha256 == row.sourceMaterialResolverSha256 &&
                     sourceReadback.sourceId == row.sourceId && sourceReadback.node == row.node &&
                     sourceReadback.nativeType == typeof(Mask).FullName && sourceReadback.maskType == row.maskType &&
                     sourceReadback.enabled == row.enabled && sourceReadback.inverted == row.inverted &&
@@ -3610,7 +3610,7 @@ namespace Monkey.StaticSortQueueProxy
                     sourceReadback.sourceMaterialId == row.sourceMaterialId &&
                     sourceReadback.resolvedSourceMaterialId == row.resolvedSourceMaterialId &&
                     sourceReadback.sourceEffectId == row.sourceEffectId && sourceReadback.sourceEffectName == row.sourceEffectName &&
-                    sourceReadback.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256;
+                    sourceReadback.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256 && sourceReadback.sourceMaterialResolution == row.sourceMaterialResolution && sourceReadback.sourceMaterialResolverPath == row.sourceMaterialResolverPath && sourceReadback.sourceMaterialResolverSha256 == row.sourceMaterialResolverSha256;
                 var sourceRenderContextDeferred = !loadedPhase && row.maskType == 0 && row.inverted &&
                     node != null && node.GetComponentInParent<Canvas>() == null && sourceMaskFieldsVerified;
                 var fieldsVerified = sourceMaskFieldsVerified && (sourceReadback.verified || sourceRenderContextDeferred);
@@ -3627,6 +3627,7 @@ namespace Monkey.StaticSortQueueProxy
                     sourceEffectId = identity == null ? null : identity.sourceEffectId,
                     sourceEffectName = identity == null ? null : identity.sourceEffectName,
                     sourceEffectDocumentSha256 = identity == null ? null : identity.sourceEffectDocumentSha256,
+                    sourceMaterialResolution=identity==null?null:identity.sourceMaterialResolution, sourceMaterialResolverPath=identity==null?null:identity.sourceMaterialResolverPath, sourceMaterialResolverSha256=identity==null?null:identity.sourceMaterialResolverSha256,
                     unityMaskMaterialGuid = row.unityMaskMaterialGuid, unityMaskShaderPath = row.unityMaskShaderPath,
                     unityMaskShaderSha256 = row.unityMaskShaderSha256, sourceMaskType = identity == null ? -1 : identity.sourceMaskType,
                     sourceEnabled = row.enabled, sourceInverted = row.inverted, sourceActiveSelfExpected = row.sourceActiveSelf,
@@ -4611,6 +4612,9 @@ namespace Monkey.StaticSortQueueProxy
                         sourceEffectId = maskSpec.sourceEffectId ?? String.Empty,
                         sourceEffectName = maskSpec.sourceEffectName ?? String.Empty,
                         sourceEffectDocumentSha256 = maskSpec.sourceEffectDocumentSha256 ?? String.Empty,
+                    sourceMaterialResolution = maskSpec.sourceMaterialResolution ?? String.Empty,
+                    sourceMaterialResolverPath = maskSpec.sourceMaterialResolverPath ?? String.Empty,
+                    sourceMaterialResolverSha256 = maskSpec.sourceMaterialResolverSha256 ?? String.Empty,
                         unityMaskShaderPath = maskSpec.unityMaskShaderPath, unityMaskShaderSha256 = maskSpec.unityMaskShaderSha256,
                         unityMaskMaterialGuid = maskSpec.unityMaskMaterialGuid, unityMaskMaterialPath = maskSpec.unityMaskMaterialPath };
                     // Always use stencil Mask on the render proxy. RectMask2D
@@ -6279,6 +6283,9 @@ namespace Monkey.StaticSortQueueProxy
                         sourceEffectId = sourceMask.sourceEffectId ?? String.Empty,
                         sourceEffectName = sourceMask.sourceEffectName ?? String.Empty,
                         sourceEffectDocumentSha256 = sourceMask.sourceEffectDocumentSha256 ?? String.Empty,
+                    sourceMaterialResolution = sourceMask.sourceMaterialResolution ?? String.Empty,
+                    sourceMaterialResolverPath = sourceMask.sourceMaterialResolverPath ?? String.Empty,
+                    sourceMaterialResolverSha256 = sourceMask.sourceMaterialResolverSha256 ?? String.Empty,
                         unityMaskShaderPath = sourceMask.unityMaskShaderPath, unityMaskShaderSha256 = sourceMask.unityMaskShaderSha256,
                         unityMaskMaterialGuid = sourceMask.unityMaskMaterialGuid, unityMaskMaterialPath = sourceMask.unityMaskMaterialPath };
                     var native = UnityStaticMaskSort.ReadStaticMask(nativeSpec, maskObject, resolveSprite);
@@ -6323,7 +6330,7 @@ namespace Monkey.StaticSortQueueProxy
                     if (!resolvedSourceMaterialMatches) checks.Add("resolved-source-material-id");
                     var sourceEffectMatches = maskIdentity != null && maskIdentity.sourceEffectId == sourceMask.sourceEffectId &&
                         maskIdentity.sourceEffectName == sourceMask.sourceEffectName &&
-                        maskIdentity.sourceEffectDocumentSha256 == sourceMask.sourceEffectDocumentSha256;
+                        maskIdentity.sourceEffectDocumentSha256 == sourceMask.sourceEffectDocumentSha256 && maskIdentity.sourceMaterialResolution == sourceMask.sourceMaterialResolution && maskIdentity.sourceMaterialResolverPath == sourceMask.sourceMaterialResolverPath && maskIdentity.sourceMaterialResolverSha256 == sourceMask.sourceMaterialResolverSha256;
                     if (!sourceEffectMatches) checks.Add("source-effect-proof");
                     var alphaThresholdMatches = maskIdentity != null && maskIdentity.sourceAlphaThreshold == sourceMask.alphaThreshold;
                     if (!alphaThresholdMatches) checks.Add("alpha-threshold");

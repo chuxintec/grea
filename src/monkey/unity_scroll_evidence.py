@@ -77,10 +77,7 @@ def _physical_rect(node, *, root_scope):
     if (not identity or row.get('componentUuid') != uuid or row.get('persistent') is not True
             or not isinstance(row.get('identityPath'), list) or uuid not in row['identityPath']):
         return None
-    if root_scope:
-        if row.get('identityOrigin') != 'corresponding-prefab-source':
-            return None
-    elif row.get('identityOrigin') != 'direct-observation':
+    if row.get('identityOrigin') not in ('direct-observation', 'corresponding-prefab-source'):
         return None
     return row
 
@@ -100,12 +97,64 @@ def _owner_component_rows(readback, owner_id, source_id):
     return roots, details, owners[0]
 
 
+def _scene_component_rows(readback, source_id):
+    rows = [row for row in readback.get('sceneComponents', [])
+            if isinstance(row, dict) and _id(row) == source_id] \
+        if isinstance(readback.get('sceneComponents'), list) else []
+    return rows
+
+
+def _validate_scroll_fields(fields, source, *, phase, identity, content_id, viewport_id, scope):
+    gaps = []
+    if not isinstance(fields, dict):
+        return [scope + '-static-scroll-fields-missing']
+    expected = {
+        'contract': CONTRACT,
+        'schemaVersion': 1,
+        'phase': phase,
+        'sourceId': source.get('sourceId'),
+        'node': source.get('node'),
+        'guid': identity[0] if identity else None,
+        'localFileId': identity[1] if identity else None,
+        'horizontal': source.get('horizontal'),
+        'vertical': source.get('vertical'),
+        'contentNode': content_id,
+        'viewportNode': viewport_id,
+    }
+    for key, value in expected.items():
+        if fields.get(key) != value or (key in ('horizontal', 'vertical')
+                and type(fields.get(key)) is not bool):
+            gaps.append(scope + '-static-scroll-field-mismatch:' + key)
+    if type(fields.get('schemaVersion')) is not int:
+        gaps.append(scope + '-static-scroll-schema-version-invalid')
+    for node_key, guid_key, file_key, persistent_key in (
+        ('contentNode', 'contentGuid', 'contentLocalFileId', 'contentPersistent'),
+        ('viewportNode', 'viewportGuid', 'viewportLocalFileId', 'viewportPersistent'),
+    ):
+        if (fields.get(node_key) is None or not _guid_local(fields.get(guid_key), fields.get(file_key))
+                or fields.get(persistent_key) is not True):
+            gaps.append(scope + '-static-scroll-reference-identity-invalid:' + node_key)
+    return gaps
+
+
+def _observed_component_identity(row, scope):
+    identity = _unity_identity(row)
+    if identity is None or row.get('observationScope') != scope:
+        return None
+    if row.get('identityOrigin') not in ('direct-observation', 'corresponding-prefab-source'):
+        return None
+    path = row.get('identityPath')
+    if not isinstance(path, list) or not path or path[-1] != row.get('componentUuid'):
+        return None
+    return identity
+
+
 def _verify_one(plan, readback, coverage_row, source, plan_nodes):
     sid = source.get('sourceId')
     gaps = []
     if (type(source.get('horizontal')) is not bool or type(source.get('vertical')) is not bool
             or type(source.get('enabled')) is not bool):
-        gaps.append('source-axis-values-not-boolean')
+        gaps.append('source-axis-or-enabled-values-not-boolean')
     content_id = source.get('content')
     content = plan_nodes.get(content_id) if isinstance(content_id, str) else None
     viewport_id = content.get('parent') if isinstance(content, dict) else None
@@ -116,8 +165,8 @@ def _verify_one(plan, readback, coverage_row, source, plan_nodes):
     if len(source_nodes) != len({source.get('node'), content_id, viewport_id}):
         gaps.append('source-node-identity-ambiguous')
 
-    # The ScrollRect and both referenced RectTransforms must belong to the
-    # same explicitly planned Prefab; aliases/order are never used as joins.
+    # The source owner is a source graph join. Candidate scene objects are a
+    # separate saved asset scope, not assumed to share owner Prefab GUIDs.
     from .prefab_component_coverage import _planned_owner
     owner_id, owner_error = _planned_owner(plan, source)
     expected_node_ids = {source.get('node'), content_id, viewport_id}
@@ -125,20 +174,6 @@ def _verify_one(plan, readback, coverage_row, source, plan_nodes):
             _node_owners(plan, node_id) != [owner_id] for node_id in expected_node_ids if node_id):
         gaps.append('source-scroll-content-viewport-owner-scope-mismatch')
         owner_id = None
-
-    native = coverage_row.get('nativeComponentReadback') if isinstance(coverage_row, dict) else None
-    identity = _unity_identity(native)
-    if (identity is None or coverage_row.get('sourceType') != 'cc.ScrollView'
-            or coverage_row.get('nativeStatus') != 'pass'
-            or coverage_row.get('disposition') not in ('native', 'disabled')
-            or coverage_row.get('nativeStaticFieldsVerified') is not True
-            or native.get('nativeType') != 'UnityEngine.UI.ScrollRect'
-            or native.get('representation') != 'native-component'
-            or native.get('status') not in ('native', 'disabled')
-            or native.get('sourceId') != sid or native.get('node') != source.get('node')
-            or native.get('sourceEnabled') is not source.get('enabled')
-            or native.get('nativeEnabled') is not source.get('enabled')):
-        gaps.append('saved-scrollrect-native-identity-unverified')
 
     root_rows, owner_rows, owner_readback = _owner_component_rows(readback, owner_id, sid) \
         if owner_id is not None else ([], [], None)
@@ -151,11 +186,13 @@ def _verify_one(plan, readback, coverage_row, source, plan_nodes):
             or owner_readback.get('path') != planned_owners[0].get('path')):
         gaps.append('saved-scroll-owner-prefab-identity-mismatch')
     if len(root_rows) != 1 or len(owner_rows) != 1 or owner_readback is None:
-        gaps.append('top-and-owner-scroll-component-rows-not-unique')
+        gaps.append('owner-scroll-component-rows-not-unique')
         top_fields = owner_fields = None
+        owner_identity = None
     else:
         top, owned = root_rows[0], owner_rows[0]
         top_fields, owner_fields = top.get('staticScrollFields'), owned.get('staticScrollFields')
+        owner_identity = _observed_component_identity(owned, 'saved-source-prefab')
         if top.get('node') != source.get('node') or owned.get('node') != source.get('node'):
             gaps.append('saved-scroll-component-node-mismatch')
         if (top.get('sourceEnabled') is not source.get('enabled')
@@ -163,9 +200,9 @@ def _verify_one(plan, readback, coverage_row, source, plan_nodes):
                 or top.get('nativeEnabled') is not source.get('enabled')
                 or owned.get('nativeEnabled') is not source.get('enabled')):
             gaps.append('saved-scroll-component-enabled-state-mismatch')
-        if top.get('sourceId') != owned.get('sourceId') or top.get('guid') != owned.get('guid') \
-                or top.get('localFileId') != owned.get('localFileId') \
-                or top.get('componentUuid') != owned.get('componentUuid'):
+        if (top.get('sourceId') != owned.get('sourceId') or top.get('guid') != owned.get('guid')
+                or top.get('localFileId') != owned.get('localFileId')
+                or top.get('componentUuid') != owned.get('componentUuid')):
             gaps.append('top-owner-scroll-identity-mismatch')
         if top_fields != owner_fields:
             gaps.append('top-owner-static-scroll-fields-disagree')
@@ -174,75 +211,107 @@ def _verify_one(plan, readback, coverage_row, source, plan_nodes):
                 or top.get('status') not in ('native', 'disabled')
                 or owned.get('status') not in ('native', 'disabled')):
             gaps.append('saved-scroll-component-type-or-status-invalid')
-        if _unity_identity(owned) != identity:
-            gaps.append('coverage-owner-scroll-identity-mismatch')
+        if owner_identity is None:
+            gaps.append('saved-owner-scroll-identity-unverified')
 
-    fields = owner_fields if isinstance(owner_fields, dict) else None
-    if fields is None:
-        gaps.append('static-scroll-fields-missing')
+    owner_fields = owner_fields if isinstance(owner_fields, dict) else None
+    if owner_fields is None:
+        gaps.append('owner-static-scroll-fields-missing')
+    gaps.extend(_validate_scroll_fields(owner_fields, source,
+        phase='persistent-saved-prefab', identity=owner_identity,
+        content_id=content_id, viewport_id=viewport_id, scope='owner'))
+
+    if (readback.get('sceneComponentContract') != 'monkey-unity-saved-scene-components/1'
+            or readback.get('sceneComponentPhase') != 'saved-scene-reopened'):
+        gaps.append('saved-scene-component-inventory-header-invalid')
+    scene_rows = _scene_component_rows(readback, sid)
+    scene_row = scene_rows[0] if len(scene_rows) == 1 else None
+    if scene_row is None:
+        gaps.append('saved-scene-scroll-component-not-unique')
+        scene_identity = None
+        scene_fields = None
     else:
-        expected = {
-            'contract': CONTRACT,
-            'schemaVersion': 1,
-            'phase': 'persistent-saved-prefab',
-            'sourceId': sid,
-            'node': source.get('node'),
-            'guid': identity[0] if identity else None,
-            'localFileId': identity[1] if identity else None,
-            'horizontal': source.get('horizontal'),
-            'vertical': source.get('vertical'),
-            'contentNode': content_id,
-            'viewportNode': viewport_id,
-        }
-        for key, value in expected.items():
-            if fields.get(key) != value or (key in ('horizontal', 'vertical') and type(fields.get(key)) is not bool):
-                gaps.append('static-scroll-field-mismatch:' + key)
-        if type(fields.get('schemaVersion')) is not int:
-            gaps.append('static-scroll-schema-version-invalid')
-        for node_key, guid_key, file_key, persistent_key in (
-            ('contentNode', 'contentGuid', 'contentLocalFileId', 'contentPersistent'),
-            ('viewportNode', 'viewportGuid', 'viewportLocalFileId', 'viewportPersistent'),
-        ):
-            if (fields.get(node_key) is None or not _guid_local(fields.get(guid_key), fields.get(file_key))
-                    or fields.get(persistent_key) is not True):
-                gaps.append('static-scroll-reference-identity-invalid:' + node_key)
+        scene_identity = _observed_component_identity(scene_row, 'saved-scene-correspondence')
+        scene_fields = scene_row.get('staticScrollFields')
+        if (scene_identity is None or scene_row.get('type') != 'cc.ScrollView'
+                or scene_row.get('nativeType') != 'UnityEngine.UI.ScrollRect'
+                or scene_row.get('node') != source.get('node')
+                or scene_row.get('status') not in ('native', 'disabled')
+                or scene_row.get('sourceEnabled') is not source.get('enabled')
+                or scene_row.get('nativeEnabled') is not source.get('enabled')
+                or scene_row.get('nativeStaticFieldsVerified') is not True):
+            gaps.append('saved-scene-scroll-component-identity-or-state-invalid')
+        if (not isinstance(coverage_row, dict)
+                or _unity_identity(coverage_row.get('nativeComponentReadback')) != scene_identity
+                or not isinstance(coverage_row.get('nativeComponentReadback'), dict)
+                or coverage_row['nativeComponentReadback'].get('componentUuid') != scene_row.get('componentUuid')):
+            gaps.append('assessed-scroll-identity-does-not-match-saved-scene-component')
+    gaps.extend(_validate_scroll_fields(scene_fields, source,
+        phase='saved-scene-correspondence', identity=scene_identity,
+        content_id=content_id, viewport_id=viewport_id, scope='scene'))
+
+    native = coverage_row.get('nativeComponentReadback') if isinstance(coverage_row, dict) else None
+    if (not isinstance(coverage_row, dict) or coverage_row.get('sourceType') != 'cc.ScrollView'
+            or coverage_row.get('nativeStatus') != 'pass'
+            or coverage_row.get('disposition') not in ('native', 'disabled')
+            or coverage_row.get('nativeStaticFieldsVerified') is not True
+            or not isinstance(native, dict)
+            or native.get('nativeType') != 'UnityEngine.UI.ScrollRect'
+            or native.get('representation') != 'native-component'
+            or native.get('status') not in ('native', 'disabled')
+            or native.get('sourceId') != sid or native.get('node') != source.get('node')
+            or native.get('sourceEnabled') is not source.get('enabled')
+            or native.get('nativeEnabled') is not source.get('enabled')):
+        gaps.append('assessed-scrollrect-native-identity-unverified')
+    if isinstance(scene_fields, dict) and isinstance(native, dict):
+        if native.get('staticScrollFields') != scene_fields:
+            gaps.append('assessed-scene-scroll-fields-mismatch')
 
     owner_nodes = owner_readback.get('nodes') if isinstance(owner_readback, dict) else None
-    root_nodes = readback.get('nodes') if isinstance(readback.get('nodes'), list) else []
-    node_evidence = {}
+    scene_nodes = readback.get('nodes') if isinstance(readback.get('nodes'), list) else []
+    owner_node_evidence = {}
+    scene_node_evidence = {}
     for node_id, guid_key, file_key in (
         (content_id, 'contentGuid', 'contentLocalFileId'),
         (viewport_id, 'viewportGuid', 'viewportLocalFileId'),
     ):
-        if not isinstance(node_id, str) or not isinstance(fields, dict):
+        if not isinstance(node_id, str) or not isinstance(owner_fields, dict) or not isinstance(scene_fields, dict):
             continue
         owner_node = _unique_by_id(owner_nodes, node_id)
-        root_node = _unique_by_id(root_nodes, node_id)
+        scene_node = _unique_by_id(scene_nodes, node_id)
         owner_rect = _physical_rect(owner_node, root_scope=False)
-        root_rect = _physical_rect(root_node, root_scope=True)
-        expected_uuid = (str(fields.get(guid_key)) + ':' + str(fields.get(file_key)))
-        if (owner_rect is None or root_rect is None
-                or owner_rect.get('guid') != fields.get(guid_key)
-                or owner_rect.get('localFileId') != fields.get(file_key)
-                or owner_rect.get('componentUuid') != expected_uuid
-                or expected_uuid not in root_rect.get('identityPath', [])):
-            gaps.append('saved-recttransform-identity-mismatch:' + node_id)
-            continue
-        node_evidence[node_id] = {
-            'guid': fields[guid_key], 'localFileId': fields[file_key],
-            'ownerComponentUuid': owner_rect['componentUuid'],
-            'rootIdentityOrigin': root_rect['identityOrigin'],
-            'rootIdentityPath': list(root_rect['identityPath']),
-        }
+        scene_rect = _physical_rect(scene_node, root_scope=True)
+        owner_uuid = str(owner_fields.get(guid_key)) + ':' + str(owner_fields.get(file_key))
+        scene_uuid = str(scene_fields.get(guid_key)) + ':' + str(scene_fields.get(file_key))
+        if (owner_rect is None or owner_rect.get('guid') != owner_fields.get(guid_key)
+                or owner_rect.get('localFileId') != owner_fields.get(file_key)
+                or owner_rect.get('componentUuid') != owner_uuid):
+            gaps.append('saved-owner-recttransform-identity-mismatch:' + node_id)
+        else:
+            owner_node_evidence[node_id] = {'guid': owner_fields[guid_key],
+                'localFileId': owner_fields[file_key], 'componentUuid': owner_rect['componentUuid'],
+                'identityOrigin': owner_rect['identityOrigin'],
+                'identityPath': list(owner_rect['identityPath'])}
+        if (scene_rect is None or scene_rect.get('guid') != scene_fields.get(guid_key)
+                or scene_rect.get('localFileId') != scene_fields.get(file_key)
+                or scene_rect.get('componentUuid') != scene_uuid):
+            gaps.append('saved-scene-recttransform-identity-mismatch:' + node_id)
+        else:
+            scene_node_evidence[node_id] = {'sourceNodeId': node_id,
+                'guid': scene_fields[guid_key], 'localFileId': scene_fields[file_key],
+                'ownerComponentUuid': scene_rect['componentUuid'],
+                'identityOrigin': scene_rect['identityOrigin'],
+                'identityPath': list(scene_rect['identityPath'])}
 
     if gaps:
         return None, diagnostic('SCROLL_STATIC_EVIDENCE_UNVERIFIED', sid,
             'Saved ScrollRect static evidence failed: ' + ', '.join(dict.fromkeys(gaps)), sid)
 
+    scene_identity = _unity_identity(native)
     evidence = {
         'sourceId': sid,
-        'guid': identity[0],
-        'localFileId': identity[1],
+        'guid': scene_identity[0],
+        'localFileId': scene_identity[1],
         'nativeType': 'UnityEngine.UI.ScrollRect',
         'representation': 'native-component',
         'persistent': True,
@@ -253,12 +322,15 @@ def _verify_one(plan, readback, coverage_row, source, plan_nodes):
         'viewportNode': viewport_id,
         'horizontal': source['horizontal'],
         'vertical': source['vertical'],
-        'contentIdentity': node_evidence[content_id],
-        'viewportIdentity': node_evidence[viewport_id],
+        'contentIdentity': scene_node_evidence[content_id],
+        'viewportIdentity': scene_node_evidence[viewport_id],
+        'staticScrollFields': dict(scene_fields),
+        'ownerStaticScrollFields': dict(owner_fields),
+        'ownerScrollIdentity': {'guid': owner_identity[0], 'localFileId': owner_identity[1]},
+        'ownerRectTransformIdentity': owner_node_evidence,
         'contract': CONTRACT,
         'schemaVersion': 1,
-        'phase': 'persistent-saved-prefab',
-        'staticScrollFields': dict(fields),
+        'phase': 'saved-scene-correspondence',
     }
     return {
         'verified': True,

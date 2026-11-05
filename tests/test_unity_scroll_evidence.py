@@ -19,10 +19,17 @@ NODE_IDENTITIES = {
     SCROLL_NODE: ('b' * 32, 10),
     CONTENT_NODE: ('c' * 32, 20),
 }
+SCENE_SCROLL_GUID = 'e' * 32
+SCENE_SCROLL_LOCAL = 456
+SCENE_NODE_IDENTITIES = {
+    SCROLL_NODE: ('1' * 32, 110),
+    CONTENT_NODE: ('2' * 32, 120),
+}
 
 
 def _rect(node_id, *, root=False, identity_override=None):
-    guid, local_id = identity_override or NODE_IDENTITIES[node_id]
+    defaults = SCENE_NODE_IDENTITIES if root else NODE_IDENTITIES
+    guid, local_id = identity_override or defaults[node_id]
     uuid = f'{guid}:{local_id}'
     return {
         'sourceId': node_id,
@@ -59,11 +66,20 @@ def fixture():
         'viewportGuid': NODE_IDENTITIES[SCROLL_NODE][0], 'viewportLocalFileId': NODE_IDENTITIES[SCROLL_NODE][1],
         'viewportPersistent': True,
     }
+    scene_fields = copy.deepcopy(fields)
+    scene_fields.update(phase='saved-scene-correspondence',guid=SCENE_SCROLL_GUID,
+        localFileId=SCENE_SCROLL_LOCAL,
+        contentGuid=SCENE_NODE_IDENTITIES[CONTENT_NODE][0],
+        contentLocalFileId=SCENE_NODE_IDENTITIES[CONTENT_NODE][1],
+        viewportGuid=SCENE_NODE_IDENTITIES[SCROLL_NODE][0],
+        viewportLocalFileId=SCENE_NODE_IDENTITIES[SCROLL_NODE][1])
     component = {
         'sourceId': SCROLL, 'node': SCROLL_NODE, 'type': 'cc.ScrollView',
         'nativeType': 'UnityEngine.UI.ScrollRect', 'status': 'native',
         'representation': 'native-component', 'guid': SCROLL_GUID, 'localFileId': SCROLL_LOCAL,
         'componentUuid': SCROLL_UUID, 'sourceIdentityVerified': True, 'persistent': True,
+        'observationScope': 'saved-source-prefab','identityOrigin':'direct-observation',
+        'identityPath':[SCROLL_UUID],
         'sourceEnabled': True, 'nativeEnabled': True, 'nativeStaticFieldsVerified': True,
         'staticScrollFields': copy.deepcopy(fields),
     }
@@ -72,6 +88,15 @@ def fixture():
         'nodes': [_rect(SCROLL_NODE), _rect(CONTENT_NODE)],
         'components': [copy.deepcopy(component)],
     }
+    scene_component = {
+        **copy.deepcopy(component),
+        'guid': SCENE_SCROLL_GUID, 'localFileId': SCENE_SCROLL_LOCAL,
+        'componentUuid': f'{SCENE_SCROLL_GUID}:{SCENE_SCROLL_LOCAL}',
+        'observationScope': 'saved-scene-correspondence',
+        'identityOrigin': 'direct-observation',
+        'identityPath': [f'{SCENE_SCROLL_GUID}:{SCENE_SCROLL_LOCAL}'],
+        'staticScrollFields': scene_fields,
+    }
     plan = {
         'nodes': plan_nodes,
         'sourcePrefabs': [{'sourceId': OWNER, 'path': OWNER_PATH,
@@ -79,6 +104,9 @@ def fixture():
         'components': [source],
     }
     readback = {
+        'sceneComponentContract': 'monkey-unity-saved-scene-components/1',
+        'sceneComponentPhase': 'saved-scene-reopened',
+        'sceneComponents': [scene_component],
         'nodes': [_rect(SCROLL_NODE, root=True), _rect(CONTENT_NODE, root=True)],
         'components': [copy.deepcopy(component)],
         'sourcePrefabs': [owner_row],
@@ -86,7 +114,7 @@ def fixture():
     coverage = {'components': [{
         'sourceId': SCROLL, 'sourceType': 'cc.ScrollView', 'disposition': 'native',
         'nativeStatus': 'pass', 'nativeStaticFieldsVerified': True,
-        'nativeComponentReadback': copy.deepcopy(component),
+        'nativeComponentReadback': copy.deepcopy(scene_component),
     }]}
     return plan, readback, coverage
 
@@ -122,17 +150,23 @@ def test_shared_blocking_gate_rechecks_current_scroll_static_payload_not_only_re
     (lambda p, r, c: p['components'][0].update(horizontal=False), 'static-scroll-field-mismatch:horizontal'),
     (lambda p, r, c: r['sourcePrefabs'][0]['components'][0]['staticScrollFields'].update(vertical=True),
      'top-owner-static-scroll-fields-disagree'),
+    (lambda p, r, c: r['sceneComponents'][0]['staticScrollFields'].update(horizontal=False),
+     'scene-static-scroll-field-mismatch:horizontal'),
+    (lambda p, r, c: r['sceneComponents'][0].update(localFileId=457),
+     'saved-scene-scroll-component-identity-or-state-invalid'),
     (lambda p, r, c: r['sourcePrefabs'][0]['components'][0]['staticScrollFields'].update(contentGuid='e' * 32),
-     'saved-recttransform-identity-mismatch:' + CONTENT_NODE),
-    (lambda p, r, c: r['nodes'][1]['physicalComponents'][0].update(identityOrigin='direct-observation'),
-     'saved-recttransform-identity-mismatch:' + CONTENT_NODE),
+     'saved-owner-recttransform-identity-mismatch:' + CONTENT_NODE),
+    (lambda p, r, c: r['sceneComponents'][0]['staticScrollFields'].update(contentLocalFileId=121),
+     'saved-scene-recttransform-identity-mismatch:' + CONTENT_NODE),
+    (lambda p, r, c: r['nodes'][1]['physicalComponents'][0].update(identityPath=['d'*32+':999']),
+     'saved-scene-recttransform-identity-mismatch:' + CONTENT_NODE),
     (lambda p, r, c: r['sourcePrefabs'][0]['nodes'][1]['physicalComponents'][0].update(persistent=False),
-     'saved-recttransform-identity-mismatch:' + CONTENT_NODE),
+     'saved-owner-recttransform-identity-mismatch:' + CONTENT_NODE),
     (lambda p, r, c: p['nodes'][1].update(parent='node:wrong#9'),
      'source-scroll-content-viewport-owner-scope-mismatch'),
     (lambda p, r, c: c['components'][0]['nativeComponentReadback'].update(localFileId=True),
-     'saved-scrollrect-native-identity-unverified'),
-    (lambda p, r, c: r['components'].clear(), 'top-and-owner-scroll-component-rows-not-unique'),
+     'assessed-scroll-identity-does-not-match-saved-scene-component'),
+    (lambda p, r, c: r['components'].clear(), 'owner-scroll-component-rows-not-unique'),
 ])
 def test_unproven_or_mismatched_scroll_static_evidence_stays_blocking(mutate, expected_gap):
     plan, readback, coverage = fixture()
@@ -149,23 +183,33 @@ def test_duplicate_prefab_owner_or_missing_root_node_chain_cannot_resolve_scroll
     readback['sourcePrefabs'].append(copy.deepcopy(readback['sourcePrefabs'][0]))
     result = verify(plan, readback, coverage)
     assert not result['familyProofs']
-    assert 'top-and-owner-scroll-component-rows-not-unique' in result['diagnostics'][0]['message']
+    assert 'owner-scroll-component-rows-not-unique' in result['diagnostics'][0]['message']
 
     plan, readback, coverage = fixture()
     readback['nodes'].pop()
     result = verify(plan, readback, coverage)
     assert not result['familyProofs']
-    assert 'saved-recttransform-identity-mismatch:' + CONTENT_NODE in result['diagnostics'][0]['message']
+    assert 'saved-scene-recttransform-identity-mismatch:' + CONTENT_NODE in result['diagnostics'][0]['message']
 
 
 def test_disabled_scroll_can_prove_static_fields_without_claiming_dynamic_behavior():
     plan, readback, coverage = fixture()
     plan['components'][0]['enabled'] = False
     for row in [readback['components'][0], readback['sourcePrefabs'][0]['components'][0],
+                readback['sceneComponents'][0],
                 coverage['components'][0]['nativeComponentReadback']]:
         row.update(status='disabled', sourceEnabled=False, nativeEnabled=False,
                    disabledReason='source-disabled')
     coverage['components'][0]['disposition'] = 'disabled'
+    result = verify(plan, readback, coverage)
+    assert SCROLL in result['familyProofs']
+
+
+def test_owner_recttransform_identity_may_follow_exact_prefab_source_chain():
+    plan, readback, coverage = fixture()
+    for node in readback['sourcePrefabs'][0]['nodes']:
+        for physical in node['physicalComponents']:
+            physical['identityOrigin'] = 'corresponding-prefab-source'
     result = verify(plan, readback, coverage)
     assert SCROLL in result['familyProofs']
 

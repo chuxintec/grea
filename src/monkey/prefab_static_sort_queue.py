@@ -330,7 +330,7 @@ def prepare(plan: Mapping, manifest: Mapping) -> dict:
         if bound:
             for key in ("spriteFrameUuid", "alphaThreshold", "sourceFields", "sourceMaterialId",
                         "resolvedSourceMaterialId", "sourceEffectId", "sourceEffectName",
-                        "sourceEffectDocumentSha256", "unityMaskShaderPath", "unityMaskShaderSha256",
+                        "sourceEffectDocumentSha256", "sourceMaterialResolution", "sourceMaterialResolverPath", "sourceMaterialResolverSha256", "unityMaskShaderPath", "unityMaskShaderSha256",
                         "unityMaskMaterialGuid", "unityMaskMaterialPath"):
                 if key in bound:
                     mask_row[key] = bound[key]

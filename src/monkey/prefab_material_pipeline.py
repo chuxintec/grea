@@ -3,7 +3,7 @@ import base64
 import math
 from importlib.resources import files
 from pathlib import Path
-from .io import inside, read, sha, diagnostic
+from .io import inside, read, sha, diagnostic, stage_bytes
 from .sources.compiled import fail
 
 
@@ -19,7 +19,7 @@ def discover(ir, ir_path):
     try:
         # Both pins are checked by the profile before any generated resource is
         # accepted; recognizing a name or UUID alone is never sufficient.
-        result=plan_ui_color(source,ir_path,'Shared',ir['sourceManifestSha256'],sha(read(ir_path)))
+        result=plan_ui_color(source,ir_path,'Shared',ir['sourceManifestSha256'],sha(stage_bytes(ir_path)))
         return result, []
     except (MaterialProfileError,OSError) as error:
         return None,[diagnostic('MATERIAL_PROFILE_HANDOFF','materials',str(error))]

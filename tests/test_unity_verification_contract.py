@@ -51,6 +51,9 @@ def _owned_component_fixture(component, native_row):
         'nodes':[node_record('saved-scene-correspondence')],
         'sourcePrefabs':[{'sourceId':owner,'path':path,'nodes':[node_record('saved-source-prefab')],
             'components':[copy.deepcopy(row)]}]}
+    readback.update(sceneComponentContract='monkey-unity-saved-scene-components/1',sceneComponentPhase='saved-scene-reopened',
+        sceneComponents=[dict(copy.deepcopy(row),observationScope='saved-scene-correspondence',
+                              identityOrigin='corresponding-prefab-source',identityPath=['d'*32+':900',target_uuid])])
     return plan,readback
 
 
@@ -127,6 +130,7 @@ class UnityVerificationContractTests(unittest.TestCase):
              'componentUuid':'0123456789abcdef0123456789abcdef:1',
              'sourceIdentityVerified':True,'persistent':True,'nativeEnabled':True,'sourceVisible':True}
         plan,rb=_owned_component_fixture(component,row)
+        rb['sceneComponents'][0]['nativeStaticFieldsVerified']=True
         rb['sourcePrefabs'][0]['staticFieldBindings']=[{'binding':field}]
         rb['staticPresentationValidation']={'components':[{'sourceId':'s','sourceVisible':True,'verified':True,'rendered':True}]}
         normalized=coverage_readback(rb)

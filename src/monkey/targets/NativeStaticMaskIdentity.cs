@@ -8,6 +8,7 @@ namespace Monkey.StaticMaskSort
     {
         public string sourceId, nativeId, sourceFieldsJson, spriteFrameUuid;
         public string sourceMaterialId, resolvedSourceMaterialId, sourceEffectId, sourceEffectName, sourceEffectDocumentSha256;
+        public string sourceMaterialResolution, sourceMaterialResolverPath, sourceMaterialResolverSha256;
         public int sourceMaskType;
         public float sourceAlphaThreshold;
         public bool sourceInverted;

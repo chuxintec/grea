@@ -43,6 +43,11 @@ def fixture():
               'diagnostics':[],
               'staticPresentationValidation':{'components':[{'sourceId':source,'sourceVisible':True,
                                                             'verified':True,'rendered':True}]}}
+    readback.update(sceneComponentContract='monkey-unity-saved-scene-components/1',sceneComponentPhase='saved-scene-reopened',
+                    sceneComponents=[dict(copy.deepcopy(native),observationScope='saved-scene-correspondence',
+                                          identityOrigin='corresponding-prefab-source',identityPath=[native['componentUuid']])])
+    for physical_row in readback['nodes'][0]['physicalComponents']:
+        physical_row['identityOrigin']='corresponding-prefab-source'
     return plan,readback
 
 
@@ -78,6 +83,7 @@ def test_missing_source_component_and_unknown_nonconvertible_are_in_denominator(
         if missing:
             rb['components']=[]
             rb['sourcePrefabs'][0]['components']=[]
+            rb['sceneComponents']=[]
         else:plan['components'].append({'sourceId':'audit:prefab#3','node':'audit:prefab#1',
             'type':'Audit.UnknownVisual','convertible':False,'enabled':True})
         coverage,result,_=pipeline(plan,rb)

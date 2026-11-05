@@ -22,6 +22,7 @@ namespace Monkey.StaticMaskSort
         public bool sourceActiveSelf, sourceActive;
         public string sourceQueueDisposition;
         public string sourceMaterialId, resolvedSourceMaterialId, sourceEffectId, sourceEffectName, sourceEffectDocumentSha256;
+        public string sourceMaterialResolution, sourceMaterialResolverPath, sourceMaterialResolverSha256;
         public string unityMaskShaderPath, unityMaskShaderSha256, unityMaskMaterialGuid, unityMaskMaterialPath;
     }
     [Serializable] public sealed class SortSpec
@@ -45,6 +46,7 @@ namespace Monkey.StaticMaskSort
     {
         public string sourceId, node, nativeType, spriteFrameUuid;
         public string sourceMaterialId, resolvedSourceMaterialId, sourceEffectId, sourceEffectName, sourceEffectDocumentSha256;
+        public string sourceMaterialResolution, sourceMaterialResolverPath, sourceMaterialResolverSha256;
         public string unityMaskMaterialGuid;
         public string unityMaskShaderPath, unityMaskShaderSha256;
         public string persistentIdentityGuid;
@@ -146,6 +148,7 @@ namespace Monkey.StaticMaskSort
                 identity.sourceMaterialId = spec.sourceMaterialId; identity.resolvedSourceMaterialId = spec.resolvedSourceMaterialId;
                 identity.sourceEffectId = spec.sourceEffectId; identity.sourceEffectName = spec.sourceEffectName;
                 identity.sourceEffectDocumentSha256 = spec.sourceEffectDocumentSha256;
+                identity.sourceMaterialResolution=spec.sourceMaterialResolution; identity.sourceMaterialResolverPath=spec.sourceMaterialResolverPath; identity.sourceMaterialResolverSha256=spec.sourceMaterialResolverSha256;
                 result.Add(ReadStaticMask(spec, go, resolveSprite));
             }
             return result.ToArray();
@@ -171,7 +174,8 @@ namespace Monkey.StaticMaskSort
                 identity.sourceFieldsJson == spec.sourceFieldsJson && mask.enabled == spec.enabled && !mask.showMaskGraphic &&
                 identity.sourceMaterialId == spec.sourceMaterialId && identity.resolvedSourceMaterialId == spec.resolvedSourceMaterialId &&
                 identity.sourceEffectId == spec.sourceEffectId && identity.sourceEffectName == spec.sourceEffectName &&
-                identity.sourceEffectDocumentSha256 == spec.sourceEffectDocumentSha256 && imageMaterialOk &&
+                identity.sourceEffectDocumentSha256 == spec.sourceEffectDocumentSha256 &&
+                identity.sourceMaterialResolution==spec.sourceMaterialResolution && identity.sourceMaterialResolverPath==spec.sourceMaterialResolverPath && identity.sourceMaterialResolverSha256==spec.sourceMaterialResolverSha256 && imageMaterialOk &&
                 invertedCanvasOk && graphic.enabled == spec.enabled && !graphic.raycastTarget;
             return new MaskReadback { sourceId = spec.sourceId, node = spec.node,
                 nativeType = mask == null ? null : mask.GetType().FullName, enabled = mask != null && mask.enabled,
@@ -185,6 +189,7 @@ namespace Monkey.StaticMaskSort
                 sourceEffectId = identity == null ? null : identity.sourceEffectId,
                 sourceEffectName = identity == null ? null : identity.sourceEffectName,
                 sourceEffectDocumentSha256 = identity == null ? null : identity.sourceEffectDocumentSha256,
+                sourceMaterialResolution=identity==null?null:identity.sourceMaterialResolution, sourceMaterialResolverPath=identity==null?null:identity.sourceMaterialResolverPath, sourceMaterialResolverSha256=identity==null?null:identity.sourceMaterialResolverSha256,
                 unityMaskMaterialGuid = spec.unityMaskMaterialGuid, unityMaskShaderPath = spec.unityMaskShaderPath,
                 unityMaskShaderSha256 = spec.unityMaskShaderSha256, verified = verified };
         }

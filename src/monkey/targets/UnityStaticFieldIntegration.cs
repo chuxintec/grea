@@ -31,7 +31,7 @@ public static partial class MonkeyImporter
             if(c.type=="cc.Graphics"&&plan.staticControlBindings!=null)return node.GetComponent<NativeStaticGraphics>();
             if(c.type=="cc.EditBox"&&plan.staticControlBindings!=null)return node.GetComponent<NativeStaticEditBox>();
             if(c.type=="cc.Animation"&&(plan.staticCompletionEnabled||plan.staticAnimationBindingsEnabled))return node.GetComponent<NativeStaticAnimationBinding>();
-            if(c.type=="cc.ProgressBar"&&!c.convertible&&c.staticProgressBinding!=null&&c.staticProgressBinding.policy=="native-static-progress-v1")return ResolveStaticProgress(plan,nodes,id);
+            if(c.type=="cc.ProgressBar"&&!c.convertible&&HasStaticProgressBinding(c)&&c.staticProgressBinding.policy=="native-static-progress-v1")return ResolveStaticProgress(plan,nodes,id);
             if(c.type=="cc.Layout"||c.type=="cc.Widget")
             {
                 var completed=ResolveStaticLayoutSource(plan,nodes,id);

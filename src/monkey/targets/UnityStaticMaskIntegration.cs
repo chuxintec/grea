@@ -97,6 +97,8 @@ public static partial class MonkeyImporter
         if(legacy) {
             if(contract.schemaVersion!=1||!String.IsNullOrEmpty(contract.contract))
                 throw new InvalidOperationException("STATIC_MASK_LEGACY_CONTRACT_INVALID");
+            if(contract.masks.Any(row=>!String.IsNullOrEmpty(row.sourceMaterialResolution)))
+                throw new InvalidOperationException("STATIC_MASK_LEGACY_DEFAULT_MATERIAL_UNPROVEN");
             return;
         }
         if(contract.schemaVersion!=1||contract.contract!=StaticMaskContractName||
@@ -128,6 +130,10 @@ public static partial class MonkeyImporter
         foreach(var mask in actual)
         {
             var component=expected[mask.sourceId];
+            if(!String.IsNullOrEmpty(mask.sourceMaterialResolution)&&
+                (mask.sourceMaterialResolution!="engine-default-builtin"||mask.sourceMaterialResolverPath!=StaticMaskSourceEnginePath||
+                mask.sourceMaterialResolverSha256!=StaticMaskSourceEngineSha256||String.IsNullOrEmpty(mask.sourceMaterialId)||String.IsNullOrEmpty(mask.sourceEffectId)))
+                throw new InvalidOperationException("STATIC_MASK_DEFAULT_MATERIAL_PROOF_INVALID: "+mask.sourceId);
             var effectiveActive=StaticMaskSourceActivity(plan,mask.node,out var sourceActiveSelf);
             if(mask.sourceOriginId==null||mask.node!=component.node||mask.nativeId!=component.nativeId||
                 mask.enabled!=component.enabled||mask.maskType!=component.maskType||mask.inverted!=component.inverted||
@@ -248,6 +254,7 @@ public static partial class MonkeyImporter
                     identity.spriteFrameUuid=spec.spriteFrameUuid;identity.sourceMaterialId=spec.sourceMaterialId;
                     identity.resolvedSourceMaterialId=spec.resolvedSourceMaterialId;identity.sourceEffectId=spec.sourceEffectId;
                     identity.sourceEffectName=spec.sourceEffectName;identity.sourceEffectDocumentSha256=spec.sourceEffectDocumentSha256;
+                    identity.sourceMaterialResolution=spec.sourceMaterialResolution;identity.sourceMaterialResolverPath=spec.sourceMaterialResolverPath;identity.sourceMaterialResolverSha256=spec.sourceMaterialResolverSha256;
                 }
                 if(!UnityStaticMaskSort.ReadStaticMask(spec,go,id=>ResolveStaticMaskSprite(id,plan,sprites)).verified)
                     throw new InvalidOperationException("STATIC_MASK_IDEMPOTENT_READBACK_FAILED: "+spec.sourceId);

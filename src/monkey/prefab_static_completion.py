@@ -98,6 +98,9 @@ def prepare(plan_path, ir_path, output, *, font_completion=None):
         attach_time(plan,time['spec'],target)
     from .prefab_static_presentation import apply_unity, apply_creator
     (apply_creator if plan['targetProfile'].startswith('cocos-') else apply_unity)(plan,manifest)
+    if not plan['targetProfile'].startswith('cocos-'):
+        from .prefab_static_button_targets import apply as apply_button_targets
+        apply_button_targets(plan)
     from .prefab_static_mask_sort import prepare as prepare_masks
     import json
     plan['staticMasks']=prepare_masks(plan,manifest)

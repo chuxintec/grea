@@ -65,9 +65,10 @@ def _physical_inventory(targets, node_id):
     return [*grouped.values(), *extras]
 
 
-def fixture(sources=None, targets=None):
+def fixture(sources=None, targets=None, scene_targets=None):
     sources = sources or [source_component()]
     targets = targets or [target_component(source) for source in sources]
+    scene_targets = scene_targets or targets
     node_ids = sorted({source["node"] for source in sources})
     plan = {
         "nodes": [{"sourceId": node_id, "parent": None, "active": True, "opacity": 255}
@@ -77,21 +78,31 @@ def fixture(sources=None, targets=None):
         "diagnostics": [],
     }
     node_rows = []
+    owner_node_rows = []
     for node_id in node_ids:
-        physical = _physical_inventory(targets, node_id)
+        physical = _physical_inventory(scene_targets, node_id)
         node_rows.append({"sourceId": node_id, "active": True, "parent": None, "opacity": 255,
                           "componentTypes": [row["nativeType"] for row in physical],
                           "physicalObservationScope": "saved-scene-correspondence",
                           "physicalInventoryContract": "monkey-unity-node-physical-components/1",
                           "physicalInventoryPhase": "persistent-saved-reopened-node",
                           "physicalComponents": physical})
-    owner_nodes = copy.deepcopy(node_rows)
-    for owner_node in owner_nodes:
-        owner_node["physicalObservationScope"] = "saved-source-prefab"
-    owner = {"sourceId": "asset:panel", "path": "Assets/panel.prefab", "nodes": owner_nodes,
+        owner_physical = _physical_inventory(targets, node_id)
+        owner_node_rows.append({"sourceId": node_id, "active": True, "parent": None, "opacity": 255,
+                          "componentTypes": [row["nativeType"] for row in owner_physical],
+                          "physicalObservationScope": "saved-source-prefab",
+                          "physicalInventoryContract": "monkey-unity-node-physical-components/1",
+                          "physicalInventoryPhase": "persistent-saved-reopened-node",
+                          "physicalComponents": owner_physical})
+    owner = {"sourceId": "asset:panel", "path": "Assets/panel.prefab", "nodes": owner_node_rows,
              "components": copy.deepcopy(targets)}
     readback = {
         "nodes": copy.deepcopy(node_rows), "components": copy.deepcopy(targets), "sourcePrefabs": [owner],
+        "sceneComponentContract": "monkey-unity-saved-scene-components/1",
+        "sceneComponentPhase": "saved-scene-reopened",
+        "sceneComponents": [dict(target, observationScope="saved-scene-correspondence",
+                                  identityOrigin="corresponding-prefab-source",
+                                  identityPath=[target["componentUuid"]]) for target in scene_targets],
         "staticPresentationValidation": {"status": "pass", "components": [
             {"sourceId": source["sourceId"], "sourceVisible": True, "verified": True, "rendered": True}
             for source in sources if source["type"] in ("cc.Sprite", "cc.Label", "cc.LabelOutline")
@@ -107,6 +118,56 @@ class PrefabComponentIdentityCoverageTests(unittest.TestCase):
         self.assertEqual(result["nativeStaticValidation"], "pass")
         self.assertEqual(result["staticPresentationValidation"]["status"], "pass")
         self.assertEqual(result["components"][0]["nativeComponentReadback"]["localFileId"], 10)
+
+    def test_independently_saved_scene_and_source_prefab_identities_need_not_match(self):
+        source = source_component()
+        owner_target = target_component(source, GUID_A, 101)
+        scene_target = target_component(source, GUID_B, 202)
+        plan, rb = fixture([source], [owner_target], [scene_target])
+        result = assess(plan, rb, "unity")
+        self.assertEqual(result["nativeStaticValidation"], "pass")
+        self.assertEqual(result["staticPresentationValidation"]["status"], "pass")
+        self.assertEqual(result["components"][0]["nativeComponentReadback"]["guid"], GUID_B)
+
+    def test_missing_scene_scope_does_not_fall_back_to_owner_identity(self):
+        plan, rb = fixture()
+        rb.pop("sceneComponents")
+        rb.pop("sceneComponentContract")
+        rb.pop("sceneComponentPhase")
+        result = assess(plan, rb, "unity")
+        self.assertNotEqual(result["nativeStaticValidation"], "pass")
+        self.assertTrue(any(row["code"] == "COMPONENT_SCENE_SCOPE_MISSING" for row in result["diagnostics"]))
+
+    def test_scene_scope_duplicate_physical_identity_remains_rejected(self):
+        sources = [source_component("asset:panel#2/components/0"),
+                   source_component("asset:panel#2/components/1")]
+        owner_targets = [target_component(source, GUID_A, 110 + index) for index, source in enumerate(sources)]
+        scene_targets = [target_component(source, GUID_B, 210) for source in sources]
+        plan, rb = fixture(sources, owner_targets, scene_targets)
+        result = assess(plan, rb, "unity")
+        self.assertNotEqual(result["nativeStaticValidation"], "pass")
+        self.assertTrue(any(row["code"] == "COMPONENT_PHYSICAL_IDENTITY_ALIAS" for row in result["diagnostics"]))
+
+    def test_scene_scope_wrong_owner_node_or_unknown_source_id_is_rejected(self):
+        plan, rb = fixture()
+        rb["sceneComponents"][0]["node"] = "asset:other#1"
+        rb["sceneComponents"].append(dict(rb["sceneComponents"][0],
+            sourceId="asset:other#2/components/0"))
+        result = assess(plan, rb, "unity")
+        self.assertNotEqual(result["nativeStaticValidation"], "pass")
+        codes = {row["code"] for row in result["diagnostics"]}
+        self.assertIn("COMPONENT_SCENE_SOURCE_MAPPING_MISMATCH", codes)
+        self.assertIn("COMPONENT_UNKNOWN_SCENE_SOURCE_ID", codes)
+
+    def test_rendered_scene_row_cannot_hide_disabled_physical_graphic(self):
+        plan, rb = fixture()
+        rb["sceneComponents"][0]["nativeEnabled"] = False
+        result = assess(plan, rb, "unity")
+        self.assertNotEqual(result["nativeStaticValidation"], "pass")
+        self.assertTrue(any(row["code"] in ("COMPONENT_SCENE_OWNER_ROLE_MISMATCH",
+                                             "COMPONENT_PHYSICAL_TARGET_ROLE_MISMATCH",
+                                             "RENDERED_PRESENTATION_WITH_DISABLED_NATIVE")
+                            for row in result["diagnostics"]))
 
     def test_missing_owner_detail_cannot_be_repaired_by_aggregate(self):
         plan, rb = fixture()

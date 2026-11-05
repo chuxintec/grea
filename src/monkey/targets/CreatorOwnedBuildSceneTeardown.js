@@ -68,32 +68,60 @@ function managerFor(cce, kind) {
 async function cleanup(scene, options = {}) {
     const {cc, cce, editorExtends = null, sceneAsset = null, dynamicRelease} = options;
     if (!scene || !ownedBuildRoots.has(scene)) throw fail('CREATOR_BUILD_SCENE_NOT_EXACT_OWNED_ROOT');
-    if (!cc || typeof cc.isValid !== 'function' || !cc.CCObject || typeof cc.CCObject._deferredDestroy !== 'function')
+    if (!cc || typeof cc.isValid !== 'function' || typeof scene._destroyImmediate !== 'function')
         throw fail('CREATOR_BUILD_SCENE_DESTROY_APIS_UNAVAILABLE');
     if (typeof dynamicRelease !== 'function') throw fail('CREATOR_BUILD_SCENE_RELEASE_CALLBACK_UNAVAILABLE');
     assertDetached(scene, cc, cce, sceneAsset);
     const captured = collect(scene);
-    for (const entry of captured) if (cc.isValid(entry.object, true) !== true)
-        throw fail('CREATOR_BUILD_SCENE_TREE_NOT_LIVE_BEFORE_CLEANUP', {kind:entry.kind, uuid:entry.uuid});
+    const beforeDestroy = [];
+    for (const entry of captured) {
+        let strictValid, liveValid;
+        try {
+            strictValid = cc.isValid(entry.object, true);
+            liveValid = cc.isValid(entry.object, false);
+        } catch (_) { strictValid = liveValid = null; }
+        // Creator 3.8.8's strict check also rejects objects already queued with
+        // CCObjectFlags.ToDestroy. They remain live until _destroyImmediate;
+        // a non-strict false result means the object is actually Destroyed and
+        // must still block this owned-tree cleanup.
+        if (liveValid !== true || (strictValid !== true && strictValid !== false))
+            throw fail('CREATOR_BUILD_SCENE_TREE_NOT_LIVE_BEFORE_CLEANUP', {
+                kind:entry.kind, uuid:entry.uuid, strictValid, liveValid,
+            });
+        beforeDestroy.push({kind:entry.kind, uuid:entry.uuid,
+            state:strictValid ? 'live' : 'queued-to-destroy'});
+    }
 
     const errors = [];
     try { await dynamicRelease(scene); } catch (error) { errors.push(error); }
     let sceneGuardFailed = false;
     try { assertDetached(scene, cc, cce, sceneAsset); }
     catch (error) { errors.push(error); sceneGuardFailed = true; }
+    let sceneDestroyQueued = false;
     if (!sceneGuardFailed) {
         try {
-            const result = scene.destroy();
-            if (result === false) errors.push(fail('CREATOR_BUILD_SCENE_DESTROY_REJECTED'));
-        } catch (error) { errors.push(error); }
-        try { cc.CCObject._deferredDestroy(); }
-        catch (error) { errors.push(fail('CREATOR_BUILD_SCENE_DEFERRED_DESTROY_FAILED', {message:String(error && error.message || error).slice(0,160)})); }
+            // Creator's global _deferredDestroy drains every object's queue,
+            // including unrelated Editor objects. The engine's own scene
+            // replacement path calls this exact node API to retire one owned
+            // subtree, so destroy only the root captured by this scope.
+            const rootState = beforeDestroy.find(row=>row.kind==='node'&&row.uuid===captured[0].uuid);
+            if (rootState && rootState.state === 'live') {
+                if (typeof scene.destroy !== 'function' || scene.destroy() !== true)
+                    throw fail('CREATOR_BUILD_SCENE_DESTROY_REJECTED', {uuid:captured[0].uuid});
+                sceneDestroyQueued = true;
+            }
+            scene._destroyImmediate();
+        } catch (error) {
+            errors.push(fail('CREATOR_BUILD_SCENE_IMMEDIATE_DESTROY_FAILED', {
+                message:String(error && error.message || error).slice(0,160),
+            }));
+        }
     }
 
-    const flushFailed = errors.some(error => error && error.code === 'CREATOR_BUILD_SCENE_DEFERRED_DESTROY_FAILED');
+    const destroyFailed = errors.some(error => error && error.code === 'CREATOR_BUILD_SCENE_IMMEDIATE_DESTROY_FAILED');
     const tombstonesRemoved = [], tombstoneFailures = [];
     let undoRetirement = {retired:false,reason:'not-attempted',retiredObjectCount:0};
-    if (!flushFailed) {
+    if (!destroyFailed) {
         let savedScope;
         try { savedScope = require('./creator-saved-scene-scope.js'); }
         catch (_) { savedScope = require('./CreatorSavedSceneScope.js'); }
@@ -122,10 +150,12 @@ async function cleanup(scene, options = {}) {
         }
     }
     ownedBuildRoots.delete(scene);
-    const post = {rootUuid:captured[0].uuid, capturedObjectCount:captured.length,
-        rootValidStrict:cc.isValid(scene, true), tombstonesRemovedCount:tombstonesRemoved.length,
+    const post = {rootUuid:captured[0].uuid, capturedObjectCount:captured.length, beforeDestroy,
+        destruction:'owned-root-immediate', sceneDestroyQueued, globalDeferredDestroyCalled:false,
+        rootValidStrict:cc.isValid(scene, true), rootValidLive:cc.isValid(scene, false),
+        tombstonesRemovedCount:tombstonesRemoved.length,
         tombstonesRemoved, tombstoneFailures, undoRetirement};
-    if (post.rootValidStrict !== false) errors.push(fail('CREATOR_BUILD_SCENE_NOT_DESTROYED_AFTER_FLUSH', post));
+    if (post.rootValidLive !== false) errors.push(fail('CREATOR_BUILD_SCENE_NOT_DESTROYED_AFTER_IMMEDIATE', post));
     if (tombstoneFailures.length) errors.push(fail('CREATOR_BUILD_SCENE_TOMBSTONE_CLEANUP_INCOMPLETE', post));
     if (errors.length) {
         const error = fail('CREATOR_BUILD_SCENE_TEARDOWN_FAILED', {errors:errors.map(item=>String(item && item.message || item).slice(0,256)),post});

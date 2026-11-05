@@ -171,7 +171,9 @@ def prepare(source_manifest_path, plan, target, output):
         raise StaticToggleError("plan must be a mapping")
     manifest_path = io.safe(source_manifest_path)
     try:
-        manifest_raw = io.read(manifest_path)
+        # This generated inspect document has the same bounded 128 MiB
+        # contract as normalized IR. Its exact pin is checked below.
+        manifest_raw = io.read(manifest_path, max_bytes=128 * 1024 * 1024)
         manifest = io.load(manifest_raw, max_nodes=8_000_000)
     except Exception as error:
         raise StaticToggleError(f"frozen source manifest is unreadable: {manifest_path}") from error

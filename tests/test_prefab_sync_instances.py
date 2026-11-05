@@ -64,6 +64,19 @@ def _manifest(*, missing=False, cycle=False, unsupported=False):
 
 
 class SyncPrefabTests(unittest.TestCase):
+    def test_whole_input_manifest_retains_generated_document_budget_and_pin(self):
+        from monkey import io
+        from monkey.sources.compiled import ParseError
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp).resolve() / 'source-manifest.json'
+            manifest = dict(sourceProfile='cocos-2.4.15-bundle', assets=[],
+                            padding='x' * (io.MAX_BYTES + 1))
+            raw = json.dumps(manifest).encode()
+            source.write_bytes(raw)
+            self.assertEqual(load_verified_source_manifest(source, io.sha(raw), manifest['sourceProfile']), manifest)
+            with self.assertRaisesRegex(SyncPrefabError, 'MANIFEST_HASH'):
+                load_verified_source_manifest(source, '0' * 64, manifest['sourceProfile'])
+
     def test_long_multibyte_clone_asset_names_keep_bounded_distinct_roles(self):
         from monkey.prefab_sync_instances import _suffix_generated_paths
         from pathlib import PurePosixPath

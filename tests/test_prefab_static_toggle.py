@@ -40,6 +40,17 @@ def fixture():
 
 
 class StaticToggleTests(unittest.TestCase):
+    def test_whole_input_source_manifest_keeps_large_document_budget_and_exact_pin(self):
+        raw, manifest, plan, ids = fixture()
+        manifest['padding'] = 'x' * (32 * 1024 * 1024 + 1)
+        raw = json.dumps(manifest, separators=(',', ':')).encode()
+        plan['sourceManifestSha256'] = hashlib.sha256(raw).hexdigest()
+        spec, _ = self.run_prepare(raw, plan)
+        self.assertIn(ids['toggle'], spec['bindings'])
+        plan['sourceManifestSha256'] = '0' * 64
+        with self.assertRaisesRegex(StaticToggleError, 'hash differs'):
+            self.run_prepare(raw, plan)
+
     def run_prepare(self, raw, plan):
         temporary = tempfile.TemporaryDirectory(dir="/private/tmp")
         self.addCleanup(temporary.cleanup)

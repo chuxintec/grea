@@ -33,6 +33,15 @@ def fixture():
                   sourcePrefabs=[dict(sourceId=owner,path=path,nodes=[dict(copy.deepcopy(node),physicalObservationScope='saved-source-prefab')],components=[retained,native_renderer])],
                   staticSpineContinuation=dict(status='verified',sourceComponentIds=[sid]),
                   staticPresentationValidation=dict(status='partial',components=[dict(sourceId=sid,sourceVisible=True,verified=False,rendered=False)]))
+    # Independently authored scene observation. The owner renderer receipt
+    # below cannot manufacture this separate scope's identity or fields.
+    readback.update(sceneComponentContract='monkey-unity-saved-scene-components/1',sceneComponentPhase='saved-scene-reopened',
+        sceneComponents=[dict(copy.deepcopy(native_renderer),observationScope='saved-scene-correspondence',
+            identityOrigin='corresponding-prefab-source',identityPath=[native_renderer['componentUuid']])])
+    for item in readback['nodes'][0]['physicalComponents']:
+        item['identityOrigin']='corresponding-prefab-source'
+        if item['nativeType']=='NativeStaticSpineReference':
+            item['sourceComponentIds']=[];item['role']='unmapped'
     rendering=dict(components=[dict(sourceComponentId=sid,sourcePrefabId=owner,sourceNodeId='node',sourceDataAssetId='source:data',
                                    eligible=True,sourceVisible=True,sourceComponentEnabled=True)])
     row=dict(sourceComponentId=sid,sourcePrefabId=owner,sourceNodeId='node',sourceDataAssetId='source:data',rendererGuid='e'*32,rendererLocalId=renderer_id,
@@ -60,6 +69,9 @@ def test_saved_renderer_supplements_retained_proof_without_mutating_it():
     assert coverage['retentionValidation']=='pass'
     assert coverage['staticPresentationValidation']['status']=='pass'
     assert coverage['runtimeCheck']=='not_run'
+    owner_only=copy.deepcopy(joined)
+    owner_only.pop('sceneComponents');owner_only.pop('sceneComponentContract');owner_only.pop('sceneComponentPhase')
+    assert assess(plan,owner_only,'unity')['nativeStaticValidation']!='pass'
 
 
 def test_typed_renderer_sidecar_joins_unmapped_physical_graphic_without_mutating_raw_inventory():
@@ -67,7 +79,7 @@ def test_typed_renderer_sidecar_joins_unmapped_physical_graphic_without_mutating
     readback['sourcePrefabs'][0]['components']=[readback['sourcePrefabs'][0]['components'][0]]
     # The original source coverage sees only the retained data carrier. The
     # independent saved renderer is present physically but has no raw source ID.
-    physical=readback['nodes'][0]['physicalComponents']
+    physical=readback['sourcePrefabs'][0]['nodes'][0]['physicalComponents']
     renderer_physical=next(row for row in physical if row['nativeType']=='Spine.Unity.SkeletonGraphic')
     renderer_physical['sourceComponentIds']=[];renderer_physical['role']='unmapped'
     readback['sourcePrefabs'][0]['nodes'][0]['physicalComponents']=copy.deepcopy(physical)
@@ -88,7 +100,7 @@ def test_typed_renderer_sidecar_joins_unmapped_physical_graphic_without_mutating
     assert coverage['nativeStaticValidation']=='pass'
     assert coverage['retentionValidation']=='pass'
     assert coverage['staticPresentationValidation']['status']=='pass'
-    assert next(row for row in joined['nodes'][0]['physicalComponents']
+    assert next(row for row in joined['sourcePrefabs'][0]['nodes'][0]['physicalComponents']
                 if row['nativeType']=='Spine.Unity.SkeletonGraphic')['sourceComponentIds']==[]
 
 

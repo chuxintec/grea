@@ -138,7 +138,7 @@ public sealed class ComponentSpec { public string sourceId,type,node,nativeId; p
 public sealed class NodeSpec { public string sourceId,parent; public bool active; }
 public sealed class ProxyMaskSpec { public string sourceId,node,nativeId; public bool enabled,inverted; public int maskType; public float alphaThreshold; }
 public sealed class ProxyQueueSpec { public ProxyMaskSpec[] masks; }
-public sealed class MaskSpec { public string sourceId,node,nativeId,sourceOriginId,sourceFieldsJson,sourceQueueDisposition; public bool sourceActiveSelf,sourceActive,enabled,inverted; public int maskType; public float alphaThreshold; public string[] sourceDefaultFields; }
+public sealed class MaskSpec { public string sourceId,node,nativeId,sourceOriginId,sourceFieldsJson,sourceQueueDisposition,sourceMaterialResolution,sourceMaterialResolverPath,sourceMaterialResolverSha256,sourceMaterialId,sourceEffectId; public bool sourceActiveSelf,sourceActive,enabled,inverted; public int maskType; public float alphaThreshold; public string[] sourceDefaultFields; }
 public sealed class Plan { public ComponentSpec[] components; public StaticMaskContract staticMasks; public bool staticMasksPresent; public string sourceManifestSha256; public ProxyQueueSpec[] staticSortQueue; public NodeSpec[] nodes; }
 ''' + members
         + "\n" + program + "\n}")

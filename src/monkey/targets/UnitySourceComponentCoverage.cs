@@ -85,24 +85,28 @@ public static partial class MonkeyImporter
         public bool horizontal,vertical,contentPersistent,viewportPersistent;
     }
     static SavedScrollStaticObservation ReadSavedScrollStaticFields(Plan plan,ComponentSpec source,
-        UnityEngine.UI.ScrollRect scroll,Dictionary<string,GameObject> nodes) {
+        UnityEngine.UI.ScrollRect scroll,Dictionary<string,GameObject> nodes,bool savedSceneScope=false) {
         if(source.type!="cc.ScrollView"||scroll==null)return null;
-        PhysicalComponentUuid(scroll,out string guid,out long local);
+        var scrollIdentity=savedSceneScope?SavedPhysicalComponentIdentity(scroll,null,out var scrollPath):scroll;
+        PhysicalComponentUuid(scrollIdentity,out string guid,out long local);
         var content=scroll.content;var viewport=scroll.viewport;
-        var contentUuid=PhysicalComponentUuid(content,out string contentGuid,out long contentLocal);
-        var viewportUuid=PhysicalComponentUuid(viewport,out string viewportGuid,out long viewportLocal);
+        var contentIdentity=savedSceneScope?SavedPhysicalComponentIdentity(content,null,out var contentPath):content;
+        var viewportIdentity=savedSceneScope?SavedPhysicalComponentIdentity(viewport,null,out var viewportPath):viewport;
+        var contentUuid=PhysicalComponentUuid(contentIdentity,out string contentGuid,out long contentLocal);
+        var viewportUuid=PhysicalComponentUuid(viewportIdentity,out string viewportGuid,out long viewportLocal);
         var contentIds=nodes.Where(pair=>pair.Value!=null&&pair.Value.transform==content).Select(pair=>pair.Key).ToArray();
         var viewportIds=nodes.Where(pair=>pair.Value!=null&&pair.Value.transform==viewport).Select(pair=>pair.Key).ToArray();
         return new SavedScrollStaticObservation{sourceId=source.sourceId,node=source.node,guid=guid,localFileId=local,
-            phase=EditorUtility.IsPersistent(scroll)?"persistent-saved-prefab":"unverified-transient-object",
+            phase=scrollIdentity!=null&&EditorUtility.IsPersistent(scrollIdentity)?(savedSceneScope?"saved-scene-correspondence":"persistent-saved-prefab"):"unverified-transient-object",
             horizontal=scroll.horizontal,vertical=scroll.vertical,
             contentNode=contentIds.Length==1?contentIds[0]:null,viewportNode=viewportIds.Length==1?viewportIds[0]:null,
             contentGuid=contentGuid,contentLocalFileId=contentLocal,viewportGuid=viewportGuid,viewportLocalFileId=viewportLocal,
-            contentPersistent=content!=null&&EditorUtility.IsPersistent(content)&&!String.IsNullOrEmpty(contentUuid),
-            viewportPersistent=viewport!=null&&EditorUtility.IsPersistent(viewport)&&!String.IsNullOrEmpty(viewportUuid)};
+            contentPersistent=contentIdentity!=null&&EditorUtility.IsPersistent(contentIdentity)&&!String.IsNullOrEmpty(contentUuid),
+            viewportPersistent=viewportIdentity!=null&&EditorUtility.IsPersistent(viewportIdentity)&&!String.IsNullOrEmpty(viewportUuid)};
     }
     [Serializable] public sealed class SourceComponentCoverage {
         public string sourceId,node,type,nativeType,componentUuid,status,representation,guid,disabledReason,nativeSlotId;
+        public string observationScope,identityOrigin; public string[] identityPath;
         public long localFileId;
         public string[] nativeBaseTypes;
         public bool sourceIdentityVerified,persistent,sourceEnabled,nativeEnabled,sourceVisible,nativeStaticFieldsVerified;
@@ -136,19 +140,22 @@ public static partial class MonkeyImporter
         }
         return true;
     }
-    static SourceComponentCoverage[] ReadSourceComponentCoverage(Plan plan,Dictionary<string,GameObject> nodes,ISet<string> referenceFailures) {
+    static SourceComponentCoverage[] ReadSourceComponentCoverage(Plan plan,Dictionary<string,GameObject> nodes,ISet<string> referenceFailures,bool savedSceneScope=false) {
         var completedLayoutSources=new HashSet<string>(ReadStaticLayoutCompletion(plan,nodes)
             .SelectMany(node=>(node.layouts??Array.Empty<StaticLayoutComponentReadback>()).Select(slot=>slot.sourceComponentId)
                 .Concat((node.widgets??Array.Empty<StaticWidgetComponentReadback>()).Select(slot=>slot.sourceComponentId))),StringComparer.Ordinal);
         return plan.components.Where(x=>nodes.ContainsKey(x.node)).Select(source=>{
             var target=StaticReference(plan,nodes,source.sourceId);var component=target as Component;
-            string guid=null;long local=0;bool persistent=target!=null&&AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target,out guid,out local)&&!String.IsNullOrEmpty(guid)&&local!=0;
+            string[] identityPath=Array.Empty<string>();
+            var identity=savedSceneScope&&component!=null?SavedPhysicalComponentIdentity(component,null,out identityPath):target;
+            string guid=null;long local=0;bool persistent=identity!=null&&EditorUtility.IsPersistent(identity)&&AssetDatabase.TryGetGUIDAndLocalFileIdentifier(identity,out guid,out local)&&!String.IsNullOrEmpty(guid)&&local!=0;
+            if(!savedSceneScope&&persistent)identityPath=new[]{guid+":"+local};
             var behavior=component as Behaviour;bool enabled=behavior==null||behavior.enabled;
             bool completedLayout=completedLayoutSources.Contains(source.sourceId)&&target is NativeStaticLayoutCompletion;
             if(completedLayout)enabled=enabled&&source.enabled;
             var chain=new List<string>();for(var current=target==null?null:target.GetType();current!=null;current=current.BaseType)chain.Add(current.FullName);
             bool retained=source.staticFieldBinding!=null&&!String.IsNullOrEmpty(source.staticFieldBinding.typeName)||
-                source.type=="cc.ProgressBar"&&source.staticProgressBinding!=null&&!source.convertible||
+                source.type=="cc.ProgressBar"&&HasStaticProgressBinding(source)&&!source.convertible||
                 source.type=="cc.Animation"&&(plan.staticAnimationBindingsEnabled||plan.staticCompletionEnabled)||
                 source.type=="sp.Skeleton"&&!String.IsNullOrEmpty(plan.staticSpineContinuationJson);
             string status=target==null?(source.convertible?"missing":"unsupported"):retained?"retained":!enabled?"disabled":"native";
@@ -157,8 +164,10 @@ public static partial class MonkeyImporter
             return new SourceComponentCoverage{sourceId=source.sourceId,node=source.node,type=source.type,nativeType=target==null?null:target.GetType().FullName,
                 nativeSlotId=completedLayout?source.sourceId:null,
                 componentUuid=persistent?guid+":"+local:null,nativeBaseTypes=chain.ToArray(),guid=guid,localFileId=local,persistent=persistent,sourceIdentityVerified=persistent,
-                staticScrollFields=ReadSavedScrollStaticFields(plan,source,target as UnityEngine.UI.ScrollRect,nodes),
-                sourceEnabled=source.enabled,nativeEnabled=target!=null&&enabled,sourceVisible=SourceNodeVisible(plan,source)&&!emptySprite,status=status,
+                observationScope=savedSceneScope?"saved-scene-correspondence":"saved-source-prefab",identityPath=identityPath,
+                identityOrigin=identity==target?"direct-observation":"corresponding-prefab-source",
+                staticScrollFields=ReadSavedScrollStaticFields(plan,source,target as UnityEngine.UI.ScrollRect,nodes,savedSceneScope),
+                sourceEnabled=source.enabled,nativeEnabled=target!=null&&enabled,sourceVisible=SourceVisualComponentTypes.Contains(source.type)&&SourceNodeVisible(plan,source)&&!emptySprite,status=status,
                 disabledReason=disabledReason,nativeStaticFieldsVerified=persistent&&(source.convertible||completedLayout)&&referenceFailures!=null&&!referenceFailures.Contains(source.sourceId),
                 representation=retained?"disabled-source-data-carrier":target==null?"no-verified-native-counterpart":completedLayout?"native-component-slot":"native-component"};
         }).ToArray();

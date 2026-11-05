@@ -324,22 +324,51 @@ def _legacy_creation_resolution(row,covered,source_id):
 
 
 def _scroll_static_evidence_still_matches(detail,native,source_id):
-    fields=native.get('staticScrollFields') if isinstance(native,dict) else None
-    if not isinstance(detail,dict)or not isinstance(fields,dict):return False
-    if detail.get('staticScrollFields')!=fields:return False
-    if (fields.get('contract')!='monkey-unity-saved-scroll-static/1'
-            or type(fields.get('schemaVersion'))is not int or fields.get('schemaVersion')!=1
-            or fields.get('phase')!='persistent-saved-prefab'
-            or fields.get('sourceId')!=source_id or fields.get('node')!=native.get('node')
-            or fields.get('guid')!=native.get('guid') or fields.get('localFileId')!=native.get('localFileId')
-            or type(fields.get('horizontal'))is not bool or type(fields.get('vertical'))is not bool
-            or fields.get('horizontal')is not detail.get('horizontal')
-            or fields.get('vertical')is not detail.get('vertical')
-            or fields.get('contentNode')!=detail.get('contentNode')
-            or fields.get('viewportNode')!=detail.get('viewportNode')
-            or fields.get('contentPersistent')is not True
-            or fields.get('viewportPersistent')is not True):
+    scene_fields=native.get('staticScrollFields')if isinstance(native,dict)else None
+    owner_fields=detail.get('ownerStaticScrollFields')if isinstance(detail,dict)else None
+    if (not isinstance(detail,dict)or not isinstance(scene_fields,dict)
+            or not isinstance(owner_fields,dict)or detail.get('staticScrollFields')!=scene_fields):
         return False
+    common=('contract','schemaVersion','sourceId','node','horizontal','vertical','contentNode','viewportNode')
+    if any(owner_fields.get(key)!=scene_fields.get(key) for key in common):return False
+    for fields,phase in ((scene_fields,'saved-scene-correspondence'),
+                         (owner_fields,'persistent-saved-prefab')):
+        if (fields.get('contract')!='monkey-unity-saved-scroll-static/1'
+                or type(fields.get('schemaVersion'))is not int or fields.get('schemaVersion')!=1
+                or fields.get('phase')!=phase
+                or fields.get('sourceId')!=source_id or fields.get('node')!=native.get('node')
+                or type(fields.get('horizontal'))is not bool or type(fields.get('vertical'))is not bool
+                or fields.get('contentPersistent')is not True
+                or fields.get('viewportPersistent')is not True):
+            return False
+        for guid_key,file_key in (('guid','localFileId'),('contentGuid','contentLocalFileId'),
+                                  ('viewportGuid','viewportLocalFileId')):
+            if (not isinstance(fields.get(guid_key),str)
+                    or re.fullmatch(r'[0-9a-f]{32}',fields[guid_key])is None
+                    or type(fields.get(file_key))is not int or fields[file_key]==0
+                    or not -(1<<63)<=fields[file_key]<(1<<63)):
+                return False
+    if (scene_fields.get('guid')!=native.get('guid')
+            or scene_fields.get('localFileId')!=native.get('localFileId')
+            or type(detail.get('horizontal'))is not bool
+            or type(detail.get('vertical'))is not bool
+            or scene_fields.get('horizontal')is not detail.get('horizontal')
+            or scene_fields.get('vertical')is not detail.get('vertical')
+            or scene_fields.get('contentNode')!=detail.get('contentNode')
+            or scene_fields.get('viewportNode')!=detail.get('viewportNode')):
+        return False
+    owner_scroll=detail.get('ownerScrollIdentity')
+    if (not isinstance(owner_scroll,dict)
+            or not isinstance(owner_scroll.get('guid'),str)
+            or re.fullmatch(r'[0-9a-f]{32}',owner_scroll['guid'])is None
+            or type(owner_scroll.get('localFileId'))is not int
+            or owner_scroll.get('localFileId')==0
+            or not -(1<<63)<=owner_scroll['localFileId']<(1<<63)
+            or (owner_scroll['guid'],owner_scroll['localFileId'])!=
+               (owner_fields.get('guid'),owner_fields.get('localFileId'))):
+        return False
+    owner_rects=detail.get('ownerRectTransformIdentity')
+    if not isinstance(owner_rects,dict):return False
     for prefix in ('content','viewport'):
         payload=detail.get(prefix+'Identity')
         if not isinstance(payload,dict):return False
@@ -348,10 +377,19 @@ def _scroll_static_evidence_still_matches(detail,native,source_id):
                 or type(local_id)is not int or local_id==0 or not -(1<<63)<=local_id<(1<<63)):
             return False
         uuid=guid+':'+str(local_id)
-        path=payload.get('rootIdentityPath')
-        if (fields.get(prefix+'Guid')!=guid or fields.get(prefix+'LocalFileId')!=local_id
+        path=payload.get('identityPath')
+        if (scene_fields.get(prefix+'Guid')!=guid or scene_fields.get(prefix+'LocalFileId')!=local_id
                 or payload.get('ownerComponentUuid')!=uuid
                 or not isinstance(path,list)or uuid not in path):
+            return False
+        owner_payload=owner_rects.get(payload.get('sourceNodeId'))
+        owner_guid=owner_fields.get(prefix+'Guid');owner_local=owner_fields.get(prefix+'LocalFileId')
+        owner_uuid=str(owner_guid)+':'+str(owner_local)
+        if (not isinstance(owner_payload,dict)or owner_payload.get('guid')!=owner_guid
+                or owner_payload.get('localFileId')!=owner_local
+                or owner_payload.get('componentUuid')!=owner_uuid
+                or owner_payload.get('identityOrigin') not in ('direct-observation','corresponding-prefab-source')
+                or owner_uuid not in owner_payload.get('identityPath',[])):
             return False
     return True
 

@@ -45,3 +45,15 @@ GREA68 在独立失败26副本用 Unity6000.6.2f1 执行固定微检查（回执
 | Creator/Mask生产 | Creator真实readSaved产生绑定保存场景节点/组件UUID、活动状态、几何与Sprite/Text资源的typed renderer行，消费方不再接受几个布尔字段作正例；不支持的renderer保留gap。矩形Mask缺/错合同在export创建输出前拒绝，合法legacy与现代合同保留完整来源分母和可映射字段校验。 | 真实Creator SDK与必要Unity最小原生由GREA执行。Node对象模型/协议夹具不冒充Editor。源物理、原版视觉、Player及两批产品采用均不由这些静态证据授予。 |
 
 本轮源/协议回归为668项、102子检查；三组SDK引用编译通过（两个65源文件无Spine、既有121源文件Spine集合离线替换当前模板），另66源文件的物理库存微检查脚本编译通过。Creator Node检查6项通过。均不冒充新的Editor或Player结果。精确源码、逐案复现脚本、原始结果、安装wheel与SDK引用编译证据保存于私有dev28交接目录。新固定候选必须再经过GREA必要最小原生检查以及总监/Claude同字节复审。
+
+## dev29：真实正例退修与两线首包集成
+
+GREA73实测固定28：Sprite两正例三入口误拒，7个反例按期拒；Scroll另有非可视组件sourceVisible误标与跨资产身份误等，Creator在owned teardown把ToDestroy误判成Destroyed。原readback与失败结果保留原字节。新生产者分别读取独立源Prefab和保存重开场景；消费者只在各自范围核物理ID，通过冻结源ID/节点/角色关联语义，绝不补造不存在的Prefab链。旧28缺新sceneComponents仍partial，不把改写旧回读当原生正例。Creator只清理精确owned root，不清空用户全局延迟销毁队列。
+
+A线59f7c7d/ad6437a的128MiB既定生成预算、Progress存在谓词与Button源renderer交接已接共享入口。真实100,783,915字节IR可出计划，但新196,238,948字节计划超现行stage/export上限，当前仍须分批，不宣称整包导出完成。两个历史Mask失败根的4个Mask已用真实固定引擎字节、原manifest内置材质/效果，经生产build_contract和export预检重放；这不是公开转换或原生通过。显式坏材质引用不借默认材质通过。
+
+B线15fe2f0的可证明静态脚本模块接入`monkey static-code-bindings`公开入口；prepare/stage/destinations均不自动启动Editor。字段完整、partial/blocked/not_executed及业务未执行分别保留；公开操作保留缺口退出1、坏输入退出2。原B线候选的93实例保存冷重开及61反例是其固定旧基线回执，不冒充集成候选原生验证。A线40图与B线5681全量去向仍由GREA单一计划管理。最终固定源码和wheel须再做受影响原生正例/拒绝例及同字节独立双审，正式采用保持HOLD。
+
+B线后续fb5822d/5cc8d73已补入，公开目的地审计复核冷重开Prefab/脚本字节与GUID、唯一实例、字段分母及未解析声明别名。最新固定label-fix01由B线实证51完整/42部分、Master的两个TMP引用已指向实际源节点；仍不冒充集成候选回执。共享CLI export路由也改为既定128MiB hash-owned stage读取；41,943,739字节自编填充计划通过公开导出，原普通32MiB读取拒绝，输入哈希未变，未启动Editor。
+
+整合源/协议回归726项、132子检查通过；SDK矩阵4项通过：两个65源文件普通出口、66源文件可选静态脚本helper、121源文件既有Spine集合替换12个当前模板（无SDK按期失败，有固定SDK通过）。Creator Node15项通过。均为离线证据，集成候选真实原生仍待GREA执行。

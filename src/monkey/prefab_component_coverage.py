@@ -657,6 +657,118 @@ def _strict_unity_component_join(plan: dict, readback: dict) -> tuple[list[dict]
     return joined, diagnostics, invalid_sources
 
 
+def _strict_unity_scene_component_join(plan: dict, readback: dict, owner_rows: list[dict]) -> tuple[list[dict], list[dict], set[str]]:
+    """Validate the independently saved Candidate scene component scope.
+
+    The Candidate prefab and source Prefab are separate SaveAsPrefabAsset
+    products. Their persistent Unity identities are intentionally different;
+    this join compares source semantics and validates each identity in its own
+    scope instead of equating GUID/localFileID across the two assets.
+    """
+    diagnostics: list[dict] = []
+    invalid: set[str] = set()
+    sources = [row for row in plan.get("components", []) if isinstance(row, dict)]
+    source_by_id: dict[str, list[dict]] = defaultdict(list)
+    for source in sources:
+        sid = _identity(source)
+        if sid:
+            source_by_id[sid].append(source)
+    rows = readback.get("sceneComponents")
+    if (readback.get("sceneComponentContract") != "monkey-unity-saved-scene-components/1" or
+            readback.get("sceneComponentPhase") != "saved-scene-reopened" or not isinstance(rows, list)):
+        diagnostics.append(diagnostic("COMPONENT_SCENE_SCOPE_MISSING", "readback/sceneComponents",
+            "An independently saved-scene component inventory with its contract and phase is required"))
+        invalid.update(source_by_id)
+        return [], diagnostics, invalid
+    by_id: dict[str, list[dict]] = defaultdict(list)
+    for index, row in enumerate(rows):
+        sid = _identity(row) if isinstance(row, dict) else None
+        if not sid:
+            diagnostics.append(diagnostic("COMPONENT_SCENE_SOURCE_ID_MISSING", f"readback/sceneComponents/{index}",
+                "Saved-scene component row has no stable source component ID"))
+            continue
+        by_id[sid].append(row)
+    for sid in sorted(set(by_id) - set(source_by_id)):
+        diagnostics.append(diagnostic("COMPONENT_UNKNOWN_SCENE_SOURCE_ID", sid,
+            "Saved-scene component ID is absent from the frozen source denominator", sid))
+        invalid.add(sid)
+    owner_by_id: dict[str, list[dict]] = defaultdict(list)
+    for row in owner_rows:
+        sid = _identity(row)
+        if sid:
+            owner_by_id[sid].append(row)
+    joined: list[dict] = []
+    for sid, source_matches in source_by_id.items():
+        if len(source_matches) != 1:
+            diagnostics.append(diagnostic("COMPONENT_SOURCE_ID_AMBIGUOUS", sid,
+                "Source component ID occurs more than once in the frozen plan", sid))
+            invalid.add(sid)
+            continue
+        source = source_matches[0]
+        actual = by_id.get(sid, [])
+        if len(actual) != 1:
+            code = "COMPONENT_SCENE_DETAIL_MISSING" if not actual else "COMPONENT_SCENE_DETAIL_AMBIGUOUS"
+            diagnostics.append(diagnostic(code, sid,
+                "Saved-scene scope must contain exactly one row for every frozen source component", sid))
+            invalid.add(sid)
+            continue
+        row = actual[0]
+        owner = owner_by_id.get(sid, [])
+        if (row.get("observationScope") != "saved-scene-correspondence" or
+                (_strict_unity_identity(row) is not None and
+                 row.get("identityOrigin") != "corresponding-prefab-source")):
+            diagnostics.append(diagnostic("COMPONENT_SCENE_OBSERVATION_SCOPE_INVALID", sid,
+                "Scene component identity must come from the saved scene's observed prefab correspondence", sid))
+            invalid.add(sid)
+        if (_planned_owner(plan, source)[0] is None or row.get("node") != source.get("node") or
+                row.get("type") != source.get("type")):
+            diagnostics.append(diagnostic("COMPONENT_SCENE_SOURCE_MAPPING_MISMATCH", sid,
+                "Saved-scene component must retain the exact planned source owner node and component type", sid))
+            invalid.add(sid)
+        role, mismatch = _component_role(row)
+        if mismatch:
+            diagnostics.append(diagnostic("COMPONENT_SCENE_ROLE_MISMATCH", sid,
+                "Saved-scene component role disagrees with its observed status and representation", sid))
+            invalid.add(sid)
+        if row.get("sourceEnabled") is not source.get("enabled"):
+            diagnostics.append(diagnostic("COMPONENT_SCENE_SOURCE_ENABLED_MISMATCH", sid,
+                "Saved-scene source-enabled state differs from the frozen source component", sid))
+            invalid.add(sid)
+        if role in ("native-component", "native-renderer", "disabled-component", "retained-carrier"):
+            if _strict_unity_identity(row) is None:
+                diagnostics.append(diagnostic("COMPONENT_SCENE_PERSISTENT_IDENTITY_INCOMPLETE", sid,
+                    "Saved-scene role lacks a consistent persistent GUID/localFileID/componentUuid identity", sid))
+                invalid.add(sid)
+        elif role in ("unsupported-component", "missing-component"):
+            pass
+        else:
+            diagnostics.append(diagnostic("COMPONENT_SCENE_ROLE_INVALID", sid,
+                "Saved-scene component has no recognized native disposition", sid))
+            invalid.add(sid)
+        matching_owner = [owner_row for owner_row in owner if _component_role(owner_row)[0] == role]
+        if len(matching_owner) != 1:
+            diagnostics.append(diagnostic("COMPONENT_SCENE_OWNER_JOIN_MISSING", sid,
+                "Saved-scene component must match exactly one same-role observation in the independently saved source Prefab", sid))
+            invalid.add(sid)
+        else:
+            owner_row = matching_owner[0]
+            owner_role, owner_mismatch = _component_role(owner_row)
+            semantic_fields = ("node", "type", "nativeType", "status", "representation", "sourceEnabled",
+                               "nativeEnabled", "sourceVisible", "disabledReason", "nativeSlotId")
+            if (owner_mismatch or role != owner_role or
+                    any(row.get(field) != owner_row.get(field) for field in semantic_fields)):
+                diagnostics.append(diagnostic("COMPONENT_SCENE_OWNER_ROLE_MISMATCH", sid,
+                    "Saved-scene and owner-Prefab observations disagree on source mapping or native role/state", sid))
+                invalid.add(sid)
+        if row.get("status") in ("native", "disabled") and row.get("nativeStaticFieldsVerified") is not True:
+            diagnostics.append(diagnostic("COMPONENT_SCENE_STATIC_FIELDS_UNVERIFIED", sid,
+                "Saved-scene native or retained row does not independently verify its static fields", sid))
+            invalid.add(sid)
+        if not mismatch and row.get("node") == source.get("node") and row.get("type") == source.get("type"):
+            joined.append(dict(row))
+    return joined, diagnostics, invalid
+
+
 def _observation_token(row: dict, engine: str) -> tuple:
     identity = _unity_persistent_identity(row) if engine == "unity" else _native_id(row)
     if isinstance(identity, dict):
@@ -1154,7 +1266,8 @@ def _mask_fields_prove_auxiliary(plan: dict, readback: dict, source_id: str, mas
             isinstance(actual.get("nativeType"), str) and bool(actual.get("nativeType")))
 
 
-def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[dict]) -> tuple[list[dict], set[str]]:
+def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[dict],
+                                       scene_joined: list[dict] | None = None) -> tuple[list[dict], set[str]]:
     """Check every saved physical Graphic identity on mapped source nodes.
 
     Older readbacks contain componentTypes strings only. That is a bounded
@@ -1175,6 +1288,10 @@ def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[
     for row in joined:
         if row.get("node"):
             joined_by_node[row["node"]].append(row)
+    scene_joined_by_node = defaultdict(list)
+    for row in scene_joined or []:
+        if row.get("node"):
+            scene_joined_by_node[row["node"]].append(row)
     sources_by_node = defaultdict(list)
     for source in source_components:
         if isinstance(source.get("node"), str):
@@ -1209,6 +1326,7 @@ def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[
             diagnostics.append(diagnostic("COMPONENT_PHYSICAL_INVENTORY_SCOPE_INVALID", node_id,
                 "Top-level physical inventory is not bound to a saved/reopened source scene or Prefab", node_id))
             invalid_sources.update(involved_ids)
+        owner_inventory_maps = []
         for owner_node in owner_nodes:
             if owner_node.get("physicalObservationScope") != "saved-source-prefab":
                 diagnostics.append(diagnostic("COMPONENT_PHYSICAL_OWNER_SCOPE_INVALID", node_id,
@@ -1288,6 +1406,14 @@ def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[
                 invalid_sources.update(involved_ids)
                 continue
             owner_rows = [row for row in owner_node["physicalComponents"] if isinstance(row, dict)]
+            for physical_row in owner_rows:
+                bases = physical_row.get("nativeBaseTypes")
+                if (not isinstance(bases, list) or not bases or
+                        any(not isinstance(value, str) or not value for value in bases) or
+                        bases[0] != physical_row.get("nativeType")):
+                    diagnostics.append(diagnostic("COMPONENT_PHYSICAL_TYPE_CHAIN_INVALID", node_id,
+                        "Owner Prefab physical component inventory lacks a complete native type/base-type chain", node_id))
+                    invalid_sources.update(involved_ids)
             owner_types = owner_node.get("componentTypes")
             if (not isinstance(owner_types, list) or
                     Counter(owner_types) != Counter(row.get("nativeType") for row in owner_rows)):
@@ -1299,87 +1425,90 @@ def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[
                 key = _physical_inventory_key(row)
                 if key is not None:
                     owner_by_key[key].append(row)
-            if set(owner_by_key) != set(root_by_key) or any(len(rows) != 1 for rows in owner_by_key.values()):
-                diagnostics.append(diagnostic("COMPONENT_PHYSICAL_SCOPE_INVENTORY_MISMATCH", node_id,
-                    "Top-level and owner-local physical component identity sets differ", node_id))
-                invalid_sources.update(involved_ids)
-                continue
-            for key, root_match in root_by_key.items():
-                root_row = root_match[0]
-                owner_row = owner_by_key[key][0]
-                compare_fields = ("nativeType", "enabledKnown", "enabled", "nativeBaseTypes", "sourceComponentIds",
-                                  "role", "auxiliaryKind", "auxiliaryOwnerComponentUuid")
-                if any(root_row.get(field) != owner_row.get(field) for field in compare_fields):
-                    diagnostics.append(diagnostic("COMPONENT_PHYSICAL_SCOPE_INVENTORY_MISMATCH", node_id,
-                        "Top-level and owner-local physical inventory rows disagree on role or component state", node_id))
+                else:
+                    diagnostics.append(diagnostic("COMPONENT_PHYSICAL_IDENTITY_INVALID", node_id,
+                        "Owner Prefab physical component lacks a consistent persistent GUID/localFileID pair", node_id))
                     invalid_sources.update(involved_ids)
+                    if _is_physical_graphic(row) and not (
+                            row.get("role") == "engine-auxiliary" and
+                            row.get("auxiliaryKind") == "mask-stencil-graphic"):
+                        diagnostics.append(diagnostic("COMPONENT_UNOWNED_NATIVE_GRAPHIC", node_id,
+                            "An owner Prefab Graphic with invalid physical identity cannot be proven as an owned source renderer", node_id))
+            if any(len(rows) != 1 for rows in owner_by_key.values()):
+                diagnostics.append(diagnostic("COMPONENT_PHYSICAL_IDENTITY_DUPLICATE", node_id,
+                    "A persisted physical component identity occurs more than once in one source-Prefab inventory", node_id))
+                invalid_sources.update(involved_ids)
+            owner_inventory_maps.append(owner_by_key)
 
-        # Link every joined logical source role to exactly one physical row and
-        # classify every additional physical Graphic.
-        node_joined = joined_by_node.get(node_id, [])
-        joined_identity_rows = defaultdict(list)
-        for row in node_joined:
-            identity = _strict_unity_identity(row)
-            if identity is not None:
-                joined_identity_rows[(identity["guid"], identity["localFileId"])].append(row)
-        for key, logical_rows in joined_identity_rows.items():
-            physical = root_by_key.get(key, [])
-            source_ids = sorted({_identity(row) for row in logical_rows if _identity(row)})
-            if len(physical) != 1:
-                diagnostics.append(diagnostic("COMPONENT_PHYSICAL_TARGET_NOT_IN_NODE_INVENTORY", node_id,
-                    "Joined logical component identity is absent or ambiguous in its saved node inventory", node_id))
-                invalid_sources.update(source_ids)
-                continue
-            physical_row = physical[0]
-            mapped_ids = physical_row.get("sourceComponentIds")
-            sidecar_backed = (len(logical_rows) == 1 and logical_rows[0].get("_coverageOwnerSidecar") is True)
-            logical_physical_state_matches = all(
-                row.get("nativeType") == physical_row.get("nativeType") and
-                row.get("nativeEnabled") is physical_row.get("enabled") and
-                (row.get("nativeBaseTypes") is None or row.get("nativeBaseTypes") == physical_row.get("nativeBaseTypes"))
-                for row in logical_rows)
-            physical_role_matches = (
-                physical_row.get("role") in ("source-component", "source-components") and
-                isinstance(mapped_ids, list) and set(mapped_ids) == set(source_ids))
-            if sidecar_backed:
-                sidecar_role_matches = (physical_row.get("role") == "unmapped" and mapped_ids == [])
-                physical_role_matches = physical_role_matches or sidecar_role_matches
-            if (physical_row.get("role") not in ("source-component", "source-components") or
-                    not physical_role_matches or
-                    physical_row.get("nativeType") != logical_rows[0].get("nativeType") or
-                    (logical_rows[0].get("nativeBaseTypes") is not None and
-                     physical_row.get("nativeBaseTypes") != logical_rows[0].get("nativeBaseTypes")) or
-                    physical_row.get("enabledKnown") is not True or
-                    physical_row.get("enabled") is not logical_rows[0].get("nativeEnabled") or
-                    not logical_physical_state_matches):
-                # A typed saved Spine renderer sidecar can identify one
-                # physically observed but source-ID-unmapped Graphic. It does
-                # not rewrite the producer's raw inventory role or source IDs.
-                if not (sidecar_backed and physical_role_matches and
-                        physical_row.get("nativeType") == logical_rows[0].get("nativeType") and
-                        physical_row.get("enabledKnown") is True and
-                        physical_row.get("enabled") is logical_rows[0].get("nativeEnabled") and
-                        logical_physical_state_matches):
-                    diagnostics.append(diagnostic("COMPONENT_PHYSICAL_TARGET_ROLE_MISMATCH", node_id,
-                        "Physical node inventory does not bind the exact source component IDs, type and enabled state", node_id))
+        # The Candidate scene and each source Prefab were saved independently.
+        # Validate the component IDs against the physical inventory from their
+        # own scope; the two persistent GUID/localFileID sets must not be
+        # equated across those distinct assets.
+        scopes = [("scene", root_by_key, scene_joined_by_node.get(node_id, []))]
+        scopes.extend(("owner", owner_map, joined_by_node.get(node_id, []))
+                      for owner_map in owner_inventory_maps)
+        for scope_name, physical_by_key, node_joined in scopes:
+            joined_identity_rows = defaultdict(list)
+            for row in node_joined:
+                identity = _strict_unity_identity(row)
+                if identity is not None:
+                    joined_identity_rows[(identity["guid"], identity["localFileId"])].append(row)
+            for key, logical_rows in joined_identity_rows.items():
+                physical_rows = physical_by_key.get(key, [])
+                source_ids = sorted({_identity(row) for row in logical_rows if _identity(row)})
+                if len(physical_rows) != 1:
+                    diagnostics.append(diagnostic("COMPONENT_PHYSICAL_TARGET_NOT_IN_NODE_INVENTORY", node_id,
+                        f"Joined {scope_name} component identity is absent or ambiguous in its own saved node inventory", node_id))
                     invalid_sources.update(source_ids)
                     continue
+                physical_row = physical_rows[0]
+                mapped_ids = physical_row.get("sourceComponentIds")
+                sidecar_backed = (len(logical_rows) == 1 and logical_rows[0].get("_coverageOwnerSidecar") is True)
+                logical_physical_state_matches = all(
+                    row.get("nativeType") == physical_row.get("nativeType") and
+                    row.get("nativeEnabled") is physical_row.get("enabled") and
+                    (row.get("nativeBaseTypes") is None or row.get("nativeBaseTypes") == physical_row.get("nativeBaseTypes"))
+                    for row in logical_rows)
+                physical_role_matches = (
+                    physical_row.get("role") in ("source-component", "source-components") and
+                    isinstance(mapped_ids, list) and set(mapped_ids) == set(source_ids))
+                if sidecar_backed:
+                    sidecar_role_matches = (physical_row.get("role") == "unmapped" and mapped_ids == [])
+                    physical_role_matches = physical_role_matches or sidecar_role_matches
+                if (physical_row.get("role") not in ("source-component", "source-components") or
+                        not physical_role_matches or
+                        physical_row.get("nativeType") != logical_rows[0].get("nativeType") or
+                        (logical_rows[0].get("nativeBaseTypes") is not None and
+                         physical_row.get("nativeBaseTypes") != logical_rows[0].get("nativeBaseTypes")) or
+                        physical_row.get("enabledKnown") is not True or
+                        physical_row.get("enabled") is not logical_rows[0].get("nativeEnabled") or
+                        not logical_physical_state_matches):
+                    # A typed saved Spine renderer sidecar can identify one
+                    # physically observed but source-ID-unmapped Graphic. It does
+                    # not rewrite the producer's raw inventory role or source IDs.
+                    if not (sidecar_backed and physical_role_matches and
+                            physical_row.get("nativeType") == logical_rows[0].get("nativeType") and
+                            physical_row.get("enabledKnown") is True and
+                            physical_row.get("enabled") is logical_rows[0].get("nativeEnabled") and
+                            logical_physical_state_matches):
+                        diagnostics.append(diagnostic("COMPONENT_PHYSICAL_TARGET_ROLE_MISMATCH", node_id,
+                            f"Physical {scope_name} inventory does not bind the exact source IDs, type and enabled state", node_id))
+                        invalid_sources.update(source_ids)
+                        continue
 
-        for key, rows in root_by_key.items():
-            physical = rows[0]
-            if not _is_physical_graphic(physical):
-                continue
-            if key in joined_identity_rows:
-                continue
-            if physical.get("role") == "engine-auxiliary" and physical.get("auxiliaryKind") == "mask-stencil-graphic":
-                owner_uuid = physical.get("auxiliaryOwnerComponentUuid")
-                masks = [row for row in node_joined if source_by_id.get(_identity(row), {}).get("type") == "cc.Mask"
-                         and row.get("componentUuid") == owner_uuid and row.get("nativeEnabled") is physical.get("enabled")]
-                if len(masks) == 1 and _mask_fields_prove_auxiliary(plan, readback, _identity(masks[0]), masks[0]):
+            for key, physical_rows in physical_by_key.items():
+                physical = physical_rows[0]
+                if not _is_physical_graphic(physical) or key in joined_identity_rows:
                     continue
-            diagnostics.append(diagnostic("COMPONENT_UNOWNED_NATIVE_GRAPHIC", node_id,
-                "A persisted Graphic has no exact source identity or verified engine-auxiliary owner", node_id))
-            invalid_sources.update(involved_ids)
+                if physical.get("role") == "engine-auxiliary" and physical.get("auxiliaryKind") == "mask-stencil-graphic":
+                    owner_uuid = physical.get("auxiliaryOwnerComponentUuid")
+                    masks = [row for row in node_joined if source_by_id.get(_identity(row), {}).get("type") == "cc.Mask"
+                             and row.get("componentUuid") == owner_uuid and row.get("nativeEnabled") is physical.get("enabled")]
+                    if len(masks) == 1 and _mask_fields_prove_auxiliary(plan, readback, _identity(masks[0]), masks[0]):
+                        continue
+                diagnostics.append(diagnostic("COMPONENT_UNOWNED_NATIVE_GRAPHIC", node_id,
+                    f"A persisted {scope_name} Graphic has no exact source identity or verified scope-local auxiliary owner", node_id))
+                invalid_sources.update(involved_ids)
     return diagnostics, invalid_sources
 
 
@@ -1481,7 +1610,8 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
     readback_available = any(key in readback for key in (
         "components", "sourceComponentCoverage", "sourcePrefabs", "retainedComponents",
         "prefabInstances", "candidatePrefabInstances", "disabledComponents", "staticFieldBindings",
-        "staticPresentationValidation", "staticSpineRendering", "staticProgressFields", "componentPeerDuplicates"))
+        "staticPresentationValidation", "staticSpineRendering", "staticProgressFields", "componentPeerDuplicates",
+        "sceneComponents"))
 
     source_by_id: dict[str, list[dict]] = defaultdict(list)
     components = []
@@ -1503,10 +1633,15 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
 
     identity_invalid_sources: set[str] = set()
     if engine == "unity":
-        component_observations, identity_diagnostics, identity_invalid_sources = _strict_unity_component_join(plan, readback)
+        owner_observations, identity_diagnostics, identity_invalid_sources = _strict_unity_component_join(plan, readback)
         diagnostics.extend(identity_diagnostics)
+        scene_observations, scene_diagnostics, scene_invalid = _strict_unity_scene_component_join(
+            plan, readback, owner_observations)
+        diagnostics.extend(scene_diagnostics)
+        identity_invalid_sources.update(scene_invalid)
+        component_observations = scene_observations if isinstance(readback.get("sceneComponents"), list) else owner_observations
         inventory_diagnostics, inventory_invalid_sources = _validate_unity_physical_inventory(plan, readback,
-            component_observations)
+            owner_observations, scene_observations if isinstance(readback.get("sceneComponents"), list) else None)
         diagnostics.extend(inventory_diagnostics)
         identity_invalid_sources.update(inventory_invalid_sources)
         alias_sources, alias_diagnostics = _duplicate_physical_identities(component_observations,
@@ -1537,7 +1672,11 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
             diagnostics.append(diagnostic("COMPONENT_ROLE_MISMATCH", _identity(row) or "readback/components",
                 "Explicit coverage role disagrees with the saved native type/status/representation", _identity(row)))
         if role == "retained-carrier":
-            retained_observations.append(row)
+            # Retention identity/data are owned by the source Prefab scope.
+            # Scene rows establish an independent native/static scene role,
+            # but cannot replace owner-local retained payload proof.
+            if engine != "unity":
+                retained_observations.append(row)
         elif role == "disabled-component" or row.get("status") == "disabled":
             disabled_observations.append(row)
         elif role == "unsupported-component":
@@ -1546,6 +1685,11 @@ def assess(plan: dict, readback: dict, engine: str) -> dict:
             missing_observations.append(row)
         else:
             native_rows.append(row)
+    if engine == "unity":
+        for row in owner_observations:
+            role, mismatch = _component_role(row)
+            if role == "retained-carrier":
+                retained_observations.append(row)
     component_tokens = {_observation_token(row, engine) for row in component_observations}
     for observation in _rows(readback, "sourceComponentCoverage"):
         sid = _identity(observation)

@@ -158,7 +158,7 @@ def _validate_queue_match(row: Mapping, event: Mapping) -> None:
         raise StaticMaskContinuationError(f"source queue Mask JSON differs from pinned component: {row.get('sourceId')}")
 
 
-def build_contract(plan: Mapping, manifest: Mapping) -> dict:
+def build_contract(plan: Mapping, manifest: Mapping, *, source_engine_evidence: Mapping | None = None) -> dict:
     """Build the exact static mask contract from a hash-bound frozen source plan.
 
     All source ``cc.Mask`` components are included. Queue event presence is a
@@ -183,7 +183,9 @@ def build_contract(plan: Mapping, manifest: Mapping) -> dict:
 
     origins = _component_origins(plan)
     source_plan = _with_origins(plan, origins)
-    prepared = _origin_rows(source_plan, manifest, "cc.Mask", include_convertible_masks=True)
+    engine_defaults = _verify_source_engine_evidence(source_engine_evidence) if source_engine_evidence is not None else None
+    prepared = _origin_rows(source_plan, manifest, "cc.Mask", include_convertible_masks=True,
+                            mask_engine_defaults=engine_defaults)
     by_id = {row.get("sourceId"): row for row in prepared}
     if len(by_id) != len(prepared) or set(by_id) != set(component_ids):
         raise StaticMaskContinuationError("source Mask material identity denominator differs from frozen components")
@@ -379,7 +381,7 @@ def prepare(plan, ir, manifest, stage, source_evidence=None) -> dict:
         raise StaticMaskContinuationError("source plan and frozen IR are required")
     _verify_ir_mask_origins(plan, ir)
     engine_evidence = _verify_source_engine_evidence(source_evidence)
-    contract = build_contract(plan, manifest)
+    contract = build_contract(plan, manifest, source_engine_evidence=source_evidence)
     contract["sourceEngine"] = engine_evidence
     patched = copy.deepcopy(dict(plan))
     prior = patched.get("staticMasks")
@@ -474,6 +476,8 @@ def validate_export_contract(plan: Mapping) -> dict:
                 parsed_fields = json.loads(source_fields_json) if isinstance(source_fields_json, str) else None
             except (TypeError, ValueError):
                 parsed_fields = None
+            if component.get("sourceMaterialResolution") is not None:
+                raise StaticMaskContinuationError("STATIC_MASK_LEGACY_DEFAULT_MATERIAL_UNPROVEN")
             required_material_fields = ("sourceMaterialId", "resolvedSourceMaterialId", "sourceEffectId",
                                         "sourceEffectName", "sourceEffectDocumentSha256")
             expected_origin = sid
@@ -545,6 +549,27 @@ def validate_export_contract(plan: Mapping) -> dict:
                 fields_json != json.dumps(source_fields, ensure_ascii=False, sort_keys=True, separators=(",", ":")) or
                 type(threshold) not in (int, float) or not math.isfinite(threshold) or not 0 <= threshold <= 1):
             raise StaticMaskContinuationError("STATIC_MASK_COMPONENT_FIELDS_MISMATCH: " + sid)
+        resolution = row.get("sourceMaterialResolution")
+        if resolution is not None:
+            if (resolution != "engine-default-builtin" or
+                    row.get("sourceMaterialResolverPath") != SOURCE_ENGINE_PATH or
+                    row.get("sourceMaterialResolverSha256") != SOURCE_ENGINE_SHA256):
+                raise StaticMaskContinuationError("STATIC_MASK_DEFAULT_MATERIAL_PROOF_INVALID: " + sid)
+            # Re-resolve against the original manifest, not a provider receipt
+            # or a claimed builtin name in this contract row.
+            from .prefab_static_mask_sort import _mask_material_proof
+            try:
+                manifest = json.loads(Path(plan["sourceManifestPath"]).read_bytes())
+                _bound_manifest(plan, manifest)
+                original = _raw_component(manifest, row["sourceOriginId"])
+                if dict(original) != dict(source_fields):
+                    raise StaticMaskSortError("Mask default material source fields differ")
+                material_proof = _mask_material_proof(manifest, sid.partition(":")[0], original,
+                                                     engine_defaults=contract["sourceEngine"])
+                if any(row.get(key) != value for key, value in material_proof.items()):
+                    raise StaticMaskSortError("Mask default material identity differs")
+            except (KeyError, OSError, ValueError, TypeError) as exc:
+                raise StaticMaskContinuationError("STATIC_MASK_DEFAULT_MATERIAL_PROOF_INVALID: " + sid) from exc
         try:
             active_self, effective_active = _effective_activity(plan, row["node"])
         except (KeyError, StaticMaskContinuationError) as exc:

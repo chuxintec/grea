@@ -177,7 +177,7 @@ def _compile(project: Path, *, references: list[Path], case: str, evidence_dir: 
     return result
 
 
-@pytest.mark.parametrize("scenario", ["OneSpriteNoSpine", "OrdinarySortNoSpine"])
+@pytest.mark.parametrize("scenario", ["OneSpriteNoSpine", "OrdinarySortNoSpine", "StaticCodeBindingsNoSpine"])
 def test_real_exported_no_spine_source_set_compiles_without_spine_sdk(tmp_path, scenario):
     """Both no-Spine export source sets compile with only standard Unity refs."""
     resolved = tmp_path.resolve()
@@ -185,6 +185,16 @@ def test_real_exported_no_spine_source_set_compiles_without_spine_sdk(tmp_path, 
     case_root = resolved / scenario
     case_root.mkdir()
     project, report = _export_fixture(case_root, scenario)
+    if scenario == "StaticCodeBindingsNoSpine":
+        # The optional binding stage installs this helper after base export.
+        # Compile its shared partial-class API against the current exporter;
+        # this is an offline source-set check, not a stage or Editor receipt.
+        relative="Assets/Game/Editor/Conversion/UnityStaticCodeBindings.cs"
+        helper=REPO/"src/monkey/targets/UnityStaticCodeBindings.cs"
+        raw=helper.read_bytes();(project/relative).write_bytes(raw)
+        manifest=json.loads((project/"manifest.json").read_bytes())
+        manifest["files"].append(dict(path=relative,sha256=sha(raw),bytes=len(raw)))
+        write_json(project/"manifest.json",manifest)
     sources = _manifest_sources(project)
     csharp_paths = [path.relative_to(project).as_posix() for path in sources]
     assert "Assets/Game/Editor/Conversion/UnityStaticSortSpineBinding.cs" not in csharp_paths
@@ -197,6 +207,7 @@ def test_real_exported_no_spine_source_set_compiles_without_spine_sdk(tmp_path, 
         "sourceFiles": [{"path": path.relative_to(project).as_posix(), "sha256": sha(path.read_bytes()),
                          "bytes": path.stat().st_size} for path in sources],
         "optionalSpineBindingExported": False,
+        "optionalStaticCodeHelperAddedForOfflineCompile":scenario == "StaticCodeBindingsNoSpine",
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (evidence_dir / "export-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     references = _standard_references()
@@ -212,6 +223,9 @@ def _copy_current_spine_templates(source_root: Path, temp_root: Path) -> list[di
         "Assets/Game/Editor/Conversion/MonkeyImporter.cs": REPO / "src/monkey/targets/UnityImporter.cs",
         "Assets/Game/Editor/Conversion/UnityStaticFieldIntegration.cs": REPO / "src/monkey/targets/UnityStaticFieldIntegration.cs",
         "Assets/Game/Editor/Conversion/UnityStaticMaskIntegration.cs": REPO / "src/monkey/targets/UnityStaticMaskIntegration.cs",
+        "Assets/Game/Editor/Conversion/UnityStaticMaskSort.cs": REPO / "src/monkey/targets/UnityStaticMaskSort.cs",
+        "Assets/Game/Editor/Conversion/UnityStaticProgressIntegration.cs": REPO / "src/monkey/targets/UnityStaticProgressIntegration.cs",
+        "Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticMaskIdentity.cs": REPO / "src/monkey/targets/NativeStaticMaskIdentity.cs",
         "Assets/Game/Editor/Conversion/UnityStaticSortQueueProxy.cs": REPO / "src/monkey/targets/UnityStaticSortQueueProxy.cs",
         "Assets/Game/Editor/Conversion/UnityStaticSortSpineBinding.cs": REPO / "src/monkey/targets/UnityStaticSortSpineBinding.cs",
         "Assets/Game/Editor/Conversion/UnityStaticSortTextSource.cs": REPO / "src/monkey/targets/UnityStaticSortTextSource.cs",
@@ -290,7 +304,7 @@ def test_real_spine_export_requires_and_compiles_with_pinned_runtime_factory_clo
         "sourceCountBeforeSubstitution": len(actual_sources),
         "substitutions": substitutions,
         "spineBackupManifestSha256": sha(backup_bytes),
-        "boundary": "source files are copied from existing actual-export19; only nine listed current package templates substituted; no new game plan export or Editor run",
+        "boundary": "source files are copied from existing actual-export19; only twelve listed current package templates substituted; no new game plan export or Editor run",
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     no_sdk = _compile(temp_root, references=standard_references, case="ActualSpineWithoutSdk", evidence_dir=evidence_dir)
     assert no_sdk["exitCode"] != 0, "real Spine export unexpectedly compiled without Spine SDK references"

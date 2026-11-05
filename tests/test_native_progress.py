@@ -102,6 +102,7 @@ class NativeProgressTests(unittest.TestCase):
         self.assertTrue(gaps)
         self.assertFalse(rows[0]['convertible'])
         self.assertEqual(binding['policy'],'native-static-progress-v1')
+        self.assertTrue(binding['contractPresent'])
         self.assertEqual(binding['barSpriteSourceId'],'asset#6')
         self.assertEqual(binding['barNodeSourceId'],'asset#1')
         self.assertEqual([binding['progress'],binding['totalLength'],binding['mode'],binding['reverse']],

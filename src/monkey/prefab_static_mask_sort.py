@@ -98,10 +98,35 @@ def _uuid_asset(manifest: Mapping, bundle: str, uuid: str) -> tuple[str, Mapping
     return original["sourceId"], asset
 
 
-def _mask_material_proof(manifest: Mapping, bundle: str, raw: Mapping) -> dict:
+def _mask_material_proof(manifest: Mapping, bundle: str, raw: Mapping, *, engine_defaults: Mapping | None = None) -> dict:
     from .shader_profiles import FRAGMENT_SHA256, VERTEX_SHA256
 
     material_refs = raw.get("_materials")
+    # CCMask._activateMaterial selects the engine builtin when the first
+    # material is absent. This is a source-engine resolution, not a serialized
+    # UUID; retain that distinction and still prove the actual builtin bytes.
+    default_material = "_materials" not in raw or material_refs == [] or material_refs == [None]
+    if default_material:
+        from .prefab_static_mask_continuation import SOURCE_ENGINE_PATH, SOURCE_ENGINE_SHA256, SOURCE_ENGINE_URL
+        if (not isinstance(engine_defaults, Mapping) or engine_defaults.get("path") != SOURCE_ENGINE_PATH
+                or engine_defaults.get("sha256") != SOURCE_ENGINE_SHA256 or engine_defaults.get("url") != SOURCE_ENGINE_URL):
+            raise StaticMaskSortError("mask default material requires verified source engine evidence")
+        candidates = []
+        for asset in manifest.get("assets", []):
+            if asset.get("kind") != "cc.Material" or not isinstance(asset.get("document"), Mapping):
+                continue
+            document = asset["document"]
+            rows = document.get("instances", [])
+            material = rows[document.get("root", 0)] if isinstance(rows, list) and rows else None
+            if (asset.get("kind") == "cc.Material" and asset.get("sourceId", "").startswith("internal:")
+                    and isinstance(material, Mapping) and material.get("_name") == "builtin-2d-sprite"):
+                candidates.append(asset)
+        if len(candidates) != 1:
+            raise StaticMaskSortError("mask engine builtin material is absent or ambiguous in the frozen source manifest")
+        selected = candidates[0]["sourceId"].partition(":")[2]
+        proof = _mask_material_proof(manifest, "internal", {"_materials": [{"__uuid__": selected}]})
+        return {**proof, "sourceMaterialResolution": "engine-default-builtin",
+                "sourceMaterialResolverPath": SOURCE_ENGINE_PATH, "sourceMaterialResolverSha256": SOURCE_ENGINE_SHA256}
     if not isinstance(material_refs, list) or len(material_refs) != 1 or not isinstance(material_refs[0], Mapping):
         raise StaticMaskSortError("mask source must have one exact source material reference")
     material_uuid = material_refs[0].get("__uuid__")
@@ -177,7 +202,8 @@ def _mask_material_proof(manifest: Mapping, bundle: str, raw: Mapping) -> dict:
             "sourceEffectProgramSha256": {"glsl1.vert": vertex_sha, "glsl1.frag": fragment_sha}}
 
 
-def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str, *, include_convertible_masks: bool = False) -> list[dict]:
+def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str, *, include_convertible_masks: bool = False,
+                 mask_engine_defaults: Mapping | None = None) -> list[dict]:
     rows = [row for row in plan.get("components", []) if row.get("type") == source_type]
     unique: dict[str, dict] = {}
     origins={r['instanceSourceId']:r['templateSourceId'] for r in plan.get('staticAnimationComponentOrigins',[])}
@@ -217,7 +243,7 @@ def _origin_rows(plan: Mapping, manifest: Mapping, source_type: str, *, include_
                 raise StaticMaskSortError(f"image stencil has no exact SpriteFrame UUID: {source_id}")
             if row.get("maskType") != mask_type or row.get("inverted") is not inverted:
                 raise StaticMaskSortError(f"plan mask identity/fields differ from source: {source_id}")
-            material = _mask_material_proof(manifest, source_id.partition(":")[0], raw)
+            material = _mask_material_proof(manifest, source_id.partition(":")[0], raw, engine_defaults=mask_engine_defaults)
             if mask_type == 2:
                 shader_path = Path(__file__).parent / "targets/materials/static_mask/NativeStaticImageMask.shader"
                 try:

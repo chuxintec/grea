@@ -461,6 +461,8 @@ def plan(ir_path, namespace, output, bindings_path=None,animation_selection=None
     prefab_by_id={row['sourceId']:row for row in result.get('sourcePrefabs',[])}
     result['sourcePrefabs']=[prefab_by_id[sid] for sid in dependencies['order']]
     result['diagnostics'].extend(diagnostic('STATIC_PREFAB_DEPENDENCY_GAP',row.get('owner')or'sourcePrefabs',str(row)) for row in dependencies['gaps'])
+    from ..prefab_static_button_targets import apply as apply_button_targets
+    apply_button_targets(result)
     write_json(out/'plan.json',result)
     return finish(out,result)
 

@@ -35,6 +35,7 @@ def configure_progress(components, nodes):
             finite(value) and finite(length) and
             type(mode) is int and mode in (0,1,2) and type(reverse) is bool):
             row['staticProgressBinding']={
+                'contractPresent':True,
                 'policy':'native-static-progress-v1',
                 'sourceComponentId':row['sourceId'],
                 'sourceNodeId':row['node'],

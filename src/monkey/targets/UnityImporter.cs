@@ -143,7 +143,8 @@ public static partial class MonkeyImporter
     [Serializable] public class LabelResult { public string sourceId, text, fontGuid, geometryProbe; public bool autoSizeReadback,autoSizing; public float fontSizeMin,fontSizeMax; public float fontSize,lineBoxHeight,lineBoxLineHeight,lineBoxExtra; public string bitmapMissingGlyphPolicy,bitmapDisplayText; public bool bitmapMissingGlyphProofVerified; public int characterCount,lineCount; public bool lineBoxPresent,lineBoxActive; public bool allCharactersPresent; public GlyphBounds[] glyphBounds; }
     [Serializable] public class GlyphBounds { public uint unicode; public float left,top,width,height,quadPadding; }
     [Serializable] public class Readback {
-        public SourceComponentCoverage[] components;
+        public SourceComponentCoverage[] components,sceneComponents;
+        public string sceneComponentContract,sceneComponentPhase;
         public SourcePresentationCoverage staticPresentationValidation;
         public StaticPreviewResult staticPreview; public StaticPreviewResult[] staticPreviews;
         public MonkeyUnityMaterialBindings.Readback materialBinding;
@@ -1086,15 +1087,13 @@ public static partial class MonkeyImporter
         var savedNodeMap=plan.galleryOnly?new Dictionary<string,RectTransform>():SavedNodeMap(plan.nodes,instance);
         foreach(var result in sourcePrefabResults)BindPhysicalNodeComponents(result.nodes,result.components);
         var sourceComponents=sourcePrefabResults.SelectMany(x=>x.components??Array.Empty<SourceComponentCoverage>()).ToArray();
-        // Scene instances can have an intermediate Candidate.prefab source.
-        // Locate the actually observed owner asset in their prefab source chain,
-        // including infrastructure components that have no logical source ID.
-        var physicalIdentitySources=sourceComponents.Concat(sourcePrefabResults.SelectMany(prefab=>
-            (prefab.nodes??Array.Empty<NodeResult>()).SelectMany(node=>
-                (node.physicalComponents??Array.Empty<PhysicalComponentObservation>()).Select(physical=>
-                    new SourceComponentCoverage{node=node.sourceId,componentUuid=physical.componentUuid})))).ToArray();
+        // The independently saved source Prefabs and aggregate Candidate asset
+        // are separate clones. Observe scene logical roles independently; do
+        // not invent an asset correspondence between those two save operations.
+        var sceneComponents=ReadSourceComponentCoverage(plan,savedNodeMap.ToDictionary(x=>x.Key,x=>x.Value.gameObject),new HashSet<string>(),true);
         var readback = new Readback {
             components=sourceComponents,staticPresentationValidation=ReadSourcePresentationCoverage(plan,sourceComponents),
+            sceneComponents=sceneComponents,sceneComponentContract="monkey-unity-saved-scene-components/1",sceneComponentPhase="saved-scene-reopened",
             importPlanSha256=Hash(Paths.plan),sourceManifestSha256=plan.sourceManifestSha256,
             materialBinding=recoveredMaterial==null?null:recoveredMaterial.readback,
             prefabInstances=ReadNativeInstances(plan,savedNodeMap,null,PrefabPath),candidatePrefabInstances=candidatePrefabProofs,
@@ -1115,7 +1114,7 @@ public static partial class MonkeyImporter
             nodes=plan.nodes.Select(n=>{
                 // Resolve the reloaded scene once by sibling-index paths, independent of names.
                 var target=savedNodeMap[n.sourceId];
-                return DescribeNode(n,target,physicalIdentitySources,null,true);
+                return DescribeNode(n,target,sceneComponents,null,true);
             }).ToArray(),
             fonts=fonts.Select(pair=>new FontResult { id=pair.Key,guid=AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(pair.Value)),
                 atlasGuid=pair.Value.atlasTextures.Length>0 && pair.Value.atlasTextures[0]!=null?AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(pair.Value.atlasTextures[0])):"",
@@ -1132,7 +1131,7 @@ public static partial class MonkeyImporter
                     border=new[]{s.border.x,s.border.y,s.border.z,s.border.w}};
             }).ToArray()
         };
-        BindPhysicalNodeComponents(readback.nodes,sourceComponents);
+        BindPhysicalNodeComponents(readback.nodes,sceneComponents);
         var savedView=instance.GetComponent<ContentPreviewView>();
         readback.viewReferences=plan.components.Where(c=>c.convertible && new[]{"cc.Sprite","cc.Label","cc.Button"}.Contains(c.type)).Select(c=> {
             var node=savedNodeMap[c.node];

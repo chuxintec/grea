@@ -90,6 +90,33 @@ def assess(plan, readback, engine):
         for owner in readback["sourcePrefabs"]:
             if isinstance(owner, dict) and owner.get("sourceId") in owner_by_id:
                 owner.setdefault("path", owner_by_id[owner["sourceId"]].get("path"))
+    # Legacy unit fixtures have no independently saved-scene role inventory.
+    # Model that scope explicitly in the fixture adapter; production readbacks
+    # missing the contract are never repaired by the consumer.
+    if "sceneComponents" not in readback:
+        scene_rows_by_id = {}
+        for key in ("components", "disabledComponents", "retainedComponents"):
+            current = {}
+            for row in readback.get(key, []):
+                if isinstance(row, dict):
+                    current.setdefault(row.get("sourceId"), []).append(row)
+            for sid, candidates in current.items():
+                scene_rows_by_id.setdefault(sid, candidates)
+        scene_rows = []
+        for source in plan.get("components", []):
+            if not isinstance(source, dict):
+                continue
+            candidates = scene_rows_by_id.get(source.get("sourceId"), [])
+            if not candidates:
+                continue
+            for row in candidates:
+                scene_row = dict(row, observationScope="saved-scene-correspondence",
+                                 identityOrigin="corresponding-prefab-source")
+                scene_row.setdefault("identityPath", [scene_row.get("componentUuid")])
+                scene_rows.append(scene_row)
+        readback["sceneComponents"] = scene_rows
+        readback["sceneComponentContract"] = "monkey-unity-saved-scene-components/1"
+        readback["sceneComponentPhase"] = "saved-scene-reopened"
     # Supply the protocol's full physical Component inventory in ordinary
     # Unity fixture setup. Negative identity/inventory cases are built in the
     # dedicated component identity tests and mutate these actual fixture rows.
@@ -511,7 +538,7 @@ class ComponentCoverageTests(unittest.TestCase):
         plan={"nodes":self.plan["nodes"],"sourcePrefabs":[{"sourceId":"test-owner","path":"Assets/test-owner.prefab","nodes":["node-a"]}],
               "components":[{"sourceId":sid,"node":"node-a","type":"sp.Skeleton","enabled":True}],
               "staticSpineContinuation":{"components":[{"sourceComponentId":sid}]}}
-        readback={"components":[dict(carrier),dict(renderer)],
+        readback={"components":[dict(renderer)],"retainedComponents":[dict(carrier)],
                   "staticSpineContinuation":{"status":"verified","sourceComponentIds":[sid]},
                   "staticSpineRendering":{"status":"verified","sourceComponentIds":[sid]}}
         result=assess(plan,readback,"unity")

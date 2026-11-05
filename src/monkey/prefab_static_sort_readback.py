@@ -2233,9 +2233,9 @@ def _check_source_mask_identities(spec, row, mode, plan):
         return False
 
     source_fields = ("sourceFieldsJson", "spriteFrameUuid", "sourceMaterialId", "resolvedSourceMaterialId", "sourceEffectId",
-                     "sourceEffectName", "sourceEffectDocumentSha256", "unityMaskMaterialGuid",
+                     "sourceEffectName", "sourceEffectDocumentSha256", "sourceMaterialResolution", "sourceMaterialResolverPath", "sourceMaterialResolverSha256", "unityMaskMaterialGuid",
                      "unityMaskShaderPath", "unityMaskShaderSha256")
-    optional_source_fields = {"spriteFrameUuid", "unityMaskMaterialGuid", "unityMaskShaderPath", "unityMaskShaderSha256"}
+    optional_source_fields = {"sourceMaterialResolution", "sourceMaterialResolverPath", "sourceMaterialResolverSha256", "spriteFrameUuid", "unityMaskMaterialGuid", "unityMaskShaderPath", "unityMaskShaderSha256"}
     for expected in expected_rows:
         source_id, node = expected.get("sourceId"), expected.get("node")
         actual_row = actual_by_id.get(source_id)
