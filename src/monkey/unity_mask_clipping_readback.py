@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import io
 import math
+import re
 import struct
 from pathlib import Path
 
@@ -185,10 +186,10 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
     if len(expected) != len(specs) or set(expected) != set(source):
         gap('Source Mask component denominator differs'); return gaps
     rows = [x for prefab in readback.get('sourcePrefabs', []) for x in (prefab.get('staticMaskFields') or [])]
-    actual = {x.get('sourceId'): x for x in rows if isinstance(x, dict)}
+    saved_by_source = {x.get('sourceId'): x for x in rows if isinstance(x, dict)}
     prefab_guids = {x.get('sourceId'): prefab.get('guid') for prefab in readback.get('sourcePrefabs', [])
                     for x in (prefab.get('staticMaskFields') or []) if isinstance(x, dict)}
-    if len(actual) != len(rows) or set(actual) != set(expected):
+    if len(saved_by_source) != len(rows) or set(saved_by_source) != set(expected):
         gap('Saved native Mask denominator differs'); return gaps
     descriptors = readback.get('staticMaskReadbackFiles')
     if not isinstance(descriptors, list) or any(not isinstance(x, dict) for x in descriptors):
@@ -201,7 +202,7 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
     for sid, spec in expected.items():
         try:
             node=nodes[spec['node']]
-            row = actual[sid]
+            row = saved_by_source[sid]
             if (row.get('verified') is not True or row.get('clipProbeVerified') is not True or
                 row.get('persistentIdentityVerified') is not True or not row.get('persistentIdentityGuid') or
                 type(row.get('persistentIdentityLocalFileId')) is not int or not row['persistentIdentityLocalFileId']):
@@ -242,7 +243,8 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
                 raise ValueError('controlled probe incorrectly claims source visual parity')
             if (not isinstance(probe.get('graphicsDeviceType'),str) or
                     probe.get('graphicsDeviceType') in ('','Null') or
-                    not probe.get('controlContextSha256') or
+                    not isinstance(probe.get('controlContextSha256'), str) or
+                    re.fullmatch(r'[0-9a-f]{64}', probe['controlContextSha256']) is None or
                     probe.get('controlContextSha256')!=probe.get('maskedContextSha256')):
                 raise ValueError('graphics backend or same-render-context control is absent')
             if (probe.get('sourceMaskEnabled') is not spec['enabled'] or

@@ -68,6 +68,29 @@ class MaskClippingReadbackTests(unittest.TestCase):
     def test_inactive_source_is_preserved_while_controlled_probe_is_active(self):
         self.assertEqual([],self.check())
 
+    def test_two_positive_rows_and_mixed_results(self):
+        first_files = self.rb['staticMaskReadbackFiles'][:]
+        second = copy.deepcopy(self.row)
+        sid = self.sid + '-second'
+        second['sourceId'] = sid
+        self.plan['components'].append(dict(self.plan['components'][0], sourceId=sid))
+        self.plan['staticMasks']['masks'].append(dict(self.spec, sourceId=sid))
+        self.rb['sourcePrefabs'][0]['staticMaskFields'].append(second)
+        self.probe = second['clipProbe']
+        self.probe['sourceId'] = sid
+        token = hashlib.sha256(sid.encode()).hexdigest()[:20]
+        self.jp, self.pp, self.cp = [PREFIX+'maskclip-'+token+suffix for suffix in ('.json','.png','-control.png')]
+        self.probe.update(evidencePath=self.jp, imagePath=self.pp, controlImagePath=self.cp)
+        for digest in ('f'*64, 'x'):
+            self.probe.update(controlContextSha256=digest, maskedContextSha256=digest)
+            self.sync()
+            self.rb['staticMaskReadbackFiles'].extend(first_files)
+            gaps = self.check()
+            if digest == 'x':
+                self.assertEqual([sid], [gap['sourceId'] for gap in gaps])
+            else:
+                self.assertEqual([], gaps)
+
     def test_disabled_mask_requires_visible_outside_stimulus(self):
         self.spec['enabled']=False
         self.probe.update(sourceMaskEnabled=False,status='disabled-mask-no-clip-verified',
