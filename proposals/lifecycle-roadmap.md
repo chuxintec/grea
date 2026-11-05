@@ -10,7 +10,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T16:15:40.119253+08:00",
+  "updatedAt": "2026-11-05T16:23:49.097096+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "Unity目标。A线原40逐图整改；monkey主线并行大计划导出，B线推进原范围有源partial，C线追源持久事件。dev33窄项已签。正式采用、扩样待人审。",
@@ -689,9 +689,11 @@
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/baseline.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/owner-interim-15-17-27.json",
         ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/source-state-leads.json",
-        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/room-guide-source-context-20261105/ROOM-GUIDE-SOURCE-CONTEXT.json"
+        "/Users/wangmeng/MyProjects/Games/projects/20-foodstreet/Analysis/v050-development-20261104/room-guide-source-context-20261105/ROOM-GUIDE-SOURCE-CONTEXT.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual-one42.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/visual40-rework/label27-source-control.json"
       ],
-      "nextAction": "原40继续静态修复。1.9.1 Room16 源位置、Build8069–8073 门槛、GuideMask/GuideHand 父级条件已收到；玩家装修状态和截图所处引导步骤仍缺同版运行证据。15/17/27 未通过。",
+      "nextAction": "director-visual-visible-defect-41 → grea-visual-one-visible-42：先查原27下一处镜像x12，以同页上方正常x12作对照。源模板#28已带负X，需核骨骼挂点及首个源/Unity差异。静态不可证则换15一条有源静态文字。交付通用修复与同父级同状态前后图；人审0/40。17的状态缺口仅影响17。",
       "moduleExecutorSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42"
     },
     {
