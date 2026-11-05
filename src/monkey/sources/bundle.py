@@ -286,6 +286,13 @@ def inspect(config, selection, output, dependency_sources=(), evidence_sources=(
     for name,b in bundles.items():
         b.max_input_bytes=max_bytes
         for key in b.keys: provided.setdefault(key,[]).append(name)
+    # Creator 2.4 sp.Skeleton._getDefaultMaterial requests "2d-spine" even
+    # when no material UUID was serialized. Include the exact builtin, if the
+    # caller supplied its internal bundle, without inventing a source ref.
+    builtin_spine = []
+    if source_profile == 'cocos-2.4.15-bundle' and 'internal' in bundles:
+        builtin_spine = [int(index) for index, row in bundles['internal'].config.get('paths', {}).items()
+                         if isinstance(row, list) and row and row[0] == 'materials/builtin-2d-spine']
     aliases_seen=set()
     seen = set()
     assets, diagnostics = [], [diagnostic('OPAQUE_SOURCE_ID_PRESERVED', name+f':$.uuids[{i}]',
@@ -332,6 +339,8 @@ def inspect(config, selection, output, dependency_sources=(), evidence_sources=(
                     entry['kind'] = 'native'
         except (ParseError, FileNotFoundError) as error:
             diagnostics.append(diagnostic(getattr(error, 'code', 'MISSING_NATIVE'), str(folder), str(error), sid))
+        if entry.get('kind') == 'sp.SkeletonData' and len(builtin_spine) == 1:
+            pending.append(('internal', builtin_spine[0]))
         for ref in entry['references']:
             if ref in bundle.lookup:
                 pending.append((name,bundle.lookup[ref]))

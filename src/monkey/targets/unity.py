@@ -6,6 +6,7 @@ import re
 from .. import __version__
 from ..io import safe, inside, read, load, sha, encoded, new_output, finish, write_json, diagnostic, stage_document, stage_bytes, stage_manifest
 from ..sources.compiled import fail
+from ..normalize import is_centered_radial_fill, is_linear_sprite_fill
 from ..layout import standard
 from ..layout.standard import VERSION
 from ..layout.standard import find_analysis
@@ -218,6 +219,7 @@ def plan(ir_path, namespace, output, bindings_path=None,animation_selection=None
     native_materials={f['sourceId'] for f in ir.get('materials',[]) if f['nativeRole']=='standard-ugui'}
     from .. import prefab_material_pipeline as material_pipeline
     material_profile,material_gaps=material_pipeline.discover(ir,ir_path)
+    identity_label_materials = material_pipeline.identity_label_materials(ir)
     diagnostics.extend(material_gaps)
     def resolve_id(value):
         seen=set()
@@ -260,20 +262,27 @@ def plan(ir_path, namespace, output, bindings_path=None,animation_selection=None
 
         if material_pipeline.supported_component(c,material_profile,resolve_id):
             entry['nativeMaterialSourceId']=material_profile['spec']['materialSourceId']
-        elif material_pipeline.identity_text_component(c,material_profile,resolve_id):
-            entry['nativeTextMaterialIdentitySourceId']=material_profile['spec']['materialSourceId']
+        elif (material_pipeline.identity_text_component(c,material_profile,resolve_id)
+              or c['type'] in ('cc.Label', 'cc.RichText') and len(c.get('materials', [])) == 1
+              and c['materials'][0] in identity_label_materials):
+            entry['nativeTextMaterialIdentitySourceId']=resolve_id(c['materials'][0])
             entry['nativeTextMaterialPolicy']='source-proven-identity-default-only'
         elif any(resolve_id(mat) not in native_materials for mat in c.get('materials',[])):
             entry['convertible']=False
             diagnostics.append(diagnostic('CUSTOM_MATERIAL_HANDOFF',c['sourceId'],'Material is not recognized standard UI texture',c['sourceId']))
         if c['type']=='cc.Sprite':
-            if c.get('spriteFrame') is not None and c.get('spriteFrame') not in sprite_ids or c['mode'] not in (0,1,2):
+            frame=next((t for t in textures if t['id']==c.get('spriteFrame')),None)
+            # Zero fill draws no pixels. Nonempty fills require identical source and packed bounds.
+            supported_fill = ((is_linear_sprite_fill(c) or is_centered_radial_fill(c)) and frame and
+                              (c['fillRange'] == 0 or
+                               (frame['size'] == frame['originalSize'] and frame['offset'] == [0, 0])))
+            if (c.get('spriteFrame') is not None and c.get('spriteFrame') not in sprite_ids
+                    or (c['mode'] not in (0, 1, 2) and not supported_fill)):
                 entry['convertible']=False
                 diagnostics.append(diagnostic('SPRITE_NOT_CONVERTIBLE',c['sourceId'],'Missing frame or unsupported mode',c['sourceId']))
             if c.get('spriteFrame') is None:
                 entry['needsSpriteBinding']=True
                 diagnostics.append(diagnostic('SOURCE_SPRITE_UNBOUND',c['sourceId'],'Source Sprite has no frame; native Image is disabled until AI binds an actual Sprite and enables it',c['sourceId']))
-            frame=next((t for t in textures if t['id']==c.get('spriteFrame')),None)
             untrimmed_identity=bool(frame and frame['size']==frame['originalSize'] and frame['offset']==[0,0])
             if not c.get('trim',True) and c['mode'] in (1,2) and untrimmed_identity:
                 entry['untrimmedGeometryPolicy']='identity-full-frame-zero-offset'

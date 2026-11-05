@@ -44,6 +44,37 @@ def supported_component(component, profile, resolve):
     return component['sourceId'] in spec['sourceComponentIds'] and exact and resolved[0] in source_material_ids
 
 
+def identity_label_materials(ir):
+    """Recognize neutral text materials even if no Sprite uses the material."""
+    from .io import load
+    from .prefab_materials import _asset_map, _resolve_bundle_asset, _root_object, _source_properties, MaterialProfileError
+    if ir.get('sourceProfile') != 'cocos-2.4.15-bundle':
+        return set()
+    ids = {c['materials'][0] for c in ir.get('components', []) if c.get('type') in ('cc.RichText', 'cc.Label')
+           and len(c.get('materials', [])) == 1}
+    if not ids or not ir.get('sourceManifestPath'):
+        return set()
+    raw = stage_bytes(Path(ir['sourceManifestPath']))
+    if sha(raw) != ir.get('sourceManifestSha256'):
+        fail('MATERIAL_SOURCE_CHANGED', ir['sourceManifestPath'], 'Source manifest hash mismatch')
+    assets = _asset_map(load(raw, max_nodes=8_000_000))
+    matched = set()
+    for sid in ids:
+        try:
+            asset, resolved = _resolve_bundle_asset(assets, sid, 'cc.Material')
+            material = _root_object(asset)
+            effect_uuid = (material.get('_effectAsset') or {}).get('__uuid__')
+            if not isinstance(effect_uuid, str):
+                continue
+            effect, _ = _resolve_bundle_asset(assets, resolved.split(':')[0] + ':' + effect_uuid, 'cc.EffectAsset')
+            props, _ = _source_properties(_root_object(effect), material)
+            if props == dict(brightness=1., constrast=1., gray=0., saturation=1., silhouette=[1.] * 4):
+                matched.add(sid)
+        except MaterialProfileError:
+            continue
+    return matched
+
+
 def identity_text_component(component,profile,resolve):
     """A proven identity UI-color transform needs no text shader replacement.
 

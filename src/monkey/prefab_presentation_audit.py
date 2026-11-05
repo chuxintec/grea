@@ -41,6 +41,15 @@ def check_images(project, objects, receipt, sprites, textures):
         row = dict(sourceId=sid, spriteFrame=key, expectedTexture=guid)
         if component.get('guid') == receipt['guid'] and '  m_Sprite:' in body:
             row['observedTexture'] = match.group(2) if match else None
+            if sprite.get('mode') == 3:
+                fields = {'m_Type': '3', 'm_FillMethod': str(sprite.get('fillType', 0)), 'm_FillOrigin': '0'}
+                if sprite.get('fillType') == 2:
+                    fields.update(m_FillMethod='4', m_FillOrigin='2',
+                                  m_FillClockwise=str(int(sprite['fillRange'] < 0)))
+                amount = re.search(r'^  m_FillAmount: ([0-9.eE+-]+)$', body, re.M)
+                if (not all(re.search(rf'^  {field}: {value}$', body, re.M) for field, value in fields.items())
+                        or not amount or abs(float(amount.group(1)) - abs(sprite['fillRange'])) > 1e-6):
+                    errors.append(f'{sid}: saved sprite fill differs')
             if not match or int(match.group(1)) == 0 or match.group(2) != guid:
                 errors.append(f'{sid}: saved Image sprite reference differs')
         else:
@@ -104,6 +113,9 @@ def inspect(project, plan, plan_hash, spec, receipt):
             moved.append(identity)
     sprites = [c for c in plan['components'] if c['node'] in saved and c['type'] == 'cc.Sprite']
     gaps = [c['sourceId'] for c in sprites if not c['convertible'] or not c.get('spriteFrame')]
+    unbound = [c['sourceId'] for c in sprites if not c.get('spriteFrame')]
+    unsupported = [c['sourceId'] for c in sprites if c.get('spriteFrame') and not c['convertible']]
+    issues.extend(f'{identity}: source-bound Sprite was not converted' for identity in unsupported)
     objects = serialized_objects(asset)
     verified_parents, parent_errors = check_parent_links(objects, saved, authored, receipt['guid'])
     issues.extend(parent_errors)
@@ -121,7 +133,7 @@ def inspect(project, plan, plan_hash, spec, receipt):
                 packedFrameBindings=[c['sourceId'] for c in sprites if c['convertible'] and
                                      c.get('untrimmedGeometryPolicy') == 'creator24-packed-frame-insets'],
                 verifiedSerializedParents=verified_parents, imageBindings=bindings, unresolvedSprites=gaps, authoredToSettledPositionChanges=moved,
-                issues=issues, previews=previews)
+                sourceUnboundSprites=unbound, unsupportedBoundSprites=unsupported, issues=issues, previews=previews)
 
 
 def audit(projects, selection, output):

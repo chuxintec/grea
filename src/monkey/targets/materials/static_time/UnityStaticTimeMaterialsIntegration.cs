@@ -32,12 +32,12 @@ public static partial class MonkeyImporter
         var frames = new Dictionary<string, Sprite>(StringComparer.Ordinal);
         foreach (var binding in spec.materials.SelectMany(row => row.spriteBindings ?? Array.Empty<UnityStaticTimeMaterialBindings.SpriteBinding>()))
         {
-            var texture = ExactStaticTimeTexture(plan, binding.spriteFrameSourceId);
+            var texture = ExactStaticTimeTexture(plan, binding.FrameKey);
             var frame = AssetDatabase.LoadAssetAtPath<Sprite>(texture.path);
             if (frame == null) throw new InvalidOperationException("STATIC_TIME_FRAME_ASSET_MISSING: " + texture.path);
-            if (frames.TryGetValue(binding.spriteFrameSourceId, out var prior) && prior != frame)
+            if (frames.TryGetValue(binding.FrameKey, out var prior) && prior != frame)
                 throw new InvalidOperationException("STATIC_TIME_FRAME_ASSET_AMBIGUOUS: " + binding.spriteFrameSourceId);
-            frames[binding.spriteFrameSourceId] = frame;
+            frames[binding.FrameKey] = frame;
         }
         return frames;
     }
@@ -88,7 +88,7 @@ public static partial class MonkeyImporter
     {
         var rows = (plan.components ?? Array.Empty<ComponentSpec>()).Where(row => row != null && row.sourceId == binding.sourceId).ToArray();
         if (rows.Length != 1 || rows[0].type != "cc.Sprite" || !rows[0].convertible || rows[0].node == null ||
-            rows[0].spriteFrame != binding.spriteFrameSourceId ||
+            rows[0].spriteFrame != binding.spriteFrameSourceId || SpriteKey(rows[0]) != binding.FrameKey ||
             rows[0].nativeStaticTimeMaterialSourceId != material.sourceMaterialId ||
             rows[0].nativeStaticTimeSourceComponentId != binding.sourceComponentId)
             throw new InvalidOperationException("STATIC_TIME_PLAN_COMPONENT_BINDING_MISMATCH: " + binding.sourceId);

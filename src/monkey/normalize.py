@@ -12,6 +12,25 @@ MAX_PIXELS = 16_777_216
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 
 
+def is_linear_sprite_fill(component):
+    amount = component.get('fillRange')
+    return (component.get('mode') == 3 and component.get('fillType') in (0, 1)
+            and component.get('fillStart') == 0 and type(amount) in (int, float)
+            and 0 <= amount <= 1)
+
+
+def is_horizontal_sprite_fill(component):
+    return is_linear_sprite_fill(component) and component.get('fillType') == 0
+
+
+def is_centered_radial_fill(component):
+    amount = component.get('fillRange')
+    return (component.get('mode') == 3 and component.get('fillType') == 2
+            and component.get('fillCenter') == [0.5, 0.5]
+            and component.get('fillStart') == 0.25
+            and type(amount) in (int, float) and -1 <= amount <= 1)
+
+
 def open_texture(raw, suffix):
     from io import BytesIO
     if suffix != '.astc':
@@ -254,12 +273,12 @@ def normalize(manifest_path, output, *, audio_provider=None):
                     # Nodes/components remain conversion-time data; unknown fields reported downstream.
                     expanded = list(expand_nodes(objects,sid))
                     component_indices = {v.get('__id__') for _, n in expanded
-                        if isinstance(n,dict) and n.get('__type__') in ('cc.Node','cc.Scene')
+                        if isinstance(n,dict) and n.get('__type__') in ('cc.Node','cc.PrivateNode','cc.Scene')
                         for v in n.get('_components',[]) if isinstance(v,dict) and type(v.get('__id__')) is int}
                     for index, obj in expanded:
                         typ = obj.get('__type__') if isinstance(obj, dict) else None
                         location = f"{asset.get('importPath')}#instances/{index}"
-                        if typ in ('cc.Node','cc.Scene'):
+                        if typ in ('cc.Node','cc.PrivateNode','cc.Scene'):
                             obj = dict(obj)
                             refs = []
                             for ordinal, value in enumerate(obj.get('_components', [])):
@@ -276,7 +295,7 @@ def normalize(manifest_path, output, *, audio_provider=None):
                                     refs.append(value)
                             obj['_components'] = refs
                             node, gaps = node_ir(sid, index, obj)
-                            if typ=='cc.Scene': node['sourceType']='cc.Scene'
+                            if typ != 'cc.Node': node['sourceType'] = typ
                             result['nodes'].append(node)
                             diagnostics.extend(diagnostic('UNSUPPORTED_NODE_FIELD', location, g, node['sourceId']) for g in gaps)
                         elif typ not in ('cc.Prefab', 'cc.PrefabInfo', 'cc.SceneAsset', None):
@@ -348,15 +367,15 @@ def expand_nodes(objects,namespace):
         index,obj=pending[position];position+=1
         if isinstance(obj,dict) and obj.get('__type__')=='cc.Prefab':
             data=obj.get('data')
-            if isinstance(data,dict) and data.get('__type__')=='cc.Node':
+            if isinstance(data,dict) and data.get('__type__') in ('cc.Node','cc.PrivateNode'):
                 # A typed inline Prefab root has no numeric object-table ID.
                 # Keep its serialized field path as the stable source ID.
                 root_index=f'{index}/data';pending.append((root_index,dict(data)))
                 obj=dict(obj,data={'__sourceId__':namespace+'#'+root_index})
-        if isinstance(obj,dict) and obj.get('__type__') in ('cc.Node','cc.Scene'):
+        if isinstance(obj,dict) and obj.get('__type__') in ('cc.Node','cc.PrivateNode','cc.Scene'):
             obj=dict(obj);children=[]
             for ordinal,child in enumerate(obj.get('_children',[])):
-                if isinstance(child,dict) and child.get('__type__')=='cc.Node':
+                if isinstance(child,dict) and child.get('__type__') in ('cc.Node','cc.PrivateNode'):
                     child_index=f'{index}/_children/{ordinal}';child=dict(child)
                     if '_parent' not in child:child['_parent']={'__sourceId__':namespace+'#'+str(index)}
                     pending.append((child_index,child));children.append({'__sourceId__':namespace+'#'+child_index})
@@ -456,7 +475,12 @@ def component_ir(namespace, index, obj, *, source_profile=None):
     if typ == 'cc.Sprite':
         base.update(spriteFrame=ref(obj.get('_spriteFrame'),namespace), mode=obj.get('_type',0),
                     sizeMode=obj.get('_sizeMode',0), trim=obj.get('_isTrimmedMode',True))
-        if base['mode'] not in (0,1,2): gaps.append('sprite mode '+str(base['mode']))
+        if base['mode'] == 3 and source_profile == 'cocos-2.4.15-bundle':
+            base.update(fillType=obj.get('_fillType',0), fillStart=obj.get('_fillStart',0), fillRange=obj.get('_fillRange',0))
+            if base['fillType'] == 2 and obj.get('_fillCenter') is not None:
+                base['fillCenter'] = vector(obj['_fillCenter'], ('x', 'y'), [0, 0])
+        if base['mode'] not in (0, 1, 2) and not (is_linear_sprite_fill(base) or is_centered_radial_fill(base)):
+            gaps.append('sprite mode '+str(base['mode']))
         known = {'_materials','_spriteFrame','_type','_sizeMode','_isTrimmedMode','_fillType','_fillCenter','_fillStart','_fillRange','_atlas'}
     elif typ == 'cc.Label':
         family_values = [obj[key] for key in ('fontFamily', '_fontFamily', '_N$fontFamily') if key in obj]
@@ -474,7 +498,18 @@ def component_ir(namespace, index, obj, *, source_profile=None):
                     bold=bool(obj.get('_styleFlags',0)&1),italic=bool(obj.get('_styleFlags',0)&2),underline=bool(obj.get('_styleFlags',0)&4),
                     spacing=obj.get('_spacingX',0),systemFont=obj.get('_isSystemFontUsed',True),
                     overflow=obj.get('_overflow',obj.get('_N$overflow',0)),wrap=obj.get('_enableWrapText',True))
-        if family_values and not family_values[0].strip() and base['systemFont'] and not base['font']:
+        if (source_profile == 'cocos-2.4.15-bundle' and base['systemFont'] is False
+                and obj.get('_N$file') is None):
+            # Creator 2.4.15 getFontFamily returns Arial for a null custom font,
+            # irrespective of the family string saved for the system-font mode.
+            base.update(sourceSystemFont=False, sourceFontFamily=base['fontFamily'],
+                        systemFont=True, fontFamily='Arial', fontFamilyEvidence='creator-null-custom-font-Arial')
+        if (source_profile == 'cocos-2.4.15-bundle' and base['systemFont']
+                and not base['font'] and base['fontFamily'] == ''):
+            # Creator 2.4.15 label/utils.getFontFamily uses comp.fontFamily || "Arial".
+            base.update(sourceFontFamily='', fontFamily='Arial',
+                        fontFamilyEvidence='creator-empty-system-family-Arial')
+        if not base['fontFamily'].strip() and base['systemFont'] and not base['font']:
             # Empty family strings occur in valid source objects. Retain the
             # graph and exact string, but do not invent Arial or a renderer.
             base['supported']=False

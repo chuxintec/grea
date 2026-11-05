@@ -393,6 +393,10 @@ def _bundle_profile_from_ir(manifest: dict, ir: dict, path: Path, ir_path: Path,
             refs=component.get('materials')
             if not isinstance(refs,list) or len(refs)!=1 or refs[0] not in by_declared:
                 continue
+            # Unbound sprite slots have no static image to project. Keep them
+            # in the IR without blocking verified siblings using this material.
+            if component.get('spriteFrame') is None:
+                continue
             if not isinstance(component.get('sourceId'),str) or not component['sourceId']:
                 raise MaterialProfileError('bundle-qualified material Sprite has no source component identity')
             requested.append(dict(sourceId=component['sourceId'],sourceOriginId=component['sourceId'],

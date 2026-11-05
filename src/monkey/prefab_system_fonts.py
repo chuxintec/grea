@@ -152,7 +152,7 @@ def prepare(
         return _needs_action("IR does not contain a components array", receipt_sha256=receipt_sha256)
 
     system_labels = [component for component in ir["components"]
-                     if component.get("type") == "cc.Label"
+                     if component.get("type") == "cc.Label" and component.get("supported") is not False
                      and component.get("systemFont") is True
                      and component.get("font") is None]
     explicit_labels = [component for component in ir["components"]

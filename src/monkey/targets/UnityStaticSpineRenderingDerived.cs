@@ -244,7 +244,7 @@ public static partial class MonkeyImporter
                     pose.sourceSkinVerified && (pose.actualSkin == pose.sourceSkin ||
                         pose.defaultSkinRuntimeNull && String.IsNullOrEmpty(pose.actualSkin) &&
                         !String.IsNullOrEmpty(pose.runtimeDefaultSkinName) && pose.runtimeDefaultSkinName == pose.sourceSkin) &&
-                    pose.actualAnimation == pose.sourceAnimation && graphic.canvasRenderers != null &&
+                    (pose.actualAnimation ?? String.Empty) == (pose.sourceAnimation ?? String.Empty) && graphic.canvasRenderers != null &&
                     graphic.canvasRenderers.Count == 0 && rootMesh == null;
                 if (!emptyPoseVerified)
                     throw new InvalidOperationException("SPINE_STATIC_SORT_FINALIZE_ZERO_RENDERER_POSE_NOT_PROVEN_EMPTY:" +

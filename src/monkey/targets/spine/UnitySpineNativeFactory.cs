@@ -326,8 +326,10 @@ namespace Monkey.Targets.Spine
                 if (!String.Equals(HashBytes(skeletonText.bytes), spec.skeletonSha256, StringComparison.OrdinalIgnoreCase) ||
                     !String.Equals(HashBytes(atlasText.bytes), spec.atlasSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("SPINE_SOURCE_TEXT_ASSET_HASH_MISMATCH");
-                if (String.IsNullOrEmpty(skeletonText.name) || !skeletonText.name.Contains(".skel"))
-                    throw new InvalidOperationException("SPINE_BINARY_TEXT_ASSET_NAME_MUST_RETAIN_SKEL_EXTENSION");
+                if (String.IsNullOrEmpty(skeletonText.name) ||
+                    !(skeletonText.name.EndsWith(".skel", StringComparison.Ordinal) ||
+                      skeletonText.name.EndsWith(".json", StringComparison.Ordinal)))
+                    throw new InvalidOperationException("SPINE_TEXT_ASSET_NAME_MUST_RETAIN_FORMAT_EXTENSION");
 
                 phase = "parse_atlas_page_identity";
                 var pageNames = ReadAtlasPageNames(atlasText.text);
@@ -419,9 +421,9 @@ namespace Monkey.Targets.Spine
 
                 phase = "read_saved_skeleton_data_asset";
                 var saved = AssetDatabase.LoadAssetAtPath<SkeletonDataAsset>(spec.skeletonDataAssetPath);
-                var parsed = saved == null ? null : saved.GetSkeletonData(true);
+                var parsed = saved == null ? null : saved.GetSkeletonData(false);
                 if (saved == null || parsed == null)
-                    throw new InvalidOperationException("SPINE_SKELETON_DATA_NATIVE_PARSE_FAILED");
+                    throw new InvalidOperationException("SPINE_SKELETON_DATA_NATIVE_PARSE_FAILED:" + spec.sourceAssetId);
                 return ReadDataAsset(spec, saved, parsed, variantMaterials, graphicNormalMaterials, graphicVariantMaterials);
             }
             catch (Exception error)

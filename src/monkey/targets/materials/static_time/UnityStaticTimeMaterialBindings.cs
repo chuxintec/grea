@@ -38,7 +38,8 @@ public static class UnityStaticTimeMaterialBindings
     [Serializable] public sealed class SpriteBinding
     {
         public string sourceId, sourceComponentId, sourcePrefabId, spriteFrameSourceId;
-        public string spriteFrameTargetPath, ownerPrefabId;
+        public string spriteFrameTargetPath, ownerPrefabId, unityFrameKey;
+        public string FrameKey => string.IsNullOrEmpty(unityFrameKey) ? spriteFrameSourceId : unityFrameKey;
     }
     [Serializable] public sealed class MaterialSpec
     {
@@ -232,7 +233,7 @@ public static class UnityStaticTimeMaterialBindings
         foreach (var binding in bindings)
         {
             if (!images.TryGetValue(binding.sourceId, out var image) || image == null ||
-                !sourceFrames.TryGetValue(binding.spriteFrameSourceId, out var frame) || frame == null || image.sprite != frame)
+                !sourceFrames.TryGetValue(binding.FrameKey, out var frame) || frame == null || image.sprite != frame)
                 throw new InvalidOperationException("STATIC_TIME_SOURCE_SPRITE_FRAME_MISMATCH: " + binding.sourceId);
             image.material = material;
             if (image.material != material || image.sprite != frame)
@@ -258,7 +259,7 @@ public static class UnityStaticTimeMaterialBindings
         foreach (var binding in row.spriteBindings ?? Array.Empty<SpriteBinding>())
         {
             if (!images.TryGetValue(binding.sourceId, out var image) || image == null || image.material != material ||
-                !sourceFrames.TryGetValue(binding.spriteFrameSourceId, out var frame) || frame == null || image.sprite != frame)
+                !sourceFrames.TryGetValue(binding.FrameKey, out var frame) || frame == null || image.sprite != frame)
                 throw new InvalidOperationException("STATIC_TIME_SPRITE_PERSISTENT_READBACK_MISMATCH: " + binding.sourceId);
         }
         var actualProperties = ReadProperties(material);

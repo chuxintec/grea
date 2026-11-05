@@ -81,3 +81,7 @@ Inactive Spine owners can use `monkey-static-spine-inactive-source-flow/1` only 
 刷新还声明 `monkey-static-spine-owner-context-lifecycle/1`，将 `Analysis/Readback/SpineRendering/owner-context-lifecycle.json` 纳入主回读 SHA 清单。该文件的构造登记、模板替换、排序捕获、保存重开配对与宿主释放记录用于验证对象生命周期，不重复计入 renderer 分母。组件 ID 与节点 ID 分别通过计划表关联，不从组件 ID 的序号推导所属节点。
 
 原生实例替换在完整属性和引用重映射后、旧根销毁前，验证准确的旧/新 renderer、实例根、模板节点、数据资产和实际 Canvas 上下文；全部候选通过后才转移登记并撤销旧对象。保存资产与加载副本继续使用独立配对，释放宿主后撤销该作用域。构造期登记不能充当保存重开证据。失败时保留部分生命周期记录及原异常；完整验收仍要求真实 Editor 的保存、重开与引用结果。
+
+Unity 批量导出可在包含 spine 的续接请求中指定 `retainUnassignedSpine: true`。当同一批同时包含有数据和未绑定数据的组件时，工具在 `unassignedSourceComponentIds` 中记录未绑定项，继续验证其余组件。静态渲染支持固定的 ASTC 和 PNG 图集页，以及源文档内嵌的 Spine 3.8 JSON。每个已接纳的动画名和皮肤名仍须经过 Unity 骨骼目录核验。
+
+`scripts/collect_unity_prefabs.py --selection selection.json --batch batch1 --batch retry1 --out delivery --archive` 按源 ID 核对批次的 Unity 重开回执、Prefab 内容哈希和 .meta GUID。批次目录需包含 conversion-results-v2.json、native-results.json 和这些回执指向的工程。selection.json 是含 sourceId 的对象数组，包重定向可附 canonicalId。清单缺项会终止交付。ZIP 内的 prefabs.json 可将每个源条目定位到所属工程和资源路径。

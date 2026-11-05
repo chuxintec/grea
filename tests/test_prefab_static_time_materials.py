@@ -76,6 +76,19 @@ class StaticTimeMaterialTests(unittest.TestCase):
         self.assertTrue(clone["convertible"])
         self.assertEqual(plan["nodes"], _plan()["nodes"])
 
+    def test_untrimmed_simple_sprite_uses_original_size_texture_with_same_source_id(self):
+        plan = _plan()
+        frame = "gameAsset:frame-a"
+        plan["textures"] = [{"id": frame, "path": "Assets/frame.png"},
+                            {"id": frame + "@original", "path": "Assets/frame-untrimmed.png"}]
+        plan["components"][0]["trim"] = False
+        spec = {"schema": stm.SCHEMA, "profile": stm.PROFILE, "sourceManifestSha256": "d" * 64,
+                "normalizedIrSha256": "e" * 64, "materials": [_material()]}
+        result = stm.attach(plan, spec, "unity")
+        rows = result["staticTimeMaterials"]["materials"][0]["spriteBindings"]
+        self.assertEqual({row["spriteFrameSourceId"] for row in rows}, {frame})
+        self.assertEqual({row["unityFrameKey"] for row in rows}, {frame, frame + "@original"})
+
     def test_attach_accepts_only_explicit_frozen_material_redirect_id(self):
         plan = _plan()
         material = _material()

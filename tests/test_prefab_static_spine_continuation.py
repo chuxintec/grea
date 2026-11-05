@@ -201,7 +201,7 @@ def _minimal_full_fixture(root):
     source.mkdir()
     (source / "import").mkdir()
     (source / "native").mkdir()
-    skeleton_bytes = b"\x02x\x073.8.99\x00binary-tail"
+    skeleton_bytes = b"\x02x\x073.8.99\x00binary-tail\x05idle"
     page_bytes = b"opaque-astc-page-bytes\x00"
     (source / "native/skeleton.bin").write_bytes(skeleton_bytes)
     (source / "native/page.astc").write_bytes(page_bytes)
@@ -371,3 +371,18 @@ def test_prepare_emit_chain_preserves_stage_merges_retained_assets_and_rejects_c
     else:
         raise AssertionError("changed source page bytes were accepted")
     assert not (changed_stage / "spine_static_continuation").exists()
+
+
+def test_nested_sync_chain_resolves_original_skeleton_and_rejects_cycles():
+    import pytest
+    source = 'bundle:template#1'
+    node = {'__type__': 'cc.Node'}
+    skeleton = {'__type__': 'sp.Skeleton', 'node': {'__id__': 0}}
+    asset = {'kind': 'cc.Prefab', 'document': {'instances': [node, skeleton]}}
+    assets = {'bundle:template': asset}
+    origins = {'outer': 'inner', 'inner': source}
+    original, _, row = spine._raw_component('outer', assets, origins)
+    assert original == source and row['component'] == skeleton
+    origins['inner'] = 'outer'
+    with pytest.raises(spine.StaticSpineContinuationError, match='cyclic sync component origin'):
+        spine._raw_component('outer', assets, origins)

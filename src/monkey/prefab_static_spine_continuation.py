@@ -1,7 +1,7 @@
-"""Freeze exact Cocos Spine component data and references into non-rendering Unity carriers.
+"""Freeze Cocos Spine references, pinned resource bytes and embedded JSON for Unity.
 
-This module copies only pinned source bytes. It does not decode ASTC pages, parse
-Spine animation data, create a renderer, or infer source defaults.
+Binary data and image pages are copied byte-for-byte. Embedded skeletons are
+serialized from the pinned source document, as is the atlas text.
 """
 from __future__ import annotations
 
@@ -100,7 +100,13 @@ def _component_origins(plan: dict) -> dict[str, str]:
 
 
 def _raw_component(source_id: str, assets: dict[str, dict], origins: dict[str, str]) -> tuple[str, dict, dict]:
-    template_id = origins.get(source_id, source_id)
+    template_id = source_id
+    visited = set()
+    while template_id in origins:
+        if template_id in visited:
+            raise StaticSpineContinuationError(f"cyclic sync component origin: {template_id}")
+        visited.add(template_id)
+        template_id = origins[template_id]
     if "#" not in template_id:
         raise StaticSpineContinuationError(f"component ID has no source object ordinal: {template_id}")
     asset_id, selector = template_id.split("#", 1)
@@ -529,7 +535,12 @@ def _prepare_impl(plan: dict, ir: dict, source_manifest: dict, output: str | Pat
                                            json.dumps(sample, ensure_ascii=False))
     missing_component_sources = [row["sourceComponentId"] for row in components
                                  if row["sourceDataReference"].get("sourceDataAssetId") is None]
-    if missing_component_sources:
+    if missing_component_sources and pinned_runtime_inputs.get("retain_unassigned_spine") and len(missing_component_sources) < len(components):
+        # Unassigned source components have no authored pose. Preserve them in the
+        # original plan and report their IDs separately from renderable bindings.
+        components = [row for row in components if row["sourceDataReference"].get("sourceDataAssetId")]
+        skeleton_by_id = {key: value for key, value in skeleton_by_id.items() if key in data_component_fields}
+    elif missing_component_sources:
         raise StaticSpineContinuationError("Spine source components lack an exact serialized SkeletonData reference: " +
                                            ", ".join(missing_component_sources[:12]))
 
@@ -555,17 +566,27 @@ def _prepare_impl(plan: dict, ir: dict, source_manifest: dict, output: str | Pat
         if any(not isinstance(page, str) or not page.lower().endswith(".png") for page in texture_names):
             raise StaticSpineContinuationError(f"Spine atlas page declaration is not an explicit PNG source page: {source_id}")
         native_path = asset.get("native")
-        if not isinstance(native_path, str) or not native_path:
-            raise StaticSpineContinuationError(f"SkeletonData source binary path is absent: {source_id}")
-        skeleton_raw, skeleton_sha, skeleton_source_path = _source_file(source_manifest, asset, native_path, inputs)
-        spine_version = binary_version(skeleton_raw)
-        if spine_version is None:
-            raise StaticSpineContinuationError(f"source SkeletonData binary version is not recognized without decoding: {source_id}")
+        embedded = skeleton_object.get("_skeletonJson")
+        embedded_json = not native_path and isinstance(embedded, dict)
+        if embedded_json:
+            skeleton_raw = _canonical(embedded)
+            skeleton_sha = _sha(skeleton_raw)
+            skeleton_source_path = "normalized-source-manifest-document#_skeletonJson"
+            spine_version = embedded.get("skeleton", {}).get("spine")
+            if not isinstance(spine_version, str) or not re.fullmatch(r"3\.8(?:\.\d+)?(?:-from-\d+(?:\.\d+){1,2})*", spine_version):
+                raise StaticSpineContinuationError(f"Unsupported embedded Spine JSON version: {source_id}")
+        else:
+            if not isinstance(native_path, str) or not native_path:
+                raise StaticSpineContinuationError(f"SkeletonData source binary path is absent: {source_id}")
+            skeleton_raw, skeleton_sha, skeleton_source_path = _source_file(source_manifest, asset, native_path, inputs)
+            spine_version = binary_version(skeleton_raw)
+            if spine_version is None:
+                raise StaticSpineContinuationError(f"source SkeletonData binary version is not recognized without decoding: {source_id}")
         atlas_raw = atlas_text.encode("utf-8")
         token = hashlib.sha256(source_id.encode("utf-8")).hexdigest()[:20]
         data_rel = f"spine_static_continuation/payloads/{token}"
         asset_target_root = f"{_UNITY_CONTENT_ROOT}/{token}"
-        skeleton_suffix = ".skel.bytes" if native_path.lower().endswith((".bin", ".skel.bytes")) else ".json.bytes"
+        skeleton_suffix = ".skel.bytes" if not embedded_json and native_path.lower().endswith((".bin", ".skel.bytes")) else ".json.bytes"
         skeleton_name = "source" + skeleton_suffix
         skeleton_copy = _write_payload_copy(module_root, payload_root, data_rel, skeleton_name,
                                              asset_target_root + "/" + skeleton_name, skeleton_raw,
@@ -586,16 +607,19 @@ def _prepare_impl(plan: dict, ir: dict, source_manifest: dict, output: str | Pat
                 raise StaticSpineContinuationError(f"Spine page texture UUID is missing, ambiguous, or not Texture2D after redirect resolution: {uuid}")
             texture_id = texture["sourceId"]
             raw_texture_path = texture.get("native")
-            if not isinstance(raw_texture_path, str) or not raw_texture_path.lower().endswith(".astc"):
-                raise StaticSpineContinuationError(f"Spine page is not a pinned ASTC source input: {texture_id}")
+            if not isinstance(raw_texture_path, str) or not raw_texture_path.lower().endswith((".astc", ".png")):
+                raise StaticSpineContinuationError(f"Spine page is not a pinned ASTC or PNG source input: {texture_id}")
             if texture_id not in page_payloads:
                 texture_raw, texture_sha, texture_source_path = _source_file(source_manifest, texture, raw_texture_path, inputs)
                 page_token = hashlib.sha256(texture_id.encode("utf-8")).hexdigest()[:20]
-                page_filename = f"page-{ordinal:02d}-{page_token}.astc.bytes"
+                page_format = Path(raw_texture_path).suffix.lower()[1:]
+                if page_format == "png" and not texture_raw.startswith(b"\x89PNG\r\n\x1a\n"):
+                    raise StaticSpineContinuationError(f"Invalid PNG source page: {texture_id}")
+                page_filename = f"page-{ordinal:02d}-{page_token}.{page_format}.bytes"
                 page_copy = _write_payload_copy(module_root, payload_root, f"payloads/pages/{page_token}",
                                                 page_filename,
                                                 f"{_UNITY_CONTENT_ROOT}/Pages/{page_filename}", texture_raw,
-                                                "opaque-source-astc-page-textasset-not-decoded", texture_id,
+                                                f"opaque-source-{page_format}-page-textasset-not-decoded", texture_id,
                                                 texture_source_path)
                 page_payloads[texture_id] = page_copy
                 copies.append(page_copy)
@@ -629,6 +653,7 @@ def _prepare_impl(plan: dict, ir: dict, source_manifest: dict, output: str | Pat
             "sourceLogicalPath": asset.get("logicalPath"),
             "sourceSpineVersion": spine_version,
             "sourceNativePath": native_path,
+            "sourceSkeletonEncoding": "embedded-json" if embedded_json else "binary",
             "sourceNativeSha256": skeleton_sha,
             "sourceNativeBytes": len(skeleton_raw),
             "sourceNativeAssetType": "TextAsset",
@@ -674,6 +699,7 @@ def _prepare_impl(plan: dict, ir: dict, source_manifest: dict, output: str | Pat
         "status": "prepared_nonrendering_static_source_reference_plan",
         "nonRendering": True, "dynamicBehavior": "not_restored", "runtimeOrRendererLoaded": False,
         "dataAssets": data_assets, "components": components,
+        "unassignedSourceComponentIds": missing_component_sources,
         "payloadCopies": copies,
         "supportFiles": _support_files(),
         "runtimeDependency": _pinned_runtime_record(
@@ -694,7 +720,9 @@ def _prepare_impl(plan: dict, ir: dict, source_manifest: dict, output: str | Pat
             "missingSourceObjectReferenceCount": sum(bool(r.get("resolutionStatus")) for c in components for r in c["sourceObjectReferences"]),
             "pmaUnknownDataAssetCount": sum(r["sourcePma"]["status"] == "source-field-unserialized-unknown" for r in data_assets),
             "pmaConflictDataAssetCount": sum(r["sourcePma"]["status"] == "source-fields-conflict" for r in data_assets),
-            "sourcePayloadFiles": len(copies), "sourceAstcPagesCopiedOpaque": len(page_payloads),
+            "sourcePayloadFiles": len(copies),
+            "sourceAstcPagesCopiedOpaque": sum(p["role"].startswith("opaque-source-astc-") for p in page_payloads.values()),
+            "sourcePngPagesCopiedOpaque": sum(p["role"].startswith("opaque-source-png-") for p in page_payloads.values()),
             "sourceAstcPagesDecoded": 0, "rendered": False, "animated": False,
         },
     }

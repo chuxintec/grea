@@ -63,6 +63,11 @@ def _put_payload(output: Path, source: Path, target: str, role: str, expected_sh
         raise StaticSpineRenderingError(f"source hash mismatch: {source}")
     if expected_bytes is not None and len(raw) != expected_bytes:
         raise StaticSpineRenderingError(f"source byte-count mismatch: {source}")
+    return _store_payload(output, raw, target, role)
+
+
+def _store_payload(output, raw, target, role):
+    digest = sha(raw)
     if not target.startswith("Assets/") or ".." in Path(target).parts:
         raise StaticSpineRenderingError(f"invalid Unity output path: {target}")
     relative = f"spine-static-rendering-payloads/{digest}/{Path(target).name}"
@@ -73,6 +78,24 @@ def _put_payload(output: Path, source: Path, target: str, role: str, expected_sh
     if not destination.exists():
         destination.write_bytes(raw)
     return {"source": relative, "target": target, "sha256": digest, "bytes": len(raw), "role": role}
+
+
+def _adapt_animation_curves(value):
+    """Translate four Bezier controls from an array to Spine-C# 3.8 fields."""
+    changed = 0
+    if isinstance(value, list):
+        for frame in value:
+            if not isinstance(frame, dict) or not isinstance(frame.get('curve'), list):
+                continue
+            controls = frame['curve']
+            if (len(controls) != 4 or any(type(x) not in (int, float) or not math.isfinite(x) for x in controls)
+                    or any(k in frame for k in ('c2', 'c3', 'c4'))):
+                raise StaticSpineRenderingError('Ambiguous Spine JSON Bezier controls')
+            frame.update(zip(('curve', 'c2', 'c3', 'c4'), controls))
+            changed += 1
+    elif isinstance(value, dict):
+        changed = sum(_adapt_animation_curves(child) for child in value.values())
+    return changed
 
 
 def _source_payload(stage_root: Path, copy_row: dict) -> Path:
@@ -158,7 +181,7 @@ def upgrade_atlas_mapping(plan: dict, stage_root: Path) -> list[dict]:
             raise StaticSpineRenderingError('native atlas page/texture source mapping differs')
         for page in spec['pages']:
             textures = [row for row in payloads if row['target'] == page['textureAssetPath']
-                        and row.get('role') == 'decoded-source-astc-spine-page']
+                        and row.get('role') in ('decoded-source-astc-spine-page', 'decoded-source-png-spine-page')]
             if len(textures) != 1:
                 raise StaticSpineRenderingError('native atlas decoded texture identity is ambiguous')
             _source_payload(module, textures[0])
@@ -350,8 +373,14 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
     from .prefab_spine_materials import _material, _program, _source_semantics
     material_refs = {ref.get("sourceAssetId") for comp in components for ref in comp.get("sourceObjectReferences", [])
                      if ref.get("targetReferenceKind") == "retained-source-material"}
-    if not material_refs:
-        raise StaticSpineRenderingError("source Skeleton components have no exact retained material references")
+    implicit_material = not material_refs
+    if implicit_material:
+        defaults = [a["sourceId"] for rows in assets_by_id.values() for a in rows
+                    if a.get("bundle") == "internal" and a.get("kind") == "cc.Material"
+                    and a.get("logicalPath") == "materials/builtin-2d-spine"]
+        if len(defaults) != 1:
+            raise StaticSpineRenderingError("source Skeleton components have no exact retained material references or unique source builtin")
+        material_refs.add(defaults[0])
     material_profiles = []
     for material_id in sorted(material_refs):
         matches = assets_by_id.get(material_id, [])
@@ -373,7 +402,8 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
         shader, stage_hashes = _program(effect_obj)
         profile = _material(effect_uuid, material_obj)
         semantics = _source_semantics(effect_obj, shader)
-        material_profiles.append({"sourceMaterialId": material_id, "sourceEffectId": effect["sourceId"],
+        material_profiles.append({"sourceBinding": "creator-2.4.15-builtin-default" if implicit_material else "serialized",
+                                  "sourceMaterialId": material_id, "sourceEffectId": effect["sourceId"],
                                   "redirects": redirects, "material": profile, "stageSha256": stage_hashes,
                                   "semantics": semantics})
     if len({json.dumps(x["stageSha256"], sort_keys=True) for x in material_profiles}) != 1:
@@ -385,13 +415,14 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
         if reuse_rendering.get('contract')!=CONTRACT or reuse_rendering.get('sourceManifestSha256')!=fragment['sourceManifestSha256']:
             raise StaticSpineRenderingError('reused rendering belongs to another source contract')
         for payload in reuse_rendering.get('payloads',[]):
-            if payload.get('role')!='decoded-source-astc-spine-page':continue
+            if payload.get('role') not in ('decoded-source-astc-spine-page', 'decoded-source-png-spine-page'):continue
             key=(payload.get('sourceTextureSourceId'),payload.get('sourceTextureSha256'))
             if key in reusable and reusable[key]['sha256']!=payload.get('sha256'):
                 raise StaticSpineRenderingError('reused decoded page source identity is ambiguous')
             reusable[key]=payload
     from .prefab_static_spine_defaults import render_pma
     data_render = {}
+    missing_animations = set()
     for data_id, row in data_by_id.items():
         scale_source = _source_scale(assets_by_id, data_id)
         skeleton_copy = copy_by_target.get(row.get("sourceSkeletonTextAssetPath"))
@@ -401,7 +432,31 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
         skeleton_path = _source_payload(source_stage, skeleton_copy)
         atlas_path = _source_payload(source_stage, atlas_copy)
         raw_skeleton = read(skeleton_path, max_bytes=128 * 1024 * 1024)
-        blend = _binary_slot_blend_modes(raw_skeleton)
+        embedded_json = row.get("sourceSkeletonEncoding") == "embedded-json"
+        if embedded_json:
+            skeleton = json.loads(raw_skeleton)
+            slots = skeleton.get("slots", [])
+            counts = dict.fromkeys(("normal", "additive", "multiply", "screen"), 0)
+            for slot in slots:
+                mode = slot.get("blend", "normal")
+                if mode not in counts:
+                    raise StaticSpineRenderingError(f"Unknown Spine JSON blend mode: {mode}")
+                counts[mode] += 1
+            blend = dict(spineVersion=skeleton["skeleton"]["spine"], boneCount=len(skeleton["bones"]),
+                         slotCount=len(slots), blendModeCounts=counts)
+        else:
+            blend = _binary_slot_blend_modes(raw_skeleton)
+        # Spine 3.8 binary animation names are literal UTF-8 strings. Absence
+        # disproves a requested name; Unity still checks every admitted name.
+        for component in components:
+            if component.get("sourceDataReference", {}).get("sourceDataAssetId") != data_id:
+                continue
+            for key in ("_animationName", "defaultAnimation"):
+                name, present = _source_field(component, key)
+                if present and isinstance(name, str) and name:
+                    absent = name not in skeleton.get("animations", {}) if embedded_json else name.encode("utf-8") not in raw_skeleton
+                    if absent:
+                        missing_animations.add((data_id, name))
         if blend.get("spineVersion") != row.get("sourceSpineVersion"):
             raise StaticSpineRenderingError(f"Spine source binary version drift: {data_id}")
         effective_pma=render_pma(row)
@@ -413,17 +468,24 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
         base = f"Assets/Game/Content/Spine/Static/{source_data_token}"
         # The native factory requires the imported TextAsset name to contain
         # '.skel'; copy identical bytes under a distinct native import name.
-        skel_target = base + "/source.skel.bytes"
-        skeleton_target = _put_payload(output, skeleton_path, skel_target, "source-spine-skeleton-bytes", row["sourceNativeSha256"], row["sourceNativeBytes"])
+        skel_target = base + ("/source.json.bytes" if embedded_json else "/source.skel.bytes")
+        curves = _adapt_animation_curves(skeleton.get("animations", {})) if embedded_json else 0
+        if curves:
+            normalized = json.dumps(skeleton, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+            skeleton_target = _store_payload(output, normalized, skel_target, "unity-spine-json-curve-controls")
+            skeleton_target.update(sourceSkeletonSha256=row["sourceNativeSha256"], convertedCurveCount=curves)
+        else:
+            skeleton_target = _put_payload(output, skeleton_path, skel_target, "source-spine-skeleton-bytes", row["sourceNativeSha256"], row["sourceNativeBytes"])
         atlas_target = base + "/source.atlas.txt"
         atlas_output = _put_payload(output, atlas_path, atlas_target, "source-spine-atlas-text", row["sourceAtlasSha256"], row["sourceAtlasBytes"])
         page_specs = []
         for page in row.get("sourceAtlasPages", []):
             texture_id = page.get("sourceTextureSourceId")
-            source_page_copy = next((copy for copy in copies if copy.get("sourceId") == texture_id and copy.get("role") == "opaque-source-astc-page-textasset-not-decoded"), None)
+            source_page_copy = next((copy for copy in copies if copy.get("sourceId") == texture_id and copy.get("role") in ("opaque-source-astc-page-textasset-not-decoded", "opaque-source-png-page-textasset-not-decoded")), None)
             if source_page_copy is None:
                 raise StaticSpineRenderingError(f"opaque ASTC page payload is absent: {data_id}:{texture_id}")
-            astc_path = _source_payload(source_stage, source_page_copy)
+            source_page_path = _source_payload(source_stage, source_page_copy)
+            page_format = "png" if source_page_copy["role"] == "opaque-source-png-page-textasset-not-decoded" else "astc"
             key=(texture_id,page['sourceTextureSha256']);cached=reusable.get(key)
             if cached is not None:
                 cached_path=inside(inside(stage_root,reuse_rendering['moduleStage']),cached['source'])
@@ -441,9 +503,9 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
             else:
                 from .normalize import open_texture
                 try:
-                    image=open_texture(read(astc_path,max_bytes=128*1024*1024),'.astc').convert('RGBA')
+                    image=open_texture(read(source_page_path,max_bytes=128*1024*1024),'.' + page_format).convert('RGBA')
                 except Exception as error:
-                    raise StaticSpineRenderingError(f'ASTC page decode failed: {texture_id}:{type(error).__name__}:{error}')from error
+                    raise StaticSpineRenderingError(f'{page_format} page decode failed: {texture_id}:{type(error).__name__}:{error}')from error
                 png_buffer=BytesIO();image.save(png_buffer,format='PNG',optimize=False)
                 png_raw=png_buffer.getvalue();width,height=image.size;decoded_pages.add(key)
                 generated_pages[key]=(png_raw,width,height)
@@ -457,7 +519,7 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
             if not png_file.exists():
                 png_file.write_bytes(png_raw)
             png_record = {"source": png_relative, "target": png_target, "sha256": sha(png_raw), "bytes": len(png_raw),
-                          "role": "decoded-source-astc-spine-page", "sourceTextureSourceId": texture_id,
+                          "role": f"decoded-source-{page_format}-spine-page", "sourceTextureSourceId": texture_id,
                           "sourceTextureSha256": page["sourceTextureSha256"], "width": width, "height": height,
                           "sampling": sampling}
             meta = _meta_payload("spine-static-rendering", png_target, output, "texture",
@@ -485,7 +547,7 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
         if not graphic_raw:
             raise StaticSpineRenderingError("Spine Graphic profile shader is empty")
         spec = {"sourceAssetId": data_id, "skeletonTextAssetPath": skel_target,
-                "skeletonSha256": row["sourceNativeSha256"], "atlasTextAssetPath": atlas_target,
+                "skeletonSha256": skeleton_target["sha256"], "atlasTextAssetPath": atlas_target,
                 "atlasSha256": row["sourceAtlasSha256"], "atlasAssetPath": base + "/SpineAtlas.asset",
                 "skeletonDataAssetPath": base + "/SkeletonData.asset", "shaderAssetPath": shader_target,
                 "shaderSha256": shader_row["sha256"], "graphicShaderAssetPath": graphic_shader_target,
@@ -529,6 +591,8 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
             field_gap = "SOURCE_ANIMATION_FIELD_INVALID"
         if loop_present and type(loop) is not bool:
             field_gap = "SOURCE_LOOP_FIELD_INVALID"
+        if isinstance(animation, str) and (data_id, animation) in missing_animations:
+            field_gap = "SOURCE_ANIMATION_ABSENT_FROM_SKELETON"
         eligible = known and field_gap is None
         enabled = component.get("sourceComponentEnabled") is True
         node = next((x for x in plan.get("nodes", []) if isinstance(x, dict) and x.get("sourceId") == component.get("sourceNodeId")), None)
@@ -558,9 +622,9 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
         if not isinstance(spec, dict):
             continue
         spec["requiredAnimations"] = sorted({r["sourceAnimation"] for r in rows
-            if r["sourceDataAssetId"] == data_id and r["sourceAnimationSerialized"] and r["sourceAnimation"]})
+            if r["eligible"] and r["sourceDataAssetId"] == data_id and r["sourceAnimationSerialized"] and r["sourceAnimation"]})
         spec["requiredSkins"] = sorted({r["sourceSkin"] for r in rows
-            if r["sourceDataAssetId"] == data_id and r["sourceSkinSerialized"] and r["sourceSkin"]})
+            if r["eligible"] and r["sourceDataAssetId"] == data_id and r["sourceSkinSerialized"] and r["sourceSkin"]})
     rows_by_id = {row["sourceComponentId"]: row for row in rows}
     for row in rows:
         template_id = row.get("templateComponentId")
@@ -618,7 +682,7 @@ def prepare_rendering(plan: dict, stage_root: str | Path, runtime_record: dict, 
                              "pmaOrReferenceGapCount": sum(not r["eligible"] for r in rows),
                              "dataAssetCount": len(data_render), "pmaOrScaleGapSourceDataIds": pma_gaps,
                              "sourceSlotBlendModeCounts": blend_totals,
-                             "decodedPageCount": sum(1 for p in unique.values() if p.get("role") == "decoded-source-astc-spine-page"),
+                             "decodedPageCount": sum(1 for p in unique.values() if p.get("role") in ("decoded-source-astc-spine-page", "decoded-source-png-spine-page")),
                              "reusedDecodedSourceTextureCount":len(reused_pages),
                              "newlyDecodedSourceTextureCount":len(decoded_pages)}}
     patched = dict(plan)

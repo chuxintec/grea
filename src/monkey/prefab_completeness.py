@@ -7,7 +7,7 @@ from copy import deepcopy
 
 
 SUPPORTED = {'cocos-2.4.15-bundle', 'cocos-2.4.15-project'}
-NODE_TYPES = {'cc.Node', 'cc.Scene'}
+NODE_TYPES = {'cc.Node', 'cc.PrivateNode', 'cc.Scene'}
 PREFAB_KINDS = {'cc.Prefab', 'cc.SceneAsset'}
 
 
@@ -221,7 +221,7 @@ def _node_expectations(source, source_id, namespace, object_count):
             raise FieldError('_children must be an array')
         refs = []
         for ordinal, child in enumerate(children):
-            if isinstance(child, dict) and child.get('__type__') == 'cc.Node':
+            if isinstance(child, dict) and child.get('__type__') in ('cc.Node', 'cc.PrivateNode'):
                 suffix = source_id.split('#', 1)[1]
                 refs.append(namespace + '#' + suffix + '/_children/' + str(ordinal))
             else:
@@ -517,7 +517,7 @@ def audit(source_manifest: dict, ir: dict, selected_source_ids: list[str]) -> di
                 diag('INVALID_CHILD_LIST', identity, 'Node._children is not an array')
                 return
             for ordinal, child_ref in enumerate(children):
-                if isinstance(child_ref, dict) and isinstance(child_ref.get('__type__'), str) and child_ref.get('__type__') == 'cc.Node':
+                if isinstance(child_ref, dict) and isinstance(child_ref.get('__type__'), str) and child_ref.get('__type__') in ('cc.Node', 'cc.PrivateNode'):
                     child, child_id = child_ref, f'{identity.split("#",1)[1]}/_children/{ordinal}'
                     child_id = sid + '#' + child_id
                 elif isinstance(child_ref, dict) and type(child_ref.get('__id__')) is int:
@@ -542,7 +542,7 @@ def audit(source_manifest: dict, ir: dict, selected_source_ids: list[str]) -> di
                 visit_node(i, obj, sid + '#' + str(i))
             elif isinstance(obj, dict) and obj.get('__type__') == 'cc.Prefab':
                 inline_root = obj.get('data')
-                if isinstance(inline_root, dict) and inline_root.get('__type__') == 'cc.Node':
+                if isinstance(inline_root, dict) and inline_root.get('__type__') in ('cc.Node', 'cc.PrivateNode'):
                     visit_node(-1, inline_root, sid + '#' + str(i) + '/data')
 
     nodes_out, components_out = [], []

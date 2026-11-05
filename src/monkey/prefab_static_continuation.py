@@ -108,7 +108,7 @@ def prepare(request_path, expected_request_sha256, output):
     if io.sha(raw)!=expected_request_sha256:
         fail('STATIC_CONTINUATION_REQUEST_HASH',str(request_path),'Request differs from its pin')
     request=io.load(raw)
-    allowed={'schema','schemaVersion','plan','planManifest','ir','sourceManifest','families','spineRuntime','spineRendering','spineSourceEngine','sourceEngineEvidence'}
+    allowed={'schema','schemaVersion','plan','planManifest','ir','sourceManifest','families','spineRuntime','spineRendering','spineSourceEngine','sourceEngineEvidence','retainUnassignedSpine'}
     if (not isinstance(request,dict)or set(request)-allowed or request.get('schema')!=SCHEMA
             or type(request.get('schemaVersion'))is not int or request['schemaVersion']!=1):
         fail('STATIC_CONTINUATION_REQUEST_INVALID',str(request_path),'Unsupported continuation request')
@@ -116,6 +116,9 @@ def prepare(request_path, expected_request_sha256, output):
     if (not isinstance(families,list)or not families or any(not isinstance(x,str)or x not in _FAMILIES for x in families)
             or len(set(families))!=len(families)):
         fail('STATIC_CONTINUATION_FAMILIES_INVALID','families','Expected distinct supported component families')
+    retain_unassigned = request.get('retainUnassignedSpine', False)
+    if type(retain_unassigned) is not bool or retain_unassigned and 'spine' not in families:
+        fail('STATIC_CONTINUATION_REQUEST_INVALID', 'retainUnassignedSpine', 'Expected a boolean with the spine family')
     rendering=request.get('spineRendering',False)
     if (type(rendering)is not bool or rendering and ('spine'not in families or 'spineRuntime'not in request or 'spineSourceEngine'not in request)
             or 'spineSourceEngine'in request and not rendering):
@@ -179,7 +182,7 @@ def prepare(request_path, expected_request_sha256, output):
         from .prefab_static_spine_continuation import prepare as prepare_spine
         result=prepare_spine(plan,ir,manifest,stage,unity_runtime_manifest=runtime_manifest,
                              unity_runtime_manifest_path=runtime_path,unity_runtime_manifest_sha256=runtime_sha,
-                             unity_runtime_assets_root=runtime_root)
+                             unity_runtime_assets_root=runtime_root, retain_unassigned_spine=retain_unassigned)
         plan=result['plan'];results['spine']=_summary(result)
         if rendering:
             from .prefab_static_spine_rendering import prepare as prepare_rendering

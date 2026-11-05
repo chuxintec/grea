@@ -6,7 +6,11 @@ from monkey.sources.compiled import ParseError
 
 class PrefabGraphSourceEdgeTests(unittest.TestCase):
     def test_empty_family_preserves_component_without_inventing_a_font(self):
-        for family in ('', '   '):
+        empty, gaps = component_ir('b:p', 2, {'__type__': 'cc.Label', '_N$fontFamily': ''},
+                                   source_profile='cocos-2.4.15-bundle')
+        self.assertEqual((empty['fontFamily'], empty['sourceFontFamily']), ('Arial', ''))
+        self.assertEqual(empty['fontFamilyEvidence'], 'creator-empty-system-family-Arial')
+        for family in ('   ',):
             source = dict(__type__='cc.Label', node={'__id__':1}, _N_string='text', _N_fontFamily=family)
             source['_N$fontFamily']=source.pop('_N_fontFamily')
             source['_N$string']=source.pop('_N_string')

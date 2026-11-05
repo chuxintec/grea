@@ -44,6 +44,14 @@ PROGRAMS = {
         "staticProof": "passtime=0 at sourceTimeSeconds=0; for delayTime>=0, passtime>delayTime is false, bright=0 and shader output equals its textured Sprite base output",
     },
 }
+# This variant computes v_flashUv from localRect. At t=0 the sweep is
+# inactive, so the sampled base texture and vertex colour are identical.
+_LOCAL_RECT_FLASH_STAGES = {
+    "glsl1.vert": "7de24d3258df3b609cccd6de68191321c07eadc659dcb1db57400f0a86a2859b",
+    "glsl1.frag": "2d45e82fed51f7a564c913404d3c346ba55310203468fe553471f870b0488d0d",
+    "glsl3.vert": "5997bd16af25da87ec18c5fc9542b4b1c5640017a36d3a328556558c84855d4b",
+    "glsl3.frag": "04a80360c3f57b22d8d78d006d528fcd546ca8c9773cf3ac6198f85b6faac9ba",
+}
 _DEFINE_SCHEMA = [
     {"name": "USE_TEXTURE", "type": "boolean", "defines": []},
     {"name": "CC_USE_MODEL", "type": "boolean", "defines": []},
@@ -119,6 +127,8 @@ def _stage_hashes(effect: dict) -> tuple[str, dict[str, str]]:
             if not isinstance(code, str) or not code.strip():
                 raise StaticTimeMaterialError("source effect lacks a complete vertex/fragment stage")
             stages[f"{lang}.{stage}"] = _canonical_stage_sha(code)
+    if stages == _LOCAL_RECT_FLASH_STAGES:
+        return "textured-flash-sweep-t0-v1", stages
     for profile, row in PROGRAMS.items():
         if stages == row["stageHashes"]:
             return profile, stages
@@ -149,6 +159,10 @@ def _validate_effect(effect: dict) -> tuple[str, dict[str, str], dict[str, Any]]
         raise StaticTimeMaterialError("source effect rasterizer contract differs")
     props = render_pass.get("properties")
     expected_names = _EFFECT_PROPERTY_NAMES[profile]
+    if stages == _LOCAL_RECT_FLASH_STAGES:
+        if not isinstance(props, dict) or props.get("localRect") != {"type": 16, "value": [0, 0, 100, 100]}:
+            raise StaticTimeMaterialError("unexpected flash sweep localRect declaration")
+        expected_names = expected_names | {"localRect"}
     if not isinstance(props, dict) or set(props) != expected_names:
         raise StaticTimeMaterialError("source effect property set differs from its exact fingerprint profile")
     return profile, stages, props
@@ -470,7 +484,11 @@ def attach(plan: dict, spec: dict, target: str) -> dict:
                 raise StaticTimeMaterialError(f"profile Sprite component is missing from the target plan: {component_id}")
             if component.get("materials") not in [[sid]for sid in material.get('sourceMaterialReferenceIds',[source_id])] or component.get("spriteFrame") != origin_to_frame[component_id]:
                 raise StaticTimeMaterialError(f"plan Sprite material/frame no longer matches profile evidence: {component_id}")
-            frame = _validate_frame_available(plan, target, origin_to_frame[component_id])
+            frame_key = origin_to_frame[component_id]
+            if (target == "unity" and component.get("trim") is False
+                    and component.get("untrimmedGeometryPolicy") != "creator24-packed-frame-insets"):
+                frame_key += "@original"
+            frame = _validate_frame_available(plan, target, frame_key)
             if not component.get("node") or component["node"] not in {n.get("sourceId") for n in plan.get("nodes", []) if isinstance(n, dict)}:
                 raise StaticTimeMaterialError(f"profile Sprite node is missing from target plan: {component_id}")
             # Reuse existing lowering values only after validating each required
@@ -491,6 +509,7 @@ def attach(plan: dict, spec: dict, target: str) -> dict:
                          "sourcePrefabId": next((row.get("sourcePrefabId") for row in source_bindings
                                                   if row.get("sourceComponentId") == component["nativeStaticTimeSourceComponentId"]), None),
                          "spriteFrameSourceId": origin_to_frame[component_id],
+                         **({"unityFrameKey": frame_key} if target == "unity" else {}),
                          "spriteFrameTargetPath": frame.get("path"),
                          "ownerPrefabId": component_id.split("#", 1)[0]})
             source_to_material[component_id] = source_id

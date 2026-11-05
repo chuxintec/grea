@@ -86,7 +86,7 @@ public static partial class MonkeyImporter
         public string bitmapMissingGlyphPolicy,bitmapMissingGlyphDisplayText;
         public string barNode; public float progress,totalLength;
         public float[] nativeCellSize;
-        public int mode, sizeMode, horizontalAlign, verticalAlign, overflow; public float fontSize,lineHeight;
+        public int mode, sizeMode, fillType, horizontalAlign, verticalAlign, overflow; public float fontSize,lineHeight,fillRange;
         public bool enabled, convertible, trim, wrap, bold, italic, underline, sourceBold, bitmapLabel,staticBitmapOutline; public float spacing; public BitmapProbe bitmapProbe;
         public string target,content,nativeId,controllerPath,materialPath,normalClipPath,pressedClipPath; public int flags,maskType,layoutType,resize,horizontalDirection,verticalDirection,startAxis,constraint,constraintCount,transition;
         public bool inverted,horizontal,vertical,interactable; public float zoomScale,duration,width;
@@ -725,6 +725,19 @@ public static partial class MonkeyImporter
                 var image = go.AddComponent<UnityEngine.UI.Image>();
                 image.sprite = string.IsNullOrEmpty(spec.spriteFrame)?null:spriteMap[key]; image.color = color; image.raycastTarget = false;
                 image.type = spec.mode == 1 ? UnityEngine.UI.Image.Type.Sliced : spec.mode==2 ? UnityEngine.UI.Image.Type.Tiled : UnityEngine.UI.Image.Type.Simple;
+                if (spec.mode == 3) {
+                    image.type = UnityEngine.UI.Image.Type.Filled;
+                    if (spec.fillType == 2) {
+                        image.fillMethod = UnityEngine.UI.Image.FillMethod.Radial360;
+                        image.fillOrigin = (int)UnityEngine.UI.Image.Origin360.Top;
+                        image.fillClockwise = spec.fillRange < 0;
+                        image.fillAmount = Mathf.Abs(spec.fillRange);
+                    } else {
+                        image.fillMethod = spec.fillType == 1 ? UnityEngine.UI.Image.FillMethod.Vertical : UnityEngine.UI.Image.FillMethod.Horizontal;
+                        image.fillOrigin = spec.fillType == 1 ? (int)UnityEngine.UI.Image.OriginVertical.Bottom : (int)UnityEngine.UI.Image.OriginHorizontal.Left;
+                        image.fillAmount = spec.fillRange;
+                    }
+                }
                 image.enabled = spec.enabled && !string.IsNullOrEmpty(spec.spriteFrame);
             }
             else if(spec.type=="cc.RichText") {
@@ -752,7 +765,8 @@ public static partial class MonkeyImporter
                 label.lineSpacing=spec.fontSize>0?(spec.lineHeight-fonts[spec.font].faceInfo.lineHeight*spec.fontSize/fonts[spec.font].faceInfo.pointSize)*100f/spec.fontSize:0;
                 label.enableAutoSizing = false; label.richText = false; label.color = color;
                 label.raycastTarget = false; label.enabled = spec.enabled;
-                label.textWrappingMode = spec.wrap && spec.overflow!=0 ? TMPro.TextWrappingModes.Normal : TMPro.TextWrappingModes.NoWrap;
+                // Cocos RESIZE_HEIGHT always wraps to the node width, even when enableWrapText is false.
+                label.textWrappingMode = spec.overflow == 3 || (spec.overflow != 0 && spec.wrap) ? TMPro.TextWrappingModes.Normal : TMPro.TextWrappingModes.NoWrap;
                 var horizontal = new [] { TMPro.HorizontalAlignmentOptions.Left, TMPro.HorizontalAlignmentOptions.Center, TMPro.HorizontalAlignmentOptions.Right };
                 var vertical = new [] { TMPro.VerticalAlignmentOptions.Top, TMPro.VerticalAlignmentOptions.Middle, TMPro.VerticalAlignmentOptions.Bottom };
                 label.horizontalAlignment = horizontal[Mathf.Clamp(spec.horizontalAlign,0,2)];

@@ -1372,7 +1372,7 @@ public static partial class MonkeyImporter
             var readback = UnitySpineNativeFactory.CreateDataAsset(spec);
             if (readback == null || !readback.staticDataVerified || !readback.nativeAssetIdentityVerified ||
                 !readback.savedSourceReferencesVerified || !readback.sourceProfileMaterialsVerified)
-                throw new InvalidOperationException("SPINE_RENDERING_DATA_ASSET_READBACK_INCOMPLETE:" + data.sourceDataAssetId);
+                throw new InvalidOperationException("SPINE_RENDERING_DATA_ASSET_READBACK_INCOMPLETE:" + data.sourceDataAssetId + ":" + String.Join(",", readback?.gaps ?? Array.Empty<string>()));
             staticSpineRenderingAssets.Add(data.sourceDataAssetId, readback);
         }
 

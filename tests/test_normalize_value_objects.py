@@ -28,3 +28,25 @@ class SourceValueObjectsTests(unittest.TestCase):
             self.assertEqual(ir['quarantinedAssets'],[])
 
 if __name__=='__main__':unittest.main()
+
+
+def test_creator_2415_null_custom_label_resolves_arial_but_retains_source_fields():
+    from monkey.normalize import component_ir
+    raw = {'__type__': 'cc.Label', '_isSystemFontUsed': False, '_fontFamily': 'HiddenFamily'}
+    label, _ = component_ir('bundle:label', 1, raw, source_profile='cocos-2.4.15-bundle')
+    assert label['systemFont'] and label['fontFamily'] == 'Arial'
+    assert label['sourceSystemFont'] is False and label['sourceFontFamily'] == 'HiddenFamily'
+    raw['_N$file'] = {'__uuid__': 'font-id'}
+    explicit, _ = component_ir('bundle:label', 1, raw, source_profile='cocos-2.4.15-bundle')
+    assert explicit['systemFont'] is False and explicit['font']
+
+
+def test_horizontal_sprite_fill_preserves_amount_and_rejects_other_origins():
+    from monkey.normalize import component_ir, is_horizontal_sprite_fill
+    sprite = {'__type__': 'cc.Sprite', '_type': 3}
+    for value in (0, 0.4, 1):
+        sprite['_fillRange'] = value
+        component, _ = component_ir('bundle:sprite', 1, sprite, source_profile='cocos-2.4.15-bundle')
+        assert is_horizontal_sprite_fill(component) and component['fillRange'] == value
+    for change in ({'fillRange': 1.1}, {'fillStart': 0.5}, {'fillType': 2}, {'fillRange': True}):
+        assert not is_horizontal_sprite_fill({**component, **change})

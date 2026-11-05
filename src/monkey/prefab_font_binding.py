@@ -963,7 +963,8 @@ def resolve_ir_macos_system_fonts(
     if source_version != "2.4.15" or source_profile != "cocos-2.4.15-bundle":
         return _needs_action("source evidence does not declare the pinned Cocos 2.4.15 profile")
     labels = [c for c in ir.get("components", [])
-              if c.get("type") == "cc.Label" and c.get("systemFont") is True and c.get("font") is None]
+              if c.get("type") == "cc.Label" and c.get("supported") is not False
+              and c.get("systemFont") is True and c.get("font") is None]
     if not labels:
         return _needs_action("IR contains no normalized system-font Label samples")
     runs = []

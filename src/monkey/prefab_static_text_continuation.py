@@ -788,8 +788,9 @@ def verify(plan: dict, candidate_root: str | Path, main_readback: dict) -> dict:
                 (4 if group.get("sourceUnderline") else 0))
             expected_overflow = 2 if group.get("sourceOverflow") == 1 else 0
             # TMP's saved enum is NoWrap=0, Normal=1. Creator's TTF assembler
-            # disables wrapping for NONE overflow even if enableWrapText=true.
-            expected_wrapping = 1 if group.get("sourceWrap") is True and group.get("sourceOverflow") != 0 else 0
+            # forces wrapping for RESIZE_HEIGHT and disables it for NONE.
+            overflow = group.get("sourceOverflow")
+            expected_wrapping = int(overflow == 3 or (overflow != 0 and group.get("sourceWrap") is True))
             def file_id_valid(value):
                 return type(value) is int and value != 0 and -(1 << 63) <= value < (1 << 63)
             configured=row.get('configuredFontAssets')
