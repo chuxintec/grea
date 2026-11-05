@@ -599,7 +599,7 @@
       "workflowStatus": "in_progress",
       "priority": 0,
       "ownerSessionId": "01a19b7a-b985-7142-92f4-3207d1b90bcf",
-      "description": "用户人类消息已原生核验；A1–A4优先，A5–A8逐项当前适用性/修复/有据处置。复用dev12–24修复，保dev25 WIP；两批产品推进挂起，只做整改必要定向转换/原生/冻结验证。",
+      "description": "dev25/822c2f2固定候选及A1–A8矩阵已收；GREA核归档/wheel/请求输入SHA，源码对wheel有2个probe .cs.meta缺项待解释，其余无不同字节。审计最小1Sprite/4x4PNG公开inspect→normalize→plan→export0诊断，但真实Unity因不含Spine的候选错误导出Spine依赖helper编译失败（PID52122 exit1）。合法imported/freeze及9copy controls未运行，双审候选尚未就绪。",
       "acceptanceCriteria": [
         "固定集成候选源码提交、工具版本/摘要、运行入口、A1–A8矩阵与关键差异一致",
         "未mock关键门正反例：缺组件/可见资源/错状态/哈希/引用/字段拒绝，合法imported与明确纯动态静态正例通过",
@@ -608,9 +608,10 @@
       ],
       "sourceRefs": [
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-monkey-audit-remediation/PLAN.md",
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261104-monkey-dual-audit/FINAL-AUDIT.json",
+        ".private/development/audit-remediation-20261105/dev25-minimal/audit-result.json"
       ],
-      "nextAction": "monkey保存并集成在途通用修复，交当前A1–A8矩阵/固定候选/定向正反例；GREA核必要实际调用再交总监双审。",
+      "nextAction": "monkey修通用可选Spine依赖闭包并核wheel缺meta，覆盖无Spine/排序/Spine生成集编译，交新固定源码/制品/矩阵；GREA重跑最小正例及拷贝反例，之后交总监+Claude同字节双审。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": []
     }
