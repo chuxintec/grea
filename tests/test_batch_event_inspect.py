@@ -45,6 +45,7 @@ class PrefabEventInspectTests(unittest.TestCase):
     def test_empty_expectation_is_supported_and_exact(self):
         validate(dict(schemaVersion=2,operation='batch',steps=[event_step(0)]))
         validate(dict(schemaVersion=2,operation='batch',steps=[event_step(1)]))
+        validate(dict(schemaVersion=2,operation='batch',steps=[dict(event_step(),requireInteractable=True)]))
 
     def test_local_ids_accept_nonzero_signed_int64(self):
         row=event_step()
@@ -64,10 +65,19 @@ class PrefabEventInspectTests(unittest.TestCase):
         invalid.append(dict(event_step(),targetNode='Panel//Controller'))
         invalid.append(dict(event_step(),method='PanelController.Confirm'))
         invalid.append(dict(event_step(),targetAssembly='Game/Runtime'))
+        invalid.append(dict(event_step(),requireInteractable=1))
         invalid.append(dict(event_step(),unexpected='write'))
         for step in invalid:
             with self.subTest(step=step),self.assertRaises(BeaverError):
                 validate(dict(schemaVersion=2,operation='batch',steps=[step]))
+
+    def test_explicit_event_enable_reuses_binding_event_action_shape(self):
+        common=dict(path='Submit',component='UnityEngine.UI.Button',property='onClick',value='empty',
+                    targetNode='Panel',targetComponent='Game.UI.Panel',method='Confirm')
+        for kind in ('binding.event','binding.event.enable'):
+            with self.subTest(kind=kind):
+                action=dict(kind=kind,**common)
+                validate(dict(schemaVersion=2,operation='batch',steps=[dict(kind='prefab.patch',assetPath='Assets/UI/Panel.prefab',actions=[action])]))
 
 
 if __name__=='__main__':

@@ -26,7 +26,7 @@ public static class BeaverBatch {
     }
     [Serializable] public class Step {
         public string kind,assetPath,source,target,oldGuid,newGuid,format,pointer,before,after,payload,path,targetNode,targetComponent,method,prefabGuid,targetAssembly,scriptGuid;
-        public long oldLocalId,newLocalId,buttonLocalId,buttonNodeLocalId,targetLocalId,targetNodeLocalId;public int expectedCount;public string[] consumers,types;public Action[] actions;
+        public long oldLocalId,newLocalId,buttonLocalId,buttonNodeLocalId,targetLocalId,targetNodeLocalId;public int expectedCount;public bool requireInteractable;public string[] consumers,types;public Action[] actions;
     }
     [Serializable] public class FileRow {public string path,source,sha256;public bool exists;public long bytes;}
     [Serializable] public class SceneMoveIdentity {public string source,target,guid;}
@@ -56,7 +56,11 @@ public static class BeaverBatch {
     [Serializable] public class EventInspectionRow {
         public string assetPath,prefabGuid,buttonPath,targetNode,targetComponent,targetAssembly,scriptGuid,method,listenerMode,callState;
         public long buttonLocalId,buttonNodeLocalId,targetLocalId,targetNodeLocalId;public int expectedCount,observedCount;public bool verified;
+        public bool requireInteractable,buttonEnabled,buttonInteractable,buttonIsInteractable,buttonActiveInHierarchy;
+        public bool targetGraphicExists,targetGraphicEnabled,targetGraphicActiveInHierarchy,targetGraphicRaycastTarget,canvasGroupsInteractable,canvasGroupsBlockRaycasts,staticClickReady;
+        public CanvasGroupObservation[] canvasGroups;
     }
+    [Serializable] public class CanvasGroupObservation {public string nodePath;public bool enabled,interactable,blocksRaycasts,ignoreParentGroups;}
     [Serializable] public class Report {
         public string status,planSha256,error,mode,editorVersion,checkpointPolicy,checkpointState;public int completedSteps,hashReadOperations,checkpointCount;public bool checkpointComplete;
         public List<string> checkpointPaths=new List<string>();
@@ -223,7 +227,7 @@ public static class BeaverBatch {
                 var nearest=PrefabUtility.GetNearestPrefabInstanceRoot(t.gameObject);
                 if(inherited&&(kind==PrefabAssetType.Variant||nearest!=null&&nearest!=root)&&(a.kind=="node.remove"||a.kind=="node.reparent"||a.kind=="node.order"||a.kind=="component.remove"))
                     throw new Exception("VARIANT_INHERITED_STRUCTURE: use a separate explicitly planned base edit, or add a new child override in this Variant; base is never modified or unpacked");
-                if(a.kind=="binding.reference"||a.kind=="binding.event")BeaverWiring.Apply(root,a);
+                if(a.kind=="binding.reference"||a.kind=="binding.event"||a.kind=="binding.event.enable")BeaverWiring.Apply(root,a);
                 else if(BeaverBatchUI.Handles(a.kind))BeaverBatchUI.Apply(root,a);
                 else if(a.kind=="property.set")Property(root,a);
                 else if(a.kind=="node.add") {
@@ -296,6 +300,38 @@ public static class BeaverBatch {
         if(matches.Length!=1)throw new Exception("Expected exactly one component: "+where);
         return matches[0];
     }
+    static CanvasGroupObservation[] ObserveCanvasGroups(Button button,Transform root,out bool interactable,out bool blocksRaycasts) {
+        var rows=new List<CanvasGroupObservation>();interactable=true;blocksRaycasts=true;
+        for(var node=button.transform;node!=null;node=node.parent) {
+            var groups=node.GetComponents<CanvasGroup>();bool stopAtParent=false;
+            foreach(var group in groups) {
+                if(group==null)continue;
+                rows.Add(new CanvasGroupObservation{nodePath=Relative(root,node),enabled=group.isActiveAndEnabled,
+                    interactable=group.interactable,blocksRaycasts=group.blocksRaycasts,ignoreParentGroups=group.ignoreParentGroups});
+                if(!group.isActiveAndEnabled)continue;
+                interactable&=group.interactable;blocksRaycasts&=group.blocksRaycasts;stopAtParent|=group.ignoreParentGroups;
+            }
+            if(stopAtParent)break;
+            if(node==root)break;
+        }
+        return rows.ToArray();
+    }
+    static bool StaticClickReady(Button button,Transform root,out EventInspectionRow row) {
+        bool groupInteractable,groupBlocks;
+        var groups=ObserveCanvasGroups(button,root,out groupInteractable,out groupBlocks);
+        var graphic=button.targetGraphic;
+        row=new EventInspectionRow {
+            buttonEnabled=button.enabled,buttonInteractable=button.interactable,buttonIsInteractable=button.IsInteractable(),
+            buttonActiveInHierarchy=button.gameObject.activeInHierarchy,targetGraphicExists=graphic!=null,
+            targetGraphicEnabled=graphic!=null&&graphic.enabled,targetGraphicActiveInHierarchy=graphic!=null&&graphic.gameObject.activeInHierarchy,
+            targetGraphicRaycastTarget=graphic!=null&&graphic.raycastTarget,
+            canvasGroupsInteractable=groupInteractable,canvasGroupsBlockRaycasts=groupBlocks,canvasGroups=groups
+        };
+        row.staticClickReady=row.buttonEnabled&&row.buttonInteractable&&row.buttonIsInteractable&&row.buttonActiveInHierarchy&&
+            row.targetGraphicExists&&row.targetGraphicEnabled&&row.targetGraphicActiveInHierarchy&&row.targetGraphicRaycastTarget&&groupInteractable&&groupBlocks&&
+            BeaverWiring.StaticClickReady(button);
+        return row.staticClickReady;
+    }
     static void InspectButtonEvent(Step step) {
         var asset=AssetDatabase.LoadAssetAtPath<GameObject>(step.assetPath);
         if(asset==null)throw new Exception("Button event Prefab missing: "+step.assetPath);
@@ -322,13 +358,22 @@ public static class BeaverBatch {
         try {
             var button=(Button)ExactComponent(Find(root,step.path).gameObject,buttonType,step.path+":UnityEngine.UI.Button");
             var receiver=ExactComponent(Find(root,step.targetNode).gameObject,targetType,step.targetNode+":"+step.targetComponent);
-            int count=button.onClick.GetPersistentEventCount();
-            if(count!=step.expectedCount||assetButton.onClick.GetPersistentEventCount()!=count)
-                throw new Exception("Button onClick persistent listener count differs from exact expectation");
+            int count=button.onClick.GetPersistentEventCount();int assetCount=assetButton.onClick.GetPersistentEventCount();
+            EventInspectionRow clickability;
+            bool staticClickReady=StaticClickReady(button,root.transform,out clickability);
             var row=new EventInspectionRow{assetPath=step.assetPath,prefabGuid=prefabGuid,buttonPath=step.path,buttonLocalId=observedButtonId,
                 buttonNodeLocalId=observedButtonNodeId,targetNode=step.targetNode,targetComponent=receiverType.FullName,targetAssembly=assembly,
                 scriptGuid=scriptGuid,targetLocalId=observedTargetId,targetNodeLocalId=observedTargetNodeId,method=step.method,
-                expectedCount=step.expectedCount,observedCount=count};
+                expectedCount=step.expectedCount,observedCount=count,requireInteractable=step.requireInteractable,
+                buttonEnabled=clickability.buttonEnabled,buttonInteractable=clickability.buttonInteractable,buttonIsInteractable=clickability.buttonIsInteractable,
+                buttonActiveInHierarchy=clickability.buttonActiveInHierarchy,targetGraphicExists=clickability.targetGraphicExists,
+                targetGraphicEnabled=clickability.targetGraphicEnabled,targetGraphicActiveInHierarchy=clickability.targetGraphicActiveInHierarchy,
+                targetGraphicRaycastTarget=clickability.targetGraphicRaycastTarget,
+                canvasGroupsInteractable=clickability.canvasGroupsInteractable,canvasGroupsBlockRaycasts=clickability.canvasGroupsBlockRaycasts,
+                canvasGroups=clickability.canvasGroups,staticClickReady=staticClickReady};
+            report.eventInspections.Add(row);
+            if(count!=step.expectedCount||assetCount!=count)throw new Exception("Button onClick persistent listener count differs from exact expectation");
+            if(step.requireInteractable&&!staticClickReady)throw new Exception("Button static clickability prerequisites failed");
             if(count==1) {
                 if(button.onClick.GetPersistentTarget(0)!=receiver||button.onClick.GetPersistentMethodName(0)!=step.method)
                     throw new Exception("Button onClick target/method differs from declared receiver");
@@ -346,7 +391,7 @@ public static class BeaverBatch {
                 if(state==UnityEventCallState.Off)throw new Exception("Button onClick persistent listener is Off");
                 row.callState=state.ToString();row.listenerMode=((PersistentListenerMode)mode.enumValueIndex).ToString();
             }
-            row.verified=true;report.eventInspections.Add(row);
+            row.verified=true;
         } finally {PrefabUtility.UnloadPrefabContents(root);}
     }
     static string ExactScriptValue(SerializedProperty p) {

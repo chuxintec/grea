@@ -45,18 +45,39 @@ public static class BeaverWiring {
         var value=field.GetValue(p,null);
         return value!=null&&!value.Equals(Activator.CreateInstance(field.PropertyType));
     }
+    static bool CanvasGroupsAllowClick(Button button) {
+        for(var node=button.transform;node!=null;node=node.parent) {
+            var groups=node.GetComponents<CanvasGroup>();bool stopAtParent=false;
+            foreach(var group in groups) {
+                if(group==null||!group.isActiveAndEnabled)continue;
+                if(!group.interactable||!group.blocksRaycasts)return false;
+                stopAtParent|=group.ignoreParentGroups;
+            }
+            if(stopAtParent)break;
+        }
+        return true;
+    }
+    public static bool StaticClickReady(Button button) {
+        var graphic=button==null?null:button.targetGraphic;
+        return button!=null&&button.enabled&&button.interactable&&button.IsInteractable()&&button.gameObject.activeInHierarchy&&
+            graphic!=null&&graphic.isActiveAndEnabled&&graphic.raycastTarget&&CanvasGroupsAllowClick(button);
+    }
     public static void Apply(GameObject root,BeaverBatch.Action a) {
-        if(a.kind=="binding.event") {
+        if(a.kind=="binding.event"||a.kind=="binding.event.enable") {
+            bool enable=a.kind=="binding.event.enable";
             var button=ComponentAt(root,a.path,"UnityEngine.UI.Button") as Button;
             if(button==null||a.component!="UnityEngine.UI.Button"||a.property!="onClick"||a.value!="empty")throw new Exception("WIRING_EVENT_CONTRACT");
+            if(enable&&(button.enabled||!button.interactable||!button.IsInteractable()))throw new Exception("WIRING_EVENT_ENABLE_PRECONDITION: Button must begin disabled and interactable");
             if(button.onClick.GetPersistentEventCount()!=0)throw new Exception("WIRING_EVENT_NONEMPTY: existing persistent listeners protected");
             var target=Target(root,a) as MonoBehaviour;
             if(target==null)throw new Exception("WIRING_EVENT_TARGET: existing MonoBehaviour required");
             var methods=target.GetType().GetMethods(BindingFlags.Public|BindingFlags.Instance).Where(m=>m.Name==a.method&&!m.IsGenericMethod&&m.ReturnType==typeof(void)&&m.GetParameters().Length==0).ToArray();
             if(methods.Length!=1)throw new Exception("WIRING_EVENT_METHOD: exact public instance void() required");
             var action=(UnityEngine.Events.UnityAction)Delegate.CreateDelegate(typeof(UnityEngine.Events.UnityAction),target,methods[0]);
+            if(enable)button.enabled=true;
             UnityEventTools.AddPersistentListener(button.onClick,action);
             if(button.onClick.GetPersistentEventCount()!=1||button.onClick.GetPersistentTarget(0)!=target||button.onClick.GetPersistentMethodName(0)!=a.method)throw new Exception("WIRING_EVENT_READBACK");
+            if(enable&&!StaticClickReady(button))throw new Exception("WIRING_EVENT_ENABLE_CLICKABILITY: Button static clickability prerequisites failed");
             EditorUtility.SetDirty(button);return;
         }
         if(a.kind!="binding.reference"||String.IsNullOrEmpty(a.property)||a.property.Contains(".")||a.property=="m_Script")throw new Exception("WIRING_FIELD_CONTRACT: direct serialized ObjectReference only");

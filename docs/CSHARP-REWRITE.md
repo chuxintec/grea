@@ -26,7 +26,7 @@ beaver csharp rewrite-event-verify --plan EVENT-PLAN.json --expected-plan EVENT-
   --transaction APPLY-OUTPUT --phase applied|recovered --out VERIFY-PLAN --editor-path EDITOR
 ```
 
-Input top-level fields are exactly `contract` and `events`; contract is `beaver-csharp-rewrite-events/1`, with 1–128 rows. Each row has exactly `source`, `prefab`, `button`, and `target`:
+Input top-level fields are exactly `contract` and `events`; contract is `beaver-csharp-rewrite-events/1`, with 1–128 rows. Each row requires `source`, `prefab`, `button`, and `target`. The optional `inputPolicy` is described below.
 
 ```json
 {
@@ -50,7 +50,9 @@ Input top-level fields are exactly `contract` and `events`; contract is `beaver-
 
 `recordSha256` is SHA256 of `beaver.io.encoded(record)`: UTF-8 JSON with sorted object keys, two-space indentation, non-ASCII preserved, and one trailing newline. The RFC6901 pointer must resolve in the source file. Source file and record hashes are both checked. Each source `recordId` and `(source path, jsonPointer)` is unique; one source record cannot be aliased into the group twice.
 
-Every target must match exactly one changed script in the rewrite plan, its GUID/assembly/full type, a successful pinned compile report, one public instance `void()` method, and one exact Prefab component identity from the rewrite plan's native instance baseline. `componentType` must equal `fullType`. Button and target object/node IDs must be positive persistent Int64 local IDs. The Prefab path/GUID must match its current `.meta`. Destinations must be distinct by Prefab and Button component localID, and the serialized `Button.onClick` must be empty when the native plan applies. Every source file/SHA pair must also occur in the rewrite workspace's pinned source set.
+The optional `inputPolicy="enable-source-button"` is accepted only when the pointer ends at `clickEvents/<index>`, its parent record has `__type__="cc.Button"`, and present `_enabled`, `_interactable`, or `interactable` flags are booleans and not false. The source handler must equal the selected compiled method. This policy emits `binding.event.enable`; only the post-bind and applied verification require `interactable=true`. The native enable-and-bind action requires a disabled, interactable target. Wiring-only rows leave the enabled state under project control.
+
+Every target must match exactly one changed script in the rewrite plan, its GUID/assembly/full type, a successful pinned compile report, one public instance `void()` method, and one exact Prefab component identity from the rewrite plan's native instance baseline. `componentType` must equal `fullType`. Button and target object/node IDs must be nonzero signed Int64 local IDs. The Prefab path/GUID must match its current `.meta`. Destinations must be distinct by Prefab and Button component localID, and the serialized `Button.onClick` must be empty when the native plan applies. Every source file/SHA pair must also occur in the rewrite workspace's pinned source set.
 
 The generated production spec preserves all original rewrite-plan `steps`, `fileEdits`, package requirements and reads. Around each binding it inserts `prefab.event.inspect(expectedCount=0)`, one `binding.event` action, then `prefab.event.inspect(expectedCount=1)`. The report records per-event `expectedCount`, `planned`, `failed`, and `reason`. The group is atomic: any preflight failure blocks every event and emits no executable production transaction plan.
 
@@ -114,3 +116,5 @@ separate results. The project owner must validate one visible operation and its
 effect on the same fixed candidate. This tool plan does not grant formal adoption,
 release, service/player-data writes or publication. Existing rename/rename-sequence
 and exact-byte intake-binding contracts remain available with their original scope.
+
+A successful persistent-listener inspection establishes the serialized target and method. To verify pointer input, open the isolated candidate in Game view and use a physical pointer on its original Button. Record the actual open/close counters and the displayed result. Calling `Button.onClick.Invoke()` bypasses Unity's disabled-component and raycast checks.

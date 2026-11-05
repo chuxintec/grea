@@ -18,7 +18,7 @@ HELPER_ROOT = 'Assets/BeaverBatchTools'
 SCENE_BUILD_SETTINGS = 'ProjectSettings/EditorBuildSettings.asset'
 MOVE_DELTA_POLICY = 'move-delta-v1'
 KINDS = {'node.add','node.remove','node.reparent','node.order','node.active','component.add','component.remove',
-         'property.set','binding.reference','binding.event','ui.rect','ui.scroll','ui.grid','ui.mask','ui.text','ui.event','ui.list','ui.safeArea'}
+         'property.set','binding.reference','binding.event','binding.event.enable','ui.rect','ui.scroll','ui.grid','ui.mask','ui.text','ui.event','ui.list','ui.safeArea'}
 FIELDS = {'kind','path','parent','name','component','property','value','targetNode','targetComponent',
           'assetGuid','localId','method','eventName','mode','index','flag','numbers','items'}
 
@@ -191,8 +191,11 @@ def validate(spec):
                 fail('BATCH_INSPECT_TYPES','types','1..16 distinct full C# type names required')
         elif kind=='prefab.event.inspect':
             keys={'kind','assetPath','path','targetNode','targetComponent','method','buttonLocalId','buttonNodeLocalId','targetLocalId','targetNodeLocalId','prefabGuid','targetAssembly','scriptGuid','expectedCount'}
-            if set(step)!=keys:fail('BATCH_EVENT_INSPECT','spec','Expected exact pinned Button event identity fields')
+            if set(step)-keys not in (set(),{'requireInteractable'}) or not keys.issubset(step):
+                fail('BATCH_EVENT_INSPECT','spec','Expected pinned Button event identity fields and optional requireInteractable')
             asset_path(step['assetPath'],'.prefab')
+            if 'requireInteractable' in step and type(step['requireInteractable']) is not bool:
+                fail('BATCH_EVENT_INSPECT','requireInteractable','Boolean required when supplied')
             for field in ('path','targetNode'):
                 value=step[field]
                 if not isinstance(value,str) or value.startswith('/') or '\\' in value or any(p in ('','..','.') for p in value.split('/')) and value:

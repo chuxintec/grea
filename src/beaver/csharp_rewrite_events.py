@@ -55,7 +55,7 @@ def _pointer(document, pointer):
     return value
 
 
-def _source(row, seen_records, seen_pointers):
+def _source(row, seen_records, seen_pointers, include_record=False):
     _closed(row, ('path', 'sha256', 'recordId', 'jsonPointer', 'recordSha256'), 'source')
     if not isinstance(row['path'], str) or not Path(row['path']).is_absolute():
         fail('REWRITE_EVENT_SOURCE', 'source.path', 'Absolute source evidence path required')
@@ -73,7 +73,7 @@ def _source(row, seen_records, seen_pointers):
     record = _pointer(document, row['jsonPointer'])
     if sha(encoded(record)) != row['recordSha256']:
         fail('REWRITE_EVENT_SOURCE_RECORD_DRIFT', row['recordId'], 'Resolved source record differs from its canonical JSON SHA256')
-    record_key = (str(path), row['recordId'])
+    record_key = row['recordId']
     pointer_key = (str(path), row['jsonPointer'])
     if record_key in seen_records:
         fail('REWRITE_EVENT_SOURCE_ID_DUPLICATE', row['recordId'], 'Source record ID must be unique in the event group')
@@ -81,8 +81,9 @@ def _source(row, seen_records, seen_pointers):
         fail('REWRITE_EVENT_SOURCE_ALIAS', row['jsonPointer'], 'One source record cannot be counted again under another ID')
     seen_records.add(record_key)
     seen_pointers.add(pointer_key)
-    return dict(path=str(path), sha256=row['sha256'], recordId=row['recordId'],
-                jsonPointer=row['jsonPointer'], recordSha256=row['recordSha256'])
+    source = dict(path=str(path), sha256=row['sha256'], recordId=row['recordId'],
+                  jsonPointer=row['jsonPointer'], recordSha256=row['recordSha256'])
+    return (source, document, record) if include_record else source
 
 
 def _plan_data(plan_path, expected_plan):
@@ -130,8 +131,13 @@ def _compiled_type(compiled, script):
 
 
 def _event(row, data, compiled, seen_destinations, seen_sources):
-    _closed(row, ('source', 'prefab', 'button', 'target'), 'event')
-    source = _source(row['source'], *seen_sources)
+    required_fields = {'source', 'prefab', 'button', 'target'}
+    if not isinstance(row, dict) or set(row) - (required_fields | {'inputPolicy'}) or not required_fields <= set(row):
+        fail('REWRITE_EVENT_CONTRACT', 'event', 'Expected source/prefab/button/target and optional inputPolicy only')
+    input_policy = row.get('inputPolicy')
+    if input_policy not in (None, 'enable-source-button'):
+        fail('REWRITE_EVENT_INPUT_POLICY', str(input_policy), 'Only enable-source-button inputPolicy is supported')
+    source, source_document, source_record = _source(row['source'], *seen_sources, include_record=True)
     prefab = row['prefab']; button = row['button']; target = row['target']
     source_pins = [pin for pin in data.get('pins', []) if safe(pin.get('path', '')) == safe(source['path'])]
     if len(source_pins) != 1 or source_pins[0].get('sha256') != source['sha256']:
@@ -150,6 +156,21 @@ def _event(row, data, compiled, seen_destinations, seen_sources):
     _node_path(target['nodePath'], asset_path + ':target.nodePath', allow_root=True)
     if button['componentType'] != BUTTON:
         fail('REWRITE_EVENT_BUTTON', asset_path, 'Exact non-root UnityEngine.UI.Button node required')
+    if input_policy == 'enable-source-button':
+        parts = source['jsonPointer'].split('/')
+        if (len(parts) < 3 or parts[-2] != 'clickEvents'
+                or not re.fullmatch(r'0|[1-9][0-9]*', parts[-1])):
+            fail('REWRITE_EVENT_INPUT_POLICY', source['recordId'], 'Policy requires a source pointer ending at clickEvents/<index>')
+        component = _pointer(source_document, '/'.join(parts[:-2]))
+        if not isinstance(component, dict) or component.get('__type__') != 'cc.Button':
+            fail('REWRITE_EVENT_INPUT_POLICY', source['recordId'], 'The clickEvents parent record must be a cc.Button')
+        for field in ('_enabled', '_interactable', 'interactable'):
+            if field in component and type(component[field]) is not bool:
+                fail('REWRITE_EVENT_INPUT_POLICY', source['recordId'], field + ' must be boolean when present')
+            if component.get(field) is False:
+                fail('REWRITE_EVENT_INPUT_POLICY', source['recordId'], 'Source Button is disabled by ' + field)
+        if source_record.get('handler') != target.get('method'):
+            fail('REWRITE_EVENT_INPUT_POLICY', source['recordId'], 'Source click handler must equal the compiled target method')
     if any(not isinstance(target[k], str) or not target[k] for k in ('componentType', 'fullType', 'assembly', 'scriptPath', 'scriptGuid', 'method')):
         fail('REWRITE_EVENT_TARGET', asset_path, 'Explicit existing compiled target type, script and method required')
     if target['componentType'] != target['fullType']:
@@ -191,7 +212,8 @@ def _event(row, data, compiled, seen_destinations, seen_sources):
     if len(native) != 1:
         fail('REWRITE_EVENT_TARGET_NATIVE', asset_path, 'Target must match one exact native instance in the rewrite-plan baseline')
 
-    action = dict(kind='binding.event', path=button['nodePath'], component=BUTTON,
+    action = dict(kind='binding.event.enable' if input_policy == 'enable-source-button' else 'binding.event',
+                  path=button['nodePath'], component=BUTTON,
                   property='onClick', value='empty', method=target['method'],
                   targetNode=target['nodePath'], targetComponent=target['componentType'])
     base_inspect = dict(kind='prefab.event.inspect', assetPath=asset_path,
@@ -201,9 +223,12 @@ def _event(row, data, compiled, seen_destinations, seen_sources):
                         prefabGuid=prefab['guid'], buttonNodeLocalId=button['nodeLocalId'],
                         targetNodeLocalId=target['nodeLocalId'], targetAssembly=target['assembly'],
                         scriptGuid=target['scriptGuid'])
-    return dict(source=source, prefab=prefab, button=button, target=target,
+    inspect1 = dict(base_inspect, expectedCount=1)
+    if input_policy == 'enable-source-button':
+        inspect1['requireInteractable'] = True
+    return dict(source=source, prefab=prefab, button=button, target=target, inputPolicy=input_policy,
                 action=action, inspect0=dict(base_inspect, expectedCount=0),
-                inspect1=dict(base_inspect, expectedCount=1), expectedCount=0)
+                inspect1=inspect1, expectedCount=0)
 
 
 def _production_plan(project, spec, output):
@@ -249,6 +274,7 @@ def plan(rewrite_plan_path, expected_rewrite_plan, events_path, expected_events,
                                          and isinstance(row['source'].get('path'), str)]])
     base = dict(contract=EVENT_PLAN, status='blocked' if any(r['failed'] for r in results) else 'planned',
                 implementationSha256=csharp_rewrite.identity(),
+                projectRoot=str(safe(rewrite['projectRoot'])),
                 rewritePlan=dict(path=str(rewrite_path), sha256=expected_rewrite_plan,
                                  compileReport=dict(path=str(compile_path), sha256=rewrite['compileReport']['sha256'])),
                 eventsInput=dict(path=str(events_file), sha256=expected_events), events=results,
@@ -314,7 +340,9 @@ def plan(rewrite_plan_path, expected_rewrite_plan, events_path, expected_events,
         return dict(status='blocked', report=str(stage / 'rewrite-event-plan.json'), native='not_run')
     base.update(status='planned', sourcePins=source_pins,
                 production=dict(report=native['report'], planSha256=native['planSha256'],
-                                originalSpecPreserved=True, fileEdits=len(spec.get('fileEdits', []))),
+                                originalSpecPreserved=True, fileEdits=len(spec.get('fileEdits', [])),
+                                originalReport=str(original_native_path),
+                                originalPlanSha256=rewrite['production']['planSha256']),
                 commands=dict(
                     apply=['beaver', 'production', 'apply', '--plan', native['report'], '--expected-plan', native['planSha256'],
                            '--out', apply_directory, '--editor-path', editor_path],
@@ -334,6 +362,7 @@ def plan(rewrite_plan_path, expected_rewrite_plan, events_path, expected_events,
                                targetNodeLocalId=event['target']['nodeLocalId'], targetAssembly=event['target']['assembly'],
                                scriptGuid=event['target']['scriptGuid'], targetComponent=event['target']['componentType'],
                                targetType=event['target']['fullType'], method=event['target']['method'],
+                               inputPolicy=event['inputPolicy'],
                                expectedCount=0, planned=True, failed=False, reason=None)
                           for event in prepared])
     for result in base['events']:
@@ -373,6 +402,27 @@ def verify(event_plan_path, expected_event_plan, transaction_path, phase, output
         if sha(encoded(record)) != pin['recordSha256']:
             fail('REWRITE_EVENT_SOURCE_RECORD_DRIFT', pin['recordId'], 'Source record changed after planning')
 
+    rewrite_ref = event_plan.get('rewritePlan')
+    if not isinstance(rewrite_ref, dict):
+        fail('REWRITE_EVENT_VERIFY_REWRITE', str(path), 'Pinned source rewrite plan is required')
+    rewrite_path = safe(rewrite_ref.get('path', ''))
+    rewrite_raw = read(rewrite_path, max_bytes=64 * 1024**2)
+    if sha(rewrite_raw) != rewrite_ref.get('sha256'):
+        fail('REWRITE_EVENT_VERIFY_REWRITE', str(rewrite_path), 'Source rewrite-plan bytes changed')
+    rewrite = load(rewrite_raw)
+    if rewrite.get('implementationSha256') != csharp_rewrite.identity():
+        fail('REWRITE_EVENT_VERIFY_REWRITE', str(rewrite_path), 'Source rewrite-plan producer changed')
+    original_ref = event_plan.get('production', {})
+    original_path = safe(rewrite.get('production', {}).get('report', ''))
+    original_native = load(read(original_path, max_bytes=64 * 1024**2))
+    if (original_path != safe(original_ref.get('originalReport', ''))
+            or rewrite.get('production', {}).get('planSha256') != original_ref.get('originalPlanSha256')
+            or sha(encoded(original_native)) != original_ref.get('originalPlanSha256')):
+        fail('REWRITE_EVENT_VERIFY_REWRITE', str(original_path), 'Original rewrite production plan is not hash-pinned')
+    original_spec = original_native.get('spec')
+    if event_plan.get('projectRoot') != rewrite.get('projectRoot') or event_plan.get('projectRoot') != original_native.get('projectRoot'):
+        fail('REWRITE_EVENT_VERIFY_PROJECT', str(path), 'Project root does not match pinned rewrite and production plans')
+
     transaction = safe(transaction_path)
     commands = event_plan['commands']
     expected_transaction = Path(commands['apply'][commands['apply'].index('--out') + 1]).resolve()
@@ -381,23 +431,90 @@ def verify(event_plan_path, expected_event_plan, transaction_path, phase, output
     journal_path = transaction / 'journal.json'
     journal = load(read(journal_path, max_bytes=64 * 1024**2))
     native_plan_sha = event_plan['production']['planSha256']
+    native_plan_path = safe(event_plan['production']['report'])
+    native_plan_raw = read(native_plan_path, max_bytes=128 * 1024**2)
+    native_plan = load(native_plan_raw)
+    if sha(native_plan_raw) != native_plan_sha:
+        fail('REWRITE_EVENT_VERIFY_PLAN', str(native_plan_path), 'Derived production plan bytes changed')
+    if native_plan.get('contract') != 'beaver-production/3' or native_plan.get('implementationSha256') != csharp_rewrite.identity():
+        fail('REWRITE_EVENT_VERIFY_PLAN', str(native_plan_path), 'Current production plan/3 producer required')
+    transaction_plan_raw = read(transaction / 'batch-plan.json', max_bytes=128 * 1024**2)
+    if sha(transaction_plan_raw) != native_plan_sha:
+        fail('REWRITE_EVENT_VERIFY_TRANSACTION', str(transaction), 'Transaction plan differs from the reviewed production plan')
+    if native_plan.get('projectRoot') != event_plan['projectRoot']:
+        fail('REWRITE_EVENT_VERIFY_PROJECT', str(native_plan_path), 'Derived production plan root differs from the pinned original project')
+    spec_steps = native_plan.get('spec', {}).get('steps', [])
+    cursor = len(original_spec.get('steps', []))
+    if (native_plan.get('spec', {}).get('fileEdits') != original_spec.get('fileEdits')
+            or spec_steps[:cursor] != original_spec.get('steps')):
+        fail('REWRITE_EVENT_VERIFY_SPEC', str(native_plan_path), 'Original production steps/fileEdits were not preserved')
+    expected_suffix = []
+    for event in event_plan.get('perEvent', []):
+        inspect = dict(kind='prefab.event.inspect', assetPath=event['prefabPath'], path=event['buttonPath'],
+                       targetNode=event['targetNode'], targetComponent=event['targetComponent'], method=event['method'],
+                       buttonLocalId=event['buttonLocalId'], targetLocalId=event['targetLocalId'],
+                       prefabGuid=event['prefabGuid'], buttonNodeLocalId=event['buttonNodeLocalId'],
+                       targetNodeLocalId=event['targetNodeLocalId'], targetAssembly=event['targetAssembly'],
+                       scriptGuid=event['scriptGuid'])
+        expected_suffix.extend([dict(inspect, expectedCount=0),
+                                dict(kind='prefab.patch', assetPath=event['prefabPath'], actions=[dict(
+                                    kind='binding.event.enable' if event.get('inputPolicy') == 'enable-source-button' else 'binding.event',
+                                    path=event['buttonPath'], component='UnityEngine.UI.Button',
+                                    property='onClick', value='empty', method=event['method'],
+                                    targetNode=event['targetNode'], targetComponent=event['targetComponent'])]),
+                                dict(inspect, expectedCount=1,
+                                     **({'requireInteractable': True} if event.get('inputPolicy') == 'enable-source-button' else {}))])
+    if spec_steps[cursor:] != expected_suffix:
+        fail('REWRITE_EVENT_VERIFY_SPEC', str(native_plan_path), 'Event ordering or exact source/target identity differs from the event plan')
+    planned_write_set = native_plan.get('writeSet')
+    if not isinstance(planned_write_set, list) or planned_write_set != journal.get('writeSet'):
+        fail('REWRITE_EVENT_VERIFY_WRITE_SET', str(transaction), 'Journal write set differs from the planned production write set')
     if (journal.get('contract') != 'beaver-production-transaction/3'
             or journal.get('planSha256') != native_plan_sha
-            or journal.get('implementationSha256') != csharp_rewrite.identity()):
+            or journal.get('implementationSha256') != csharp_rewrite.identity()
+            or safe(journal.get('projectRoot', '')) != safe(native_plan.get('projectRoot', ''))):
         fail('REWRITE_EVENT_VERIFY_TRANSACTION', str(transaction), 'Native production transaction does not match this event plan')
-    project = safe(event_plan['projectRoot'])
+    project = safe(native_plan['projectRoot'])
+    planned_before = native_plan.get('before')
+    journal_before = journal.get('before')
+    if not isinstance(planned_before, dict) or not isinstance(journal_before, dict):
+        fail('REWRITE_EVENT_VERIFY_TRANSACTION', str(transaction), 'Plan and journal before-image maps are required')
+    expected_before = {relative: planned_before[relative] for relative in planned_write_set if relative in planned_before}
+    if len(expected_before) != len(planned_write_set) or journal_before != expected_before:
+        fail('REWRITE_EVENT_VERIFY_TRANSACTION', str(transaction), 'Journal before-image must equal the planned write-set subset')
+
+    write_set = set(planned_write_set)
+    readonly_pins = []
+    for pin in rewrite.get('pins', []):
+        pin_path = safe(pin['path'])
+        try:
+            relative = pin_path.relative_to(project).as_posix()
+        except ValueError:
+            relative = None
+        if relative not in write_set:
+            readonly_pins.append(pin)
+    csharp_rewrite._check_pins(readonly_pins)
+    compile_pin = rewrite.get('compileReport')
+    if not isinstance(compile_pin, dict) or sha(read(safe(compile_pin.get('path', '')))) != compile_pin.get('sha256'):
+        fail('REWRITE_EVENT_VERIFY_COMPILE', str(rewrite_path), 'Pinned compile report changed')
     from .batch import state
     if phase == 'applied':
         if journal.get('status') != 'complete' or not isinstance(journal.get('native'), dict) or journal['native'].get('status') != 'verified':
             fail('REWRITE_EVENT_VERIFY_APPLIED', str(transaction), 'A complete verified apply journal is required')
         expected_state = journal.get('after')
+        for edit in rewrite.get('fileEdits', []):
+            observed = expected_state.get(edit['path']) if isinstance(expected_state, dict) else None
+            if not isinstance(observed, dict) or observed.get('sha256') != edit['sha256']:
+                fail('REWRITE_EVENT_VERIFY_APPLIED', edit['path'], 'Journal after-image differs from the reviewed compiled source patch')
         expected_count = 1
     else:
         receipt_path = journal.get('recoveryReport')
         if journal.get('status') != 'recovered' or not isinstance(receipt_path, str):
             fail('REWRITE_EVENT_VERIFY_RECOVERY', str(transaction), 'Verified recovery receipt is required')
         receipt = load(read(receipt_path, max_bytes=16 * 1024**2))
-        if receipt.get('status') != 'verified':
+        if (receipt.get('status') != 'verified' or receipt.get('report') != receipt_path
+                or receipt.get('nativeReadback') != 'restored_exact_bytes_and_imported'
+                or receipt.get('restored') != len(journal.get('writeSet', []))):
             fail('REWRITE_EVENT_VERIFY_RECOVERY', str(receipt_path), 'Recovery receipt does not verify')
         expected_state = journal.get('before')
         expected_count = 0
@@ -407,15 +524,16 @@ def verify(event_plan_path, expected_event_plan, transaction_path, phase, output
 
     steps = []
     for event in event_plan.get('perEvent', []):
-        steps.append(dict(kind='prefab.event.inspect', assetPath=event['prefabPath'],
-                          path=event['buttonPath'], targetNode=event['targetNode'],
-                          targetComponent=event['targetComponent'], method=event['method'],
-                          buttonLocalId=event['buttonLocalId'], buttonNodeLocalId=event['buttonNodeLocalId'],
-                          targetLocalId=event['targetLocalId'], targetNodeLocalId=event['targetNodeLocalId'],
-                          prefabGuid=event['prefabGuid'], targetAssembly=event['targetAssembly'],
-                          scriptGuid=event['scriptGuid'], expectedCount=expected_count))
-    original_native = load(read(event_plan['production']['report'], max_bytes=64 * 1024**2))
-    original_spec = original_native['spec']
+        inspect = dict(kind='prefab.event.inspect', assetPath=event['prefabPath'],
+                       path=event['buttonPath'], targetNode=event['targetNode'],
+                       targetComponent=event['targetComponent'], method=event['method'],
+                       buttonLocalId=event['buttonLocalId'], buttonNodeLocalId=event['buttonNodeLocalId'],
+                       targetLocalId=event['targetLocalId'], targetNodeLocalId=event['targetNodeLocalId'],
+                       prefabGuid=event['prefabGuid'], targetAssembly=event['targetAssembly'],
+                       scriptGuid=event['scriptGuid'], expectedCount=expected_count)
+        if phase == 'applied' and event.get('inputPolicy') == 'enable-source-button':
+            inspect['requireInteractable'] = True
+        steps.append(inspect)
     spec = dict(schemaVersion=3, operation='production', profile=original_spec['profile'], steps=steps,
                 fileEdits=[], readPaths=[])
     stage = new_output(output, inputs=[path, transaction, project, *[safe(p['path']) for p in event_plan.get('sourcePins', [])]])
