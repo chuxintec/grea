@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T14:01:39.014409+08:00",
+  "updatedAt": "2026-11-05T14:03:38.357412+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
@@ -694,9 +694,11 @@
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/two-types-handoff-index.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/label-fix01/bc-handoff-index.json",
         "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey/.private/foodstreet-visual-20261105/label-dependency-handoff-v2.json",
-        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md"
+        "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev29-dual-review/RESULT.md",
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey/.private/foodstreet-bindings-20261105/final03/handoff-index.json",
+        ".private/development/foodstreet-monkey-parallel-20261105/B-final03-check.json"
       ],
-      "nextAction": "修请求、apply、cold、磁盘与所属实例的双向匹配；复验缺失Master文件的7条成功、保留其他实例准确去向，修正后再定全量台账。"
+      "nextAction": "dbff8a3 的23片/5681行已逐源核对，报告2811完整、2436部分、290阻塞、144场景未运行。独立篡改后该SHA仍对已删除Prefab输出7行成功。B线继续修复并复核受影响台账，主线已收集成范围。"
     },
     {
       "id": "grea:T-foodstreet-beaver-target-rewrite",
