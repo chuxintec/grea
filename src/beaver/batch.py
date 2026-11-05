@@ -287,9 +287,9 @@ def dependencies(project, roots, explicit_guids=()):
         seen.add(rel);p=inside(project,rel)
         if not p.is_file():continue
         if p.suffix.lower() in ('.prefab','.unity','.asset','.mat','.controller','.anim','.overridecontroller'):
-            raw=read(p,max_bytes=32*1024**2);bytes_read+=len(raw)
-            if raw.startswith(b'%YAML'):
-                for guid in set(re.findall(rb'guid: ([a-f0-9]{32})',raw)):
+            found,scanned=_yaml_guid_scan(p,remaining=2*1024**3-bytes_read);bytes_read+=scanned
+            if found:
+                for guid in found:
                     dep=guids.get(guid.decode())
                     if dep and inside(project,dep).is_file():pending.append(dep)
         if p.suffix=='.cs':
@@ -302,6 +302,30 @@ def dependencies(project, roots, explicit_guids=()):
     seen.update(p.relative_to(project).as_posix() for name in ('Packages','ProjectSettings') for p in inside(project,name).rglob('*') if p.is_file())
     seen|={p+'.meta' for p in tuple(seen) if p.startswith('Assets/') and inside(project,p+'.meta').is_file()}
     return seen,dict(metaIdentityReads=meta_count,dependencyTextBytes=bytes_read)
+
+
+def _yaml_guid_scan(path,remaining,chunk_bytes=1024*1024):
+    """Stream large native text assets, retaining cross-chunk GUID matches.
+
+    Fonts can contain a >128 MiB inline atlas on a single line. Reading by line
+    or raising the ordinary JSON/text read limit would still allocate it whole.
+    Binary assets have no YAML GUID graph; their bytes remain hashed in state().
+    """
+    path=safe(path)
+    with path.open('rb') as stream:
+        head=stream.read(5)
+        if head!=b'%YAML':return set(),len(head)
+        size=path.stat().st_size
+        if size>512*1024**2 or size>remaining:fail('BATCH_DEPENDENCY_BUDGET',str(path),'Selected YAML closure exceeds 512 MiB/file or 2 GiB aggregate')
+        found=set();tail=head;total=len(head)
+        while True:
+            raw=stream.read(chunk_bytes)
+            if not raw:break
+            total+=len(raw)
+            if total>512*1024**2 or total>remaining:fail('BATCH_DEPENDENCY_BUDGET',str(path),'YAML grew beyond fixed scan budget')
+            block=tail+raw;found.update(re.findall(rb'guid: ([a-f0-9]{32})',block));tail=block[-37:]
+    if total!=size:fail('BATCH_DEPENDENCY_DRIFT',str(path),'YAML size changed during dependency scan')
+    return found,total
 
 
 def plan(project,spec_path,output):
