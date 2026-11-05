@@ -447,3 +447,13 @@ For a source-linked diagnostic capture, run `monkey prepare-context-preview --pr
 
 
 用 `monkey capabilities --json` 查看 `byteBudgets` 三项默认限额。包转换回执记录整批展开字节数和最大条目的实测大小，Unity 验证回执记录导入指令文件大小。超额时 CLI 返回含对象、测量依据、实测字节数、有效上限及单位的 `byteBudget`。1 MiB = 1,048,576 bytes，恰等于上限时通过字节检查。单根展开及原始容器的独立上限为 1024 MiB。
+
+### 在隔离副本重试 Button 目标材质
+
+当颜色过渡 Button 的目标 Sprite 因自定义材质被交接时，可用下列命令准备新的 Unity 候选。输入为完整导出候选、其 manifest.json 的 SHA-256、对应的 plan.json 和原始归一化 IR。
+
+```sh
+monkey prepare-button-material-retry --candidate ORIGINAL --expected-manifest SHA256 --plan STAGE/plan.json --ir NORMALIZED/ir.json --out NEW_CANDIDATE
+```
+
+工具按来源组件核对 Button 目标、平铺 Sprite、原始 SpriteFrame、材质和 Effect。成功回执列出目标数量、不同来源组件数和新候选指纹。导入指令沿用原始字节。用新指纹在共享 Editor 槽执行 native-import，然后检查保存重读的 Button.targetGraphic、Image、Sprite 和材质。

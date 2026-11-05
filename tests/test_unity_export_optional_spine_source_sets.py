@@ -177,7 +177,7 @@ def _compile(project: Path, *, references: list[Path], case: str, evidence_dir: 
     return result
 
 
-@pytest.mark.parametrize("scenario", ["OneSpriteNoSpine", "OrdinarySortNoSpine", "StaticCodeBindingsNoSpine"])
+@pytest.mark.parametrize("scenario", ["OneSpriteNoSpine", "OrdinarySortNoSpine", "StaticCodeBindingsNoSpine", "ButtonMaterialProjectionNoSpine"])
 def test_real_exported_no_spine_source_set_compiles_without_spine_sdk(tmp_path, scenario):
     """Both no-Spine export source sets compile with only standard Unity refs."""
     resolved = tmp_path.resolve()
@@ -185,12 +185,13 @@ def test_real_exported_no_spine_source_set_compiles_without_spine_sdk(tmp_path, 
     case_root = resolved / scenario
     case_root.mkdir()
     project, report = _export_fixture(case_root, scenario)
-    if scenario == "StaticCodeBindingsNoSpine":
+    if scenario in ("StaticCodeBindingsNoSpine", "ButtonMaterialProjectionNoSpine"):
         # The optional binding stage installs this helper after base export.
         # Compile its shared partial-class API against the current exporter;
         # this is an offline source-set check, not a stage or Editor receipt.
-        relative="Assets/Game/Editor/Conversion/UnityStaticCodeBindings.cs"
-        helper=REPO/"src/monkey/targets/UnityStaticCodeBindings.cs"
+        name = "UnityStaticCodeBindings.cs" if scenario == "StaticCodeBindingsNoSpine" else "UnityButtonMaterialProjection.cs"
+        relative="Assets/Game/Editor/Conversion/"+name
+        helper=REPO/"src/monkey/targets"/name
         raw=helper.read_bytes();(project/relative).write_bytes(raw)
         manifest=json.loads((project/"manifest.json").read_bytes())
         manifest["files"].append(dict(path=relative,sha256=sha(raw),bytes=len(raw)))

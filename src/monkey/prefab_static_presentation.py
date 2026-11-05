@@ -30,11 +30,19 @@ def _append_material_binding(plan, manifest, component):
     if len(refs)!=1 or not isinstance(refs[0],dict):raise ValueError('STATIC_PRESENTATION_SOURCE_MATERIAL_REFERENCE_INVALID')
     by_id,by_uuid=_source_assets(manifest)
     uuid=refs[0].get('__uuid__');sid=owner.split(':')[0]+':'+str(uuid)
-    if _resolve_redirect(sid,by_id)!=spec['materialSourceId']:raise ValueError('STATIC_PRESENTATION_SOURCE_MATERIAL_IDENTITY_DIFFERS')
+    resolved=_resolve_redirect(sid,by_id)
+    binding=next((row for row in spec.get('sourceMaterialBindings',[]) if row.get('sourceMaterialId')==sid),None)
+    component_binding=next((row for row in spec.get('sourceComponentMaterialBindings',[])
+                            if row.get('sourceId')==component['sourceId']),None)
+    if (binding is None or binding.get('resolvedMaterialSourceId')!=resolved or
+            sid not in spec.get('sourceMaterialIds',[spec.get('materialSourceId')]) or
+            (component_binding is not None and component_binding.get('sourceMaterialId')!=sid)):
+        raise ValueError('STATIC_PRESENTATION_SOURCE_MATERIAL_IDENTITY_DIFFERS')
     if component['sourceId']not in spec['sourceComponentIds']:
         spec['sourceComponentIds'].append(component['sourceId'])
         spec.setdefault('staticCompletionSourceBindings',[]).append(dict(sourceId=component['sourceId'],sourceOriginId=source,
-            sourceMaterialId=sid,resolvedMaterialId=spec['materialSourceId'],sourceManifestSha256=plan['sourceManifestSha256']))
+            sourceMaterialId=sid,resolvedMaterialId=resolved,sourceEffectId=binding['sourceEffectId'],
+            sourceManifestSha256=plan['sourceManifestSha256']))
     if not any(b['sourceId']==component['sourceId']for b in spec['spriteBindings']):spec['spriteBindings'].append({'sourceId':component['sourceId']})
 
 
@@ -108,25 +116,34 @@ def _material_evidence(component: dict, plan: dict, manifest: dict,
 
     binding = plan.get("materialBinding")
     spec = binding.get("spec") if isinstance(binding, dict) else None
-    effect_ref = material.get("_effectAsset")
-    effect_uuid = effect_ref.get("__uuid__") if isinstance(effect_ref, dict) else None
-    effects = by_uuid.get(effect_uuid, []) if isinstance(effect_uuid, str) else []
-    if (isinstance(spec, dict) and spec.get("profile") == _UI_COLOR_PROFILE and
-            spec.get("materialSourceId") == source_id and
-            spec.get("programCanonicalSha256") == _UI_COLOR_PROGRAM_SHA256 and
-            material.get("_name") == "shader-2d-uiColor" and
-            len(effects) == 1 and effects[0].get("kind") == "cc.EffectAsset"):
-        effect = _root(effects[0])
-        if isinstance(effect, dict) and effect.get("__type__") == "cc.EffectAsset" and effect.get("_name") == "shader-2d-uiColor":
-            tech = material.get("_techniqueData", {}).get("0", {})
-            defines = tech.get("defines", {})
-            props = tech.get("props", {})
-            if (defines.get("USE_TEXTURE") is True and
-                    _near(props.get("gray"), spec.get("gray")) and
-                    _near(props.get("saturation"), spec.get("saturation"))):
-                return {"kind": "unity-recovered-material-binding", "sourceMaterialId": source_id,
-                        "resolvedMaterialId": resolved_id, "effectSourceId": effects[0]["sourceId"],
-                        "profile": _UI_COLOR_PROFILE, "requiresMaterialBindingAppend": True}, None
+    if isinstance(spec,dict) and spec.get("profile")==_UI_COLOR_PROFILE and spec.get("programCanonicalSha256")==_UI_COLOR_PROGRAM_SHA256:
+        from .prefab_materials import (_canonical_sha,_resolve_bundle_asset,_source_properties,
+                                       _stage_hashes,_program_profile_hash)
+        source_binding=next((row for row in spec.get('sourceMaterialBindings',[])
+                             if row.get('sourceMaterialId')==source_id),None)
+        component_binding=next((row for row in spec.get('sourceComponentMaterialBindings',[])
+                                if row.get('sourceId')==component.get('sourceId')),None)
+        source_uuid=asset.get('key') or resolved_id.split(':',1)[-1]
+        effect_ref=material.get('_effectAsset')
+        effect_uuid=effect_ref.get('__uuid__') if isinstance(effect_ref,dict) else None
+        if source_binding is not None and isinstance(effect_uuid,str):
+            try:
+                effect_asset,effect_source_id=_resolve_bundle_asset(by_id,asset.get('bundle')+':'+effect_uuid,'cc.EffectAsset')
+                effect=_root(effect_asset)
+                properties,_=_source_properties(effect,material)
+                exact=(resolved_id==source_binding.get('resolvedMaterialSourceId') and
+                    effect_source_id==source_binding.get('sourceEffectId') and source_uuid==resolved_id.split(':',1)[1] and
+                    _canonical_sha(asset.get('document'))==source_binding.get('materialDocumentSha256') and
+                    _canonical_sha(effect_asset.get('document'))==source_binding.get('effectDocumentSha256') and
+                    _program_profile_hash(_stage_hashes(effect))==spec.get('programCanonicalSha256') and
+                    properties==spec.get('properties') and source_id in spec.get('sourceMaterialIds',[]) and
+                    (component_binding is None or component_binding.get('sourceMaterialId')==source_id))
+            except (ValueError,TypeError,KeyError):
+                exact=False
+            if exact:
+                return {"kind":"unity-recovered-material-binding","sourceMaterialId":source_id,
+                        "resolvedMaterialId":resolved_id,"effectSourceId":effect_source_id,
+                        "profile":_UI_COLOR_PROFILE,"requiresMaterialBindingAppend":True},None
     return None, "source_effect_not_mapped:" + source_id
 
 

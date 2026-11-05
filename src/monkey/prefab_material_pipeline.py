@@ -28,8 +28,20 @@ def discover(ir, ir_path):
 def supported_component(component, profile, resolve):
     if not profile or component.get('type')!='cc.Sprite':return False
     spec=profile['spec']
-    return (component['sourceId'] in spec['sourceComponentIds'] and
-            [resolve(m) for m in component.get('materials',[])]==[spec['materialSourceId']])
+    source_material_ids=set(spec.get('sourceMaterialIds',[spec['materialSourceId']]))
+    source_material_ids.update(row.get('resolvedMaterialSourceId') for row in spec.get('sourceMaterialBindings',[])
+                               if isinstance(row,dict) and isinstance(row.get('resolvedMaterialSourceId'),str))
+    resolved=[resolve(m) for m in component.get('materials',[])]
+    component_rows=[row for row in spec.get('sourceComponentMaterialBindings',[])
+                    if isinstance(row,dict) and row.get('sourceId')==component.get('sourceId')]
+    if component_rows:
+        exact=(len(component_rows)==1 and len(resolved)==1 and
+               resolve(component_rows[0].get('sourceMaterialId'))==resolved[0])
+    else:
+        # Legacy single-material plan fragments bind every covered source
+        # Sprite to their one canonical source material ID.
+        exact=(len(resolved)==1 and resolved[0]==spec['materialSourceId'])
+    return component['sourceId'] in spec['sourceComponentIds'] and exact and resolved[0] in source_material_ids
 
 
 def identity_text_component(component,profile,resolve):

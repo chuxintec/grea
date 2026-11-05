@@ -903,6 +903,9 @@ def verify(candidate, output, level='static'):
     from ..byte_budgets import record, UNITY_INSTRUCTION
     from ..export_plan import read_import_instruction
     instruction, instruction_sha = read_import_instruction(root, m, standard.locate(m, 'importPlan'))
+    if m.get('buttonMaterialProjection') is not None:
+        from ..button_material_retry import projected_instruction
+        instruction = projected_instruction(root,m,instruction,instruction_sha)
     from ..sources.containers import fingerprint
     native={};editor='not_run';rb=None;coverage={};raw_native_diagnostics=[];spine_coverage=None;text_family_proofs={}
     rendering_fragment=None;rendering_receipt=None;saved_meta_observations=[]
@@ -912,6 +915,8 @@ def verify(candidate, output, level='static'):
             diagnostics.append(diagnostic('EDITOR_NOT_RUN','Analysis/Readback/editor-readback.json','Run native import in the declared Editor first'))
         else:
             rb=load(read(readback_path,max_bytes=128*1024*1024),max_nodes=8_000_000)
+            if (rb.get('buttonMaterialProjectionSha256') or None) != (m.get('buttonMaterialProjection') or {}).get('sha256'):
+                diagnostics.append(diagnostic('BUTTON_MATERIAL_PROJECTION_READBACK_PIN',str(readback_path),'Native material adapter identity differs'))
             from ..unity_verification_contract import native_diagnostics
             from ..native_readback_contract import saved_readback_admission
             raw_native_diagnostics=rb.get('diagnostics')

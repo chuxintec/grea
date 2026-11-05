@@ -8,7 +8,11 @@ from unittest.mock import patch
 
 from monkey import prefab_materials
 from monkey.prefab_materials import (MaterialProfileError, _validate_binding_spec, emit_ui_color,
-                                    generate_ui_color, inspect_ui_color, plan_ui_color)
+                                    generate_ui_color, inspect_ui_color, plan_ui_color,
+                                    plan_ui_color_for_origins)
+from monkey import prefab_material_pipeline
+from monkey.prefab_static_presentation import apply_unity
+from monkey.prefab_static_button_targets import apply as apply_button_targets
 
 
 def _asset(source_id, kind, index, doc, *, refs=None, path=None, ordinal=None):
@@ -90,6 +94,47 @@ def _fixture_profile(manifest_path):
     return patch.object(prefab_materials, "UI_COLOR_STAGE_HASHES", prefab_materials._stage_hashes(effect))
 
 
+def _bundle_alias_fixture(tmp: Path, *, change_material=False, change_effect=False):
+    tmp=tmp.resolve()
+    manifest_path=_fixture(tmp/'base')
+    manifest=json.loads(manifest_path.read_text())
+    assets=manifest['assets']
+    by_id={row['sourceId']:row for row in assets}
+    mini_root=tmp/'miniGameRes';mini_pack=mini_root/'import/00/fixture.json'
+    mini_pack.parent.mkdir(parents=True);mini_pack.write_text('{"bundle":"miniGameRes"}')
+    manifest['sourceRoots']['miniGameRes']=str(mini_root)
+    original_prefab=copy.deepcopy(by_id['gameAsset:fixture-prefab'])
+    original_prefab.update(sourceId='miniGameRes:fixture-prefab-copy',bundle='miniGameRes',index=2,pack='fixture-mini')
+    original_prefab['importPath']='import/00/fixture.json'
+    original_prefab['references']=['material-fixture-id']
+    aliases=[]
+    for source_id in ('gameAsset:material-fixture-id','gameAsset:effect-fixture-id',
+                      'gameAsset:frame-id','gameAsset:texture-id'):
+        row=copy.deepcopy(by_id[source_id]);row['sourceId']='miniGameRes:'+source_id.split(':',1)[1]
+        row['bundle']='miniGameRes';row['pack']='fixture-mini';row['importPath']='import/00/fixture.json'
+        if row['sourceId']=='miniGameRes:material-fixture-id' and change_material:
+            row['document']['instances'][0]['_techniqueData']['0']['props']['gray']=0.25
+        if row['sourceId']=='miniGameRes:effect-fixture-id' and change_effect:
+            row['document']['instances'][0]['shaders'][0]['glsl1']['frag']='vec4 frag () { return vec4(0.25); }'
+        aliases.append(row)
+    assets.extend([original_prefab,*aliases]);manifest['selection']=[1,2]
+    manifest['sourceProfile']='cocos-2.4.15-bundle'
+    manifest_path.write_text(json.dumps(manifest),encoding='utf-8')
+    manifest_sha=hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    components=[]
+    for bundle,prefab in [('gameAsset','fixture-prefab'),('miniGameRes','fixture-prefab-copy')]:
+        for suffix in ('#1','#2/components/0'):
+            components.append(dict(type='cc.Sprite',sourceId=f'{bundle}:{prefab}{suffix}',
+                materials=[f'{bundle}:material-fixture-id'],spriteFrame=f'{bundle}:frame-id'))
+    ir={'sourceProfile':'cocos-2.4.15-bundle','sourceManifestPath':str(manifest_path),
+        'sourceManifestSha256':manifest_sha,'aliases':{},'components':components}
+    ir_path=tmp/'bundle-alias-ir.json';ir_path.write_text(json.dumps(ir),encoding='utf-8')
+    ir_raw=ir_path.read_bytes()
+    (tmp/'manifest.json').write_text(json.dumps({'files':[{'path':ir_path.name,'bytes':len(ir_raw),
+        'sha256':hashlib.sha256(ir_raw).hexdigest()}]}),encoding='utf-8')
+    return manifest_path,ir_path,ir
+
+
 class PrefabMaterialTests(unittest.TestCase):
     def test_inspection_follows_selected_prefab_material_effect_spriteframe_texture(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -166,7 +211,8 @@ class PrefabMaterialTests(unittest.TestCase):
                 source_sha = hashlib.sha256(manifest.read_bytes()).hexdigest()
                 ir = {"sourceManifestSha256": source_sha,
                       "components": [{"type": "cc.Sprite", "materials": [source["source"]["materialSourceId"]],
-                                      "sourceId": row["componentSourceId"]}
+                                      "sourceId": row["componentSourceId"],
+                                      "spriteFrame":"gameAsset:"+row["spriteFrameUuid"]}
                                      for row in source["source"]["prefabOccurrences"]]}
                 ir_path = root / "ir.json"
                 ir_path.write_text(json.dumps(ir), encoding="utf-8")
@@ -197,7 +243,8 @@ class PrefabMaterialTests(unittest.TestCase):
                 source_sha = hashlib.sha256(manifest.read_bytes()).hexdigest()
                 ir = {"sourceManifestSha256": source_sha,
                       "components": [{"type": "cc.Sprite", "materials": [source["source"]["materialSourceId"]],
-                                      "sourceId": row["componentSourceId"]}
+                                      "sourceId": row["componentSourceId"],
+                                      "spriteFrame":"gameAsset:"+row["spriteFrameUuid"]}
                                      for row in source["source"]["prefabOccurrences"]]}
                 ir_path = root / "ir.json"; ir_path.write_text(json.dumps(ir), encoding="utf-8")
                 ir_sha = hashlib.sha256(ir_path.read_bytes()).hexdigest()
@@ -207,6 +254,107 @@ class PrefabMaterialTests(unittest.TestCase):
                 bad["sourceMaterialId"] = bad.pop("materialSourceId")
                 with self.assertRaisesRegex(MaterialProfileError, "canonical materialSourceId"):
                     _validate_binding_spec(bad)
+
+    def test_bundle_qualified_duplicate_materials_share_only_exact_profile_and_keep_per_sprite_identity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);manifest_path,ir_path,ir=_bundle_alias_fixture(root)
+            with _fixture_profile(manifest_path):
+                source=inspect_ui_color(manifest_path,ir_path)
+                manifest_sha=hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+                ir_sha=hashlib.sha256(ir_path.read_bytes()).hexdigest()
+                fragment=plan_ui_color(manifest_path,ir_path,'UiColorModule',manifest_sha,ir_sha)
+                profile,gaps=prefab_material_pipeline.discover(ir,ir_path)
+            spec=fragment['spec']
+            self.assertEqual(spec['sourceMaterialIds'],['gameAsset:material-fixture-id','miniGameRes:material-fixture-id'])
+            self.assertEqual(len(spec['sourceMaterialBindings']),2)
+            self.assertEqual(len(spec['sourceComponentMaterialBindings']),4)
+            self.assertTrue(source['source']['normalizedIR']['sourceToIRComponentIds']['exactMatch'])
+            self.assertFalse(gaps);self.assertIsNotNone(profile)
+            def resolve(value):return ir.get('aliases',{}).get(value,value)
+            for component in ir['components']:
+                self.assertTrue(prefab_material_pipeline.supported_component(component,profile,resolve))
+            tampered=copy.deepcopy(profile)
+            tampered['spec']['sourceComponentMaterialBindings'][0]['sourceMaterialId']='miniGameRes:material-fixture-id'
+            for component in ir['components']:
+                if component['sourceId']==tampered['spec']['sourceComponentMaterialBindings'][0]['sourceId']:
+                    self.assertFalse(prefab_material_pipeline.supported_component(component,tampered,resolve))
+
+    def test_nonidentical_bundle_material_copy_is_not_grouped_or_silently_projected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);manifest_path,ir_path,_=_bundle_alias_fixture(root,change_material=True)
+            with _fixture_profile(manifest_path):
+                with self.assertRaisesRegex(MaterialProfileError,'distinct bundle-qualified uiColor material profiles'):
+                    inspect_ui_color(manifest_path,ir_path)
+
+    def test_changed_duplicate_effect_does_not_promote_its_bundle_consumers(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);manifest_path,ir_path,ir=_bundle_alias_fixture(root,change_effect=True)
+            with _fixture_profile(manifest_path):
+                source=inspect_ui_color(manifest_path,ir_path)
+            self.assertEqual(source['source']['materialSourceIds'],['gameAsset:material-fixture-id'])
+            self.assertEqual({row['sourceId'] for row in source['source']['normalizedIR']['components']},
+                             {'gameAsset:fixture-prefab#1','gameAsset:fixture-prefab#2/components/0'})
+
+    def test_origin_scoped_material_fragment_and_plan_bound_instances_keep_exact_source_joins(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();manifest_path,ir_path,ir=_bundle_alias_fixture(root)
+            origins=[row['sourceId'] for row in ir['components']]
+            source_sha=hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+            ir_sha=hashlib.sha256(ir_path.read_bytes()).hexdigest()
+            with _fixture_profile(manifest_path):
+                physical=plan_ui_color_for_origins(manifest_path,ir_path,source_sha,ir_sha,origins)
+                bindings=[]
+                for row in ir['components']:
+                    bindings.append(dict(sourceId=row['sourceId'],sourceOriginId=row['sourceId'],
+                        sourceMaterialId=row['materials'][0],spriteFrameSourceId=row['spriteFrame']))
+                bindings.extend([
+                    dict(sourceId='instance:prefabA::sync-sprite',sourceOriginId=origins[1],
+                         sourceMaterialId=ir['components'][1]['materials'][0],spriteFrameSourceId=ir['components'][1]['spriteFrame']),
+                    dict(sourceId='instance:prefabB::sync-sprite',sourceOriginId=origins[3],
+                         sourceMaterialId=ir['components'][3]['materials'][0],spriteFrameSourceId=ir['components'][3]['spriteFrame'])])
+                projected=plan_ui_color(manifest_path,ir_path,'UiColorModule',source_sha,ir_sha,
+                    source_component_bindings=bindings,source_plan_sha256='a'*64)
+            self.assertEqual(physical['spec']['sourceComponentIds'],origins)
+            self.assertEqual(physical['spec']['sourceComponentMaterialBindings'][0]['sourceOriginId'],origins[0])
+            self.assertEqual(set(projected['spec']['sourceComponentIds']),{row['sourceId'] for row in bindings})
+            self.assertEqual(projected['spec']['sourcePlanSha256'],'a'*64)
+            self.assertEqual(len(projected['spec']['sourceIrComponentIds']['source']),4)
+            tampered=copy.deepcopy(bindings);tampered[-1]['sourceMaterialId']='gameAsset:other-material-id'
+            with _fixture_profile(manifest_path):
+                with self.assertRaisesRegex(MaterialProfileError,'selected source component does not exactly join'):
+                    plan_ui_color(manifest_path,ir_path,'UiColorModule',source_sha,ir_sha,
+                        source_component_bindings=tampered,source_plan_sha256='a'*64)
+
+    def test_material_resolved_sprite_remains_the_button_target_graphic(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();manifest_path,ir_path,ir=_bundle_alias_fixture(root)
+            with _fixture_profile(manifest_path):
+                profile,gaps=prefab_material_pipeline.discover(ir,ir_path)
+                self.assertFalse(gaps)
+                (root/'material-stage').mkdir()
+                binding=prefab_material_pipeline.prepare(profile,'unity',root/'material-stage')
+            target_id='gameAsset:fixture-prefab#target'
+            button_id='gameAsset:fixture-prefab#button'
+            sprite=copy.deepcopy(ir['components'][1]);sprite.update(node=target_id,convertible=False,mode=2,trim=True,sizeMode=0)
+            button=dict(sourceId=button_id,node='gameAsset:fixture-prefab#button-node',target=target_id,
+                        type='cc.Button',transition=1,interactable=True,convertible=True,
+                        staticButtonBinding=dict(renderReady=True,sourceFields={'target':'authored'}))
+            plan=dict(targetProfile='unity-6000.6.2f1-ugui',sourceManifestSha256=profile['spec']['sourceManifestSha256'],
+                      sourceManifestPath=str(manifest_path),materialBinding=binding,components=[sprite,button],
+                      textures=[dict(id='gameAsset:frame-id',path='Assets/Game/Content/Textures/frame.png',size=[16,16],originalSize=[16,16],offset=[0,0],border=[0,0,0,0]),
+                                dict(id='gameAsset:frame-id@original',path='Assets/Game/Content/Textures/frame-untrimmed.png',size=[16,16],originalSize=[16,16],offset=[0,0],border=[0,0,0,0])],
+                      assets=[],nodes=[])
+            with _fixture_profile(manifest_path):
+                profile_sha=prefab_materials._program_profile_hash(prefab_materials.UI_COLOR_STAGE_HASHES)
+                with patch('monkey.prefab_static_presentation._UI_COLOR_PROGRAM_SHA256',profile_sha):
+                    apply_unity(plan,json.loads(manifest_path.read_text()))
+            self.assertTrue(sprite['convertible'])
+            self.assertEqual(sprite['nativeMaterialSourceId'],'gameAsset:material-fixture-id')
+            self.assertEqual(button['target'],sprite['node'])
+            self.assertEqual([],apply_button_targets(plan))
+            importer=(Path(__file__).parents[1]/'src/monkey/targets/UnityImporter.cs').read_text()
+            self.assertIn('button.targetGraphic=target.GetComponent<UnityEngine.UI.Graphic>()',importer)
+            self.assertIn('STATIC_BUTTON_TARGET_GRAPHIC_MISSING',importer)
 
     def test_plan_requires_explicit_matching_manifest_and_ir_pins(self):
         with tempfile.TemporaryDirectory() as temp:

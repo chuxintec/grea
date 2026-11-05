@@ -312,13 +312,274 @@ def _raw_source_evidence(manifest: dict, *assets: dict) -> dict:
                        for asset in assets]}
 
 
-def inspect_ui_color(source_manifest: str | Path, normalized_ir: str | Path | None = None) -> dict:
+def _resolve_bundle_asset(assets: dict[str, dict], source_id: str, kind: str) -> tuple[dict, str]:
+    """Resolve one bundle-qualified dependency, following only source redirects."""
+    if not isinstance(source_id, str) or ':' not in source_id:
+        raise MaterialProfileError('source dependency is not bundle-qualified')
+    current=source_id;seen=set()
+    while current not in seen:
+        seen.add(current)
+        asset=assets.get(current)
+        if not isinstance(asset,dict):
+            raise MaterialProfileError(f'missing exact bundle-qualified {kind} dependency: {current}')
+        if asset.get('kind')==kind:
+            return asset, current
+        target=asset.get('redirectTarget')
+        if asset.get('kind')!='redirect' or not isinstance(target,str) or not target:
+            raise MaterialProfileError(f'{current} is not a {kind} and has no explicit redirect')
+        current=target
+    raise MaterialProfileError(f'source dependency redirect cycle at {source_id}')
+
+
+def _bundle_profile_from_ir(manifest: dict, ir: dict, path: Path, ir_path: Path,
+                            source_component_bindings: list[dict] | None = None,
+                            source_plan_sha256: str | None = None) -> dict:
+    """Resolve exact IR material identities and allow only byte-equivalent duplicate bundle copies."""
+    assets=_asset_map(manifest)
+    component_rows=[row for row in ir.get('components',[]) if isinstance(row,dict) and row.get('type')=='cc.Sprite']
+    material_ids=sorted({value for row in component_rows for value in row.get('materials',[])
+                         if isinstance(value,str) and ':' in value})
+    if not material_ids:
+        raise MaterialProfileError('normalized IR has no bundle-qualified Sprite material references')
+    candidates=[]
+    for declared_id in material_ids:
+        try:
+            material_asset,resolved_material_id=_resolve_bundle_asset(assets,declared_id,'cc.Material')
+        except MaterialProfileError:
+            continue
+        material=_root_object(material_asset)
+        effect_ref=material.get('_effectAsset')
+        effect_uuid=effect_ref.get('__uuid__') if isinstance(effect_ref,dict) else None
+        if not isinstance(effect_uuid,str) or not effect_uuid:
+            continue
+        source_bundle=resolved_material_id.split(':',1)[0]
+        try:
+            effect_asset,resolved_effect_id=_resolve_bundle_asset(assets,source_bundle+':'+effect_uuid,'cc.EffectAsset')
+        except MaterialProfileError:
+            # A material's direct, qualified UUID edge is authoritative. A
+            # cross-bundle effect is accepted only if that exact source row is
+            # an explicit redirect, never by UUID suffix lookup.
+            continue
+        effect=_root_object(effect_asset)
+        if not _exact_ui_color_profile(effect):
+            continue
+        try:
+            props,source_props=_source_properties(effect,material)
+        except MaterialProfileError:
+            continue
+        candidates.append(dict(declaredMaterialId=declared_id,resolvedMaterialId=resolved_material_id,
+            materialAsset=material_asset,material=material,effectAsset=effect_asset,effect=effect,
+            effectSourceId=resolved_effect_id,properties=props,sourceProps=source_props,
+            materialDocumentSha256=_canonical_sha(material_asset.get('document')),
+            effectDocumentSha256=_canonical_sha(effect_asset.get('document')),
+            programStageCanonicalSha256=_stage_hashes(effect)))
+    if not candidates:
+        raise MaterialProfileError('no bundle-qualified material/effect dependency matches the exact uiColor source profile')
+    groups={}
+    for row in candidates:
+        key=(row['materialDocumentSha256'],row['effectDocumentSha256'],
+             _program_profile_hash(row['programStageCanonicalSha256']),_canonical_sha(row['properties']))
+        groups.setdefault(key,[]).append(row)
+    if len(groups)!=1:
+        raise MaterialProfileError(f'{len(groups)} distinct bundle-qualified uiColor material profiles require separate native material bindings')
+    group=next(iter(groups.values()))
+    by_declared={row['declaredMaterialId']:row for row in group}
+    # Every Sprite reference whose exact asset resolves into this proven group
+    # remains source-bound; unrelated custom materials stay in handoff.
+    ir_by_id={row.get('sourceId'):row for row in component_rows if isinstance(row.get('sourceId'),str)}
+    requested=[]
+    if source_component_bindings is None:
+        for component in component_rows:
+            refs=component.get('materials')
+            if not isinstance(refs,list) or len(refs)!=1 or refs[0] not in by_declared:
+                continue
+            if not isinstance(component.get('sourceId'),str) or not component['sourceId']:
+                raise MaterialProfileError('bundle-qualified material Sprite has no source component identity')
+            requested.append(dict(sourceId=component['sourceId'],sourceOriginId=component['sourceId'],
+                materialSourceId=refs[0],spriteFrameSourceId=component.get('spriteFrame')))
+    else:
+        if not isinstance(source_component_bindings,list) or not source_component_bindings:
+            raise MaterialProfileError('selected source component projection is empty')
+        needs_plan_pin=any(isinstance(row,dict) and row.get('sourceId')!=row.get('sourceOriginId')
+                           for row in source_component_bindings)
+        if needs_plan_pin and not re.fullmatch(r'[0-9a-f]{64}',source_plan_sha256 or ''):
+            raise MaterialProfileError('non-origin source component projection requires a frozen source plan SHA-256')
+        for row in source_component_bindings:
+            if not isinstance(row,dict):raise MaterialProfileError('selected source component binding is malformed')
+            source_id=row.get('sourceId');origin=row.get('sourceOriginId');material_id=row.get('sourceMaterialId');frame_id=row.get('spriteFrameSourceId')
+            component=ir_by_id.get(origin)
+            if (not isinstance(source_id,str) or not source_id or not isinstance(origin,str) or not origin or
+                    not isinstance(material_id,str) or material_id not in by_declared or component is None or
+                    component.get('materials')!=[material_id] or frame_id!=component.get('spriteFrame') or
+                    (source_id!=origin and not source_plan_sha256)):
+                raise MaterialProfileError('selected source component does not exactly join to its frozen IR Material/SpriteFrame identity')
+            requested.append(dict(sourceId=source_id,sourceOriginId=origin,materialSourceId=material_id,
+                                  spriteFrameSourceId=frame_id))
+    for row in requested:
+        frame_asset,resolved_frame_id=_resolve_bundle_asset(assets,row['spriteFrameSourceId'],'cc.SpriteFrame')
+        row['resolvedSpriteFrameSourceId']=resolved_frame_id
+    if len({row['sourceId'] for row in requested})!=len(requested):
+        raise MaterialProfileError('selected source component projection repeats a source ID')
+    source_components=requested
+    if not source_components:
+        raise MaterialProfileError('exact uiColor material group has no normalized Sprite consumers')
+    if len({row['sourceId'] for row in source_components})!=len(source_components):
+        raise MaterialProfileError('normalized IR repeats a uiColor Sprite source identity')
+    ids_by_material={material_id:[] for material_id in by_declared}
+    for row in source_components:ids_by_material[row['materialSourceId']].append(row['sourceOriginId'])
+    prefabs=[]
+    for material_id,profile in sorted(by_declared.items()):
+        asset=profile['materialAsset'];bundle=asset.get('bundle')
+        wanted_origins={row['sourceOriginId'] for row in source_components if row['materialSourceId']==material_id}
+        prefab_ids={source_id.split('#',1)[0] for source_id in wanted_origins}
+        raw_material_uuid=asset.get('key') or profile['resolvedMaterialId'].split(':',1)[1]
+        if not isinstance(raw_material_uuid,str):
+            raise MaterialProfileError(f'{material_id} lacks a pinned source UUID')
+        for prefab_id in sorted(prefab_ids):
+            prefab=assets.get(prefab_id)
+            if not isinstance(prefab,dict) or prefab.get('kind')!='cc.Prefab' or prefab.get('bundle')!=bundle:
+                raise MaterialProfileError(f'{material_id} consumer prefab is absent in the same source bundle: {prefab_id}')
+            instances=prefab.get('document',{}).get('instances',[])
+            for object_index,obj in enumerate(instances):
+                if not isinstance(obj,dict):continue
+                if obj.get('__type__')=='cc.Sprite':
+                    sprite_rows=[(None,obj,f'{prefab_id}#{object_index}')]
+                elif obj.get('__type__')=='cc.Node':
+                    sprite_rows=[(component_index,component,
+                        f'{prefab_id}#{object_index}/components/{component_index}')
+                        for component_index,component in enumerate(obj.get('_components',[]))
+                        if isinstance(component,dict) and component.get('__type__')=='cc.Sprite']
+                else:sprite_rows=[]
+                for component_index,sprite,sprite_sid in sprite_rows:
+                    if sprite_sid not in wanted_origins:
+                        continue
+                    material_refs=sprite.get('_materials',[])
+                    if not any(isinstance(value,dict) and value.get('__uuid__')==raw_material_uuid for value in material_refs):
+                        raise MaterialProfileError(f'{sprite_sid} selected source origin does not reference the declared Material UUID')
+                    normalized_component=next((c for c in source_components if c['sourceOriginId']==sprite_sid and c['materialSourceId']==material_id),None)
+                    if normalized_component is None or normalized_component['materialSourceId']!=material_id:
+                        raise MaterialProfileError(f'raw Sprite→Material edge is not joined to the exact normalized ID: {sprite_sid}')
+                    frame_ref=sprite.get('_spriteFrame')
+                    frame_uuid=frame_ref.get('__uuid__') if isinstance(frame_ref,dict) else None
+                    if normalized_component.get('spriteFrameSourceId') is not None:
+                        frame_sid=normalized_component['spriteFrameSourceId']
+                        frame_asset,resolved_frame_id=_resolve_bundle_asset(assets,frame_sid,'cc.SpriteFrame')
+                        if normalized_component.get('resolvedSpriteFrameSourceId')!=resolved_frame_id:
+                            raise MaterialProfileError(f'{sprite_sid} SpriteFrame redirect differs from the selected IR frame mapping')
+                        if (frame_asset.get('key') or frame_asset.get('sourceId','').split(':',1)[-1])!=frame_uuid:
+                            raise MaterialProfileError(f'{sprite_sid} SpriteFrame UUID differs between raw prefab and normalized IR')
+                        frame_bundle=frame_asset.get('bundle')
+                        frame_texture=frame_asset.get('document',{}).get('instances',[])
+                        texture_uuid=None
+                        root_index=frame_asset.get('document',{}).get('root')
+                        if type(root_index) is int and 0<=root_index<len(frame_texture):
+                            frame_obj=frame_texture[root_index]
+                            setter=frame_obj.get('_textureSetter') if isinstance(frame_obj,dict) else None
+                            texture_uuid=setter.get('__uuid__') if isinstance(setter,dict) else None
+                        if not isinstance(texture_uuid,str) or not texture_uuid:
+                            raise MaterialProfileError(f'{frame_sid} has no serialized Texture2D edge')
+                        _resolve_bundle_asset(assets,frame_bundle+':'+texture_uuid,'cc.Texture2D')
+                    prefabs.append(dict(prefabSourceId=prefab_id,prefabPath=prefab.get('logicalPath'),
+                        locator=prefab.get('index'),spriteObjectIndex=object_index,
+                        inlineComponentIndex=component_index,componentSourceId=sprite_sid,
+                        sourceMaterialId=material_id,spriteFrameUuid=frame_uuid))
+    raw_component_ids=sorted(row['componentSourceId'] for row in prefabs)
+    expected_component_ids=sorted({row['sourceOriginId'] for row in source_components})
+    if raw_component_ids!=expected_component_ids:
+        raise MaterialProfileError('raw source Sprite occurrences do not exactly match bundle-qualified normalized IR material consumers')
+    frame_assets=[];texture_assets=[]
+    for occurrence,source_component in zip(sorted(prefabs,key=lambda row:row['componentSourceId']),
+                                           sorted(source_components,key=lambda row:row['sourceId'])):
+        frame_id=source_component.get('resolvedSpriteFrameSourceId')
+        frame=assets.get(frame_id) if isinstance(frame_id,str) else None
+        if not isinstance(frame,dict) or frame.get('kind')!='cc.SpriteFrame':
+            raise MaterialProfileError(f'{source_component["sourceId"]} has no pinned SpriteFrame dependency')
+        if (frame.get('key') or frame.get('sourceId','').split(':',1)[-1])!=occurrence.get('spriteFrameUuid'):
+            raise MaterialProfileError(f'{source_component["sourceId"]} source SpriteFrame edge changed')
+        frame_assets.append(frame)
+        root_index=frame.get('document',{}).get('root');instances=frame.get('document',{}).get('instances',[])
+        frame_obj=instances[root_index] if type(root_index) is int and 0<=root_index<len(instances) else None
+        setter=frame_obj.get('_textureSetter') if isinstance(frame_obj,dict) else None
+        texture_uuid=setter.get('__uuid__') if isinstance(setter,dict) else None
+        texture,texture_id=_resolve_bundle_asset(assets,frame.get('bundle')+':'+str(texture_uuid),'cc.Texture2D')
+        texture_assets.append(texture)
+        occurrence['spriteFrameSourceId']=frame_id;occurrence['textureSourceId']=texture_id
+    # Make closure records unique by source identity while retaining all source
+    # pack hashes for every bundle copy.
+    frame_assets=list({row['sourceId']:row for row in frame_assets}.values())
+    texture_assets=list({row['sourceId']:row for row in texture_assets}.values())
+    material_assets=list({row['materialAsset']['sourceId']:row['materialAsset'] for row in group}.values())
+    effect_assets=list({row['effectAsset']['sourceId']:row['effectAsset'] for row in group}.values())
+    primary=sorted(group,key=lambda row:(row['declaredMaterialId'],row['effectSourceId']))[0]
+    props=primary['properties']
+    if any(row['properties']!=props for row in group):
+        raise MaterialProfileError('bundle-qualified equivalent materials have different serialized properties')
+    ir_raw=ir_path.read_bytes()
+    comparison={'source':expected_component_ids,'ir':expected_component_ids,'missingInIR':[],'extraInIR':[],'exactMatch':True}
+    bindings=[dict(sourceMaterialId=row['declaredMaterialId'],resolvedMaterialSourceId=row['resolvedMaterialId'],
+        sourceEffectId=row['effectSourceId'],materialDocumentSha256=row['materialDocumentSha256'],
+        effectDocumentSha256=row['effectDocumentSha256'],programStageCanonicalSha256=row['programStageCanonicalSha256'],
+        properties=row['properties']) for row in sorted(group,key=lambda item:item['declaredMaterialId'])]
+    evidence=_raw_source_evidence(manifest,*material_assets,*effect_assets,*frame_assets,*texture_assets)
+    inventory_rows=[]
+    for row in sorted(group,key=lambda item:item['declaredMaterialId']):
+        inventory_rows.append({'materialSourceId':row['declaredMaterialId'],
+            'resolvedMaterialSourceId':row['resolvedMaterialId'],'materialName':row['material'].get('_name'),
+            'effectSourceId':row['effectSourceId'],'effectName':row['effect'].get('_name'),
+            'status':'supported-profile','reason':None,
+            'materialDocumentSha256':row['materialDocumentSha256'],
+            'effectDocumentSha256':row['effectDocumentSha256']})
+    inventory={'selectedMaterialCount':len(inventory_rows),'supportedMaterialCount':len(inventory_rows),
+        'retainedOutsideProfileCount':0,'referencedEffectCount':len({row['effectSourceId'] for row in group}),
+        'materials':inventory_rows,
+        'effects':[{'sourceId':sid,'name':next(row['effect'].get('_name') for row in group if row['effectSourceId']==sid)}
+                   for sid in sorted({row['effectSourceId'] for row in group})]}
+    return {'profile':PROFILE,'status':'supported-source-subset',
+        'source':{'effectSourceId':primary['effectSourceId'],'effectSourceIds':sorted({row['effectSourceId'] for row in group}),
+            'materialSourceId':primary['declaredMaterialId'],'materialSourceIds':sorted(by_declared),
+            'sourceMaterialBindings':bindings,'effectProgram':PROGRAM_NAME,'prefabOccurrences':sorted(prefabs,key=lambda row:row['componentSourceId']),
+            'sourcePlanSha256':source_plan_sha256,
+            'sourceComponentMaterialBindings':[dict(sourceId=row['sourceId'],sourceOriginId=row['sourceOriginId'],
+                sourceMaterialId=row['materialSourceId'],spriteFrameSourceId=row['spriteFrameSourceId'],
+                resolvedSpriteFrameSourceId=row['resolvedSpriteFrameSourceId'])
+                for row in sorted(source_components,key=lambda item:item['sourceId'])],
+            'programStageCanonicalSha256':primary['programStageCanonicalSha256'],
+            'programCanonicalSha256':_program_profile_hash(primary['programStageCanonicalSha256']),
+            'spriteFrames':[{'sourceId':a['sourceId'],'logicalPath':a.get('logicalPath')}for a in frame_assets],
+            'textures':[{'sourceId':a['sourceId'],'logicalPath':a.get('logicalPath')}for a in texture_assets],
+            'sourceEvidence':evidence,'normalizedIR':{'path':str(ir_path),'sha256':_sha(ir_raw),
+                'selectedSpriteMaterialReferenceCount':len(source_components),'sourceOccurrences':len(prefabs),
+                'sourceToIRComponentIds':comparison,'components':[{'sourceId':row['sourceId'],
+                    'sourceOriginId':row['sourceOriginId'],'materialSourceId':row['materialSourceId']} for row in source_components]},
+            'selectedMaterialScope':inventory,'effectDocumentSha256':primary['effectDocumentSha256'],
+            'materialDocumentSha256':primary['materialDocumentSha256']},
+        'material':{'sourceName':primary['material'].get('_name'),'defines':primary['sourceProps']['defines'],
+            'sourceProps':primary['sourceProps']['props'],'properties':props,
+            'propertyBindings':{'brightness':{'creator':'brightness','unity':'_Brightness'},
+                'saturation':{'creator':'saturation','unity':'_Saturation'},
+                'constrast':{'creator':'constrast','unity':'_Constrast'},
+                'gray':{'creator':'gray','unity':'_Gray'},'silhouette':{'creator':'silhouette','unity':'_Silhouette'}},
+            'textureBinding':'SpriteFrame/Texture2D remains supplied by target Sprite renderer'}}
+
+
+def inspect_ui_color(source_manifest: str | Path, normalized_ir: str | Path | None = None, *,
+                     source_component_bindings: list[dict] | None = None,
+                     source_plan_sha256: str | None = None) -> dict:
     """Resolve the selected Sprite→Material→Effect closure and source identity."""
     path = Path(source_manifest).resolve()
     try:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise MaterialProfileError(f"unable to read source manifest: {exc}") from exc
+    if normalized_ir is not None:
+        ir_path=Path(normalized_ir).resolve()
+        try:
+            ir=json.loads(ir_path.read_text(encoding='utf-8'))
+        except (OSError,json.JSONDecodeError) as exc:
+            raise MaterialProfileError(f'unable to read normalized IR: {exc}') from exc
+        if ir.get('sourceManifestSha256')!=_sha(path.read_bytes()):
+            raise MaterialProfileError('normalized IR is not pinned to the supplied source manifest')
+        return _bundle_profile_from_ir(manifest,ir,path,ir_path,source_component_bindings,source_plan_sha256)
     assets = _asset_map(manifest)
     effect_asset = _find_supported_effect(assets)
     material_asset = _find_supported_material(manifest, assets, effect_asset)
@@ -508,6 +769,31 @@ def _validate_binding_spec(spec: dict) -> None:
         raise MaterialProfileError("native material spec profile is unsupported")
     if "sourceMaterialId" in spec or not isinstance(spec.get("materialSourceId"), str) or not spec["materialSourceId"]:
         raise MaterialProfileError("native material spec requires the canonical materialSourceId field")
+    material_ids=spec.get('sourceMaterialIds',[spec['materialSourceId']])
+    material_bindings=spec.get('sourceMaterialBindings',[])
+    if (not isinstance(material_ids,list) or not material_ids or len(material_ids)!=len(set(material_ids)) or
+            spec['materialSourceId'] not in material_ids or any(not isinstance(value,str) or ':' not in value for value in material_ids)):
+        raise MaterialProfileError('bundle-qualified source material identity list is invalid')
+    if material_bindings:
+        ids=[row.get('sourceMaterialId') for row in material_bindings if isinstance(row,dict)]
+        if (len(ids)!=len(material_bindings) or len(ids)!=len(set(ids)) or set(ids)!=set(material_ids) or
+                any(not isinstance(row.get('resolvedMaterialSourceId'),str) or
+                    not isinstance(row.get('sourceEffectId'),str) or
+                    not re.fullmatch(r'[0-9a-f]{64}',row.get('materialDocumentSha256','')) or
+                    not re.fullmatch(r'[0-9a-f]{64}',row.get('effectDocumentSha256','')) or
+                    row.get('properties')!=spec.get('properties') for row in material_bindings)):
+            raise MaterialProfileError('equivalent source Material/Effect identity evidence is incomplete or differs')
+    component_bindings=spec.get('sourceComponentMaterialBindings',[])
+    if component_bindings:
+        component_ids=[row.get('sourceId') for row in component_bindings if isinstance(row,dict)]
+        projected=any(row.get('sourceId')!=row.get('sourceOriginId') for row in component_bindings if isinstance(row,dict))
+        plan_sha=spec.get('sourcePlanSha256')
+        if (len(component_ids)!=len(component_bindings) or len(component_ids)!=len(set(component_ids)) or
+                set(component_ids)!=set(spec.get('sourceComponentIds',[])) or
+                any(row.get('sourceMaterialId') not in material_ids for row in component_bindings) or
+                (projected and not re.fullmatch(r'[0-9a-f]{64}',plan_sha or '')) or
+                (plan_sha is not None and not re.fullmatch(r'[0-9a-f]{64}',plan_sha))):
+            raise MaterialProfileError('source component to bundle-qualified Material mapping is not one-to-one')
     if spec.get("programCanonicalSha256") != _program_profile_hash(UI_COLOR_STAGE_HASHES):
         raise MaterialProfileError("native material spec program hash differs from exact profile")
     unity, creator = spec.get("unity"), spec.get("creator")
@@ -534,7 +820,9 @@ def _validate_binding_spec(spec: dict) -> None:
 
 
 def plan_ui_color(source_manifest: str | Path, normalized_ir: str | Path, module: str,
-                  source_manifest_sha256: str, normalized_ir_sha256: str) -> dict:
+                  source_manifest_sha256: str, normalized_ir_sha256: str, *,
+                  source_component_bindings: list[dict] | None = None,
+                  source_plan_sha256: str | None = None) -> dict:
     """Build a pinned target-plan fragment plus exact owned-file declarations.
 
     Native Unity .mat and Creator .mtl assets are deliberately omitted from
@@ -552,10 +840,13 @@ def plan_ui_color(source_manifest: str | Path, normalized_ir: str | Path, module
     ir = json.loads(ir_raw)
     if ir.get("sourceManifestSha256") != source_manifest_sha256:
         raise MaterialProfileError("normalized IR is not pinned to the supplied source manifest")
-    source = inspect_ui_color(manifest_path, ir_path)
+    source = inspect_ui_color(manifest_path, ir_path,source_component_bindings=source_component_bindings,
+                              source_plan_sha256=source_plan_sha256)
     comparison = source["source"]["normalizedIR"].get("sourceToIRComponentIds")
     if not comparison or comparison.get("exactMatch") is not True:
         raise MaterialProfileError("source material component IDs do not exactly match the pinned normalized IR")
+    material_component_bindings = source["source"].get("sourceComponentMaterialBindings", [])
+    target_component_ids = [row["sourceId"] for row in material_component_bindings]
 
     material_source_id = source["source"]["materialSourceId"]
     unity_shader_guid = uuid.uuid5(uuid.NAMESPACE_URL, f"monkey/{material_source_id}/unity-material/{module}/shader").hex
@@ -592,8 +883,13 @@ def plan_ui_color(source_manifest: str | Path, normalized_ir: str | Path, module
             "programStageCanonicalSha256": source["source"]["programStageCanonicalSha256"],
             "module": module, "materialSourceId": material_source_id,
             "sourceEffectId": source["source"]["effectSourceId"],
+            "sourceMaterialIds": source["source"].get("materialSourceIds", [material_source_id]),
+            "sourceEffectIds": source["source"].get("effectSourceIds", [source["source"]["effectSourceId"]]),
+            "sourceMaterialBindings": source["source"].get("sourceMaterialBindings", []),
+            "sourceComponentMaterialBindings": source["source"].get("sourceComponentMaterialBindings", []),
+            "sourcePlanSha256": source["source"].get("sourcePlanSha256"),
             "sourceManifestSha256": source_manifest_sha256, "normalizedIrSha256": normalized_ir_sha256,
-            "sourceComponentIds": comparison["source"], "sourceIrComponentIds": comparison,
+            "sourceComponentIds": target_component_ids or comparison["source"], "sourceIrComponentIds": comparison,
             "properties": props, "propertyBindings": source["material"]["propertyBindings"],
             "brightness": props["brightness"], "saturation": props["saturation"],
             "constrast": props["constrast"], "gray": props["gray"],
@@ -607,7 +903,7 @@ def plan_ui_color(source_manifest: str | Path, normalized_ir: str | Path, module
             "creator": {"effectPath": creator_effect_path, "effectUuid": creator_effect_uuid,
                         "materialPath": creator_material_path, "materialUuid": creator_material_uuid,
                         "materialMetaPath": creator_material_path + ".meta"},
-            "spriteBindings": [{"sourceId": component_id} for component_id in comparison["source"]],
+            "spriteBindings": [{"sourceId": component_id} for component_id in (target_component_ids or comparison["source"])],
             "sourceBindings": [{"sourceId": row["componentSourceId"],
                                 "sourcePrefabId": row["prefabSourceId"],
                                 "spriteFrameUuid": row.get("spriteFrameUuid")}
@@ -623,6 +919,40 @@ def plan_ui_color(source_manifest: str | Path, normalized_ir: str | Path, module
                          "creator38": "reloaded cc.Material UUID, EffectAsset UUID, technique and source properties"}}
     _validate_binding_spec(spec)
     return {"schema": "monkey-prefab-material-plan-fragment/1", "spec": spec, "ownedFiles": files}
+
+
+def plan_ui_color_for_origins(source_manifest_path: str | Path, ir_path: str | Path,
+                              source_manifest_sha256: str, normalized_ir_sha256: str,
+                              required_origin_ids: list[str], *, module: str = 'Shared') -> dict:
+    """Build the standard material fragment for an exact set of physical Sprite origins.
+
+    Instance Sprite IDs stay in the caller's frozen plan overlay. This function
+    pins the underlying source Material/Effect and returns source origin →
+    bundle-qualified Material/Frame rows for that overlay to join.
+    """
+    if (not isinstance(required_origin_ids,list) or not required_origin_ids or
+            any(not isinstance(value,str) or not value for value in required_origin_ids) or
+            len(required_origin_ids)!=len(set(required_origin_ids))):
+        raise MaterialProfileError('required physical Sprite origin IDs must be unique and non-empty')
+    ir_file=Path(ir_path).resolve()
+    try:
+        ir=json.loads(ir_file.read_bytes())
+    except (OSError,json.JSONDecodeError) as exc:
+        raise MaterialProfileError(f'unable to read normalized IR: {exc}') from exc
+    by_id={row.get('sourceId'):row for row in ir.get('components',[])
+           if isinstance(row,dict) and isinstance(row.get('sourceId'),str)}
+    bindings=[]
+    for source_id in required_origin_ids:
+        row=by_id.get(source_id)
+        if not isinstance(row,dict) or row.get('type')!='cc.Sprite':
+            raise MaterialProfileError(f'{source_id} is not a frozen source cc.Sprite origin')
+        materials=row.get('materials');frame=row.get('spriteFrame')
+        if not isinstance(materials,list) or len(materials)!=1 or not isinstance(materials[0],str) or not isinstance(frame,str):
+            raise MaterialProfileError(f'{source_id} lacks exact single Material or SpriteFrame source identity')
+        bindings.append(dict(sourceId=source_id,sourceOriginId=source_id,
+            sourceMaterialId=materials[0],spriteFrameSourceId=frame))
+    return plan_ui_color(source_manifest_path,ir_file,module,source_manifest_sha256,normalized_ir_sha256,
+                         source_component_bindings=bindings)
 
 
 def emit_ui_color(plan: dict, plan_root: str | Path, output_root: str | Path) -> dict:

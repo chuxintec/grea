@@ -63,6 +63,7 @@ public static partial class MonkeyImporter
     }
     [Serializable] public class NumericMethodsSpec { public string setter,getter; }
     [Serializable] public class ComponentSpec {
+        public string[] materials; public string untrimmedGeometryPolicy;
         public string[] clips; public string defaultClip; public bool defaultClipKnown,playOnLoad;
         public StaticButtonColors staticButtonBinding; public StaticProgressSpec staticProgressBinding;
         public string nativeStaticTimeMaterialSourceId,nativeStaticTimeSourceComponentId;
@@ -124,7 +125,11 @@ public static partial class MonkeyImporter
         return (spec.bold?TMPro.FontStyles.Bold:TMPro.FontStyles.Normal) | (spec.italic?TMPro.FontStyles.Italic:TMPro.FontStyles.Normal) | (spec.underline?TMPro.FontStyles.Underline:TMPro.FontStyles.Normal);
     }
     static Color ButtonColor(float[] value){if(value==null||value.Length!=4)throw new InvalidOperationException("STATIC_BUTTON_COLOR_MISSING");return new Color(value[0]/255f,value[1]/255f,value[2]/255f,value[3]/255f);}
+    static partial void ApplyButtonMaterialProjection(Plan plan);
+    static partial void StampButtonMaterialProjection(Readback readback);
+    static partial void CheckProjectedButton(ComponentSpec spec, UnityEngine.UI.Button button, GameObject target);
     static bool StaticButtonMatches(ComponentSpec spec,UnityEngine.UI.Button button,GameObject target) {
+        CheckProjectedButton(spec, button, target);
         var graphic=target?target.GetComponent<UnityEngine.UI.Graphic>():null;
         if(button==null||button.enabled||button.targetGraphic!=graphic||button.interactable!=spec.interactable||button.transition!=(spec.transition==1?UnityEngine.UI.Selectable.Transition.ColorTint:UnityEngine.UI.Selectable.Transition.None))return false;
         var retained=button.GetComponent<NativeStaticButtonTarget>();
@@ -143,6 +148,7 @@ public static partial class MonkeyImporter
     [Serializable] public class LabelResult { public string sourceId, text, fontGuid, geometryProbe; public bool autoSizeReadback,autoSizing; public float fontSizeMin,fontSizeMax; public float fontSize,lineBoxHeight,lineBoxLineHeight,lineBoxExtra; public string bitmapMissingGlyphPolicy,bitmapDisplayText; public bool bitmapMissingGlyphProofVerified; public int characterCount,lineCount; public bool lineBoxPresent,lineBoxActive; public bool allCharactersPresent; public GlyphBounds[] glyphBounds; }
     [Serializable] public class GlyphBounds { public uint unicode; public float left,top,width,height,quadPadding; }
     [Serializable] public class Readback {
+        public string buttonMaterialProjectionSha256;
         public SourceComponentCoverage[] components,sceneComponents;
         public string sceneComponentContract,sceneComponentPhase;
         public SourcePresentationCoverage staticPresentationValidation;
@@ -503,6 +509,7 @@ public static partial class MonkeyImporter
     {
         ValidateEditorContext();
         var plan = JsonUtility.FromJson<Plan>(File.ReadAllText(Paths.plan));
+        ApplyButtonMaterialProjection(plan);
         var diagnostics = new List<string>();
         foreach(var directory in new[]{Path.GetDirectoryName(PrefabPath),Path.GetDirectoryName(ScenePath),Path.GetDirectoryName(BootstrapPath),Path.GetDirectoryName(Paths.editableProbe),Paths.artRoot,Paths.controllersRoot,Paths.materialsRoot,"Analysis/Readback"})
             Directory.CreateDirectory(directory);
@@ -846,6 +853,7 @@ public static partial class MonkeyImporter
             var button=nodeMap[spec.node].GetComponent<UnityEngine.UI.Button>();
             var target=string.IsNullOrEmpty(spec.target)?nodeMap[spec.node]:nodeMap[spec.target];
             button.targetGraphic=target.GetComponent<UnityEngine.UI.Graphic>();
+            CheckProjectedButton(spec, button, target);
             var retained=button.gameObject.AddComponent<NativeStaticButtonTarget>();
             retained.Target=target;retained.SourceEnabled=spec.staticButtonBinding.sourceEnabled;retained.SourceTransition=spec.transition;retained.SourceZoomScale=spec.zoomScale;retained.SourceDuration=spec.duration;retained.enabled=false;
             if(spec.transition==1&&button.targetGraphic==null&&plan.components.Any(c=>c.node==spec.target&&(c.type=="cc.Sprite"||c.type=="cc.Label"||c.type=="cc.RichText")))
@@ -1169,6 +1177,7 @@ public static partial class MonkeyImporter
         readback.staticSpineReadbackFiles=spineAuxiliaryFiles.OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray();
         readback.staticTextReadbackFiles=Directory.Exists("Analysis/Readback/TextMetrics")?Directory.GetFiles("Analysis/Readback/TextMetrics","*.json").OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray():new FileResult[0];
         readback.staticMaskReadbackFiles=Directory.Exists("Analysis/Readback/MaskClipping")?Directory.GetFiles("Analysis/Readback/MaskClipping").Where(path=>path.EndsWith(".json",StringComparison.Ordinal)||path.EndsWith(".png",StringComparison.Ordinal)).OrderBy(path=>path,StringComparer.Ordinal).Select(path=>new FileResult{path=path.Replace('\\','/'),sha256=Hash(path)}).ToArray():new FileResult[0];
+        StampButtonMaterialProjection(readback);
         File.WriteAllText("Analysis/Readback/editor-readback.json",JsonUtility.ToJson(readback,true));
         nativeProgress.phase="complete";nativeProgress.processed=1;nativeProgress.total=1;WriteNativeProgress(readback.status=="imported"?"completed":"completed_partial");
         Debug.Log("Monkey native import: "+readback.status+"; readback Analysis/Readback/editor-readback.json");
