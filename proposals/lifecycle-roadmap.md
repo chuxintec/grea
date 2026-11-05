@@ -6,7 +6,7 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T15:12:28.759217+08:00",
+  "updatedAt": "2026-11-05T15:14:41.286178+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "新增游戏工程、转换导出、开发、实图和放行统一使用 Unity。Cocos 原包仍可作为恢复输入；Cocos/Creator 目标仅保留既有显式兼容入口和历史证据，暂停新增开发、主动修复与原生验收。 当前三线与dev29双审按Unity验收。显式材质Mask阻塞晋升。",
@@ -629,9 +629,10 @@
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev30-dual-review/RESULT.md",
         ".private/development/audit-remediation-20261105/dev31-review/RESULT.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev31-dual-review/RESULT.md",
-        ".private/development/audit-remediation-20261105/dev32-review/RESULT.json"
+        ".private/development/audit-remediation-20261105/dev32-review/RESULT.json",
+        ".private/development/audit-remediation-20261105/dev33-review/RESULT.json"
       ],
-      "nextAction": "dev31双审HOLD。dev32四页6个矩形、1695三图、1930及额外真实禁用矩形的像素通过；消费端合并两条真实正例仍误拒，主开发已接退修，固定dev32已交双审。40项视觉仍需另验。",
+      "nextAction": "dev33/7fbf2cb固定包复用dev32真实PNG：1695单行/两行/三行通过，中间行三类篡改仅该行拒绝，四页6条裁剪通过。已交同字节独立双审；原40张人审单独执行。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
