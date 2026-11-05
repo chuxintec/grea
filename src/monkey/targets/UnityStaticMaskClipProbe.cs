@@ -15,7 +15,7 @@ public static partial class MonkeyImporter
 {
     [Serializable] public sealed class MaskClipProbeReadback
     {
-        public string sourceId, node, status, method, stimulus, imagePath, imageSha256, evidencePath;
+        public string sourceId, node, status, method, probeProfile, stimulus, imagePath, imageSha256, evidencePath;
         public string expectedInsidePixelClass, expectedOutsidePixelClass;
         public bool supported, sourceGeometryVerified, sourceNodeActiveSelf, sourceNodeActiveInHierarchy,
             sourceMaskEnabled, sourceStatePreserved, probeHostOwned, probeObjectsDestroyed,
@@ -24,7 +24,16 @@ public static partial class MonkeyImporter
             maskInsidePointAccepted, maskOutsidePointRejected, childGraphicInsideAccepted,
             childGraphicOutsideRejected, disabledChildGraphicOutsideAccepted,
             stencilClipVerified, disabledNoClipVerified, probeMaskActiveInHierarchy, probeChildActiveInHierarchy,
-            sourceAppFrame, sourceVisualParityClaimed, verified;
+            sourceAppFrame, sourceVisualParityClaimed, verified, stimulusSpriteVerified, stimulusObjectsDestroyed;
+        public bool sourceTextureAlphaVerified, sourceMaskMaterialVerified, alphaSamplesVerified;
+        public string sourceSpriteFrameId, sourceSpriteGuid, sourceTextureId, sourceTexturePath, sourceTextureGuid,
+            sourceTextureSha256, sourceTextureFormat, sourceTextureImportMode, sourceTextureMeshType,
+            sourceTextureCompression, sourceTextureAlphaSource, sourceMaterialGuid, sourceMaterialShaderPath,
+            sourceMaterialShaderSha256, alphaDiscardPolicy;
+        public long sourceSpriteLocalFileId;
+        public int sourceTextureWidth, sourceTextureHeight;
+        public float sourceAlphaThreshold;
+        public MaskClipAlphaSample[] sourceAlphaSamples;
         public int imageWidth, imageHeight;
         public float[] insideLocalPoint, outsideLocalPoint, insideWorldPoint, outsideWorldPoint;
         public float[] insideViewportPoint, outsideViewportPoint;
@@ -32,8 +41,35 @@ public static partial class MonkeyImporter
         public string[] diagnostics;
     }
 
-    const string MaskClipProbeMethod="unity-ui-mask-stencil-rendertexture-v1";
-    const int MaskClipProbeSize=256;
+    [Serializable] public sealed class MaskClipAlphaSample
+    {
+        public string kind;
+        public bool sourceAlphaPass, expectedVisible, pixelVerified;
+        public int sourceAlphaByte;
+        public float sourceAlpha;
+        public int[] sourceTexturePixel, pixel, rgba;
+        public float[] localPoint, viewportPoint;
+    }
+
+    sealed class MaskClipImageInput
+    {
+        public TextureSpec textureSpec;
+        public Sprite sprite;
+        public Texture2D decodedSourceTexture;
+        public TextureImporter importer;
+        public byte[] sourceBytes;
+        public Rect textureRect;
+        public string textureGuid,spriteGuid,materialGuid,shaderPath,shaderSha256,textureFormat;
+        public long spriteLocalFileId;
+        public Color32[] sourcePixels;
+        public int width,height;
+    }
+
+    const string MaskClipRectMethod="unity-ui-mask-stencil-rendertexture-v2";
+    const string MaskClipImageMethod="unity-ui-mask-alpha-stencil-rendertexture-v1";
+    const string MaskClipImageProfile="sprite-alpha-threshold";
+    const int MaskClipRectProbeSize=256;
+    const int MaskClipImageProbeSize=512;
 
     static bool MaskClipNearly(float a,float b,float epsilon=.001f)
     {
@@ -130,6 +166,131 @@ public static partial class MonkeyImporter
             return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();
     }
 
+    static bool TryMaskClipImageInput(Plan plan,MaskSpec spec,Image sourceImage,out MaskClipImageInput input,out string diagnostic)
+    {
+        input=null;diagnostic=null;
+        if(spec.maskType!=2||String.IsNullOrEmpty(spec.spriteFrameUuid)||sourceImage==null||sourceImage.sprite==null)
+        {diagnostic="image-mask-source-sprite-absent";return false;}
+        var sourceSeparator=(spec.sourceId??String.Empty).IndexOf(':');
+        if(sourceSeparator<=0||sourceSeparator==spec.sourceId.Length-1||spec.spriteFrameUuid.Contains(":"))
+        {diagnostic="image-mask-source-and-sprite-bundle-identity-invalid";return false;}
+        var textureId=spec.sourceId.Substring(0,sourceSeparator)+":"+spec.spriteFrameUuid;
+        var textureRows=(plan.textures??Array.Empty<TextureSpec>()).Where(row=>row!=null&&row.id==textureId).ToArray();
+        if(textureRows.Length!=1)
+        {diagnostic="image-mask-source-texture-id-absent-or-ambiguous";return false;}
+        var textureSpec=textureRows[0];
+        if(String.IsNullOrEmpty(textureSpec.path)||!textureSpec.path.StartsWith("Assets/",StringComparison.Ordinal)||
+            textureSpec.path.Contains("..")||textureSpec.size==null||textureSpec.size.Length<2)
+        {diagnostic="image-mask-source-texture-plan-row-invalid";return false;}
+        var sprite=sourceImage.sprite;var sourceTexture=sprite.texture;
+        var sourceSpritePath=AssetDatabase.GetAssetPath(sprite);
+        var sourceTexturePath=AssetDatabase.GetAssetPath(sourceTexture);
+        if(sourceTexture==null||sprite.packed||sourceSpritePath!=textureSpec.path||sourceTexturePath!=textureSpec.path)
+        {diagnostic="image-mask-source-sprite-does-not-map-to-one-unpacked-plan-texture";return false;}
+        if(sourceImage.type!=Image.Type.Simple||sourceImage.useSpriteMesh||sourceImage.preserveAspect||
+            sourceImage.pixelsPerUnitMultiplier!=1f||sprite.border.sqrMagnitude>0.000001f)
+        {diagnostic="image-mask-source-Image-layout-is-outside-verified-Simple-FullRect-profile";return false;}
+        var importer=AssetImporter.GetAtPath(textureSpec.path) as TextureImporter;
+        if(importer==null||importer.textureType!=TextureImporterType.Sprite||importer.spriteImportMode!=SpriteImportMode.Single||
+            importer.textureCompression!=TextureImporterCompression.Uncompressed||importer.alphaSource!=TextureImporterAlphaSource.FromInput||
+            importer.mipmapEnabled||importer.npotScale!=TextureImporterNPOTScale.None)
+        {diagnostic="image-mask-source-texture-import-settings-are-not-verified-Single-FullRect-uncompressed-alpha";return false;}
+        var settings=new TextureImporterSettings();importer.ReadTextureSettings(settings);
+        if(settings.spriteMeshType!=SpriteMeshType.FullRect)
+        {diagnostic="image-mask-source-Sprite-mesh-is-not-FullRect";return false;}
+        var textureRect=sprite.textureRect;
+        if(!MaskClipNearly(textureRect.x,0)||!MaskClipNearly(textureRect.y,0)||
+            !MaskClipNearly(textureRect.width,sourceTexture.width)||!MaskClipNearly(textureRect.height,sourceTexture.height)||
+            !MaskClipNearly(textureSpec.size[0],sourceTexture.width)||!MaskClipNearly(textureSpec.size[1],sourceTexture.height)||
+            !MaskClipNearly(sprite.rect.width,sourceTexture.width)||!MaskClipNearly(sprite.rect.height,sourceTexture.height))
+        {diagnostic="image-mask-source-Sprite-does-not-cover-the-exact-plan-texture-rectangle";return false;}
+        var material=sourceImage.material;
+        if(material==null||material.shader==null||material.shader.name!="Monkey/NativeStaticImageMask"||
+            !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material,out var materialGuid,out long _)||
+            materialGuid!=spec.unityMaskMaterialGuid||material.GetFloat("_AlphaThreshold")!=spec.alphaThreshold)
+        {diagnostic="image-mask-source-material-identity-or-alpha-threshold-differs";return false;}
+        var shaderPath=AssetDatabase.GetAssetPath(material.shader);
+        if(shaderPath!=spec.unityMaskShaderPath||String.IsNullOrEmpty(shaderPath))
+        {diagnostic="image-mask-source-shader-path-differs";return false;}
+        var shaderAbsolute=Path.GetFullPath(Path.Combine(Application.dataPath,"..",shaderPath));
+        if(!File.Exists(shaderAbsolute))
+        {diagnostic="image-mask-source-shader-file-absent";return false;}
+        var shaderSha=MaskClipHash(File.ReadAllBytes(shaderAbsolute));
+        if(shaderSha!=spec.unityMaskShaderSha256)
+        {diagnostic="image-mask-source-shader-hash-differs";return false;}
+        var textureAbsolute=Path.GetFullPath(Path.Combine(Application.dataPath,"..",textureSpec.path));
+        if(!File.Exists(textureAbsolute))
+        {diagnostic="image-mask-source-PNG-file-absent";return false;}
+        var sourceBytes=File.ReadAllBytes(textureAbsolute);
+        var decoded=new Texture2D(2,2,TextureFormat.RGBA32,false,true);
+        decoded.name="__MaskClipSourceAlpha";decoded.hideFlags=HideFlags.HideAndDontSave;
+        if(!ImageConversion.LoadImage(decoded,sourceBytes,false)||decoded.width!=sourceTexture.width||decoded.height!=sourceTexture.height)
+        {UnityEngine.Object.DestroyImmediate(decoded);diagnostic="image-mask-source-PNG-decode-or-dimension-check-failed";return false;}
+        if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sprite,out var spriteGuid,out long spriteLocal)||
+            String.IsNullOrEmpty(spriteGuid)||spriteLocal==0)
+        {UnityEngine.Object.DestroyImmediate(decoded);diagnostic="image-mask-source-Sprite-persistent-identity-absent";return false;}
+        var textureGuid=AssetDatabase.AssetPathToGUID(textureSpec.path);
+        if(String.IsNullOrEmpty(textureGuid)||textureGuid!=spriteGuid)
+        {UnityEngine.Object.DestroyImmediate(decoded);diagnostic="image-mask-source-texture-and-Sprite-GUID-differ";return false;}
+        input=new MaskClipImageInput{textureSpec=textureSpec,sprite=sprite,decodedSourceTexture=decoded,importer=importer,
+            sourceBytes=sourceBytes,textureRect=textureRect,textureGuid=textureGuid,spriteGuid=spriteGuid,
+            spriteLocalFileId=spriteLocal,materialGuid=materialGuid,shaderPath=shaderPath,shaderSha256=shaderSha,
+            textureFormat=sourceTexture.format.ToString(),sourcePixels=decoded.GetPixels32(),width=decoded.width,height=decoded.height};
+        return true;
+    }
+
+    static bool MaskClipAlphaPass(byte alpha,float threshold)
+    {
+        return alpha/255f>=threshold;
+    }
+
+    static Vector2 MaskClipImageLocalPoint(Rect localRect,Rect textureRect,int x,int y)
+    {
+        var u=(x+.5f-textureRect.x)/textureRect.width;
+        var v=(y+.5f-textureRect.y)/textureRect.height;
+        return new Vector2(localRect.xMin+u*localRect.width,localRect.yMin+v*localRect.height);
+    }
+
+    static bool MaskClipAlphaPixel(MaskClipImageInput input,int alpha,float threshold,bool nonzeroOnly,out int x,out int y)
+    {
+        x=y=-1;
+        var xMin=Mathf.Max(0,Mathf.CeilToInt(input.textureRect.x));
+        var yMin=Mathf.Max(0,Mathf.CeilToInt(input.textureRect.y));
+        var xMax=Mathf.Min(input.width,Mathf.FloorToInt(input.textureRect.xMax));
+        var yMax=Mathf.Min(input.height,Mathf.FloorToInt(input.textureRect.yMax));
+        var best=-1;
+        for(var py=yMin+2;py<yMax-2;py++)for(var px=xMin+2;px<xMax-2;px++)
+        {
+            var value=input.sourcePixels[py*input.width+px].a;
+            var matches=alpha==-1?(MaskClipAlphaPass(value,threshold)&&(!nonzeroOnly||value>0)):
+                alpha==-2?(!MaskClipAlphaPass(value,threshold)&&value>0):value==alpha&&(!nonzeroOnly||value>0);
+            if(!matches)continue;
+            var stable=true;
+            for(var dy=-2;dy<=2&&stable;dy++)for(var dx=-2;dx<=2;dx++)
+            {
+                var neighbor=input.sourcePixels[(py+dy)*input.width+px+dx].a;
+                var neighborMatches=alpha==-1?(MaskClipAlphaPass(neighbor,threshold)&&(!nonzeroOnly||neighbor>0)):
+                    alpha==-2?(!MaskClipAlphaPass(neighbor,threshold)&&neighbor>0):neighbor==alpha&&(!nonzeroOnly||neighbor>0);
+                if(!neighborMatches){stable=false;break;}
+            }
+            if(stable&&value>best){best=value;x=px;y=py;}
+        }
+        return x>=0&&y>=0;
+    }
+
+    static MaskClipAlphaSample MaskClipBuildAlphaSample(MaskClipImageInput input,Rect localRect,
+        MaskSpec spec,string kind,int requestedAlpha)
+    {
+        if(input==null)return null;
+        if(!MaskClipAlphaPixel(input,requestedAlpha,spec.alphaThreshold,false,out var x,out var y))return null;
+        var alpha=input.sourcePixels[y*input.width+x].a;
+        var passes=MaskClipAlphaPass(alpha,spec.alphaThreshold);
+        var point=MaskClipImageLocalPoint(localRect,input.textureRect,x,y);
+        return new MaskClipAlphaSample{kind=kind,sourceAlphaByte=alpha,sourceAlpha=alpha/255f,
+            sourceAlphaPass=passes,expectedVisible=!spec.enabled||passes,
+            sourceTexturePixel=new[]{x,y},localPoint=new[]{point.x,point.y}};
+    }
+
     static string MaskClipEvidenceRoot()
     {
         var projectRoot=Directory.GetParent(Application.dataPath);
@@ -142,8 +303,10 @@ public static partial class MonkeyImporter
         var result=new MaskClipProbeReadback
         {
             sourceId=spec==null?null:spec.sourceId,node=spec==null?null:spec.node,
-            status="gap",method=MaskClipProbeMethod,stimulus="temporary-white-child-image-on-transparent-world-space-canvas",
-            supported=spec!=null&&spec.maskType==0&&!spec.inverted,
+            status="gap",method=spec!=null&&spec.maskType==2?MaskClipImageMethod:MaskClipRectMethod,
+            probeProfile=spec!=null&&spec.maskType==2?MaskClipImageProfile:"rect",
+            stimulus="owned-white-sprite-child-on-transparent-world-space-canvas",
+            supported=spec!=null&&!spec.inverted&&(spec.maskType==0||spec.maskType==2),
             sourceMaskEnabled=spec!=null&&spec.enabled,
             sourceNodeActiveSelf=loadedSource!=null&&loadedSource.activeSelf,
             sourceNodeActiveInHierarchy=loadedSource!=null&&loadedSource.activeInHierarchy,
@@ -153,8 +316,10 @@ public static partial class MonkeyImporter
         };
         var diagnostics=new List<string>();var pngBytes=null as byte[];
         GameObject host=null,cameraObject=null;Camera probeCamera=null;Canvas probeCanvas=null;
-        RectTransform probeMaskRect=null;Mask probeMask=null;Image childGraphic=null;
-        RenderTexture renderTexture=null;Texture2D readbackTexture=null;var priorActiveTexture=RenderTexture.active;
+        GameObject childObject=null;RectTransform probeMaskRect=null;Mask probeMask=null;Image childGraphic=null;
+        RenderTexture renderTexture=null;Texture2D readbackTexture=null,stimulusTexture=null;
+        Sprite stimulusSprite=null;MaskClipImageInput imageInput=null;var priorActiveTexture=RenderTexture.active;
+        var probeSize=spec!=null&&spec.maskType==2?MaskClipImageProbeSize:MaskClipRectProbeSize;
         Scene probeScene=default(Scene);
         var sourceActiveSelfBefore=loadedSource!=null&&loadedSource.activeSelf;
         var sourceActiveHierarchyBefore=loadedSource!=null&&loadedSource.activeInHierarchy;
@@ -168,7 +333,7 @@ public static partial class MonkeyImporter
             if(spec==null||loadedSource==null)
             {diagnostics.Add("source-mask-or-loaded-node-absent");break;}
             if(!result.supported)
-            {diagnostics.Add("clip-probe-supports-only-noninverted-rect-mask-type-0");break;}
+            {diagnostics.Add("clip-probe-supports-only-noninverted-rect-or-pinned-image-alpha-mask");break;}
             if(sourceMask==null||loadedSource.GetComponent<NativeStaticMaskIdentity>()==null)
             {diagnostics.Add("source-native-mask-or-identity-absent");break;}
             if(!MaskClipSourceGeometry(plan,spec,loadedSource,out sourceRect,out sourceActiveSelf,out sourceActive,out geometryDiagnostic))
@@ -176,9 +341,28 @@ public static partial class MonkeyImporter
                 diagnostics.Add(geometryDiagnostic??"source-geometry-unverified");break;}
             var identity=loadedSource.GetComponent<NativeStaticMaskIdentity>();
             var sourceGraphic=loadedSource.GetComponent<Graphic>();
-            var sourceTypedReadback=UnityStaticMaskSort.ReadStaticMask(spec,loadedSource,id=>null);
+            var sourceImage=sourceGraphic as Image;
+            if(spec.maskType==2)
+            {
+                if(!TryMaskClipImageInput(plan,spec,sourceImage,out imageInput,out var imageInputDiagnostic))
+                {diagnostics.Add(imageInputDiagnostic??"image-mask-source-input-unverified");break;}
+                result.probeProfile=MaskClipImageProfile;result.sourceSpriteFrameId=spec.spriteFrameUuid;
+                result.sourceSpriteGuid=imageInput.spriteGuid;result.sourceSpriteLocalFileId=imageInput.spriteLocalFileId;
+                result.sourceTextureId=imageInput.textureSpec.id;result.sourceTexturePath=imageInput.textureSpec.path;
+                result.sourceTextureGuid=imageInput.textureGuid;result.sourceTextureSha256=MaskClipHash(imageInput.sourceBytes);
+                result.sourceTextureFormat=imageInput.textureFormat;
+                result.sourceTextureImportMode=imageInput.importer.spriteImportMode.ToString();
+                result.sourceTextureMeshType="FullRect";result.sourceTextureCompression=imageInput.importer.textureCompression.ToString();
+                result.sourceTextureAlphaSource=imageInput.importer.alphaSource.ToString();
+                result.sourceTextureWidth=imageInput.width;result.sourceTextureHeight=imageInput.height;
+                result.sourceMaterialGuid=imageInput.materialGuid;result.sourceMaterialShaderPath=imageInput.shaderPath;
+                result.sourceMaterialShaderSha256=imageInput.shaderSha256;result.alphaDiscardPolicy="discard-if-source-alpha-less-than-threshold";
+                result.sourceAlphaThreshold=spec.alphaThreshold;result.sourceTextureAlphaVerified=true;result.sourceMaskMaterialVerified=true;
+            }
+            var sourceTypedReadback=UnityStaticMaskSort.ReadStaticMask(spec,loadedSource,
+                id=>imageInput!=null&&id==spec.spriteFrameUuid?imageInput.sprite:null);
             if(identity.sourceId!=spec.sourceId||identity.nativeId!=spec.nativeId||sourceMask.enabled!=spec.enabled||
-                sourceMask.showMaskGraphic||sourceGraphic==null||!(sourceGraphic is Image)||
+                sourceMask.showMaskGraphic||sourceGraphic==null||sourceImage==null||
                 sourceGraphic.enabled!=spec.enabled||sourceGraphic.raycastTarget||!sourceTypedReadback.verified)
             {diagnostics.Add("source-mask-typed-identity-or-graphic-setup-differs");break;}
             var rect=sourceRect.rect;
@@ -186,6 +370,19 @@ public static partial class MonkeyImporter
                 Single.IsInfinity(rect.width)||Single.IsInfinity(rect.height))
             {diagnostics.Add("source-rect-mask-geometry-degenerate");break;}
             var outsideLocal=MaskClipExpectedOutsidePoint(rect);var insideLocal=rect.center;
+            if(imageInput!=null)
+            {
+                var samples=new List<MaskClipAlphaSample>();
+                var alphaZero=MaskClipBuildAlphaSample(imageInput,rect,spec,"transparent-zero",0);
+                var alphaOpaque=MaskClipBuildAlphaSample(imageInput,rect,spec,"opaque",255);
+                var alphaOne=MaskClipBuildAlphaSample(imageInput,rect,spec,"low-nonzero",1);
+                if(alphaOne==null&&spec.alphaThreshold>0)
+                    alphaOne=MaskClipBuildAlphaSample(imageInput,rect,spec,"under-threshold-nonzero",-2);
+                if(alphaZero==null||alphaOpaque==null)
+                {diagnostics.Add("image-mask-source-lacks-stable-transparent-or-passing-alpha-sample");break;}
+                samples.Add(alphaOpaque);samples.Add(alphaZero);if(alphaOne!=null)samples.Add(alphaOne);
+                result.sourceAlphaSamples=samples.ToArray();insideLocal=new Vector2(alphaOpaque.localPoint[0],alphaOpaque.localPoint[1]);
+            }
             result.insideLocalPoint=new[]{insideLocal.x,insideLocal.y};
             result.outsideLocalPoint=new[]{outsideLocal.x,outsideLocal.y};
             result.sourceGeometryVerified=true;result.sourceNodeActiveSelf=sourceActiveSelf;
@@ -195,7 +392,7 @@ public static partial class MonkeyImporter
             var worldScale=sourceRect.localScale;
             var spanX=Mathf.Abs(rect.width*worldScale.x)+Mathf.Abs(rect.height*worldScale.y);
             var spanY=Mathf.Abs(rect.width*worldScale.x)+Mathf.Abs(rect.height*worldScale.y);
-            var canvasSide=Mathf.Max(4f*Mathf.Max(spanX,spanY),4f);
+            var canvasSide=Mathf.Max((imageInput!=null?2.5f:4f)*Mathf.Max(spanX,spanY),4f);
             const int probeLayer=31;
             probeScene=EditorSceneManager.NewPreviewScene();result.probeSceneCreated=probeScene.IsValid();
             if(!result.probeSceneCreated){diagnostics.Add("disposable-preview-scene-unavailable");break;}
@@ -229,26 +426,40 @@ public static partial class MonkeyImporter
             probeMaskRect.localScale=sourceRect.localScale;probeMaskRect.localRotation=sourceRect.localRotation;
             var centerFromPivot=new Vector3((.5f-probePivot.x)*rect.width,(.5f-probePivot.y)*rect.height,0);
             probeMaskRect.anchoredPosition3D=-(probeMaskRect.localRotation*Vector3.Scale(probeMaskRect.localScale,centerFromPivot));
+            stimulusTexture=new Texture2D(1,1,TextureFormat.RGBA32,false,true);
+            stimulusTexture.name="__MaskClipOpaqueWhite";stimulusTexture.hideFlags=HideFlags.HideAndDontSave;
+            stimulusTexture.filterMode=FilterMode.Point;stimulusTexture.wrapMode=TextureWrapMode.Clamp;
+            stimulusTexture.SetPixel(0,0,Color.white);stimulusTexture.Apply(false,false);
+            stimulusSprite=Sprite.Create(stimulusTexture,new Rect(0,0,1,1),new Vector2(.5f,.5f),1f,0,SpriteMeshType.FullRect);
+            stimulusSprite.name="__MaskClipOpaqueWhiteSprite";stimulusSprite.hideFlags=HideFlags.HideAndDontSave;
+            result.stimulusSpriteVerified=stimulusTexture.GetPixel(0,0).a>=.999f&&stimulusSprite!=null&&stimulusSprite.rect.width==1&&stimulusSprite.rect.height==1;
+            if(!result.stimulusSpriteVerified){diagnostics.Add("owned-white-sprite-stimulus-invalid");break;}
             var maskGraphic=probeMaskObject.AddComponent<Image>();maskGraphic.color=Color.white;
+            maskGraphic.type=Image.Type.Simple;maskGraphic.preserveAspect=false;maskGraphic.useSpriteMesh=false;
+            maskGraphic.sprite=imageInput==null?stimulusSprite:imageInput.sprite;
+            maskGraphic.material=imageInput==null?null:sourceImage.material;
             maskGraphic.raycastTarget=false;maskGraphic.enabled=spec.enabled;
             probeMask=probeMaskObject.AddComponent<Mask>();probeMask.showMaskGraphic=false;probeMask.enabled=spec.enabled;
 
-            var childObject=new GameObject("__MaskClipProbeChild",typeof(RectTransform),typeof(CanvasRenderer));
+            childObject=new GameObject("__MaskClipProbeChild",typeof(RectTransform),typeof(CanvasRenderer));
             childObject.hideFlags=HideFlags.HideAndDontSave;childObject.layer=probeLayer;
             childObject.transform.SetParent(probeMaskObject.transform,false);
             var childRect=(RectTransform)childObject.transform;
             childRect.anchorMin=childRect.anchorMax=new Vector2(.5f,.5f);childRect.pivot=new Vector2(.5f,.5f);
-            childRect.sizeDelta=new Vector2(rect.width*1.5f,rect.height*.75f);
-            childRect.anchoredPosition=new Vector2((outsideLocal.x-insideLocal.x)*.5f,0);
+            childRect.sizeDelta=new Vector2(rect.width*1.5f,rect.height*1.5f);
+            childRect.anchoredPosition=new Vector2(rect.center.x+rect.width*.5f,rect.center.y);
             childRect.localScale=Vector3.one;childRect.localRotation=Quaternion.identity;
             childGraphic=childObject.AddComponent<Image>();childGraphic.color=Color.white;
+            childGraphic.type=Image.Type.Simple;childGraphic.preserveAspect=false;childGraphic.useSpriteMesh=false;
+            childGraphic.sprite=stimulusSprite;
             childGraphic.raycastTarget=true;childGraphic.maskable=true;
+            result.stimulusObjectsDestroyed=false;
             probeMaskObject.SetActive(true);childObject.SetActive(true);
             result.probeMaskActiveInHierarchy=probeMaskObject.activeInHierarchy;
             result.probeChildActiveInHierarchy=childObject.activeInHierarchy;
             if(!result.probeMaskActiveInHierarchy||!result.probeChildActiveInHierarchy)
             {diagnostics.Add("disposable-mask-or-child-not-active-for-probe");break;}
-            renderTexture=new RenderTexture(MaskClipProbeSize,MaskClipProbeSize,24,RenderTextureFormat.ARGB32);
+            renderTexture=new RenderTexture(probeSize,probeSize,24,RenderTextureFormat.ARGB32);
             renderTexture.name="__MaskClipProbeRT";renderTexture.hideFlags=HideFlags.HideAndDontSave;
             if(!renderTexture.Create()||renderTexture.depth<24||!SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGB32))
             {diagnostics.Add("stencil-rendertexture-backend-unavailable");break;}
@@ -263,20 +474,20 @@ public static partial class MonkeyImporter
             result.outsideWorldPoint=new[]{outsideWorld.x,outsideWorld.y,outsideWorld.z};
             result.insideViewportPoint=new[]{insideViewport.x,insideViewport.y,insideViewport.z};
             result.outsideViewportPoint=new[]{outsideViewport.x,outsideViewport.y,outsideViewport.z};
-            var ix=Mathf.FloorToInt(insideViewport.x*MaskClipProbeSize);var iy=Mathf.FloorToInt(insideViewport.y*MaskClipProbeSize);
-            var ox=Mathf.FloorToInt(outsideViewport.x*MaskClipProbeSize);var oy=Mathf.FloorToInt(outsideViewport.y*MaskClipProbeSize);
+            var ix=Mathf.FloorToInt(insideViewport.x*probeSize);var iy=Mathf.FloorToInt(insideViewport.y*probeSize);
+            var ox=Mathf.FloorToInt(outsideViewport.x*probeSize);var oy=Mathf.FloorToInt(outsideViewport.y*probeSize);
             result.insidePixel=new[]{ix,iy};result.outsidePixel=new[]{ox,oy};
-            if(ix<0||iy<0||ix>=MaskClipProbeSize||iy>=MaskClipProbeSize||ox<0||oy<0||
-                ox>=MaskClipProbeSize||oy>=MaskClipProbeSize||insideViewport.z<=0||outsideViewport.z<=0)
+            if(ix<0||iy<0||ix>=probeSize||iy>=probeSize||ox<0||oy<0||
+                ox>=probeSize||oy>=probeSize||insideViewport.z<=0||outsideViewport.z<=0)
             {diagnostics.Add("inside-or-outside-sample-point-falls-outside-camera");break;}
-            readbackTexture=new Texture2D(MaskClipProbeSize,MaskClipProbeSize,TextureFormat.RGBA32,false,true);
+            readbackTexture=new Texture2D(probeSize,probeSize,TextureFormat.RGBA32,false,true);
             RenderTexture.active=renderTexture;
-            readbackTexture.ReadPixels(new Rect(0,0,MaskClipProbeSize,MaskClipProbeSize),0,0,false);
+            readbackTexture.ReadPixels(new Rect(0,0,probeSize,probeSize),0,0,false);
             readbackTexture.Apply(false,false);
             var insidePixel=readbackTexture.GetPixel(ix,iy);var outsidePixel=readbackTexture.GetPixel(ox,oy);
             var inside32=(Color32)insidePixel;var outside32=(Color32)outsidePixel;
             result.insideRgba=MaskClipPixel(inside32);result.outsideRgba=MaskClipPixel(outside32);
-            result.imageWidth=MaskClipProbeSize;result.imageHeight=MaskClipProbeSize;
+            result.imageWidth=probeSize;result.imageHeight=probeSize;
             pngBytes=readbackTexture.EncodeToPNG();result.imageSha256=MaskClipHash(pngBytes);
             result.pixelReadbackVerified=true;
             result.insidePixelVerified=MaskClipExpectedOpaqueWhite(inside32);
@@ -289,8 +500,32 @@ public static partial class MonkeyImporter
             var childOutsideAccepted=childGraphic.Raycast(outsideScreen,probeCamera);
             result.childGraphicOutsideRejected=spec.enabled&&!childOutsideAccepted;
             result.disabledChildGraphicOutsideAccepted=!spec.enabled&&childOutsideAccepted;
-            result.stencilClipVerified=spec.enabled&&result.insidePixelVerified&&result.outsidePixelVerified;
-            result.disabledNoClipVerified=!spec.enabled&&result.insidePixelVerified&&result.outsidePixelVerified;
+            result.alphaSamplesVerified=imageInput==null;
+            if(imageInput!=null)
+            {
+                var alphaSamples=result.sourceAlphaSamples??Array.Empty<MaskClipAlphaSample>();
+                var alphaPass=true;
+                foreach(var sample in alphaSamples)
+                {
+                    var local=new Vector2(sample.localPoint[0],sample.localPoint[1]);
+                    var world=probeMaskRect.TransformPoint(new Vector3(local.x,local.y,0));
+                    var viewport=probeCamera.WorldToViewportPoint(world);
+                    sample.viewportPoint=new[]{viewport.x,viewport.y,viewport.z};
+                    var sx=Mathf.FloorToInt(viewport.x*probeSize);var sy=Mathf.FloorToInt(viewport.y*probeSize);
+                    if(sx<0||sy<0||sx>=probeSize||sy>=probeSize||viewport.z<=0)
+                    {sample.pixelVerified=false;alphaPass=false;continue;}
+                    sample.pixel=new[]{sx,sy};
+                    var pixel=(Color32)readbackTexture.GetPixel(sx,sy);sample.rgba=MaskClipPixel(pixel);
+                    var expectedVisible=!spec.enabled||sample.sourceAlphaPass;
+                    sample.expectedVisible=expectedVisible;
+                    sample.pixelVerified=expectedVisible?MaskClipExpectedOpaqueWhite(pixel):MaskClipExpectedClear(pixel);
+                    alphaPass&=sample.pixelVerified;
+                }
+                result.alphaSamplesVerified=alphaSamples.Length>=2&&alphaPass;
+                if(!result.alphaSamplesVerified)diagnostics.Add("source-alpha-threshold-samples-do-not-match-native-stencil-output");
+            }
+            result.stencilClipVerified=spec.enabled&&result.insidePixelVerified&&result.outsidePixelVerified&&result.alphaSamplesVerified;
+            result.disabledNoClipVerified=!spec.enabled&&result.insidePixelVerified&&result.outsidePixelVerified&&result.alphaSamplesVerified;
             if(!result.insidePixelVerified)diagnostics.Add("inside-stimulus-pixel-is-not-opaque-white");
             if(!result.outsidePixelVerified)diagnostics.Add(spec.enabled?"outside-stimulus-pixel-was-not-stencil-clipped":"disabled-mask-outside-stimulus-was-not-visible");
             if(!result.maskInsidePointAccepted||(spec.enabled?!result.maskOutsidePointRejected:result.maskOutsidePointRejected))
@@ -312,9 +547,14 @@ public static partial class MonkeyImporter
             if(renderTexture!=null){renderTexture.Release();UnityEngine.Object.DestroyImmediate(renderTexture);}
             if(cameraObject!=null)UnityEngine.Object.DestroyImmediate(cameraObject);
             if(host!=null)UnityEngine.Object.DestroyImmediate(host);
+            if(stimulusSprite!=null)UnityEngine.Object.DestroyImmediate(stimulusSprite);
+            if(stimulusTexture!=null)UnityEngine.Object.DestroyImmediate(stimulusTexture);
+            if(imageInput!=null&&imageInput.decodedSourceTexture!=null)UnityEngine.Object.DestroyImmediate(imageInput.decodedSourceTexture);
             if(result.probeSceneCreated&&probeScene.IsValid())EditorSceneManager.ClosePreviewScene(probeScene);
             result.probeSceneClosed=result.probeSceneCreated&&!probeScene.IsValid();
-            result.probeObjectsDestroyed=host==null&&cameraObject==null&&renderTexture==null&&readbackTexture==null;
+            result.probeObjectsDestroyed=host==null&&cameraObject==null&&renderTexture==null&&readbackTexture==null&&childObject==null;
+            result.stimulusObjectsDestroyed=stimulusSprite==null&&stimulusTexture==null&&
+                (imageInput==null||imageInput.decodedSourceTexture==null);
             result.sourceStatePreserved=loadedSource!=null&&loadedSource.activeSelf==sourceActiveSelfBefore&&
                 loadedSource.activeInHierarchy==sourceActiveHierarchyBefore&&sourceMask!=null&&sourceMask.enabled==sourceMaskEnabledBefore;
             RectTransform afterRect;bool afterActiveSelf,afterActive;string afterDiagnostic;
@@ -343,10 +583,12 @@ public static partial class MonkeyImporter
             result.sourceStatePreserved&&result.probeHostOwned&&
             result.probeSceneCreated&&result.probeSceneClosed&&
             result.probeMaskActiveInHierarchy&&result.probeChildActiveInHierarchy&&
-            result.probeObjectsDestroyed&&result.renderCompleted&&result.pixelReadbackVerified&&
+            result.probeObjectsDestroyed&&result.stimulusSpriteVerified&&result.stimulusObjectsDestroyed&&
+            result.renderCompleted&&result.pixelReadbackVerified&&
             result.insidePixelVerified&&result.outsidePixelVerified&&result.maskInsidePointAccepted&&
             (spec.enabled?result.maskOutsidePointRejected:!result.maskOutsidePointRejected)&&result.childGraphicInsideAccepted&&
             (spec.enabled?result.childGraphicOutsideRejected:result.disabledChildGraphicOutsideAccepted)&&
+            (imageInput==null||(result.sourceTextureAlphaVerified&&result.sourceMaskMaterialVerified&&result.alphaSamplesVerified))&&
             (spec.enabled?result.stencilClipVerified:result.disabledNoClipVerified)&&String.IsNullOrEmpty(result.imagePath)==false;
         result.status=result.verified?(spec.enabled?"native-stencil-clipping-verified":"disabled-mask-no-clip-verified"):
             result.supported?"native-clipping-probe-gap":"unsupported-mask-clipping-semantics";

@@ -31,15 +31,15 @@ disabled and contain no lifecycle methods.
 
 ## Independent commands
 
-The public `monkey static-code-bindings` entry uses explicit paths; the module entry remains compatible. These operations do not launch an Editor:
+These commands use explicit paths and do not register a new shared CLI command:
 
 ```sh
-monkey static-code-bindings prepare \
+PYTHONPATH=src monkey static-code-bindings prepare \
   --ir INPUT/ir.json --bindings INPUT/component-code-bindings.json \
   --code-index INPUT/code-index.json --source-root INPUT/Source \
   --output NEW_PREPARATION
 
-monkey static-code-bindings stage \
+PYTHONPATH=src monkey static-code-bindings stage \
   --source SAVED_UNITY_CANDIDATE --prepared NEW_PREPARATION \
   --output NEW_UNITY_CANDIDATE --stage-id example-01 --compile-all-types
 ```
@@ -70,7 +70,7 @@ duplicate instance. A reference control must introduce its own new field-level
 failure; an unrelated preexisting gap cannot satisfy the control.
 
 ```sh
-monkey static-code-bindings destinations \
+PYTHONPATH=src monkey static-code-bindings destinations \
   --prepared NEW_PREPARATION --candidate NEW_UNITY_CANDIDATE \
   --output NEW_DESTINATIONS.json
 ```
@@ -83,7 +83,31 @@ its hashed evidence. Partial fields and missing references never become full
 static success. `success` is limited to static persistence and carries
 `sourceBehaviorExecuted=false`; it grants no visual, gameplay or adoption pass.
 
-The public entry exits 0 for a completed requested operation, 1 when its report retains blocked/partial/not-executed mappings, and 2 for invalid inputs. A successful static operation does not grant source behavior, visual or adoption acceptance.
+File and instance coverage are joined in both directions against the requested
+Prefab scopes. Each requested file needs one apply row, one cold row and matching
+current bytes/GUID; each expected instance needs one observation in each phase.
+The saved Unity YAML must contain that component/local ID, its owning GameObject,
+script GUID, source marker, full type/assembly identifier and disabled state.
+Omitting a cold file row cannot remove its instances from validation. Missing,
+duplicate, misplaced or nonexistent evidence blocks the affected destinations;
+unrelated instances retain their independently verified status. Unexpected rows
+remain stage diagnostics. The module command writes the ledger then exits 1 for
+these structural evidence gaps. Ordinary retained source-field gaps remain a
+separate partial result.
+
+`--compatible-prepared` can explicitly admit an older preparation only when
+the source manifest, complete mapping identities/proofs, fields/values and all
+generated script records are identical. The only allowed difference is added
+unresolved-alias diagnostics in the current preparation; removed gaps or changed
+source/field evidence are refused. Each native stage retains its actual report
+hash. The consumer independently retains alias gaps from the current report.
+
+For large batches, `monkey static-code-bindings index --ledger
+DESTINATIONS.json --output NEW_INDEX` writes a source-ID lookup index and
+SHA-256-pinned shards. Each shard and the index stay within 4 MiB; every mapping
+and destination is retained. Oversized individual mappings fail explicitly.
+
+The public entry exits 0 for a completed requested operation, 1 when its report retains blocked/partial/not-executed mappings or evidence-contract gaps, and 2 for invalid inputs. A successful static operation does not grant source behavior, visual or adoption acceptance.
 
 ## Integration ownership
 

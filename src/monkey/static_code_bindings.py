@@ -242,12 +242,173 @@ def stage_candidate(source, prepared, output, *, stage_id, code_regions=None, co
     return request
 
 
-def record_destinations(prepared, candidates, output):
+def _compatible_catalog(older, current):
+    """Only permit added unresolved-alias diagnostics over identical evidence."""
+    if older["sourceManifestSha256"] != current["sourceManifestSha256"] or older["scripts"] != current["scripts"]:
+        return False
+    a = {r["sourceComponent"]: r for r in older["mappings"]}
+    b = {r["sourceComponent"]: r for r in current["mappings"]}
+    if a.keys() != b.keys() or len(a) != len(older["mappings"]) or len(b) != len(current["mappings"]):
+        return False
+    for sid in a:
+        left, right = copy.deepcopy(a[sid]), copy.deepcopy(b[sid])
+        for row in (left, right):
+            row.pop("reasons", None)
+        if "spec" in left and "spec" in right:
+            old_gaps, new_gaps = set(left["spec"].pop("gaps")), set(right["spec"].pop("gaps"))
+            if not old_gaps.issubset(new_gaps) or any(not g.startswith("source_declared_type_alias_unresolved:") for g in new_gaps - old_gaps):
+                return False
+        if left != right:
+            return False
+    return True
+
+
+def _selected_mapping_ids(request, plan):
+    nodes = set()
+    for target in request["prefabs"]:
+        matches = [p for p in plan["sourcePrefabs"] if p["sourceId"] == target["sourceId"] and p["path"] == target["path"]]
+        if len(matches) != 1:
+            raise ValueError("Native request Prefab scope differs from the source plan")
+        nodes.update(matches[0]["nodes"])
+    return {r["sourceComponent"] for r in request["mappings"] if r["sourceNode"] in nodes}
+
+
+def _native_closure(request, apply, cold, plan, candidate):
+    """Join both file lists and both instance lists to the requested disk scope.
+
+    Failures stay attached to their own Prefab/instance. Extra receipt rows are
+    diagnostics, never an alternative denominator for the requested rows.
+    """
+    targets, expected, gaps, blocks = {}, {}, {}, {}
+    issues = []
+    mappings = {r["sourceComponent"]: r for r in request["mappings"]}
+    def gap(path, reason):
+        if reason not in gaps.setdefault(path, []):
+            gaps[path].append(reason)
+    for target in request["prefabs"]:
+        path = target["path"]
+        if path in targets:
+            gap(path, "request_prefab_duplicate")
+        targets[path] = target
+        specs = [p for p in plan["sourcePrefabs"] if p["sourceId"] == target["sourceId"] and p["path"] == path]
+        if len(specs) != 1:
+            gap(path, "request_prefab_plan_scope_mismatch")
+            continue
+        nodes = set(specs[0]["nodes"])
+        for row in request["mappings"]:
+            if row["sourceNode"] in nodes:
+                expected[(row["sourceComponent"], path)] = row
+    for phase, receipt in (("apply", apply), ("cold", cold)):
+        by_path = {}
+        for row in receipt["prefabs"]:
+            path = row.get("path")
+            by_path.setdefault(path, []).append(row)
+            if path not in targets:
+                issues.append(dict(code=phase + "_prefab_unrequested", prefabPath=path))
+        for path, target in targets.items():
+            rows = by_path.get(path, [])
+            if len(rows) != 1:
+                gap(path, phase + "_prefab_missing_or_duplicate")
+            elif rows[0].get("sourceId") != target["sourceId"] or rows[0].get("guid") != target["guid"]:
+                gap(path, phase + "_prefab_identity_mismatch")
+    for path, target in targets.items():
+        saved = [r for r in apply["prefabs"] if r.get("path") == path]
+        reopened = [r for r in cold["prefabs"] if r.get("path") == path]
+        if len(saved) == len(reopened) == 1 and saved[0].get("sha256") != reopened[0].get("sha256"):
+            gap(path, "apply_cold_prefab_hash_mismatch")
+        try:
+            file = inside(candidate, path)
+            raw = file.read_bytes()
+            metadata = Path(str(file) + ".meta").read_text()
+            if not re.search(r"(?m)^guid: " + re.escape(target["guid"]) + r"$", metadata):
+                gap(path, "disk_prefab_guid_mismatch")
+            for phase, rows in (("apply", saved), ("cold", reopened)):
+                if len(rows) == 1 and _sha(raw) != rows[0].get("sha256"):
+                    gap(path, phase + "_disk_prefab_hash_mismatch")
+            text = raw.decode("utf-8", "strict")
+            physical = {}
+            for match in re.finditer(r"(?ms)^--- !u!(\d+) &(-?\d+)(?: stripped)?\s*\n(.*?)(?=^--- !u!|\Z)", text):
+                identity = int(match.group(2))
+                if identity in physical:
+                    gap(path, "disk_duplicate_local_file_id")
+                physical[identity] = (int(match.group(1)), match.group(3))
+            blocks[path] = physical
+        except (OSError, UnicodeError, ValueError) as error:
+            gap(path, "disk_prefab_unavailable:" + type(error).__name__)
+    indexed = {}
+    for phase, receipt in (("apply", apply), ("cold", cold)):
+        observed = {}
+        for row in receipt["observations"]:
+            key = (row.get("sourceComponent"), row.get("prefabPath"))
+            observed.setdefault(key, []).append(row)
+            if key not in expected:
+                issues.append(dict(code=phase + "_instance_unrequested", sourceComponent=key[0], prefabPath=key[1]))
+        indexed[phase] = observed
+    rejected = {}
+    for key, mapping in expected.items():
+        sid, path = key
+        failures = list(gaps.get(path, []))
+        target = targets[path]
+        for phase in ("apply", "cold"):
+            rows = indexed[phase].get(key, [])
+            if len(rows) != 1:
+                failures.append(phase + "_instance_missing_or_duplicate")
+                continue
+            row = rows[0]
+            if row.get("sourceNode") != mapping["sourceNode"] or row.get("sourceAsset") != mapping["sourceAsset"]:
+                failures.append(phase + "_instance_source_owner_mismatch")
+            if row.get("componentGuid") != target["guid"] or row.get("nodeGuid") != target["guid"]:
+                failures.append(phase + "_instance_prefab_guid_mismatch")
+            physical = blocks.get(path, {})
+            component = physical.get(row.get("componentLocalId"))
+            node = physical.get(row.get("nodeLocalId"))
+            if component is None or component[0] != 114 or node is None or node[0] != 1:
+                failures.append(phase + "_instance_not_on_disk")
+                continue
+            body = component[1]
+            owner = re.search(r"(?m)^  m_GameObject: \{fileID: (-?\d+)\}", body)
+            script = re.search(r"(?m)^  m_Script: \{fileID: 11500000, guid: ([0-9a-f]{32}), type: 3\}", body)
+            declared = re.search(r"(?m)^  m_EditorClassIdentifier: (.*)$", body)
+            enabled = re.search(r"(?m)^  m_Enabled: ([01])$", body)
+            marker = re.search(r"(?m)^  __monkeySourceId: (.*)$", body)
+            source_id = marker.group(1).strip() if marker else None
+            if source_id and source_id.startswith('"'):
+                try:
+                    source_id = json.loads(source_id)
+                except ValueError:
+                    source_id = None
+            if not owner or int(owner.group(1)) != row.get("nodeLocalId"):
+                failures.append(phase + "_instance_disk_node_mismatch")
+            if not script or script.group(1) != mapping["spec"]["scriptGuid"] or source_id != sid:
+                failures.append(phase + "_instance_disk_script_or_source_mismatch")
+            if not declared or declared.group(1).strip() != str(row.get("assembly")) + "::" + mapping["spec"]["typeName"]:
+                failures.append(phase + "_instance_disk_type_or_assembly_mismatch")
+            if not enabled or enabled.group(1) != "0":
+                failures.append(phase + "_instance_disk_behavior_not_disabled")
+        rejected[key] = sorted(set(failures))
+    for path, reasons in gaps.items():
+        issues.extend(dict(code=reason, prefabPath=path) for reason in reasons)
+    for (sid, path), reasons in rejected.items():
+        issues.extend(dict(code=reason, sourceComponent=sid, prefabPath=path) for reason in reasons if reason not in gaps.get(path, []))
+    return expected, indexed, rejected, issues
+
+
+def record_destinations(prepared, candidates, output, *, compatible_preparations=()):
     """Join cold evidence without changing the original mapping denominator."""
     prepared = Path(prepared).resolve()
     raw = (prepared / "bindings.json").read_bytes()
     report = json.loads(raw)
-    observed, attempted = {}, {}
+    accepted = {_sha(raw): report}
+    compatibility = []
+    for older_path in compatible_preparations:
+        older_raw = (Path(older_path).resolve() / "bindings.json").read_bytes()
+        older = json.loads(older_raw)
+        if not _compatible_catalog(older, report):
+            raise ValueError("Compatible preparation changed source evidence, fields, scripts or non-alias gaps")
+        accepted[_sha(older_raw)] = older
+        compatibility.append(dict(olderSha256=_sha(older_raw), currentSha256=_sha(raw),
+                                  rule="identical_source_fields_scripts_only_added_alias_diagnostics"))
+    observed, attempted, unselected = {}, {}, set()
     stages = []
     for candidate in candidates:
         candidate = Path(candidate).resolve()
@@ -256,15 +417,16 @@ def record_destinations(prepared, candidates, output):
         request = json.loads(request_raw)
         apply = json.loads((folder / "apply.json").read_bytes())
         cold = json.loads((folder / "cold.json").read_bytes())
-        if request["bindingsSha256"] != _sha(raw) or _sha((folder / "bindings.json").read_bytes()) != _sha(raw):
+        candidate_pin = request["bindingsSha256"]
+        if candidate_pin not in accepted or _sha((folder / "bindings.json").read_bytes()) != candidate_pin:
             raise ValueError("Native stage uses a different source mapping report")
         if apply["requestSha256"] != _sha(request_raw) or cold["requestSha256"] != _sha(request_raw):
             raise ValueError("Native receipt request hash mismatch")
-        for prefab in cold["prefabs"]:
-            path = inside(candidate, prefab["path"])
-            metadata = Path(str(path) + ".meta").read_text()
-            if _sha(path.read_bytes()) != prefab["sha256"] or not re.search(r"(?m)^guid: " + re.escape(prefab["guid"]) + r"$", metadata):
-                raise ValueError("Saved native Prefab bytes or GUID changed after cold read")
+        plan_raw = inside(candidate, request["planPath"]).read_bytes()
+        if _sha(plan_raw) != request["planSha256"]:
+            raise ValueError("Source plan bytes changed after native execution")
+        selected = _selected_mapping_ids(request, json.loads(plan_raw))
+        unselected.update(r["sourceComponent"] for r in request["mappings"] if r["sourceComponent"] not in selected)
         for script in request["scripts"]:
             path = inside(candidate, script["target"])
             metadata = Path(str(path) + ".meta").read_text()
@@ -274,25 +436,27 @@ def record_destinations(prepared, candidates, output):
         if len(requested) != len(request["mappings"]):
             raise ValueError("Duplicate native request mapping")
         source_rows = {r["sourceComponent"]: r for r in report["mappings"]}
+        original_rows = {r["sourceComponent"]: r for r in accepted[candidate_pin]["mappings"]}
         for r in request["mappings"]:
-            if r != source_rows.get(r["sourceComponent"]):
+            if r != original_rows.get(r["sourceComponent"]):
                 raise ValueError("Native request changed a generated source mapping")
-        prior = {(r["sourceComponent"], r["prefabPath"]): r for r in apply["observations"]}
-        cold_keys = {(r["sourceComponent"], r["prefabPath"]) for r in cold["observations"]}
-        if len(prior) != len(apply["observations"]) or len(cold_keys) != len(cold["observations"]):
-            raise ValueError("Duplicate saved or cold native instance observation")
+        expected, receipts, closure_gaps, contract_issues = _native_closure(request, apply, cold, json.loads(plan_raw), candidate)
         stage = {"candidate": str(candidate), "stageId": request["stageId"], "requestSha256": _sha(request_raw),
+                 "bindingsSha256": candidate_pin,
                  "applySha256": _sha((folder / "apply.json").read_bytes()), "coldSha256": _sha((folder / "cold.json").read_bytes()),
-                 "applyErrors": apply["errors"], "coldErrors": cold["errors"]}
+                 "applyErrors": apply["errors"], "coldErrors": cold["errors"],
+                 "evidenceContractGaps": contract_issues}
         stages.append(stage)
-        for sid in requested:
+        for sid in selected:
             attempted.setdefault(sid, []).append(stage)
-        for native in cold["observations"]:
-            sid = native["sourceComponent"]
-            if sid not in requested or (sid, native["prefabPath"]) not in prior:
-                raise ValueError("Unrequested or unsaved native observation")
+        for (sid, prefab_path), mapping in expected.items():
+            instance_key = (sid, prefab_path)
+            cold_rows = receipts["cold"].get(instance_key, [])
+            saved_rows = receipts["apply"].get(instance_key, [])
+            native = cold_rows[0] if cold_rows else dict(sourceComponent=sid, prefabPath=prefab_path,
+                sourceNode=mapping["sourceNode"], sourceAsset=mapping["sourceAsset"], readback=None)
             spec = source_rows[sid]["spec"]
-            before = prior[(sid, native["prefabPath"])]
+            before = saved_rows[0] if saved_rows else {}
             read = native.get("readback") or {}
             identity = all(native.get(k) == before.get(k) and native.get(k) not in (None, "", 0)
                            for k in ("nodeGuid", "nodeLocalId", "componentGuid", "componentLocalId", "fullType", "assembly", "scriptGuid"))
@@ -328,27 +492,34 @@ def record_destinations(prepared, candidates, output):
                     verified = False
                 if field["storageType"] == "UnityEngine.Object[]" and value.get("referencesVerified") is not True:
                     verified = False
-            observed.setdefault(sid, []).append(dict(native, evidence=stage, consumerGaps=alias_gaps, disposition="success" if verified else "partial"))
+            disposition = "blocked" if closure_gaps[instance_key] else "success" if verified else "partial"
+            evidence = {k: v for k, v in stage.items() if k != "evidenceContractGaps"}
+            observed.setdefault(sid, []).append(dict(native, evidence=evidence, consumerGaps=alias_gaps + closure_gaps[instance_key],
+                evidenceClosureVerified=not closure_gaps[instance_key], disposition=disposition))
     rows = []
     for original in report["mappings"]:
         row = copy.deepcopy(original)
         destinations = observed.get(row["sourceComponent"], [])
         if destinations:
-            row["disposition"] = "success" if all(d["disposition"] == "success" for d in destinations) else "partial"
-            row["nativeStatus"] = "saved_and_cold_reopened"
+            row["disposition"] = "blocked" if any(d["disposition"] == "blocked" for d in destinations) else "success" if all(d["disposition"] == "success" for d in destinations) else "partial"
+            row["nativeStatus"] = "evidence_rejected" if row["disposition"] == "blocked" else "saved_and_cold_reopened"
         elif row["sourceComponent"] in attempted:
             row["disposition"] = "blocked"
             row["nativeStatus"] = "native_attempt_failed"
             row["attempts"] = attempted[row["sourceComponent"]]
         elif row["disposition"] == "prepared":
             row["disposition"] = "not_executed"
+            if row["sourceComponent"] in unselected:
+                row["nativeStatus"] = "not_selected_by_prefab_scope"
+                row["reasons"].append("source_node_outside_requested_prefab_scope")
         row["destinations"] = destinations
         rows.append(row)
     from collections import Counter
     ledger = {"schemaVersion": "monkey-static-code-destinations/1", "bindingsSha256": _sha(raw),
               "mappingCount": len(rows), "sourceModuleCount": report["sourceModuleCount"],
               "targetTypeCount": report["targetTypeCount"], "counts": dict(Counter(r["disposition"] for r in rows)),
-              "sourceBehaviorExecuted": False, "stages": stages, "mappings": rows}
+              "sourceBehaviorExecuted": False, "preparationCompatibility": compatibility, "stages": stages, "mappings": rows}
+    ledger["hasEvidenceContractGaps"] = any(s["evidenceContractGaps"] for s in stages)
     write_json(Path(output).resolve(), ledger)
     return ledger
 
@@ -375,6 +546,49 @@ def prepare_from_paths(ir_path, bindings_path, code_index_path, source_root, out
     return report
 
 
+def write_destination_index(ledger, output, *, max_bytes=4 * 1024 * 1024, source_ledger_sha256=None):
+    """Create bounded, hash-pinned shards without dropping instance evidence."""
+    output = Path(output).resolve()
+    if output.exists() or max_bytes < 1024:
+        raise ValueError("Expected a new index directory and at least 1024 bytes per shard")
+    encode = lambda value: json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    rows = ledger["mappings"]
+    if len({r["sourceComponent"] for r in rows}) != len(rows) or len(rows) != ledger["mappingCount"]:
+        raise ValueError("Index denominator or source identity conflict")
+    groups, group, size = [], [], 0
+    for row in rows:
+        row_size = len(encode(row)) + 1
+        if row_size + 128 > max_bytes:
+            raise ValueError("One native mapping exceeds the shard budget")
+        if group and size + row_size + 128 > max_bytes:
+            groups.append(group)
+            group, size = [], 0
+        group.append(row)
+        size += row_size
+    if group:
+        groups.append(group)
+    index = {k: v for k, v in ledger.items() if k != "mappings"}
+    index.update(schemaVersion="monkey-static-code-destinations-index/1", sourceLedgerSha256=source_ledger_sha256,
+                 maxShardBytes=max_bytes, shards=[], locations=[])
+    payloads = []
+    for ordinal, group in enumerate(groups):
+        name = f"shard-{ordinal:04d}.json"
+        raw = encode({"schemaVersion": "monkey-static-code-destinations-shard/1", "mappings": group})
+        if len(raw) > max_bytes:
+            raise ValueError("Native mapping shard exceeds the byte budget")
+        payloads.append((name, raw))
+        index["shards"].append(dict(path=name, sha256=_sha(raw), bytes=len(raw), mappingCount=len(group)))
+        index["locations"].extend(dict(sourceComponent=r["sourceComponent"], shard=name, row=i) for i, r in enumerate(group))
+    raw_index = encode(index)
+    if len(raw_index) > max_bytes:
+        raise ValueError("Native mapping index exceeds the byte budget")
+    output.mkdir(parents=True)
+    for name, raw in payloads:
+        (output / name).write_bytes(raw)
+    (output / "index.json").write_bytes(raw_index)
+    return index
+
+
 def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
@@ -391,14 +605,23 @@ def main(argv=None):
     ledger.add_argument("--prepared", required=True)
     ledger.add_argument("--candidate", action="append", required=True)
     ledger.add_argument("--output", required=True)
+    ledger.add_argument("--compatible-prepared", action="append", default=[])
+    index = sub.add_parser("index")
+    index.add_argument("--ledger", required=True)
+    index.add_argument("--output", required=True)
     args = parser.parse_args(argv)
     if args.command == "prepare":
         result = prepare_from_paths(args.ir, args.bindings, args.code_index, args.source_root, args.output)
     elif args.command == "stage":
         result = stage_candidate(args.source, args.prepared, args.output, stage_id=args.stage_id, code_regions=args.code_region, compile_all_types=args.compile_all_types)
+    elif args.command == "destinations":
+        result = record_destinations(args.prepared, args.candidate, args.output, compatible_preparations=args.compatible_prepared)
     else:
-        result = record_destinations(args.prepared, args.candidate, args.output)
+        raw = Path(args.ledger).read_bytes()
+        result = write_destination_index(json.loads(raw), args.output, source_ledger_sha256=_sha(raw))
     print(json.dumps({k: v for k, v in result.items() if k in ("schemaVersion", "mappingCount", "sourceModuleCount", "targetTypeCount", "counts", "stageId")}, sort_keys=True))
+    if result.get("hasEvidenceContractGaps"):
+        raise SystemExit(1)
     return result
 
 

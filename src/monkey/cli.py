@@ -587,7 +587,7 @@ def main(argv=None):
             from .output_limits import policy
             from .code_profiles import profile_capabilities
             legacy_profile_capabilities=profile_capabilities()
-            print(json.dumps(dict(version=__version__, profiles=[PROFILE,PROJECT_PROFILE,'cocos-2.4.11-bundle','cocos-3.8.7-bundle','cocos-3.4.1-bundle','cocos-2.1.2-resource','generic-image-resources-v1','egret-custom-resource-plist-v1'], targetProfiles=[UNITY_PROFILE,cocos.PROFILE],
+            print(json.dumps(dict(version=__version__, profiles=[PROFILE,PROJECT_PROFILE,'cocos-2.4.11-bundle','cocos-3.8.7-bundle','cocos-3.4.1-bundle','cocos-2.1.2-resource','generic-image-resources-v1','egret-custom-resource-plist-v1'], targetProfiles=[UNITY_PROFILE,cocos.PROFILE], activeTargetProfiles=[UNITY_PROFILE], pausedCompatibilityTargetProfiles=[cocos.PROFILE],
                 ownership=dict(recoveryCandidates='monkey',developmentProjectOperations='beaver',workflow='GREA'),
                 unityPrefabRecovery=dict(command='recover-unity-prefabs',requestContract='monkey-unity-prefab-recovery-request/1',scope='selected-source-roots-and-provider-GUID-closure',nativeCommand='verify-unity-prefabs',native='implemented-acceptance-pending',sourceCodeExecuted=False),
                 nativeSdkDeclarations=dict(command='audit-native-code-dependencies',contract='monkey-native-sdk-declaration/1',schemaVersion=1,coverage='manifest-pinned-Spine-stage-and-literal-script-reference-tuples',assemblyInspectionOwner='beaver',migration='not-performed'),

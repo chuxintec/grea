@@ -1246,8 +1246,8 @@ def _physical_inventory_key(row: dict):
 def _mask_fields_prove_auxiliary(plan: dict, readback: dict, source_id: str, mask_target: dict) -> bool:
     mask_rows = [row for row in _nested_rows(readback, "staticMaskFields") if _identity(row) == source_id]
     try:
-        from .prefab_static_mask_continuation import validate_export_contract
-        validate_export_contract(plan)
+        from .prefab_static_mask_continuation import validate_import_contract
+        validate_import_contract(plan)
     except (ImportError, ValueError):
         return False
     contract = plan.get("staticMasks")
@@ -1263,7 +1263,7 @@ def _mask_fields_prove_auxiliary(plan: dict, readback: dict, source_id: str, mas
             isinstance(actual.get("persistentIdentityGuid"), str) and _GUID.fullmatch(actual["persistentIdentityGuid"]) and
             _signed64(actual.get("persistentIdentityLocalFileId")) is not None and
             actual.get("persistentIdentityLocalFileId") != 0 and
-            isinstance(actual.get("nativeType"), str) and bool(actual.get("nativeType")))
+            actual.get("nativeType") == mask_target.get("nativeType") == "UnityEngine.UI.Mask")
 
 
 def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[dict],

@@ -425,14 +425,7 @@ def prepare(plan, ir, manifest, stage, source_evidence=None) -> dict:
     }}
 
 
-def validate_export_contract(plan: Mapping) -> dict:
-    """Fail before native export when a source Mask lacks its consumer contract.
-
-    Unity's importer requires an identity row for every source ``cc.Mask``,
-    including inactive and non-queue Masks. This preflight mirrors that
-    denominator and the Unity consumer's schema-1 compatibility rule so the
-    error is reported during export, before starting an Editor.
-    """
+def _mask_contract_parts(plan):
     if not isinstance(plan, Mapping):
         raise StaticMaskContinuationError("STATIC_MASK_PLAN_INVALID")
     components = plan.get("components")
@@ -444,7 +437,7 @@ def validate_export_contract(plan: Mapping) -> dict:
         raise StaticMaskContinuationError("STATIC_MASK_SOURCE_COMPONENT_IDENTITY_INVALID")
     contract = plan.get("staticMasks")
     if not masks and contract is None:
-        return {"status": "not-required", "sourceMaskCount": 0, "sourceMaskIds": []}
+        return masks, contract, [], ids, []
     if not masks:
         raise StaticMaskContinuationError("STATIC_MASK_CONTRACT_PRESENCE_MARKER_MISMATCH: no source cc.Mask components")
     if not isinstance(contract, Mapping):
@@ -462,56 +455,77 @@ def validate_export_contract(plan: Mapping) -> dict:
             contract.get("sourceManifestSha256") != plan["sourceManifestSha256"]:
         raise StaticMaskContinuationError("STATIC_MASK_SOURCE_MANIFEST_PIN_MISMATCH")
 
+    return masks, contract, rows, ids, row_ids
+
+
+def _validate_legacy_mask_rows(plan, contract, masks, rows, ids, row_ids):
+    if type(contract.get('schemaVersion')) is not int or contract['schemaVersion'] != 1 or contract.get('contract') not in (None, ''):
+        raise StaticMaskContinuationError('STATIC_MASK_LEGACY_SCHEMA_INVALID')
+    node_ids = {row.get("sourceId") for row in plan.get("nodes", []) if isinstance(row, Mapping)}
+    components_by_id = {row.get("sourceId"): row for row in masks}
+    origins = _component_origins(plan)
+    for sid, component in zip(row_ids, rows):
+        if not isinstance(component, Mapping):
+            raise StaticMaskContinuationError("STATIC_MASK_LEGACY_FIELDS_MISSING")
+        threshold = component.get("alphaThreshold")
+        source_fields_json = component.get("sourceFieldsJson")
+        try:
+            parsed_fields = json.loads(source_fields_json) if isinstance(source_fields_json, str) else None
+        except (TypeError, ValueError):
+            parsed_fields = None
+        if component.get("sourceMaterialResolution") is not None:
+            raise StaticMaskContinuationError("STATIC_MASK_LEGACY_DEFAULT_MATERIAL_UNPROVEN")
+        required_material_fields = ("sourceMaterialId", "resolvedSourceMaterialId", "sourceEffectId",
+                                    "sourceEffectName", "sourceEffectDocumentSha256")
+        expected_origin = sid
+        origin_seen = set()
+        while expected_origin in origins:
+            if expected_origin in origin_seen:
+                raise StaticMaskContinuationError("STATIC_MASK_LEGACY_FIELDS_MISSING: source origin cycle")
+            origin_seen.add(expected_origin)
+            expected_origin = origins[expected_origin]
+        source_component = components_by_id[sid]
+        fields_valid = (
+            isinstance(sid, str) and sid in set(ids) and
+            component.get("sourceId") == sid and component.get("sourceOriginId") == expected_origin and
+            isinstance(component.get("nativeId"), str) and bool(component["nativeId"]) and
+            component.get("nativeId") == source_component.get("nativeId") and
+            isinstance(component.get("node"), str) and component["node"] in node_ids and
+            component.get("node") == source_component.get("node") and
+            type(component.get("maskType")) is int and component["maskType"] in (0, 1, 2) and
+            component.get("maskType") == source_component.get("maskType") and
+            type(component.get("enabled")) is bool and component.get("enabled") is source_component.get("enabled") and
+            type(component.get("inverted")) is bool and component.get("inverted") is source_component.get("inverted") and
+            type(threshold) in (int, float) and math.isfinite(threshold) and 0 <= threshold <= 1 and
+            isinstance(parsed_fields, Mapping) and bool(source_fields_json) and
+            all(isinstance(component.get(key), str) and component[key]
+                for key in required_material_fields))
+        if "alphaThreshold" in source_component:
+            fields_valid = fields_valid and component.get("alphaThreshold") == source_component["alphaThreshold"]
+        if component.get("maskType") == 2:
+            fields_valid = fields_valid and all(isinstance(component.get(key), str) and component[key]
+                for key in ("spriteFrameUuid", "unityMaskShaderPath", "unityMaskShaderSha256",
+                            "unityMaskMaterialGuid", "unityMaskMaterialPath"))
+        if not fields_valid:
+            raise StaticMaskContinuationError("STATIC_MASK_LEGACY_FIELDS_MISSING: " + str(sid))
+    return {"status": "legacy-complete", "sourceMaskCount": len(ids), "sourceMaskIds": sorted(ids)}
+
+
+def validate_export_contract(plan: Mapping) -> dict:
+    """Fail before native export when a source Mask lacks its consumer contract.
+
+    Unity's importer requires an identity row for every source ``cc.Mask``,
+    including inactive and non-queue Masks. This preflight mirrors that
+    denominator and the Unity consumer's schema-1 compatibility rule so the
+    error is reported during export, before starting an Editor.
+    """
+    masks, contract, rows, ids, row_ids = _mask_contract_parts(plan)
+    if not masks:
+        return {"status": "not-required", "sourceMaskCount": 0, "sourceMaskIds": []}
+
     legacy = (contract.get("schemaVersion") == 1 and contract.get("contract") in (None, ""))
     if legacy:
-        node_ids = {row.get("sourceId") for row in plan.get("nodes", []) if isinstance(row, Mapping)}
-        components_by_id = {row.get("sourceId"): row for row in masks}
-        origins = _component_origins(plan)
-        for sid, component in zip(row_ids, rows):
-            if not isinstance(component, Mapping):
-                raise StaticMaskContinuationError("STATIC_MASK_LEGACY_FIELDS_MISSING")
-            threshold = component.get("alphaThreshold")
-            source_fields_json = component.get("sourceFieldsJson")
-            try:
-                parsed_fields = json.loads(source_fields_json) if isinstance(source_fields_json, str) else None
-            except (TypeError, ValueError):
-                parsed_fields = None
-            if component.get("sourceMaterialResolution") is not None:
-                raise StaticMaskContinuationError("STATIC_MASK_LEGACY_DEFAULT_MATERIAL_UNPROVEN")
-            required_material_fields = ("sourceMaterialId", "resolvedSourceMaterialId", "sourceEffectId",
-                                        "sourceEffectName", "sourceEffectDocumentSha256")
-            expected_origin = sid
-            origin_seen = set()
-            while expected_origin in origins:
-                if expected_origin in origin_seen:
-                    raise StaticMaskContinuationError("STATIC_MASK_LEGACY_FIELDS_MISSING: source origin cycle")
-                origin_seen.add(expected_origin)
-                expected_origin = origins[expected_origin]
-            source_component = components_by_id[sid]
-            fields_valid = (
-                isinstance(sid, str) and sid in set(ids) and
-                component.get("sourceId") == sid and component.get("sourceOriginId") == expected_origin and
-                isinstance(component.get("nativeId"), str) and bool(component["nativeId"]) and
-                component.get("nativeId") == source_component.get("nativeId") and
-                isinstance(component.get("node"), str) and component["node"] in node_ids and
-                component.get("node") == source_component.get("node") and
-                type(component.get("maskType")) is int and component["maskType"] in (0, 1, 2) and
-                component.get("maskType") == source_component.get("maskType") and
-                type(component.get("enabled")) is bool and component.get("enabled") is source_component.get("enabled") and
-                type(component.get("inverted")) is bool and component.get("inverted") is source_component.get("inverted") and
-                type(threshold) in (int, float) and math.isfinite(threshold) and 0 <= threshold <= 1 and
-                isinstance(parsed_fields, Mapping) and bool(source_fields_json) and
-                all(isinstance(component.get(key), str) and component[key]
-                    for key in required_material_fields))
-            if "alphaThreshold" in source_component:
-                fields_valid = fields_valid and component.get("alphaThreshold") == source_component["alphaThreshold"]
-            if component.get("maskType") == 2:
-                fields_valid = fields_valid and all(isinstance(component.get(key), str) and component[key]
-                    for key in ("spriteFrameUuid", "unityMaskShaderPath", "unityMaskShaderSha256",
-                                "unityMaskMaterialGuid", "unityMaskMaterialPath"))
-            if not fields_valid:
-                raise StaticMaskContinuationError("STATIC_MASK_LEGACY_FIELDS_MISSING: " + str(sid))
-        return {"status": "legacy-complete", "sourceMaskCount": len(ids), "sourceMaskIds": sorted(ids)}
+        return _validate_legacy_mask_rows(plan, contract, masks, rows, ids, row_ids)
     if (contract.get("schemaVersion") != 1 or contract.get("contract") != CONTRACT or
             contract.get("sourceProfile") != SOURCE_PROFILE or contract.get("sourceVersion") != SOURCE_VERSION or
             contract.get("sourceEngine") != {"path": SOURCE_ENGINE_PATH, "sha256": SOURCE_ENGINE_SHA256,
@@ -535,6 +549,14 @@ def validate_export_contract(plan: Mapping) -> dict:
         raise StaticMaskContinuationError("STATIC_MASK_QUEUE_EVENT_DENOMINATOR_MISMATCH")
 
     defaults_by_field = {key: set() for key in _DEFAULTS}
+    # Recompute material provenance for every modern row. An optional resolver
+    # declaration must never decide whether source-byte checks are performed.
+    try:
+        source_manifest = json.loads(Path(plan["sourceManifestPath"]).read_bytes())
+        _bound_manifest(plan, source_manifest)
+        origins = _component_origins(plan)
+    except (KeyError, OSError, ValueError, TypeError) as exc:
+        raise StaticMaskContinuationError("STATIC_MASK_SOURCE_MATERIAL_MANIFEST_UNPROVEN") from exc
     for sid, component in expected_by_id.items():
         row = contract_by_id[sid]
         threshold = row.get("alphaThreshold")
@@ -549,27 +571,28 @@ def validate_export_contract(plan: Mapping) -> dict:
                 fields_json != json.dumps(source_fields, ensure_ascii=False, sort_keys=True, separators=(",", ":")) or
                 type(threshold) not in (int, float) or not math.isfinite(threshold) or not 0 <= threshold <= 1):
             raise StaticMaskContinuationError("STATIC_MASK_COMPONENT_FIELDS_MISMATCH: " + sid)
-        resolution = row.get("sourceMaterialResolution")
-        if resolution is not None:
-            if (resolution != "engine-default-builtin" or
-                    row.get("sourceMaterialResolverPath") != SOURCE_ENGINE_PATH or
-                    row.get("sourceMaterialResolverSha256") != SOURCE_ENGINE_SHA256):
-                raise StaticMaskContinuationError("STATIC_MASK_DEFAULT_MATERIAL_PROOF_INVALID: " + sid)
-            # Re-resolve against the original manifest, not a provider receipt
-            # or a claimed builtin name in this contract row.
-            from .prefab_static_mask_sort import _mask_material_proof
-            try:
-                manifest = json.loads(Path(plan["sourceManifestPath"]).read_bytes())
-                _bound_manifest(plan, manifest)
-                original = _raw_component(manifest, row["sourceOriginId"])
-                if dict(original) != dict(source_fields):
-                    raise StaticMaskSortError("Mask default material source fields differ")
-                material_proof = _mask_material_proof(manifest, sid.partition(":")[0], original,
-                                                     engine_defaults=contract["sourceEngine"])
-                if any(row.get(key) != value for key, value in material_proof.items()):
-                    raise StaticMaskSortError("Mask default material identity differs")
-            except (KeyError, OSError, ValueError, TypeError) as exc:
-                raise StaticMaskContinuationError("STATIC_MASK_DEFAULT_MATERIAL_PROOF_INVALID: " + sid) from exc
+        from .prefab_static_mask_sort import _mask_material_proof
+        try:
+            expected_origin = sid
+            while expected_origin in origins:
+                expected_origin = origins[expected_origin]
+            if row["sourceOriginId"] != expected_origin:
+                raise StaticMaskSortError("Mask component source origin differs")
+            original = _raw_component(source_manifest, expected_origin)
+            if dict(original) != dict(source_fields):
+                raise StaticMaskSortError("Mask material source fields differ")
+            material_proof = _mask_material_proof(source_manifest, sid.partition(":")[0], original,
+                                                 engine_defaults=contract["sourceEngine"])
+            if any(row.get(key) != value for key, value in material_proof.items()):
+                raise StaticMaskSortError("Mask material source identity differs")
+            for key in ("sourceMaterialResolution", "sourceMaterialResolverPath", "sourceMaterialResolverSha256"):
+                expected_value = material_proof.get(key)
+                actual_value = row.get(key)
+                matches = actual_value in (None, "") if expected_value is None else actual_value == expected_value
+                if not matches:
+                    raise StaticMaskSortError("Mask material resolution differs")
+        except (KeyError, OSError, ValueError, TypeError) as exc:
+            raise StaticMaskContinuationError("STATIC_MASK_SOURCE_MATERIAL_PROOF_INVALID: " + sid) from exc
         try:
             active_self, effective_active = _effective_activity(plan, row["node"])
         except (KeyError, StaticMaskContinuationError) as exc:
@@ -620,3 +643,132 @@ def _source_engine_metadata_matches(value: object) -> bool:
     return (isinstance(value, Mapping) and value.get("path") == SOURCE_ENGINE_PATH and
             value.get("sha256") == SOURCE_ENGINE_SHA256 and value.get("url") == SOURCE_ENGINE_URL)
 
+
+
+def validate_import_contract(instruction: Mapping) -> dict:
+    """Validate saved-instruction shape without pretending it is an export plan.
+
+    Export preflight reopens original source bytes. An import instruction owns
+    the emitted, pinned contract and native IDs; it does not carry source paths
+    or the source sort-queue representation. This check only admits that typed
+    declaration for joining actual saved native observations. It cannot grant
+    clipping, rendering, original-byte provenance, or component acceptance.
+    """
+    masks, contract, rows, ids, row_ids = _mask_contract_parts(instruction)
+    if not masks:
+        if instruction.get('staticMasksPresent') is True:
+            raise StaticMaskContinuationError('STATIC_MASK_CONTRACT_PRESENCE_MARKER_MISMATCH')
+        return {"status": "not-required", "sourceMaskCount": 0, "sourceMaskIds": []}
+    legacy = type(contract.get('schemaVersion')) is int and contract['schemaVersion'] == 1 and contract.get('contract') in (None, '')
+    if legacy:
+        return _validate_legacy_mask_rows(instruction, contract, masks, rows, ids, row_ids)
+    if (type(contract.get('schemaVersion')) is not int or contract['schemaVersion'] != 1 or
+            contract.get('contract') != CONTRACT or contract.get('sourceProfile') != SOURCE_PROFILE or
+            contract.get('sourceVersion') != SOURCE_VERSION or not _source_engine_metadata_matches(contract.get('sourceEngine'))):
+        raise StaticMaskContinuationError('STATIC_MASK_IMPORT_CONTRACT_INVALID')
+    if 'staticMasksPresent' in instruction and instruction['staticMasksPresent'] is not True:
+        raise StaticMaskContinuationError('STATIC_MASK_CONTRACT_PRESENCE_MARKER_MISMATCH')
+    expected = {row['sourceId']: row for row in masks}
+    nodes = instruction.get('nodes')
+    if not isinstance(nodes, list) or any(not isinstance(n, Mapping) for n in nodes):
+        raise StaticMaskContinuationError('STATIC_MASK_IMPORT_NODES_INVALID')
+    node_ids = [n.get('sourceId') for n in nodes]
+    if any(not isinstance(n, str) or not n for n in node_ids) or len(set(node_ids)) != len(node_ids):
+        raise StaticMaskContinuationError('STATIC_MASK_IMPORT_NODES_INVALID')
+    # Native ProxyQueueSpec is distinct from the source queue graph. Null is
+    # the producer's no-queue value, not evidence of a missing source graph.
+    queues = instruction.get('staticSortQueue')
+    if queues is None:
+        queues = []
+    if not isinstance(queues, list):
+        raise StaticMaskContinuationError('STATIC_MASK_IMPORT_QUEUE_INVALID')
+    events = {}
+    for queue in queues:
+        if not isinstance(queue, Mapping) or not isinstance(queue.get('masks', []), list):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_QUEUE_INVALID')
+        for event in queue.get('masks', []):
+            if not isinstance(event, Mapping) or not isinstance(event.get('sourceId'), str) or event['sourceId'] not in expected:
+                raise StaticMaskContinuationError('STATIC_MASK_IMPORT_QUEUE_INVALID')
+            events.setdefault(event['sourceId'], []).append(event)
+    defaults_by_field = {key: set() for key in _DEFAULTS}
+    from .shader_profiles import VERTEX_SHA256, FRAGMENT_SHA256
+    for row in rows:
+        sid = row['sourceId'];component = expected[sid]
+        threshold = row.get('alphaThreshold');raw = row.get('sourceFields');raw_json = row.get('sourceFieldsJson')
+        if (not isinstance(row.get('sourceOriginId'), str) or not row['sourceOriginId'] or
+                not isinstance(raw, Mapping) or raw.get('__type__') != 'cc.Mask' or
+                not isinstance(raw_json, str) or raw_json != json.dumps(raw, ensure_ascii=False, sort_keys=True, separators=(',', ':')) or
+                row.get('node') not in node_ids or row.get('node') != component.get('node') or
+                not isinstance(row.get('nativeId'), str) or not row['nativeId'] or row['nativeId'] != component.get('nativeId') or
+                type(row.get('enabled')) is not bool or row['enabled'] is not component.get('enabled') or
+                type(row.get('maskType')) is not int or row['maskType'] not in (0, 1, 2) or row['maskType'] != component.get('maskType') or
+                type(row.get('inverted')) is not bool or row['inverted'] is not component.get('inverted') or
+                type(threshold) not in (int, float) or not math.isfinite(threshold) or not 0 <= threshold <= 1):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_COMPONENT_FIELDS_MISMATCH: '+sid)
+        if (raw.get('_type', raw.get('_N$type', 0)) != row['maskType'] or
+                raw.get('_inverted', raw.get('_N$inverted', False)) is not row['inverted'] or
+                raw.get('_alphaThreshold', raw.get('_N$alphaThreshold', 0.1)) != threshold):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_FIELDS_MISMATCH: '+sid)
+        active_self, active = _effective_activity(instruction, row['node'])
+        if row.get('sourceActiveSelf') is not active_self or row.get('sourceActive') is not active:
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_ACTIVITY_MISMATCH: '+sid)
+        disposition = row.get('sourceQueueDisposition')
+        choices = ('active-mask-barrier-event', 'outside-active-render-flow-inactive-ancestor',
+                   'outside-active-render-flow-disabled-mask', 'outside-static-sort-queue-scope')
+        actual_events = events.get(sid, [])
+        if (disposition not in choices or len(actual_events) != int(disposition == 'active-mask-barrier-event') or
+                disposition == 'active-mask-barrier-event' and (not active or not row['enabled']) or
+                disposition == 'outside-active-render-flow-inactive-ancestor' and active or
+                disposition == 'outside-active-render-flow-disabled-mask' and (not active or row['enabled'])):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_QUEUE_MISMATCH: '+sid)
+        for event in actual_events:
+            _validate_queue_match(row, event)
+        if (not all(isinstance(row.get(key), str) and row[key] for key in
+                ('sourceMaterialId', 'resolvedSourceMaterialId', 'sourceMaterialName', 'sourceEffectId', 'sourceEffectName')) or
+                row['sourceMaterialName'] != 'builtin-2d-sprite' or row['sourceEffectName'] != 'builtin-2d-sprite' or
+                not isinstance(row.get('sourceEffectDocumentSha256'), str) or not re.fullmatch(r'[0-9a-f]{64}', row['sourceEffectDocumentSha256']) or
+                row.get('sourceEffectProgramSha256') != {'glsl1.vert': VERTEX_SHA256, 'glsl1.frag': FRAGMENT_SHA256}):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_MATERIAL_PROFILE_INVALID: '+sid)
+        material_refs = raw.get('_materials')
+        defaults = '_materials' not in raw or material_refs == [] or material_refs == [None]
+        if defaults:
+            valid_material = (row.get('sourceMaterialResolution') == 'engine-default-builtin' and
+                row.get('sourceMaterialResolverPath') == SOURCE_ENGINE_PATH and row.get('sourceMaterialResolverSha256') == SOURCE_ENGINE_SHA256 and
+                row['sourceMaterialId'].startswith('internal:'))
+        else:
+            valid_material = (isinstance(material_refs, list) and len(material_refs) == 1 and isinstance(material_refs[0], Mapping) and
+                isinstance(material_refs[0].get('__uuid__'), str) and row['sourceMaterialId'].partition(':')[2] == material_refs[0]['__uuid__'] and
+                all(row.get(key) in (None, '') for key in ('sourceMaterialResolution', 'sourceMaterialResolverPath', 'sourceMaterialResolverSha256')))
+        if not valid_material:
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_MATERIAL_REFERENCE_INVALID: '+sid)
+        sprite = raw.get('_spriteFrame')
+        expected_sprite = sprite.get('__uuid__') if isinstance(sprite, Mapping) else None
+        if row.get('spriteFrameUuid') != expected_sprite or row['maskType'] == 2 and (not isinstance(expected_sprite, str) or not expected_sprite):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SPRITE_REFERENCE_INVALID: '+sid)
+        if row['maskType'] == 2 and (not all(isinstance(row.get(k), str) and row[k] for k in
+                ('unityMaskShaderPath', 'unityMaskShaderSha256', 'unityMaskMaterialGuid', 'unityMaskMaterialPath')) or
+                re.fullmatch(r'[0-9a-f]{32}', row['unityMaskMaterialGuid']) is None or
+                re.fullmatch(r'[0-9a-f]{64}', row['unityMaskShaderSha256']) is None):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_IMAGE_MATERIAL_INVALID: '+sid)
+        absent = {field for field, spec in _DEFAULTS.items() if not any(key in raw for key in spec['serializedKeys'])}
+        fields = row.get('sourceDefaultFields')
+        if not isinstance(fields, list) or any(not isinstance(f, str) for f in fields) or len(fields) != len(set(fields)) or set(fields) != absent:
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_DEFAULT_FIELDS_INVALID: '+sid)
+        for field in fields:
+            defaults_by_field[field].add(sid)
+    declared_defaults = contract.get('sourceDefaults')
+    if not isinstance(declared_defaults, list):
+        raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_DEFAULTS_INVALID')
+    seen = set()
+    for row in declared_defaults:
+        if not isinstance(row, Mapping) or row.get('field') not in _DEFAULTS or row['field'] in seen:
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_DEFAULTS_INVALID')
+        field = row['field'];spec = _DEFAULTS[field];scope = row.get('sourceIds')
+        if (row.get('sourceProperty') != spec['sourceProperty'] or row.get('value') != spec['jsonValue'] or
+                not isinstance(scope, list) or any(not isinstance(s, str) for s in scope) or len(scope) != len(set(scope)) or set(scope) != defaults_by_field[field]):
+            raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_DEFAULTS_INVALID')
+        seen.add(field)
+    if seen != {field for field, source_ids in defaults_by_field.items() if source_ids}:
+        raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_DEFAULTS_INVALID')
+    return {'status': 'saved-instruction-declaration', 'sourceMaskCount': len(ids), 'sourceMaskIds': sorted(ids),
+            'sourceBytesRevalidated': False, 'nativeClippingValidated': False}

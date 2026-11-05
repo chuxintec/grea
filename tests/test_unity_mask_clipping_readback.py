@@ -1,5 +1,6 @@
 import copy
 import hashlib
+import io
 import json
 import tempfile
 import unittest
@@ -7,7 +8,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from monkey.unity_mask_clipping_readback import CONTRACT, METHOD, PREFIX, _TRUE, verify
+from monkey.unity_mask_clipping_readback import CONTRACT, IMAGE_METHOD, METHOD, PREFIX, _TRUE, verify
 
 
 class MaskClippingReadbackTests(unittest.TestCase):
@@ -23,8 +24,8 @@ class MaskClippingReadbackTests(unittest.TestCase):
         token=hashlib.sha256(self.sid.encode()).hexdigest()[:20]
         self.jp=PREFIX+'maskclip-'+token+'.json'; self.pp=PREFIX+'maskclip-'+token+'.png'
         self.probe=dict.fromkeys(_TRUE,True)
-        self.probe.update(sourceId=self.sid,node=self.node,method=METHOD,
-            stimulus='temporary-white-child-image-on-transparent-world-space-canvas',
+        self.probe.update(sourceId=self.sid,node=self.node,method=METHOD,probeProfile='rect',
+            stimulus='owned-white-sprite-child-on-transparent-world-space-canvas',
             evidencePath=self.jp,imagePath=self.pp,sourceAppFrame=False,sourceVisualParityClaimed=False,
             sourceMaskEnabled=True,sourceNodeActiveSelf=True,sourceNodeActiveInHierarchy=False,
             status='native-stencil-clipping-verified',stencilClipVerified=True,disabledNoClipVerified=False,
@@ -111,6 +112,103 @@ class MaskClippingReadbackTests(unittest.TestCase):
 
     def test_unpinned_json_blocks(self):
         (self.root/PREFIX/'extra.json').write_text('{}');self.assertTrue(self.check())
+
+    def _image_mask_fixture(self,threshold=.1,enabled=True):
+        frame='texture-mask-alpha';texture_id='source:'+frame
+        texture_path='Assets/Game/Content/Textures/mask-alpha.png'
+        source=Image.new('RGBA',(8,8),(255,255,255,255))
+        # Pillow rows are top-origin; probe texels use Unity's bottom-origin coordinates.
+        source.putpixel((1,6),(255,255,255,0))
+        source.putpixel((3,4),(255,255,255,1))
+        source_bytes=io.BytesIO();source.save(source_bytes,format='PNG');raw=source_bytes.getvalue()
+        source_path=self.root/texture_path;source_path.parent.mkdir(parents=True,exist_ok=True);source_path.write_bytes(raw)
+        source_sha=hashlib.sha256(raw).hexdigest()
+        self.plan['textures']=[dict(id=texture_id,path=texture_path,size=[8,8],originalSize=[8,8],offset=[0,0],border=[0,0,0,0])]
+        self.plan['nodes'][0]['size']=[80,80]
+        self.plan['nodes'][0]['anchor']=[.5,.5]
+        self.spec.update(maskType=2,inverted=False,enabled=enabled,sourceActiveSelf=True,sourceActive=True,
+            spriteFrameUuid=frame,alphaThreshold=threshold,unityMaskMaterialGuid='c'*32,
+            unityMaskShaderPath='Assets/Game/Content/Materials/StaticMasks/NativeStaticImageMask.shader',
+            unityMaskShaderSha256='d'*64,sourceEffectName='builtin-2d-sprite',sourceEffectDocumentSha256='e'*64)
+        self.row.update(unityMaskMaterialGuid='c'*32,unityMaskShaderPath=self.spec['unityMaskShaderPath'],
+                        unityMaskShaderSha256='d'*64)
+        samples=[]
+        for kind,texel,alpha,pixel in (
+            ('opaque',[6,6],255,[128,128]),
+            ('transparent-zero',[1,1],0,[100,100]),
+            ('low-nonzero',[3,3],1,[110,110]),
+        ):
+            alpha_pass=alpha/255.0>=threshold
+            visible=(not enabled) or alpha_pass
+            local=[(texel[0]+.5)/8*80-40,(texel[1]+.5)/8*80-40]
+            samples.append(dict(kind=kind,sourceTexturePixel=texel,sourceAlphaByte=alpha,
+                sourceAlpha=alpha/255.0,sourceAlphaPass=alpha_pass,expectedVisible=visible,
+                localPoint=local,pixel=pixel,viewportPoint=[pixel[0]/512,pixel[1]/512,10],
+                rgba=[255]*4 if visible else [0]*4,pixelVerified=True))
+        self.probe.update(method=IMAGE_METHOD,probeProfile='sprite-alpha-threshold',
+            sourceSpriteFrameId=frame,sourceSpriteGuid='b'*32,sourceSpriteLocalFileId=21300000,
+            sourceTextureId=texture_id,sourceTexturePath=texture_path,sourceTextureGuid='b'*32,
+            sourceTextureSha256=source_sha,sourceTextureFormat='RGBA32',sourceTextureImportMode='Single',
+            sourceTextureMeshType='FullRect',sourceTextureCompression='Uncompressed',sourceTextureAlphaSource='FromInput',
+            sourceTextureWidth=8,sourceTextureHeight=8,sourceTextureAlphaVerified=True,sourceMaskMaterialVerified=True,
+            sourceMaterialGuid='c'*32,sourceMaterialShaderPath=self.spec['unityMaskShaderPath'],
+            sourceMaterialShaderSha256='d'*64,alphaDiscardPolicy='discard-if-source-alpha-less-than-threshold',
+            sourceAlphaThreshold=threshold,sourceAlphaSamples=samples,alphaSamplesVerified=True,
+            imageWidth=512,imageHeight=512,insideLocalPoint=samples[0]['localPoint'],outsideLocalPoint=[60,0],
+            sourceNodeActiveSelf=True,sourceNodeActiveInHierarchy=True,
+            insidePixel=samples[0]['pixel'],insideViewportPoint=samples[0]['viewportPoint'],insideRgba=samples[0]['rgba'],
+            outsidePixel=[480,256],outsideViewportPoint=[480/512,.5,10],
+            outsideRgba=[255]*4 if not enabled else [0]*4,insidePixelVerified=True,outsidePixelVerified=True,
+            stencilClipVerified=enabled,disabledNoClipVerified=not enabled,sourceMaskEnabled=enabled,
+            maskOutsidePointRejected=enabled,childGraphicOutsideRejected=enabled,
+            disabledChildGraphicOutsideAccepted=not enabled,
+            status='native-stencil-clipping-verified' if enabled else 'disabled-mask-no-clip-verified')
+        self.rb['sprites']=[dict(id=texture_id,guid='b'*32,fileId=21300000,size=[8,8])]
+        self.owned_files={texture_path:dict(path=texture_path,owner='generated',bytes=len(raw),sha256=source_sha)}
+        probe_image=Image.new('RGBA',(512,512),(0,0,0,0))
+        for sample in samples:
+            x,y=sample['pixel'];probe_image.putpixel((x,511-y),tuple(sample['rgba']))
+        x,y=self.probe['outsidePixel'];probe_image.putpixel((x,511-y),tuple(self.probe['outsideRgba']))
+        self.image=probe_image;self.sync()
+
+    def image_check(self):
+        return verify(self.plan,self.rb,self.root,owned_files=getattr(self,'owned_files',None))
+
+    def test_image_mask_uses_manifest_owned_alpha_and_pinned_material_profile(self):
+        self._image_mask_fixture(.1)
+        self.assertEqual([],self.image_check())
+
+    def test_image_mask_alpha_zero_and_one_are_explained_at_threshold_zero_and_one(self):
+        self._image_mask_fixture(0.0)
+        self.assertTrue(all(row['expectedVisible'] for row in self.probe['sourceAlphaSamples']))
+        self.assertEqual([],self.image_check())
+        self._image_mask_fixture(1.0)
+        self.assertTrue(self.probe['sourceAlphaSamples'][0]['expectedVisible'])
+        self.assertFalse(self.probe['sourceAlphaSamples'][1]['expectedVisible'])
+        self.assertFalse(self.probe['sourceAlphaSamples'][2]['expectedVisible'])
+        self.assertEqual([],self.image_check())
+
+    def test_image_mask_requires_generated_owned_source_texture_bytes(self):
+        self._image_mask_fixture(.1)
+        self.assertTrue(verify(self.plan,self.rb,self.root,owned_files=None))
+        self.owned_files[self.probe['sourceTexturePath']]['sha256']='0'*64
+        self.assertTrue(self.image_check())
+
+    def test_image_mask_rejects_source_alpha_or_material_identity_drift(self):
+        self._image_mask_fixture(.1)
+        self.probe['sourceAlphaSamples'][1]['sourceAlphaByte']=255
+        self.sync();self.assertTrue(self.image_check())
+        self._image_mask_fixture(.1)
+        self.probe['sourceMaterialGuid']='f'*32
+        self.sync();self.assertTrue(self.image_check())
+
+    def test_image_sprite_frame_lookup_is_bundle_exact(self):
+        self._image_mask_fixture(.1)
+        other=dict(self.plan['textures'][0],id='other:texture-mask-alpha',path='Assets/Game/Content/Textures/other.png')
+        self.plan['textures'].append(other)
+        self.assertEqual([],self.image_check())
+        self.plan['textures']=[other]
+        self.assertTrue(self.image_check())
 
 
 if __name__=='__main__':unittest.main()

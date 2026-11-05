@@ -3601,7 +3601,7 @@ namespace Monkey.StaticSortQueueProxy
                     identity.spriteFrameUuid == row.spriteFrameUuid && identity.sourceMaterialId == row.sourceMaterialId &&
                     identity.resolvedSourceMaterialId == row.resolvedSourceMaterialId &&
                     identity.sourceEffectId == row.sourceEffectId && identity.sourceEffectName == row.sourceEffectName &&
-                    identity.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256 && identity.sourceMaterialResolution == row.sourceMaterialResolution && identity.sourceMaterialResolverPath == row.sourceMaterialResolverPath && identity.sourceMaterialResolverSha256 == row.sourceMaterialResolverSha256 &&
+                    identity.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256 && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(identity.sourceMaterialResolution,row.sourceMaterialResolution) && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(identity.sourceMaterialResolverPath,row.sourceMaterialResolverPath) && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(identity.sourceMaterialResolverSha256,row.sourceMaterialResolverSha256) &&
                     sourceReadback.sourceId == row.sourceId && sourceReadback.node == row.node &&
                     sourceReadback.nativeType == typeof(Mask).FullName && sourceReadback.maskType == row.maskType &&
                     sourceReadback.enabled == row.enabled && sourceReadback.inverted == row.inverted &&
@@ -3610,7 +3610,7 @@ namespace Monkey.StaticSortQueueProxy
                     sourceReadback.sourceMaterialId == row.sourceMaterialId &&
                     sourceReadback.resolvedSourceMaterialId == row.resolvedSourceMaterialId &&
                     sourceReadback.sourceEffectId == row.sourceEffectId && sourceReadback.sourceEffectName == row.sourceEffectName &&
-                    sourceReadback.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256 && sourceReadback.sourceMaterialResolution == row.sourceMaterialResolution && sourceReadback.sourceMaterialResolverPath == row.sourceMaterialResolverPath && sourceReadback.sourceMaterialResolverSha256 == row.sourceMaterialResolverSha256;
+                    sourceReadback.sourceEffectDocumentSha256 == row.sourceEffectDocumentSha256 && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(sourceReadback.sourceMaterialResolution,row.sourceMaterialResolution) && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(sourceReadback.sourceMaterialResolverPath,row.sourceMaterialResolverPath) && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(sourceReadback.sourceMaterialResolverSha256,row.sourceMaterialResolverSha256);
                 var sourceRenderContextDeferred = !loadedPhase && row.maskType == 0 && row.inverted &&
                     node != null && node.GetComponentInParent<Canvas>() == null && sourceMaskFieldsVerified;
                 var fieldsVerified = sourceMaskFieldsVerified && (sourceReadback.verified || sourceRenderContextDeferred);
@@ -6330,7 +6330,7 @@ namespace Monkey.StaticSortQueueProxy
                     if (!resolvedSourceMaterialMatches) checks.Add("resolved-source-material-id");
                     var sourceEffectMatches = maskIdentity != null && maskIdentity.sourceEffectId == sourceMask.sourceEffectId &&
                         maskIdentity.sourceEffectName == sourceMask.sourceEffectName &&
-                        maskIdentity.sourceEffectDocumentSha256 == sourceMask.sourceEffectDocumentSha256 && maskIdentity.sourceMaterialResolution == sourceMask.sourceMaterialResolution && maskIdentity.sourceMaterialResolverPath == sourceMask.sourceMaterialResolverPath && maskIdentity.sourceMaterialResolverSha256 == sourceMask.sourceMaterialResolverSha256;
+                        maskIdentity.sourceEffectDocumentSha256 == sourceMask.sourceEffectDocumentSha256 && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(maskIdentity.sourceMaterialResolution,sourceMask.sourceMaterialResolution) && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(maskIdentity.sourceMaterialResolverPath,sourceMask.sourceMaterialResolverPath) && UnityStaticMaskSort.OptionalMaterialSourceFieldMatches(maskIdentity.sourceMaterialResolverSha256,sourceMask.sourceMaterialResolverSha256);
                     if (!sourceEffectMatches) checks.Add("source-effect-proof");
                     var alphaThresholdMatches = maskIdentity != null && maskIdentity.sourceAlphaThreshold == sourceMask.alphaThreshold;
                     if (!alphaThresholdMatches) checks.Add("alpha-threshold");

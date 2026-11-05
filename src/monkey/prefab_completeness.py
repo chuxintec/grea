@@ -540,6 +540,10 @@ def audit(source_manifest: dict, ir: dict, selected_source_ids: list[str]) -> di
         for i, obj in enumerate(objects):
             if isinstance(obj, dict) and obj.get('__type__') in NODE_TYPES:
                 visit_node(i, obj, sid + '#' + str(i))
+            elif isinstance(obj, dict) and obj.get('__type__') == 'cc.Prefab':
+                inline_root = obj.get('data')
+                if isinstance(inline_root, dict) and inline_root.get('__type__') == 'cc.Node':
+                    visit_node(-1, inline_root, sid + '#' + str(i) + '/data')
 
     nodes_out, components_out = [], []
     source_node_ids = {record['sourceId'] for record in source_nodes}

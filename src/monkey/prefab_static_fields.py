@@ -9,7 +9,7 @@ import re
 
 
 _COMPONENT_ID = re.compile(
-    r"^(?P<asset>[^#]+)#(?P<object>\d+(?:/_children/\d+)*)(?:/components/(?P<ordinal>\d+))?$"
+    r"^(?P<asset>[^#]+)#(?P<object>\d+(?:/data)?(?:/_children/\d+)*)(?:/components/(?P<ordinal>\d+))?$"
 )
 _EXCLUDED = {
     "__type__", "node", "_enabled", "_id", "_objFlags", "_prefab", "_name",
@@ -131,7 +131,8 @@ def extract_static_fields(manifest, ir):
             continue
         bundle = asset.get("bundle", asset_id.split(":", 1)[0])
         discovered = {}
-        for node_index, node_obj in enumerate(objects):
+        from .normalize import expand_nodes
+        for node_index, node_obj in expand_nodes(objects, asset_id):
             if not isinstance(node_obj, Mapping) or node_obj.get("__type__") not in {"cc.Node", "cc.Scene"}:
                 continue
             node_id = f"{asset_id}#{node_index}"

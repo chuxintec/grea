@@ -1041,7 +1041,8 @@ def verify(candidate, output, level='static'):
                     if actual.get('textSha256')!=fingerprint(root/spec['path']) or not actual.get('guid'):
                         diagnostics.append(diagnostic('JSON_READBACK_MISMATCH',spec['path'],'Native TextAsset text/identity differs or is absent'))
             from ..unity_mask_clipping_readback import verify as verify_mask_clipping
-            diagnostics.extend(verify_mask_clipping(instruction,rb,root))
+            diagnostics.extend(verify_mask_clipping(instruction,rb,candidate=root,
+                owned_files={row['path']:row for row in m['files']}))
             by_id={s['id']:s for s in rb.get('sprites',[])}
             for spec in instruction['textures']:
                 actual=by_id.get(spec['id'])

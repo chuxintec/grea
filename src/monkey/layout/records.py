@@ -2,7 +2,8 @@
 import re
 from collections import Counter,defaultdict
 from pathlib import Path
-from ..io import read,load,write_json,new_output,safe
+from ..io import read,load,write_json,new_output,safe,inside
+from ..output_limits import digest_file
 from ..sources.compiled import fail
 from . import standard
 
@@ -60,10 +61,32 @@ def project_docs(project,engine,profile,tool_version,overrides,code_report=None)
     return table
 
 
+def _deduplicated_audio_paths(project, root):
+    """Join naming reservations to exact emitted audio bytes, not guessed names."""
+    path=standard.find_analysis(project,'resource-ledger.json')
+    if not path.exists():return {}
+    ledger=load(read(path,max_bytes=128*1024*1024),max_nodes=8_000_000)
+    result={}
+    for row in ledger.get('files',[]):
+        if row.get('category')!='Audio' or row.get('disposition')!='deduplicated':continue
+        target=row.get('target','')
+        if not target.startswith(root+'/') or row.get('targetState')=='excluded_from_runtime':continue
+        asset=inside(project,target)
+        if (not asset.is_file() or asset.stat().st_size!=row.get('bytes') or
+                digest_file(asset)!=row.get('sha256')):
+            fail('AUDIO_ALIAS_TARGET_CHANGED',target,'Deduplicated runtime audio differs from its exact source ledger')
+        sid=row.get('sourceId')
+        if sid in result and result[sid]['target']!=target:
+            fail('AUDIO_ALIAS_SOURCE_AMBIGUOUS',str(sid),'Source audio has conflicting runtime targets')
+        result[sid]=row
+    return result
+
+
 def resource_paths(project,engine):
     """Export stable source identities and type-first load keys, without build groups."""
     (project/'Docs').mkdir(exist_ok=True)
     root=standard.ROOTS[engine]['content'];assets={}
+    audio_aliases=_deduplicated_audio_paths(project,root)
     for name in ('name-map.json','package-name-map.json','resource-catalog.json','spine-closures.json'):
         path=standard.find_analysis(project,name)
         if not path.exists():continue
@@ -80,6 +103,9 @@ def resource_paths(project,engine):
         for row in report.get('naming',report).get('records',[]):
             target=row.get('target','')
             if not target.startswith(root+'/'):continue
+            reserved=target
+            alias=audio_aliases.get(row['sourceId'])
+            if alias is not None:target=alias['target']
             relative=target[len(root)+1:];closure=row.get('type') in ('spine','shader') and not Path(target).suffix
             key=relative.rsplit('.',1)[0] if Path(target).suffix else relative
             load_key=key
@@ -88,6 +114,10 @@ def resource_paths(project,engine):
             assets[(target,row['sourceId'],row.get('kind'))]=dict(sourceId=row['sourceId'],sourceBundle=row.get('bundle'),sourceLogicalKey=row.get('originalPath'),
                 path=target,type=row.get('type'),address=key,loadKey=None if closure else load_key,entryKind='closure-prefix' if closure else 'asset',
                 state='exported' if (project/target).exists() else 'planned_native_import')
+            if alias is not None and target!=reserved:
+                assets[(target,row['sourceId'],row.get('kind'))].update(
+                    reservedPath=reserved,canonicalPathEvidence='exact-source-ledger-audio-deduplication',
+                    sourceSha256=alias['sha256'])
     write_json(project/standard.analysis('resource-paths.json'),dict(schemaVersion=1,layout=standard.VERSION,engine=engine,root=root,
         assets=sorted(assets.values(),key=lambda a:a['path']),remoteConfigured=False,buildStatus='not_run'))
     (project/'Docs/RESOURCE-LOADING.md').write_text('# Resource loading\n\nUnity: Assets/Game/Content/<Type>/<Module>/...\nCreator: assets/resources/<Type>/<Module>/...\nAll user directories use PascalCase. Source bundle names are provenance only; no automatic Bundle, Local or Remote directory is created.\nAnalysis/Mappings/resource-paths.json maps original keys and source IDs to physical paths. Creator resources.load uses loadKey without the extension; closure-prefix rows are directories, not loadable assets. Read skeletonPath and individual files from spine-closures.json for Spine.\nSource runtime calls are not automatically rewritten. Unity Addressables/AssetBundle and remote delivery remain separate, unconfigured build concerns.\nPreview scenes are inspection content, not shipping startup scenes. Spine playback and shader adaptation require separate validation.\n',encoding='utf-8')

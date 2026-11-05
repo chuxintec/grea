@@ -207,6 +207,8 @@ def _covered(text: str, coverage: dict) -> bool:
 
 
 def _font_mapping(component: dict, plan: dict) -> tuple[dict | None, str | None]:
+    if component.get('fontFamilyEvidence') == 'serialized-empty-unresolved':
+        return None, 'source_explicit_empty_font_family_unresolved'
     effective = component.get('nativeEffectiveFontBinding')
     if isinstance(effective, dict) and effective.get('sourceEffectiveFontPolicy') == 'creator24-ttf-null-font-effective-family-arial-v1':
         matches=[b for b in (plan.get('systemFontBinding')or{}).get('labelBindings',[]) if b.get('sourceLabelId')==component['sourceId']]

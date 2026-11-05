@@ -56,20 +56,31 @@ def _raw_component(manifest: Mapping, source_id: str) -> Mapping:
         raise StaticMaskSortError(f"component source has no frozen instances: {asset_id}")
     parts = suffix.split("/components/")
     try:
-        node_index = int(parts[0])
+        object_path = parts[0]
+        if object_path.isdecimal() and str(int(object_path)) == object_path:
+            owner = instances[int(object_path)]
+        else:
+            from .normalize import expand_nodes
+            owner = next(value for index, value in expand_nodes(instances, asset_id)
+                         if str(index) == object_path)
         if len(parts) == 1:
-            raw = instances[node_index]
+            raw = owner
         else:
             ordinal = int(parts[1])
-            node = instances[node_index]
-            ref = node.get("_components", [])[ordinal]
+            if ordinal < 0 or str(ordinal) != parts[1] or len(parts) != 2:
+                raise ValueError
+            if not isinstance(owner, Mapping):
+                raise TypeError
+            ref = owner.get("_components", [])[ordinal]
             if isinstance(ref, Mapping) and type(ref.get("__id__")) is int:
+                if ref["__id__"] < 0:
+                    raise ValueError
                 raw = instances[ref["__id__"]]
             elif isinstance(ref, Mapping):
                 raw = ref
             else:
                 raise TypeError
-    except (IndexError, TypeError, ValueError) as exc:
+    except (IndexError, TypeError, ValueError, StopIteration) as exc:
         raise StaticMaskSortError(f"component identity does not resolve in source document: {source_id}") from exc
     if not isinstance(raw, Mapping):
         raise StaticMaskSortError(f"malformed component object: {source_id}")

@@ -4,7 +4,7 @@ import pytest
 
 from monkey.unity_scroll_evidence import verify
 from monkey.unity_diagnostic_resolution import reconcile
-from monkey.unity_verification_contract import unresolved_diagnostics
+from monkey.unity_verification_contract import unresolved_diagnostics, statuses
 
 
 SCROLL = 'scroll:prefab#0'
@@ -144,6 +144,61 @@ def test_shared_blocking_gate_rechecks_current_scroll_static_payload_not_only_re
     state = unresolved_diagnostics(diagnostics, coverage)
     assert state['blocking'] == diagnostics
     assert state['remainingDynamic'] == []
+
+
+def test_source_gap_aggregate_is_nonblocking_only_when_exact_source_indices_are_adjudicated():
+    plan, readback, coverage = fixture()
+    proof = verify(plan, readback, coverage)['familyProofs']
+    row = {'code': 'SCROLL_PHYSICS_NOT_VERIFIED', 'sourceId': SCROLL,
+        'message': 'Native axes/content/viewport retained; drag and inertia remain unverified',
+        'origin': 'source', 'origins': ['source'],
+        'sourceEvidence': [{'origin': 'source', 'index': 0, 'raw': 'source warning'}]}
+    reconciled = reconcile([row], coverage, family_proofs=proof)['diagnostics']
+    aggregate = {'code': 'SOURCE_GAPS', 'message': 'SOURCE_GAPS: 1', 'rawDiagnostic': 'SOURCE_GAPS: 1'}
+    state = unresolved_diagnostics([aggregate, *reconciled], coverage)
+    assert state['blocking'] == []
+    assert len(state['remainingDynamic']) == 1
+    coverage['nativeStaticValidation'] = 'pass'
+    coverage['staticPresentationValidation'] = 'pass'
+    outcome = statuses('partial', [aggregate, *reconciled], coverage, 'editor')
+    assert outcome['editorValidation'] == 'pass'
+    assert outcome['nativeStaticValidation'] == 'pass'
+
+    deduped = copy.deepcopy(row)
+    deduped['sourceEvidence'] = [
+        {'origin': 'source', 'index': 0, 'raw': 'source warning 0'},
+        {'origin': 'source', 'index': 1, 'raw': 'source warning 1'},
+    ]
+    deduped_rows = reconcile([deduped], coverage, family_proofs=proof)['diagnostics']
+    aggregate_two = {'code': 'SOURCE_GAPS', 'message': 'SOURCE_GAPS: 2', 'rawDiagnostic': 'SOURCE_GAPS: 2'}
+    state = unresolved_diagnostics([aggregate_two, *deduped_rows], coverage)
+    assert state['blocking'] == []
+    assert len(state['remainingDynamic']) == 1
+
+
+@pytest.mark.parametrize(('count', 'indexes', 'static_code'), [
+    (2, [0], None),  # absent raw source index must keep the aggregate blocking
+    (1, [0], 'UNKNOWN_STATIC_SOURCE_SEMANTIC'),
+])
+def test_source_gap_aggregate_never_hides_static_or_unlinked_source_diagnostics(count, indexes, static_code):
+    plan, readback, coverage = fixture()
+    proof = verify(plan, readback, coverage)['familyProofs']
+    scroll = {'code': 'SCROLL_PHYSICS_NOT_VERIFIED', 'sourceId': SCROLL,
+        'message': 'Native axes/content/viewport retained; drag and inertia remain unverified',
+        'origin': 'source', 'origins': ['source'],
+        'sourceEvidence': [{'origin': 'source', 'index': index, 'raw': 'original source warning'}
+                           for index in indexes]}
+    rows = reconcile([scroll], coverage, family_proofs=proof)['diagnostics']
+    if static_code:
+        rows.append({'code': static_code, 'sourceId': 'static:unknown',
+            'origin': 'source', 'origins': ['source'],
+            'sourceEvidence': [{'origin': 'source', 'index': 0, 'raw': 'unknown static gap'}]})
+    aggregate = {'code': 'SOURCE_GAPS', 'message': f'SOURCE_GAPS: {count}',
+                 'rawDiagnostic': f'SOURCE_GAPS: {count}'}
+    state = unresolved_diagnostics([aggregate, *rows], coverage)
+    assert aggregate in state['blocking']
+    if static_code:
+        assert any(row['code'] == static_code for row in state['blocking'])
 
 
 @pytest.mark.parametrize(('mutate', 'expected_gap'), [

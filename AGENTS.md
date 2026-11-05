@@ -2,6 +2,8 @@
 
 monkey is a Python command-line tool for evidence-traceable recovery into independent native project candidates. Source parsing, resource identity, recovery drafts and candidate generation belong here. GREA owns workflow orchestration; beaver owns development-project adoption and construction.
 
+- Current target scope (native-verified human01a1aa42-52f5, 2026-11-05): new recovery output, fixes, native checks and acceptance target Unity only. Keep Cocos source parsing and Cocos-to-Unity conversion. Existing explicit Creator/Cocos target code, parameters, fixed artifacts and failed evidence remain as paused compatibility; do not add target-specific repair, tests or acceptance gates.
+
 - Read `docs/PLAN.md` and the relevant public contract before making changes. Preserve current user authorization and repository ownership boundaries.
 - Current unfinished tool tasks and v1.1 acceptance live only in GREA's `proposals/lifecycle-roadmap.md` (2026-11-04 user override). Keep this module PLAN for technical context/completed history and mapped GREA task links, without independent unfinished task or development-release lists.
 - Keep original inputs immutable. Private samples, candidates, account data, raw logs and internal coordination records stay under ignored local directories and must not enter Git or release artifacts.

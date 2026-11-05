@@ -394,6 +394,23 @@ def _scroll_static_evidence_still_matches(detail,native,source_id):
     return True
 
 
+def _source_gap_count(row):
+    if not isinstance(row,dict):return None
+    text=row.get('rawDiagnostic')or row.get('message')
+    if not isinstance(text,str):return None
+    match=re.fullmatch(r'\s*SOURCE_GAPS:\s*(\d+)\s*',text)
+    return int(match.group(1)) if match else None
+
+
+def _has_source_diagnostic_origin(row):
+    if not isinstance(row,dict):return False
+    if row.get('origin')=='source':return True
+    if isinstance(row.get('origins'),list)and 'source' in row['origins']:return True
+    evidence=row.get('sourceEvidence')
+    return isinstance(evidence,list)and any(isinstance(item,dict)and item.get('origin')=='source'
+                                            for item in evidence)
+
+
 def unresolved_diagnostics(diagnostics,coverage):
     """Return revalidated blocking, resolved, and remaining-dynamic observations.
 
@@ -407,13 +424,30 @@ def unresolved_diagnostics(diagnostics,coverage):
             'message':'Native diagnostics must be an array','rawDiagnostic':repr(diagnostics)}],
             'resolved':[],'remainingDynamic':[]}
     index,duplicates=_indexed_components(coverage)
-    blocking=[];resolved=[];remaining_dynamic=[]
+    blocking=[];resolved=[];remaining_dynamic=[];source_gap_rows=[];source_states=[]
+    source_evidence_indexes=set();source_evidence_invalid=False
     for row in diagnostics:
         if not isinstance(row,dict):
             blocking.append({'code':'NATIVE_DIAGNOSTIC_INVALID',
                 'message':'Malformed diagnostic row blocks verification','rawDiagnostic':repr(row)});continue
+        if row.get('code')=='SOURCE_GAPS':
+            source_gap_rows.append(row)
+            continue
         source_id=row.get('sourceId')or row.get('sourceComponentId')
         covered=index.get(source_id)
+        is_source_row=_has_source_diagnostic_origin(row)
+        if is_source_row:
+            evidence_rows=[item for item in row.get('sourceEvidence',[])
+                if isinstance(item,dict)and item.get('origin')=='source'] \
+                if isinstance(row.get('sourceEvidence'),list)else[]
+            if not evidence_rows:
+                source_evidence_invalid=True
+            for item in evidence_rows:
+                position=item.get('index')
+                if type(position)is not int or position<0:
+                    source_evidence_invalid=True
+                else:
+                    source_evidence_indexes.add(position)
         current_ok=(source_id not in duplicates and _exact_current_resolution(row,covered,source_id))
         legacy_ok=(source_id not in duplicates and _legacy_creation_resolution(row,covered,source_id))
         if row.get('code')=='SCROLL_PHYSICS_NOT_VERIFIED':
@@ -424,14 +458,33 @@ def unresolved_diagnostics(diagnostics,coverage):
                 and _exact_current_resolution(row,covered,source_id,allow_dynamic=True))
             if scroll_static_ok:
                 remaining_dynamic.append(row)
+                if is_source_row:source_states.append('nonblocking')
             else:
                 blocking.append(row)
+                if is_source_row:source_states.append('blocking')
         elif is_dynamic_boundary(row,covered):
             remaining_dynamic.append(row)
+            if is_source_row:source_states.append('nonblocking')
         elif current_ok or legacy_ok:
             resolved.append(row)
+            if is_source_row:source_states.append('nonblocking')
         else:
             blocking.append(row)
+            if is_source_row:source_states.append('blocking')
+    if source_gap_rows:
+        # Unity's SOURCE_GAPS is a count-only echo of plan.sourceDiagnosticCount.
+        # It adds no new static evidence. It is nonblocking only when its exact
+        # denominator equals the source-origin rows already adjudicated above,
+        # and every such row has an independent resolution/dynamic classification.
+        aggregate_count=_source_gap_count(source_gap_rows[0])if len(source_gap_rows)==1 else None
+        exact_source_indexes=(aggregate_count is not None and not source_evidence_invalid
+            and source_evidence_indexes==set(range(aggregate_count)))
+        aggregate_resolved=(len(source_gap_rows)==1
+            and aggregate_count is not None
+            and exact_source_indexes
+            and all(state=='nonblocking' for state in source_states))
+        if not aggregate_resolved:
+            blocking.extend(source_gap_rows)
     return {'blocking':blocking,'resolved':resolved,'remainingDynamic':remaining_dynamic}
 
 

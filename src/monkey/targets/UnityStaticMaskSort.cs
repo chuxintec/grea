@@ -80,6 +80,14 @@ namespace Monkey.StaticMaskSort
     /// </summary>
     public static class UnityStaticMaskSort
     {
+        // Unity asset serialization normalizes absent MonoBehaviour strings
+        // to empty strings. Only these optional provenance fields use this
+        // equivalence; required resolver values still compare ordinally.
+        public static bool OptionalMaterialSourceFieldMatches(string actual, string expected)
+        {
+            return String.Equals(actual ?? String.Empty, expected ?? String.Empty, StringComparison.Ordinal);
+        }
+
         static string FileSha256(string path)
         {
             using (var sha = SHA256.Create())
@@ -175,7 +183,9 @@ namespace Monkey.StaticMaskSort
                 identity.sourceMaterialId == spec.sourceMaterialId && identity.resolvedSourceMaterialId == spec.resolvedSourceMaterialId &&
                 identity.sourceEffectId == spec.sourceEffectId && identity.sourceEffectName == spec.sourceEffectName &&
                 identity.sourceEffectDocumentSha256 == spec.sourceEffectDocumentSha256 &&
-                identity.sourceMaterialResolution==spec.sourceMaterialResolution && identity.sourceMaterialResolverPath==spec.sourceMaterialResolverPath && identity.sourceMaterialResolverSha256==spec.sourceMaterialResolverSha256 && imageMaterialOk &&
+                OptionalMaterialSourceFieldMatches(identity.sourceMaterialResolution,spec.sourceMaterialResolution) &&
+                OptionalMaterialSourceFieldMatches(identity.sourceMaterialResolverPath,spec.sourceMaterialResolverPath) &&
+                OptionalMaterialSourceFieldMatches(identity.sourceMaterialResolverSha256,spec.sourceMaterialResolverSha256) && imageMaterialOk &&
                 invertedCanvasOk && graphic.enabled == spec.enabled && !graphic.raycastTarget;
             return new MaskReadback { sourceId = spec.sourceId, node = spec.node,
                 nativeType = mask == null ? null : mask.GetType().FullName, enabled = mask != null && mask.enabled,

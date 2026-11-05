@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 import unittest
+import pytest
 from pathlib import Path
 from unittest.mock import patch
 
@@ -57,8 +58,26 @@ class DefaultMaskMaterialTests(unittest.TestCase):
         plan['staticMasks'] = contract
         continuation.validate_export_contract(plan)
         plan['staticMasks']['masks'][0]['sourceMaterialId'] = 'internal:wrong'
-        with self.assertRaisesRegex(continuation.StaticMaskContinuationError, 'DEFAULT_MATERIAL_PROOF'):
+        with self.assertRaisesRegex(continuation.StaticMaskContinuationError, 'SOURCE_MATERIAL_PROOF'):
             continuation.validate_export_contract(plan)
+
+    def test_removing_resolver_or_inventing_serialized_uuid_cannot_skip_original_source(self):
+        plan, manifest, evidence = self.fixture()
+        contract = continuation.build_contract(plan, manifest, source_engine_evidence=evidence)
+        for variant in ('remove-resolver', 'invent-material-reference', 'wrong-origin'):
+            candidate = copy.deepcopy(plan); candidate['staticMasks'] = copy.deepcopy(contract)
+            row = candidate['staticMasks']['masks'][0]
+            if variant == 'wrong-origin':
+                row['sourceOriginId'] = 'not-the-source#1'
+            else:
+                for key in ('sourceMaterialResolution', 'sourceMaterialResolverPath', 'sourceMaterialResolverSha256'):
+                    row.pop(key)
+                row['sourceMaterialId'] = 'internal:invented'; row['resolvedSourceMaterialId'] = 'internal:invented'
+                if variant == 'invent-material-reference':
+                    row['sourceFields']['_materials'] = [{'__uuid__': 'invented'}]
+                    row['sourceFieldsJson'] = json.dumps(row['sourceFields'], ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+            with self.assertRaisesRegex(continuation.StaticMaskContinuationError, 'SOURCE_MATERIAL_PROOF'):
+                continuation.validate_export_contract(candidate)
 
     def test_wrong_engine_bytes_or_ambiguous_builtin_cannot_grant_default(self):
         plan, manifest, evidence = self.fixture()
@@ -82,3 +101,19 @@ class DefaultMaskMaterialTests(unittest.TestCase):
         self.reseal(plan, manifest)
         with self.assertRaisesRegex(StaticMaskSortError, 'absent or ambiguous'):
             continuation.build_contract(plan, manifest, source_engine_evidence=evidence)
+
+
+def test_inline_prefab_mask_source_paths_preserve_raw_fields_and_refuse_alias_indexes():
+    from src.monkey.prefab_static_mask_sort import _raw_component
+    raw={'__type__':'cc.Mask','_type':0}
+    child_raw={'__type__':'cc.Mask','_type':2,'_spriteFrame':{'__uuid__':'actual-frame'}}
+    manifest={'assets':[{'sourceId':'fixture:a','kind':'cc.Prefab','document':{'instances':[
+        {'__type__':'cc.Prefab','data':{'__type__':'cc.Node','_components':[raw],
+            '_children':[{'__type__':'cc.Node','_components':[child_raw]}]}}]}}]}
+    before=copy.deepcopy(manifest)
+    assert _raw_component(manifest,'fixture:a#0/data/components/0')==raw
+    assert _raw_component(manifest,'fixture:a#0/data/_children/0/components/0')==child_raw
+    assert manifest==before
+    for suffix in ('-1/components/0','0/data/components/-1','0/datax/components/0'):
+        with pytest.raises(StaticMaskSortError):
+            _raw_component(manifest,'fixture:a#'+suffix)

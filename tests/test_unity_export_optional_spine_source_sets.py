@@ -2,7 +2,7 @@
 
 The first two cases call the real exporter with create-only synthetic plans.
 The third reuses the frozen actual-export19 source tree, replaces only the
-nine listed current package templates under test, and keeps the plan-owned Spine 3.8
+listed current package templates under test, and keeps the plan-owned Spine 3.8
 factory/runtime closure byte-for-byte. No Editor or product stage is launched.
 """
 from __future__ import annotations
@@ -224,6 +224,7 @@ def _copy_current_spine_templates(source_root: Path, temp_root: Path) -> list[di
         "Assets/Game/Editor/Conversion/UnityStaticFieldIntegration.cs": REPO / "src/monkey/targets/UnityStaticFieldIntegration.cs",
         "Assets/Game/Editor/Conversion/UnityStaticMaskIntegration.cs": REPO / "src/monkey/targets/UnityStaticMaskIntegration.cs",
         "Assets/Game/Editor/Conversion/UnityStaticMaskSort.cs": REPO / "src/monkey/targets/UnityStaticMaskSort.cs",
+        "Assets/Game/Editor/Conversion/UnityStaticMaskClipProbe.cs": REPO / "src/monkey/targets/UnityStaticMaskClipProbe.cs",
         "Assets/Game/Editor/Conversion/UnityStaticProgressIntegration.cs": REPO / "src/monkey/targets/UnityStaticProgressIntegration.cs",
         "Assets/Game/Scripts/Presentation/StaticMasks/NativeStaticMaskIdentity.cs": REPO / "src/monkey/targets/NativeStaticMaskIdentity.cs",
         "Assets/Game/Editor/Conversion/UnityStaticSortQueueProxy.cs": REPO / "src/monkey/targets/UnityStaticSortQueueProxy.cs",

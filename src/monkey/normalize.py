@@ -346,6 +346,13 @@ def expand_nodes(objects,namespace):
     pending=list(enumerate(objects));position=0
     while position<len(pending):
         index,obj=pending[position];position+=1
+        if isinstance(obj,dict) and obj.get('__type__')=='cc.Prefab':
+            data=obj.get('data')
+            if isinstance(data,dict) and data.get('__type__')=='cc.Node':
+                # A typed inline Prefab root has no numeric object-table ID.
+                # Keep its serialized field path as the stable source ID.
+                root_index=f'{index}/data';pending.append((root_index,dict(data)))
+                obj=dict(obj,data={'__sourceId__':namespace+'#'+root_index})
         if isinstance(obj,dict) and obj.get('__type__') in ('cc.Node','cc.Scene'):
             obj=dict(obj);children=[]
             for ordinal,child in enumerate(obj.get('_children',[])):
@@ -453,8 +460,8 @@ def component_ir(namespace, index, obj, *, source_profile=None):
         known = {'_materials','_spriteFrame','_type','_sizeMode','_isTrimmedMode','_fillType','_fillCenter','_fillStart','_fillRange','_atlas'}
     elif typ == 'cc.Label':
         family_values = [obj[key] for key in ('fontFamily', '_fontFamily', '_N$fontFamily') if key in obj]
-        if any(not isinstance(value, str) or not value.strip() for value in family_values):
-            fail('LABEL_FONT_FAMILY_INVALID', base['sourceId'], 'Expected a nonempty system font family')
+        if any(not isinstance(value, str) for value in family_values):
+            fail('LABEL_FONT_FAMILY_INVALID', base['sourceId'], 'Expected a serialized font-family string')
         if len(set(family_values)) > 1:
             fail('LABEL_FONT_FAMILY_ALIAS_CONFLICT', base['sourceId'], 'Conflicting font family aliases')
         base['fontFamily'] = family_values[0] if family_values else 'Arial'
@@ -467,6 +474,12 @@ def component_ir(namespace, index, obj, *, source_profile=None):
                     bold=bool(obj.get('_styleFlags',0)&1),italic=bool(obj.get('_styleFlags',0)&2),underline=bool(obj.get('_styleFlags',0)&4),
                     spacing=obj.get('_spacingX',0),systemFont=obj.get('_isSystemFontUsed',True),
                     overflow=obj.get('_overflow',obj.get('_N$overflow',0)),wrap=obj.get('_enableWrapText',True))
+        if family_values and not family_values[0].strip() and base['systemFont'] and not base['font']:
+            # Empty family strings occur in valid source objects. Retain the
+            # graph and exact string, but do not invent Arial or a renderer.
+            base['supported']=False
+            base['fontFamilyEvidence']='serialized-empty-unresolved'
+            gaps.append('empty serialized system font family retained; effective source font unresolved')
         known = {'fontFamily','_string','_N$string','_N$file','_fontSize','_lineHeight','_horizontalAlign','_verticalAlign',
                  '_N$horizontalAlign','_N$verticalAlign','_materials','_overflow','_N$overflow','_enableWrapText','_isSystemFontUsed','_fontFamily','_N$fontFamily','_cacheMode','_styleFlags','_spacingX'}
         if not base['font']: gaps.append('system font requires source-backed explicit matching font binding')

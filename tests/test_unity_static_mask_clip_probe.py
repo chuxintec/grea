@@ -51,12 +51,15 @@ class StaticMaskClipProbeContractTests(unittest.TestCase):
 
     def test_probe_uses_real_mask_stencil_render_and_raycast_apis(self):
         self.assertIn("probeCamera.Render()", self.source)
-        self.assertIn("new RenderTexture(MaskClipProbeSize,MaskClipProbeSize,24,RenderTextureFormat.ARGB32)", self.source)
+        self.assertIn("new RenderTexture(probeSize,probeSize,24,RenderTextureFormat.ARGB32)", self.source)
         self.assertIn("probeMask.IsRaycastLocationValid(insideScreen,probeCamera)", self.source)
         self.assertIn("probeMask.IsRaycastLocationValid(outsideScreen,probeCamera)", self.source)
         self.assertIn("childGraphic.Raycast(insideScreen,probeCamera)", self.source)
         self.assertIn("childGraphic.Raycast(outsideScreen,probeCamera)", self.source)
-        self.assertIn("stencilClipVerified=spec.enabled&&result.insidePixelVerified&&result.outsidePixelVerified", self.source)
+        self.assertIn("stencilClipVerified=spec.enabled&&result.insidePixelVerified&&result.outsidePixelVerified&&result.alphaSamplesVerified", self.source)
+        self.assertIn("stimulusSprite=Sprite.Create(stimulusTexture", self.source)
+        self.assertIn("childGraphic.sprite=stimulusSprite", self.source)
+        self.assertIn("result.stimulusObjectsDestroyed=stimulusSprite==null&&stimulusTexture==null", self.source)
 
     def test_source_geometry_and_original_activity_are_independent_gates(self):
         self.assertIn("sourceRect.sizeDelta,source.size", self.source)
@@ -68,9 +71,21 @@ class StaticMaskClipProbeContractTests(unittest.TestCase):
         self.assertIn("result.probeObjectsDestroyed=host==null&&cameraObject==null", self.source)
 
     def test_inverted_or_nonrect_masks_are_explicit_gaps(self):
-        self.assertIn("spec.maskType==0&&!spec.inverted", self.source)
-        self.assertIn("clip-probe-supports-only-noninverted-rect-mask-type-0", self.source)
+        self.assertIn("!spec.inverted&&(spec.maskType==0||spec.maskType==2)", self.source)
+        self.assertIn("clip-probe-supports-only-noninverted-rect-or-pinned-image-alpha-mask", self.source)
+        self.assertIn("spec.maskType!=2", self.source)
+        self.assertIn("UnityStaticMaskSort.ReadStaticMask(spec,loadedSource", self.source)
+        self.assertIn("id==spec.spriteFrameUuid?imageInput.sprite:null", self.source)
+        self.assertIn("sourceId.Substring(0,sourceSeparator)+\":\"+spec.spriteFrameUuid", self.source)
+        self.assertIn("spec.spriteFrameUuid.Contains(\":\")", self.source)
         self.assertIn("unsupported-mask-clipping-semantics", self.source)
+
+    def test_image_alpha_probe_hashes_and_decodes_the_exact_texture_spec(self):
+        self.assertIn("importer.textureCompression!=TextureImporterCompression.Uncompressed", self.source)
+        self.assertIn("importer.alphaSource!=TextureImporterAlphaSource.FromInput", self.source)
+        self.assertIn("settings.spriteMeshType!=SpriteMeshType.FullRect", self.source)
+        self.assertIn("ImageConversion.LoadImage(decoded,sourceBytes,false)", self.source)
+        self.assertIn("alphaDiscardPolicy=\"discard-if-source-alpha-less-than-threshold\"", self.source)
 
 
 if __name__ == "__main__":
