@@ -775,6 +775,22 @@ class Program {
   var primary=MakeRoleBinding(rows.First(x=>JS(x,"expectedRole")=="primary-font"&&x.TryGetProperty("actual19Failure",out _)));
   var falseFlag=primary.Copy();falseFlag.requiresPersistentFallbackRegistration=true;falseFlag.registrationDisposition="required";falseFlag.registrationOutcome="pending";Need(!RegisterRole(falseFlag,out var falseFlagDiagnostic),"primary false-requires flag rejected");
   var fallbackRow=rows.First(x=>JS(x,"expectedRole")=="fallback-font-transient"&&JB(x,"sourceOutlineEnabled"));var fallback=MakeRoleBinding(fallbackRow);
+  var transientSlot=MakeRoleBinding(fallbackRow);
+  transientSlot.sourceMaterial.guid=new string('0',32);
+  transientSlot.sourceMaterial.localFileId=0;
+  var apiIdentity=new object[]{transientSlot.sourceMaterial,null,0L};
+  var getIdentity=typeof(UnityStaticSortTextSource).GetMethod("AssetIdentity",BindingFlags.NonPublic|BindingFlags.Static);
+  Need(!(bool)getIdentity.Invoke(null,apiIdentity),"transient fallback has no persistent identity");
+  var slotRow=transientSlot.textSlotEnumeration.rows[transientSlot.materialSlot];
+  slotRow.sourceGraphicMaterialGuid=(string)apiIdentity[1];
+  slotRow.sourceGraphicMaterialLocalFileId=(long)apiIdentity[2];
+  RehashEnum(transientSlot.textSlotEnumeration);
+  Need(Classify(transientSlot,out var sentinelRole,out _,out _,out var sentinelDiagnostic)&&sentinelRole=="fallback-font-transient",
+       "Unity empty GUID/0 fallback must classify: "+sentinelDiagnostic);
+  slotRow.sourceGraphicMaterialGuid=GuidFor("unexpected-transient-material");
+  RehashEnum(transientSlot.textSlotEnumeration);
+  Need(!Classify(transientSlot,out _,out _,out _,out var conflict)&&conflict.StartsWith("TMP_SORT_CAPTURE_SLOT_ROLE_TRANSIENT_MATERIAL_IDENTITY_CONFLICT"),
+       "conflicting GUID on a transient material must still fail");
   var foreignMaterial=fallback.Copy();foreignMaterial.sourceMaterial=new Material{guid=GuidFor("foreign-fallback-material"),localFileId=9001,assetPath="Assets/foreign.mat",fingerprint=fallback.sourceMaterialFingerprint};foreignMaterial.sourceMaterialGuid=foreignMaterial.sourceMaterial.guid;foreignMaterial.sourceMaterialLocalFileId=9001;Need(!Classify(foreignMaterial,out _,out _,out _,out _),"foreign transient source material rejected");
   var foreignAtlas=fallback.Copy();foreignAtlas.sourceTexture=new Texture{guid=GuidFor("foreign-atlas"),localFileId=fallback.sourceTextureLocalFileId,assetPath=fallback.sourceTexture.assetPath};Need(!Classify(foreignAtlas,out _,out _,out _,out _),"foreign atlas identity rejected");
   var foreignFallback=fallback.Copy();foreignFallback.fallbackFontAsset=new TMP_FontAsset{guid=GuidFor("foreign-font"),localFileId=fallback.fallbackFontAssetLocalFileId,assetPath=fallback.fallbackFontAsset.assetPath};foreignFallback.fallbackFontAssetGuid=foreignFallback.fallbackFontAsset.guid;Need(!Classify(foreignFallback,out _,out _,out _,out _),"foreign fallback font identity rejected");

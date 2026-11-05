@@ -1108,8 +1108,12 @@ namespace Monkey.StaticSortQueueProxy
         static bool AssetIdentity(UnityEngine.Object value, out string guid, out long localFileId)
         {
             guid = null; localFileId = 0;
-            return value != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out guid, out localFileId) &&
-                !String.IsNullOrWhiteSpace(guid) && localFileId != 0;
+            if (value == null) return false;
+            var found = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out guid, out localFileId);
+            // Unity can fill the out parameters with its empty GUID and file ID 0
+            // for a transient TMP material. Slot evidence uses null/0 for that identity.
+            if (localFileId == 0 && guid == "00000000000000000000000000000000") guid = null;
+            return found && !String.IsNullOrWhiteSpace(guid) && localFileId != 0;
         }
 
         static bool SameIdentity(UnityEngine.Object value, string expectedGuid, long expectedLocalFileId,
