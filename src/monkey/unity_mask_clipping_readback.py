@@ -20,7 +20,9 @@ _TRUE = ('supported', 'sourceGeometryVerified', 'sourceGeometryPreserved', 'sour
          'renderCompleted', 'pixelReadbackVerified', 'insidePixelVerified', 'outsidePixelVerified',
          'maskInsidePointAccepted', 'childGraphicInsideAccepted',
          'probeMaskActiveInHierarchy', 'probeChildActiveInHierarchy', 'stimulusSpriteVerified',
-         'stimulusObjectsDestroyed', 'verified')
+         'stimulusObjectsDestroyed', 'graphicsBackendAvailable', 'probeCameraSceneBound',
+         'unmaskedControlRenderCompleted', 'unmaskedControlVerified',
+         'unmaskedControlSameRenderContext', 'verified')
 
 
 def _file(root, relative):
@@ -159,9 +161,11 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
             token = hashlib.sha256(sid.encode()).hexdigest()[:20]
             json_path = PREFIX + 'maskclip-' + token + '.json'
             png_path = PREFIX + 'maskclip-' + token + '.png'
-            if probe.get('evidencePath') != json_path or probe.get('imagePath') != png_path:
+            control_png_path = PREFIX + 'maskclip-' + token + '-control.png'
+            if (probe.get('evidencePath') != json_path or probe.get('imagePath') != png_path or
+                    probe.get('controlImagePath') != control_png_path):
                 raise ValueError('probe paths are not bound to the exact source ID')
-            for relative in (json_path, png_path):
+            for relative in (json_path, png_path, control_png_path):
                 raw = read(_file(root, relative), max_bytes=8*1024*1024)
                 if hashlib.sha256(raw).hexdigest() != pinned.get(relative):
                     raise ValueError('probe file SHA differs from main readback')
@@ -178,6 +182,11 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
                 raise ValueError('probe has incomplete execution/cleanup checks')
             if probe.get('sourceAppFrame') is not False or probe.get('sourceVisualParityClaimed') is not False:
                 raise ValueError('controlled probe incorrectly claims source visual parity')
+            if (not isinstance(probe.get('graphicsDeviceType'),str) or
+                    probe.get('graphicsDeviceType') in ('','Null') or
+                    not probe.get('controlContextSha256') or
+                    probe.get('controlContextSha256')!=probe.get('maskedContextSha256')):
+                raise ValueError('graphics backend or same-render-context control is absent')
             if (probe.get('sourceMaskEnabled') is not spec['enabled'] or
                 probe.get('sourceNodeActiveSelf') is not spec['sourceActiveSelf'] or
                 probe.get('sourceNodeActiveInHierarchy') is not spec['sourceActive']):
@@ -209,6 +218,40 @@ def verify(instruction, readback, candidate_root=None, *, candidate=None, owned_
             png = read(_file(root, png_path), max_bytes=8*1024*1024)
             if hashlib.sha256(png).hexdigest() != probe.get('imageSha256'):
                 raise ValueError('PNG SHA differs from probe')
+            control_png=read(_file(root,control_png_path),max_bytes=8*1024*1024)
+            if hashlib.sha256(control_png).hexdigest()!=probe.get('controlImageSha256'):
+                raise ValueError('unmasked control PNG SHA differs from probe')
+            with Image.open(io.BytesIO(control_png)) as control_image:
+                if control_image.format!='PNG' or control_image.size!=(probe.get('imageWidth'),probe.get('imageHeight')):
+                    raise ValueError('unmasked control PNG dimensions differ')
+                control_rgba=control_image.convert('RGBA')
+                for label in ('inside','outside'):
+                    point=_viewport_pixel(probe,label,control_image.width,control_image.height)
+                    actual=list(control_rgba.getpixel((point[0],control_image.height-1-point[1])))
+                    if actual!=probe.get('unmaskedControl'+label.title()+'Rgba'):
+                        raise ValueError('unmasked control RGBA differs from control PNG')
+                    if not (actual[3]>=245 and all(channel>=230 for channel in actual[:3])):
+                        raise ValueError('same-context unmasked white control did not render')
+                control_samples=probe.get('unmaskedControlAlphaSamples') or []
+                if spec['maskType']==2:
+                    source_samples=probe.get('sourceAlphaSamples')
+                    if (not isinstance(control_samples,list) or not isinstance(source_samples,list) or
+                            len(control_samples)!=len(source_samples)):
+                        raise ValueError('unmasked control omits image-alpha sample points')
+                    for control_sample,source_sample in zip(control_samples,source_samples):
+                        if control_sample.get('kind')!=source_sample.get('kind'):
+                            raise ValueError('unmasked control sample role differs from source-alpha sample')
+                        point=control_sample.get('pixel');viewport=control_sample.get('viewportPoint')
+                        source_point=source_sample.get('pixel');source_viewport=source_sample.get('viewportPoint')
+                        if (point!=source_point or viewport!=source_viewport or not _pair(point) or
+                                not all(0<=x<control_image.width for x in point)):
+                            raise ValueError('unmasked control does not use the exact masked source-alpha sample projection')
+                        actual=list(control_rgba.getpixel((point[0],control_image.height-1-point[1])))
+                        rgba=control_sample.get('rgba')
+                        if actual!=rgba:
+                            raise ValueError('unmasked control alpha-sample RGBA differs from control PNG')
+                        if (not isinstance(rgba,list) or len(rgba)!=4 or rgba[3]<245 or any(x<230 for x in rgba[:3])):
+                            raise ValueError('unmasked source-alpha control was not opaque white')
             with Image.open(io.BytesIO(png)) as image:
                 expected_probe_size = (256,256) if spec['maskType'] == 0 else (512,512)
                 if image.format != 'PNG' or image.size != expected_probe_size or (probe.get('imageWidth'),probe.get('imageHeight')) != image.size:

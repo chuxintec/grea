@@ -23,10 +23,14 @@ class MaskClippingReadbackTests(unittest.TestCase):
                          nodes=[dict(sourceId=self.node,size=[200,100],anchor=[.5,.5])])
         token=hashlib.sha256(self.sid.encode()).hexdigest()[:20]
         self.jp=PREFIX+'maskclip-'+token+'.json'; self.pp=PREFIX+'maskclip-'+token+'.png'
+        self.cp=PREFIX+'maskclip-'+token+'-control.png'
         self.probe=dict.fromkeys(_TRUE,True)
         self.probe.update(sourceId=self.sid,node=self.node,method=METHOD,probeProfile='rect',
             stimulus='owned-white-sprite-child-on-transparent-world-space-canvas',
-            evidencePath=self.jp,imagePath=self.pp,sourceAppFrame=False,sourceVisualParityClaimed=False,
+            evidencePath=self.jp,imagePath=self.pp,controlImagePath=self.cp,
+            graphicsDeviceType='Metal',controlContextSha256='f'*64,maskedContextSha256='f'*64,
+            controlImageSha256='',unmaskedControlInsideRgba=[255]*4,unmaskedControlOutsideRgba=[255]*4,
+            unmaskedControlAlphaSamples=[],sourceAppFrame=False,sourceVisualParityClaimed=False,
             sourceMaskEnabled=True,sourceNodeActiveSelf=True,sourceNodeActiveInHierarchy=False,
             status='native-stencil-clipping-verified',stencilClipVerified=True,disabledNoClipVerified=False,
             maskOutsidePointRejected=True,
@@ -44,9 +48,11 @@ class MaskClippingReadbackTests(unittest.TestCase):
     def sync(self):
         (self.root/PREFIX).mkdir(parents=True,exist_ok=True)
         self.image.save(self.root/self.pp)
+        Image.new('RGBA',self.image.size,(255,255,255,255)).save(self.root/self.cp)
+        self.probe['controlImageSha256']=hashlib.sha256((self.root/self.cp).read_bytes()).hexdigest()
         self.probe['imageSha256']=hashlib.sha256((self.root/self.pp).read_bytes()).hexdigest()
         (self.root/self.jp).write_text(json.dumps(self.probe))
-        self.rb['staticMaskReadbackFiles']=[dict(path=p,sha256=hashlib.sha256((self.root/p).read_bytes()).hexdigest()) for p in (self.jp,self.pp)]
+        self.rb['staticMaskReadbackFiles']=[dict(path=p,sha256=hashlib.sha256((self.root/p).read_bytes()).hexdigest()) for p in (self.jp,self.pp,self.cp)]
 
     def check(self): return verify(self.plan,self.rb,self.root)
 
@@ -100,6 +106,14 @@ class MaskClippingReadbackTests(unittest.TestCase):
 
     def test_descriptor_must_cover_exact_file_set(self):
         self.rb['staticMaskReadbackFiles'].pop();self.assertTrue(self.check())
+
+    def test_control_requires_bound_camera_scene_same_context_and_opaque_white(self):
+        self.probe['probeCameraSceneBound']=False;self.sync();self.assertTrue(self.check())
+        self.probe['probeCameraSceneBound']=True;self.probe['unmaskedControlVerified']=False;self.sync();self.assertTrue(self.check())
+        self.probe['unmaskedControlVerified']=True;self.probe['maskedContextSha256']='0'*64;self.sync();self.assertTrue(self.check())
+
+    def test_null_graphics_device_is_not_a_rendering_result(self):
+        self.probe['graphicsDeviceType']='Null';self.sync();self.assertTrue(self.check())
 
     def test_unsupported_mask_cannot_inherit_rect_probe(self):
         self.spec['inverted']=True;self.assertTrue(self.check())
@@ -163,6 +177,8 @@ class MaskClippingReadbackTests(unittest.TestCase):
             maskOutsidePointRejected=enabled,childGraphicOutsideRejected=enabled,
             disabledChildGraphicOutsideAccepted=not enabled,
             status='native-stencil-clipping-verified' if enabled else 'disabled-mask-no-clip-verified')
+        self.probe['unmaskedControlAlphaSamples']=[dict(kind=row['kind'],pixel=list(row['pixel']),
+            viewportPoint=list(row['viewportPoint']),rgba=[255]*4) for row in samples]
         self.rb['sprites']=[dict(id=texture_id,guid='b'*32,fileId=21300000,size=[8,8])]
         self.owned_files={texture_path:dict(path=texture_path,owner='generated',bytes=len(raw),sha256=source_sha)}
         probe_image=Image.new('RGBA',(512,512),(0,0,0,0))
@@ -200,6 +216,11 @@ class MaskClippingReadbackTests(unittest.TestCase):
         self.sync();self.assertTrue(self.image_check())
         self._image_mask_fixture(.1)
         self.probe['sourceMaterialGuid']='f'*32
+        self.sync();self.assertTrue(self.image_check())
+
+    def test_image_control_samples_must_match_masked_alpha_projection(self):
+        self._image_mask_fixture(.1)
+        self.probe['unmaskedControlAlphaSamples'][0]['pixel']=[127,128]
         self.sync();self.assertTrue(self.image_check())
 
     def test_image_sprite_frame_lookup_is_bundle_exact(self):

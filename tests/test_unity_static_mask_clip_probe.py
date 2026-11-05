@@ -61,6 +61,15 @@ class StaticMaskClipProbeContractTests(unittest.TestCase):
         self.assertIn("childGraphic.sprite=stimulusSprite", self.source)
         self.assertIn("result.stimulusObjectsDestroyed=stimulusSprite==null&&stimulusTexture==null", self.source)
 
+    def test_preview_camera_is_scene_bound_and_requires_same_context_white_control(self):
+        self.assertIn("probeCamera.scene=probeScene", self.source)
+        self.assertIn("result.probeCameraSceneBound=probeCamera.scene==probeScene", self.source)
+        self.assertIn("GraphicsDeviceType.Null", self.source)
+        self.assertIn("result.unmaskedControlVerified=MaskClipExpectedOpaqueWhite(controlInside)", self.source)
+        self.assertIn("result.controlContextSha256==result.maskedContextSha256", self.source)
+        self.assertIn("maskGraphic.enabled=false;probeMask.enabled=false", self.source)
+        self.assertIn("result.controlImagePath=\"Analysis/Readback/MaskClipping/\"+controlPngName", self.source)
+
     def test_source_geometry_and_original_activity_are_independent_gates(self):
         self.assertIn("sourceRect.sizeDelta,source.size", self.source)
         self.assertIn("sourceRect.anchorMin-expectedAnchor", self.source)

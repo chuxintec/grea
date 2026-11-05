@@ -7,6 +7,7 @@ using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Monkey.StaticMaskSort;
@@ -15,7 +16,8 @@ public static partial class MonkeyImporter
 {
     [Serializable] public sealed class MaskClipProbeReadback
     {
-        public string sourceId, node, status, method, probeProfile, stimulus, imagePath, imageSha256, evidencePath;
+        public string sourceId, node, status, method, probeProfile, stimulus, imagePath, imageSha256, evidencePath,
+            controlImagePath, controlImageSha256, graphicsDeviceType, controlContextSha256, maskedContextSha256;
         public string expectedInsidePixelClass, expectedOutsidePixelClass;
         public bool supported, sourceGeometryVerified, sourceNodeActiveSelf, sourceNodeActiveInHierarchy,
             sourceMaskEnabled, sourceStatePreserved, probeHostOwned, probeObjectsDestroyed,
@@ -24,7 +26,9 @@ public static partial class MonkeyImporter
             maskInsidePointAccepted, maskOutsidePointRejected, childGraphicInsideAccepted,
             childGraphicOutsideRejected, disabledChildGraphicOutsideAccepted,
             stencilClipVerified, disabledNoClipVerified, probeMaskActiveInHierarchy, probeChildActiveInHierarchy,
-            sourceAppFrame, sourceVisualParityClaimed, verified, stimulusSpriteVerified, stimulusObjectsDestroyed;
+            sourceAppFrame, sourceVisualParityClaimed, verified, stimulusSpriteVerified, stimulusObjectsDestroyed,
+            graphicsBackendAvailable, probeCameraSceneBound, unmaskedControlRenderCompleted,
+            unmaskedControlVerified, unmaskedControlSameRenderContext;
         public bool sourceTextureAlphaVerified, sourceMaskMaterialVerified, alphaSamplesVerified;
         public string sourceSpriteFrameId, sourceSpriteGuid, sourceTextureId, sourceTexturePath, sourceTextureGuid,
             sourceTextureSha256, sourceTextureFormat, sourceTextureImportMode, sourceTextureMeshType,
@@ -38,6 +42,8 @@ public static partial class MonkeyImporter
         public float[] insideLocalPoint, outsideLocalPoint, insideWorldPoint, outsideWorldPoint;
         public float[] insideViewportPoint, outsideViewportPoint;
         public int[] insidePixel, outsidePixel, insideRgba, outsideRgba;
+        public int[] unmaskedControlInsideRgba, unmaskedControlOutsideRgba;
+        public MaskClipControlAlphaSample[] unmaskedControlAlphaSamples;
         public string[] diagnostics;
     }
 
@@ -49,6 +55,13 @@ public static partial class MonkeyImporter
         public float sourceAlpha;
         public int[] sourceTexturePixel, pixel, rgba;
         public float[] localPoint, viewportPoint;
+    }
+
+    [Serializable] public sealed class MaskClipControlAlphaSample
+    {
+        public string kind;
+        public int[] pixel,rgba;
+        public float[] viewportPoint;
     }
 
     sealed class MaskClipImageInput
@@ -164,6 +177,18 @@ public static partial class MonkeyImporter
     {
         using(var sha=SHA256.Create())
             return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();
+    }
+
+    static string MaskClipRenderContextSha256(Scene scene,Camera camera,Canvas canvas,RenderTexture target)
+    {
+        if(camera==null||canvas==null||target==null)return null;
+        var value=String.Join("|",new[]{scene.handle.ToString(),camera.GetEntityId().ToString(),camera.scene.handle.ToString(),
+            camera.cullingMask.ToString(),camera.clearFlags.ToString(),camera.orthographic.ToString(),camera.orthographicSize.ToString("R"),
+            camera.aspect.ToString("R"),camera.nearClipPlane.ToString("R"),camera.farClipPlane.ToString("R"),
+            canvas.GetEntityId().ToString(),canvas.renderMode.ToString(),canvas.sortingOrder.ToString(),canvas.overrideSorting.ToString(),
+            canvas.worldCamera==null?"null":canvas.worldCamera.GetEntityId().ToString(),target.GetEntityId().ToString(),
+            target.width.ToString(),target.height.ToString(),target.depth.ToString(),target.format.ToString()});
+        return MaskClipHash(Encoding.UTF8.GetBytes(value));
     }
 
     static bool TryMaskClipImageInput(Plan plan,MaskSpec spec,Image sourceImage,out MaskClipImageInput input,out string diagnostic)
@@ -310,11 +335,12 @@ public static partial class MonkeyImporter
             sourceMaskEnabled=spec!=null&&spec.enabled,
             sourceNodeActiveSelf=loadedSource!=null&&loadedSource.activeSelf,
             sourceNodeActiveInHierarchy=loadedSource!=null&&loadedSource.activeInHierarchy,
+            graphicsDeviceType=SystemInfo.graphicsDeviceType.ToString(),
             sourceAppFrame=false,sourceVisualParityClaimed=false,verified=false,
             expectedInsidePixelClass="opaque-white",
             diagnostics=Array.Empty<string>()
         };
-        var diagnostics=new List<string>();var pngBytes=null as byte[];
+        var diagnostics=new List<string>();var pngBytes=null as byte[];var controlPngBytes=null as byte[];
         GameObject host=null,cameraObject=null;Camera probeCamera=null;Canvas probeCanvas=null;
         GameObject childObject=null;RectTransform probeMaskRect=null;Mask probeMask=null;Image childGraphic=null;
         RenderTexture renderTexture=null;Texture2D readbackTexture=null,stimulusTexture=null;
@@ -332,6 +358,11 @@ public static partial class MonkeyImporter
             {
             if(spec==null||loadedSource==null)
             {diagnostics.Add("source-mask-or-loaded-node-absent");break;}
+            if(SystemInfo.graphicsDeviceType==GraphicsDeviceType.Null)
+            {result.graphicsBackendAvailable=false;diagnostics.Add("graphics-device-null");break;}
+            result.graphicsBackendAvailable=SystemInfo.supportsRenderTextures&&SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGB32);
+            if(!result.graphicsBackendAvailable)
+            {diagnostics.Add("graphics-rendertexture-backend-unavailable");break;}
             if(!result.supported)
             {diagnostics.Add("clip-probe-supports-only-noninverted-rect-or-pinned-image-alpha-mask");break;}
             if(sourceMask==null||loadedSource.GetComponent<NativeStaticMaskIdentity>()==null)
@@ -415,6 +446,9 @@ public static partial class MonkeyImporter
             probeCamera.cullingMask=1<<probeLayer;probeCamera.allowHDR=false;probeCamera.allowMSAA=false;
             cameraObject.transform.position=new Vector3(0,0,-10);cameraObject.transform.rotation=Quaternion.identity;
             probeCanvas.worldCamera=probeCamera;
+            probeCamera.scene=probeScene;
+            result.probeCameraSceneBound=probeCamera.scene==probeScene;
+            if(!result.probeCameraSceneBound){diagnostics.Add("probe-camera-not-bound-to-preview-scene");break;}
 
             var probeMaskObject=new GameObject("__MaskClipProbeRect",typeof(RectTransform),typeof(CanvasRenderer));
             probeMaskObject.hideFlags=HideFlags.HideAndDontSave;probeMaskObject.layer=probeLayer;
@@ -464,8 +498,8 @@ public static partial class MonkeyImporter
             if(!renderTexture.Create()||renderTexture.depth<24||!SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGB32))
             {diagnostics.Add("stencil-rendertexture-backend-unavailable");break;}
             probeCamera.targetTexture=renderTexture;
+            readbackTexture=new Texture2D(probeSize,probeSize,TextureFormat.RGBA32,false,true);
             Canvas.ForceUpdateCanvases();
-            probeCamera.Render();result.renderCompleted=true;
             var insideWorld=probeMaskRect.TransformPoint(new Vector3(insideLocal.x,insideLocal.y,0));
             var outsideWorld=probeMaskRect.TransformPoint(new Vector3(outsideLocal.x,outsideLocal.y,0));
             var insideViewport=probeCamera.WorldToViewportPoint(insideWorld);
@@ -480,7 +514,47 @@ public static partial class MonkeyImporter
             if(ix<0||iy<0||ix>=probeSize||iy>=probeSize||ox<0||oy<0||
                 ox>=probeSize||oy>=probeSize||insideViewport.z<=0||outsideViewport.z<=0)
             {diagnostics.Add("inside-or-outside-sample-point-falls-outside-camera");break;}
-            readbackTexture=new Texture2D(probeSize,probeSize,TextureFormat.RGBA32,false,true);
+
+            // A same-scene, same-camera, same-Canvas and same-RenderTexture
+            // unmasked control distinguishes a broken preview render context
+            // from a real stencil result. It must visibly draw the owned white
+            // child before the masked pass is interpreted.
+            maskGraphic.enabled=false;probeMask.enabled=false;Canvas.ForceUpdateCanvases();
+            result.controlContextSha256=MaskClipRenderContextSha256(probeScene,probeCamera,probeCanvas,renderTexture);
+            probeCamera.Render();result.unmaskedControlRenderCompleted=true;
+            RenderTexture.active=renderTexture;
+            readbackTexture.ReadPixels(new Rect(0,0,probeSize,probeSize),0,0,false);
+            readbackTexture.Apply(false,false);
+            var controlInside=(Color32)readbackTexture.GetPixel(ix,iy);
+            var controlOutside=(Color32)readbackTexture.GetPixel(ox,oy);
+            result.unmaskedControlInsideRgba=MaskClipPixel(controlInside);
+            result.unmaskedControlOutsideRgba=MaskClipPixel(controlOutside);
+            var controlSamples=new List<MaskClipControlAlphaSample>();var controlAlphaOk=true;
+            foreach(var sample in result.sourceAlphaSamples??Array.Empty<MaskClipAlphaSample>())
+            {
+                var local=new Vector2(sample.localPoint[0],sample.localPoint[1]);
+                var world=probeMaskRect.TransformPoint(new Vector3(local.x,local.y,0));
+                var viewport=probeCamera.WorldToViewportPoint(world);
+                var sx=Mathf.FloorToInt(viewport.x*probeSize);var sy=Mathf.FloorToInt(viewport.y*probeSize);
+                if(sx<0||sy<0||sx>=probeSize||sy>=probeSize||viewport.z<=0)
+                {controlAlphaOk=false;controlSamples.Add(new MaskClipControlAlphaSample{kind=sample.kind,rgba=Array.Empty<int>()});continue;}
+                var color=(Color32)readbackTexture.GetPixel(sx,sy);var rgba=MaskClipPixel(color);
+                controlSamples.Add(new MaskClipControlAlphaSample{kind=sample.kind,pixel=new[]{sx,sy},
+                    viewportPoint=new[]{viewport.x,viewport.y,viewport.z},rgba=rgba});
+                controlAlphaOk&=MaskClipExpectedOpaqueWhite(color);
+            }
+            result.unmaskedControlAlphaSamples=controlSamples.ToArray();
+            result.unmaskedControlVerified=MaskClipExpectedOpaqueWhite(controlInside)&&MaskClipExpectedOpaqueWhite(controlOutside)&&controlAlphaOk;
+            if(!result.unmaskedControlVerified)
+            {diagnostics.Add("unmasked-control-white-stimulus-not-visible");break;}
+            controlPngBytes=readbackTexture.EncodeToPNG();result.controlImageSha256=MaskClipHash(controlPngBytes);
+            maskGraphic.enabled=spec.enabled;probeMask.enabled=spec.enabled;Canvas.ForceUpdateCanvases();
+            result.maskedContextSha256=MaskClipRenderContextSha256(probeScene,probeCamera,probeCanvas,renderTexture);
+            result.unmaskedControlSameRenderContext=!String.IsNullOrEmpty(result.controlContextSha256)&&
+                result.controlContextSha256==result.maskedContextSha256;
+            if(!result.unmaskedControlSameRenderContext)
+            {diagnostics.Add("unmasked-control-and-masked-render-context-differ");break;}
+            probeCamera.Render();result.renderCompleted=true;
             RenderTexture.active=renderTexture;
             readbackTexture.ReadPixels(new Rect(0,0,probeSize,probeSize),0,0,false);
             readbackTexture.Apply(false,false);
@@ -566,10 +640,16 @@ public static partial class MonkeyImporter
         }
         var outputRoot=MaskClipEvidenceRoot();
         var token=MaskClipHash(Encoding.UTF8.GetBytes(spec.sourceId)).Substring(0,20);
-        var pngName="maskclip-"+token+".png";var jsonName="maskclip-"+token+".json";
+        var pngName="maskclip-"+token+".png";var controlPngName="maskclip-"+token+"-control.png";
+        var jsonName="maskclip-"+token+".json";
         try
         {
             Directory.CreateDirectory(outputRoot);
+            if(controlPngBytes!=null)
+            {
+                File.WriteAllBytes(Path.Combine(outputRoot,controlPngName),controlPngBytes);
+                result.controlImagePath="Analysis/Readback/MaskClipping/"+controlPngName;
+            }
             if(pngBytes!=null)
             {
                 File.WriteAllBytes(Path.Combine(outputRoot,pngName),pngBytes);
@@ -584,6 +664,8 @@ public static partial class MonkeyImporter
             result.probeSceneCreated&&result.probeSceneClosed&&
             result.probeMaskActiveInHierarchy&&result.probeChildActiveInHierarchy&&
             result.probeObjectsDestroyed&&result.stimulusSpriteVerified&&result.stimulusObjectsDestroyed&&
+            result.graphicsBackendAvailable&&result.probeCameraSceneBound&&result.unmaskedControlRenderCompleted&&
+            result.unmaskedControlVerified&&result.unmaskedControlSameRenderContext&&
             result.renderCompleted&&result.pixelReadbackVerified&&
             result.insidePixelVerified&&result.outsidePixelVerified&&result.maskInsidePointAccepted&&
             (spec.enabled?result.maskOutsidePointRejected:!result.maskOutsidePointRejected)&&result.childGraphicInsideAccepted&&
