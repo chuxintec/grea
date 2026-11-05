@@ -193,7 +193,23 @@ _UNITY_IDENTITY_FIELDS = ("sourceId", "node", "type", "nativeType", "status", "r
                          "nativeSlotId", "disabledReason")
 
 
-def _planned_owner(plan: dict, component: dict) -> tuple[str | None, str | None]:
+def _owner_index(prefabs):
+    by_node = defaultdict(list)
+    owner_counts = Counter(row.get("sourceId") for row in prefabs
+                           if isinstance(row, dict) and isinstance(row.get("sourceId"), str))
+    for prefab in prefabs:
+        if not isinstance(prefab, dict) or not isinstance(prefab.get("sourceId"), str):
+            continue
+        nodes = prefab.get("nodes")
+        if not isinstance(nodes, list):
+            continue
+        node_ids = {row.get("sourceId") if isinstance(row, dict) else row for row in nodes}
+        for node_id in node_ids:
+            by_node[node_id].append(prefab["sourceId"])
+    return owner_counts, by_node
+
+
+def _planned_owner(plan: dict, component: dict, index=None) -> tuple[str | None, str | None]:
     """Resolve one source component to one explicit plan Prefab owner.
 
     A node may occur in nested/template scopes. In that case the component's
@@ -206,18 +222,8 @@ def _planned_owner(plan: dict, component: dict) -> tuple[str | None, str | None]
     if not isinstance(prefabs, list) or not isinstance(node_id, str) or not node_id:
         return None, "plan-source-prefab-or-component-node-missing"
     declared_owner = component.get("sourcePrefabId") or component.get("ownerPrefabId")
-    owners = []
-    owner_counts = Counter(row.get("sourceId") for row in prefabs
-                           if isinstance(row, dict) and isinstance(row.get("sourceId"), str))
-    for prefab in prefabs:
-        if not isinstance(prefab, dict) or not isinstance(prefab.get("sourceId"), str):
-            continue
-        nodes = prefab.get("nodes")
-        if not isinstance(nodes, list):
-            continue
-        node_ids = {row.get("sourceId") if isinstance(row, dict) else row for row in nodes}
-        if node_id in node_ids:
-            owners.append(prefab["sourceId"])
+    owner_counts, by_node = index if index is not None else _owner_index(prefabs)
+    owners = by_node.get(node_id, ())
     if declared_owner is not None:
         if (not isinstance(declared_owner, str) or declared_owner not in owners or
                 owner_counts.get(declared_owner) != 1):
@@ -259,6 +265,15 @@ def _owner_scoped_component_rows(container: dict) -> list[dict]:
                 value["_coverageCollectionRole"] = "disabled-component"
             rows.append(value)
     return rows
+
+
+def _unique_nodes_by_id(rows):
+    result = {}
+    for row in rows if isinstance(rows, list) else ():
+        if isinstance(row, dict) and isinstance(row.get("sourceId"), str):
+            sid = row["sourceId"]
+            result[sid] = None if sid in result else row
+    return result
 
 
 def _unique_node_row(rows, node_id):
@@ -393,13 +408,16 @@ def _strict_unity_component_join(plan: dict, readback: dict) -> tuple[list[dict]
     diagnostics.extend(spine_diagnostics)
     invalid_sources.update(spine_invalid)
     source_components = [row for row in plan.get("components", []) if isinstance(row, dict)]
+    owner_index = _owner_index(plan.get("sourcePrefabs") or [])
+    source_nodes_by_id = _unique_nodes_by_id(plan.get("nodes"))
+    top_nodes_by_id = _unique_nodes_by_id(readback.get("nodes"))
     by_source: dict[str, list[dict]] = defaultdict(list)
     owners_by_source: dict[str, str] = {}
     for component in source_components:
         sid = _identity(component)
         if not sid:
             continue
-        owner_id, owner_error = _planned_owner(plan, component)
+        owner_id, owner_error = _planned_owner(plan, component, owner_index)
         if owner_error:
             diagnostics.append(diagnostic("COMPONENT_SOURCE_OWNER_UNRESOLVED", sid,
                 "Cannot prove a unique sourcePrefab owner for the source component node: " + owner_error, sid))
@@ -500,15 +518,15 @@ def _strict_unity_component_join(plan: dict, readback: dict) -> tuple[list[dict]
                 "Saved owner Prefab node inventory does not contain the source component's planned node", sid))
             invalid_sources.add(sid)
             continue
-        source_nodes = [row for row in plan.get("nodes", []) if isinstance(row, dict) and row.get("sourceId") == node_id]
-        top_node = _unique_node_row(readback.get("nodes"), node_id)
+        source_node = source_nodes_by_id.get(node_id)
+        top_node = top_nodes_by_id.get(node_id)
         owner_node = _unique_node_row(owner.get("nodes"), node_id)
-        if len(source_nodes) != 1 or top_node is None or owner_node is None:
+        if source_node is None or top_node is None or owner_node is None:
             diagnostics.append(diagnostic("COMPONENT_NODE_IDENTITY_EVIDENCE_MISSING", sid,
                 "Source, top-level saved, and owner-local node identity rows must each be unique", sid))
             invalid_sources.add(sid)
             continue
-        source_active = source_nodes[0].get("active")
+        source_active = source_node.get("active")
         if (type(source_active) is not bool or type(top_node.get("active")) is not bool or
                 type(owner_node.get("active")) is not bool or
                 top_node.get("active") is not source_active or owner_node.get("active") is not source_active or
@@ -1243,13 +1261,17 @@ def _physical_inventory_key(row: dict):
     return identity["guid"], identity["localFileId"]
 
 
-def _mask_fields_prove_auxiliary(plan: dict, readback: dict, source_id: str, mask_target: dict) -> bool:
-    mask_rows = [row for row in _nested_rows(readback, "staticMaskFields") if _identity(row) == source_id]
+def _valid_mask_contract(plan):
     try:
         from .prefab_static_mask_continuation import validate_import_contract
         validate_import_contract(plan)
     except (ImportError, ValueError):
         return False
+    return True
+
+
+def _mask_fields_prove_auxiliary(plan: dict, readback: dict, source_id: str, mask_target: dict) -> bool:
+    mask_rows = [row for row in _nested_rows(readback, "staticMaskFields") if _identity(row) == source_id]
     contract = plan.get("staticMasks")
     planned = [row for row in contract.get("masks", []) if isinstance(row, dict) and row.get("sourceId") == source_id]
     if len(mask_rows) != 1 or len(planned) != 1:
@@ -1284,6 +1306,9 @@ def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[
               if isinstance(row, dict) and isinstance(row.get("sourceId"), str)}
     actual_owners = {row.get("sourceId"): row for row in readback.get("sourcePrefabs", [])
                      if isinstance(row, dict) and isinstance(row.get("sourceId"), str)}
+    owner_index = _owner_index(plan.get("sourcePrefabs") or [])
+    top_nodes_by_id = _unique_nodes_by_id(readback.get("nodes"))
+    mask_contract_valid = None
     joined_by_node = defaultdict(list)
     for row in joined:
         if row.get("node"):
@@ -1307,9 +1332,9 @@ def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[
                                       for row in node_sources)
         if not needs_graphic_inventory:
             continue
-        expected_owners = {_planned_owner(plan, row)[0] for row in node_sources}
+        expected_owners = {_planned_owner(plan, row, owner_index)[0] for row in node_sources}
         expected_owners.discard(None)
-        root_node = _unique_node_row(readback.get("nodes"), node_id)
+        root_node = top_nodes_by_id.get(node_id)
         owner_nodes = []
         for owner_id in expected_owners:
             owner = actual_owners.get(owner_id)
@@ -1504,7 +1529,9 @@ def _validate_unity_physical_inventory(plan: dict, readback: dict, joined: list[
                     owner_uuid = physical.get("auxiliaryOwnerComponentUuid")
                     masks = [row for row in node_joined if source_by_id.get(_identity(row), {}).get("type") == "cc.Mask"
                              and row.get("componentUuid") == owner_uuid and row.get("nativeEnabled") is physical.get("enabled")]
-                    if len(masks) == 1 and _mask_fields_prove_auxiliary(plan, readback, _identity(masks[0]), masks[0]):
+                    if mask_contract_valid is None:
+                        mask_contract_valid = _valid_mask_contract(plan)
+                    if len(masks) == 1 and mask_contract_valid and _mask_fields_prove_auxiliary(plan, readback, _identity(masks[0]), masks[0]):
                         continue
                 diagnostics.append(diagnostic("COMPONENT_UNOWNED_NATIVE_GRAPHIC", node_id,
                     f"A persisted {scope_name} Graphic has no exact source identity or verified scope-local auxiliary owner", node_id))

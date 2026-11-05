@@ -74,3 +74,16 @@ def test_native_pair_refuses_mismatches(native_pair, damage):
             p.write_bytes(pretty(doc))
     with pytest.raises(ParseError,match='NATIVE_AGGREGATE_INVALID'):
         verify(pins)
+
+
+def test_compressed_report_preserves_every_row_and_status(tmp_path):
+    import gzip
+    from monkey.unity_aggregate_readback import write_verified_report
+    issue = dict(code='UNRESOLVED',sourceId='a',message='detail')
+    result = dict(diagnostics=[issue,issue],blockingDiagnostics=[issue,issue],componentCoverage={'rows':[1,2]})
+    assert write_verified_report(tmp_path,result,[issue])['status']=='partial'
+    manifest=json.loads((tmp_path/'manifest.json').read_bytes())
+    packed=(tmp_path/manifest['fullVerificationReport']['path']).read_bytes()
+    assert sha(packed)==manifest['fullVerificationReport']['sha256']
+    assert json.loads(gzip.decompress(packed))==result
+    assert manifest['diagnosticCount']==manifest['blockingCodes']['UNRESOLVED']==2

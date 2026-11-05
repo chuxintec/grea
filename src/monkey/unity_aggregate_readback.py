@@ -150,3 +150,33 @@ def read_pair(root, instruction, plan_sha, editor_pin, source_pin):
         return result, dict(editorSha256=editor_pin, sourcePrefabsSha256=source_pin,
                             prefabCount=len(result['sourcePrefabs']), orderedReceiptSha256=order_pin,
                             editorBytes=len(editor), sourcePrefabsBytes=len(source))
+
+
+def write_verified_report(out, result, blockers):
+    """Keep the full evidence and publish a bounded manifest for pinned aggregates."""
+    import gzip
+    import io
+    import json
+    from collections import Counter
+    from .io import finish, write_json
+
+    report_path = out/'verification.json.gz'
+    with report_path.open('xb') as raw:
+        with gzip.GzipFile(filename='', fileobj=raw, mode='wb', compresslevel=1, mtime=0) as packed:
+            with io.TextIOWrapper(packed, encoding='utf-8') as stream:
+                json.dump(result, stream, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+    detailed = {'componentCoverage', 'diagnostics', 'nativeDiagnostics', 'blockingDiagnostics',
+                'remainingDynamicDiagnostics', 'resolvedNativeDiagnostics', 'savedGeneratedMetaReadback'}
+    summary = {key:value for key,value in result.items() if key not in detailed}
+    summary['reportFormat'] = 'monkey-unity-verification-gzip/1'
+    summary['fullVerificationReport'] = dict(path=report_path.name, sha256=fingerprint(report_path),
+                                             bytes=report_path.stat().st_size, encoding='gzip+utf-8-json')
+    summary['diagnosticCount'] = len(result['diagnostics'])
+    summary['blockingCodes'] = dict(Counter(row['code'] for row in result.get('blockingDiagnostics', [])))
+    examples = {}
+    for row in result.get('blockingDiagnostics', []):
+        examples.setdefault(row['code'], {key:row.get(key) for key in ('code','sourceId','location','message')})
+    summary['blockingExamples'] = list(examples.values())
+    write_json(out/'verification.json', summary)
+    stored = finish(out,summary,blocking_diagnostics=blockers)
+    return dict(result, **{key:stored[key] for key in ('status','files','limits','fullVerificationReport')})

@@ -96,6 +96,10 @@ def _effective_activity(plan: Mapping, node_id: str) -> tuple[bool, bool]:
         if node["sourceId"] in node_map:
             raise StaticMaskContinuationError(f"source node identity repeats: {node['sourceId']}")
         node_map[node["sourceId"]] = node
+    return _activity_from_nodes(node_map, node_id)
+
+
+def _activity_from_nodes(node_map, node_id):
     self_node = node_map.get(node_id)
     if self_node is None or type(self_node.get("active")) is not bool:
         raise StaticMaskContinuationError(f"source Mask node activity is not typed: {node_id}")
@@ -675,6 +679,7 @@ def validate_import_contract(instruction: Mapping) -> dict:
     node_ids = [n.get('sourceId') for n in nodes]
     if any(not isinstance(n, str) or not n for n in node_ids) or len(set(node_ids)) != len(node_ids):
         raise StaticMaskContinuationError('STATIC_MASK_IMPORT_NODES_INVALID')
+    nodes_by_id = dict(zip(node_ids, nodes))
     # Native ProxyQueueSpec is distinct from the source queue graph. Null is
     # the producer's no-queue value, not evidence of a missing source graph.
     queues = instruction.get('staticSortQueue')
@@ -698,7 +703,7 @@ def validate_import_contract(instruction: Mapping) -> dict:
         if (not isinstance(row.get('sourceOriginId'), str) or not row['sourceOriginId'] or
                 not isinstance(raw, Mapping) or raw.get('__type__') != 'cc.Mask' or
                 not isinstance(raw_json, str) or raw_json != json.dumps(raw, ensure_ascii=False, sort_keys=True, separators=(',', ':')) or
-                row.get('node') not in node_ids or row.get('node') != component.get('node') or
+                row.get('node') not in nodes_by_id or row.get('node') != component.get('node') or
                 not isinstance(row.get('nativeId'), str) or not row['nativeId'] or row['nativeId'] != component.get('nativeId') or
                 type(row.get('enabled')) is not bool or row['enabled'] is not component.get('enabled') or
                 type(row.get('maskType')) is not int or row['maskType'] not in (0, 1, 2) or row['maskType'] != component.get('maskType') or
@@ -709,7 +714,7 @@ def validate_import_contract(instruction: Mapping) -> dict:
                 raw.get('_inverted', raw.get('_N$inverted', False)) is not row['inverted'] or
                 raw.get('_alphaThreshold', raw.get('_N$alphaThreshold', 0.1)) != threshold):
             raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_FIELDS_MISMATCH: '+sid)
-        active_self, active = _effective_activity(instruction, row['node'])
+        active_self, active = _activity_from_nodes(nodes_by_id, row['node'])
         if row.get('sourceActiveSelf') is not active_self or row.get('sourceActive') is not active:
             raise StaticMaskContinuationError('STATIC_MASK_IMPORT_SOURCE_ACTIVITY_MISMATCH: '+sid)
         disposition = row.get('sourceQueueDisposition')

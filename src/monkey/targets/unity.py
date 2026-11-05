@@ -1226,10 +1226,13 @@ def verify(candidate, output, level='static', *, readback_pins=None):
         result['aggregateReadback']=aggregate_proof
     result['currentDiagnosticCounts']={key:len(rows)for key,rows in current_diagnostics.items()}
     result['verificationScope']=('resource-gallery' if locals().get('instruction',{}).get('galleryOnly')is True else 'saved-source-node-subset')if level=='editor' else 'generated-files'
-    write_json(out/'verification.json',result)
     completion_blockers=list(current_diagnostics['blocking'])
     required=('staticValidation','nativeStaticValidation','staticPresentationValidation')if level=='editor' else('staticValidation',)
     completion_blockers.extend(key for key in required if result.get(key)!='pass')
+    if aggregate_proof is not None:
+        from ..unity_aggregate_readback import write_verified_report
+        return write_verified_report(out,result,completion_blockers)
+    write_json(out/'verification.json',result)
     return finish(out,result,blocking_diagnostics=completion_blockers)
 
 

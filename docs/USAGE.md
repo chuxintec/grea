@@ -468,3 +468,5 @@ monkey verify --level editor --candidate NATIVE/UnityProject --out NEW_REPORT \
 ```
 
 两个指纹共同启用 JsonUtility 聚合回执读取，单份最多 1024 MiB、4000 万个结构标点，单行记录最多 32 MiB。工具核对两个阶段共有字段的签名，并按导入指令顺序将每个 Prefab 与独立回执、Prefab 及 .meta 指纹对应。报告的 aggregateReadback 记录两份文件的原始指纹和顺序签名。退出码 1 表示已有完整或部分验证结果，具体差异见报告。
+
+双指纹模式将完整逐项报告存为 verification.json.gz。verification.json 和 manifest.json 提供分类计数、阻塞样例及压缩文件的 SHA-256。
