@@ -6,10 +6,10 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-05T12:46:38.048044+08:00",
+  "updatedAt": "2026-11-05T13:03:27.377312+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "肥鹅隔离全量审计已通过总监验收，见 grea:T-foodstreet-full-conversion-diagnostic 的裁定、固定候选与交付索引。后续由既有 monkey 通用整改与独立双审处理缺口，产品采用保持 HOLD。",
+  "currentStage": "当前事件 foodstreet-monkey-parallel-20261105：两条独立 detached 工作树并行开发，Unity 串行，原主开发负责唯一 dev28 集成。退出须以同一固定候选交总监，正式采用继续 HOLD。",
   "activeImplementationTask": "grea:T-monkey-audit-remediation-dual-review",
   "releases": [
     {
@@ -72,7 +72,9 @@
       "requiredTaskIds": [
         "grea:T-foodstreet-four-activity-bulk",
         "grea:T-zombie-bulk-static-prefabs",
-        "grea:T-monkey-audit-remediation-dual-review"
+        "grea:T-monkey-audit-remediation-dual-review",
+        "grea:T-foodstreet-monkey-visual",
+        "grea:T-foodstreet-monkey-bindings"
       ]
     }
   ],
@@ -618,7 +620,7 @@
         ".private/development/audit-remediation-20261105/dev27-minimal/review-handoff.json",
         "/Users/wangmeng/MyProjects/Manager/reviews/20261105-monkey-dev27-dual-review/RESULT.md"
       ],
-      "nextAction": "monkey修四组通用缺陷，沿用同一组审计反例，新增合法共享和必要组件正例。GREA核新固定制品后交总监与Claude CLI独立复审。",
+      "nextAction": "原 monkey 主开发单写 dev28 共享 CLI、Importer 接线、验证/冻结、打包与版本。集成两线提交，GREA 以单一源码 SHA 和制品摘要复核四页、受影响样本及门禁，再交独立双审。",
       "authorizationHumanMessage": "01a1a95b-4d69-73e2-abde-24f8b8cf8b42",
       "blockerIds": [],
       "fixedReviewCandidate": {
@@ -647,6 +649,42 @@
         ".private/development/foodstreet-full-conversion-audit-20261105/REPORT.md",
         "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-full-conversion-audit/result.json"
       ]
+    },
+    {
+      "id": "grea:T-foodstreet-monkey-visual",
+      "title": "肥鹅驱动 monkey 转换修复和分层实图",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "in_progress",
+      "ownerSessionId": "01a1aa15-8661-7c92-8458-4779e19afc42",
+      "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
+      "acceptanceCriteria": [
+        "按全量底册对账，按共因修预算、原生失败和四页文字；其他原因逐根保留",
+        "首轮至少40个独立源ID，按4/12/12/8/4去重，固定样本与种子，实图逐张目检；保留前后截图、状态、文件身份、回执和剩余差异"
+      ],
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-visual/monkey",
+        ".private/development/foodstreet-monkey-parallel-20261105"
+      ],
+      "nextAction": "专属树实施并提交本地 SHA、精确回执与剩余项；Unity 执行经共享独占锁串行。"
+    },
+    {
+      "id": "grea:T-foodstreet-monkey-bindings",
+      "title": "肥鹅驱动 monkey 静态 MonoBehaviour 批量挂载",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "in_progress",
+      "ownerSessionId": "01a1aa15-8791-7512-92df-1ab33a28d0de",
+      "description": "foodstreet-monkey-parallel-20261105，从固定 51a5e900b70107fa23de3fe808e3869383a93947 在专属 detached 工作树实现。原主开发单写 dev28 共享入口、门禁和版本。",
+      "acceptanceCriteria": [
+        "先验证 MasterMatchMainWindow 和 ScaleBackEffect 多实例，真实编译、GetClass、保存冷重开、字段/引用/节点与错绑反例",
+        "扩至四页并按类型族批量挂载，逐项交代 5,681 个源组件的实际去向和原生证据"
+      ],
+      "sourceRefs": [
+        "/Users/wangmeng/MyProjects/Manager/decisions/20261105-foodstreet-monkey-parallel/PLAN.md",
+        "/Users/wangmeng/.codex/worktrees/monkey-foodstreet-bindings/monkey",
+        ".private/development/foodstreet-monkey-parallel-20261105"
+      ],
+      "nextAction": "专属树实施并提交本地 SHA、精确回执与剩余项；Unity 执行经共享独占锁串行。"
     }
   ],
   "blockers": [
