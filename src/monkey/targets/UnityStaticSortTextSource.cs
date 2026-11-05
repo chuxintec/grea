@@ -3002,10 +3002,10 @@ namespace Monkey.StaticSortQueueProxy
                 var requires = (source.captureRole == "fallback-font-transient" || source.captureRole == "fallback-font-persistent") &&
                     source.outlineDriverPresent && source.outlineTargetMatchesOwner;
                 var expectedDisposition = requires ? "required" : "not-required";
-                var expectedSkip = requires ? null : ExpectedRegistrationSkipReason(source.captureRole);
+                var expectedSkip = requires ? String.Empty : ExpectedRegistrationSkipReason(source.captureRole);
                 if (source.registrationDisposition != expectedDisposition ||
                     source.registrationOutcome != (requires ? "pending" : "skipped") ||
-                    source.registrationSkipReason != expectedSkip) return false;
+                    (source.registrationSkipReason ?? String.Empty) != expectedSkip) return false;
                 foreach (var phase in lifecycle.phases.Where(value => value != null &&
                     (value.slot < 0 || value.slot == slotId)))
                 {
@@ -3019,7 +3019,7 @@ namespace Monkey.StaticSortQueueProxy
                         snapshot.fontAssetIsRasterBitmap != source.fontAssetIsRasterBitmap ||
                         snapshot.fallbackAtlasIndex != source.fallbackAtlasIndex ||
                         snapshot.registrationDisposition != expectedDisposition ||
-                        snapshot.registrationSkipReason != expectedSkip) return false;
+                        (snapshot.registrationSkipReason ?? String.Empty) != expectedSkip) return false;
                     if (requires)
                     {
                         var registeredPhase = phase.phase == "register-fallback-variant-output" ||
@@ -3676,6 +3676,15 @@ namespace Monkey.StaticSortQueueProxy
                     captured.bakedProxyMaterialFingerprint == captured.transientFallbackFingerprint;
                 if (!persistentFallbackTransition)
                     return Fail("TMP_SORT_CAPTURE_SLOT_ROLE_TRANSITION_UNPROVEN:" + captured.captureRole + "->" + current.observedRole, out diagnostic);
+                // A fresh TMP enumeration observes the registered material but has
+                // no history of the bake. Carry its proof only after verifying
+                // this material reference, GUID, local ID and both fingerprints.
+                current.tmpFallbackMaterialBaked = captured.tmpFallbackMaterialBaked;
+                current.bakedProxyMaterialGuid = captured.bakedProxyMaterialGuid;
+                current.bakedProxyMaterialLocalFileId = captured.bakedProxyMaterialLocalFileId;
+                current.bakedProxyMaterialFingerprint = captured.bakedProxyMaterialFingerprint;
+                current.transientFallbackFingerprint = captured.transientFallbackFingerprint;
+                current.tmpFallbackAlgorithm = captured.tmpFallbackAlgorithm;
                 transition = "transient-to-persistent-registered";
             }
             else if (captured.captureRole != "primary-font" && captured.captureRole != "fallback-font-transient" &&

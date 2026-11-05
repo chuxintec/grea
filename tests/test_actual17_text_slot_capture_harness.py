@@ -539,6 +539,10 @@ static class UnityStaticSortTextSource {
    if(failRegistration)return false;if(!b.requiresPersistentFallbackRegistration)return true;b.requiresPersistentFallbackRegistration=false; b.persistentFallbackVariantRegistered=true;b.registrationOutcome="registered";b.registrationSkipReason=null;
    var next=b.Copy(); next.sourceMaterial=b.proxyMaterial; next.sourceMaterialGuid=b.bakedProxyMaterialGuid;
    next.sourceMaterialLocalFileId=b.bakedProxyMaterialLocalFileId; next.sourceMaterialFingerprint=b.bakedProxyMaterialFingerprint;next.observedRole="fallback-font-persistent";next.observedRoleVerified=true;next.roleTransition="transient-to-persistent-registered";
+   // Fresh final samples retain observed asset identity but have no prior bake evidence.
+   next.tmpFallbackMaterialBaked=false;next.bakedProxyMaterialFingerprint=null;
+   next.bakedProxyMaterialGuid=null;next.bakedProxyMaterialLocalFileId=0;
+   next.transientFallbackFingerprint=null;next.tmpFallbackAlgorithm=null;
    next.textSlotEnumeration=null; var bindingIndex=b.owner.finalBindings.FindIndex(x=>x!=null&&x.materialSlot==b.materialSlot);b.owner.finalBindings[bindingIndex]=next;
    var e=CloneEnum(b.owner.finalEnumeration??b.owner.enumeration);
    var r=e.rows[b.materialSlot];r.sourceGraphicMaterialGuid=b.bakedProxyMaterialGuid;
