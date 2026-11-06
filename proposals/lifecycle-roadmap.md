@@ -13,7 +13,7 @@
   "updatedAt": "2026-11-06T11:34:13+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "GREA 已完成僵尸 300.411 剩余有源 Prefab 的隔离静态复验。B02 的同工程采用与正式验收仍按先肥鹅四活动、再僵尸推进。",
+  "currentStage": "GREA 已完成僵尸 300.411 剩余有源 Prefab 的隔离静态复验。B02 当前仅验僵尸：待完成单工程合并、ActorHp 共享工程修复及 Unity 复验。肥鹅四页界面已由用户验收，B02 不写入肥鹅正式工程。",
   "commandArchitecturePilot": {
     "scope": "prefab intake-plan；B02 的采用、回滚和静态验证保持各自的入口",
     "status": "试点已实施并对照，其他动作继续沿原路由；以后按动作验收后迁移",
@@ -491,7 +491,7 @@
           "sourceModuleRoot": "../beaver"
         }
       ],
-      "nextAction": "先按四活动的源 ID 将现有候选、绑定和同版画面对齐。仅在缺口有对应证据时交现任模块主开发处理；项目采用和总监验收分别记录。",
+      "nextAction": "保留已通过的肥鹅四页界面、候选与 Play Mode 回执；正式写入肥鹅工程已移出 B02。",
       "blockerIds": [
         "grea:B-beaver-B-native03-owned-export",
         "grea:B-beaver-B-native03-runtime-bindings",
@@ -596,7 +596,7 @@
           "sourceModuleRoot": "../monkey"
         }
       ],
-      "nextAction": "保留 7,835 个隔离复验回执。正式采用前核对肥鹅四活动与独立审查放行，之后对同 GUID 异内容及既有业务绑定做三方采用；通过 B02 正式验收后启动 B03。",
+      "nextAction": "直接推进僵尸单工程合并，核对冲突 GUID、同名依赖和既有业务绑定。在合并工程复验 ActorHp 并完成全量采用核对；B02 正式验收通过后启动 B03。",
       "supersededTaskIds": [
         "grea:T-monkey-dev8-consumer-handoff"
       ],
@@ -1159,7 +1159,7 @@
 ## 当前约束与实际结果
 
 - monkey 当前主开发线为 `v0.8.0.dev45`。dev44 已交描边和肥鹅批量静态成果；僵尸 300.411 全量工具进展见当前任务的交付索引。
-- 肥鹅项目已验帮助页开关窄项，四活动正式采用仍为 HOLD。僵尸项目已有 10 个不同根的采用回执，新批次的原生静态结果另计。
+- 本轮用户已验收肥鹅四个界面，并明确 B02 只考虑僵尸工程。肥鹅工程正式采用移出本批；此前计划中的先后顺序只作历史记录。僵尸项目已有 10 个不同根的采用回执，新批次的隔离原生结果另计。
 - 二进制编译/打包仍由用户暂停；本次源码与分支整改不恢复该线，不新增 Release 或安装。
 - 旧固定消费者、源码提交、锁、输入和运行时保留；路径型 sourceRefs 以仓库根为基准，私有执行证据不纳入公开源码。
 
