@@ -1,4 +1,6 @@
-# beaver development
+# Engineering in monkey
+
+This is the imported engineering module of monkey. New engineering changes and tests land in the monkey repository and run through `monkey develop`. Existing pinned beaver transactions keep their original runtime. Keep source recovery and development-project adoption as separately verified operations. The historical guidelines below still apply to implementation safety; standalone repository and release ownership is superseded.
 
 GREA's internal development-engineering module: Python CLI and native Unity Editor companions. Source-package recovery belongs to upstream modules.
 
