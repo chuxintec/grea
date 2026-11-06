@@ -72,6 +72,7 @@ DEVELOPMENT_GROUPS = {
     "native": ("project", "native"), "build-filter": ("build", "filter"),
 }
 HELPER_GROUPS = {
+    "prefab": "verify_static_set",
     "source": "unpack_xapk unpack_wxapkg decrypt_v1mmwx_wxapkg laya_contract_audit cocos_modules cocos_convert",
     "research": "research_report", "project": "unity_pilot unity_reference cocos_project",
     "asset": "unity_asset_ledger unity_dependency_audit static_asset_copy unity_native_assets shader_probe image_alpha_audit image_contact_sheet audit_numeric_texture cocos_assets",

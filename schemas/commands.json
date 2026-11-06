@@ -10217,6 +10217,93 @@
       "exclusiveGroups": []
     },
     {
+      "module": "prefab",
+      "action": "verify-static-set",
+      "usage": "usage: grea prefab verify-static-set [-h] --project PROJECT --selection SELECTION --expected-selection EXPECTED_SELECTION --unity-editor UNITY_EDITOR --output OUTPUT [--budget-seconds BUDGET_SECONDS]",
+      "description": "Save, cold-open and reimport a hash-pinned set of Prefabs in a fresh Unity project copy.",
+      "parameters": [
+        {
+          "name": "project",
+          "flags": [
+            "--project"
+          ],
+          "dest": "project",
+          "type": "Path",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Trusted Unity candidate (copied, never edited)"
+        },
+        {
+          "name": "selection",
+          "flags": [
+            "--selection"
+          ],
+          "dest": "selection",
+          "type": "Path",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "UTF-8 JSONL of assetPath, guid, sha256 and sourceNodes; optional source and capture"
+        },
+        {
+          "name": "expected-selection",
+          "flags": [
+            "--expected-selection"
+          ],
+          "dest": "expected_selection",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "SHA-256 of the exact selection bytes"
+        },
+        {
+          "name": "unity-editor",
+          "flags": [
+            "--unity-editor"
+          ],
+          "dest": "unity_editor",
+          "type": "Path",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Matching installed Unity 6 Editor executable"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
+          "type": "Path",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "New directory for the isolated project and receipts"
+        },
+        {
+          "name": "budget-seconds",
+          "flags": [
+            "--budget-seconds"
+          ],
+          "dest": "budget_seconds",
+          "type": "int",
+          "required": false,
+          "nargs": null,
+          "repeatable": false,
+          "default": 1800,
+          "help": "Timeout per Editor phase, 30–7200 seconds"
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
       "module": "project",
       "action": "adopt-apply",
       "usage": "usage: grea project adopt-apply [-h] --plan PLAN --expected-plan EXPECTED_PLAN --output OUT --editor-path EDITOR_PATH [--timeout TIMEOUT]",

@@ -1,0 +1,70 @@
+using System;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.UI;
+using Object = UnityEngine.Object;
+
+namespace Grea.StaticVerification
+{
+    internal static class StaticSetCapture
+    {
+        internal static void Render(GameObject asset,string kind,string output)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+            int w = kind=="ui" ? 432 : 480, h = kind=="ui" ? 768 : 480;
+            var cameraObject = new GameObject("GreaCaptureCamera");
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.orthographic = true; camera.orthographicSize=5;
+            camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=new Color32(32,36,44,255);
+            camera.nearClipPlane=.01f;camera.farClipPlane=10000;camera.allowHDR=false;camera.allowMSAA=false;
+            camera.transform.position=new Vector3(0,0,-30);
+            var target=new RenderTexture(w,h,24,RenderTextureFormat.ARGB32);
+            var previous=RenderTexture.active;Texture2D tex=null;
+            try
+            {
+                camera.targetTexture=target;
+                var instance=(GameObject)PrefabUtility.InstantiatePrefab(asset,scene);
+                if (kind=="ui")
+                {
+                    var cv=new GameObject("GreaCaptureCanvas",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler));
+                    var canvas=cv.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceCamera;
+                    canvas.worldCamera=camera;canvas.planeDistance=10;
+                    var scaler=cv.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                    scaler.referenceResolution=new Vector2(720,1280);scaler.matchWidthOrHeight=.5f;
+                    instance.transform.SetParent(cv.transform,false);
+                    Canvas.ForceUpdateCanvases();
+                }
+                else
+                {
+                    var light=new GameObject("GreaCaptureLight").AddComponent<Light>();
+                    light.type=LightType.Directional;light.intensity=1.5f;light.transform.rotation=Quaternion.Euler(35,-25,0);
+                    if(kind=="effect")
+                    {
+                        var systems=instance.GetComponentsInChildren<ParticleSystem>(true);
+                        foreach(var ps in systems){ ps.Stop(false,ParticleSystemStopBehavior.StopEmittingAndClear); ps.useAutoRandomSeed=false;ps.randomSeed=54321; }
+                        foreach(var ps in systems)ps.Simulate(.63f,false,true,true);
+                    }
+                    var renderers=instance.GetComponentsInChildren<Renderer>(false).Where(r=>r.enabled).ToArray();
+                    if(renderers.Length>0)
+                    {
+                        Bounds b=renderers[0].bounds;foreach(var r in renderers.Skip(1))b.Encapsulate(r.bounds);
+                        camera.orthographicSize=Mathf.Max(.15f,Mathf.Max(b.extents.x,b.extents.y)*1.2f);
+                        camera.transform.position=b.center-Vector3.forward*Mathf.Max(30,b.extents.z+3);
+                    }
+                }
+                camera.Render();RenderTexture.active=target;
+                tex=new Texture2D(w,h,TextureFormat.RGB24,false);
+                tex.ReadPixels(new Rect(0,0,w,h),0,0);tex.Apply();File.WriteAllBytes(output,tex.EncodeToPNG());
+            }
+            finally
+            {
+                camera.targetTexture=null;RenderTexture.active=previous;
+                if(tex)Object.DestroyImmediate(tex);Object.DestroyImmediate(target);
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+            }
+        }
+    }
+}

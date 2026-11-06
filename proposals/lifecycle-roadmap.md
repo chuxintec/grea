@@ -13,7 +13,7 @@
   "updatedAt": "2026-11-06T11:34:13+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "monkey 在 dev45 自主完成僵尸 300.411 静态批次。GREA 核对已有交付与消费者回执；正式验收先肥鹅四活动，再僵尸。",
+  "currentStage": "GREA 已完成僵尸 300.411 剩余有源 Prefab 的隔离静态复验。B02 的同工程采用与正式验收仍按先肥鹅四活动、再僵尸推进。",
   "activeImplementationTask": "grea:T-zombie-bulk-static-prefabs",
   "releases": [
     {
@@ -554,8 +554,8 @@
       "title": "monkey统一0.8线僵尸有源Prefab全量静态批处理与采用",
       "primaryReleaseId": "grea:R1.1.0",
       "workflowStatus": "in_progress",
-      "executionStatus": "monkey_static_batch_in_progress",
-      "description": "300.411 的 16,371 个 AB 已普查出 13,426 个可寻址源 Prefab。monkey 已交早期缓存 161 项及核心 UI 1,600 项，15 个隔离工程的 1,761 项静态复核有回执。全量批次由 dev45 主开发接续；项目已有采用回执仅覆盖 10 个不同根的静态子集、59 对资产。",
+      "executionStatus": "isolated_static_verified_formal_adoption_pending",
+      "description": "13,426 个有源根中，5,581 个已有隔离保存、冷读与重导回执，10 个已有原工程静态采用回执，其余 7,835 个已通过 GREA 分组保存、冷读、强制重导。候选分组保留冲突身份。50 个抽查中 22 个默认画面为单色；ActorHp 的共享候选血条偏暗，独立原路径复验与参照逐像素一致，共享工程视觉仍待解决。正式工程全量合并、采用和 B03 启动仍待前置验收。",
       "sourceRefs": [
         "../../Manager/decisions/20261104-zombie-bulk-prefab-recovery/PLAN.md",
         "../monkey/.private/unity-prefab-v080-20261104/source-prefab-inventory-with-adoption-02.json",
@@ -564,7 +564,9 @@
         "../monkey/.private/zombie-core1600/delivery/all1600.json",
         "../monkey/.private/zombie-repair-review/delivery/summary.json",
         "../../Games/projects/21-zombie-cannon/Analysis/static-prefab-20261102/ten-root-static-milestone-01.json",
-        "../monkey/.private/zombie-full300411"
+        "../monkey/.private/zombie-full300411",
+        ".private/zombie-b02-static-300411/evidence/native-summary.json",
+        ".private/zombie-b02-static-300411/evidence/all-roots.jsonl"
       ],
       "ownerSessionId": "01a1aee8-38cc-7502-9b82-021df0eda50a",
       "implementationModules": [
@@ -585,7 +587,7 @@
           "sourceModuleRoot": "../monkey"
         }
       ],
-      "nextAction": "GREA 从现有运行目录只读核对最终索引、保存冷读回执、制品身份和剩余差异；有固定交付后再核采用范围。不催办、不重启作业、不重转已验子集。",
+      "nextAction": "保留 7,835 个隔离复验回执。正式采用前核对肥鹅四活动与独立审查放行，之后对同 GUID 异内容及既有业务绑定做三方采用；通过 B02 正式验收后启动 B03。",
       "supersededTaskIds": [
         "grea:T-monkey-dev8-consumer-handoff"
       ],
@@ -603,12 +605,9 @@
       ],
       "moduleExecutorSessionId": "01a1ab54-d75a-7802-b6db-779dced6b3d2",
       "resume": {
-        "runDirectory": "../monkey/.private/zombie-full300411",
-        "deliveryDirectory": "../monkey/.private/zombie-full300411/delivery",
-        "identity": "dev44 提交 e5977db25ea5e19af25e7339dc6d5be663ec7e1e；交接时 dev45 工作树以同一提交为基底，含未提交改动。最终工具身份以批次冻结回执为准。",
-        "responsibility": "用户指定现有 monkey 主开发自主完成批次；GREA 只核对交付，项目正式采用按肥鹅、僵尸顺序验收。",
-        "receiptAtHandoff": "已核来源普查及 1,761 项复核。全量目录仍有在途作业，临时压缩包不作交付。",
-        "nextAction": "GREA 从现有运行目录只读核对最终索引、保存冷读回执、制品身份和剩余差异；有固定交付后再核采用范围。不催办、不重启作业、不重转已验子集。"
+        "runDirectory": ".private/zombie-b02-static-300411",
+        "receipt": ".private/zombie-b02-static-300411/evidence/native-summary.json",
+        "nextAction": "按原门槛接续同工程正式采用；已验根复用固定回执。"
       },
       "formalAdoptionDependsOnTaskIds": [
         "grea:T-foodstreet-four-activity-bulk",

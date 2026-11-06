@@ -1,0 +1,171 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using UnityEditor;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace Grea.StaticVerification
+{
+    public static class StaticSetProbe
+    {
+        [Serializable] private class Completion { public string editor, phase; public int roots, errors; }
+        private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+        private static readonly UTF8Encoding Utf8 = new UTF8Encoding(false);
+
+        private static string Hex(byte[] bytes) { return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant(); }
+        private static string TextHash(StringBuilder value)
+        {
+            using (var sha = SHA256.Create()) return Hex(sha.ComputeHash(Utf8.GetBytes(value.ToString())));
+        }
+        private static string FileHash(string path)
+        {
+            using (var file = File.OpenRead(path))
+            using (var sha = SHA256.Create()) return Hex(sha.ComputeHash(file));
+        }
+        private static string Identity(Object obj, out long local)
+        {
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out string guid, out local))
+                throw new InvalidDataException("object has no persistent identity: " + obj.GetType().FullName + "/" + obj.name);
+            return guid;
+        }
+        private static long Owned(Object obj, string expected)
+        {
+            string guid = Identity(obj, out long id);
+            if (guid != expected) throw new InvalidDataException("object belongs to another Prefab: " + obj.name + " -> " + guid);
+            return id;
+        }
+        private static string Vec(Vector3 v) { return v.x.ToString("R",Invariant)+","+v.y.ToString("R",Invariant)+","+v.z.ToString("R",Invariant); }
+
+        private sealed class Observation
+        {
+            public int nodes, components, properties, references, externalPins;
+            public readonly List<long> ids = new List<long>();
+            public readonly StringBuilder hierarchy = new StringBuilder(), bindings = new StringBuilder();
+            public readonly HashSet<string> external = new HashSet<string>(StringComparer.Ordinal);
+
+            public void Inspect(Object owner, long ownerId, string assetGuid)
+            {
+                using (var serialized = new SerializedObject(owner))
+                using (var prop = serialized.GetIterator())
+                {
+                    bool enter = true;
+                    while (prop.Next(enter))
+                    {
+                        properties++;
+                        var kind = prop.propertyType;
+                        enter = kind == SerializedPropertyType.Generic || kind == SerializedPropertyType.ManagedReference;
+                        if (kind != SerializedPropertyType.ObjectReference) continue;
+                        var obj = prop.objectReferenceValue;
+                        if (obj == null)
+                        {
+                            if (prop.objectReferenceEntityIdValue != EntityId.None)
+                                throw new InvalidDataException("unresolved reference: " + owner.name + "/" + prop.propertyPath);
+                            continue;
+                        }
+                        string guid = Identity(obj, out long target);
+                        references++;
+                        bindings.Append(ownerId).Append('|').Append(prop.propertyPath).Append('|').Append(guid).Append(':').Append(target)
+                                .Append('|').Append(obj.GetType().FullName).Append('\n');
+                        if (guid != assetGuid) external.Add(ownerId + ":" + guid + ":" + target);
+                    }
+                }
+            }
+            public void Read(GameObject root, string guid)
+            {
+                foreach (var tr in root.GetComponentsInChildren<Transform>(true))
+                {
+                    GameObject go = tr.gameObject;
+                    long goId = Owned(go,guid);
+                    ids.Add(goId); nodes++;
+                    var rot = tr.localRotation;
+                    hierarchy.Append(goId).Append('|').Append(tr.parent ? Owned(tr.parent.gameObject,guid) : 0).Append('|')
+                        .Append(tr.GetSiblingIndex()).Append('|').Append(go.activeSelf).Append('|').Append(go.layer)
+                        .Append('|').Append(go.name.Length).Append(':').Append(go.name).Append('|').Append(Vec(tr.localPosition))
+                        .Append('|').Append(Vec(tr.localScale)).Append('|').Append(rot.ToString("R",Invariant)).Append('\n');
+                    if (tr is RectTransform rect)
+                        hierarchy.Append("rect|").Append(Vec(rect.anchorMin)).Append('|').Append(Vec(rect.anchorMax)).Append('|')
+                            .Append(Vec(rect.pivot)).Append('|').Append(Vec(rect.anchoredPosition3D)).Append('|')
+                            .Append(Vec(rect.sizeDelta)).Append('\n');
+                    Inspect(go,goId,guid);
+                    foreach (var component in go.GetComponents<Component>())
+                    {
+                        if (!component) throw new InvalidDataException("missing component on " + go.name);
+                        long cid = Owned(component,guid);
+                        ids.Add(cid); components++;
+                        hierarchy.Append(cid).Append('|').Append(goId).Append('|').Append(component.GetType().Assembly.GetName().Name)
+                            .Append("::").Append(component.GetType().FullName).Append('\n');
+                        Inspect(component,cid,guid);
+                    }
+                }
+            }
+        }
+
+        public static void Run()
+        {
+            string dir = Environment.GetEnvironmentVariable("GREA_STATIC_SET_RUN");
+            string phase = Environment.GetEnvironmentVariable("GREA_STATIC_SET_PHASE");
+            int errors = 0, roots = 0;
+            try
+            {
+                var expectedRefs = new Dictionary<string,HashSet<string>>();
+                foreach (string line in File.ReadLines(Path.Combine(dir,"references.tsv")))
+                {
+                    string[] parts = line.Split('\t');
+                    if (!expectedRefs.TryGetValue(parts[0],out var set)) expectedRefs[parts[0]] = set = new HashSet<string>();
+                    set.Add(parts[1]);
+                }
+                using (var result = new StreamWriter(Path.Combine(dir,phase+".tsv"),false,Utf8))
+                {
+                    foreach (string line in File.ReadLines(Path.Combine(dir,"roots.tsv")))
+                    {
+                        string[] r = line.Split('\t');
+                        string guid = r[0], path = r[1], error = "", persisted = "";
+                        var o = new Observation();
+                        try
+                        {
+                            if (phase == "repeat")
+                                AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+                            if (AssetDatabase.GUIDToAssetPath(guid) != path) throw new InvalidDataException("GUID/path mismatch");
+                            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                            if (!asset || PrefabUtility.GetPrefabAssetType(asset)==PrefabAssetType.NotAPrefab)
+                                throw new InvalidDataException("not an imported Prefab");
+                            o.Read(asset,guid);
+                            if (o.nodes!=int.Parse(r[2],Invariant) || string.Join(",",o.ids.OrderBy(n=>n))!=r[3])
+                                throw new InvalidDataException("local IDs or source node count differ");
+                            if (expectedRefs.TryGetValue(guid,out var wanted))
+                            {
+                                o.externalPins = wanted.Count;
+                                var missing = wanted.Except(o.external).Take(4).ToArray();
+                                if (missing.Length!=0) throw new InvalidDataException("source reference not read back: "+string.Join(",",missing));
+                            }
+                            if (phase=="save")
+                            {
+                                PrefabUtility.SavePrefabAsset(asset,out bool saved);
+                                if (!saved) throw new InvalidDataException("Prefab save failed");
+                            }
+                            persisted = FileHash(path);
+                            if (phase!="repeat" && r[4]!="")
+                                StaticSetCapture.Render(asset,r[4],Path.Combine(dir,"images",phase+"-"+guid+".png"));
+                        }
+                        catch (Exception e) { errors++;error=e.GetType().Name+" "+e.Message.Replace("\t"," ").Replace("\n"," ").Replace("\r"," "); }
+                        roots++;
+                        result.WriteLine(string.Join("\t",guid,o.nodes,o.components,o.properties,o.references,o.externalPins,
+                            TextHash(o.hierarchy),TextHash(o.bindings),persisted,error));
+                        if (roots%50==0) result.Flush();
+                    }
+                }
+                if (phase=="save") AssetDatabase.SaveAssets();
+                File.WriteAllText(Path.Combine(dir,phase+"-completion.json"),
+                    JsonUtility.ToJson(new Completion{editor=Application.unityVersion,phase=phase,roots=roots,errors=errors}),Utf8);
+                Debug.Log("GREA static set "+phase+" roots="+roots+" errors="+errors);
+                EditorApplication.Exit(errors==0 ? 0 : 3);
+            }
+            catch(Exception e) { Debug.LogException(e);EditorApplication.Exit(2); }
+        }
+    }
+}
