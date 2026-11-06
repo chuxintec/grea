@@ -43,7 +43,7 @@ class StructuredTests(unittest.TestCase):
             self.assertEqual(alias['redirectTarget'],'textures:'+TEXTURE)
             for name in ('UnityProject','CocosProject'):
                 project=root/'out'/name;m=load(read(project/'manifest.json'))
-                self.assertEqual(m['projectLayout'],'monkey-project/2.0.0')
+                self.assertEqual(m['projectLayout'],'grea-project-layout/2.1.0')
                 self.assertFalse([d for d in (m.get('diagnostics') or []) if d['code']=='LAYOUT_FORBIDDEN_NAME'])
                 self.assertEqual(m['validation']['editor'],'not_run')
                 if name=='UnityProject':

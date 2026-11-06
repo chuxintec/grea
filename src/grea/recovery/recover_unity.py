@@ -249,7 +249,7 @@ def convert(source,output,provider_python,asset_ripper,budget_seconds=600,depend
     write_json(analysis('unity-code-quarantine.json'),dict(schemaVersion=1,providerCode=code,schemaApplied=schema_applied,
                                                         methodsRecovered=0,unknownBehavior='not_run'))
     write_json(analysis('unity-code-model.json'),models)
-    # Provider export -> monkey-project/2.0.0, files move with their .meta so every GUID and reference survives.
+    # Provider export -> grea-project-layout/2.1.0, files move with their .meta so every GUID and reference survives.
     from .layout import load_overrides
     from .unity_layout import relocate
     overrides,overrides_sha=load_overrides(safe(layout_path) if layout_path else None)
@@ -264,7 +264,7 @@ Schema-derived C# fields preserve known types; they do not restore original meth
 Target Unity 6000.6.2f1. Native import, save/reopen, original visuals and gameplay have not run.
 See Analysis/Evidence/unity-typed-objects.json for exact source objects/PPtr identities and embedded schemas.
 See Analysis/Code/unity-code-model.json and unity-code-quarantine.json for named fields, original script identity and unknown method bodies.
-Assets/Game follows monkey-project/2.0.0 (Content/<Type>/<Module>, Scripts/<Assembly>); Analysis/Mappings/unity-relocation.json maps every provider path.
+Assets/Game follows grea-project-layout/2.1.0 (Content/<Type>/<Module>, Scripts/<Assembly>); Analysis/Mappings/unity-relocation.json maps every provider path.
 Assets contains provider resources and only evidence-derived C# fields; original/provider code is preserved in SourceRecovery.
 Do not treat missing external assets or placeholder provider GUIDs as resolved. Acquire the explicit dependencies, repair via typed source references,
 and verify native references before claiming a complete resource or gameplay recovery.
@@ -305,7 +305,7 @@ and verify native references before claiming a complete resource or gameplay rec
     from .layout.records import project_docs
     project_docs(project,'unity',TARGET_VERSION,__version__,overrides)
     (project/'README.md').write_text('Unity 6 resource candidate. Start with Docs/START-HERE.md; layout and module index: Docs/PROJECT-STRUCTURE.md.\nOriginal methods, missing references and native acceptance remain explicit gaps in Analysis/.\n',encoding='utf-8')
-    (out/'README.md').write_text('Conversion output: monkey-project/2.0.0\n\nOpen UnityProject/ with Unity '+TARGET_VERSION+'. Read UnityProject/Docs/START-HERE.md and conversion-result.json for evidence and limitations.\nNative Editor/Player/gameplay acceptance is separate from export completion.\n',encoding='utf-8')
+    (out/'README.md').write_text('Conversion output: grea-project-layout/2.1.0\n\nOpen UnityProject/ with Unity '+TARGET_VERSION+'. Read UnityProject/Docs/START-HERE.md and conversion-result.json for evidence and limitations.\nNative Editor/Player/gameplay acceptance is separate from export completion.\n',encoding='utf-8')
     from .layout.verify import scan
     from .layout.standard import VERSION as layout_version
     layout_gaps=scan([p.relative_to(project).as_posix() for p in assets.rglob('*') if p.is_file()])

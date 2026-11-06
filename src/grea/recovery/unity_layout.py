@@ -138,6 +138,7 @@ def plan(project,overrides=None):
             # Resources.Load keys survive: exact relative key below a typed Resources folder (GREA STR rule).
             at=lowered.index('resources',1);key='/'.join(parts[at+1:])
             typ=planner.types.get({'native':'sfx','font-asset':'font','controller':'animation','scene':'data'}.get(kind,kind)) or planner.types['data']
+            if kind=='sprite' and path.suffix.lower()=='.asset':typ=planner.types['standalone_sprite']
             move(relative,content+'/'+typ+'/Resources/'+key,kind,'resources-key-kept');continue
         requests.append((relative,kind,path.suffix,'',_meta(relative),None))
     planner.reserve(requests)

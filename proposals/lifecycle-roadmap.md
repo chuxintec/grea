@@ -4,16 +4,16 @@
 
 ## 压缩后从这里接续
 
-先读下方 `activeImplementationTask` 指向的僵尸批次及其 `resume`，核对同批交付清单和项目采用回执。GREA 单仓维护 source、prefab、asset、code、project 等执行模块。下文既有任务 ID、生产者及项目采用回执按原身份复用；B02 验收顺序仍为先肥鹅四活动，再僵尸。
+先读下方 `activeImplementationTask` 指向的僵尸批次及其 `resume`，核对同批交付清单和项目采用回执。GREA 单仓维护 source、prefab、asset、code、project 等执行模块。下文既有任务 ID、生产者及项目采用回执按原身份复用。按最新用户范围，B02 正式采用只验僵尸；肥鹅四页视觉结论独立保留。
 
 ```manager-task-view
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-06T11:34:13+08:00",
+  "updatedAt": "2026-11-07T01:17:26+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "GREA 已完成僵尸 300.411 剩余有源 Prefab 的隔离静态复验。B02 当前仅验僵尸：待完成单工程合并、ActorHp 共享工程修复及 Unity 复验。肥鹅四页界面已由用户验收，B02 不写入肥鹅正式工程。",
+  "currentStage": "僵尸 B02 静态采用已在唯一正式工程验收。133,368 项资产、13,426 个 Prefab、117 组脚本挂点通过核对。13 张迁移前后图逐像素一致；ActorHp 在 Play Mode 实例化并读回绿色血条。B03 跟踪 636 个 FBX 根与 18 个待核纹理标识。",
   "commandArchitecturePilot": {
     "scope": "prefab intake-plan；B02 的采用、回滚和静态验证保持各自的入口",
     "status": "试点已实施并对照，其他动作继续沿原路由；以后按动作验收后迁移",
@@ -21,7 +21,7 @@
     "evidence": ".private/cmd-pilot/comparison.json",
     "verification": "292 个公开动作目录一致；公共参数、请求文件、旧阶段 CLI、真实 stdio MCP 产出同一 SHA，候选与目标内容哈希保持；切换前后计划仅 implementationSha256 不同。工程与命令回归 719 passed、10 skipped、300 subtests passed。"
   },
-  "activeImplementationTask": "grea:T-zombie-bulk-static-prefabs",
+  "activeImplementationTask": "grea:T-zombie-b03-visual",
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -560,11 +560,11 @@
     },
     {
       "id": "grea:T-zombie-bulk-static-prefabs",
-      "title": "monkey统一0.8线僵尸有源Prefab全量静态批处理与采用",
+      "title": "僵尸有源 Prefab 全量静态恢复、归类与正式采用",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
-      "executionStatus": "isolated_static_verified_formal_adoption_pending",
-      "description": "13,426 个有源根中，5,581 个已有隔离保存、冷读与重导回执，10 个已有原工程静态采用回执，其余 7,835 个已通过 GREA 分组保存、冷读、强制重导。候选分组保留冲突身份。50 个抽查中 22 个默认画面为单色；ActorHp 的共享候选血条偏暗，独立原路径复验与参照逐像素一致，共享工程视觉仍待解决。正式工程全量合并、采用和 B03 启动仍待前置验收。",
+      "workflowStatus": "done",
+      "executionStatus": "formal_static_adoption_verified",
+      "description": "300.411 共 13,426 个有源 Prefab，133,368 项当前资产已按原生类型、来源模块和 GREA 命名规范纳入同一个资产工程。B02 只验僵尸。旧首关、业务资源和启动场景已退出。正式工程逐项核对命名联动、文件和 meta、来源挂点与静态视觉。",
       "sourceRefs": [
         "../../Manager/decisions/20261104-zombie-bulk-prefab-recovery/PLAN.md",
         "../monkey/.private/unity-prefab-v080-20261104/source-prefab-inventory-with-adoption-02.json",
@@ -575,7 +575,10 @@
         "../../Games/projects/21-zombie-cannon/Analysis/static-prefab-20261102/ten-root-static-milestone-01.json",
         "../monkey/.private/zombie-full300411",
         ".private/zombie-b02-static-300411/evidence/native-summary.json",
-        ".private/zombie-b02-static-300411/evidence/all-roots.jsonl"
+        ".private/zombie-b02-static-300411/evidence/all-roots.jsonl",
+        "../../Games/projects/21-zombie-cannon/Analysis/b02-unified-300411/current-only/standard/RESULT.md",
+        "../../Games/projects/21-zombie-cannon/Analysis/b02-unified-300411/current-only/standard/accepted.json",
+        "../../Games/projects/21-zombie-cannon/Analysis/b02-unified-300411/current-only/standard/final-stage/layout.jsonl"
       ],
       "ownerSessionId": "01a1aee8-38cc-7502-9b82-021df0eda50a",
       "implementationModules": [
@@ -596,36 +599,30 @@
           "sourceModuleRoot": "../monkey"
         }
       ],
-      "nextAction": "直接推进僵尸单工程合并，核对冲突 GUID、同名依赖和既有业务绑定。在合并工程复验 ActorHp 并完成全量采用核对；B02 正式验收通过后启动 B03。",
+      "nextAction": "B02 保留当前正式采用和逐项身份台账；B03 独立验证模型、纹理与其他可编辑视觉资源。",
       "supersededTaskIds": [
         "grea:T-monkey-dev8-consumer-handoff"
       ],
-      "retainedPendingScope": "dev8完整BattleMain491节点1380组件59291字段及独立根4/8/4297原生保存冷读通过，仍须固定身份/采用；归入本批，不计已经全量恢复。",
+      "retainedPendingScope": "历史 dev8 记录保留。B02 验收静态身份与显示；动态玩法、动画播放及未取得源节点的方法独立跟踪。",
       "blockerIds": [],
       "priority": 1,
       "acceptanceCriteria": [
         "monkey程序核清全部已取得且可识别源Prefab根、嵌套根及静态依赖，逐项区分缺源/未解析；161仅起始已知根，不以527目标文件充当源分母。",
         "统一0.8公开批处理生成范围内全部真实Unity Prefab及必要依赖，保来源→目标身份、静态组件字段与序列化引用；复用已验子集，不人工逐根拼装。",
         "全批次实际Unity6000.6.2f1导入、保存/重开和静态层级/字段/引用检查；每根生成/原生/静态状态可回读，失败共因修工具后重跑受影响批次。",
-        "按组件族及首关实际消费者做代表视觉对照，未覆盖视觉明确，不从少量样本推全量一致；纯动态缺口与静态完整性分开。",
-        "beaver实际采用通过的固定候选，保原业务/GUID/JSON/存档/WIP，明确采用结果；缺源和纯动态未恢复如实保留。",
-        "monkey 自主接续当前工具批次。正式产品交付依次验肥鹅四活动、僵尸全量采用；两批均需总监验收。",
-        "按全部源组件与真实原生诊断验收；retained-only非静态可见完成，Player未执行不得报通过；审计A1–A4修复并核受影响候选。"
+        "按本轮组件族及实际恢复挂点做代表视觉对照，未覆盖视觉明确，不从少量样本推全量一致；纯动态缺口与静态完整性分开。",
+        "仅采用本轮僵尸恢复内容，旧首关及旧业务退出正式工程；应用 GREA 目录、命名和兼容性检查。",
+        "按最新用户范围独立验收僵尸 B02；肥鹅四页视觉结论独立保留。",
+        "按已取得的源组件与原生诊断核对。只保留数据不算静态显示完成；未执行的 Player 和动态业务另列。保留 A1–A4 修复及受影响候选证据。"
       ],
       "moduleExecutorSessionId": "01a1ab54-d75a-7802-b6db-779dced6b3d2",
       "resume": {
-        "runDirectory": ".private/zombie-b02-static-300411",
-        "receipt": ".private/zombie-b02-static-300411/evidence/native-summary.json",
-        "nextAction": "按原门槛接续同工程正式采用；已验根复用固定回执。"
+        "runDirectory": "../../Games/projects/21-zombie-cannon/Analysis/b02-unified-300411/current-only/standard",
+        "receipt": "../../Games/projects/21-zombie-cannon/Analysis/b02-unified-300411/current-only/standard/accepted.json",
+        "nextAction": "B02 已收口；从 B03 来源索引接续。"
       },
-      "formalAdoptionDependsOnTaskIds": [
-        "grea:T-foodstreet-four-activity-bulk",
-        "grea:T-monkey-audit-remediation-dual-review"
-      ],
-      "formalAdoptionBlockerIds": [
-        "grea:B-monkey-audit-result-contract",
-        "grea:B-monkey-dual-review-release-gate"
-      ]
+      "formalAdoptionDependsOnTaskIds": [],
+      "formalAdoptionBlockerIds": []
     },
     {
       "id": "grea:T-monkey-audit-remediation-dual-review",
@@ -871,6 +868,31 @@
           "grea:T-repository-root-wip",
           "grea:T-repository-version-branches"
         ]
+      }
+    },
+    {
+      "id": "grea:T-zombie-b03-visual",
+      "title": "僵尸 B03 可编辑视觉资源与源对象对账",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "in_progress",
+      "executionStatus": "source_model_mesh_bindings_inspected",
+      "ownerSessionId": "01a1aee8-38cc-7502-9b82-021df0eda50a",
+      "blockerIds": [],
+      "description": "逐项核对 636 个 FBX 地址、18 个待核纹理标识及视觉组件，新增采用沿用 GREA 工程目录与命名规则。 已实读 106 个包；636 个 FBX 地址中有 636 个由层级和 MeshFilter/Renderer 引用证明本地网格。",
+      "acceptanceCriteria": [
+        "分类核对模型、网格、纹理、切片、字体、材质、Shader、动画和特效的来源与正式目标。",
+        "编辑代表素材并实际保存冷读；骨骼、动画过渡、着色器与特效时序另作运行验证。"
+      ],
+      "sourceRefs": [
+        "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/start.json",
+        "../monkey/.private/zombie-export-audit-300411/十批开发工程规划.md",
+        "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/model-mesh-summary.json",
+        "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/model-bundles-inspection/inspection-set.json"
+      ],
+      "resume": {
+        "runDirectory": "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411",
+        "receipt": "model-mesh-summary.json",
+        "nextAction": "依据逐地址网格台账关联正式工程的编辑副本；确证局部几何、材质与 Unity 冷读后再采用。"
       }
     }
   ],

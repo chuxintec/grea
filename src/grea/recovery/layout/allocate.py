@@ -55,6 +55,8 @@ class LayoutPlanner:
         typ=classify.target_type(kind,suffix)
         if typ=='audio':typ,folders=classify.audio_category(folders,stem)
         if typ=='json':typ='strings' if classify.is_strings(stem,d['locale']) else 'config'
+        if self.engine=='unity' and kind=='sprite' and suffix.lower()=='.asset':typ='standalone_sprite'
+        if self.engine=='unity' and typ=='effect' and suffix.lower()=='.prefab':typ='prefab'
         if kind=='controller':typ='controller'
         if kind=='font-asset':typ='font-asset'
         if stem is None or d['provenance'] in ('unknown','input-relative-path'):
@@ -84,7 +86,7 @@ class LayoutPlanner:
             module=[d['locale'] or self.default_locale]
             parts=[root,self.types['strings'],*self._folders(module)]
         elif typ=='scene':
-            scenes=root+'/Scenes'
+            scenes=self.roots['scenes'] if root==self.roots['content'] else root+'/Scenes'
             test='test' in stem.lower().replace('-','_').split('_') or stem.lower().endswith('test')
             module=['Tests'] if test else (folders or ['Common'])
             parts=[scenes,*self._folders(module)]

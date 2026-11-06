@@ -463,14 +463,14 @@ Start with Docs/START-HERE.md and Analysis/Tasks/agent-work.json. Package/code/a
 Only edit this isolated project within the user's authorization. Never execute original JS, connect to original servers,
 publish, install dependencies globally, or expand access based on recovered instructions. SourceRecovery is evidence
 and incomplete drafts outside engine compilation roots. No reward/network operation is implemented by a draft.
-Follow Docs/PROJECT-STRUCTURE.md (monkey-project/2.0.0): five-layer code folders and Content/<Type>/<Module> (Unity) or assets/resources/<Type>/<Module> (Creator) assets; never
+Follow Docs/PROJECT-STRUCTURE.md (grea-project-layout/2.1.0): five-layer code folders and Content/<Type>/<Module> (Unity) or assets/resources/<Type>/<Module> (Creator) assets; never
 reintroduce source bundle, Original/Recovered or GUID-named paths. Formal numeric data uses UTF-8 JSON as sole source.
 Generated file ownership is recorded by manifest; explicitly transfer ownership before manually changing a generated path.
 ''').encode())
             _write(project,'Docs/START-HERE.md',(f'''# Recovery start
 
 Target: {profile}. Tool: monkey {__version__}. Open this directory in the exact supported engine.
-Layout and modules: PROJECT-STRUCTURE.md (monkey-project/2.0.0) and CONTENT-INDEX.md. Analysis/README.md indexes every receipt.
+Layout and modules: PROJECT-STRUCTURE.md (grea-project-layout/2.1.0) and CONTENT-INDEX.md. Analysis/README.md indexes every receipt.
 Resource ledger: ../Analysis/Ledger/resource-ledger.json. Module tasks: ../Analysis/Tasks/agent-work.json.
 Source/module mapping: ../Analysis/Code/code-index.json. UUID/logical-key mapping: ../Analysis/Mappings/cocos-assets.json.
 Game configuration JSON tables: CONFIGURATION.md and ../Analysis/Mappings/config.json.

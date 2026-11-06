@@ -1,0 +1,31 @@
+// Install temporarily in an Editor folder. Inventory output stays outside Assets.
+using System;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+
+namespace Grea.AssetLayout
+{
+    public static class Inventory
+    {
+        public static void Run()
+        {
+            string output = Environment.GetEnvironmentVariable("GREA_ASSET_INVENTORY");
+            string helper = Environment.GetEnvironmentVariable("GREA_LAYOUT_HELPER");
+            using (var writer = new StreamWriter(output, false, new System.Text.UTF8Encoding(false)))
+            {
+                foreach (var path in AssetDatabase.GetAllAssetPaths().OrderBy(p => p, StringComparer.Ordinal))
+                {
+                    if (path == helper || !path.StartsWith("Assets/", StringComparison.Ordinal) || AssetDatabase.IsValidFolder(path)) continue;
+                    var type = AssetDatabase.GetMainAssetTypeAtPath(path);
+                    string name = type == null ? "" : type.FullName;
+                    var deps = AssetDatabase.GetDependencies(path, false)
+                        .Where(p => p != path && p.StartsWith("Assets/", StringComparison.Ordinal))
+                        .Select(p => AssetDatabase.AssetPathToGUID(p)).OrderBy(g => g, StringComparer.Ordinal);
+                    writer.WriteLine(string.Join("\t", AssetDatabase.AssetPathToGUID(path), path, name, string.Join(",", deps)));
+                }
+            }
+        }
+    }
+}

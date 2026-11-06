@@ -63,11 +63,11 @@ class PlannerTests(unittest.TestCase):
 
     def test_packaging_type_words_and_variants_leave_production_paths(self):
         p=LayoutPlanner('unity',DEMO_ASSETS)
-        self.assertEqual(p.path('bundleA:item','sprite','.png'),'Assets/Game/Content/Textures/Element/ItemSet/7001.png')
-        self.assertEqual(p.path('bundleA:item@original','sprite','.png'),'Assets/Game/Content/Textures/Element/ItemSet/7001_untrimmed.png')
+        self.assertEqual(p.path('bundleA:item','sprite','.png'),'Assets/Game/Content/Images/Element/ItemSet/7001.png')
+        self.assertEqual(p.path('bundleA:item@original','sprite','.png'),'Assets/Game/Content/Images/Element/ItemSet/7001_untrimmed.png')
         self.assertEqual(p.path('bundleA:decor','prefab','.prefab'),'Assets/Game/Content/Prefabs/House/Decor/Room2/7100.prefab')
         self.assertEqual(p.path('bundleB:clip','animation','.anim'),'Assets/Game/Content/Animations/Avatar/PlayerGroup/appear4.anim')
-        self.assertEqual(p.path('resources:button','sprite','.png'),'Assets/Game/Content/Textures/UI/button_confirm.png')
+        self.assertEqual(p.path('resources:button','sprite','.png'),'Assets/Game/Content/Images/UI/button_confirm.png')
 
     def test_audio_is_never_an_image_and_is_split_by_category(self):
         p=LayoutPlanner('unity',DEMO_ASSETS)
@@ -77,17 +77,17 @@ class PlannerTests(unittest.TestCase):
 
     def test_locale_bundles_become_localization_and_configs_become_tables(self):
         p=LayoutPlanner('unity',DEMO_ASSETS)
-        self.assertEqual(p.path('zh-tw:label','cc.JsonAsset','.json'),'Assets/Game/Content/Strings/ZhHant/Label.json')
-        self.assertEqual(p.path('zh:label','cc.JsonAsset','.json'),'Assets/Game/Content/Strings/ZhHans/Label.json')
+        self.assertEqual(p.path('zh-tw:label','cc.JsonAsset','.json'),'Assets/Game/Content/Config/Localization/ZhHant/Label.json')
+        self.assertEqual(p.path('zh:label','cc.JsonAsset','.json'),'Assets/Game/Content/Config/Localization/ZhHans/Label.json')
         self.assertEqual(p.path('bundleB:cfg','cc.JsonAsset','.json'),'Assets/Game/Content/Config/Common/AudioTable.json')
         self.assertEqual(p.path('bundleC:level','cc.JsonAsset','.json'),'Assets/Game/Content/Config/Grid/Resources/Levels/Level2.json')
 
     def test_scenes_and_unknown_sources(self):
         p=LayoutPlanner('unity',DEMO_ASSETS)
-        self.assertEqual(p.path('main:scene','scene',''),'Assets/Game/Content/Scenes/Common/Main.unity')
-        self.assertEqual(p.path('main:test','scene',''),'Assets/Game/Content/Scenes/Tests/SampleRoomTest.unity')
+        self.assertEqual(p.path('main:scene','scene',''),'Assets/Game/Scenes/Common/Main.unity')
+        self.assertEqual(p.path('main:test','scene',''),'Assets/Game/Scenes/Tests/SampleRoomTest.unity')
         hashed=p.path('x:1','native','.png',metadata=dict(bundle='x',logicalPath='native/ab/abcd.png',nameProvenance='input-relative-path'))
-        self.assertTrue(hashed.startswith('Assets/Game/Content/Textures/Unsorted/texture_'))
+        self.assertTrue(hashed.startswith('Assets/Game/Content/Images/Unsorted/texture_'))
         unsafe=p.path('x:2','native','.png',metadata=dict(bundle='x',logicalPath='../escape'))
         self.assertIn('/Unsorted/',unsafe);self.assertNotIn('..',unsafe)
 
@@ -105,15 +105,15 @@ class PlannerTests(unittest.TestCase):
         second=LayoutPlanner('unity',meta);second.reserve(list(reversed(requests)))
         mapping=lambda p:{sid:p.path(sid,'sprite','.png') for sid in meta}
         self.assertEqual(mapping(first),mapping(second))
-        self.assertEqual(mapping(first)['a:1'],'Assets/Game/Content/Textures/UI/icon.png')
+        self.assertEqual(mapping(first)['a:1'],'Assets/Game/Content/Images/UI/icon.png')
         self.assertEqual(len({v.casefold() for v in mapping(first).values()}),3)
         self.assertEqual(first.report()['collisionPaths'],2)
 
     def test_hash_names_are_not_names_and_shared_clips_use_owner_qualifiers(self):
         p=LayoutPlanner('unity',{'m:1':dict(bundle='miniGameRes',logicalPath='Texture/cattle/Map/3942396cc7b0fad2b18e8909565e25fe'),
                                  'm:2':dict(bundle='miniGameRes',logicalPath='Texture/cattle/Map/0b44e06ac5a2a0899058be7d60c34733ba9f_zp1z_nk')})
-        self.assertRegex(p.path('m:1','sprite','.png'),r'^Assets/Game/Content/Textures/MiniGames/Cattle/Map/sprite_[0-9a-f]{6}\.png$')
-        self.assertEqual(p.path('m:2','sprite','.png'),'Assets/Game/Content/Textures/MiniGames/Cattle/Map/zp1z_nk.png')
+        self.assertRegex(p.path('m:1','sprite','.png'),r'^Assets/Game/Content/Images/MiniGames/Cattle/Map/sprite_[0-9a-f]{6}\.png$')
+        self.assertEqual(p.path('m:2','sprite','.png'),'Assets/Game/Content/Images/MiniGames/Cattle/Map/zp1z_nk.png')
         clip=dict(bundle='gameAsset',logicalPath='Anim/Badge/appear')
         q=LayoutPlanner('unity');q.reserve([('c@a','animation','.anim','',clip,'BadgeItem_icon'),('c@b','animation','.anim','',clip,'ShopBadge_icon')])
         self.assertEqual({q.path('c@a','animation','.anim'),q.path('c@b','animation','.anim')},
@@ -133,8 +133,8 @@ class PlannerTests(unittest.TestCase):
                                bundles={'events':dict(role='minigame')}))
         p=LayoutPlanner('unity',{'u:1':dict(bundle='game',logicalPath='uiraw/icon_item/a2_saodiji3'),
                                  'u:2':dict(bundle='events',logicalPath='Texture/Disco/bg')},overrides)
-        self.assertEqual(p.path('u:1','sprite','.png'),'Assets/Game/Content/Textures/Icons/Item/street_sweeper.png')
-        self.assertEqual(p.path('u:2','sprite','.png'),'Assets/Game/Content/Textures/MiniGames/Disco/Common/bg.png')
+        self.assertEqual(p.path('u:1','sprite','.png'),'Assets/Game/Content/Images/Icons/Item/street_sweeper.png')
+        self.assertEqual(p.path('u:2','sprite','.png'),'Assets/Game/Content/Images/MiniGames/Disco/Common/bg.png')
 
     def test_invalid_overrides_are_rejected(self):
         for bad in [dict(schemaVersion=2),dict(schemaVersion=1,extra=1),dict(schemaVersion=1,modules=[dict(match='../x',module='Y')]),

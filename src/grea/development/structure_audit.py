@@ -151,7 +151,7 @@ def _standard_target(path):
     return True
 
 
-def _expected_content_kinds(imported_type):
+def expected_content_kinds(imported_type, path=None):
     """Return only type-to-directory rules supported by native import identity."""
     direct = {
         "UnityEngine.Material": {"Materials"},
@@ -163,19 +163,34 @@ def _expected_content_kinds(imported_type):
         "UnityEngine.AnimationClip": {"Animations"},
         "UnityEditor.Animations.AnimatorController": {"Animations"},
         "UnityEngine.Avatar": {"Animations"},
+        "UnityEngine.AnimatorOverrideController": {"Animations"},
+        "UnityEngine.Shader": {"Shaders"},
+        "UnityEditor.ShaderInclude": {"Shaders"},
+        "UnityEngine.RenderTexture": {"Images"},
+        "Spine.Unity.SkeletonDataAsset": {"Spine"},
+        "Spine.Unity.SpineAtlasAsset": {"Spine"},
+        "UnityEditor.SceneAsset": {"Scenes"},
         "UnityEngine.Mesh": {"Models"},
         "UnityEngine.GameObject": {"Prefabs"},
     }
+    if path is not None:
+        ext = PurePosixPath(path).suffix.lower()
+        if imported_type == 'UnityEngine.GameObject' and ext in ('.fbx', '.obj', '.dae', '.blend'):
+            return {'Models'}
+        if imported_type == 'UnityEngine.Sprite' and ext in ('.png', '.tga', '.psd', '.jpg', '.jpeg'):
+            return {'Images'}
     return direct.get(imported_type)
 
 
 def _type_path_mismatch(path, imported_type):
-    expected = _expected_content_kinds(imported_type)
+    expected = expected_content_kinds(imported_type, path)
     if not expected:
         return False, None
     parts = PurePosixPath(path).parts
     if len(parts) < 3 or parts[:2] != ("Assets", "Game"):
         return False, None
+    if expected == {"Scenes"} and parts[2] == "Scenes":
+        return False, sorted(expected)
     if len(parts) >= 4 and parts[2] == "Content" and parts[3] in expected:
         return False, sorted(expected)
     return True, sorted(expected)

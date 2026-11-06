@@ -2,6 +2,7 @@
 from pathlib import Path
 import subprocess
 from PIL import Image
+from .layout import casing
 from .io import safe,read,load,sha,new_output,write_json,inside
 from .sources.compiled import fail
 from .unity_texture_selection import validate_selection
@@ -40,7 +41,8 @@ def export(source,derivative,hydration_report,expected_hydration_sha256,selectio
         pixels=read(inside(out,row['payloadPath']),max_bytes=64*1024*1024);w,h=row['width'],row['height']
         if type(w)is not int or type(h)is not int or not 0<w*h<=16777216 or len(pixels)!=w*h*4 or sha(pixels)!=row['rgbaRawSha256']:fail('UNITY_TEXTURE_EXPORT_PIXELS','$','Payload dimensions or pixel SHA differ')
         identity=sha((row['file']+'\0'+row['pathId']+'\0'+row['sourceRawSha256']).encode())
-        relative='Assets/Game/Content/Textures/Selected/Texture'+identity+'.png';target=inside(candidate,relative);target.parent.mkdir(parents=True,exist_ok=True)
+        name=casing.snake(row.get('sourceName') or 'texture')
+        relative='Assets/Game/Content/Images/Selected/'+name[:40]+'_'+identity[:12]+'.png';target=inside(candidate,relative);target.parent.mkdir(parents=True,exist_ok=True)
         if target.exists():fail('UNITY_TEXTURE_EXPORT_COLLISION',relative,'Fresh per-object PNG path required')
         with Image.frombytes('RGBA',(w,h),pixels)as image:image.transpose(Image.Transpose.FLIP_TOP_BOTTOM).save(target,format='PNG')
         with Image.open(target)as image:

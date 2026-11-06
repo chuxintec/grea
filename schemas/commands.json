@@ -703,6 +703,67 @@
     },
     {
       "module": "asset",
+      "action": "collect-recovered-layout",
+      "usage": "usage: grea asset collect-recovered-layout [-h] --project PROJECT --output OUTPUT --unity-editor UNITY_EDITOR [--budget-seconds BUDGET_SECONDS]",
+      "description": "Collect native asset types and direct references in Unity.",
+      "parameters": [
+        {
+          "name": "project",
+          "flags": [
+            "--project"
+          ],
+          "dest": "project",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Closed Unity project to read"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Fresh independent output directory"
+        },
+        {
+          "name": "unity-editor",
+          "flags": [
+            "--unity-editor"
+          ],
+          "dest": "unity_editor",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Matching installed Unity Editor executable"
+        },
+        {
+          "name": "budget-seconds",
+          "flags": [
+            "--budget-seconds"
+          ],
+          "dest": "budget_seconds",
+          "type": "int",
+          "required": false,
+          "nargs": null,
+          "repeatable": false,
+          "default": 1800,
+          "help": "Native Editor timeout (30..7200 seconds)"
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "asset",
       "action": "complete-native-font",
       "usage": "usage: grea asset complete-native-font [-h] --request REQUEST --expected-request EXPECTED_REQUEST --output OUT",
       "description": "Append an explicitly pinned consumer text corpus using the same static font face and preserved glyphs",
@@ -2341,6 +2402,67 @@
     },
     {
       "module": "asset",
+      "action": "stage-recovered-layout",
+      "usage": "usage: grea asset stage-recovered-layout [-h] --project PROJECT --inventory INVENTORY --output OUTPUT [--addresses ADDRESSES]",
+      "description": "Stage recovered assets under GREA paths.",
+      "parameters": [
+        {
+          "name": "project",
+          "flags": [
+            "--project"
+          ],
+          "dest": "project",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Closed Unity project to read"
+        },
+        {
+          "name": "inventory",
+          "flags": [
+            "--inventory"
+          ],
+          "dest": "inventory",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Native inventory TSV collected from this project"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Fresh independent output directory"
+        },
+        {
+          "name": "addresses",
+          "flags": [
+            "--addresses"
+          ],
+          "dest": "addresses",
+          "type": "str",
+          "required": false,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Optional JSON object mapping asset GUIDs to source logical paths"
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "asset",
       "action": "static-asset-copy",
       "usage": "usage: grea asset static-asset-copy [-h] --source SOURCE --output OUTPUT --map FROM=TO",
       "description": "Copy selected static files without transforming them; no build or runtime validation.\n\nOutput must be new or empty and disjoint from source. All mappings are checked\nbefore writing. This is a local copy helper, not a transactional filesystem or\nan adversarial concurrent-writer sandbox. A copy-time failure retains partial output.",
@@ -2748,6 +2870,80 @@
           "nargs": null,
           "repeatable": false,
           "default": null
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "asset",
+      "action": "verify-recovered-layout",
+      "usage": "usage: grea asset verify-recovered-layout [-h] --project PROJECT --inventory INVENTORY --output OUTPUT --before BEFORE --ledger LEDGER",
+      "description": "Verify asset identities, bytes, types and dependencies after Unity import.",
+      "parameters": [
+        {
+          "name": "project",
+          "flags": [
+            "--project"
+          ],
+          "dest": "project",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Closed Unity project to read"
+        },
+        {
+          "name": "inventory",
+          "flags": [
+            "--inventory"
+          ],
+          "dest": "inventory",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Native inventory TSV collected from this project"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Fresh independent output directory"
+        },
+        {
+          "name": "before",
+          "flags": [
+            "--before"
+          ],
+          "dest": "before",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Original native inventory TSV"
+        },
+        {
+          "name": "ledger",
+          "flags": [
+            "--ledger"
+          ],
+          "dest": "ledger",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Staged layout.jsonl"
         }
       ],
       "exclusiveGroups": []
@@ -15392,7 +15588,7 @@
             "grea"
           ],
           "default": null,
-          "help": "Deprecated: every output already uses monkey-project/2.0.0; grea is accepted as an alias."
+          "help": "Deprecated: every output already uses grea-project-layout/2.1.0; grea is accepted as an alias."
         },
         {
           "name": "layout",
@@ -15405,7 +15601,7 @@
           "nargs": null,
           "repeatable": false,
           "default": null,
-          "help": "Game layout.json: module/rename/bundle-role overrides for monkey-project/2.0.0 paths (docs/history/recovery/PROJECT-SPEC.md section 7)"
+          "help": "Game layout.json: module/rename/bundle-role overrides for grea-project-layout/2.1.0 paths (docs/history/recovery/PROJECT-SPEC.md section 7)"
         },
         {
           "name": "source-family",

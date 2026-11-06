@@ -30,7 +30,7 @@ def project_docs(project,engine,profile,tool_version,overrides,code_report=None)
     resource_paths(project,engine)
     table=modules(manifest_paths,engine);write_json(project/standard.analysis('modules.json'),dict(schemaVersion=1,layout=standard.VERSION,engine=engine,modules=table))
     content=standard.ROOTS[engine]['content']
-    lines=['# Project structure','',f'Layout `{standard.VERSION}` (monkey docs/PROJECT-SPEC.md); target `{profile}`; monkey {tool_version}.',
+    lines=['# Project structure','',f'Layout `{standard.VERSION}`; target `{profile}`; GREA {tool_version}.',
            f"Root namespace: `{(overrides or {}).get('rootNamespace') or 'Game'}`; default locale: `{(overrides or {}).get('defaultLocale') or 'zh-Hans'}`.",'',
            '- Assets: `Assets/Game/Content/<Type>/<Module>/...` (Unity); `assets/resources/<Type>/<Module>/...` (Creator). All user directory names are PascalCase.',
            f'- Conversion preview scenes: `{standard.ROOTS[engine]["scenes"]}`. Preview scenes are not shipping startup scenes; conversion glue `{standard.ROOTS[engine]["conversion"]}` is development-only.',

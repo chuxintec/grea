@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import unicodedata
 
+from .layout.standard import VERSION, V2_LAYOUT
 from . import io
 
 
@@ -589,7 +590,7 @@ def prepare(plan: dict, ir: dict, manifest: dict, stage_root: str | Path, *, sou
     """
     if not isinstance(plan, dict) or not isinstance(ir, dict) or not isinstance(manifest, dict):
         raise StaticTextContinuationError("STATIC_TEXT_INPUT_DOCUMENT_INVALID")
-    if plan.get("projectLayout") != "monkey-project/2.0.0":
+    if plan.get("projectLayout") not in (VERSION, V2_LAYOUT):
         raise StaticTextContinuationError("STATIC_TEXT_TARGET_PROJECT_LAYOUT_UNSUPPORTED")
     if manifest.get("sourceVersion") != SOURCE_VERSION or ir.get("sourceProfile") != SOURCE_PROFILE:
         raise StaticTextContinuationError("STATIC_TEXT_SOURCE_PROFILE_OR_VERSION_MISMATCH")

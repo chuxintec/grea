@@ -56,6 +56,34 @@ def resolution_context(package_evidence, expected_package_evidence):
     return context,context_path
 
 
+def enforce_layout(incoming_path, destination):
+    """A finalized candidate can change module on adoption, but keeps its type and filename."""
+    from .structure_audit import _standard_target
+    src, dst = Path(incoming_path), Path(destination)
+    if not _standard_target(incoming_path) or not _standard_target(destination):
+        fail('INTAKE_LAYOUT', destination, 'Standardize the recovered asset set before adopting it')
+    source_parts, target_parts = src.parts, dst.parts
+    prefix = 4 if source_parts[:3] == ('Assets', 'Game', 'Content') else 3
+    if prefix == 4:
+        categories = {'.prefab': {'Prefabs'}, '.mat': {'Materials', 'Spine', 'Fonts'},
+                      '.png': {'Images', 'Spine', 'Fonts'}, '.shader': {'Shaders'}, '.ttf': {'Fonts'}, '.otf': {'Fonts'}}
+        suffix = dst.suffix.lower()
+        kind = target_parts[3]
+        if kind not in categories.get(suffix, {kind}):
+            fail('INTAKE_LAYOUT', destination, 'Recovered file type conflicts with its directory')
+        if kind not in {'Spine', 'Fonts', 'Shaders'} and '/Resources/' not in destination:
+            if len(target_parts) < 6 or any(not re.fullmatch(r'(?:[A-Z0-9][A-Za-z0-9_]*)', folder) for folder in target_parts[4:-1]):
+                fail('INTAKE_LAYOUT', destination, 'A typed module directory in PascalCase is required')
+            pattern = r'[A-Z0-9][A-Za-z0-9]*(?:_[a-z0-9]+)*' if kind in {'Prefabs', 'Config', 'Levels'} else r'[a-z0-9]+(?:_[a-z0-9]+)*'
+            if not re.fullmatch(pattern, dst.stem):
+                fail('INTAKE_LAYOUT', destination, 'Recovered filename differs from the structured or media naming convention')
+    if (source_parts[:prefix] != target_parts[:prefix] or src.name != dst.name
+            or incoming_path.partition('/Resources/')[2] != destination.partition('/Resources/')[2]):
+        fail('INTAKE_LAYOUT', destination, 'Retain the finalized type, filename and Resources key')
+    if incoming_path != destination and (prefix != 4 or source_parts[3] in ('Spine', 'Fonts', 'Shaders')):
+        fail('INTAKE_LAYOUT', destination, 'Keep the finalized script, vendor or dependency group path')
+
+
 def build_plan(candidate, target, spec_path, package_evidence=None, expected_package_evidence=None):
     incoming, manifest, files, manifest_hash = snapshot(candidate)
     verify(incoming, files)
@@ -104,8 +132,15 @@ def build_plan(candidate, target, spec_path, package_evidence=None, expected_pac
     new_scripts = spec.get('newScripts', [])
     from .intake_assemblies import validate as validate_assemblies
     retained_assemblies = validate_assemblies(spec, incoming, files, target, before, existing_guids) if spec['schemaVersion'] >= 5 else []
+    from grea.recovery.layout.standard import VERSION as current_layout
+    profile = target.parent/'grea-project.json'
+    config = load(read(profile)) if profile.is_file() else {}
+    recovered_target = (config.get('template', {}).get('id') == 'unity-recovered-assets' and
+                        config.get('paths', {}).get('unityProject') == target.name)
     for row in spec['additions'] + new_scripts:
         src, dest = row['source'], row['target']
+        if manifest.get('projectLayout') == current_layout or recovered_target:
+            enforce_layout(src, dest)
         if src not in files or src+'.meta' not in files:
             fail('INTAKE_SOURCE_PAIR', src, 'Selected manifest file and metadata pair required')
         g = guid(read(inside(incoming, src+'.meta')), src)

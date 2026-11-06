@@ -75,7 +75,7 @@ namespace Grea.StaticVerification
                     }
                 }
             }
-            public void Read(GameObject root, string guid)
+            public void Read(GameObject root, string guid, string sourceRootName)
             {
                 foreach (var tr in root.GetComponentsInChildren<Transform>(true))
                 {
@@ -83,9 +83,10 @@ namespace Grea.StaticVerification
                     long goId = Owned(go,guid);
                     ids.Add(goId); nodes++;
                     var rot = tr.localRotation;
+                    string name = go == root && sourceRootName != null ? sourceRootName : go.name;
                     hierarchy.Append(goId).Append('|').Append(tr.parent ? Owned(tr.parent.gameObject,guid) : 0).Append('|')
                         .Append(tr.GetSiblingIndex()).Append('|').Append(go.activeSelf).Append('|').Append(go.layer)
-                        .Append('|').Append(go.name.Length).Append(':').Append(go.name).Append('|').Append(Vec(tr.localPosition))
+                        .Append('|').Append(name.Length).Append(':').Append(name).Append('|').Append(Vec(tr.localPosition))
                         .Append('|').Append(Vec(tr.localScale)).Append('|').Append(rot.ToString("R",Invariant)).Append('\n');
                     if (tr is RectTransform rect)
                         hierarchy.Append("rect|").Append(Vec(rect.anchorMin)).Append('|').Append(Vec(rect.anchorMax)).Append('|')
@@ -105,6 +106,38 @@ namespace Grea.StaticVerification
             }
         }
 
+        // Apply every forced import before observing the reloaded dependency graph.
+        // Importing one root at a time refreshes the entire large host asset database.
+        private static Dictionary<string,string> PrepareRoots(string table, bool save)
+        {
+            var failures = new Dictionary<string,string>();
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                foreach (string line in File.ReadLines(table))
+                {
+                    var fields = line.Split('\t');
+                    string guid = fields[0], path = fields[1];
+                    try
+                    {
+                        if (AssetDatabase.GUIDToAssetPath(guid) != path)
+                            throw new InvalidDataException("GUID/path mismatch before asset operation");
+                        if (save)
+                        {
+                            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                            if (!asset) throw new InvalidDataException("Prefab unavailable for save");
+                            PrefabUtility.SavePrefabAsset(asset, out bool saved);
+                            if (!saved) throw new InvalidDataException("Prefab save failed");
+                        }
+                        else AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                    }
+                    catch (Exception e) { failures[guid] = e.Message; }
+                }
+            }
+            finally { AssetDatabase.StopAssetEditing(); }
+            return failures;
+        }
+
         public static void Run()
         {
             string dir = Environment.GetEnvironmentVariable("GREA_STATIC_SET_RUN");
@@ -119,6 +152,7 @@ namespace Grea.StaticVerification
                     if (!expectedRefs.TryGetValue(parts[0],out var set)) expectedRefs[parts[0]] = set = new HashSet<string>();
                     set.Add(parts[1]);
                 }
+                var importFailures = phase == "cold" ? null : PrepareRoots(Path.Combine(dir,"roots.tsv"), phase == "save");
                 using (var result = new StreamWriter(Path.Combine(dir,phase+".tsv"),false,Utf8))
                 {
                     foreach (string line in File.ReadLines(Path.Combine(dir,"roots.tsv")))
@@ -128,13 +162,16 @@ namespace Grea.StaticVerification
                         var o = new Observation();
                         try
                         {
-                            if (phase == "repeat")
-                                AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+                            if (importFailures != null && importFailures.TryGetValue(guid,out string problem))
+                                throw new InvalidDataException(phase+" failed: "+problem);
                             if (AssetDatabase.GUIDToAssetPath(guid) != path) throw new InvalidDataException("GUID/path mismatch");
                             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                             if (!asset || PrefabUtility.GetPrefabAssetType(asset)==PrefabAssetType.NotAPrefab)
                                 throw new InvalidDataException("not an imported Prefab");
-                            o.Read(asset,guid);
+                            string sourceRootName = r.Length == 8 ? r[6] : null;
+                            if (sourceRootName != null && asset.name != r[7])
+                                throw new InvalidDataException("Imported Prefab root name differs from declared destination");
+                            o.Read(asset,guid,sourceRootName);
                             if (r[5].Length == 0)
                             {
                                 if (o.nodes!=int.Parse(r[2],Invariant) || string.Join(",",o.ids.OrderBy(n=>n))!=r[3])
@@ -162,11 +199,6 @@ namespace Grea.StaticVerification
                                 o.externalPins = wanted.Count;
                                 var missing = wanted.Except(o.external).Take(4).ToArray();
                                 if (missing.Length!=0) throw new InvalidDataException("source reference not read back: "+string.Join(",",missing));
-                            }
-                            if (phase=="save")
-                            {
-                                PrefabUtility.SavePrefabAsset(asset,out bool saved);
-                                if (!saved) throw new InvalidDataException("Prefab save failed");
                             }
                             persisted = FileHash(path);
                             if (phase!="repeat" && r[4]!="")

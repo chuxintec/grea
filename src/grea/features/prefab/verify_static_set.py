@@ -36,7 +36,7 @@ def selection_rows(raw):
     guids, paths = set(), set()
     for line in raw.splitlines():
         row = json.loads(line)
-        if not isinstance(row, dict) or set(row) - {"assetPath","guid","sha256","sourceNodes","source","capture"}:
+        if not isinstance(row, dict) or set(row) - {"assetPath","guid","sha256","sourceNodes","source","capture","prefabRootAlias"}:
             raise ValueError("Unexpected selection fields")
         path = relative_name(row.get("assetPath", "")).as_posix()
         if not path.startswith("Assets/") or not path.endswith(".prefab"):
@@ -47,6 +47,14 @@ def selection_rows(raw):
                 type(row.get("sourceNodes")) is not int or row["sourceNodes"] < 1 or
                 row.get("capture") is not None and row["capture"] not in CAPTURES):
             raise ValueError(f"Invalid or duplicate selection: {path}")
+        if "prefabRootAlias" in row:
+            alias = row["prefabRootAlias"]
+            if (not isinstance(alias, dict) or set(alias) != {"sourceName","targetName","rootLocalId","savedSha256"}
+                    or not isinstance(alias["sourceName"],str) or not alias["sourceName"]
+                    or re.search(r"[/\\\t\r\n]", alias["sourceName"])
+                    or alias["targetName"] != Path(path).stem or type(alias["rootLocalId"]) != int
+                    or not isinstance(alias["savedSha256"],str) or not DIGEST.fullmatch(alias["savedSha256"])):
+                raise ValueError("Invalid declared Prefab root alias")
         rows.append(row)
         guids.add(guid)
         paths.add(path.casefold())
@@ -86,6 +94,12 @@ def freeze_expectations(project, rows, output):
             meta = re.search(rb"^guid:\s*([a-f0-9]{32})\s*$",Path(str(path)+".meta").read_bytes(),re.M)
             if not meta or meta.group(1).decode()!=row["guid"]:
                 raise ValueError(f"Prefab meta GUID differs: {path}")
+            alias = row.get("prefabRootAlias")
+            if alias and row["sha256"] != alias["savedSha256"]:
+                from grea.features.asset.prefab_names import root_alias
+                predicted = root_alias(raw, alias["sourceName"] + ".prefab", path)
+                if predicted != alias:
+                    raise ValueError(f"Declared root alias does not match pinned Prefab: {path}")
             heads = list(HEADER.finditer(raw))
             ids = [int(h[2]) for h in heads]
             if len(set(ids))!=len(ids) or sum(h[1]==b"1" for h in heads)!=row["sourceNodes"]:
@@ -100,8 +114,11 @@ def freeze_expectations(project, rows, output):
                     instances.append(f"{int(head[2])}:{origin[1].decode()}")
                 elif not head[0].rstrip().endswith(b"stripped"):
                     owned.append(int(head[2]))
-            roots.write("\t".join((row["guid"],row["assetPath"],str(row["sourceNodes"]),
-                                  ",".join(map(str,sorted(owned))),row.get("capture") or "",",".join(instances)))+"\n")
+            fields = [row["guid"], row["assetPath"], str(row["sourceNodes"]), ",".join(map(str,sorted(owned))),
+                      row.get("capture") or "", ",".join(instances)]
+            if alias:
+                fields.extend((alias["sourceName"], alias["targetName"]))
+            roots.write("\t".join(fields)+"\n")
             for index, head in enumerate(heads):
                 data = raw[head.end():heads[index+1].start() if index+1<len(heads) else len(raw)]
                 if head[1] == b"1001" or head[0].rstrip().endswith(b"stripped"):
@@ -181,7 +198,7 @@ def run(args):
             errors = {r["error"] for r in observed if r["error"]}
             if observed[0]!=observed[1] or observed[1]!=observed[2]:
                 errors.add("native save/cold/reimport observations differ")
-            if observed[-1]["persistedSha256"]!=row["sha256"]:
+            if observed[-1]["persistedSha256"]!=row.get("prefabRootAlias", {}).get("savedSha256", row["sha256"]):
                 errors.add("persisted Prefab bytes differ from the frozen candidate")
             failed += bool(errors)
             dest.write(json.dumps(dict(**row,observed=observed[-1],status="partial" if errors else "verified",

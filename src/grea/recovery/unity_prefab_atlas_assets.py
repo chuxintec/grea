@@ -7,6 +7,7 @@ Texture2D, then records immutable target asset preconditions for an Editor owner
 from pathlib import Path
 import re
 
+from .layout.standard import VERSION, V2_LAYOUT
 from .io import inside, load, read, sha, write_json
 from .sources.compiled import fail
 from .unity_sprite import atlas_settings, rectangle_atlas_geometry
@@ -155,7 +156,7 @@ def plan_packed_atlas_rebind(*, candidate_root, expected_manifest_sha256,
     relocation_raw = read(relocation_path, max_bytes=16 * 1024 * 1024)
     _candidate_owned(manifest, "Analysis/Mappings/unity-relocation.json", relocation_raw)
     relocation = load(relocation_raw, max_nodes=500_000)
-    _need(relocation.get("layout") == "monkey-project/2.0.0", "ATLAS_ASSET_RELOCATION", relocation_path,
+    _need(relocation.get("layout") in (VERSION, V2_LAYOUT), "ATLAS_ASSET_RELOCATION", relocation_path,
           "Exact candidate relocation report required")
     objects = {o["sourceObjectId"]: o for o in graph.get("reachableObjects", [])}
     _need(len(objects) == len(graph.get("reachableObjects", [])), "ATLAS_ASSET_GRAPH", graph_path, "Duplicate source object IDs")

@@ -13,7 +13,7 @@ from grea.recovery.sources.compiled import ParseError
 @unittest.skipUnless(importlib.util.find_spec('texture2ddecoder'),'optional ASTC decoder required')
 class TextureOutputTests(unittest.TestCase):
     def fixture(self,root):
-        relative='Assets/Game/Content/Textures/Effect/Noise.jpg';image=root/relative;image.parent.mkdir(parents=True)
+        relative='Assets/Game/Content/Images/Effect/Noise.jpg';image=root/relative;image.parent.mkdir(parents=True)
         Image.new('RGB',(4,4),'blue').save(image)
         meta=Path(str(image)+'.meta');meta.write_text('guid: '+'1'*32+'\nTextureImporter:\n  textureType: 0\n')
         logical='Assets/Textures/astc/4/noise.txt';cache=root/'SourceRecovery/TextureCache'/logical;cache.parent.mkdir(parents=True)

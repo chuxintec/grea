@@ -11,6 +11,7 @@ import re
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from .layout.standard import VERSION, V2_LAYOUT
 from .assets.spine import atlas_pages, binary_version
 from .io import inside, safe, write_json, read
 from .targets.unity import guid
@@ -417,7 +418,7 @@ def _prepare_impl(plan: dict, ir: dict, source_manifest: dict, output: str | Pat
         raise StaticSpineContinuationError("pinned source manifest cannot be parsed as UTF-8 JSON") from error
     if disk_manifest != source_manifest:
         raise StaticSpineContinuationError("parsed source manifest differs from the pinned file bytes")
-    if plan.get("projectLayout") != "monkey-project/2.0.0":
+    if plan.get("projectLayout") not in (VERSION, V2_LAYOUT):
         raise StaticSpineContinuationError("unsupported target project layout for static Spine continuation")
     if plan.get("spineNativeStage") or plan.get("spineNativeBindingPlan"):
         raise StaticSpineContinuationError("static source continuation cannot be mixed with the legacy rendering Spine stage")

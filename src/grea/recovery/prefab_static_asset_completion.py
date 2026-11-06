@@ -395,12 +395,12 @@ def apply(plan: dict, source_manifest: str | Path, out: str | Path) -> dict:
         logical = _safe_logical_path(frame_logical or texture_logical)
         frame_stem = logical
         texture_stem = logical
-        unity_frame_path = _unique_target(PurePosixPath("Assets/Game/Content/Textures") / frame_stem.with_suffix(".png"), frame_id, occupied)
-        unity_original_path = _unique_target(PurePosixPath("Assets/Game/Content/Textures/@original/Frames") / frame_stem.with_suffix(".png"), frame_id + "@original", occupied)
-        unity_source_texture_path = _unique_target(PurePosixPath("Assets/Game/Content/Textures/@original/Textures") / texture_stem.with_suffix(".png"), texture_id, occupied)
-        creator_frame_path = unity_frame_path.replace("Assets/Game/Content/", "assets/resources/")
-        creator_original_path = unity_original_path.replace("Assets/Game/Content/", "assets/resources/")
-        creator_texture_path = unity_source_texture_path.replace("Assets/Game/Content/", "assets/resources/")
+        unity_frame_path = _unique_target(PurePosixPath("Assets/Game/Content/Images") / frame_stem.with_suffix(".png"), frame_id, occupied)
+        unity_original_path = _unique_target(PurePosixPath("Assets/Game/Content/Images/@original/Frames") / frame_stem.with_suffix(".png"), frame_id + "@original", occupied)
+        unity_source_texture_path = _unique_target(PurePosixPath("Assets/Game/Content/Images/@original/Textures") / texture_stem.with_suffix(".png"), texture_id, occupied)
+        creator_frame_path = unity_frame_path.replace("Assets/Game/Content/Images/", "assets/resources/Textures/")
+        creator_original_path = unity_original_path.replace("Assets/Game/Content/Images/", "assets/resources/Textures/")
+        creator_texture_path = unity_source_texture_path.replace("Assets/Game/Content/Images/", "assets/resources/Textures/")
 
         left, top, right, bottom = geometry["capInsets"]
         unity_frame_guid = _unity_guid(plan["namespace"], frame_id)
@@ -702,7 +702,7 @@ def emit(plan: dict, plan_root: str | Path, out: str | Path, target: str) -> dic
     prefix = pointer.get("payloadPrefix", "payloads/")
     if prefix != "payloads/":
         raise StaticAssetCompletionError("payload prefix differs from the portable contract")
-    native_prefix = "Assets/Game/Content/Textures/" if target == "unity" else "assets/resources/Textures/"
+    native_prefix = ("Assets/Game/Content/Images/", "Assets/Game/Content/Textures/") if target == "unity" else "assets/resources/Textures/"
     kind_prefix = "unity-" if target == "unity" else "creator-"
     target_payload_prefix = "payloads/" + target + "/"
     selected = []

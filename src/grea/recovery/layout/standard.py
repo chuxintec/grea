@@ -3,7 +3,8 @@
 Each fixed file is (current, legacy). Candidates whose manifest carries projectLayout=VERSION use the
 current path; older frozen candidates resolve the legacy path through their own pathMap.
 """
-VERSION='monkey-project/2.0.0'
+VERSION='grea-project-layout/2.1.0'
+V2_LAYOUT='monkey-project/2.0.0'
 PARTITION_VERSION='monkey-project/1.1.0'
 PREVIOUS_VERSION='monkey-project/1.0.0'
 
@@ -11,9 +12,10 @@ UNITY_TYPES={'sprite':'Textures','texture':'Textures','atlas':'Atlases','prefab'
     'animation':'Animations','spine':'Spine','font':'Fonts','music':'Audio/Music','sfx':'Audio/Sfx','voice':'Audio/Voice',
     'material':'Materials','shader':'Shaders','model':'Models','config':'Config','data':'Data','strings':'Strings','video':'Video'}
 CREATOR_TYPES=dict(UNITY_TYPES)
+UNITY_TYPES.update(sprite="Images", texture="Images", standalone_sprite="Sprites", effect="Shaders", atlas="Sprites", strings="Config/Localization")
 
 ROOTS={
-    'unity':dict(content='Assets/Game/Content',scenes='Assets/Game/Content/Scenes',game='Assets/Game',conversion='Assets/Game/Editor/Conversion',
+    'unity':dict(content='Assets/Game/Content',scenes='Assets/Game/Scenes',game='Assets/Game',conversion='Assets/Game/Editor/Conversion',
         localization='Localization',minigames='MiniGames',unsorted='Unsorted',scripts='Assets/Game/Scripts'),
     'creator':dict(content='assets/resources',scenes='assets/resources/Scenes',game='assets/Game',conversion='extensions/monkey-import',
         localization='Localization',minigames='MiniGames',unsorted='Unsorted',scripts='assets/Game/Scripts'),
@@ -33,8 +35,8 @@ UNITY_FILES={
     'dynamicUi':(_C+'MonkeyDynamicUi.cs','Assets/Monkey/Editor/UnityDynamicUi.cs'),
     'previewView':('Assets/Game/Presentation/Preview/ContentPreviewView.cs','Assets/Generated/Views/MonkeyCandidateView.cs'),
     'previewPrefab':('Assets/Game/Content/Prefabs/Preview/ContentPreview.prefab','Assets/Generated/Views/Candidate.prefab'),
-    'previewScene':('Assets/Game/Content/Scenes/Preview/ContentPreview.unity','Assets/Generated/Scenes/Candidate.unity'),
-    'bootScene':('Assets/Game/Content/Scenes/Boot/Boot.unity','Assets/Generated/Scenes/ImportBootstrap.unity'),
+    'previewScene':('Assets/Game/Scenes/Preview/ContentPreview.unity','Assets/Generated/Scenes/Candidate.unity'),
+    'bootScene':('Assets/Game/Scenes/Boot/Boot.unity','Assets/Generated/Scenes/ImportBootstrap.unity'),
     'editableProbe':('Assets/Game/Content/Prefabs/Preview/EditableProbe.prefab','Assets/Generated/Views/EditableProbe.prefab'),
 }
 LAYOUT_COMPONENTS=('NativeLinearLayoutGroup.cs','NativeRectConstraints.cs','NativeTextLineBox.cs','IntrinsicGridLayoutGroup.cs')
@@ -54,16 +56,18 @@ def creator(key):return CREATOR_FILES[key][0]
 
 
 def current(manifest):
-    return manifest.get('projectLayout') in (VERSION,PREVIOUS_VERSION,PARTITION_VERSION)
+    return manifest.get('projectLayout') in (VERSION,V2_LAYOUT,PREVIOUS_VERSION,PARTITION_VERSION)
 
 
 def locate(manifest,key,engine='unity'):
     """Fixed file path inside a candidate of either layout generation."""
     table=UNITY_FILES if engine=='unity' else CREATOR_FILES
+    if engine=='unity' and manifest.get('projectLayout')==V2_LAYOUT and key in ('previewScene','bootScene'):
+        return table[key][0].replace('Assets/Game/Scenes/', 'Assets/Game/Content/Scenes/')
     if engine=='creator' and key=='previewScene' and manifest.get('projectLayout')==PREVIOUS_VERSION:
         return 'assets/scenes/preview/ContentPreview.scene'
     if manifest.get('projectLayout') in (PREVIOUS_VERSION,PARTITION_VERSION):
-        if engine=='creator' and key=='previewScene':return 'assets/Game/Scenes/Preview/ContentPreview.scene'
+        if engine=="creator" and key=="previewScene":return "assets/Game/Scenes/Preview/ContentPreview.scene"
         old={'previewPrefab':'Assets/Game/Scenes/Preview/ContentPreview.prefab','editableProbe':'Assets/Game/Scenes/Preview/EditableProbe.prefab','previewScene':'Assets/Game/Scenes/Preview/ContentPreview.unity','bootScene':'Assets/Game/Scenes/Boot.unity'}
         if engine=='unity' and key in old:return old[key]
     if current(manifest):return table[key][0]

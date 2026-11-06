@@ -100,7 +100,7 @@ Product、SourceRecovery、_Recovery 和编号修复副本不能作为长期正�
 
 **STR-06 有界例外**：仅为真实引擎入口、第三方布局或已证明的序列化/反射兼容约束登记。记录具体规则、最小路径范围、原因、替代约束、验证证据、负责人和复审触发；“旧工程”“保留 Product 全树”不能作为理由。例外不等于验证通过，动态加载无法证明时保留 unknown。
 
-项目 `grea-project.json` 继续使用现行 `grea-unity-project/1.0.0` 配置合同：`paths.unityProject/evidenceRoot/buildRoot`、`toolchain`、`dependencyLock`、`scenes.bootstrap/entry` 等字段按现行 Schema 填写；设计尺寸、额外构建场景及结构映射写 `Docs/PROJECT-STRUCTURE.md`，不能向禁止额外属性的配置强塞字段。
+项目 `grea-project.json` 继续使用现行 `grea-unity-project/1.0.0` 配置合同：`paths.unityProject/evidenceRoot/buildRoot`、`toolchain`、`dependencyLock` 等字段按现行 Schema 填写；游戏模板声明启动场景，`unity-recovered-assets` 资产工程允许空 `scenes`；设计尺寸、额外构建场景及结构映射写 `Docs/PROJECT-STRUCTURE.md`，不能向禁止额外属性的配置强塞字段。
 
 现行配置的 `exceptions[]` 字段仍是 `ruleId/scope/reason/alternative/verification/owner/reviewTrigger`，其中 scope 为原合同的范围说明字符串。GREA 工程操作 新结构审计候选采用独立输入，不改写该接口；以下是双方对接的字段合同，CLI 及实际能力仍待固定候选验收：
 
@@ -129,6 +129,27 @@ Product、SourceRecovery、_Recovery 和编号修复副本不能作为长期正�
 - 已使用 Catalog、Addressables 或 AssetBundle 的项目保留其寻址机制和地址/标签；目录规范不要求改为 Resources。
 - 同步审查 AssetDatabase 路径、拼接路径、Directory.GetFiles、生成输出、构建场景、ProjectSettings 及当前文档。旧提交的 `git show <commit>:<path>` 是历史定位，不能随活动路径全局替换。
 - 同名文件先查用途再决定子目录或有意义的新名；检查大小写、Unicode 和 Windows 保留名。没有证据时保留文件名，避免把按名字查找的对象改坏。
+
+## 恢复资产正式入库
+
+使用 GREA 的三个 asset 命令。先关闭目标工程的 Editor，在独立目录保存清单。
+
+```bash
+grea asset collect-recovered-layout --project "$SOURCE" --unity-editor "$EDITOR" --output "$BEFORE"
+grea asset stage-recovered-layout --project "$SOURCE" --inventory "$BEFORE/inventory.tsv" --addresses "$GUID_ADDRESSES" --output "$STAGE"
+```
+
+`--addresses` 可省略；输入为 GUID 到来源逻辑路径的 JSON 对象。源地址优先决定模块；只能确定一个使用模块时沿用该模块，其他资产归 Common。新候选的 `Assets/` 与 `layout.jsonl` 一起交接。清单逐项记录原路径、目标路径、来源地址、GUID、实际主类型、归类原因、内容和 meta 的 SHA-256。采集器短暂使用受管 Editor 脚本，退出后清理；候选构建在独立目录。正式采用后使用同版本 Unity 重新采集，再逐文件验证。
+
+```bash
+grea asset collect-recovered-layout --project "$TARGET" --unity-editor "$EDITOR" --output "$AFTER"
+grea asset verify-recovered-layout --project "$TARGET" --before "$BEFORE/inventory.tsv" --inventory "$AFTER/inventory.tsv" --ledger "$STAGE/layout.jsonl" --output "$CHECK"
+```
+
+- 模块目录用 PascalCase，Prefab、场景与 Controller 用 PascalCase，普通媒体用 snake_case；中文转无声调拼音。重名按来源身份确定，不覆盖已有文件。纹理文件与独立 Sprite 分别归 Images 和 Sprites。
+- Spine 与字体按原生依赖归组；程序集、C# 文件名、Resources 键和相对 shader include 保留身份。遇到未知导入类型、未覆盖依赖、受保护路径碰撞或确定的旧路径消费者，工具终止并指出资产。
+- Unity 会把 Prefab 根名绑定到文件名。改名时 `prefabRootAlias` 固定原名、目标名、根 localID 和仅替换根名时允许的保存后 SHA。逐项验证可在 `prefab verify-static-set` 的 selection 中携带同一条记录；已恢复脚本存在原根名字符串时须先处理消费者。子节点、组件、引用、meta 及其他序列化字段仍逐项核对。动态拼接、远程地址和玩法执行另验。
+- 分类暂时不明确的 .asset 必须补原生类型证据。现行资产工程与新布局候选的 Prefab 采用计划会检查正式目标目录、类型、文件名和动态键。完整工程的场景列表与构建设置仍由对应工程事务管理。
 
 ## 目录迁移完成条件
 

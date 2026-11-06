@@ -24,6 +24,7 @@ def scan(paths,texts=None):
         for i,folder in enumerate(folders):
             low=folder.lower()
             parent=folders[i-1].lower() if i else ''
+            if parent=='content' and folder=='Images':continue
             if folder=='Resources':break  # Preserve existing Unity Resources.Load keys.
             if parent=='audio' and low in ('music','sfx','voice'):continue
             # A shader closure's final folder is an asset name, not a source

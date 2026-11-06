@@ -209,10 +209,10 @@ class StaticAssetCompletionTests(unittest.TestCase):
             root = Path(temp)
             plan, manifest, _, _, _, _ = self._fixture(root)
             plan["copies"] = [{"sourceId": "gameAsset:other-frame", "target":
-                "Assets/Game/Content/Textures/Test/frame.png", "sha256": "0" * 64}]
+                "Assets/Game/Content/Images/Test/frame.png", "sha256": "0" * 64}]
             prepared = prepare_for_target(plan, manifest, root / "unity-completion")
             frame = next(row for row in prepared["plan"]["textures"] if row["id"] == "gameAsset:" + FRAME)
-            self.assertNotEqual("Assets/Game/Content/Textures/Test/frame.png", frame["path"])
+            self.assertNotEqual("Assets/Game/Content/Images/Test/frame.png", frame["path"])
             self.assertRegex(Path(frame["path"]).stem, r"^frame__[0-9a-f]{10}$")
 
 

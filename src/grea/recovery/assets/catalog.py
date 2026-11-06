@@ -17,7 +17,7 @@ def export_catalog(manifest,project,engine,namespace,cache,overrides=None):
     project=Path(project);cache=Path(cache);cache.mkdir(parents=True,exist_ok=True)
     naming=LayoutPlanner(engine,source_names(manifest),overrides)
     existing={}
-    for path in sorted((project/ROOTS[engine]['content']/'Textures').rglob('*.png')):
+    for path in sorted((project/ROOTS[engine]['content']/naming.types['texture']).rglob('*.png')):
         relative=path.relative_to(project).as_posix();naming.claim(relative)
         if Path(str(path)+'.meta').is_file():existing.setdefault(sha(read(path,max_bytes=128*1024*1024)),relative)
     inputs={(i.get('bundle',manifest['bundle']),i['path']):i for i in manifest['inputs']}

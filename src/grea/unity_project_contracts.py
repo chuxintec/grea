@@ -10,6 +10,7 @@ PLANNER_VERSION = '1.0.0'
 TEMPLATE_ID = 'grea-minimal-2d'
 TEMPLATE_VERSION = '0.1.0'
 LEGACY_TEMPLATE = {'id': TEMPLATE_ID, 'version': '0.1.0-design'}
+ASSET_ONLY_TEMPLATE = {'id': 'unity-recovered-assets', 'version': '1.0.0'}
 LAYERS = ('Domain', 'Gameplay', 'Presentation', 'Services', 'Diagnostics')
 FEATURES = ('lifecycle', 'ui', 'resources', 'audio', 'save', 'diagnostics')
 
@@ -65,6 +66,17 @@ PROFILE = obj({
     'exceptions': array(obj({'ruleId': text(r'^(STR|ARC|LIF|DAT|CMP|PFB|SCR|GEN|ACC|UPG)-\d{2}$'), 'scope': PATH,
                              'reason': text(), 'alternative': text(), 'verification': text(), 'owner': text(), 'reviewTrigger': text()}), maximum=100),
 })
+# Asset collections declare no gameplay entrypoints. Existing game profiles still
+# require both scene paths and at least one module.
+scene_pair = PROFILE['properties']['scenes']
+PROFILE['properties']['scenes'] = {'oneOf': [scene_pair, obj({})]}
+PROFILE['properties']['modules']['minItems'] = 0
+PROFILE['allOf'] = [{
+    'if': {'properties': {'template': {'const': ASSET_ONLY_TEMPLATE}}},
+    'then': {'properties': {'scenes': {'maxProperties': 0}, 'modules': {'maxItems': 0},
+                            'features': {'const': ['resources']}}},
+    'else': {'properties': {'scenes': scene_pair, 'modules': {'minItems': 1}}},
+}]
 FILE_IDENTITY = obj({'path': PATH, 'kind': enum('file', 'directory'), 'bytes': {'type': 'integer', 'minimum': 0},
                      'sha256': NULL_HASH, 'guid': {'anyOf': [text(r'^[0-9a-f]{32}$'), {'type': 'null'}]}})
 FINDING = obj({'code': text(), 'severity': enum('error', 'warning'), 'path': {'type': 'string'}, 'message': text(), 'ruleId': text()})
@@ -124,10 +136,19 @@ REFERENCE = {
 }
 
 
+ASSET_ONLY_REFERENCE = {
+    'id': 'unity-6000.6.2f1-builtin-recovered-assets',
+    'template': ASSET_ONLY_TEMPLATE, 'assetBackend': 'resources',
+    'toolchain': {**REFERENCE['toolchain'], 'renderPipeline': 'builtin',
+                  'packages': {'com.unity.ugui': '2.6.0'}},
+    'scope': 'Existing recovered asset collections only. Project-specific native receipts remain separate.',
+}
+
+
 def capability_matrix():
     return {'schemaVersion': 1, 'standardVersion': STANDARD_VERSION, 'plannerVersion': PLANNER_VERSION,
             'scope': 'Combination observations describe static planning only; executable create-only generation is exposed separately. Named reference game evidence is scoped separately and never applied to arbitrary projects.',
-            'combinations': [deepcopy(REFERENCE)],
+            'combinations': [deepcopy(REFERENCE), deepcopy(ASSET_ONLY_REFERENCE)],
             'profileRecipes': [{'id':'modern-ui-v1','version':'0.1.0','status':'candidate','renderPipeline':'builtin','ui':'ugui-tmp','input':'input-system','editor':'6000.6.2f1','definition':'tools/unity/profiles/modern-ui/profile.json','validation':'validation/releases/2026-10-16-audit-remediation.json','scope':'Opt-in sample preparation only; not a supported plan_unity_project generation override.'}],
             'referenceGames': [{
                 'id': 'signal-garden', 'version': '1.0.0',

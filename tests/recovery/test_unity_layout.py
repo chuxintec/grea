@@ -44,8 +44,8 @@ class UnityLayoutTests(unittest.TestCase):
             result=relocate(root)
             moves={m['source']:m['target'] for m in load(read(root/'Analysis/Mappings/unity-relocation.json'))['moves']}
             expect={
-                'Assets/Texture2D/atlas_page.png':'Assets/Game/Content/Textures/Unsorted/atlas_page.png',
-                'Assets/uiraw/battle/zmzg_btn.asset':'Assets/Game/Content/Textures/Battle/zmzg_btn.asset',
+                'Assets/Texture2D/atlas_page.png':'Assets/Game/Content/Images/Unsorted/atlas_page.png',
+                'Assets/uiraw/battle/zmzg_btn.asset':'Assets/Game/Content/Sprites/Battle/zmzg_btn.asset',
                 'Assets/effect/ui/glow.mat':'Assets/Game/Content/Materials/Effect/UI/glow.mat',
                 'Assets/MonoBehaviour/hero_SkeletonData.asset':'Assets/Game/Content/Spine/Unsorted/Hero/hero_SkeletonData.asset',
                 'Assets/TextAsset/hero.skel.bytes':'Assets/Game/Content/Spine/Unsorted/Hero/hero.skel.bytes',
@@ -53,8 +53,8 @@ class UnityLayoutTests(unittest.TestCase):
                 'Assets/Resources/config/AudioCfg.bytes':'SourceRecovery/Config/Resources/config/AudioCfg.bytes',
                 'Assets/Resources/LineBreaking Leading Characters.bytes':'Assets/Game/Content/Data/Resources/LineBreaking Leading Characters.bytes',
                 'Assets/Resources/TMP Settings.asset':'Assets/Game/Content/Data/Resources/TMP Settings.asset',
-                'Assets/Scenes/SceneMain.unity':'Assets/Game/Content/Scenes/SceneMain.unity',
-                'Assets/Scenes/SceneMain/Settings.lighting':'Assets/Game/Content/Scenes/SceneMain/Settings.lighting',
+                'Assets/Scenes/SceneMain.unity':'Assets/Game/Scenes/SceneMain.unity',
+                'Assets/Scenes/SceneMain/Settings.lighting':'Assets/Game/Scenes/SceneMain/Settings.lighting',
                 'Assets/Scripts/GameLogic/T5Game/Hero.cs':'Assets/Game/Scripts/GameLogic/T5Game/Hero.cs'}
             for old,new in expect.items():self.assertEqual(moves.get(old),new,old)
             self.assertEqual(result['moved'],len(moves))
@@ -73,7 +73,7 @@ class UnityLayoutTests(unittest.TestCase):
             root=Path(temp).resolve();export(root)
             relocate(root,dict(schemaVersion=1,modules=[dict(match='uiraw/*',module='UI/{1}')]))
             moves={m['source']:m['target'] for m in load(read(root/'Analysis/Mappings/unity-relocation.json'))['moves']}
-            self.assertEqual(moves['Assets/uiraw/battle/zmzg_btn.asset'],'Assets/Game/Content/Textures/UI/Battle/zmzg_btn.asset')
+            self.assertEqual(moves['Assets/uiraw/battle/zmzg_btn.asset'],'Assets/Game/Content/Sprites/UI/Battle/zmzg_btn.asset')
 
     def test_schema_code_receipt_follows_relocated_file_preserving_provenance(self):
         from grea.recovery.io import write_json,sha

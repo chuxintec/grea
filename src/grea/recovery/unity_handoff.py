@@ -87,7 +87,7 @@ Read Analysis/Tasks/full-resource-handoff.json first: actual native files/GUIDs,
 SourceRecovery/Original retains every unique explicitly supplied container. Lookup/schema copies are evidence, not extra native assets.
 Analysis/Evidence/all-typed-objects.json (when present) preserves exact source file/pathID, references and parsed fields across the full input set.
 Analysis/Code/unity-code-model.json contains proven named field classes; SourceRecovery/Code/Source and Code/Drafts retain original code and metadata signatures/TODOs.
-Analysis/Mappings/unity-relocation.json maps every provider export path to its monkey-project/2.0.0 location with the same GUID.
+Analysis/Mappings/unity-relocation.json maps every provider export path to its grea-project-layout/2.1.0 location with the same GUID.
 Metadata-only declarations do not contain recovered business logic; uncompiled drafts remain outside Assets. Do not count empty or unsupported methods as working behavior.
 Repair missing script/package/Shader/Spine dependencies using their exact source identities. Never resolve collisions by first matching name or replace unknown logic with fake rewards.
 Shader-related nativeFiles have content-based shaderEvidence and a hold/review runtimeDisposition. Platform binaries and recovered dumps are source evidence, not approved runtime Shader source. Even source-text is not_run for native compilation. Use the consumer build filter and native dependencies before adopting runtime assets; do not delete referenced evidence blindly.

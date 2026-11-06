@@ -1,5 +1,8 @@
 # Unity指南
 
+已有 Unity 工程只交付恢复资产时，可在工程清单使用 `unity-recovered-assets` 1.0.0。该模板使用 `features: ["resources"]`、空的 `modules` 和 `scenes`，用于 adopt 或 refactor 的静态核对。资产工程的原生验收须另存 Prefab 保存、独立冷开、重导和引用回执；后续有正式入口场景时再切换游戏工程配置。
+
+
 用途：选择 GREA 已有的 Unity 检查、生成、框架与隔离恢复能力。不自动改动已有游戏；目录/生命周期/制作约束以 [Unity标准技能](../SKILL.md)为准。
 
 ## 项目检查与只读规划

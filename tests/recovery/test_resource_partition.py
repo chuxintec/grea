@@ -20,7 +20,7 @@ class ResourceLayoutTests(unittest.TestCase):
             manifest=dict(bundle='main',sourceRoots={'main':str(source)},inputs=[dict(path=p.name,sha256=sha(read(p))) for p in source.iterdir()],assets=[
                 dict(sourceId=s,kind='cc.Texture2D',native=n,logicalPath='Texture/UI/icon') for s,n in [('main:a','same.png'),('main:b','same.png'),('main:c','different.png')]])
             for engine in ('unity','creator'):
-                project=root/engine;relative=ROOTS[engine]['content']+'/Textures/UI/icon.png';image=project/relative
+                project=root/engine;relative=ROOTS[engine]['content']+('/Images' if engine=='unity' else '/Textures')+'/UI/icon.png';image=project/relative
                 image.parent.mkdir(parents=True);image.write_bytes(read(source/'same.png'));meta=Path(str(image)+'.meta')
                 if engine=='unity':meta.write_text('fileFormatVersion: 2\nguid: '+'a'*32+'\nTextureImporter:\n  spriteMode: 1\n')
                 else:write_json(meta,cocos.meta(cocos.identity('test','frame'),'image','1.0.27',dict(type='sprite-frame')))
@@ -81,7 +81,7 @@ class ResourceLayoutTests(unittest.TestCase):
                 p=LayoutPlanner(engine,metadata);paths.append(p.path('r:1','sprite','.png'))
                 self.assertEqual(p.records[0]['sourceId'],'r:1')
                 self.assertNotIn('partition',p.records[0])
-            self.assertEqual(paths,['Assets/Game/Content/Textures/UI/an_niu.png','assets/resources/Textures/UI/an_niu.png'])
+            self.assertEqual(paths,['Assets/Game/Content/Images/UI/an_niu.png','assets/resources/Textures/UI/an_niu.png'])
         with self.assertRaises(ParseError):validate(dict(schemaVersion=1,partitions=[dict(match='*',group='Boot',placement='resources')]))
 
     def test_source_collisions_keep_distinct_identity_and_loading_keys(self):

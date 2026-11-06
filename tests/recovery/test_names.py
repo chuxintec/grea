@@ -48,7 +48,7 @@ class NameTests(unittest.TestCase):
             self.assertFalse(second['sourceStageReuse']['pixelDecoderExecuted'])
             self.assertEqual((root/'first/Structured/normalize/ir.json').read_bytes(),original)
             plan=load(read(root/'second/UnityProject/Analysis/Mappings/name-map.json'))
-            self.assertTrue(any(r['target']=='Assets/Game/Content/Textures/UI/panel.png' for r in plan['records']))
+            self.assertTrue(any(r['target']=='Assets/Game/Content/Images/UI/panel.png' for r in plan['records']))
             added=root/'source/new.js';added.write_text('unexecuted source change')
             with self.assertRaises(ParseError) as changed:
                 convert_package(None,'both',root/'changed',input_set_path=declaration,reuse_source_stages=root/'first')

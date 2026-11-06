@@ -12,7 +12,7 @@ class LayoutRecordTests(unittest.TestCase):
             root=Path(temp).resolve();convert_package(fixture(root/'source').parent,'both',root/'out')
             for name,module in [('UnityProject','UI'),('CocosProject','UI')]:
                 project=root/'out'/name;structure=(project/'Docs/PROJECT-STRUCTURE.md').read_text()
-                self.assertIn('monkey-project/2.0.0',structure);self.assertIn('| '+module+' |',structure)
+                self.assertIn('grea-project-layout/2.1.0',structure);self.assertIn('| '+module+' |',structure)
                 table=load(read(project/'Analysis/Mappings/modules.json'))['modules']
                 self.assertEqual(table[module]['texture'],1)
                 self.assertIn('Mappings/',(project/'Analysis/README.md').read_text())
@@ -28,7 +28,7 @@ class LayoutRecordTests(unittest.TestCase):
             summary=json.loads(out.getvalue());self.assertGreaterEqual(summary['unity']['changed'],1)
             rows=load(read(root/'preview/layout-preview.json'))['rows']
             sprite=next(r for r in rows if r['engine']=='unity' and r['current'].endswith('/panel.png'))
-            self.assertEqual(sprite['preview'],'Assets/Game/Content/Textures/Panels/panel.png')
+            self.assertEqual(sprite['preview'],'Assets/Game/Content/Images/Panels/panel.png')
             self.assertFalse((root/'preview/UnityProject').exists())
             unchanged=next(r for r in rows if r['engine']=='creator' and r['current'].endswith('/panel.png'))
             self.assertEqual(unchanged['preview'],'assets/resources/Textures/Panels/panel.png')

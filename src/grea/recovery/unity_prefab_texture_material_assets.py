@@ -6,6 +6,7 @@ existing relocated Material. It never edits candidate/provider files or Unity YA
 from pathlib import Path
 import re
 
+from .layout.standard import VERSION, V2_LAYOUT
 from .io import encoded, inside, load, read, sha, write_json
 from .sources.compiled import fail
 
@@ -117,7 +118,7 @@ def plan_texture_material_rebuild(*, candidate_root, expected_manifest_sha256,
     graph, inputs, relocation = load(graph_raw, 8_000_000), load(inputs_raw, 200_000), load(relocation_raw, 500_000)
     _need(graph.get('contract') == 'monkey-unity-prefab-source-graph/1' and graph.get('sourceUnityVersions') == ['2021.3.30f1'],
           'TEXTURE_MATERIAL_GRAPH', graph_path, 'Exact supported source graph required')
-    _need(relocation.get('layout') == 'monkey-project/2.0.0', 'TEXTURE_MATERIAL_RELOCATION', relocation_path,
+    _need(relocation.get('layout') in (VERSION, V2_LAYOUT), 'TEXTURE_MATERIAL_RELOCATION', relocation_path,
           'Exact candidate relocation report required')
     pix_path = Path(selected_pixel_manifest).resolve()
     pix_raw = _pin(pix_path, selected_pixel_manifest_sha256, 16 * 1024 * 1024)

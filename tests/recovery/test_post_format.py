@@ -16,7 +16,7 @@ class RetiredFormatTests(unittest.TestCase):
             self.assertFalse(any(d['code']=='FORMAT_PROFILE_RETIRED' for d in none['diagnostics']))
             for name in ['UnityProject','CocosProject']:
                 plain=load(read(root/'none'/name/'manifest.json'));alias=load(read(root/'grea'/name/'manifest.json'))
-                self.assertEqual(plain['projectLayout'],'monkey-project/2.0.0');self.assertEqual(alias['projectLayout'],plain['projectLayout'])
+                self.assertEqual(plain['projectLayout'],'grea-project-layout/2.1.0');self.assertEqual(alias['projectLayout'],plain['projectLayout'])
                 # Absolute output roots change the inspected source receipt hash. Confirm each
                 # plan pins its own real manifest and compare all other project content.
                 plans = {"UnityProject":"Assets/Game/Editor/Conversion/import-plan.json",

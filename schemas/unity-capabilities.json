@@ -32,6 +32,27 @@
         "player": "not_run",
         "generation": "not_run"
       }
+    },
+    {
+      "id": "unity-6000.6.2f1-builtin-recovered-assets",
+      "template": {
+        "id": "unity-recovered-assets",
+        "version": "1.0.0"
+      },
+      "assetBackend": "resources",
+      "toolchain": {
+        "editorVersion": "6000.6.2f1",
+        "renderPipeline": "builtin",
+        "ui": "ugui",
+        "input": "legacy",
+        "targetPlatform": "macOS",
+        "architecture": "arm64",
+        "scriptingBackend": "Mono",
+        "packages": {
+          "com.unity.ugui": "2.6.0"
+        }
+      },
+      "scope": "Existing recovered asset collections only. Project-specific native receipts remain separate."
     }
   ],
   "profileRecipes": [

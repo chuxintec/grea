@@ -12,7 +12,7 @@ from collections import deque
 from jsonschema import Draft202012Validator
 from .common import GreaError, digest
 from .unity_project_contracts import (
-    PROFILE, REPORT, PLAN, REFERENCE, STANDARD_VERSION, PLANNER_VERSION, LEGACY_TEMPLATE, documents,
+    PROFILE, REPORT, PLAN, REFERENCE, STANDARD_VERSION, PLANNER_VERSION, LEGACY_TEMPLATE, ASSET_ONLY_TEMPLATE, ASSET_ONLY_REFERENCE, documents,
 )
 
 LIMITATIONS = [
@@ -243,7 +243,10 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
         if not value.startswith('Assets/') or not value.endswith('.unity'):
             raise GreaError('INVALID_PROFILE', 'Scenes must use explicit Assets-relative .unity paths.')
         reader.path(at(value))
-    if p['scenes']['bootstrap'] == p['scenes']['entry']:
+    asset_only = p['template'] == ASSET_ONLY_TEMPLATE
+    if asset_only and mode == 'new':
+        raise GreaError('UNSUPPORTED_TEMPLATE', 'Recovered asset collections can only be inspected as existing projects.')
+    if not asset_only and p['scenes']['bootstrap'] == p['scenes']['entry']:
         raise GreaError('INVALID_PROFILE', 'Bootstrap and content scene must be distinct in the reference profile.')
     if p['saveNamespace'] == p['qaSaveNamespace']:
         raise GreaError('INVALID_PROFILE', 'QA and player save namespaces must be distinct.')
@@ -252,7 +255,7 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
     module_names = [unicodedata.normalize('NFC', x['name']).casefold() for x in p['modules']]
     if len(set(module_names)) != len(module_names):
         raise GreaError('INVALID_PROFILE', 'Module names collide after portable normalization.')
-    if 'lifecycle' not in p['features'] or ('ui' in p['features'] and 'resources' not in p['features']):
+    if not asset_only and ('lifecycle' not in p['features'] or ('ui' in p['features'] and 'resources' not in p['features'])):
         raise GreaError('INVALID_PROFILE', 'Lifecycle is required; UI also requires resources.')
     for exception in p['exceptions']:
         relative(exception['scope']); reader.path(at(exception['scope']))
@@ -335,10 +338,15 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
                     finding('UNSUPPORTED_DEPENDENCY_SOURCE', manifest_path, 'Static inspection does not resolve local, Git or unpinned dependency: '+name, 'STR-04')
                 elif not isinstance(locked.get(name), dict) or locked[name].get('version') != version:
                     finding('MISSING_LOCK_ENTRY', lock_path, 'Direct package is absent or mismatched in lock: '+name, 'GEN-01')
-    template_ok = p['template'] in (REFERENCE['template'], LEGACY_TEMPLATE)
+    template_ok = p['template'] in (REFERENCE['template'], LEGACY_TEMPLATE, ASSET_ONLY_TEMPLATE)
     if not template_ok:
-        finding('UNKNOWN_TEMPLATE', profile, 'Only the registered recipe or legacy design profile is recognized.', 'GEN-01')
+        finding('UNKNOWN_TEMPLATE', profile, 'Unknown Unity project template.', 'GEN-01')
     known = template_ok and p['toolchain'] == REFERENCE['toolchain'] and p['assetBackend'] == REFERENCE['assetBackend']
+    if asset_only:
+        expected = ASSET_ONLY_REFERENCE['toolchain']
+        known = (all(p['toolchain'][k] == v for k, v in expected.items() if k != 'packages')
+                 and p['assetBackend'] == ASSET_ONLY_REFERENCE['assetBackend']
+                 and all(p['toolchain']['packages'].get(k) == v for k, v in expected['packages'].items()))
     if not known:
         finding('UNSUPPORTED_COMBINATION', profile, 'This combination is not in the static reference matrix; it will not be substituted.', 'GEN-01')
     if p['frameworkPackages']:
@@ -356,7 +364,8 @@ def _inspect(project_root, profile, mode, scope, baseline, max_files, max_bytes,
     findings = list({digest(f): f for f in findings}.values())
     inventory = sorted(reader.identities.values(), key=lambda x: x['path'])
     snapshot = digest({'inventory': inventory, 'directories': reader.directories, 'absent': sorted(reader.missing)})
-    capability = {'id': REFERENCE['id'] if known else None, 'staticPlanning': 'supported' if known else 'unsupported',
+    combination = ASSET_ONLY_REFERENCE if asset_only else REFERENCE
+    capability = {'id': combination['id'] if known else None, 'staticPlanning': 'supported' if known else 'unsupported',
                   'editor': 'not_run', 'playMode': 'not_run', 'player': 'not_run', 'generation': 'not_run'}
     report = {'schemaVersion': 1, 'standardVersion': STANDARD_VERSION, 'plannerVersion': PLANNER_VERSION,
               'mode': mode, 'profileSha256': reader.identities[profile]['sha256'], 'snapshotSha256': snapshot,

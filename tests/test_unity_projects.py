@@ -145,6 +145,19 @@ class UnityProjectTests(unittest.TestCase):
         self.assertEqual(result['result']['items'],[])
         self.assertEqual(result['result']['report']['capability']['staticPlanning'],'unsupported')
 
+    def test_asset_collection_requires_no_game_scenes_or_modules(self):
+        from grea.unity_project_contracts import ASSET_ONLY_REFERENCE, ASSET_ONLY_TEMPLATE
+        self.profile.update(template=ASSET_ONLY_TEMPLATE, scenes={}, modules=[], features=['resources'],
+                            assetBackend='resources', toolchain=deepcopy(ASSET_ONLY_REFERENCE['toolchain']))
+        self.existing()
+        result = self.call(mode='adopt')
+        self.assertEqual(result['result']['staticStatus'], 'pass', result)
+        self.assertEqual(result['result']['capability']['id'], ASSET_ONLY_REFERENCE['id'])
+        self.assertEqual(self.call(mode='new')['error']['code'], 'UNSUPPORTED_TEMPLATE')
+        self.profile['scenes']={'bootstrap': 'Assets/Old.unity', 'entry': 'Assets/Stage.unity'}
+        self.save_profile()
+        self.assertEqual(self.call(mode='adopt')['error']['code'], 'INVALID_PROFILE')
+
     def test_profile_semantic_and_module_contracts(self):
         original=deepcopy(self.profile)
         mutations=[lambda p:p.update(features=['unknown-feature']),

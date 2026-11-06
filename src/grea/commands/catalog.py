@@ -141,7 +141,8 @@ def commands():
         src = ("static-code-bindings", *path)
         add(*recovery_route(src), "bindings", src, parser, defaults, description, static_code_bindings.execute)
     from grea.features.prefab.commands import declared_commands
-    for command in declared_commands():
+    from grea.features.asset.commands import declared_commands as asset_commands
+    for command in (*declared_commands(), *asset_commands()):
         register(command)
     for path, defaults, parser, description in leaves(development.parser(include_intake_plan=False)):
         add(*development_route(path), "development", path, parser, defaults, description, development.main)

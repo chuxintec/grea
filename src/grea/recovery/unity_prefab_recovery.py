@@ -553,7 +553,7 @@ def recover(request_path, expected_request, output):
     from .io import encoded
     source_namespace = "unity-source/" + sha(encoded(sorted(roots, key=lambda r: (r["sourceSha256"], r["file"], r["pathId"]))))[:24]
     write_json(project / "manifest.json", dict(schemaVersion=1, contract=report["contract"], toolVersion=__version__, namespace=source_namespace,
-        targetProfile="unity-6000.6.2f1-ugui", sourceFamily="unity", requestSha256=expected_request,
+        targetProfile="unity-6000.6.2f1-ugui", projectLayout=relocation["layout"], sourceFamily="unity", requestSha256=expected_request,
         selectedSourceRoots=roots, files=files, diagnostics=gaps, native="not_run", business="not_run"))
     write_json(out / "result.json", report)
     return report
