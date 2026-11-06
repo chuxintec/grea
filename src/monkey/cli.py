@@ -16,6 +16,9 @@ from pathlib import Path
 
 def main(argv=None):
     raw = list(sys.argv[1:] if argv is None else argv)
+    if raw[:1] == ['develop']:
+        from .development import main as run_development
+        return run_development(raw[1:])
     if raw[:1] == ['tool']:
         from monkey.toolkit.runner import main as run_tool
         return run_tool(raw[1:])
@@ -31,6 +34,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog='monkey')
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     sub = parser.add_subparsers(dest='command', required=True)
+    sub.add_parser('develop', help='Unity project adoption, development, testing and build tools')
     p = sub.add_parser('select-prefab-presentation', help='Freeze a representative Cocos UI Prefab sample')
     p.add_argument('--ir', required=True)
     p.add_argument('--limit', type=int, default=50)
@@ -75,7 +79,7 @@ def main(argv=None):
             p.add_argument('--contains',default='');p.add_argument('--extract')
         else:
             p.add_argument('--alias');p.add_argument('--content-source');p.add_argument('--content-prefix',default='')
-    p = sub.add_parser('adopt', help='Deprecated compatibility: three-way asset adoption; ownership transferred to beaver')
+    p = sub.add_parser('adopt', help='Legacy three-way asset adoption; new transactions use monkey develop adopt')
     p.add_argument('--candidate', help='Frozen incoming package or Unity-source project')
     p.add_argument('--target', help='Existing owned development project; never the source export')
     p.add_argument('--baseline', help='Explicit frozen common generation for first adoption')
@@ -633,9 +637,9 @@ def main(argv=None):
             from .code_profiles import profile_capabilities
             legacy_profile_capabilities=profile_capabilities()
             print(json.dumps(dict(version=__version__, byteBudgets=default_byte_budgets(), profiles=[PROFILE,PROJECT_PROFILE,'cocos-2.4.11-bundle','cocos-3.8.7-bundle','cocos-3.4.1-bundle','cocos-2.1.2-resource','generic-image-resources-v1','egret-custom-resource-plist-v1'], targetProfiles=[UNITY_PROFILE,cocos.PROFILE], activeTargetProfiles=[UNITY_PROFILE], pausedCompatibilityTargetProfiles=[cocos.PROFILE],
-                ownership=dict(recoveryCandidates='monkey',developmentProjectOperations='beaver',workflow='GREA'),
+                ownership=dict(recoveryCandidates='monkey',developmentProjectOperations='monkey',developmentCommand='monkey develop',workflow='GREA'),
                 unityPrefabRecovery=dict(command='recover-unity-prefabs',requestContract='monkey-unity-prefab-recovery-request/1',scope='selected-source-roots-and-provider-GUID-closure',nativeCommand='verify-unity-prefabs',native='implemented-acceptance-pending',sourceCodeExecuted=False),
-                nativeSdkDeclarations=dict(command='audit-native-code-dependencies',contract='monkey-native-sdk-declaration/1',schemaVersion=1,coverage='manifest-pinned-Spine-stage-and-literal-script-reference-tuples',assemblyInspectionOwner='beaver',migration='not-performed'),
+                nativeSdkDeclarations=dict(command='audit-native-code-dependencies',contract='monkey-native-sdk-declaration/1',schemaVersion=1,coverage='manifest-pinned-Spine-stage-and-literal-script-reference-tuples',assemblyInspectionOwner='monkey develop',migration='not-performed'),
                 codeRecovery=dict(status='partial',sourceExecution=False,lexicalGraph='complete-source-static-binding-and-utf8-spans',typedModules='explicit-source-class-method-hashes-and-call-domain',moduleProfiles=legacy_profile_capabilities['profiles'],moduleProfileExtensions=legacy_profile_capabilities['extensions'],selection='optional-strict-typed-dependency-closure-and-lowering',methods='default-full-source-best-effort-CSharp-bodies;unknown-fragments-retained',fullDrafts=dict(commands=['code-draft','convert'],typeContractRequired=False,sourceMethods='all-indexed-plus-auxiliary-functions',fields='known-class-or-unresolved-owner-binding',diagnostics='source-linked-bounded-shards',compilation='excluded;syntax-and-API-errors-allowed'),projectPostprocess=dict(commands=['code-project-prepare','code-project-run','code-project-status','code-project-resume','code-project-pause','code-project-configure','code-project-recheck'],scope='all-manifest-owned-CSharp-files',execution='single-CLI-continuous-batches;per-batch-limits;exact-session',status='legacy-file-repair;active-run-superseded'),nativeArchitecture=dict(commands=['code-architecture-prepare','code-architecture-run','code-architecture-status','code-architecture-recheck','code-architecture-refine','code-native-prepare','code-native-run','code-native-status','code-native-continue','code-native-reassemble','code-native-revise','code-native-add-json','code-architecture-module-prepare','code-architecture-module-run','code-architecture-module-status','code-architecture-module-recheck','code-architecture-module-recover'],scope='complete-frozen-source-modules-members-and-resources',layers=['Bootstrap','Domain','Gameplay','Presentation','Services'],execution='single-existing-Codex-CLI;versioned-source-and-target-ownership',status='architecture-design-stage-available;native-implementation-in-progress'),optionalPostprocess=dict(commands=['code-postprocess','code-postprocess-resume'],defaultEnabled=False,provider='existing-local-Codex-CLI',workspace='independent-selected-code-copy',sourceCandidate='immutable',budgets='total-idle-output',resume='exact-recorded-session-only'),packageComposition='exact-frozen-resource-reuse;one-manifest-with-Scene-Prefab-JSON-and-CSharp',incremental='owned-candidate-fingerprints-and-hash-verified-reuse',mono='static-decompiler-drafts;legal-fixture-target-compiled',il2cpp='v29-exact-WASM-body-evidence;8-pure-i64-operator-fragments;caller-map-assumption;stateful-bodies-not-lifted',native='separate-probe-required;not-implied-by-emission'),
                 recoveryOperations=dict(commands=['acquire-resources','diagnose','doctor','space-preview','resource-probe'],
                     resume='same-manifest-and-input-set; completed-partial-receipt-to-fresh-layer; rehash-selected-payloads',
@@ -643,7 +647,7 @@ def main(argv=None):
                     diagnostics='selected-existing-evidence; no source parsing or target-byte validation implied',space='metadata-preview-only; no deletion',
                     spine='creator-3.8.8/standard-3.8-native-reference-page-time-and-pose-representatives',shader='exact-cocos-2.4.15-builtin-2d-sprite-macro-profile'),
                 evidenceInspection=dict(commands=['query-methods','query-tables','inspect-aliases'],inputs=['strict-streamed-json-array','manifest-hashed-table-zip','exact-url-content-alias-index'],sourceExecution=False,metadataIsMethodBody=False,hashVerification='complete-selected-source; outer-ZIP-not-implied',maxSourceBytes=536870912,maxRowBytes=8388608,maxResults=1000),
-                projectOperations=dict(status='deprecated-compatibility',owner='beaver',commands=['adopt','adopt-recover','register','apply'],replacement='beaver-0.1.0-local-verified;consumer-switch-pending',scope='frozen-transition-implementation; not a new monkey mainline capability',unityNative='representative-move-and-reopen-verified-on-predecessor-WIP; latest-add-folder-runtime-not_run',creatorNative='unsupported'),
+                projectOperations=dict(status='integrated', owner='monkey', command='monkey develop', discovery='monkey develop capabilities', legacyCommands=['adopt','adopt-recover','register','apply'], creatorNative='unsupported'),
                 outputPolicy=dict(wholeInput=policy({'scopeMode':'whole-input'}),selection=policy({}),hashChunkBytes=1048576,sourceDecoderBudgets='independent'),
                 additionalPackageProfiles={'cocos-3.4.1-bundle':dict(scope='version-proven-node-ui-prefab-and-resource-subset',graphs='856-of-857-source-graphs;22503-nodes;52-instances;one-null-quaternion-rejected',native='5-source-frames-plus-6-prefabs-331-nodes-8-instances-7-mounted-nodes-1-mounted-widget-both-targets-verified',operations=['package-convert']), 'egret-custom-resource-plist-v1':dict(scope='reviewed-custom-resource-manifest-plist-binjson-v2',targets=['unity6'],sourceSkins='typed-data-only-native-layout-pending',remoteAcquisition='explicit-manifest-cache-and-bounded-fetch',native='132-source-frames-verified; expanded-atlas-set-pending',operations=['package-convert']), 'cocos-2.1.2-resource':dict(scope='version-proven-resource-subset',native='211-source-frames-both-targets-verified',graphs='pending',operations=['package-convert']), 'generic-image-resources-v1':dict(scope='derived-original-image-gallery-only',families=['laya','layaair','egret','eraget','custom','other'],targets=['unity6'],native='Egret-16-derived-images-verified',sourceGraphs='not-restored',operations=['package-convert']), 'cocos-2.4.11-bundle':dict(scope='version-proven-published-bundle-subset',native='91-source-graphs-both-targets-verified',operations=['package-convert']), 'cocos-3.8.7-bundle':dict(scope='version-proven-node-ui-template-and-resource-subset',native='83-static-graphs-plus-4-prefab-5-native-relations-and-16-node-dynamic-ui-representatives-both-targets-verified',graphs='114-root-closures-static;5-graphs-missing-6-exact-templates;not-all-native-validated',operations=['package-convert'])},
                 toolkit=dict(contract='grea-toolkit/1',runner='monkey tool <id>',tools=list(__import__('monkey.toolkit',fromlist=['TOOLS']).TOOLS)),
@@ -657,7 +661,7 @@ def main(argv=None):
                 animationSubset=['local-position','local-scale','opacity','linear','constant-step','Normal','Loop'],animationEvents='manual-contract-only', targetEditorValidation='representative-subsets-only'), ensure_ascii=False))
             return 0
         if args.command == 'adopt':
-            print('Deprecated compatibility: development-project adoption belongs to beaver; beaver 0.1.0 has local verification; consumer switch is still pending. See docs/V0.5-ADOPTION.md.',file=sys.stderr)
+            print('Legacy adoption command. For new development transactions use monkey develop adopt.',file=sys.stderr)
             if args.execute:
                 if not args.plan or not args.expected_plan or not args.editor_path or any((args.candidate,args.target,args.baseline,args.lineage)):
                     parser.error('adopt --execute requires --plan --expected-plan --editor-path and no candidate/target/baseline')
@@ -670,7 +674,7 @@ def main(argv=None):
                 result=preview(args.candidate,args.target,args.out,args.baseline,args.lineage)
             print(json.dumps(result,ensure_ascii=False));return 1 if result['status']=='blocked' else 0
         if args.command == 'adopt-recover':
-            print('Deprecated compatibility: recovery of existing adoption transactions is retained during beaver handoff.',file=sys.stderr)
+            print('Legacy adoption recovery. Use the implementation recorded in the original transaction.',file=sys.stderr)
             from .adoption_native import recover
             result=recover(args.transaction,args.editor_path,args.budget_seconds)
             print(json.dumps(result,ensure_ascii=False));return 0

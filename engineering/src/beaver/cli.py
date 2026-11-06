@@ -120,8 +120,8 @@ class Parser(argparse.ArgumentParser):
         fail("CLI_USAGE", "arguments", message)
 
 
-def parser():
-    p = Parser(prog="beaver")
+def parser(prog="beaver"):
+    p = Parser(prog=prog)
     sub = p.add_subparsers(dest="command", required=True)
     sub.add_parser("version")
     sub.add_parser("capabilities")
@@ -614,22 +614,24 @@ def dispatch(a):
         return apply(a.plan,a.out,a.expected_plan)
 
 
-def main(argv=None):
+def main(argv=None, *, prog="beaver", producer="beaver", version=__version__):
     argv=list(sys.argv[1:] if argv is None else argv)
     if argv==['--version']:
         argv=['version']
     if argv[:1]==["tool"]:
         from .toolkit.runner import main as run_tool
-        return run_tool(argv[1:])
+        return run_tool(argv[1:], prog=prog)
     run_id = uuid.uuid4().hex
     base = dict(schemaVersion=1, contract="beaver-result/1", operationId=run_id,
-                producer=dict(name="beaver", version=__version__, implementationSha256=implementation_identity()),
+                producer=dict(name=producer, version=version, implementationSha256=implementation_identity()),
                 actualChanges=[], artifacts=[], diagnostics=[], limitations=[],
                 verification=dict(native="not_run", player="not_run", visual="not_run", business="not_run"))
     a=None
     try:
-        a = parser().parse_args(argv)
+        a = parser(prog).parse_args(argv)
         data = dispatch(a)
+        if a.command == "version" and producer != "beaver":
+            data = dict(version=version, engineeringVersion=__version__)
         status = data.get("status") if data.get("status") in ("blocked","partial","failed","not_run") else "ok"
         if a.command=='ui' and data.get('status')=='issues':status='partial'
         if data.get('status') in ('identity_unknown','starting','stopping','not_available'):status='partial'

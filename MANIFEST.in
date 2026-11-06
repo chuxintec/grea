@@ -10,6 +10,13 @@ prune outputs
 prune dist
 recursive-include src/monkey *.cjs
 
+include engineering/LICENSE
+recursive-include engineering/src/beaver *.py *.cs *.m *.md *.template *.txt
+graft engineering/src/beaver/server_templates
+recursive-include engineering/docs *.md *.json
+prune engineering/.private
+global-exclude __pycache__ *.py[cod] .DS_Store
+
 include scripts/install_release.py
 
 include scripts/smoke_cli.py

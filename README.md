@@ -15,6 +15,10 @@ monkey 是 Python 驱动的原包恢复命令行工具，将已授权取得的�
 
 Unity 目标使用 Unity 6，采用 `Assets/Game/Content/<Type>/<Module>/`；Creator 资源目标使用 `assets/resources/<Type>/<Module>/`。图片统一放在 Textures，保留 Sprite 导入设置与引用。中文输出名转拼音，保留源名映射及冲突消歧。原始数值配置以 UTF-8 JSON 为维护源。
 
+## 本地开发工程命令
+
+`monkey develop` 接收 beaver 全部工程命令。运行 `monkey develop --help` 查看命令组，运行 `monkey develop capabilities` 查看验证范围及引擎依赖。恢复仍用原有 monkey 命令；新采用事务使用 `monkey develop intake plan/apply/rollback`。工程实现、原生 Editor 伴随代码、测试和模板随仓库维护，固定历史事务继续使用创建它们的版本。参数和事务边界见 [工程命令合同](engineering/docs/CLI-CONTRACT.md)。
+
 ## 0.7.0 的主要能力
 
 - Cocos 来源的静态 Prefab 恢复支持有据字段、资源、布局、固定状态和双目标保存重开；未知业务、动画曲线和不可用行为仍保留具体缺口。
@@ -24,7 +28,7 @@ Unity 目标使用 Unity 6，采用 `Assets/Game/Content/<Type>/<Module>/`；Cre
 - 包级 `convert` 可生成全部已取得 JS 方法的 C# 初稿，并保留资源、JSON、Scene/Prefab、源码映射及具体未恢复项。支持核验后复用冻结资源候选，避免重复解码。
 - 原生架构流程按 Bootstrap/Domain/Gameplay/Presentation/Services 组织完整模块，支持单进程有界生成、断点接续、只读重分类、哈希固定的候选修订和显式本地测试 JSON。
 - 大工程解析预算、阶段复用、资源身份、引用闭包和生成所有权保留明确边界。未知方法、缺失资源与不可编译初稿不会变成假成功。
-- `monkey tool <id> [args...]` 接收 GREA 的来源侧工具，保持 ID、参数、报告与退出码。GREA 可通过固定版本 provider 调用；人工工程的采用和建设由 beaver 负责。
+- `monkey tool <id> [args...]` 接收 GREA 的来源侧工具，保持 ID、参数、报告与退出码。GREA 可通过固定版本 provider 调用；当前开发版通过 `monkey develop` 进行工程采用和建设。
 
 支持范围按来源格式逐步实现，参见[支持矩阵](docs/SUPPORT-MATRIX.md)。Cocos、Unity、Egret 等已有不同范围的 reader；原图 gallery 不代表节点或业务已恢复。恢复候选、原生导入、编译、玩法及视觉验收分别记录。
 

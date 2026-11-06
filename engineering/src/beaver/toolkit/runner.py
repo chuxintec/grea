@@ -5,9 +5,9 @@ import traceback
 from beaver.toolkit import TOOLS
 
 
-def main(argv):
+def main(argv, *, prog="beaver"):
     if not argv or argv[0] in ('-h', '--help'):
-        print('usage: beaver tool <id> [args...]\n\ntools: ' + ', '.join(TOOLS))
+        print(f'usage: {prog} tool <id> [args...]\n\ntools: ' + ', '.join(TOOLS))
         return 0 if argv else 2
     tool, rest = argv[0], argv[1:]
     if tool not in TOOLS:
