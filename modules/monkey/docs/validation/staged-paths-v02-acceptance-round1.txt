@@ -1,0 +1,3 @@
+docs/PLAN.md
+docs/validation/2026-10-23-v02-acceptance-round1.md
+docs/validation/staged-paths-v02-acceptance-round1.txt

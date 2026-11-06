@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "case": "样例项目",
+  "stage": "source-resolution",
+  "status": "blocked",
+  "code": "DECLARED_SOURCE_PATH_UNAVAILABLE",
+  "declaredSource": "projects/archives/16-样例项目",
+  "sourcePointer": "source archive/games/样例项目/RESEARCH.json:identity.originalSource",
+  "managerPointerAgrees": true,
+  "existsAtCheck": false,
+  "sourceCodeExecuted": false,
+  "engine": "unknown",
+  "export": "not_run",
+  "native": "not_run",
+  "business": "not_run"
+}

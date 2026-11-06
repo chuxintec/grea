@@ -1,0 +1,119 @@
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: sprite-outline-vs:vert
+      frag: sprite-outline-fs:frag
+      depthStencilState:
+        depthTest: false
+        depthWrite: false
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendDstAlpha: one_minus_src_alpha
+      rasterizerState:
+        cullMode: none
+      properties:
+        outlineColor: { value: [1.0, 1.0, 1.0, 1.0], editor: { type: color } }
+        outlineTextureSize: { value: [128.0, 128.0] }
+        outlineWidth: { value: 3.0 }
+        fillAlpha: { value: 0.0 }
+        alphaThreshold: { value: 0.01 }
+}%
+
+CCProgram sprite-outline-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #if USE_LOCAL
+    #include <builtin/uniforms/cc-local>
+  #endif
+  #if SAMPLE_FROM_RT
+    #include <common/common-define>
+  #endif
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+  out vec4 v_color;
+  out vec2 v_uv;
+  vec4 vert () {
+    vec4 pos = vec4(a_position, 1.0);
+    #if USE_LOCAL
+      pos = cc_matWorld * pos;
+    #endif
+    #if USE_PIXEL_ALIGNMENT
+      pos = cc_matView * pos;
+      pos.xyz = floor(pos.xyz);
+      pos = cc_matProj * pos;
+    #else
+      pos = cc_matViewProj * pos;
+    #endif
+    v_uv = a_texCoord;
+    #if SAMPLE_FROM_RT
+      CC_HANDLE_RT_SAMPLE_FLIP(v_uv);
+    #endif
+    v_color = a_color;
+    return pos;
+  }
+}%
+
+CCProgram sprite-outline-fs %{
+  precision highp float;
+  #include <builtin/internal/embedded-alpha>
+  in vec4 v_color;
+  in vec2 v_uv;
+  #pragma builtin(local)
+  layout(set = 2, binding = 11) uniform sampler2D cc_spriteTexture;
+  uniform Constant {
+    vec4 outlineColor;
+    vec2 outlineTextureSize;
+    float outlineWidth;
+    float fillAlpha;
+    float alphaThreshold;
+  };
+
+  float sampleAlpha(vec2 uv) {
+    return CCSampleWithAlphaSeparated(cc_spriteTexture, uv).a;
+  }
+  float sampleRingAlpha(vec2 uv, vec2 stepUv, float radius) {
+    vec2 offset = stepUv * radius;
+    vec2 diag = offset * 0.70710678;
+    float alpha = 0.0;
+    alpha = max(alpha, sampleAlpha(uv + vec2( offset.x, 0.0)));
+    alpha = max(alpha, sampleAlpha(uv + vec2(-offset.x, 0.0)));
+    alpha = max(alpha, sampleAlpha(uv + vec2(0.0,  offset.y)));
+    alpha = max(alpha, sampleAlpha(uv + vec2(0.0, -offset.y)));
+    alpha = max(alpha, sampleAlpha(uv + vec2( diag.x,  diag.y)));
+    alpha = max(alpha, sampleAlpha(uv + vec2(-diag.x,  diag.y)));
+    alpha = max(alpha, sampleAlpha(uv + vec2( diag.x, -diag.y)));
+    alpha = max(alpha, sampleAlpha(uv + vec2(-diag.x, -diag.y)));
+    return alpha;
+  }
+  float getOutlineMask(vec2 uv) {
+    vec2 safeTextureSize = max(outlineTextureSize, vec2(1.0, 1.0));
+    vec2 stepUv = 1.0 / safeTextureSize;
+    float width = clamp(outlineWidth, 0.0, 8.0);
+    float sourceAlpha = sampleAlpha(uv);
+    float neighborAlpha = 0.0;
+    for (int i = 1; i <= 8; i++) {
+      float ring = float(i);
+      float ringWeight = clamp(width - ring + 1.0, 0.0, 1.0);
+      neighborAlpha = max(neighborAlpha, sampleRingAlpha(uv, stepUv, ring) * ringWeight);
+    }
+    float sourceMask = smoothstep(alphaThreshold, alphaThreshold + 0.05, sourceAlpha);
+    float solidMask = smoothstep(0.45, 0.9, sourceAlpha);
+    float neighborMask = smoothstep(alphaThreshold, alphaThreshold + 0.05, neighborAlpha);
+    float softEdgeMask = sourceMask * (1.0 - solidMask);
+    return max(max(neighborMask - solidMask, 0.0), softEdgeMask);
+  }
+  vec4 frag () {
+    vec4 o = CCSampleWithAlphaSeparated(cc_spriteTexture, v_uv);
+    o *= v_color;
+    float outlineMask = getOutlineMask(v_uv);
+    vec4 outline = vec4(outlineColor.rgb, outlineColor.a * outlineMask);
+    float sourceMask = smoothstep(alphaThreshold, alphaThreshold + 0.05, o.a);
+    vec4 source = vec4(o.rgb, o.a * clamp(fillAlpha, 0.0, 1.0) * sourceMask);
+    float sourceBlend = sourceMask * clamp(fillAlpha, 0.0, 1.0);
+    return vec4(mix(outline.rgb, source.rgb, sourceBlend), max(outline.a, source.a));
+  }
+}%

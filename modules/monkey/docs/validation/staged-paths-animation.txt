@@ -1,0 +1,15 @@
+docs/PLAN.md
+docs/PROVENANCE.md
+docs/USAGE.md
+docs/validation/2026-10-23-animation.md
+docs/validation/staged-paths-animation.txt
+src/monkey/assets/animation.py
+src/monkey/cli.py
+src/monkey/normalize.py
+src/monkey/targets/CreatorAnimation.js
+src/monkey/targets/CreatorMain.js
+src/monkey/targets/CreatorScene.js
+src/monkey/targets/UnityImporter.cs
+src/monkey/targets/cocos.py
+src/monkey/targets/unity.py
+tests/test_animation.py

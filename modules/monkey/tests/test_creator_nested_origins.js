@@ -1,0 +1,14 @@
+'use strict';
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const moduleObject={exports:{}};
+vm.runInNewContext(fs.readFileSync('src/monkey/targets/CreatorPrefabInstances.js','utf8'),{module:moduleObject,require:()=>({}),Map,Set});
+const plan={nodes:['instance','middle','source'].map(sourceId=>({sourceId})),syncPrefabBindings:[{origins:[{instanceSourceId:'instance',templateSourceId:'middle'},{instanceSourceId:'middle',templateSourceId:'source'}]}]};
+assert.equal(moduleObject.exports.sourceTemplateNode(plan,'instance'),'source');
+assert.equal(moduleObject.exports.sourceTemplateNode(plan,'source'),'source');
+const cycle=structuredClone(plan);cycle.syncPrefabBindings[0].origins.push({instanceSourceId:'source',templateSourceId:'instance'});
+assert.throws(()=>moduleObject.exports.sourceTemplateNode(cycle,'instance'),/cycle/);
+const missing=structuredClone(plan);missing.syncPrefabBindings[0].origins[0].templateSourceId='absent';
+assert.throws(()=>moduleObject.exports.sourceTemplateNode(missing,'instance'),/origin differs/);
+const ambiguous=structuredClone(plan);ambiguous.syncPrefabBindings[0].origins.push({instanceSourceId:'instance',templateSourceId:'source'});
+assert.throws(()=>moduleObject.exports.sourceTemplateNode(ambiguous,'instance'),/origin differs/);
+console.log('Nested native opacity provenance checks passed');

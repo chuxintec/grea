@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reviewed fix11 post-exit font source recovery",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "transactionRoot",
+    "planSha256",
+    "sourceImplementationSha256",
+    "journalSha256",
+    "processSha256",
+    "reviewReference",
+    "reason",
+    "files"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "contract": {
+      "const": "beaver-build-font-post-exit-recovery/1"
+    },
+    "transactionRoot": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceImplementationSha256": {
+      "const": "44a1280aa75d7b720fa0bdfada800441e09dc76c95911ed1b00e2993725f766c"
+    },
+    "reviewReference": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "beforeSha256",
+          "afterSha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^Assets/.+\\.asset(?:\\.meta)?$"
+          },
+          "beforeSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "afterSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "planSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "journalSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "processSha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

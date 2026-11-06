@@ -1,0 +1,22 @@
+# v0.7.0 support and evidence boundaries
+
+The release consolidates the fixed 0.7.0.dev9 source line. Supported profiles are bounded by exact source versions and evidence. Existing reader/tool contracts remain available. A reader or candidate generator is not a statement that every game in an engine family can be recovered.
+
+| Source / operation | Target / prerequisites | Evidence scope | Limits |
+| --- | --- | --- | --- |
+| Cocos Creator 2.4.15 selected source Prefabs | Unity 6000.6.2f1 and Creator 3.8.8 | Static selected hierarchy, typed fields, resources, saved assets and independent reopen; a 30-root/52-Prefab closure has existing native evidence | Unknown methods, dynamic behavior and unlowered animation curves remain explicit; no complete-game or universal visual claim |
+| Other existing Cocos readers (2.1.2, 2.4.11, 3.4.1, 3.8.7) | Profile-specific Unity/Creator targets | Prior bounded resource/hierarchy profiles retained | Not all formats, components, layouts or gameplay; check diagnostics per candidate |
+| Saved Prefab selection | Existing native-saved Unity candidate and exact manifest/readback pins | Source files, GUID/localID, literal shader includes and declared helper closure; prior public consumer adoption evidence | Does not create missing resources or prove target compilation/Player by itself |
+| Font completion | Pinned original font/face and explicit glyph request; external Unity/TMP | Exact face/glyph coverage with saved font/atlas/material identity in representative evidence | No replacement font inference or future arbitrary text/typography guarantee |
+| Spine static resource closure | Exact source skeleton/atlas, explicit matching external runtime/license/build evidence | Initial pose/resource references, scale, static geometry, saved/reopened asset identity in representative evidence | No complete dynamic Spine behavior; runtime binaries/engine/third-party fonts are not bundled |
+| SDK declaration and code dependency audit | Frozen selection, original producer/native evidence | Exact assembly/meta/license/helper hashes, SDK provenance and source script tuples | Missing native MonoScript tables explicitly remain not_run; not a consumer SDK replacement/migration policy |
+| Existing Unity / Egret / other readers and code workflows | Profile-specific original inputs and declared providers | Prior bounded source indexing/resource/code draft contracts retained | The newer 0.8 Unity-source Prefab reconstruction increment is excluded; no arbitrary engine/version or complete methods/servers guarantee |
+| Distribution and CLI | Python 3.11+, declared Python dependencies; Node only for code graph workflows | Installed-package CLI and neutral source fixtures are checked per release report | External Unity/Creator, native SDKs, decompilers and provider runtimes require explicit setup; Windows native evidence is not implied by a portable wheel |
+
+Native static, ordinary saves, physical input, visual comparison, Player builds, business and publication have separate evidence. Partial/unsupported/not_run diagnostics and nonzero needs-action exits remain contractual. Original source, saved proof assets and generated runtime state remain separate. No game originals, private fixtures, engine binaries, SDK binaries or credentials are distributed.
+# 当前统一开发线
+
+0.8.0.dev9 合并既有 Unity 来源恢复及 Cocos 静态恢复工具；新增公开字体准备/生成、
+Toggle 空配置和静态资源引用 schema 桥接。旧 0.7 稳定说明保留为历史兼容边界，
+不代表继续迭代两条线。详见 [Unity Prefab 恢复](UNITY-PREFAB-RECOVERY.md)
+和 [系统字体工具](SOURCE-SYSTEM-FONTS.md)；实际原生、视觉及采用结果分别验收。

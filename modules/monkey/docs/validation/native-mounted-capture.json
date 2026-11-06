@@ -1,0 +1,38 @@
+{
+  "publicationForm": "summary-only",
+  "privatePayloadIncluded": false,
+  "privatePayloadSha256": "[private fingerprint omitted]",
+  "scope": "native Editor representative proof",
+  "schemaVersion": 1,
+  "sourceProfile": "cocos-3.4.1-bundle",
+  "sourceGraphs": 6,
+  "sourceFrames": 44,
+  "bitmapFonts": 1,
+  "sourceRuntimeExecuted": false,
+  "native": {
+    "unity": {
+      "prefabCount": 6,
+      "nodeCount": 331,
+      "mountedRootCount": 7,
+      "mountedNodeCount": 7,
+      "mountedComponentCount": 1,
+      "sourcePrefabInstanceProofs": 8,
+      "readbackSha256": "[private fingerprint omitted]",
+      "editorValidation": "partial",
+      "strictDiagnostics": 0,
+      "processExited": true
+    },
+    "cocos": {
+      "prefabCount": 6,
+      "nodeCount": 331,
+      "mountedRootCount": 7,
+      "mountedNodeCount": 7,
+      "mountedComponentCount": 1,
+      "sourcePrefabInstanceProofs": 8,
+      "readbackSha256": "[private fingerprint omitted]",
+      "editorValidation": "pass",
+      "strictDiagnostics": 0,
+      "processExited": true
+    }
+  }
+}

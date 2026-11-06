@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "scope": "two actual source prefabs / native Editor / gameplay and Player not_run",
+  "evidence": {
+    "unity": {
+      "output": "outputs/cocos387-dynamic-ui-real-05-unity-native",
+      "pid": 63064,
+      "processExited": true,
+      "processExitCode": 0,
+      "startedUtc": "2026-10-24T04:24:01.926405Z",
+      "endedUtc": "2026-10-24T04:24:22.809036Z",
+      "verification": {
+        "diagnostics": 0,
+        "editor": "partial"
+      },
+      "readbackSha256": "[private fingerprint omitted]"
+    },
+    "cocos": {
+      "output": "outputs/cocos387-dynamic-ui-real-05-cocos-native",
+      "pid": 58136,
+      "processExited": true,
+      "processExitCode": -15,
+      "startedUtc": "2026-10-24T04:07:12.331631Z",
+      "endedUtc": "2026-10-24T04:07:53.011413Z",
+      "verification": {
+        "diagnostics": 0,
+        "editor": "pass"
+      },
+      "readbackSha256": "[private fingerprint omitted]"
+    }
+  },
+  "crossTarget": {
+    "unity": "outputs/cocos387-dynamic-ui-real-05-unity-native",
+    "creator": "outputs/cocos387-dynamic-ui-real-05-cocos-native",
+    "scope": "native Editor state changes; original game runtime/visual not_run",
+    "tolerancePixels": 0.05,
+    "passed": true,
+    "rows": [
+      {
+        "sourceId": "resources:[private identifier]#11",
+        "type": "cc.Label",
+        "states": [
+          "baseline",
+          "text-change",
+          "show-original-text"
+        ],
+        "maxDelta": {
+          "size": 0.03548083318008821,
+          "position": 0.0
+        },
+        "within05px": true
+      },
+      {
+        "sourceId": "resources:[private identifier]#15",
+        "type": "cc.Label",
+        "states": [
+          "baseline",
+          "text-change",
+          "show-original-text"
+        ],
+        "maxDelta": {
+          "size": 2.842170943040401e-14,
+          "position": 0.0
+        },
+        "within05px": true
+      },
+      {
+        "sourceId": "resources:[private identifier]#4/components/2",
+        "type": "cc.Widget",
+        "states": [
+          "baseline",
+          "parent-resize",
+          "show-after-resize"
+        ],
+        "maxDelta": {
+          "size": 0.0,
+          "position": 0.0
+        },
+        "within05px": true
+      },
+      {
+        "sourceId": "resources:[private identifier]#5/components/1",
+        "type": "cc.Layout",
+        "states": [
+          "baseline",
+          "add-child",
+          "hide-child",
+          "show-child",
+          "remove-child"
+        ],
+        "maxDelta": {
+          "size": 0.0,
+          "position": 1.2207031119260137e-07
+        },
+        "within05px": true
+      }
+    ]
+  },
+  "sourceRootClosure": "114 source graphs closed;5 missing exact templates;only PveFightUI3 detached records excluded from live tree",
+  "tests": 44
+}

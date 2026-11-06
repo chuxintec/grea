@@ -1,0 +1,28 @@
+// Static mesh adapter for serialized color/width and the source font shader's UV channels.
+using UnityEngine;
+using UnityEngine.UI;
+namespace DodGame {
+ public class DodTextOutline : BaseMeshEffect {
+  public Color m_OutlineColor;
+  public float m_OutlineWidth;
+  public Material m_material;
+  public override void ModifyMesh(VertexHelper mesh) {
+   if(!IsActive() || m_OutlineWidth<=0 || graphic==null || graphic.canvas==null) return;
+   graphic.canvas.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2 | AdditionalCanvasShaderChannels.TexCoord3;
+   if(mesh.currentVertCount%4!=0) return;
+   var quad=new UIVertex[4];
+   for(int k=0;k<mesh.currentVertCount;k+=4) {
+    Vector2 lo=Vector2.positiveInfinity,hi=Vector2.negativeInfinity,min=lo,max=hi;
+    for(int n=0;n<4;n++){mesh.PopulateUIVertex(ref quad[n],k+n); Vector2 uv=quad[n].uv0;lo=Vector2.Min(lo,uv);hi=Vector2.Max(hi,uv);min=Vector2.Min(min,quad[n].position);max=Vector2.Max(max,quad[n].position);}
+    Vector2 size=max-min;if(size.x<=0 || size.y<=0)continue;
+    Vector2 step=new Vector2((hi.x-lo.x)/size.x,(hi.y-lo.y)/size.y);
+    for(int n=0;n<4;n++){
+     UIVertex v=quad[n];Vector2 uv=v.uv0;
+     v.position+=new Vector3(v.position.x==min.x?-1:1,v.position.y==min.y?-1:1)*m_OutlineWidth;
+     v.uv0+=new Vector4(uv.x==lo.x?-step.x:step.x,uv.y==lo.y?-step.y:step.y)*m_OutlineWidth;
+     v.uv1=lo;v.uv2=new Vector4(hi.x,hi.y,step.x,step.y);v.uv3=new Vector4(m_OutlineColor.r,m_OutlineColor.g,m_OutlineColor.b,m_OutlineWidth);mesh.SetUIVertex(v,k+n);
+    }
+   }
+  }
+ }
+}

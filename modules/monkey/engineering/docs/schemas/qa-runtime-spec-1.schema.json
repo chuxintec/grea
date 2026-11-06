@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beaver.invalid/schemas/qa-runtime-spec-1.schema.json",
+  "title": "Beaver macOS Unity QA runtime spec v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "contract", "projectId", "buildId", "artifactManifest",
+    "artifactManifestSha256", "profileId", "profileSeed", "configInputs",
+    "environmentBindings", "testMode", "arguments"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "beaver-unity-qa/1" },
+    "projectId": { "$ref": "#/$defs/id" },
+    "buildId": { "$ref": "#/$defs/id" },
+    "profileId": { "$ref": "#/$defs/id" },
+    "artifactManifest": { "type": "string", "minLength": 1 },
+    "artifactManifestSha256": { "$ref": "#/$defs/sha256" },
+    "profileSeed": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "object", "additionalProperties": false, "required": ["root", "manifest", "manifestSha256"], "properties": { "root": { "type": "string", "minLength": 1 }, "manifest": { "type": "string", "minLength": 1 }, "manifestSha256": { "$ref": "#/$defs/sha256" } } }
+      ]
+    },
+    "configInputs": {
+      "type": "object", "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "$ref": "#/$defs/sha256" } }
+      }
+    },
+    "environmentBindings": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Z][A-Z0-9_]{0,63}$" },
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "const": "config" }, "id": { "$ref": "#/$defs/id" } } },
+          { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "const": "profile" }, "id": { "const": "root" } } }
+        ]
+      }
+    },
+    "testMode": { "enum": ["normal", "denyDocuments"] },
+    "arguments": { "type": "array", "maxItems": 32, "items": { "type": "string", "pattern": "^(?:-(?:screen-(?:fullscreen|width|height)|force-metal|force-d3d11|development|qa-[a-z0-9-]{1,40})|(?:0|[1-9][0-9]{0,3}|true|false))$" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

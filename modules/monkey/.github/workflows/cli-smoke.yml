@@ -1,0 +1,36 @@
+name: Installed CLI smoke
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ['3.11', '3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip wheel --no-deps --wheel-dir dist .
+      - shell: python
+        run: |
+          import pathlib, subprocess, sys
+          wheel = next(pathlib.Path('dist').glob('*.whl'))
+          subprocess.run([sys.executable, '-m', 'pip', 'install', str(wheel)], check=True)
+      - run: python scripts/smoke_cli.py --out cli-smoke.json
+      - run: python -m unittest discover -s tests -p test_operations.py
+      - run: python -m unittest discover -s tests -p test_acquisition.py
+      - run: python -m unittest discover -s tests -p test_resource_probe.py
+      - run: python -m unittest discover -s tests -p test_shader_profiles.py
+      - run: python -m unittest discover -s tests/toolkit -p test_*.py
+      - run: python -m unittest discover -s tests -p test_identities.py

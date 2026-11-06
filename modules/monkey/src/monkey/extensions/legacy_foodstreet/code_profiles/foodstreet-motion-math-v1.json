@@ -1,0 +1,68 @@
+{
+  "callDomain": "Primitive binary64 arguments and non-null Point2 values with primitive numeric x/y; no source vector factory/runtime or arbitrary coercion. Only four exact static methods; original class initialization/other methods excluded.",
+  "modules": [
+    {
+      "classId": "class@binding@1430951",
+      "classSha256": "4fce2956cde2e62fe437b1d86569ba9e79e14557a9cce123f5c63c18d5ec8b25",
+      "fields": {},
+      "id": "MotionMath",
+      "methods": [
+        {
+          "id": "method@1438924",
+          "name": "NormalizeAngle",
+          "parameters": [
+            "Number"
+          ],
+          "returns": "Number",
+          "sha256": "a13dcac24d2b1dd5cb97d49693db6185347bc3feda231e9cd2822a7de44d3be5"
+        },
+        {
+          "id": "method@1439006",
+          "name": "UnwrapAngle",
+          "parameters": [
+            "Number",
+            "Number"
+          ],
+          "returns": "Number",
+          "sha256": "1e1c4708220890cb257ed1e099340326073148ac1a5b38081dc7656038fc0db9"
+        },
+        {
+          "id": "method@1438056",
+          "name": "Distance",
+          "parameters": [
+            "Point2",
+            "Point2"
+          ],
+          "returns": "Number",
+          "sha256": "9f5e7d9c3bbdcd9fc29ce0acf17653caa03c1051b2cddcf3db7f568316a7f9eb"
+        },
+        {
+          "id": "method@1439070",
+          "name": "Clamp",
+          "parameters": [
+            "Number",
+            "Number",
+            "Number"
+          ],
+          "returns": "Number",
+          "sha256": "108abad0a013efc901ee2ca121349eb71f700fdcf3eb2ff8724c0070f5f2aa6a"
+        }
+      ],
+      "targetClass": "MotionMath"
+    }
+  ],
+  "namespace": "Game.Domain.Recovered",
+  "profileName": "foodstreet-motion-math-v1",
+  "records": [
+    {
+      "fields": {
+        "x": "Number",
+        "y": "Number"
+      },
+      "name": "Point2"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceBytes": 7147892,
+  "sourceSha256": "21af08e48846f6ad1a2e0673b0c945358136723b1664f0cd1f6ec9b3df6c5cb5"
+}

@@ -1,0 +1,773 @@
+{
+  "schemaVersion": 1,
+  "contract": "monkey-recovery-ownership-review/1",
+  "reviewDate": "2026-10-26",
+  "eventId": "monkey-grea-recovery-handoff-scope-20261026-01",
+  "authority": "[private conversation reference]",
+  "status": "reviewed-no-consumer-switch",
+  "source": {
+    "product": "GREA",
+    "head": "[private fingerprint omitted]",
+    "identityRule": "Frozen manifest/content hashes identify snapshot including source WIP; HEAD alone is not the snapshot.",
+    "inventoryPath": "validation/development/grea-beaver-handoff-20261026.json",
+    "inventorySha256": "[private fingerprint omitted]",
+    "snapshotPath": ".private/triad-20261026/source-freeze/source",
+    "snapshotManifestSha256": "[private fingerprint omitted]",
+    "selectedSourceArchive": {
+      "path": "grea-seven-recovery-source.tar.gz",
+      "sha256": "[private fingerprint omitted]",
+      "bytes": 128071,
+      "files": 23
+    },
+    "selectedFiles": [
+      {
+        "path": "LICENSE",
+        "bytes": 1074,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "THIRD_PARTY.md",
+        "bytes": 7053,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "pyproject.toml",
+        "bytes": 667,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "registry.json",
+        "bytes": 182728,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/common.py",
+        "bytes": 3119,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/data_io.py",
+        "bytes": 2454,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/host/files.py",
+        "bytes": 5064,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/host/paths.py",
+        "bytes": 4139,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/host/windows_files.py",
+        "bytes": 2341,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/host/windows_security.py",
+        "bytes": 2561,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/safe_paths.py",
+        "bytes": 3211,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/cocos3_evidence.py",
+        "bytes": 9156,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/cocos_assets.py",
+        "bytes": 21935,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/cocos_convert.py",
+        "bytes": 8595,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/cocos_modules.py",
+        "bytes": 3572,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/cocos_project.py",
+        "bytes": 6763,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/laya_contract_audit.py",
+        "bytes": 2465,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/project_templates.py",
+        "bytes": 1486,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/read_elf_values.py",
+        "bytes": 2742,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/shader_probe.py",
+        "bytes": 2355,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "src/grea/tools/unpack_xapk.py",
+        "bytes": 7604,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "tools/cocos/index-modules.cjs",
+        "bytes": 10940,
+        "sha256": "[private fingerprint omitted]"
+      },
+      {
+        "path": "uv.lock",
+        "bytes": 260031,
+        "sha256": "[private fingerprint omitted]"
+      }
+    ]
+  },
+  "monkeyBaseline": {
+    "commit": "[private fingerprint omitted]",
+    "developmentVersion": "0.5.0.dev1",
+    "stableInstalledVersion": "0.4.0"
+  },
+  "license": {
+    "ownSource": "GREA MIT; preserve original notice on any future extraction",
+    "thirdParty": "THIRD_PARTY.md and existing monkey THIRD-PARTY-NOTICES.md / GREA-MIT / ACORN-MIT remain separate",
+    "distribution": "No legacy implementation imported into monkey package; no private AGENTS, host paths, original games or evidence payloads in public package"
+  },
+  "items": [
+    {
+      "toolId": "laya_contract_audit",
+      "owner": "monkey",
+      "sourceEntry": {
+        "path": "src/grea/tools/laya_contract_audit.py",
+        "bytes": 2465,
+        "sha256": "[private fingerprint omitted]"
+      },
+      "sourceClosure": [
+        {
+          "path": "src/grea/host/paths.py",
+          "bytes": 4139,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_files.py",
+          "bytes": 2341,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/laya_contract_audit.py",
+          "bytes": 2465,
+          "sha256": "[private fingerprint omitted]"
+        }
+      ],
+      "decision": "reference-only",
+      "monkeyPaths": [
+        "src/monkey/resource_package.py"
+      ],
+      "coverage": "Generic images/resource manifest only; no versioned Laya mesh/skin/particle parser or trusted-project-parser audit.",
+      "uncovered": [
+        "Laya mesh/submesh/bone-weight contracts",
+        "trusted project-local Python provider loading"
+      ],
+      "action": "Keep frozen reference; do not integrate exec_module or claim Laya engine/profile support. Any later reuse requires an explicit frozen provider contract and source sample.",
+      "compatibilityStatus": "not-drop-in; consumer-not-verified",
+      "consumerCandidates": [
+        "TOOLS.md",
+        "docs/tools/规则与格式检查.md",
+        "plugin/shared/02-工具-选择与调用.md",
+        "plugin/skills/grea-native-port/references/05-Unity-跨引擎移植与行为一致性.md",
+        "registry.json",
+        "schemas/document-path-map.json",
+        "schemas/tool-platform-matrix.json",
+        "src/grea/workflows.py",
+        "tests/fixtures/tool-ids-v2026.10.13-rc1.json",
+        "validation/releases/2026-10-16-project-tools.json",
+        "validation/tool-evidence-index.json"
+      ],
+      "consumerListScope": "lexical candidates from frozen GREA inventory, not proven active runtime callers",
+      "retireAllowed": false,
+      "newSourceProfile": false,
+      "implementationCopiedIntoProduct": false
+    },
+    {
+      "toolId": "read_elf_values",
+      "owner": "monkey",
+      "sourceEntry": {
+        "path": "src/grea/tools/read_elf_values.py",
+        "bytes": 2742,
+        "sha256": "[private fingerprint omitted]"
+      },
+      "sourceClosure": [
+        {
+          "path": "src/grea/host/paths.py",
+          "bytes": 4139,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_files.py",
+          "bytes": 2341,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/read_elf_values.py",
+          "bytes": 2742,
+          "sha256": "[private fingerprint omitted]"
+        }
+      ],
+      "decision": "reference-only",
+      "monkeyPaths": [
+        "src/monkey/unity_code_model.py"
+      ],
+      "coverage": "Unity signature/field evidence does not implement ELF virtual-address typed constant reads.",
+      "uncovered": [
+        "ELF32/64 PT_LOAD virtual-address mapping",
+        "typed file-backed constants"
+      ],
+      "action": "Retain parameterizable algorithm reference. No current equivalent or active consumer switch; future use needs bounded file/segment reads, address provenance and exact source identity.",
+      "compatibilityStatus": "not-drop-in; consumer-not-verified",
+      "consumerCandidates": [
+        "docs/tools/制品与资源检查.md",
+        "plugin/shared/02-工具-选择与调用.md",
+        "plugin/skills/grea-parity/references/06-玩法-规则与随机一致性.md",
+        "registry.json",
+        "schemas/document-path-map.json",
+        "schemas/tool-platform-matrix.json",
+        "tests/fixtures/tool-ids-v2026.10.13-rc1.json",
+        "validation/releases/2026-10-16-project-tools.json",
+        "validation/tool-evidence-index.json"
+      ],
+      "consumerListScope": "lexical candidates from frozen GREA inventory, not proven active runtime callers",
+      "retireAllowed": false,
+      "newSourceProfile": false,
+      "implementationCopiedIntoProduct": false
+    },
+    {
+      "toolId": "unpack_xapk",
+      "owner": "monkey",
+      "sourceEntry": {
+        "path": "src/grea/tools/unpack_xapk.py",
+        "bytes": 7604,
+        "sha256": "[private fingerprint omitted]"
+      },
+      "sourceClosure": [
+        {
+          "path": "src/grea/common.py",
+          "bytes": 3119,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/data_io.py",
+          "bytes": 2454,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/files.py",
+          "bytes": 5064,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/paths.py",
+          "bytes": 4139,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_files.py",
+          "bytes": 2341,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_security.py",
+          "bytes": 2561,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/safe_paths.py",
+          "bytes": 3211,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/unpack_xapk.py",
+          "bytes": 7604,
+          "sha256": "[private fingerprint omitted]"
+        }
+      ],
+      "decision": "partial-coverage-reference-only",
+      "monkeyPaths": [
+        "src/monkey/sources/containers.py",
+        "src/monkey/package.py"
+      ],
+      "coverage": "Direct APK/directory/plain wxapkg input is implemented; nested XAPK and the legacy extraction report/scope are not.",
+      "uncovered": [
+        "nested APKs in XAPK",
+        "opaque OBB/reference preservation contract",
+        "legacy all-entries/assets selective extraction report"
+      ],
+      "action": "Reuse current APK reader; do not create a second APK reader. Keep frozen XAPK composition reference and legacy GREA implementation until a bounded monkey container adapter and consumers are actually validated. Do not rename XAPK to APK.",
+      "compatibilityStatus": "not-drop-in; consumer-not-verified",
+      "consumerCandidates": [
+        "TOOLS.md",
+        "docs/providers/windows-native.md",
+        "docs/tools/制品与资源检查.md",
+        "plugin/shared/02-工具-选择与调用.md",
+        "plugin/skills/grea-evidence/references/03-恢复-原版运行与内容取证.md",
+        "registry.json",
+        "schemas/document-path-map.json",
+        "schemas/tool-platform-matrix.json",
+        "src/grea/workflows.py",
+        "tests/fixtures/tool-ids-v2026.10.13-rc1.json",
+        "tests/test_skill_distribution.py",
+        "tests/test_workflow_profiles.py",
+        "tests/test_xapk_extraction.py",
+        "validation/releases/2026-10-16-project-tools.json",
+        "validation/tool-evidence-index.json"
+      ],
+      "consumerListScope": "lexical candidates from frozen GREA inventory, not proven active runtime callers",
+      "retireAllowed": false,
+      "newSourceProfile": false,
+      "implementationCopiedIntoProduct": false
+    },
+    {
+      "toolId": "shader_probe",
+      "owner": "monkey",
+      "sourceEntry": {
+        "path": "src/grea/tools/shader_probe.py",
+        "bytes": 2355,
+        "sha256": "[private fingerprint omitted]"
+      },
+      "sourceClosure": [
+        {
+          "path": "src/grea/host/paths.py",
+          "bytes": 4139,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_files.py",
+          "bytes": 2341,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/shader_probe.py",
+          "bytes": 2355,
+          "sha256": "[private fingerprint omitted]"
+        }
+      ],
+      "decision": "reference-only",
+      "monkeyPaths": [
+        "src/monkey/assets/catalog.py"
+      ],
+      "coverage": "Source shader/effect evidence retention is implemented; this is not combined-GLES compilation, SPIR-V validation or ShaderLab conversion.",
+      "uncovered": [
+        "selected combined GLES profile",
+        "glslangValidator/spirv-val/spirv-cross provider contracts",
+        "target rendering equivalence"
+      ],
+      "action": "Keep frozen source/compiler diagnostic reference for 05-C selected Shader subset; do not install tools or claim shader recovery from compiler success/ES300-to310 adaptation.",
+      "compatibilityStatus": "not-drop-in; consumer-not-verified",
+      "consumerCandidates": [
+        "TOOLS.md",
+        "docs/tools/Shader工具.md",
+        "plugin/shared/02-工具-选择与调用.md",
+        "registry.json",
+        "schemas/document-path-map.json",
+        "schemas/tool-platform-matrix.json",
+        "tests/test_skill_distribution.py",
+        "validation/releases/2026-10-16-project-tools.json",
+        "validation/tool-evidence-index.json"
+      ],
+      "consumerListScope": "lexical candidates from frozen GREA inventory, not proven active runtime callers",
+      "retireAllowed": false,
+      "newSourceProfile": false,
+      "implementationCopiedIntoProduct": false
+    },
+    {
+      "toolId": "cocos_assets",
+      "owner": "monkey",
+      "sourceEntry": {
+        "path": "src/grea/tools/cocos_assets.py",
+        "bytes": 21935,
+        "sha256": "[private fingerprint omitted]"
+      },
+      "sourceClosure": [
+        {
+          "path": "src/grea/common.py",
+          "bytes": 3119,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/data_io.py",
+          "bytes": 2454,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/files.py",
+          "bytes": 5064,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/paths.py",
+          "bytes": 4139,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_files.py",
+          "bytes": 2341,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_security.py",
+          "bytes": 2561,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/safe_paths.py",
+          "bytes": 3211,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/cocos3_evidence.py",
+          "bytes": 9156,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/cocos_assets.py",
+          "bytes": 21935,
+          "sha256": "[private fingerprint omitted]"
+        }
+      ],
+      "decision": "reuse-existing-core-conditional-replacement",
+      "monkeyPaths": [
+        "src/monkey/sources/compiled.py",
+        "src/monkey/sources/bundle.py",
+        "src/monkey/sources/cocos34.py",
+        "src/monkey/sources/cocos34_graphs.py"
+      ],
+      "coverage": "Existing compiled-v1/pack/texture-pack readers derive from the same frozen GREA foundation; Creator 3.4.1 is a version-proven bundle profile.",
+      "uncovered": [
+        "legacy standalone evidence CLI/schema/envelope",
+        "exact one-to-one standalone CCON JSON/index routing"
+      ],
+      "action": "Reuse existing monkey source readers; no second CompiledV1. Keep legacy entry pending explicit argument/result adapter and consumer verification. Bundle conversion is not a drop-in replacement for standalone evidence export.",
+      "compatibilityStatus": "not-drop-in; consumer-not-verified",
+      "consumerCandidates": [
+        "README.md",
+        "TOOLS.md",
+        "docs/providers/cocos-static.md",
+        "docs/providers/cocos3-evidence.md",
+        "registry.json",
+        "schemas/cocos-evidence.schema.json",
+        "schemas/tool-platform-matrix.json",
+        "scripts/verify_plugin.py",
+        "src/grea/cocos_contracts.py",
+        "src/grea/tools/cocos3_evidence.py",
+        "src/grea/tools/cocos_modules.py",
+        "src/grea/workflows.py",
+        "tests/test_cocos3_evidence.py",
+        "tests/test_cocos_assets.py",
+        "tests/test_cocos_modules.py",
+        "tests/test_import_boundaries.py",
+        "tests/test_project_tools_dispatch.py",
+        "validation/releases/2026-10-16-project-tools.json",
+        "validation/releases/2026-10-17-native-plugin.json",
+        "validation/tool-evidence-index.json"
+      ],
+      "consumerListScope": "lexical candidates from frozen GREA inventory, not proven active runtime callers",
+      "retireAllowed": false,
+      "newSourceProfile": false,
+      "implementationCopiedIntoProduct": false
+    },
+    {
+      "toolId": "cocos_modules",
+      "owner": "monkey",
+      "sourceEntry": {
+        "path": "src/grea/tools/cocos_modules.py",
+        "bytes": 3572,
+        "sha256": "[private fingerprint omitted]"
+      },
+      "sourceClosure": [
+        {
+          "path": "src/grea/common.py",
+          "bytes": 3119,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/data_io.py",
+          "bytes": 2454,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/files.py",
+          "bytes": 5064,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/paths.py",
+          "bytes": 4139,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_files.py",
+          "bytes": 2341,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_security.py",
+          "bytes": 2561,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/safe_paths.py",
+          "bytes": 3211,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/cocos3_evidence.py",
+          "bytes": 9156,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/cocos_assets.py",
+          "bytes": 21935,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/cocos_modules.py",
+          "bytes": 3572,
+          "sha256": "[private fingerprint omitted]"
+        }
+      ],
+      "decision": "reuse-existing-core-conditional-replacement",
+      "monkeyPaths": [
+        "src/monkey/sources/code.py",
+        "src/monkey/sources/index-modules.cjs",
+        "src/monkey/sources/acorn.cjs"
+      ],
+      "coverage": "Existing static AST module/RF extraction extends the same frozen GREA parser, with pinned Acorn 8.15.0 and additional source syntax/partial candidates.",
+      "uncovered": [
+        "legacy standalone --adapter/export_index CLI/schema",
+        "all old consumers and four-adapter full equivalence"
+      ],
+      "action": "Reuse existing AST implementation; no new module parser. Three representative wrappers match source ranges/hashes; partial stays partial. Route only after explicit legacy-output adapter and consumer acceptance, not directly to unrelated code-model output.",
+      "compatibilityStatus": "not-drop-in; consumer-not-verified",
+      "consumerCandidates": [
+        "README.md",
+        "TOOLS.md",
+        "docs/providers/cocos-static.md",
+        "docs/providers/cocos3-evidence.md",
+        "registry.json",
+        "schemas/cocos-evidence.schema.json",
+        "schemas/tool-platform-matrix.json",
+        "scripts/verify_plugin.py",
+        "src/grea/cocos_contracts.py",
+        "src/grea/workflows.py",
+        "tests/test_cocos3_evidence.py",
+        "tests/test_cocos_modules.py",
+        "tools/cocos/README.md",
+        "validation/releases/2026-10-16-project-tools.json",
+        "validation/tool-evidence-index.json"
+      ],
+      "consumerListScope": "lexical candidates from frozen GREA inventory, not proven active runtime callers",
+      "retireAllowed": false,
+      "newSourceProfile": false,
+      "implementationCopiedIntoProduct": false
+    },
+    {
+      "toolId": "cocos_convert",
+      "owner": "monkey",
+      "sourceEntry": {
+        "path": "src/grea/tools/cocos_convert.py",
+        "bytes": 8595,
+        "sha256": "[private fingerprint omitted]"
+      },
+      "sourceClosure": [
+        {
+          "path": "src/grea/common.py",
+          "bytes": 3119,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/files.py",
+          "bytes": 5064,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/paths.py",
+          "bytes": 4139,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_files.py",
+          "bytes": 2341,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/host/windows_security.py",
+          "bytes": 2561,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/safe_paths.py",
+          "bytes": 3211,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/cocos_convert.py",
+          "bytes": 8595,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/cocos_project.py",
+          "bytes": 6763,
+          "sha256": "[private fingerprint omitted]"
+        },
+        {
+          "path": "src/grea/tools/project_templates.py",
+          "bytes": 1486,
+          "sha256": "[private fingerprint omitted]"
+        }
+      ],
+      "decision": "reuse-existing-subset-conditional-replacement",
+      "monkeyPaths": [
+        "src/monkey/sources/project.py",
+        "src/monkey/normalize.py",
+        "src/monkey/targets/cocos.py",
+        "src/monkey/targets/CreatorJobs.js"
+      ],
+      "coverage": "Existing 2.4.15 editable-project -> shared IR -> Creator 3.8.8 candidate pipeline covers the migration purpose and broader proven resource semantics.",
+      "uncovered": [
+        "standalone flat .fire/.scene/.prefab plus explicit UUID asset-map contract",
+        "3.8.8 editable-source input",
+        "legacy conversion.json and exact UUID selection"
+      ],
+      "action": "Reuse current candidate pipeline for declared project inputs. Standalone inputs require validated project/meta evidence adaptation; 3.8.8 target support is not 3.8.8 editable-source support. Preserve legacy compatibility until consumers are verified; do not add a source profile just to clear this table.",
+      "compatibilityStatus": "not-drop-in; consumer-not-verified",
+      "consumerCandidates": [
+        "TOOLS.md",
+        "docs/providers/cocos-target.md",
+        "plugin/skills/grea-cocos/SKILL.md",
+        "plugin/skills/grea-cocos/references/05-Cocos-工程与迁移.md",
+        "registry.json",
+        "schemas/tool-platform-matrix.json",
+        "src/grea/workflows.py",
+        "tests/test_cocos_target.py",
+        "tests/test_monkey_handoff.py"
+      ],
+      "consumerListScope": "lexical candidates from frozen GREA inventory, not proven active runtime callers",
+      "retireAllowed": false,
+      "newSourceProfile": false,
+      "implementationCopiedIntoProduct": false
+    }
+  ],
+  "validation": {
+    "compiled": {
+      "equal": true,
+      "negativeDiagnostics": {
+        "unknown-format": [
+          "UNSUPPORTED_VERSION",
+          "UNSUPPORTED_VERSION"
+        ],
+        "bad-class-index": [
+          "INDEX_OUT_OF_RANGE",
+          "INDEX_OUT_OF_RANGE"
+        ]
+      }
+    },
+    "compiledAstEquality": {
+      "CompiledV1": false,
+      "decode_document": true,
+      "budget": true,
+      "uuid_full": true
+    },
+    "containers": {
+      "monkeyApk": "accepted-preserves-entry-bytes",
+      "monkeyXapk": "UNSUPPORTED_CONTAINER",
+      "legacyXapk": {
+        "scope": "assets",
+        "selected": 1,
+        "skipped": 2,
+        "failed": 0
+      },
+      "legacyNestedApkCount": 1,
+      "obb": "preserved-opaque; not parsed"
+    },
+    "editableCocos": {
+      "legacy2415": "serialized_candidate_not_imported",
+      "monkeyEditable388": "UNSUPPORTED_VERSION"
+    },
+    "moduleRepresentatives": {
+      "schemaVersion": 1,
+      "scope": "three representative wrappers only; legacy result schema not treated as compatible",
+      "legacySourceSha256": "[private fingerprint omitted]",
+      "bridgeSha256": "[private fingerprint omitted]",
+      "bridgeChange": "Only Acorn dependency binding and version lookup use existing pinned monkey vendor; no parser logic change",
+      "providerSha256": "[private fingerprint omitted]",
+      "cases": [
+        {
+          "adapter": "browserify-table-v1",
+          "modules": 2,
+          "sourceRangesAndHashesEqual": true,
+          "legacyStatus": "complete",
+          "monkeyDiagnostic": null,
+          "sourceExecuted": false
+        },
+        {
+          "adapter": "define-browserify-v1",
+          "modules": 1,
+          "sourceRangesAndHashesEqual": true,
+          "legacyStatus": "partial",
+          "monkeyDiagnostic": {
+            "code": "MODULE_RECOVERY_PARTIAL",
+            "message": "Static candidates require enclosing context/module identity recovery",
+            "issues": [],
+            "sourceFormat": "define-browserify-v1"
+          },
+          "sourceExecuted": false
+        },
+        {
+          "adapter": "system-register-v1",
+          "modules": 1,
+          "sourceRangesAndHashesEqual": true,
+          "legacyStatus": "complete",
+          "monkeyDiagnostic": null,
+          "sourceExecuted": false
+        }
+      ],
+      "consumerSwitch": "not_verified"
+    },
+    "focusedExistingTests": 6,
+    "unavailableOrNotRun": {
+      "laya": "not_run; would execute explicitly selected trusted local provider",
+      "elf": "not_run; no current monkey equivalent",
+      "shader": "not_run; external compilers/profile not selected",
+      "gameEditors": "not_run"
+    },
+    "legacyCallerSwitch": "not_run",
+    "editorPlayerVisualBusiness": "not_run",
+    "full339TestBaseline": "previous checkpoint passed; not rerun for this documentation-only review"
+  },
+  "dispositionCounts": {
+    "reuseExistingConditional": 3,
+    "partialApkReference": 1,
+    "referenceOnly": 3
+  },
+  "retireAllowed": false,
+  "limitations": [
+    "This is an ownership/capability review, not seven new CLI implementations.",
+    "Semantic representatives do not prove legacy parameter/output/consumer equivalence.",
+    "GREA retains ownership of retirement and consumer changes.",
+    "All seven are recovery-side references/capabilities; none is transferred to beaver.",
+    "05-C/05-D remain the monkey implementation plan; this review does not expand engine profiles."
+  ]
+}

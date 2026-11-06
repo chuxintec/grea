@@ -1,0 +1,195 @@
+{
+  "callDomain": "Explicit finite Number IDs/counts, non-null typed collections/records; acyclic recipe graph; caller initialized state; nullable synchronous callbacks; no engine/service execution",
+  "modules": [
+    {
+      "classId": "class@binding@926434",
+      "classSha256": "c8bb32d41b508244c87f8ec005053efa2fdc264f40216dbc80d999f3e783f757",
+      "fields": {},
+      "id": "OrderRules",
+      "methods": [
+        {
+          "id": "method@933231",
+          "locals": {
+            "t": "Map<Number,Number>"
+          },
+          "name": "GetBoardDemandsMapByOrders",
+          "parameters": [
+            "List<SourceOrder>"
+          ],
+          "returns": "Map<Number,Number>",
+          "sha256": "918e6e718c339033a4a68ed9aeaf2a6e6d3f40d3dc1486259fb75a3e477ffc4c"
+        },
+        {
+          "id": "method@933967",
+          "locals": {
+            "t": "List<OrderLine>"
+          },
+          "name": "GetSortedOrder",
+          "parameters": [
+            "Map<Number,Number>"
+          ],
+          "returns": "List<OrderLine>",
+          "sha256": "9074b4078b7a152ed2d040540be39c9c20523a212a497ee238f6eea1fa219e65"
+        },
+        {
+          "id": "method@936255",
+          "locals": {
+            "i": "Map<Number,Number>"
+          },
+          "name": "FindDishOrderDemands",
+          "parameters": [
+            "Map<Number,Number>"
+          ],
+          "returns": "Map<Number,Number>",
+          "sha256": "ebcb563a230060d731101bc17519ddb89edef1807b7a68fecc60c1bebbe1c150"
+        }
+      ],
+      "targetClass": "OrderRules"
+    },
+    {
+      "classId": "class@binding@616141",
+      "classSha256": "b8b1bad06cfeff665d45f1541f2e7a82d14129fe61aa910d6f16fbcd1a7b4ba2",
+      "fields": {
+        "_dishMap": "Map<Number,Recipe>"
+      },
+      "id": "RecipeCatalog",
+      "methods": [
+        {
+          "id": "method@616964",
+          "locals": {},
+          "name": "IsDish",
+          "parameters": [
+            "Number"
+          ],
+          "returns": "Boolean",
+          "sha256": "ebed17cb556eed5fee99409f41cf089d986d39fa639ec6a8da78e6179a695b40"
+        },
+        {
+          "id": "method@617302",
+          "locals": {},
+          "name": "GetRecipeOf",
+          "parameters": [
+            "Number"
+          ],
+          "returns": "Optional<Recipe>",
+          "sha256": "0af8bd6f8e766260fd2e223c095e1ffa63de363f2445f86b68b6e253eca4b71a"
+        },
+        {
+          "id": "method@621011",
+          "locals": {
+            "i": "Function<Number,Void>",
+            "n": "Set<Number>"
+          },
+          "name": "FlattenIngredientsOf",
+          "parameters": [
+            "Number"
+          ],
+          "returns": "List<Number>",
+          "sha256": "9bf3773ef1f94374aec1958e38f499b4ba698f73de73fd454ae0fe6701048061"
+        }
+      ],
+      "targetClass": "RecipeCatalog"
+    },
+    {
+      "classId": "class@binding@3168270",
+      "classSha256": "2c459be8f44aa5ce514aa458877f7717a3a92ff8efdfb6c644f934e78d19f53a",
+      "fields": {
+        "atk": "Number",
+        "combo": "Number",
+        "currHp": "Number",
+        "def": "Number",
+        "delta": "Number",
+        "maxHp": "Number",
+        "onComboChange": "Action<HealthState>",
+        "onHpChange": "Action<HealthState>"
+      },
+      "id": "HealthState",
+      "methods": [
+        {
+          "id": "method@3168569",
+          "locals": {},
+          "name": "SetProperty",
+          "parameters": [
+            "Number",
+            "Number"
+          ],
+          "returns": "Void",
+          "sha256": "2c953abbc9480fcc6486b2fb71124adc5acb24326f8452db89feaf3929a79900"
+        },
+        {
+          "id": "method@3168645",
+          "locals": {},
+          "name": "DoDelta",
+          "parameters": [
+            "Number"
+          ],
+          "returns": "Void",
+          "sha256": "71f2fd4360d67db5ff2cb8a44c87202c06c7a76b01d3e38b253416004bc25029"
+        },
+        {
+          "id": "method@3168907",
+          "locals": {},
+          "name": "MaxHpDoDelta",
+          "parameters": [
+            "Number"
+          ],
+          "returns": "Void",
+          "sha256": "e721fedf7ddfbd34fa027e4b18601a32fb55546c56463bdeb9fefd5f8c58f889"
+        },
+        {
+          "id": "method@3169039",
+          "locals": {},
+          "name": "ComboDoDelta",
+          "parameters": [
+            "Number"
+          ],
+          "returns": "Void",
+          "sha256": "4199b5e977629709237de232d166b8e7c00f75bf853c1967614f03fcd3f764b2"
+        },
+        {
+          "id": "method@3169159",
+          "locals": {},
+          "name": "clearCombo",
+          "parameters": [],
+          "returns": "Void",
+          "sha256": "e292a57953c7a572858900f1ee08d85953bd363627bea8c806df6e00b1bfab11"
+        },
+        {
+          "id": "method@3169208",
+          "locals": {},
+          "name": "getPercent",
+          "parameters": [],
+          "returns": "Number",
+          "sha256": "8043f3b4dc66f96e41fc600d66d236e53d8059b43eea44eaf3c03d6700c393e8"
+        }
+      ],
+      "targetClass": "HealthState"
+    }
+  ],
+  "namespace": "Game.Domain.Recovered",
+  "profileName": "foodstreet-demand-health-v1",
+  "records": [
+    {
+      "fields": {
+        "count": "Number",
+        "eleId": "Number"
+      },
+      "name": "OrderLine"
+    },
+    {
+      "fields": {
+        "demand": "Map<Number,Number>"
+      },
+      "name": "SourceOrder"
+    },
+    {
+      "fields": {
+        "ingredients": "Map<Number,Number>"
+      },
+      "name": "Recipe"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceBytes": 7147892,
+  "sourceSha256": "21af08e48846f6ad1a2e0673b0c945358136723b1664f0cd1f6ec9b3df6c5cb5"
+}

@@ -1,0 +1,29 @@
+# Unity native probe for recovered code modules
+
+`monkey.code_native_probe.prepare(candidate, expected_manifest_sha256, output, *, health_module="HealthState", recipe_module=False)` creates a fresh Unity `6000.6.2f1` project and does not launch the Editor. The bounded source contract accepts only the approved sample-game source identity `[private fingerprint omitted]`. The candidate root manifest SHA, each copied file's SHA/byte count, and its exact owner are checked before any output is created. The source is never executed.
+
+The required HealthState subset is `DoDelta`, `MaxHpDoDelta`, `ComboDoDelta`, `getPercent`, `SetProperty`, and `clearCombo`, with exactly `atk`, `combo`, `currHp`, `def`, `delta`, `maxHp`, `onComboChange`, and `onHpChange` fields. A generated synthetic JSON fixture initializes these fields through `JsonUtility.FromJsonOverwrite`; each numeric value begins as `NaN`, then finite and HP range checks reject missing or malformed values. The probe adapter bridges source callback delegates to persistent `UnityEvent<double>` listeners and unsubscribes in `OnDestroy`. It declares Unity's built-in `com.unity.modules.imgui` and `com.unity.modules.jsonserialize` dependencies for its `OnGUI` controls.
+
+The optional `recipe_module=True` mode adds the exact owned `RecipeCatalog`, `RecoveredRecords`, `RecipeJsonConfiguration`, and `ElementMultiOrderPool.json` source assets and their `.meta` files. It checks the TextAsset and loader signatures, exact source JSON identity, 732 JSON records, and row 293's `elementIdWeight` entry for probe dish `2015015`. The generated adapter calls `RecipeJsonConfiguration.Load(recipeTable)` from `Awake`; the test-only GUI button flattens dish `2015015`. The Editor probe binds the copied JSON TextAsset into the saved scene, reopens it, checks its GUID against the copied `.meta`, requires a valid nonzero localId, checks its SHA-256, and in Play Mode checks the expected ordered leaves `[1010204, 1005303, 1007206, 1002401, 1007204, 1010201, 1004302, 1005203, 1010303]`. This dish selection is probe test code, not product behavior.
+
+Both modes generate the scene with Unity APIs, save/reopen it, check persistent UnityEvent targets and method names, enter Play Mode, verify lifecycle initialization and typed calls, exit, reopen the saved scene, and check bindings again. A persisted phase resumes through Editor update after domain reload, avoiding shared one-shot delayCall loss. The PlayMode check also destroys the adapter and verifies that both source callback subscriptions are removed. The health fixture uses `def=1`: source `DoDelta(-10)` clamps damage to `-1`, so health progresses `80 -> 79 -> 89`, and `MaxHpDoDelta(+20)` yields `109/120`. `SetProperty` is checked separately. This reflects the source method semantics and does not change the candidate C#.
+
+`prepare` returns `prepared_not_run`; the plan records the source/report identity, copied asset identities, mode contract, generated project and `MonkeyCodeModuleProbe.Run`. The Editor helper uses a 900-second method bound and writes a receipt with compile, Unity binding and Play Mode states separately from rendering, physical input and Player build. Rendering, physical input, and Player build are not claimed by this probe. The adapter, constructor, lifecycle, JSON fixture, UI and event bridge are new probe infrastructure, not recovered original runtime behavior. The health fixture numbers are synthetic. No JavaScript VM or source engine is included.
+
+The module tests exercise the exact candidate preparation path, owner/hash rejection, optional Recipe JSON asset closure, expected oracle values, and the built-in IMGUI dependency. Offline C# SDK compilation may be used as a separate syntax/reference check; it does not substitute for Unity import or Play Mode. The parent task owns all Unity Editor startup and native validation.
+
+Current local validation: the parent-owned Unity 6000.6.2f1 window04 on the exact profile06 candidate passed compilation, Scene save/reopen, persistent script/TextAsset/event bindings, 6 HealthState methods and the 3-method RecipeCatalog chain, actual JSON loading and ordered leaves, and OnDestroy unsubscribe. The process exited 0 and was reaped. Earlier failed windows are retained; see [v0.6 validation](validation/2026-10-26-v060-csharp-modules.md). Rendering, physical input and Player build remain not_run.
+
+```sh
+monkey code-native-probe --candidate code-candidate --expected-manifest SHA256 --recipe-module --out new-unity-probe
+```
+
+## Operable Editor flow
+
+```sh
+monkey code-native-probe --candidate code-candidate --expected-manifest SHA256 --interactive --out new-interactive-probe
+```
+
+This prepares the same source-bound assets plus `MonkeyInteractiveProbeWindow.Open`, an Editor-only window with six sequential pointer controls: Start, Damage, Heal, Combo, Query Recipe, Stop/Reopen. It creates only a normal project-local default Search index; it does not change global settings. Run the generated executeMethod in an independently owned Editor window. After each MouseUp it writes `interactive-code-probe.json`; PlayMode transitions resume through a disk receipt, and reopening waits for `EnteredEditMode`. The closing control exits the owned Editor after pass/fail.
+
+Final continuation window04 passed all six actual CUA OS pointer actions, HP 79→89, combo 1, callback counts 2/1, original JSON's nine leaves, destruction unsubscribe and identical saved bindings. Editor exit 0 was reaped. This is an operable finite validation flow. It is new test UI/lifecycle wiring, not recovered original UI or a human physical-input/Player/visual-parity claim. Source `HealthState` is an ECS model, not a source MonoBehaviour; the existing original `onHpChange` consumer at `method@3177644` has an unresolved decorated/inherited owner and is explicitly unsupported, not missing source. Its source bytes remain indexed and preserved.
