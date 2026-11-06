@@ -218,6 +218,11 @@ def build_plan(candidate, target, spec_path, package_evidence=None, expected_pac
     return plan
 
 
+def plan_from_args(args):
+    return preview(args.candidate, args.target, args.spec, args.out,
+                   args.package_evidence, args.expected_package_evidence)
+
+
 def preview(candidate, target, spec, output, package_evidence=None, expected_package_evidence=None):
     plan = build_plan(candidate, target, spec, package_evidence, expected_package_evidence)
     resolution,_ = resolution_context(package_evidence,expected_package_evidence)

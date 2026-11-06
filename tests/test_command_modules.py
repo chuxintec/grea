@@ -88,3 +88,38 @@ class ModuleMcpTests(unittest.IsolatedAsyncioTestCase):
                 for key in ("product","version","command","status","exit_code"):
                     self.assertEqual(observed[key],expected[key])
                 self.assertEqual(observed["result"]["producer"],expected["result"]["producer"])
+
+    async def test_intake_plan_stdio_matches_cli_and_refuses_existing_output(self):
+        from tests.development.test_intake import _candidate, _project, _spec, _write_spec
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            candidate = _candidate(root / "candidate")
+            target = _project(root / "target")
+            spec = _write_spec(root / "spec.json", _spec(candidate))
+            flags = ["--candidate", str(candidate), "--target", str(target), "--spec", str(spec)]
+            rc, refused = run(["prefab", "intake-plan", *flags, "--output", str(root / "cli"),
+                               "--out", str(root / "conflict")])
+            self.assertEqual(rc, 2)
+            self.assertIn("Conflicting output", refused["diagnostics"])
+            self.assertFalse((root / "cli").exists())
+            self.assertFalse((root / "conflict").exists())
+            rc, expected = run(["prefab", "intake-plan", *flags, "--out", str(root / "cli")])
+            self.assertEqual(rc, 0)
+            client = Client(StdioServerParameters(command=sys.executable, args=["-m", "grea.cli", "mcp"]))
+            async with client:
+                desc = await client.call_tool("command_catalog", {"module": "prefab", "action": "intake-plan"})
+                self.assertEqual(desc.structured_content["result"]["commands"],
+                                 [commands()["prefab", "intake-plan"].describe()])
+                for attempt in range(2):
+                    reply = await client.call_tool("run_tool", {
+                        "tool_id": "prefab", "arguments": ["intake-plan", *flags, "--output", str(root / "mcp")],
+                        "run_dir": str(root / f"run-{attempt}")})
+                    receipt = reply.structured_content["result"]["parsed_stdout"]
+                    if attempt:
+                        self.assertNotEqual(receipt["exit_code"], 0)
+                        self.assertTrue(receipt["result"]["diagnostics"])
+                    else:
+                        self.assertEqual(receipt["status"], "ok")
+                        self.assertEqual(receipt["result"]["data"]["planSha256"],
+                                         expected["result"]["data"]["planSha256"])

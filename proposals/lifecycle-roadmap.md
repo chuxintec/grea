@@ -14,6 +14,13 @@
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
   "currentStage": "GREA 已完成僵尸 300.411 剩余有源 Prefab 的隔离静态复验。B02 的同工程采用与正式验收仍按先肥鹅四活动、再僵尸推进。",
+  "commandArchitecturePilot": {
+    "scope": "prefab intake-plan；B02 的采用、回滚和静态验证保持各自的入口",
+    "status": "试点已实施并对照，其他动作继续沿原路由；以后按动作验收后迁移",
+    "design": "proposals/design/command-architecture.md",
+    "evidence": ".private/cmd-pilot/comparison.json",
+    "verification": "292 个公开动作目录一致；公共参数、请求文件、旧阶段 CLI、真实 stdio MCP 产出同一 SHA，候选与目标内容哈希保持；切换前后计划仅 implementationSha256 不同。工程与命令回归 719 passed、10 skipped、300 subtests passed。"
+  },
   "activeImplementationTask": "grea:T-zombie-bulk-static-prefabs",
   "releases": [
     {

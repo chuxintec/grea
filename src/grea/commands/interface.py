@@ -195,8 +195,9 @@ def run_command(module, action, raw, request_file=None):
         return 0
     with tempfile.SpooledTemporaryFile(max_size=1024*1024, mode="w+", encoding="utf-8") as output, \
          tempfile.SpooledTemporaryFile(max_size=1024*1024, mode="w+", encoding="utf-8") as errors:
+        result = None
         try:
-            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            with contextlib.redirect_stderr(errors):
                 if request_file is not None:
                     if raw:
                         raise ValueError("Use either --request FILE or inline parameters")
@@ -210,7 +211,11 @@ def run_command(module, action, raw, request_file=None):
                     args = command.parser.parse_args(raw)
                 for key, value in command.defaults.items():
                     setattr(args, key, value)
-                code = invoke(command, args, raw) or 0
+                if command.backend == "structured":
+                    result, code = command.handler(args)
+                else:
+                    with contextlib.redirect_stdout(output):
+                        code = invoke(command, args, raw) or 0
         except SystemExit as error:
             code = error.code if isinstance(error.code, int) else int(error.code is not None)
             if isinstance(error.code, str):
@@ -220,10 +225,11 @@ def run_command(module, action, raw, request_file=None):
             code = 2
         output.seek(0)
         body = output.read()
-        try:
-            result = json.loads(body) if body.strip() else None
-        except ValueError:
-            result = body
+        if body.strip():
+            try:
+                result = json.loads(body)
+            except ValueError:
+                result = body
         errors.seek(0)
         diagnostics = errors.read().strip()
     status = {0:"ok", 1:"partial", 2:"error", 3:"blocked"}.get(code,"error")

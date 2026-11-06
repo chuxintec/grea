@@ -125,9 +125,13 @@ def commands():
 
     result = {}
     def add(group, name, backend, path, parser, defaults, description, handler=None, schema=None):
+        register(Command(group, name, backend, path, parser, defaults, description, handler, schema))
+
+    def register(command):
+        group, name = command.module, command.name
         if group not in MODULES or (group, name) in result:
             raise ValueError(f"Invalid or duplicate GREA command: {group} {name}")
-        result[group, name] = Command(group, name, backend, path, parser, defaults, description, handler, schema)
+        result[group, name] = command
 
     for path, defaults, parser, description in leaves(recovery.parser()):
         if path[0] in LEGACY_RECOVERY or path == ("static-code-bindings",):
@@ -136,7 +140,10 @@ def commands():
     for path, defaults, parser, description in leaves(static_code_bindings.parser()):
         src = ("static-code-bindings", *path)
         add(*recovery_route(src), "bindings", src, parser, defaults, description, static_code_bindings.execute)
-    for path, defaults, parser, description in leaves(development.parser()):
+    from grea.features.prefab.commands import declared_commands
+    for command in declared_commands():
+        register(command)
+    for path, defaults, parser, description in leaves(development.parser(include_intake_plan=False)):
         add(*development_route(path), "development", path, parser, defaults, description, development.main)
 
     for tool in sorted(HELPER_MODULE):
