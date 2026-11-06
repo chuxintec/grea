@@ -160,6 +160,19 @@ def main(argv=None):
     p.add_argument('--budget-seconds',type=int,default=120)
     from .unity_visual_repair import add_arguments as visual_arguments
     visual_arguments(sub.add_parser('repair-unity-visuals', help='Prepare source-identified UI and effect repairs for an exported Unity project'))
+    p = sub.add_parser('prepare-unity-runtime-hosts', help='Identify original per-prefab MonoBehaviour hosts for native validation')
+    p.add_argument('--manifest', required=True)
+    p.add_argument('--out', required=True)
+    p.add_argument('--project', help='Install the matching Editor save/cold verifier in this candidate')
+    p = sub.add_parser('inventory-unity-methods', help='Classify recoverable WASM methods on selected source types')
+    p.add_argument('--manifest', required=True)
+    p.add_argument('--out', required=True)
+    p.add_argument('--include-body-bytes', action='store_true', help='Include exact identified WASM body bytes and source offsets for the selected remaining methods')
+    p.add_argument('--exclude-overlay', action='append', default=[], help='Exclude exact method identities already listed in a prior overlay (repeatable)')
+    p = sub.add_parser('apply-unity-method-overlay', help='Apply reviewed source-bound C# methods to existing Unity scripts')
+    p.add_argument('--project', required=True)
+    p.add_argument('--manifest', required=True)
+    p.add_argument('--native-signatures', action='store_true', help='Emit exact overload expectations for the runtime host Editor checker')
     p = sub.add_parser('export-unity-textures',help='Export exact selected hydrated Texture2D pixels as PNG candidates without whole-container AssetRipper export')
     for name in ('source','derivative','hydration-report','expected-hydration-sha256','selection-manifest','provider-python','out'):p.add_argument('--'+name,required=True)
     p.add_argument('--budget-seconds',type=int,default=120)
@@ -210,6 +223,10 @@ def main(argv=None):
     p = sub.add_parser('project-model', help='Inspect explicit target asset path slots and identity without moving files')
     p.add_argument('--candidate', required=True)
     p.add_argument('--out', required=True)
+    p = sub.add_parser('lower-cocos-local-methods', help='Emit source-pinned C# bodies for reviewed local void member contracts')
+    p.add_argument('--source',required=True)
+    p.add_argument('--manifest',required=True)
+    p.add_argument('--out',required=True)
     p = sub.add_parser('code-emit', help='Emit source-bound typed C# modules or legacy numeric field methods; unknown methods stay excluded')
     p.add_argument('--source',required=True)
     group=p.add_mutually_exclusive_group(required=True)
@@ -536,6 +553,18 @@ def main(argv=None):
     args = parser.parse_args(argv)
     unity_parse_limits={k:v for k,v in [('objectValues',getattr(args,'unity_object_value_limit',None)),('containerValues',getattr(args,'unity_container_value_limit',None))] if v is not None} or None
     try:
+        if args.command=='prepare-unity-runtime-hosts':
+            from .unity_runtime_hosts import prepare as prepare_hosts
+            print(json.dumps(prepare_hosts(args.manifest,args.out,args.project),ensure_ascii=False))
+            return 0
+        if args.command=='inventory-unity-methods':
+            from .unity_method_overlay import inventory
+            print(json.dumps(inventory(args.manifest,args.out,exclude_overlays=args.exclude_overlay,include_body_bytes=args.include_body_bytes),ensure_ascii=False))
+            return 0
+        if args.command=='apply-unity-method-overlay':
+            from .unity_method_overlay import apply as apply_methods
+            print(json.dumps(apply_methods(args.project,args.manifest,native_signatures=args.native_signatures),ensure_ascii=False))
+            return 0
         if args.command=='repair-unity-visuals':
             from .unity_visual_repair import run as repair_visuals
             print(json.dumps(repair_visuals(args),ensure_ascii=False))
@@ -678,6 +707,11 @@ def main(argv=None):
             from .adoption_native import recover
             result=recover(args.transaction,args.editor_path,args.budget_seconds)
             print(json.dumps(result,ensure_ascii=False));return 0
+        if args.command == 'lower-cocos-local-methods':
+            from .cocos_local_methods import export
+            result = export(args.source,args.manifest,args.out)
+            print(json.dumps(result))
+            return int(result['lowered'] != result['methods'])
         if args.command == 'code-emit':
             if args.module_contract or args.module_profile:
                 if args.numeric_field or args.namespace!='monkey-project' or args.cocos_code_language!='ts':parser.error('Module emission excludes legacy numeric/namespace/language flags; use the typed contract namespace')

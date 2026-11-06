@@ -15,8 +15,14 @@ MATRIX_UNIFORMS = {'hlslcc_mtx4x4unity_ObjectToWorld': 'unity_ObjectToWorld', 'h
 BUILTIN_UNIFORMS = {'_Time', '_ProjectionParams', '_ScreenParams', '_WorldSpaceCameraPos', 'unity_LightShadowBias', '_LightColor0'}
 DECLARATION = '\\b(in|out|uniform)\\s+(?:(?:highp|mediump|lowp)\\s+)?(\\w+)\\s+(\\w+)(?:\\[(\\d+)\\])?\\s*;'
 
+VECTOR_COMPARISONS = {
+    'lessThan': '<', 'lessThanEqual': '<=', 'greaterThan': '>', 'greaterThanEqual': '>=',
+    'equal': '==', 'notEqual': '!=',
+}
+
+
 def translate_vector_constructors(source):
-    pat = '\\b(vec[234]|ivec[234]|bvec[234]|uvec[234]|greaterThanEqual)\\s*\\('
+    pat = r'\b(vec[234]|[ibu]vec[234]|' + '|'.join(VECTOR_COMPARISONS) + r')\s*\('
     m = re.search(pat, source)
     if not m:
         return source
@@ -36,8 +42,10 @@ def translate_vector_constructors(source):
             args.append(translate_vector_constructors(source[start:i]))
             start = i + 1
     t = m[1]
-    if t == 'greaterThanEqual':
-        val = f'(({args[0]}) >= ({args[1]}))'
+    if t in VECTOR_COMPARISONS:
+        if len(args) != 2:
+            raise ValueError(f'Expected two operands for GLSL {t}')
+        val = f'(({args[0]}) {VECTOR_COMPARISONS[t]} ({args[1]}))'
     elif len(args) == 1:
         val = f'(({VECTOR_TYPES[t]})({args[0]}))'
     else:

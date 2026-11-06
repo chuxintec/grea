@@ -1,6 +1,6 @@
 # monkey
 
-当前开发统一在 **0.8.0.dev44** 单线，包含 Unity 来源恢复、Cocos 来源转 Unity 静态 Prefab、
+当前开发统一在 **0.8.0.dev45** 单线，包含 Unity 来源恢复、Cocos 来源转 Unity 静态 Prefab、
 Toggle 空配置桥接、显式 CoreText 静态回退字体及严格静态引用恢复。
 新增导出、开发与验收统一以 Unity 为目标；Creator/Cocos 目标保留既有显式兼容入口及历史证据，暂停专项修复和验收。
 monkey 由 GREA 统一调度和分发；旧 0.7.0 发布与固定消费者只作兼容保留，
@@ -111,3 +111,106 @@ For reviewed layouts use `layouts` entries with the same `root`, `path`, `node`
 and `reason`. `includeInLayout` enables an existing excluded LayoutElement
 under its LayoutGroup. `fitPreferredHeight` lets an existing layout group use
 the preferred height of its children. Both are checked again after reopening.
+
+### Lower local Cocos methods to C# bodies
+
+Run `monkey lower-cocos-local-methods --source GAME.js --manifest CONTRACT.json --out NEW_DIRECTORY`.
+The contract pins `sourceSha256`. Each `methods` row supplies its lexical graph `id`,
+exact `sha256`, reviewed `returns`, permitted zero-argument `voidCalls`, and
+a `members` map of same-type string, bool or double members. Optional `visualFields`
+map side-effect-free source fields to Unity GameObject, CanvasGroup or Image.
+The emitter recognizes empty void methods, local calls and assignments, and
+guarded literal active/opacity/sprite resets. It checks the **whole** method AST.
+For a single-argument return using a source component field, a typed `returns` and
+`returnCall: {"field":"list","method":"find"}` authorize only the complete
+`return this.list.find(arg)` shape with the same lexical parameter. A reviewed `localPositionAxes` list can lower `this.node.x/y` to local Unity coordinates
+for declared double fields. Addition is supported only for two declared double members.
+A comma sequence must lower completely. Unmatched methods have status `review` and a null body. Exit 1 indicates a
+partial selection. Optional `templates` entries specify a local C# filename in `file`,
+its `sha256`, and method `ids`. Each `/*monkey:method@OFFSET*/` marker must occur
+exactly once, and each requested body must have been lowered. Compile the emitted bodies in their declared component
+context, bind serialized references, and verify behavior separately in Play Mode.
+
+### Apply reviewed IL2CPP methods to Unity components
+
+`monkey apply-unity-method-overlay --project CANDIDATE --manifest REVIEW.json`
+updates existing C# scripts in an independent Unity candidate. Each script retains
+its original path and MonoScript GUID. Supply SHA-256 pins for the v29 metadata,
+Il2CppDumper declarations, decoded WASM segments in table-overlay order, original
+script bytes and reviewed C# output. Each method entry identifies the full source
+type, metadata method index/token, dump signature, table slot and body hash.
+The command preflights the entire batch and accepts an already-applied script
+on retry. Review translations and validate the actual components separately in
+Unity Play Mode.
+
+For a byte accessor backed by a declared bool field, a reviewed template can use
+`/*wasm:METHOD_INDEX*/` and `lift: "bool-accessor"`. The tool recognizes the full
+load, store, or conditional store with a dirty flag and verifies the final script
+hash. Other method bodies require explicit translations.
+
+Use `lift: "numeric-accessor"` for complete int32 or float32 property loads and
+stores. The index-setter pattern also preserves a second, explicitly converted
+float field written by the same source body. Other opcode sequences or field
+type mismatches stop the batch.
+
+Use `lift: "struct-getter"` for a `Vector2` or `Color` instance getter when the
+WASM body copies the entire declared field into its hidden return buffer. The
+rule checks each source and destination word, including field type and offsets.
+
+`monkey prepare-unity-runtime-hosts --manifest HOSTS.json --out hosts.json --project CANDIDATE`
+locates each selected script on its original GameObject. The manifest maps
+lowercase serialized file names under `files` to bundle `path` and `sha256`.
+Each `roots` entry names the candidate prefab `asset`, source `cab` and
+`rootId`, fully qualified `type`, assembly name without the .dll suffix, and
+candidate `scriptGuid`. The UnityPy dependency comes with the `unity-visuals`
+extra. In separate Editor processes, run `UnityRuntimeMethodHosts.Save` and
+`UnityRuntimeMethodHosts.Cold` to verify script identity, component position
+and persistent local file ID for every source host. Play Mode assertions still
+need to trigger and observe the behavior being recovered.
+
+`monkey inventory-unity-methods --manifest INPUT.json --out methods.json`
+inventories the original methods before preparing any scripts. Supply the same
+pinned `metadata`, `dump` and ordered `segments` as the overlay manifest, plus
+`types` entries with the qualified `type` and `typeIndex`. Each method is
+reported as automatically translatable, requiring review, or missing a local
+body. The report includes prototype, token, WASM body identity and the generated
+accessor expression when available. Nested compiler-generated types are checked
+against their declaring type. A compiler-generated backing field named
+`<Name>k__BackingField` uses the C# template identifier `recoveredBacking_Name`.
+
+For offline method review, add `--include-body-bytes` to record the original
+segment offset and hex bytes after exclusions. The command verifies each body
+hash. Unresolved slots carry no bytes.
+
+To inventory only outstanding methods, pass one or more
+`--exclude-overlay PRIOR.json` options. The command compares metadata, dump
+and ordered WASM hashes and checks each selected method identity before
+subtraction. Multiple overlays listing the same method subtract it once.
+This measures overlay coverage. Play Mode behavior is verified separately.
+
+For small static methods returning a float, inventory can also report
+`float-expression`. This lift emits a C# return expression from an entire
+straight-line WASM body using float arguments, finite f32 literals, negation
+and the four basic arithmetic operations. Parameter reads, stack arity and the
+function terminator are checked. Calls, branches, memory access and unsupported
+instructions remain available for review.
+
+For a void method with no local variables whose entire WASM body contains only
+optional NOP instructions and the function end, `void-noop` emits `return;`.
+Constructors and methods with output parameters require separate review.
+
+Use `apply-unity-method-overlay --native-signatures` with the runtime host
+Editor checker to check compiled overloads when saving and cold reopening the
+candidate. It writes an immutable `expected-method-signatures.json` in the
+candidate. The checker binds the script by GUID and checks the declaring type,
+static flag, return type, parameter order, generic arguments and by-reference
+direction. Missing or ambiguous declarations fail the check. Save and cold
+receipts are separate from Play Mode behavior observations. For compiler-generated
+local functions, an unnamed by-reference Roslyn display-class parameter retains
+its generated type and exact declaring method in the signature check.
+
+Applying a subsequent overlay with `--native-signatures` keeps the initial
+signature file intact. Additional expectations are stored by script GUID and
+metadata method index under `expected-method-signatures.d/`. The Editor checks
+the baseline and all additions together. Reapplying an identical signature is
+idempotent, and conflicting signatures for the same method are rejected.

@@ -261,7 +261,7 @@ def _metadata_v29(raw: bytes) -> dict[str, Any]:
             if method_count and (method_start < 0 or method_start + method_count > len(methods)):
                 raise ValueError("type method range out of bounds")
             types.append({"index": index, "name": string_at(name_index), "namespace": string_at(namespace_index),
-                          "parentTypeIndex": parent, "byvalTypeIndex": byval,
+                          "parentTypeIndex": parent, "byvalTypeIndex": byval, "declaringIl2CppTypeIndex": declaring,
                           "methodStart": method_start, "methodCount": method_count,
                           "fieldStart": field_start, "fieldCount": field_count,
                           "token": f"0x{token:08x}"})
