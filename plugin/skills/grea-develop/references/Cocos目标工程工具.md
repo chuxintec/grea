@@ -2,7 +2,7 @@
 
 当前 GREA 源码已提供 `cocos_project` 与 `cocos_convert` 的有限能力，并有自有合成样例验证；生成/转换结果仍是待验候选，不代表目标工程可运行。实际 Editor 导入、TypeScript 编译、浏览器真实输入和渠道验收分别记录。安装后的当前 session 是否加载该能力，调用前以 `session`、工具清单和描述结果核实。仅在用户明确授权的 Cocos 目标范围内使用。
 
-当前 registry 仍保留 GREA 工具：`cocos_project` 尚无已登记接收能力；`cocos_convert` 的 Monkey 接收方能力等价性和消费者切换尚未核验。不要因接收方名称或工具存在而称已迁移/退休；调用按当次 registry 与固定 provider 描述执行。
+本页记录显式选择的存量 Cocos 兼容操作。当前 Unity 主线通过 source、prefab、asset 和 code 模块处理来源。仅在已有固定消费者要求时运行其原接口。
 
 调用前从已安装 GREA 根目录使用 `list-tools`、`describe-tool` 核实当前参数；通过 `run-tool` 写入全新输出目录，输入保持只读。不要依赖源码树路径或假定安装了本机 Editor/Node。
 
@@ -30,4 +30,4 @@
 
 ## 完整恢复与有限子集的边界
 
-完整初版导出由固定 monkey 流程负责，GREA 核查交接并编排接续；可支持集合之外的来源或 profile 保持 `not_available`。上述有限 `cocos_convert` 保留旧 ID 兼容，不作为批量完整恢复入口，也不据此另建完整转换器。`cocos_project` 是可选工程规范模板，不代替真实资源和代码导出。Creator 目标保持明确选择，不能把源引擎包装成 Unity；引擎修改、插件和实际浏览器操作按用户授权边界执行。
+全量恢复须在来源支持范围内执行并记录未恢复项。旧项目生成器生成模板或有限集合不能作为完整还原回执。

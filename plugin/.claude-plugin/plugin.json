@@ -1,7 +1,7 @@
 {
   "name": "grea",
   "version": "1.1.0.dev2",
-  "description": "GREA: five Skills for orchestration, game research, recovery, development and release; monkey restores candidates and beaver operates development projects.",
+  "description": "GREA game research, source recovery, native project development and release, with five Skills and a shared CLI/MCP command catalog.",
   "author": {
     "name": "GREA contributors",
     "url": "https://github.com/chuxintec/grea"

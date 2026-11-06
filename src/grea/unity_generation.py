@@ -13,8 +13,8 @@ from .common import GreaError, digest, package_root, write_new
 from . import runner, registry
 from .unity_projects import Reader, relative, overlaps, strict_json, KEYWORDS
 from .unity_project_contracts import PROFILE, REFERENCE, MANIFEST as MANIFEST_SCHEMA
-from .tools import unity_framework_audit
-from .tools.unity_framework_audit import inspect as inspect_framework
+from .features.qa import unity_framework_audit
+from .features.qa.unity_framework_audit import inspect as inspect_framework
 
 def boundary_implementation_hash():
     return hashlib.sha256(Path(unity_framework_audit.__file__).read_bytes()).hexdigest()

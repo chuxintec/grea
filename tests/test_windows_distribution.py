@@ -29,6 +29,16 @@ class TargetTests(unittest.TestCase):
   self.assertNotIn('validation/releases/report.json',files);self.assertNotIn('proposals/design/plan.md',files)
   self.assertIn('tests/unity/reference-project/keep',files);self.assertNotIn('tests/test_old.py',files)
   self.assertIn(b'https://github.com/chuxintec/grea/blob/'+b'a'*40,files['README.md'][0])
+ def test_internal_sources_do_not_enter_a_public_projection(self):
+  from audit_public_tree import inspect
+  from product_projection import project
+  source = {'LICENSE': (b'license',0o100644)}
+  private = ('src/grea/recovery/convert.py','src/grea/development/targets/Intake.cs',
+             'src/grea/features/asset/decoder.py','docs/history/recovery/old.md')
+  source.update({name:(b'internal implementation',0o100644) for name in private})
+  self.assertEqual(set(project(source,'a'*40)),{'LICENSE'})
+  for name in private:
+   self.assertIn('internal_implementation',{row['code'] for row in inspect(name,b'private')})
  def test_windows_unsafe_names_are_rejected(self):
   for name in ('grea/CON','grea/a./x','grea/Lpt1.json','grea/ok:stream','grea/a?/b','grea/trailing '):
    with self.subTest(name=name),self.assertRaises(ValueError):plugin_bundle.safe_name(name)

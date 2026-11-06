@@ -1158,7 +1158,10 @@
     {
       "id": "unity_asset_ledger",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "unity_asset_ledger",
         "--help"
@@ -1171,7 +1174,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "unity_asset_ledger"
         ],
@@ -1196,7 +1202,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1234,12 +1240,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "id": "unity_dependency_audit",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "unity_dependency_audit",
         "--help"
@@ -1252,7 +1264,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "unity_dependency_audit"
         ],
@@ -1277,7 +1292,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1315,12 +1330,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "id": "compare_traces",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "compare_traces",
         "--help"
@@ -1333,7 +1354,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "compare_traces"
         ],
@@ -1358,7 +1382,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1396,12 +1420,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "evidence"
     },
     {
       "id": "video_manifest",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "video_manifest",
         "--help"
@@ -1414,7 +1444,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "video_manifest"
         ],
@@ -1439,7 +1472,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1477,12 +1510,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "evidence"
     },
     {
       "id": "verify_payload_tree",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "verify_payload_tree",
         "--help"
@@ -1495,7 +1534,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "verify_payload_tree"
         ],
@@ -1520,7 +1562,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1558,12 +1600,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "build"
     },
     {
       "id": "package_windows_portable",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "package_windows_portable",
         "--help"
@@ -1576,7 +1624,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "package_windows_portable"
         ],
@@ -1599,7 +1650,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1637,12 +1688,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "build"
     },
     {
       "id": "audit_numeric_texture",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "audit_numeric_texture",
         "--help"
@@ -1655,7 +1712,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "audit_numeric_texture"
         ],
@@ -1680,7 +1740,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1718,12 +1778,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "id": "compare_events",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "compare_events",
         "--help"
@@ -1736,7 +1802,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "compare_events"
         ],
@@ -1761,7 +1830,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1799,12 +1868,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "evidence"
     },
     {
       "id": "laya_contract_audit",
       "probe": [
-        "monkey",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
         "tool",
         "laya_contract_audit",
         "--help"
@@ -1817,7 +1892,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "monkey",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover",
           "tool",
           "laya_contract_audit"
         ],
@@ -1841,7 +1919,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -1880,7 +1958,10 @@
           "monkey": "0.4.1"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "recover",
+      "configuration_source": "grea-builtin",
+      "module": "source"
     },
     {
       "id": "glslangValidator",
@@ -2153,7 +2234,10 @@
     {
       "id": "image_alpha_audit",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "image_alpha_audit",
         "--help"
@@ -2166,7 +2250,10 @@
       "tested_samples": "Validate the selected provider against the current input; historical project-specific evidence is not distributed.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "image_alpha_audit"
         ],
@@ -2191,7 +2278,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -2229,7 +2316,10 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "id": "pngquant",
@@ -2364,7 +2454,10 @@
     {
       "id": "video_sheet",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "video_sheet",
         "--help"
@@ -2376,7 +2469,10 @@
       "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "video_sheet"
         ],
@@ -2399,7 +2495,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -2437,12 +2533,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "evidence"
     },
     {
       "id": "read_elf_values",
       "probe": [
-        "monkey",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
         "tool",
         "read_elf_values",
         "--help"
@@ -2454,7 +2556,10 @@
       "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
       "execution": {
         "command": [
-          "monkey",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover",
           "tool",
           "read_elf_values"
         ],
@@ -2477,7 +2582,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -2515,12 +2620,18 @@
           "monkey": "0.4.1"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "recover",
+      "configuration_source": "grea-builtin",
+      "module": "code"
     },
     {
       "id": "unpack_xapk",
       "probe": [
-        "monkey",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
         "tool",
         "unpack_xapk",
         "--help"
@@ -2532,7 +2643,10 @@
       "output_schema": "Legacy JSON/exit code wrapped by grea result envelope.",
       "execution": {
         "command": [
-          "monkey",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover",
           "tool",
           "unpack_xapk"
         ],
@@ -2555,7 +2669,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "apk-assets",
           "apk-all-entries",
@@ -2599,7 +2713,10 @@
           "monkey": "0.4.1"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "recover",
+      "configuration_source": "grea-builtin",
+      "module": "source"
     },
     {
       "id": "registry_doctor",
@@ -2664,7 +2781,8 @@
         "target": "GREA",
         "transition": "thin-provider-or-workflow-helper",
         "old_interface_preserved": true
-      }
+      },
+      "module": "system"
     },
     {
       "id": "android-emulator-arm32",
@@ -2959,7 +3077,10 @@
       ],
       "execution": {
         "command": [
-          "monkey",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover",
           "tool",
           "export_config_tables"
         ],
@@ -3036,7 +3157,10 @@
         }
       },
       "probe": [
-        "monkey",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
         "tool",
         "export_config_tables",
         "--help"
@@ -3049,7 +3173,9 @@
           "capability": "monkey tool export_config_tables",
           "status": "moved_in_monkey_0.4.1"
         }
-      }
+      },
+      "feature": "recover",
+      "configuration_source": "grea-builtin"
     },
     {
       "id": "webgl-xxtea-decrypt",
@@ -3117,7 +3243,10 @@
       ],
       "execution": {
         "command": [
-          "monkey",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover",
           "tool",
           "decrypt_v1mmwx_wxapkg"
         ],
@@ -3186,7 +3315,10 @@
         }
       },
       "probe": [
-        "monkey",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
         "tool",
         "decrypt_v1mmwx_wxapkg",
         "--help"
@@ -3199,7 +3331,9 @@
           "capability": "monkey tool decrypt_v1mmwx_wxapkg",
           "status": "moved_in_monkey_0.4.1"
         }
-      }
+      },
+      "feature": "recover",
+      "configuration_source": "grea-builtin"
     },
     {
       "id": "wxapkg-unpack",
@@ -3210,7 +3344,10 @@
       ],
       "execution": {
         "command": [
-          "monkey",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover",
           "tool",
           "unpack_wxapkg"
         ],
@@ -3279,7 +3416,10 @@
         }
       },
       "probe": [
-        "monkey",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
         "tool",
         "unpack_wxapkg",
         "--help"
@@ -3292,7 +3432,9 @@
           "capability": "monkey tool unpack_wxapkg",
           "status": "moved_in_monkey_0.4.1"
         }
-      }
+      },
+      "feature": "recover",
+      "configuration_source": "grea-builtin"
     },
     {
       "id": "check_grea_skill",
@@ -3858,12 +4000,16 @@
           "capability": "beaver references",
           "status": "receiver_capability_available_equivalence_unverified"
         }
-      }
+      },
+      "module": "project"
     },
     {
       "id": "unity_pilot",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "unity_pilot",
         "--help"
@@ -3872,7 +4018,10 @@
       "usage": "Freeze selected authoring inputs, create isolated copies and verify source identity; see docs/Unity隔离迁移指南.md.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "unity_pilot"
         ],
@@ -3900,7 +4049,7 @@
         "Cooperative local filesystem only; reject symlinks and detect drift, not an adversarial concurrent-writer sandbox."
       ],
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -3938,12 +4087,18 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "project"
     },
     {
       "id": "shader_probe",
       "probe": [
-        "monkey",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
         "tool",
         "shader_probe",
         "--help"
@@ -3952,7 +4107,10 @@
       "usage": "Probe combined GLES sources through explicitly installed shader compilers.",
       "execution": {
         "command": [
-          "monkey",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover",
           "tool",
           "shader_probe"
         ],
@@ -3977,7 +4135,7 @@
         "verification": "Routing declaration only; see validation reports for actual executed host/input/version."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -4016,12 +4174,18 @@
           "monkey": "0.4.1"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "recover",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "id": "unity_package_backup",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "package_backup",
         "--help"
@@ -4030,7 +4194,10 @@
       "usage": "Snapshot selected UPM dependencies or prepare a verified restore plan; no Editor execution.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "package_backup"
         ],
@@ -4092,12 +4259,17 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin"
     },
     {
       "id": "static_asset_copy",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "static_asset_copy",
         "--help"
@@ -4106,7 +4278,10 @@
       "usage": "Copy explicit FROM=TO mappings unchanged into a new or empty disjoint output; see plugin/skills/grea/references/资源审计与制品校验工具.md.",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "static_asset_copy"
         ],
@@ -4132,7 +4307,7 @@
         "Preflight rejects source symlinks, traversal and overlapping mappings; copy-time failure retains partial output. Cooperative filesystem only."
       ],
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [],
         "format_scope": "provider_documented",
         "provider_requirements": [
@@ -4170,7 +4345,10 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "id": "cocos_assets",
@@ -4249,7 +4427,8 @@
           "capability": "monkey convert (cocos source profiles)",
           "status": "receiver_capability_available_equivalence_unverified"
         }
-      }
+      },
+      "module": "asset"
     },
     {
       "id": "cocos_modules",
@@ -4332,12 +4511,16 @@
           "capability": "monkey convert (cocos source profiles)",
           "status": "receiver_capability_available_equivalence_unverified"
         }
-      }
+      },
+      "module": "source"
     },
     {
       "id": "unity_native_exit",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "unity_native_exit",
         "--help"
@@ -4350,7 +4533,10 @@
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "unity_native_exit"
         ],
@@ -4376,7 +4562,7 @@
       },
       "required_files": [],
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "unity-native-exit-policy-v1"
         ],
@@ -4415,7 +4601,10 @@
           "grea": "2026.10.27",
           "beaver": "0.4.0"
         }
-      }
+      },
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "qa"
     },
     {
       "id": "unity_player_audit",
@@ -4496,12 +4685,16 @@
           "capability": null,
           "status": "gap_open_no_receiver_capability"
         }
-      }
+      },
+      "module": "qa"
     },
     {
       "id": "unity_config_candidate",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "unity_config_candidate",
         "--help"
@@ -4514,7 +4707,10 @@
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "unity_config_candidate"
         ],
@@ -4538,7 +4734,7 @@
       },
       "required_files": [],
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "unity-config-authoring-v1"
         ],
@@ -4577,12 +4773,18 @@
           "grea": "2026.10.27",
           "beaver": "0.4.0"
         }
-      }
+      },
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "config"
     },
     {
       "id": "unity_native_assets",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "unity_native_assets",
         "--help"
@@ -4595,7 +4797,10 @@
       "tested_samples": "Own synthetic layouts/assemblies and isolated Editor/Mono Player; see docs/validation/2026-10-16-project-tools.json",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "unity_native_assets"
         ],
@@ -4621,7 +4826,7 @@
       },
       "required_files": [],
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "unity-native-assets-v1",
           "spine-json-text-atlas"
@@ -4661,7 +4866,10 @@
           "grea": "2026.10.27",
           "beaver": "0.4.0"
         }
-      }
+      },
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "check_level": "synthetic-and-isolated-native-evidence",
@@ -4683,14 +4891,20 @@
       },
       "id": "evidence_manifest",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "evidence_manifest",
         "--help"
       ],
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "evidence_manifest"
         ],
@@ -4704,7 +4918,7 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_evidence_manifest.py and tests/test_audit_regressions.py; execution evidence is versioned separately.",
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "flat-v1",
           "layers-v1"
@@ -4745,7 +4959,10 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "evidence"
     },
     {
       "check_level": "synthetic-and-isolated-native-evidence",
@@ -4767,14 +4984,20 @@
       },
       "id": "config_preflight",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "config_preflight",
         "--help"
       ],
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "config_preflight"
         ],
@@ -4786,7 +5009,7 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "typed-json-v1"
         ],
@@ -4826,7 +5049,10 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "config"
     },
     {
       "check_level": "synthetic-and-isolated-native-evidence",
@@ -4848,14 +5074,20 @@
       },
       "id": "presentation_audit",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "presentation_audit",
         "--help"
       ],
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "presentation_audit"
         ],
@@ -4869,7 +5101,7 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "presentation-observation-v1"
         ],
@@ -4909,7 +5141,10 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "ui"
     },
     {
       "check_level": "synthetic-and-isolated-native-evidence",
@@ -4931,14 +5166,20 @@
       },
       "id": "performance_compare",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "performance_compare",
         "--help"
       ],
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "performance_compare"
         ],
@@ -4950,7 +5191,7 @@
       "side_effects": "Read explicit local files and write one new report. No network.",
       "tested_samples": "tests/test_observation_tools.py; target game verification is separate.",
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "performance-run-v1"
         ],
@@ -4990,7 +5231,10 @@
           "beaver": "0.4.0"
         }
       },
-      "required_files": []
+      "required_files": [],
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "qa"
     },
     {
       "id": "theme_assets",
@@ -5055,7 +5299,7 @@
         "support_formats": "theme-map-v1 and declared art-ledger-v1; automatic assets limited to existing single-Sprite UI PNG"
       },
       "required_files": [
-        "{grea}/src/grea/tools/theme_assets.py"
+        "{grea}/src/grea/features/ui/theme_assets.py"
       ],
       "ownership": {
         "target": "beaver",
@@ -5065,7 +5309,8 @@
           "capability": "beaver resource.image-produce/validate-step",
           "status": "receiver_capability_available_equivalence_unverified"
         }
-      }
+      },
+      "module": "ui"
     },
     {
       "id": "research_report",
@@ -5129,13 +5374,14 @@
         "support_formats": "research-input-v1; stage and protocol direction normalization; explicit evidence hashes"
       },
       "required_files": [
-        "{grea}/src/grea/tools/research_report.py"
+        "{grea}/src/grea/features/research/research_report.py"
       ],
       "ownership": {
         "target": "GREA",
         "transition": "thin-provider-or-workflow-helper",
         "old_interface_preserved": true
-      }
+      },
+      "module": "research"
     },
     {
       "id": "cocos_project",
@@ -5199,7 +5445,7 @@
         "support_formats": "Creator3.8.8 create-only five-layer sample"
       },
       "required_files": [
-        "{grea}/src/grea/tools/cocos_project.py"
+        "{grea}/src/grea/features/project/cocos_project.py"
       ],
       "ownership": {
         "target": "beaver",
@@ -5209,7 +5455,8 @@
           "capability": null,
           "status": "gap_open_no_receiver_capability"
         }
-      }
+      },
+      "module": "project"
     },
     {
       "id": "cocos_convert",
@@ -5273,7 +5520,7 @@
         "support_formats": "2.4.15 and 3.8.8 bounded serialized objects, explicit UUID closure; unsupported refuses graph"
       },
       "required_files": [
-        "{grea}/src/grea/tools/cocos_convert.py"
+        "{grea}/src/grea/features/source/cocos_convert.py"
       ],
       "ownership": {
         "target": "monkey",
@@ -5283,7 +5530,8 @@
           "capability": "monkey convert --target cocos38",
           "status": "receiver_capability_available_equivalence_unverified"
         }
-      }
+      },
+      "module": "source"
     },
     {
       "id": "server_go_project",
@@ -5347,7 +5595,7 @@
         "support_formats": "Go six-role development framework; generates source only; no Docker deployment"
       },
       "required_files": [
-        "{grea}/src/grea/tools/server_go_project.py"
+        "{grea}/src/grea/features/server/server_go_project.py"
       ],
       "ownership": {
         "target": "beaver",
@@ -5357,7 +5605,8 @@
           "capability": "beaver server.generate/module-generate",
           "status": "receiver_capability_available_equivalence_unverified"
         }
-      }
+      },
+      "module": "server"
     },
     {
       "id": "monkey_bridge",
@@ -5505,7 +5754,10 @@
     {
       "id": "image_contact_sheet",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "image_contact_sheet",
         "--help"
@@ -5518,7 +5770,10 @@
       "tested_samples": "Owned wide/tall images, Chinese font review, limits and source protection",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "image_contact_sheet"
         ],
@@ -5541,7 +5796,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "image-contact-v1"
         ],
@@ -5581,12 +5836,18 @@
           "grea": "2026.10.27",
           "beaver": "0.4.0"
         }
-      }
+      },
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "asset"
     },
     {
       "id": "compatibility_plan",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "compatibility_plan",
         "--help"
@@ -5599,7 +5860,10 @@
       "tested_samples": "Owned local fixtures; no ordinary save migration, real player data, production or channel execution",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "compatibility_plan"
         ],
@@ -5624,7 +5888,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "compatibility_plan-v1"
         ],
@@ -5664,12 +5928,18 @@
           "grea": "2026.10.27",
           "beaver": "0.4.0"
         }
-      }
+      },
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "config"
     },
     {
       "id": "operations_preview",
       "probe": [
-        "beaver",
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
         "tool",
         "operations_preview",
         "--help"
@@ -5682,7 +5952,10 @@
       "tested_samples": "Owned local fixtures; no ordinary save migration, real player data, production or channel execution",
       "execution": {
         "command": [
-          "beaver",
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop",
           "tool",
           "operations_preview"
         ],
@@ -5705,7 +5978,7 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "module_delegate",
+        "implementation": "grea_builtin",
         "adapters": [
           "operations_preview-v1"
         ],
@@ -5745,7 +6018,10 @@
           "grea": "2026.10.27",
           "beaver": "0.4.0"
         }
-      }
+      },
+      "feature": "develop",
+      "configuration_source": "grea-builtin",
+      "module": "config"
     },
     {
       "id": "monkey_pipeline",
@@ -6015,9 +6291,9 @@
         "--help"
       ],
       "check_level": "synthetic-fixtures-and-readonly-consumer-evidence",
-      "formats": "Explicit readiness of required monkey and beaver; no automatic install or upgrade.",
+      "formats": "Checks the two integrated implementation packages without running an Editor.",
       "side_effects": "Explicit receipt writes and bounded capability subprocess; no engineering writes, installation or upgrade.",
-      "usage": "Explicit readiness of required monkey and beaver; no automatic install or upgrade.",
+      "usage": "grea system toolchain-check --output NEW_DIRECTORY",
       "output_schema": "JSON readiness receipt; needs_action never means execution passed",
       "tested_samples": "See validation/development/triad-skill-first-20261026.json",
       "execution": {
@@ -6048,35 +6324,14 @@
         "remediation": "Install matching host dependencies; run selected doctor probes and real samples. See plugin/skills/grea-release/references/Windows供应方与桌面验收.md."
       },
       "capability": {
-        "implementation": "builtin",
-        "adapters": [
-          "beaver-readiness-v1"
-        ],
-        "format_scope": "provider_documented",
-        "provider_requirements": [
-          "python"
-        ],
-        "availability_check": "presence_only",
-        "validation": {
-          "status": "versioned_separately",
-          "evidence": [],
-          "current_claim": "No target game or current host acceptance implied; consult versioned evidence"
-        },
-        "limitations": [
-          "Readiness is not engine connection or business acceptance.",
-          "No automatic installation of beaver; explicit development binding is not a released installation."
-        ],
-        "effects": [
-          "filesystem_read",
-          "process",
-          "explicit_output_write"
-        ],
-        "support_formats": "Explicit readiness of required monkey and beaver; no automatic install or upgrade."
+        "implementation": "grea_builtin",
+        "format_scope": "local feature presence",
+        "runtime": "not_checked"
       },
       "required_files": [
-        "{grea}/src/grea/tools/toolchain_check.py",
-        "{grea}/src/grea/integrations/beaver.py"
-      ]
+        "{grea}/src/grea/features/system/toolchain_check.py"
+      ],
+      "module": "system"
     },
     {
       "id": "grea_modules",
@@ -6212,13 +6467,618 @@
         "support_formats": "External engineering CLI; exact operations depend on actual pinned capabilities"
       },
       "required_files": []
+    },
+    {
+      "id": "recover",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "recover",
+        "capabilities"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "recover"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "Recover source packages, assets, prefabs and code.",
+      "usage": "grea recover --help",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "develop",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "develop",
+        "capabilities"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "develop"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "Adopt, edit, test and build development projects.",
+      "usage": "grea develop --help",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Darwin",
+          "Windows",
+          "Linux"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "system",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "system",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "system"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "版本、能力、工具发现和环境诊断",
+      "usage": "grea commands system",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "workflow",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "workflow",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "workflow"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "工作流、案例和验收范围",
+      "usage": "grea commands workflow",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "research",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "research",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "research"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "原版调研和来源证据",
+      "usage": "grea commands research",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "source",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "source",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "source"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "包体、资源清单、转换和交接",
+      "usage": "grea commands source",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "project",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "project",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "project"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "工程上下文、采用、工作区和原生事务",
+      "usage": "grea commands project",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "prefab",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "prefab",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "prefab"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "Prefab 恢复、脚本挂载、采用和冷读",
+      "usage": "grea commands prefab",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "asset",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "asset",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "asset"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "图片、字体、着色器、资源引用和纹理",
+      "usage": "grea commands asset",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "code",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "code",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "code"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "C#、WASM、程序集和方法恢复",
+      "usage": "grea commands code",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "config",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "config",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "config"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "配置、表结构和生成",
+      "usage": "grea commands config",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "ui",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "ui",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "ui"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "界面、布局、节点和事件",
+      "usage": "grea commands ui",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "server",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "server",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "server"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "Go 服务、协议和迁移",
+      "usage": "grea commands server",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "qa",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "qa",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "qa"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "Player 实测、调试、输入与性能",
+      "usage": "grea commands qa",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "build",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "build",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "build"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "构建、备份、制品和封装",
+      "usage": "grea commands build",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
+    },
+    {
+      "id": "evidence",
+      "category": "builtin",
+      "probe": [
+        "{python}",
+        "-m",
+        "grea.cli",
+        "evidence",
+        "--help"
+      ],
+      "execution": {
+        "command": [
+          "{python}",
+          "-m",
+          "grea.cli",
+          "evidence"
+        ],
+        "finding_exit_codes": [
+          1
+        ]
+      },
+      "formats": "证据、画面、对照和验证回执",
+      "usage": "grea commands evidence",
+      "effects": [
+        "process",
+        "explicit_output_write"
+      ],
+      "host_support": {
+        "systems": [
+          "Linux",
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "required_files": [],
+      "configuration_source": "grea-builtin"
     }
   ],
   "product": "grea",
   "product_version": "2026.10.26.dev4",
   "version": "0.1.1",
-  "required_providers": [
-    "monkey",
-    "beaver"
+  "required_providers": [],
+  "builtin_features": [
+    "system",
+    "workflow",
+    "research",
+    "source",
+    "project",
+    "prefab",
+    "asset",
+    "code",
+    "config",
+    "ui",
+    "server",
+    "qa",
+    "build",
+    "evidence"
   ]
 }

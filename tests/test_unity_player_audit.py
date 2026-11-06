@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
-from grea.tools.unity_player_audit import audit, AuditError
+from grea.features.qa.unity_player_audit import audit, AuditError
 from grea.native_exit_contracts import documents, MAX_PLAYER_ASSEMBLIES
 from jsonschema import Draft202012Validator
 

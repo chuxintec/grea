@@ -27,7 +27,7 @@ sync = module('sync_skill_closure', 'sync_skill.py')
 
 class SkillClosureTests(unittest.TestCase):
     def test_frida_pair_diagnostic_does_not_read_a_repository_manual(self):
-        from grea.tools import registry_doctor
+        from grea.features.system import registry_doctor
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             reference = root / 'plugin/skills/grea-recover/assets/frida-pair.reference.json'

@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PACKAGES = ROOT / 'tools/unity/framework/packages'
 SAMPLE = ROOT / 'tools/unity/templates/counter-composition/Assets'
 sys.path.insert(0, str(ROOT / 'src'))
-from grea.tools.unity_framework_audit import inspect as inspect_framework
+from grea.features.qa.unity_framework_audit import inspect as inspect_framework
 
 
 def prepare(destination, include_sample=True, sample=None):

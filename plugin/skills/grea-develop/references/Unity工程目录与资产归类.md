@@ -102,7 +102,7 @@ Product、SourceRecovery、_Recovery 和编号修复副本不能作为长期正�
 
 项目 `grea-project.json` 继续使用现行 `grea-unity-project/1.0.0` 配置合同：`paths.unityProject/evidenceRoot/buildRoot`、`toolchain`、`dependencyLock`、`scenes.bootstrap/entry` 等字段按现行 Schema 填写；设计尺寸、额外构建场景及结构映射写 `Docs/PROJECT-STRUCTURE.md`，不能向禁止额外属性的配置强塞字段。
 
-现行配置的 `exceptions[]` 字段仍是 `ruleId/scope/reason/alternative/verification/owner/reviewTrigger`，其中 scope 为原合同的范围说明字符串。beaver 新结构审计候选采用独立输入，不改写该接口；以下是双方对接的字段合同，CLI 及实际能力仍待固定候选验收：
+现行配置的 `exceptions[]` 字段仍是 `ruleId/scope/reason/alternative/verification/owner/reviewTrigger`，其中 scope 为原合同的范围说明字符串。GREA 工程操作 新结构审计候选采用独立输入，不改写该接口；以下是双方对接的字段合同，CLI 及实际能力仍待固定候选验收：
 
 ```json
 {

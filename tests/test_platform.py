@@ -50,11 +50,11 @@ class PlatformTests(unittest.TestCase):
                 self.assertEqual(dispatch('session')['error']['code'],'INVALID_PROVIDER_CONFIG')
 
     def test_doctor_default_is_presence_only(self):
-        p=subprocess.run([sys.executable,str(ROOT/'src/grea/tools/registry_doctor.py'),'--json'],capture_output=True,text=True)
+        p=subprocess.run([sys.executable,str(ROOT/'src/grea/features/system/registry_doctor.py'),'--json'],capture_output=True,text=True)
         self.assertIn(p.returncode,(0,1),p.stderr)
         report=json.loads(p.stdout)
         self.assertTrue(all(row['level'] in ('presence','host') for row in report['result']['checks']))
-        p=subprocess.run([sys.executable,str(ROOT/'src/grea/tools/registry_doctor.py'),'--json','--probe'],capture_output=True,text=True)
+        p=subprocess.run([sys.executable,str(ROOT/'src/grea/features/system/registry_doctor.py'),'--json','--probe'],capture_output=True,text=True)
         self.assertEqual(json.loads(p.stdout)['error']['code'],'EXPLICIT_SELECTION_REQUIRED')
 
     def test_platform_tools_name_not_rewritten(self):

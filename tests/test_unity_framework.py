@@ -57,7 +57,7 @@ class UnityFrameworkTests(unittest.TestCase):
                 self.assertFalse(destination.exists())
 
     def test_distinct_samples_are_copied_and_checked_without_game_dependencies_in_packages(self):
-        from grea.tools.unity_framework_audit import inspect
+        from grea.features.qa.unity_framework_audit import inspect
         for name in ('numeric-combat', 'grid-puzzle'):
             with self.subTest(sample=name), tempfile.TemporaryDirectory() as tmp:
                 dest = Path(tmp).resolve() / 'project'

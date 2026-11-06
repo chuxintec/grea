@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from grea.tools.cocos3_evidence import inspect_ccon, inspect_index
-from grea.tools.cocos_assets import ParseError
-from grea.tools.cocos_modules import index_source
+from grea.features.source.cocos3_evidence import inspect_ccon, inspect_index
+from grea.features.asset.cocos_assets import ParseError
+from grea.features.source.cocos_modules import index_source
 
 
 class Cocos3Tests(unittest.TestCase):

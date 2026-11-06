@@ -92,31 +92,37 @@ class BeaverReadinessTests(unittest.TestCase):
     def test_session_declares_dependencies_without_spawning(self):
         with patch.object(beaver.subprocess,'run') as run:
             result=dispatch('session');self.assertEqual(result['status'],'ok',result)
-            self.assertEqual(result['result']['required_toolchain']['providers'],['monkey','beaver']);run.assert_not_called()
+            self.assertEqual(result['result']['required_toolchain']['providers'],[]);run.assert_not_called()
 
     def test_workflow_uses_correct_stage_without_forcing_reexport(self):
         for mode in ('recover','fix','reskin','refactor'):
             result=dispatch('plan_workflow',{'mode':mode,'source_engine':'unity'})['result']
-            self.assertEqual(result['required_providers'],['monkey','beaver'])
+            self.assertEqual(result['required_providers'],[])
             self.assertFalse(result['toolchain']['force_reexport_existing_project'])
             self.assertEqual('initial_project_pipeline' in result,mode=='recover')
             for step in result['steps']:
                 if step.get('execution_provider'):
                     source_conversion=Path(step['reference']).name in {'Unity工程重建与恢复.md','Unity原生转换规范.md','Unity跨引擎移植与行为一致性.md','Unity源引擎映射-Cocos.md'}
-                    expected='monkey' if mode=='recover' and source_conversion else 'beaver'
+                    expected='GREA'
+                    self.assertTrue(step['command'].startswith('grea '))
+                    if mode=='recover' and source_conversion:self.assertEqual(step['command'],'grea source convert')
                     self.assertEqual(step['execution_provider'],expected)
 
-    def test_recovery_with_go_backend_keeps_engineering_in_beaver(self):
+    def test_go_backend_selects_the_server_module(self):
         result=dispatch('plan_workflow',{'mode':'recover','source_engine':'unity','backend':'go'})['result']
         server=next(x for x in result['steps'] if Path(x['reference']).name=='Go六服与事务.md')
-        self.assertEqual(server['execution_provider'],'beaver')
-        self.assertEqual(server['tool_ids'],['beaver_pipeline'])
+        self.assertEqual(server['execution_provider'],'GREA')
+        self.assertEqual(server['tool_ids'],['server'])
 
-    def test_double_check_preserves_missing_beaver(self):
-        from grea.tools.toolchain_check import main
-        with tempfile.TemporaryDirectory() as t,patch('grea.integrations.monkey.local.readiness',return_value={'ready':True,'status':'ok'}),patch.object(beaver,'check',return_value={'ready':False,'status':'needs_action'}):
-            self.assertEqual(main(['--output',str(Path(t)/'out')]),1)
-            value=json.loads((Path(t)/'out/result.json').read_text());self.assertFalse(value['ready'])
-            self.assertEqual(value['providers']['monkey']['status'],'ok')
+    def test_toolchain_checks_bundled_features_without_running_an_editor(self):
+        from grea.features.system.toolchain_check import main
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / 'out'
+            self.assertEqual(main(['--output',str(dest)]), 0)
+            receipt = json.loads((dest/'result.json').read_text())
+            self.assertTrue(receipt['ready'])
+            self.assertEqual(receipt['features'], {'recover':True,'develop':True})
+            self.assertEqual(receipt['native'], 'not_run')
+
 
 if __name__=='__main__':unittest.main()

@@ -1,7 +1,7 @@
 {
   "name": "grea",
   "version": "1.1.0.dev2",
-  "description": "GREA: five Skills for orchestration, game research, recovery, development and release; monkey restores candidates and beaver operates development projects.",
+  "description": "GREA game research, source recovery, native project development and release, with five Skills and a shared CLI/MCP command catalog.",
   "author": {
     "name": "GREA contributors",
     "url": "https://github.com/chuxintec/grea"
@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "GREA",
     "shortDescription": "游戏调研、恢复与开发工作流",
-    "longDescription": "GREA 维护 Skill 与方法；monkey 恢复原游戏，beaver 操作开发工程。随包 MCP 与 Python 提供薄调用层；外部 provider 需核验固定版本及实际能力。",
+    "longDescription": "GREA 在同一工具中完成来源恢复、Prefab 和代码导出、工程采用、验证与构建。五个技能按任务选用功能模块，CLI 与 MCP 共享命令参数。",
     "developerName": "GREA contributors",
     "category": "Developer Tools",
     "capabilities": [

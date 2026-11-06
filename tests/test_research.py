@@ -1,6 +1,6 @@
 import hashlib,json,tempfile,unittest
 from pathlib import Path
-from grea.tools.research_report import normalize,report
+from grea.features.research.research_report import normalize,report
 class Research(unittest.TestCase):
  def test_count_direction_stage_unknown_and_source_integrity(self):
   with tempfile.TemporaryDirectory() as td:

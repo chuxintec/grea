@@ -11,7 +11,9 @@ def bundled_module(name):
     entry=next((m for m in json.loads(lock.read_text(encoding='utf-8'))['modules'] if m['name']==name),None)
     return bool(entry) and (package_root()/'modules'/'wheels'/entry['wheel']['file']).is_file()
 
-def load():
+LEGACY_FEATURE_IDS = {"monkey", "beaver", "monkey_bridge", "monkey_pipeline", "beaver_pipeline", "grea_modules"}
+
+def load(*, legacy=False):
     value=json.loads((package_root()/'registry.json').read_text(encoding='utf-8'))
     entries=value['tools'];ids=[x['id'] for x in entries]
     if len(ids)!=len(set(ids)):raise GreaError('INVALID_REGISTRY','Duplicate tool IDs.')
@@ -20,6 +22,14 @@ def load():
     for entry in entries:
         if entry['id'] in acquisition:entry['acquisition']=acquisition[entry['id']]
     by_id={x['id']:x for x in entries}
+    # Explicit historical plugin roots can carry verified, frozen wheel launchers.
+    # Source checkouts and new binary-mode installs always use the integrated code.
+    wheel_root = package_root() / 'modules' / 'wheels'
+    pinned_install = False
+    if os.environ.get('GREA_HOME') and wheel_root.is_dir():
+        metadata = package_root() / 'plugin' / 'version.json'
+        distribution = json.loads(metadata.read_text(encoding='utf-8')) if metadata.is_file() else {}
+        pinned_install = distribution.get('moduleDistribution', {}).get('mode') != 'binary'
     overrides={}
     if os.environ.get('GREA_PROVIDERS'):
         config=json.loads(Path(os.environ['GREA_PROVIDERS']).expanduser().read_text(encoding='utf-8'))
@@ -34,11 +44,11 @@ def load():
                 if field in override and (not isinstance(override[field],list) or not override[field] or not all(isinstance(x,str) and x for x in override[field])):
                     raise GreaError('INVALID_PROVIDER_CONFIG','Override arrays must contain nonempty strings.')
             if not any(k in override for k in ('command','probe')):raise GreaError('INVALID_PROVIDER_CONFIG','Override must specify command or probe.')
-    if 'monkey' in by_id and 'monkey' not in overrides:
+    if legacy and 'monkey' in by_id and 'monkey' not in overrides:
         from .integrations.monkey.local import provider_override
         auto=provider_override()
         if auto:overrides['monkey']=auto
-    if 'beaver' in by_id and 'beaver' not in overrides:
+    if legacy and 'beaver' in by_id and 'beaver' not in overrides:
         from .integrations.beaver import provider_override
         auto=provider_override()
         if auto:overrides['beaver']=auto
@@ -50,6 +60,9 @@ def load():
             for field in ('execution','probe','files','required_files','host_support','configuration_source','system_binary'):entry[field]=canonical.get(field)
             entry['canonical_id']=canonical.get('canonical_id',canonical['id'])
         delegate=entry.get('delegate')
+        if entry.get("feature") and delegate["module"] not in overrides:
+            if not (pinned_install and bundled_module(delegate["module"])):
+                return entry
         if delegate:
             # Execution moved to a GREA module; the ID stays and runs through the bound module CLI.
             module=resolve(delegate['module'],(*seen,key))
@@ -81,7 +94,13 @@ def load():
             entry['system_binary']=None
             entry['configuration_source']=str(Path(os.environ['GREA_PROVIDERS']).expanduser().resolve()) if os.environ.get('GREA_PROVIDERS') else 'local-provider-discovery-or-binding'
         return entry
-    return [resolve(key) for key in sorted(by_id)]
+    entries = [resolve(key) for key in sorted(by_id) if legacy or key not in LEGACY_FEATURE_IDS]
+    if not legacy:
+        for entry in entries:
+            # Keep old binding metadata private to callers explicitly using the old routes.
+            entry.pop('delegate', None)
+            entry.pop('ownership', None)
+    return entries
 
 def check_host(entry):
     support=entry.get('host_support',{})
@@ -90,10 +109,13 @@ def check_host(entry):
     if support.get('architectures') and machine() not in support['architectures']:
         raise GreaError('UNSUPPORTED_ARCH','Bundled adapter does not match this CPU.',details={'tool_id':entry['id'],'architecture':platform.machine()},next_action='Install a matching native build and configure its canonical provider ID.')
 
-def expand(value):return value.replace('{grea}',str(package_root())).replace('{tools}',str(package_root())).replace('{home}',str(Path.home()) if '{home}' in value else '').replace('{python}',sys.executable)
+def expand(value):
+    if value.startswith('{grea}/src/grea/') and package_root() == Path(__file__).resolve().parent / '_data':
+        return str(Path(__file__).resolve().parent / value[len('{grea}/src/grea/'):])
+    return value.replace('{grea}',str(package_root())).replace('{tools}',str(package_root())).replace('{home}',str(Path.home()) if '{home}' in value else '').replace('{python}',sys.executable)
 
 def tool(tool_id):
-    for entry in load():
+    for entry in load(legacy=tool_id in LEGACY_FEATURE_IDS):
         if entry['id']==tool_id:return entry
     raise GreaError('UNKNOWN_TOOL','No such tool ID.',details={'tool_id':tool_id},next_action='Use list_tools or describe_tool; do not guess aliases.')
 

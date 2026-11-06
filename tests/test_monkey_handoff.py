@@ -31,5 +31,5 @@ class BulkHandoff(unittest.TestCase):
  def test_plan_routes_bulk_first_without_claiming_execution(self):
   from grea.application import dispatch
   for target in ('unity','cocos'):
-   v=dispatch('plan_workflow',dict(mode='recover',source_engine='cocos',target_engine=target));self.assertEqual(v['status'],'ok',v);p=v['result'];self.assertEqual(p['initial_project_pipeline']['export_owner'],'monkey');self.assertEqual(p['initial_project_pipeline']['all_scope_export'],'pinned_monkey_0_4_0_pipeline');self.assertFalse(p['steps'][0]['executed']);self.assertNotIn('cocos_convert',[t for step in p['steps'] for t in step['tool_ids']])
+   v=dispatch('plan_workflow',dict(mode='recover',source_engine='cocos',target_engine=target));self.assertEqual(v['status'],'ok',v);p=v['result'];self.assertEqual(p['initial_project_pipeline']['export_owner'],'GREA');self.assertEqual(p['initial_project_pipeline']['recovery_command'],'grea source convert');self.assertFalse(p['steps'][0]['executed']);self.assertNotIn('cocos_convert',[t for step in p['steps'] for t in step['tool_ids']])
   p=dispatch('plan_workflow',dict(mode='fix',source_engine='unity'))['result'];self.assertNotIn('initial_project_pipeline',p)

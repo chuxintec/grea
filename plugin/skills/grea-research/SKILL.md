@@ -13,3 +13,5 @@ description: 游戏调研阶段：体验原版、分析核心循环与系统、�
 4. 需要结构化报告时按[调研工具与证据合同](references/调研工具与证据合同.md)编写输入，使用随技能分发的 Schema；`research_report`校验和整理声明，不替分析者判断。
 
 交付研究结论、来源/覆盖表、成本前提及未知项，回答哪些证据会改变结论。报告推荐不是开发授权；用户决定恢复后转 `grea-recover`，已有可维护工程或已批准原创设计直接转 `grea-develop`。技术提取、原生运行、可玩性、视觉和商业可行性分别报告。
+
+可用 `grea research inspect-target` 检查输入，`grea research research-report` 处理调研报告。参数见[命令索引](../grea/references/功能模块和命令参数.md)。

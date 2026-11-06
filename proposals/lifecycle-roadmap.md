@@ -4,7 +4,7 @@
 
 ## 压缩后从这里接续
 
-先读下方 `activeImplementationTask` 指向的僵尸批次及其 `resume`，核对同批交付清单和项目采用回执。monkey 主开发自主推进，GREA 只读接续；旧视觉、绑定及大计划条目的历史回执仅供复用。
+先读下方 `activeImplementationTask` 指向的僵尸批次及其 `resume`，核对同批交付清单和项目采用回执。GREA 单仓维护 source、prefab、asset、code、project 等执行模块。下文既有任务 ID、生产者及项目采用回执按原身份复用；B02 验收顺序仍为先肥鹅四活动，再僵尸。
 
 ```manager-task-view
 {

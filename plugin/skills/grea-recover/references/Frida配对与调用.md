@@ -13,7 +13,7 @@ Frida 客户端和设备端服务不随公开 GREA 分发。只有当前任务�
 可运行登记器的只读配对检查：
 
 ```sh
-grea legacy registry_doctor --verify-frida-pair --json
+grea system registry-doctor --verify-frida-pair --json
 ```
 
 配对记录以随技能分发的 [结构化参考](../assets/frida-pair.reference.json) 为准，诊断不解析用户手册正文。该检查读取记录值，检查客户端版本与 `.private/providers/frida/` 下归档哈希；不执行服务端，也不连接设备。能力、连接状态和对授权数据的实际读取分别记录，不能由配对检查代替。

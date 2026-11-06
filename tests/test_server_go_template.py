@@ -1,6 +1,6 @@
 import tempfile,unittest,json
 from pathlib import Path
-from grea.tools.server_go_project import generate
+from grea.features.server.server_go_project import generate
 from grea.application import dispatch
 class ServerGoTemplate(unittest.TestCase):
  def test_generator_is_create_only_no_credentials_no_deployment(self):

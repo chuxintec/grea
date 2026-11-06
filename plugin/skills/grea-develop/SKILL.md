@@ -26,6 +26,8 @@ description: 开发现有或已采用的游戏工程，处理 Unity 工程维护
 - 获准拆分独立模块或接续已有子 Agent 时，读取[功能模块并行协作](../grea/references/功能模块并行协作.md)：主开发承担关键路径与集成，按完整业务模块派工；人数、模型、共享资源和交付按该页及项目有效约定执行，小修不因此增员。
 - [工程结构与开发规范](references/Unity工程结构与开发规范.md)、[开发前检查与迭代](references/开发前检查与迭代.md)：仅在治理或跨模块迭代需要时读取。
 - 采用恢复候选或处理首次脚本导入差异，读[生成态、保存态与项目采用身份](../grea-recover/references/全量初版工程与协作.md#生成态保存态与项目采用身份)：资源与编译依赖分别核，静态显示与动态接线分别验。
-- 已有项目成组出现 Prefab 布局/组件/图片恢复失真，或完整页面需先静态再接业务时，读[成组Prefab恢复与采用](../grea-recover/references/成组Prefab恢复与采用.md)：恢复仍由 GREA 调用 monkey，项目负责采用、接线和实际画面。
+- 已有项目成组出现 Prefab 布局/组件/图片恢复失真，或完整页面需先静态再接业务时，读[成组Prefab恢复与采用](../grea-recover/references/成组Prefab恢复与采用.md)：恢复仍由 GREA 的 prefab 模块执行，项目负责采用、接线和实际画面。
 - 获准应用内虚拟指针测试时，读[虚拟指针与用户桌面并行](references/Unity界面还原与输入交互.md#应用内虚拟指针与用户桌面并行)及[输入证据分层](../grea/references/测试与结果交付.md#虚拟输入与原生输入分层)：先核固定后端和测试实例，不将旧PID鼠标模式当作虚拟设备。
 - 资产、配置、性能、换皮、Cocos、Go 与 Editor 操作参考见开发任务表；不要求整组加载。
+
+已有工程使用 `grea project inspect`，增量接收使用 `grea prefab intake-plan`，接线与运行分别使用 ui 和 qa 模块。见[工程事务操作](../grea/references/工程事务操作.md)。

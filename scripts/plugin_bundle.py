@@ -14,6 +14,7 @@ import unicodedata
 import zipfile
 
 from audit_public_tree import inspect
+from product_projection import included, internal_source
 
 
 def sha256(path):
@@ -70,6 +71,7 @@ def read_source(root, worktree=False):
     if worktree:
         for raw in sorted(set(git('ls-files', '-c', '-o', '--exclude-standard', '-z').split(b'\0')) - {b''}):
             name = raw.decode(); path = root / name
+            if internal_source(name): continue
             safe_name(name)
             if path.is_symlink(): raise ValueError('Source symlink: ' + name)
             if not path.exists(): continue  # Staged renames/deletions in the current worktree.
@@ -79,11 +81,13 @@ def read_source(root, worktree=False):
         for entry in filter(None, git('ls-tree', '-rz', '--full-tree', revision).split(b'\0')):
             info, raw = entry.split(b'\t', 1)
             mode, kind, oid = info.decode().split(); name = raw.decode()
+            if internal_source(name): continue
             safe_name(name)
             if kind != 'blob' or mode not in ('100644', '100755'):
                 raise ValueError('Non-file source: ' + name)
             files[name] = (git('cat-file', 'blob', oid), int(mode, 8))
     for name, (data, mode) in files.items():
+        if not included(name): continue  # Full Git publication is audited separately.
         issues = inspect(name, data, format(mode, 'o'))
         if issues: raise ValueError('Public source audit failed: ' + name + ' ' + str(issues))
     content = {n: {'sha256': hashlib.sha256(d).hexdigest(), 'mode': m} for n, (d, m) in sorted(files.items())}

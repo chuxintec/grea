@@ -1,6 +1,6 @@
 # GREA 项目文档
 
-GREA 是游戏调研、恢复与开发的工作流产品：**技能**（`plugin/skills/`）定义规范与工作流；**monkey** 把原游戏恢复为独立候选工程；**beaver** 操作可开发工程、资源、配置、验证与构建。两个模块随 GREA 版本统一发布（[modules.lock.json](../modules.lock.json)），CLI/MCP 只做发现、绑定、委托和回执。
+GREA 在同一产品中实现来源恢复、工程采用、开发和验证。五个技能指导阶段选择，十四个功能模块提供 CLI 与 MCP 入口。
 
 本目录只维护项目介绍、安装、使用、维护与故障手册；provider/tools 页面是用户入口，不重复技能中的规范和完整调用合同：做什么、按什么顺序、怎样验收，以 [grea 技能](../plugin/skills/grea/SKILL.md) 为准。
 
@@ -17,7 +17,7 @@ GREA 是游戏调研、恢复与开发的工作流产品：**技能**（`plugin/
 
 ## 工具与模块
 
-- [monkey](providers/monkey.md)、[beaver](providers/beaver.md)：模块版本、绑定与命名操作；原 GREA 执行工具在模块中以 `monkey tool <id>` / `beaver tool <id>` 运行，工具 ID 不变。
+- [全部命令和参数](../plugin/skills/grea/references/功能模块和命令参数.md)，用 `grea commands` 查询当前版本实际实现。
 - [provider 总览](providers/README.md)：供应方安装与使用入口；专项调用合同归各 Skill references；工具说明见[规则与格式检查](tools/规则与格式检查.md)、[制品与资源检查](tools/制品与资源检查.md)、[Shader 工具](tools/Shader工具.md)、[Memory Profiler 安装](tools/MemoryProfiler安装.md)。
 - 工具目录与 ID 见 [TOOLS](../TOOLS.md)；换皮示例数据随 `grea-develop/assets/` 分发；开发候选 [主题映射](providers/theme-assets.md)。
 

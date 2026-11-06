@@ -1,8 +1,0 @@
-#!/bin/sh
-# Normal use always selects the installed release, never the mutable checkout.
-MONKEY_RELEASE="$HOME/.local/bin/monkey"
-if [ ! -x "$MONKEY_RELEASE" ]; then
-    echo 'monkey: install the GitHub Release first (see README.md); for explicit source development use .venv/bin/python -m monkey.cli' >&2
-    exit 2
-fi
-exec "$MONKEY_RELEASE" "$@"

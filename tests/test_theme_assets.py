@@ -5,7 +5,7 @@ from PIL import Image
 from grea.change_contracts import INVARIANTS, validate
 from grea.common import GreaError
 from jsonschema.exceptions import ValidationError
-from grea.tools.theme_assets import inspect,create
+from grea.features.ui.theme_assets import inspect,create
 
 def contract(sha='a'*64,state='candidate'):
     return dict(schema_version=1,scope='ui_ux',baseline_sha256=sha,product_id='Derived',baseline_product_id='Original',save_namespace='derived-test',baseline_save_namespace='original-test',design=dict(state=state,reference='own-design-v1',sha256='b'*64),allowed_changes=['visual_style','layout'],invariants=INVARIANTS[:],ui_ux_budget='overall page/flow scope; no per-page or pixel quota')

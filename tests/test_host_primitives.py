@@ -88,7 +88,7 @@ class HostTests(unittest.TestCase):
     @unittest.skipUnless(os.name=='nt','Windows junction boundary')
     def test_junction_is_not_read_as_owned_evidence(self):
         from grea.host.files import is_link
-        from grea.tools._artifact_common import inventory
+        from grea.features.evidence._artifact_common import inventory
         with tempfile.TemporaryDirectory() as tmp:
             base=Path(tmp);source=base/'source';source.mkdir();outside=base/'outside';outside.mkdir();(outside/'private.txt').write_text('owned test only')
             link=source/'jump'

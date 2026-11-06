@@ -8,12 +8,10 @@
     "describe_tool",
     "plan_workflow",
     "run_tool",
-    "start_case_revision"
+    "start_case_revision",
+    "command_catalog"
   ],
-  "requiredProviders": [
-    "monkey",
-    "beaver"
-  ],
+  "requiredProviders": [],
   "moduleDistribution": {
     "mode": "binary",
     "stage": "macos_arm64_development",

@@ -1,6 +1,7 @@
 """Five-stage Skill routing with compatible workflow modes; plans are not execution."""
 from pathlib import Path
 from .common import package_root
+from . import __version__
 from .lifecycle import metadata,check_change,CHANGE_MODES
 
 WORKFLOWS = {
@@ -86,24 +87,37 @@ def required_dimensions(mode, source_engine='unknown', target_engine='unity', ba
 
 
 def initial_project_pipeline(result, mode):
-    result['required_providers']=['monkey','beaver']
-    result['toolchain']={'check_tool':'toolchain_check','runtime':'not_checked','missing_or_incompatible':'needs_action','recovery_owner':'monkey','engineering_owner':'beaver','workflow_owner':'GREA','force_reexport_existing_project':False}
+    result['required_providers']=[]
+    result['toolchain']=dict(product='GREA', recovery_command='grea source convert', development_command='grea project inspect',
+                             runtime='not_checked', check_tool='toolchain_check', missing_or_incompatible='needs_action',
+                             recovery_owner='GREA', engineering_owner='GREA', workflow_owner='GREA',
+                             force_reexport_existing_project=False)
     for step in result['steps']:
-        if step.get('phase') in ('implementation','verification') and mode not in ('research','assess','evidence','maintain'):
-            source_conversion=Path(step['reference']).name in {'Unity工程重建与恢复.md','Unity原生转换规范.md','Unity跨引擎移植与行为一致性.md','Unity源引擎映射-Cocos.md'}
-            owner='monkey' if mode in ('recover','port') and source_conversion else 'beaver'
-            step['execution_provider']=owner
-            if owner=='beaver':step['engineering_provider']='beaver'
-            step['legacy_tool_ids']=list(step['tool_ids'])
-            step['tool_ids']=['monkey_pipeline' if owner=='monkey' else 'beaver_pipeline']
-            if owner=='beaver':
-                step['legacy_grea_operations']=step.get('grea_operations',[])
-                step['grea_operations']=[]
-                step['request_schema']=str(package_root()/'schemas/beaver-operation.schema.json')
-                step['capability_check']='pinned beaver capabilities; unsupported effects remain needs_action'
+        if step.get('phase') not in ('implementation','verification') or mode in ('research','assess','evidence','maintain'):
+            continue
+        source_conversion=Path(step['reference']).name in {'Unity工程重建与恢复.md','Unity原生转换规范.md','Unity跨引擎移植与行为一致性.md','Unity源引擎映射-Cocos.md'}
+        if mode in ('recover', 'port') and source_conversion:
+            action = 'source convert'
+        elif Path(step['reference']).name == 'Go六服与事务.md':
+            action = 'server inspect'
+        elif mode == 'deliver':
+            action = 'build payload-plan'
+        elif step.get('phase') == 'verification':
+            action = 'qa player-run'
+        else:
+            action = 'project inspect'
+        step.update(execution_provider='GREA', command='grea '+action, tool_ids=[action.split()[0]])
     if mode not in ('recover','port'):return result
-    result['initial_project_pipeline']=dict(export_owner='monkey',grea_role='workflow_source_freeze_and_handoff_methods',engineering_owner='beaver',business_owner='game_agent_after_handoff',business_continuation_route=dict(primary_skill='grea-develop',stage='develop',entrypoint='grea-develop/SKILL.md'),all_scope_export='pinned_monkey_0_4_0_pipeline',provider_version='0.4.0',execution_tool='monkey_pipeline',handoff_audit='manifest_bytes_then_explicit_native_contract',stages=['discover_and_ensure_provider','freeze_inputs_and_plan','bulk_export','audit_project_bytes','beaver_adoption_and_native_verification','business_continuation'],executed=False)
-    result['steps'].insert(0,dict(reference=str(reference('全量初版工程与协作.md')),tool_ids=['monkey_pipeline','monkey_bridge'],phase='freeze_then_bulk_export_then_handoff',executed=False,grea_operations=[],bulk_export_status='requires_pinned_provider_and_explicit_plan'))
+    result['initial_project_pipeline']=dict(export_owner='GREA', recovery_command='grea source convert',
+        engineering_owner='GREA', development_command='grea project adopt-plan', execution_tool='source',
+        business_owner='game_agent_after_handoff', handoff_audit='manifest_bytes_then_explicit_native_contract',
+        grea_role='research_recovery_and_development', all_scope_export='supported_source_profiles',
+        provider_version=__version__, executed=False,
+        stages=['check_capabilities','freeze_inputs_and_plan','bulk_export','audit_project_bytes',
+                'project_adoption_and_native_verification','business_continuation'],
+        business_continuation_route=dict(primary_skill='grea-develop',stage='develop',entrypoint='grea-develop/SKILL.md'))
+    result['steps'].insert(0,dict(reference=str(reference('全量初版工程与协作.md')),tool_ids=['source'],command='grea source convert',
+        phase='freeze_then_bulk_export_then_handoff',executed=False,grea_operations=[],bulk_export_status='requires_source_identity_and_explicit_plan'))
     for step in result['steps'][1:]:
         step['business_development_requires_verified_bulk_handoff']=step.get('phase') not in ('research','source_evidence')
         if 'cocos_convert' in step['tool_ids']:step['tool_ids'].remove('cocos_convert')

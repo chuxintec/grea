@@ -17,9 +17,35 @@ def main():
     if os.name=='nt':
         for stream in (sys.stdin,sys.stdout,sys.stderr):
             if hasattr(stream,'reconfigure'):stream.reconfigure(encoding='utf-8')
+    from .commands.interface import route
+    if not sys.argv[1:] or sys.argv[1:] in (["--help"], ["-h"]):
+        from .commands.groups import MODULES
+        print("GREA — game research, recovery and development")
+        print("usage: grea [--request FILE|-] MODULE ACTION [parameters]")
+        print("       grea commands [MODULE [ACTION]] [--json]")
+        print("       grea --version | grea mcp")
+        print()
+        for name, description in MODULES.items():
+            print(f"  {name:10} {description}")
+        return 0
+    routed = route(sys.argv[1:])
+    if routed is not None:
+        return routed
+    if sys.argv[1:2] == ['recover']:
+        from .recovery.cli import main as recover
+        return recover(sys.argv[2:])
+    if sys.argv[1:2] == ['develop']:
+        from .development.cli import main as develop
+        return develop(sys.argv[2:])
     p=argparse.ArgumentParser(prog='grea',description='Game Reverse Engineering and Assembly: game research, explicit Unity/Cocos targets, Go templates and MCP.')
     p.add_argument('--version',action='version',version=__version__)
     sub=p.add_subparsers(dest='operation',required=True)
+    from .commands.groups import MODULES
+    sub.add_parser('commands', help='List functional modules and command parameters')
+    for module, label in MODULES.items():
+        sub.add_parser(module, help=label)
+    sub.add_parser('recover', help='Recover source packages, assets, Prefabs and code.')
+    sub.add_parser('develop', help='Adopt, edit, verify and build development projects.')
     sub.add_parser('mcp',help='Serve stdio MCP using the official SDK; stdout is protocol-only.')
     sub.add_parser('catalog',help='Print generated operation/provider contracts as JSON.')
     legacy=sub.add_parser('legacy',help='Compatibility passthrough: retain existing helper argv, stdout and exit codes.')

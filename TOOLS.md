@@ -1,10 +1,6 @@
 # GREA 工具目录
 
-> 三产品过渡：GREA 维护方法与薄入口；恢复用 monkey，工程开发用 beaver。`toolchain_check` 检查两项必选依赖；`beaver_pipeline` 提供发现/身份锁及命名操作转发。下列旧执行 ID 保持兼容，尚未接收的实现不会提前删除。见[beaver接入](plugin/skills/grea/references/beaver工程操作合同.md)。
->
-> 模块统一发布：monkey/beaver 的固定 wheel 见 [modules.lock.json](modules.lock.json)，`grea_modules status|install` 只读查看或隔离安装；每个旧执行 ID 的接收能力登记在 registry `ownership.receiver`。见[审计与路线](proposals/triad-toolchain-audit-20261027.md)。
-
-本页用于**按任务选工具**。安装和调用方法统一见 [使用说明](docs/使用指南.md)；完整登记、别名、依赖路径及平台限制以 [registry.json](registry.json) 为准，使用 list-tools／describe-tool 查询当前有效配置。本页不维护另一份“当前已安装版本”表。
+[功能模块、所有命令和完整参数](plugin/skills/grea/references/功能模块和命令参数.md)由实际解析器生成。
 
 ## 选择入口
 
@@ -46,7 +42,7 @@
 - 公开 GREA 子目录：通用源码、脚本、适配入口及说明。第三方程序、运行时和包备份可在本机保留，但不随 Git 分发，见 [依赖说明](THIRD_PARTY.md)。
 - 系统安装：部分 Homebrew 工具、Unity Editor、Android SDK、Blender 等；克隆仓库不会自动安装。
 - 项目内部：项目专用适配器、真实证据、分析输出和游戏制品，不搬到通用工具目录。
-- Python 实现集中在 `src/grea/tools/`，其他技术栈见 [tools](tools/README.md)，第三方专题见 [接入说明](docs/providers/README.md)。
+- 通用 Python 工具按用途归入 `src/grea/features/`，来源恢复和工程事务分别位于 `src/grea/recovery/`、`src/grea/development/`，其他技术栈见 [tools](tools/README.md)，第三方专题见 [接入说明](docs/providers/README.md)。
 
 ## 版本、库存与能力状态
 
@@ -80,6 +76,6 @@ host_support 表示登记的平台条件，不表示已原生实测；Windows �
 
 开发候选：`research_report`（[调研](plugin/skills/grea-research/references/调研工具与证据合同.md)）、`cocos_project` / `cocos_convert`（[Creator](plugin/skills/grea-develop/references/Cocos目标工程工具.md)）、`server_go_project`（[Go六服](plugin/skills/grea-develop/references/Go六服模板工具.md)）。模板生成不自动启动Editor、Docker或生产服务。
 
-批量恢复主路：`monkey_pipeline`固定 monkey 0.4.0，执行 pin→plan→run→audit；`monkey`为外部可配置provider，`monkey_bridge`保留历史包级／切片接续与显式原生交接审计，见[monkey](plugin/skills/grea/references/monkey恢复工具合同.md)；`image_contact_sheet`及`image_alpha_audit`规格增量见[资产总览](plugin/skills/grea-develop/references/图像联系表与规格工具.md)。
+批量恢复从 source、prefab、asset 与 code 模块进入。工程采用使用 project 与 prefab 模块。外部供应方的系统依赖可由 `grea system list-tools` 查询。
 
 本地候选工具：`compatibility_plan`（声明的save/config/protocol/pending差异）与`operations_preview`（事件/经济只读分析及配置预览），见[支持范围](plugin/skills/grea-develop/references/版本兼容与运营预览工具.md)，不提供普通档迁移或生产执行。

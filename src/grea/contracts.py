@@ -24,6 +24,7 @@ TOOL = string('Exact tool ID from list_tools; no implicit provider substitution.
 CASE = string('Project .grea case directory, or its owning project directory.')
 
 CONTRACTS = {
+ 'command_catalog': ('List GREA commands and their parser-derived parameters; optionally select a module and action.', obj({'module': string(), 'action': string()}), []),
  'session': ('Inspect grea identity, catalog digest and readiness without launching providers; optionally check an installed Skill.', obj({'skill_dir': PATH}), []),
  'list_tools': ('List the complete registered provider/helper inventory, including unavailable entries.', obj({'category': string()}), []),
  'describe_tool': ('Read one registered tool contract, effects, command and limitations.', obj({'tool_id': TOOL}, ['tool_id']), []),

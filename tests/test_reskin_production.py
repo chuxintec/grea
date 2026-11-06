@@ -4,7 +4,7 @@ from pathlib import Path
 from grea.application import dispatch
 from grea.change_contracts import validate,validate_ledger,RESKIN_STAGES
 from grea.common import GreaError
-from grea.tools.theme_assets import inspect,create
+from grea.features.ui.theme_assets import inspect,create
 import test_theme_assets as fixtures
 
 ROOT=Path(__file__).resolve().parents[1]

@@ -8,4 +8,4 @@ class ImportBoundaries(unittest.TestCase):
         for name in ('data_io.py','authoring_output.py'):
             for node in ast.walk(ast.parse((root/name).read_text())):
                 if isinstance(node,ast.ImportFrom):
-                    self.assertNotIn(node.module,('grea.tools.cocos_assets','grea.tools.unity_config_candidate'),name)
+                    self.assertNotIn(node.module,('grea.features.asset.cocos_assets','grea.features.config.unity_config_candidate'),name)

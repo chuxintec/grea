@@ -1,16 +1,19 @@
 # GREA · 游戏调研、恢复与开发工作流
 
-GREA 以 Skill、规范与方法为主，编排两个随版本统一发布的模块：**monkey 恢复原游戏为独立候选，beaver 操作可开发工程**。游戏开发者负责具体业务与实际可玩结果。CLI、stdio MCP 与轻量脚本只提供发现、版本锁定、模块委托和调用回执。
+GREA 在一个仓库中维护游戏调研、原包恢复、工程采用、开发和验证。已集成的恢复与工程操作直接通过本地 GREA 执行。选用特定解码器、SDK 或原生 Editor 的命令会单独说明前置条件。
 
-当前开发源码 **v1.1.0.dev2** 接入独立二进制模块身份，Mac ARM64 先行、Windows x64 后续；真实编译制品、组合运行和新完整包尚待验，不作为可发布版本。GREA 保持开源，monkey/beaver 源码留各自私有开发仓库，后续只经 GREA 分发编译模块及明确允许的接入资源。旧历史源码包与许可保留；新构建在二进制包装完成前拒绝源码 wheel fallback。
+当前开发版本为 **v1.1.0.dev2**。本地完整源码与公开插件制品分别维护。新的编译分发仍处于暂停状态；已发布制品及已有事务按原版本使用。
 
-此前 **v1.1.0.dev1** 本地固定候选有限接入 beaver **0.7.0.dev1** 四个 debug 操作，项目保留入口继续待实际采用，不因分发改造切换；`partial/starting` 表示 worker 已派发，不能自动重试 start。现有构建、QA及采用锁与全局安装保持原身份。二进制新模式见[身份合同](plugin/skills/grea/references/二进制模块身份与安装.md)。
+## 命令入口
 
-五技能覆盖总入口、调研、恢复、开发和发布。原始资源恢复由monkey负责，工程采用、SDK/程序集、JSON配置、构建验证与有限输入由beaver负责。monkey v0.8 Unity来源开发线及游戏现用固定链保持独立；本版不承诺任意原包完整业务恢复。见[本版说明](validation/release-notes/v1.0.0.md)、[beaver接入](docs/providers/beaver.md)。
+```sh
+./bin/grea commands
+./bin/grea commands prefab intake-plan
+./bin/grea system version
+./bin/grea --request request.json prefab intake-plan
+```
 
-提取、编译、readiness、真实输入和原版一致性分别报告，未执行层保持未验。
-
-[下载正式版](https://github.com/chuxintec/grea/releases/latest) · [开始使用](docs/使用指南.md) · [工具目录](TOOLS.md) · [验证记录](validation/README.md)
+按任务选择模块，用 `grea commands <module> <action> --json` 查看参数、类型、枚举与互斥条件。CLI 和 MCP 共用命令目录。[全部功能和参数](plugin/skills/grea/references/功能模块和命令参数.md) · [使用指南](docs/使用指南.md) · [工具与外部依赖](TOOLS.md)
 
 ## 能解决什么问题
 
@@ -53,13 +56,13 @@ Claude Code 的安装入口和 stdio 清单也随包提供，按 [安装与平�
 
 ```sh
 uv sync --frozen
-./bin/grea session
-./bin/grea list-tools
-./bin/grea describe-tool '{"tool_id":"unity_player_audit"}'
-./bin/grea plan-workflow '{"mode":"assess","source_engine":"cocos","target_engine":"unity"}'
+./bin/grea system session
+./bin/grea system list-tools
+./bin/grea system describe-tool --tool-id unity_player_audit
+./bin/grea workflow plan-workflow --mode assess --source-engine cocos --target-engine unity
 ```
 
-上述规划只输出评估流程，不启动转换或游戏。Windows PowerShell 的源码入口为 `bin\grea.cmd session`；复杂 JSON 用 UTF-8 请求文件配合 `--input`，避免 shell 引号差异。命令行帮助为 `./bin/grea --help`；源码的 Python 最低版本与依赖以 [pyproject.toml](pyproject.toml) 和 [uv.lock](uv.lock) 为准，维护构建工具可能要求更高版本。
+上述规划只输出评估流程，不启动转换或游戏。Windows PowerShell 的源码入口为 `bin\grea.cmd system session`；复杂 JSON 用 UTF-8 请求文件配合 `--request FILE`，避免 shell 引号差异。命令行帮助为 `./bin/grea --help`；源码的 Python 最低版本与依赖以 [pyproject.toml](pyproject.toml) 和 [uv.lock](uv.lock) 为准，维护构建工具可能要求更高版本。
 
 ### 执行一次受控工具任务
 
@@ -75,7 +78,7 @@ uv sync --frozen
 ```
 
 ```sh
-./bin/grea run-tool --input request.json
+./bin/grea --request request.json system run-tool
 ```
 
 Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执、stdout/stderr、退出码和产物哈希；不能复用旧运行目录掩盖失败。CLI 与 MCP 共用 [契约](schemas/operations.json) 及执行层；MCP 使用本地 **stdio**，无需另开 HTTP 服务。CLI 操作用短横线，MCP 用下划线，例如 `run-tool` / `run_tool`。既有工具 ID 和兼容入口保留。
@@ -86,15 +89,15 @@ Windows 可使用 `C:/work/...`。回读结构化结果及 run_dir 中的回执�
 | --- | --- | --- | --- |
 | 总入口 | [grea](plugin/skills/grea/SKILL.md) | 根据目标和现有工程状态路由，维护共享约束、证据及工具调用方法 | 按阶段选择 |
 | 调研 | [grea-research](plugin/skills/grea-research/SKILL.md) | 体验取证、玩法/系统分析、成本与立项建议 | 按需只读工具 |
-| 恢复 | [grea-recover](plugin/skills/grea-recover/SKILL.md) | 技术取证、来源冻结、多种来源到 Unity 的恢复路线、独立候选与缺口交接 | monkey |
-| 开发 | [grea-develop](plugin/skills/grea-develop/SKILL.md) | 工程采用、功能/一致性修复、换皮、Go服务端、配置/资产/性能和Editor工作 | beaver |
-| 发布 | [grea-release](plugin/skills/grea-release/SKILL.md) | 构建、目标Player验收、打包校验、版本说明及获准发布 | beaver及已配置平台工具 |
+| 恢复 | [grea-recover](plugin/skills/grea-recover/SKILL.md) | 技术取证、来源冻结、多种来源到 Unity 的恢复路线、独立候选与缺口交接 | source、prefab、asset、code |
+| 开发 | [grea-develop](plugin/skills/grea-develop/SKILL.md) | 工程采用、功能/一致性修复、换皮、Go服务端、配置/资产/性能和Editor工作 | project、prefab、ui、config、server、qa |
+| 发布 | [grea-release](plugin/skills/grea-release/SKILL.md) | 构建、目标Player验收、打包校验、版本说明及获准发布 | build、qa 及已配置的平台工具 |
 
 调研 → 恢复 → 开发 → 发布。已有可维护工程或已批准原创设计直接进入开发；已有候选可直接交付；只读取证不自动执行恢复。换皮和Go服务端属于开发阶段专题，不再以独立技能安装。研究建议不批准开发，构建不等于可玩或已发布。
 
 整套Skills的流程、参考、示例与输入Schema独立于仓库手册，按任务选读。共用内容在 `grea/references/`，其他内容归所属阶段。旧工具ID、CLI/MCP输入和工作流mode不变；[旧技能名称映射](plugin/skills/grea/assets/skill-layout.json)及[历史路径映射](schemas/document-path-map.json)用于解释已有引用，安装列表仅五个入口。
 
-项目介绍、安装与使用说明在 [docs](docs/README.md)。CLI/MCP、固定monkey/beaver与引擎仍是运行依赖，技能文件存在不表示工具就绪。
+项目介绍、安装与使用说明在 [docs](docs/README.md)。CLI/MCP 共享本地实现，原生验证需要对应引擎，技能文件存在不表示工具就绪。
 
 ## 工具、原生制作与框架
 
@@ -143,12 +146,4 @@ Case 操作、严格 JSON Schema、退出码、预算、清理和审阅边界见
 | [维护与发布](docs/维护与发布.md) | 源码职责、检查、构建与发布流程 |
 | [全部文档导航](docs/README.md) / [贡献指南](CONTRIBUTING.md) | 专项格式、测试和贡献入口 |
 
-Skill 维护源只在 `plugin/skills/`，发现/绑定/薄适配放 `src/grea/`，自身维护脚本放 `scripts/`。旧 `src/grea/tools/` 与 `tools/` 执行实现冻结交 beaver 接收，验证后再退休。保留工具 ID、调用契约和旧证据；改动按实际风险运行相关测试，发布前完成既有 CI 和制品门禁。
-
-开发候选工具：[调研归一与报告](docs/providers/research.md)、[存量 Creator 3.8.8 显式兼容示例](docs/providers/cocos-target.md)、[Go六服虚构事务示例](docs/providers/server-go.md)。生成/编译不替代Editor、浏览器、数据库或六服运行；实际完成边界见 [本地开发记录](proposals/design/research-cocos-go.md)。
-
-未发布生命周期增量：stage/work_mode/delivery_level规划与变更v2合同、固定[monkey候选接续](docs/providers/monkey.md)、静态资产联系表及尺寸/色数检查已实现；不代表原生可玩或生产运营。当前范围/待验只维护在[生命周期计划](proposals/lifecycle-roadmap.md)。
-
-`compatibility_plan`和`operations_preview`已提供有限本地兼容/事件/经济流/配置候选工具；见[精确边界](docs/providers/lifecycle-analysis.md)。没有真实运营数据、线上写入或发行渠道验收，不能把候选分析称为全体系交付完成。
-
-批量恢复统一从[monkey 工具链](docs/providers/monkey.md)进入：GREA 固定来源与工具 → monkey 导出独立初版 → GREA 核验文件与原生交接 → 游戏开发。`monkey_pipeline` 为新入口，历史工具 ID 保持兼容；新版 GREA 源码中的能力不等于已安装客户端自动升级。
+Skill 维护源位于 `plugin/skills/`。命令目录从执行解析器生成；日常维护使用 `scripts/generate_command_reference.py --check`、`scripts/check_docs.py` 与回归测试。实际采用与发布证据分别保留在[生命周期计划](proposals/lifecycle-roadmap.md)和[验证记录](validation/README.md)。

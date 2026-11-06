@@ -11,7 +11,7 @@ from mcp.client.stdio import StdioServerParameters
 from jsonschema import Draft202012Validator
 from grea.common import package_root
 from grea.cocos_contracts import documents
-from grea.tools.cocos_assets import error_report, ParseError
+from grea.features.asset.cocos_assets import error_report, ParseError
 from module_support import with_modules
 
 PLAIN=[1,[],[],[['cc.Node',['_name'],2]],[[0,0,2]],[[0,'root']],[],[],[],[],[]]

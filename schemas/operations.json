@@ -2,6 +2,143 @@
   "schema_version": 1,
   "operations": [
     {
+      "name": "command_catalog",
+      "description": "List GREA commands and their parser-derived parameters; optionally select a module and action.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "product": {
+            "const": "grea"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": ""
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "error"
+            ]
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "object"
+                  },
+                  "next_action": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details",
+                  "next_action"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "schema_version",
+          "product",
+          "version",
+          "operation",
+          "run_id",
+          "status",
+          "result",
+          "evidence",
+          "limitations",
+          "limits",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "effects": [],
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
       "name": "session",
       "description": "Inspect grea identity, catalog digest and readiness without launching providers; optionally check an installed Skill.",
       "inputSchema": {
@@ -4809,5 +4946,5 @@
       }
     }
   ],
-  "sha256": "59f1041e299689fbb6b9b56a986ff480ca8e06821704848335e97baf00e275d3"
+  "sha256": "e6a5c9407feafd4bff197a74352269deb307b8b68a8f8bed9a24c4f984e5be64"
 }

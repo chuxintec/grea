@@ -35,12 +35,22 @@ class ModuleDelegationTests(unittest.TestCase):
             self.assertFalse((ROOT/'src/grea/tools'/(t['delegate']['tool'] + '.py')).exists(), t['id'])
             self.assertEqual(t['ownership']['transition'], 'moved_to_module')
 
-    def test_missing_module_is_reported_not_substituted(self):
-        with tempfile.TemporaryDirectory() as t, patch.dict(os.environ, {'HOME': t, 'PATH': '', 'GREA_PROVIDER_STATE_DIR': t + '/state'}):
+    def test_old_install_with_a_pinned_wheel_uses_the_verified_launcher(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            (home/"modules/wheels").mkdir(parents=True)
+            (home/"modules/wheels/example.whl").write_bytes(b"registry presence fixture")
+            (home/"modules.lock.json").write_text(json.dumps({"modules":[{"name":"beaver","wheel":{"file":"example.whl"}}]}))
+            (home/"registry.json").write_bytes((ROOT/"registry.json").read_bytes())
+            with patch.dict(os.environ, {"GREA_HOME":tmp}):
+                entry = registry.tool("verify_payload_tree")
+                self.assertEqual(entry["execution"]["command"][1:3], ["{grea}/launch_module.py","beaver"])
+
+    def test_helper_is_builtin_without_a_separate_module_install(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'PATH':'','HOME':tmp}):
             os.environ.pop('GREA_PROVIDERS', None)
-            entry = registry.tool('compare_traces')
-            with self.assertRaises(Exception):
-                registry.command(entry)
+            argv = registry.command(registry.tool('compare_traces'))
+            self.assertEqual(argv[1:], ['-m','grea.cli','develop','tool','compare_traces'])
 
 
 class BundledModuleTests(unittest.TestCase):

@@ -12,7 +12,12 @@ class GreaError(Exception):
 def canonical(value): return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
 def digest(value): return hashlib.sha256(canonical(value)).hexdigest()
 def now(): return datetime.now(timezone.utc).isoformat()
-def package_root(): return Path(os.environ.get('GREA_HOME', Path(__file__).resolve().parents[2])).resolve()
+def package_root():
+    if os.environ.get("GREA_HOME"):
+        return Path(os.environ["GREA_HOME"]).expanduser().resolve()
+    module = Path(__file__).resolve().parent
+    wheel_data = module / "_data"
+    return wheel_data if (wheel_data / "registry.json").is_file() else module.parents[1]
 def workspace_root(): return package_root().parent
 
 def hash_file(path, max_bytes=None):

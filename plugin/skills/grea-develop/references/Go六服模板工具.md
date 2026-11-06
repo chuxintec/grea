@@ -1,8 +1,8 @@
 # Go六服示例框架工具
 
-当前 GREA 保留工具 ID `server_go_project` 与既有生成合同；Beaver 同名接收能力的等价性尚未核验，不能称消费者已切换。调用前按 registry/`describe-tool` 核对实际提供方和参数。该工具只生成源码候选，不安装、编译、启动容器或部署。以下记录的是此 GREA 工具的实际能力。
+`grea server server-go-project` 生成基础源码模板；`grea server generate` 按显式 spec 生成服务候选。这两个入口的输入和输出不同。模板生成不安装、编译或启动实际服务。
 
-`grea legacy server_go_project --output new-server` 写入全新目录。模板位于 `tools/server-go/template`，使用虚构 Signal 奖励业务；六个入口为 gateway、chat、server、login、world、billing。它不包含真实支付；完整服务边界以[Go六服与事务](Go六服与事务.md)为准。
+`grea server server-go-project --output new-server` 写入全新目录。模板位于 `tools/server-go/template`，使用虚构 Signal 奖励业务；六个入口为 gateway、chat、server、login、world、billing。它不包含真实支付；完整服务边界以[Go六服与事务](Go六服与事务.md)为准。
 
 Go 1.26.2及go.mod/go.sum固定依赖。生成的api/game.pb.go/game_grpc.pb.go由本例IDL和具名protoc插件产生；重新生成使用protoc-gen-go 1.36.12、protoc-gen-go-grpc 1.6.2与系统protoc。编译各入口或统一`go build -o bin/role ./cmd/role`；Docker需`CGO_ENABLED=0 GOOS=linux GOARCH=arm64`或按目标架构设置，不能把macOS二进制放入Linux镜像。
 

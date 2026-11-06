@@ -7,7 +7,7 @@ import types
 import unittest
 from unittest.mock import patch
 
-from grea.tools.unity_framework_audit import inspect
+from grea.features.qa.unity_framework_audit import inspect
 
 
 class AuditRegressions(unittest.TestCase):

@@ -78,3 +78,7 @@ TestResults/
 /tools/unity/spine/*/vendor/
 /dotnet-recovery/
 /game-building/
+
+# Source for artifact building is a package, not generated build output.
+!src/grea/features/build/
+!src/grea/features/build/*.py

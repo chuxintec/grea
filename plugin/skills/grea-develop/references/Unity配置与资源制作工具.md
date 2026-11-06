@@ -5,7 +5,9 @@
 ## 强类型配置
 
 ```sh
-grea run-tool '{"tool_id":"unity_config_candidate","arguments":["--schema","/absolute/Enemy.schema.json","--input","/absolute/Enemy.rows.json","--output","/absolute/new-candidate"],"run_dir":"/absolute/new-run"}'
+grea --request - system run-tool <<'JSON'
+{"tool_id": "config", "arguments": ["unity-config-candidate", "--schema", "/absolute/Enemy.schema.json", "--input", "/absolute/Enemy.rows.json", "--output", "/absolute/new-candidate"], "run_dir": "/absolute/new-run"}
+JSON
 ```
 
 Schema 为 `schemas/unity-config-authoring.schema.json`：显式 namespace、类型名、唯一行 key 和有限字段。首批只支持 int32、bool、string 和可空 string；范围、缺字段、多字段、重复 key、无效 C# 名字全部在写入前拒绝。缺值、null、空串、false、0 不相互代换。Unity 会把序列化 null string 变为空串，因此候选 SO 以“值＋是否有值”的私有序列化字段和强类型只读属性保留可空语义。正式数值运行时路径见[DAT-01](Unity程序集分层与生命周期.md#生命周期与数据契约)；候选 SO 与其可空语义不代表正式数据源或Player读取实现。
@@ -17,7 +19,9 @@ Schema 为 `schemas/unity-config-authoring.schema.json`：显式 namespace、类
 ## Sprite 与动画
 
 ```sh
-grea run-tool '{"tool_id":"unity_native_assets","arguments":["prepare","--recipe","/absolute/native.recipe.json","--output","/absolute/new-native-candidate"],"run_dir":"/absolute/new-run"}'
+grea --request - system run-tool <<'JSON'
+{"tool_id": "asset", "arguments": ["unity-native-assets-prepare", "--recipe", "/absolute/native.recipe.json", "--output", "/absolute/new-native-candidate"], "run_dir": "/absolute/new-run"}
+JSON
 ```
 
 输入 Schema 为 `schemas/unity-native-assets.schema.json`。Sprite rect、offset 均为源图左上角像素；rotated_cw 表示源裁片顺时针旋转，制作时逆转并恢复原尺寸透明画布；pivot 为原画布左下归一坐标，border 顺序为左、下、右、上。九宫格不得超过原尺寸。PNG 和 request 都进入生成身份，预检图像、总像素/字节、路径、重复名称和人工冲突。

@@ -9,7 +9,9 @@ from pathlib import PurePosixPath
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 from grea.brand_assets import validate_asset
+from product_projection import included, internal_source
 
 
 FORBIDDEN_PARTS = {'.private', '.git', '.venv', 'node_modules', '__pycache__',
@@ -30,6 +32,8 @@ def inspect(path, data, mode='100644'):
     """Return categories/line numbers, never matched bytes."""
     name = PurePosixPath(path)
     issues = []
+    if internal_source(path):
+        issues.append({'code': 'internal_implementation'})
     if mode in {'120000', '160000'}:
         issues.append({'code': 'symlink_or_submodule'})
     if (set(name.parts) & FORBIDDEN_PARTS or name.suffix.lower() in FORBIDDEN_SUFFIXES
@@ -64,7 +68,7 @@ def inspect(path, data, mode='100644'):
     return issues
 
 
-def audit(root):
+def audit(root, *, scope="git"):
     def git(*args):
         return subprocess.check_output(['git', '-C', str(root), *args])
     entries = git('ls-files', '--stage', '-z').split(b'\0')
@@ -73,6 +77,8 @@ def audit(root):
         info, rawpath = entry.split(b'\t', 1)
         mode, oid, stage = info.decode().split()
         path = rawpath.decode('utf-8')
+        if scope == 'plugin' and not included(path):
+            continue
         if stage != '0':
             findings.append({'file': path, 'code': 'unmerged_index'})
             continue
@@ -83,7 +89,7 @@ def audit(root):
         total += 1
         size += len(data)
         findings.extend(dict(file=path, **issue) for issue in inspect(path, data, mode))
-    return {'ok': not findings, 'scope': 'Git index bytes', 'files': total,
+    return {'ok': not findings, 'scope': 'Git index bytes' if scope == 'git' else 'Public plugin projection of Git index bytes', 'files': total,
             'bytes': size, 'findings': findings,
             'limits': 'Pattern-based source gate, not proof that every secret or license issue is absent.'}
 
@@ -91,7 +97,8 @@ def audit(root):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', default='.')
+    parser.add_argument('--scope', choices=('git','plugin'), default='git')
     args = parser.parse_args()
-    result = audit(args.root)
+    result = audit(args.root, scope=args.scope)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     raise SystemExit(0 if result['ok'] else 1)

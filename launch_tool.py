@@ -15,7 +15,9 @@ if len(sys.argv) < 2 or not re.fullmatch(r'[a-z][a-z0-9_]*', sys.argv[1]):
 module = sys.argv.pop(1)
 sys.path.insert(0, str(Path(__file__).absolute().parent / 'src'))
 try:
-    runpy.run_module('grea.tools.' + module, run_name='__main__')
+    from grea.commands.groups import HELPER_MODULE
+    prefix = ('grea.features.' + HELPER_MODULE[module]) if module in HELPER_MODULE else 'grea.tools'
+    runpy.run_module(prefix + '.' + module, run_name='__main__')
 except Exception:
     # Exit 1 is reserved for a tool's intentional findings. An uncaught failure,
     # including import errors in optional provider environments, is always 2.

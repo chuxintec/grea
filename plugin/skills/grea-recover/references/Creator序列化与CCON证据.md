@@ -5,7 +5,9 @@
 ## `cocos_assets`：bundle 索引
 
 ```sh
-grea run-tool '{"tool_id":"cocos_assets","arguments":["--config","/absolute/config.json","--asset-index","N","--adapter","cocos-3.4.1-index-v1","--output","/absolute/new-candidate"],"run_dir":"/absolute/new-run"}'
+grea --request - system run-tool <<'JSON'
+{"tool_id": "asset", "arguments": ["cocos-assets", "--config", "/absolute/config.json", "--asset-index", "0", "--adapter", "cocos-3.4.1-index-v1", "--output", "/absolute/new-candidate"], "run_dir": "/absolute/new-run"}
+JSON
 ```
 
 调用者明确选择 bundle 索引和配置版本。实现范围包括 UUID 与子资源后缀、短 pack ID、数字或规范十进制字符串成员索引、版本索引、共享 header-1 pack 节序号、选定 standalone import 与 CCON sidecar。适配器复用 header-1 序列化协议解码，不把 Creator 2.4 bundle 适配器整体套用到 3.x。
@@ -15,7 +17,9 @@ grea run-tool '{"tool_id":"cocos_assets","arguments":["--config","/absolute/conf
 ## `cocos_assets`：CCON JSON 与 BIN sidecar
 
 ```sh
-grea run-tool '{"tool_id":"cocos_assets","arguments":["--input","/absolute/file.json","--adapter","cocos-3.4.1-ccon-json-v1","--output","/absolute/new-candidate"],"run_dir":"/absolute/new-run"}'
+grea --request - system run-tool <<'JSON'
+{"tool_id": "asset", "arguments": ["cocos-assets", "--input", "/absolute/file.json", "--adapter", "cocos-3.4.1-ccon-json-v1", "--output", "/absolute/new-candidate"], "run_dir": "/absolute/new-run"}
+JSON
 ```
 
 仅支持观察到的 CCON JSON version 1、单个 `.bin` sidecar 和 `Uint8Array` 字节范围。JSON 的 `document` 是对象表，`__id__` 保留为数据引用；`TypedArrayRef` 指向经 SHA-256 校验的 BIN 子范围。缺少 BIN、未知版本或构造器、多个 chunk 均明确拒绝。曲线编码、骨骼播放、CCONB 二进制容器和游戏运行不在范围内。
@@ -23,7 +27,9 @@ grea run-tool '{"tool_id":"cocos_assets","arguments":["--input","/absolute/file.
 ## `cocos_modules`：System.register
 
 ```sh
-grea run-tool '{"tool_id":"cocos_modules","arguments":["--input","/absolute/file.js","--adapter","system-register-v1","--output","/absolute/new-candidate"],"run_dir":"/absolute/new-run"}'
+grea --request - system run-tool <<'JSON'
+{"tool_id": "source", "arguments": ["cocos-modules", "--input", "/absolute/file.js", "--adapter", "system-register-v1", "--output", "/absolute/new-candidate"], "run_dir": "/absolute/new-run"}
+JSON
 ```
 
 使用锁定 Acorn AST 提取 System.register 工厂函数原始字节范围及字面量依赖。动态模块名/依赖和匿名调用保留 unresolved，并将报告标为 partial；重复字面量身份失败。不执行工厂、不求值表达式、不导入游戏模块；语法调用不证明运行时已注册。

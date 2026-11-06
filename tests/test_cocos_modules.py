@@ -7,8 +7,8 @@ import sys
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
-from grea.tools.cocos_modules import index_source, export_index
-from grea.tools.cocos_assets import ParseError
+from grea.features.source.cocos_modules import index_source, export_index
+from grea.features.asset.cocos_assets import ParseError
 
 @unittest.skipUnless(shutil.which('node') and (Path(__file__).resolve().parents[1]/'tools/cocos/node_modules/acorn/package.json').is_file(),'Optional Node/Acorn provider; run locked npm ci explicitly')
 class ModuleTests(unittest.TestCase):

@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
-from grea.tools.cocos_assets import decode_document, export_document, export_bundle, select_import, ParseError
+from grea.features.asset.cocos_assets import decode_document, export_document, export_bundle, select_import, ParseError
 
 PLAIN = [1, [], [], [['cc.Node', ['_name'], 2]], [[0, 0, 2]], [[0, 'root']], [], [], [], [], []]
 REFERENCES = [1, ['00'+'A'*20], [], [['cc.Node', ['_name','child','texture'], 3,0,1,6]],

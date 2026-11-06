@@ -23,3 +23,5 @@ description: 将已实现的 Unity 游戏或 Go 服务工程构建为明确身�
 以获准目标及现有工程约定为准；仅未指定平台的Unity任务默认macOS。存量 Cocos/Web 兼容记录及 Go 交付规则见[目标规则](references/游戏构建与版本发布.md#非unity目标交付)。先核实际工具链能力，缺失项保持needs_action，不从文档推断已安装。
 
 本地候选、目标运行、封装、安装、Git推送与正式发布分别记录。沿已有授权执行，保留新buildId和来源身份；失败保留证据与旧current，回滚核存档兼容。详细字段和流程只在构建参考维护。
+
+用 `grea build payload-verify` 核制品，`grea qa player-run` 检查声明的运行目标。具体前置条件见[命令索引](../grea/references/功能模块和命令参数.md)。

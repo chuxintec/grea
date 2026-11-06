@@ -5,7 +5,7 @@ This verifies bounded IO/rollback control flow only, not actual Unity APIs/impor
 import json,os,shutil,subprocess,unittest
 from pathlib import Path
 import test_theme_assets as fixtures
-from grea.tools.theme_assets import create
+from grea.features.ui.theme_assets import create
 
 STUBS=r'''
 using System;using System.IO;using System.Text.Json;

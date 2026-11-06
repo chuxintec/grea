@@ -6,7 +6,9 @@
 
 ```sh
 grea describe-tool '{"tool_id":"cocos_assets"}'
-grea run-tool '{"tool_id":"cocos_assets","arguments":["--input","/absolute/source.json","--output","/absolute/new-candidate","--adapter","cocos-2.4-compiled-v1"],"run_dir":"/absolute/new-run"}'
+grea --request - system run-tool <<'JSON'
+{"tool_id": "asset", "arguments": ["cocos-assets", "--input", "/absolute/source.json", "--output", "/absolute/new-candidate", "--adapter", "cocos-2.4-compiled-v1"], "run_dir": "/absolute/new-run"}
+JSON
 ```
 
 ## `cocos_assets`：Creator 2.4 离线子集
@@ -21,7 +23,9 @@ bundle 模式使用 `--config /absolute/bundle/config.hash.json --asset-index N`
 
 ```sh
 npm ci --prefix tools/cocos --ignore-scripts --no-audit --no-fund
-grea run-tool '{"tool_id":"cocos_modules","arguments":["--input","/absolute/game.js","--output","/absolute/new-index","--adapter","browserify-table-v1"],"run_dir":"/absolute/new-run"}'
+grea --request - system run-tool <<'JSON'
+{"tool_id": "source", "arguments": ["cocos-modules", "--input", "/absolute/game.js", "--output", "/absolute/new-index", "--adapter", "browserify-table-v1"], "run_dir": "/absolute/new-run"}
+JSON
 ```
 
 | adapter | 可提取范围 |

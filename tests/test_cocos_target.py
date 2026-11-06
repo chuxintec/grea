@@ -1,7 +1,7 @@
 import json,tempfile,unittest
 from pathlib import Path
-from grea.tools.cocos_project import generate,audit_layers
-from grea.tools.cocos_convert import convert
+from grea.features.project.cocos_project import generate,audit_layers
+from grea.features.source.cocos_convert import convert
 from grea.application import dispatch
 class CocosTarget(unittest.TestCase):
  def test_create_layers_identity_configuration_and_no_overwrite(self):

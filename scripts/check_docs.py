@@ -8,14 +8,15 @@ import sys
 from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'src'))
-from grea.tools.check_skill import heading_ids, without_fences
+from grea.features.system.check_skill import heading_ids, without_fences
 from grea.contracts import catalog
+from grea.commands.groups import CORE_MODULE
 from check_skill_closure import check as check_skill_closure
 
 
 def operation_table():
     rows = ["<!-- operations:start -->", "| CLI / MCP 操作 | 契约描述 |", "| --- | --- |"]
-    rows += ["| `" + item["name"].replace("_", "-") + "` / `" + item["name"] + "` | " + item["description"].replace("|", "\\|") + " |" for item in catalog()]
+    rows += ["| `" + "grea " + CORE_MODULE[item["name"]] + " " + item["name"].replace("_", "-") + "` / `" + item["name"] + "` | " + item["description"].replace("|", "\\|") + " |" for item in catalog()]
     return "\n".join(rows + ["<!-- operations:end -->"])
 
 
@@ -40,7 +41,13 @@ def check(root):
         errors.append({'file':'docs/接口与证据说明.md','code':'operation_catalog_drift'})
     if (root/'plugin/skills/grea/SKILL.md').is_file():
         errors.extend(dict(item, check='skill_closure') for item in check_skill_closure(root/'plugin/skills')['errors'])
-    return {'ok':not errors,'documents':documents,'localLinks':count,'errors':errors,'scope':'Local links/anchors only; external URLs not fetched.'}
+    skill_examples = 0
+    if (root/'src/grea/recovery/cli.py').is_file() and (root/'plugin/skills').is_dir():
+        from check_skill_commands import check as check_examples
+        examples = check_examples(root/'plugin/skills')
+        skill_examples = examples['examples']
+        errors.extend(dict(item,check='skill_command_examples') for item in examples['errors'])
+    return {'ok':not errors,'documents':documents,'skillCommandExamples':skill_examples,'localLinks':count,'errors':errors,'scope':'Local links/anchors only; external URLs not fetched.'}
 
 
 if __name__=='__main__':
