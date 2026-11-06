@@ -14,6 +14,7 @@ public sealed class NativeRectConstraints : UIBehaviour
     public bool Configured;
     bool initialized,applying;
     Vector2 viewport;
+    Rect previousParentRect;
     protected override void OnEnable(){base.OnEnable();initialized=false;Refresh();}
     void LateUpdate(){Refresh();}
     public void Refresh() {
@@ -21,7 +22,7 @@ public sealed class NativeRectConstraints : UIBehaviour
         var rect=(RectTransform)transform;var parent=rect.parent as RectTransform;if(parent==null)return;
         var canvas=GetComponentInParent<Canvas>();
         var screen=canvas!=null?(canvas.rootCanvas.transform as RectTransform).rect.size:new Vector2(Screen.width,Screen.height);
-        bool needed=!initialized||Policy==UpdatePolicy.Continuous||(Policy==UpdatePolicy.ViewportResize&&screen!=viewport);
+        bool needed=!initialized||Policy==UpdatePolicy.Continuous||(Policy==UpdatePolicy.ViewportResize&&(screen!=viewport || parent.rect!=previousParentRect));
         if(!Application.isPlaying)needed=true;
         if(!needed)return;
         applying=true;
@@ -41,7 +42,7 @@ public sealed class NativeRectConstraints : UIBehaviour
                 else if(edge==Edge.Maximum)position[axis]=start+parentSize-high-(1-pivot)*size;
                 else position[axis]=start+parentSize*.5f+Center[axis]+CenterFraction[axis]*parentSize+(pivot-.5f)*size;
             }
-            rect.localPosition=position;initialized=true;viewport=screen;
+            rect.localPosition=position;initialized=true;viewport=screen;previousParentRect=parent.rect;
         }finally{applying=false;}
     }
 }
