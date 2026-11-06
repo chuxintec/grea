@@ -1,0 +1,25 @@
+# Native serialization readback and preview capture
+
+`beaver native readback --project <Unity> --spec request.json --out <fresh-outside-project> --editor-path <Unity-executable>` uses the existing native lock, content guards and owned helper cleanup. Requires a matching installed Editor; installs nothing. Selected assets are read through AssetDatabase and fields through SerializedObject.FindProperty. No YAML field parser, instance-ID identity or heuristic field renaming is used.
+
+Request schemaVersion 1: `assets` (1–128 canonical Assets file paths), optional `queries` (asset, nodePath, componentType, propertyPath), optional `aliases` (unique name/propertyPath). A prefab root uses empty nodePath. Component selectors require the exact full compiled type and exactly one matching owner. Nested/array paths use Unity property paths. Empty/null object references are legal and distinct from missing references; missing or ambiguous selectors return unknown. Scalar values and object-reference states are read explicitly; structured properties carry a type marker, and callers should query their nested fields directly. A supplied alias resolves only its exact name.
+
+Optional `capture` selects one prefab or scene asset and exact width/height (max 4096 each, 8 megapixels total). Choose one exact existing `cameraPath` including scene/prefab root name, or an explicit temporary `camera` with position/euler vectors, orthographic bool, positive size and RGBA background. The collector binds Camera.scene to its owned preview scene, renders an offscreen texture and closes that scene in finally. ScreenSpaceOverlay is rejected instead of silently changing the source canvas. Rendering can run project Editor callbacks; the byte guard reports unexpected product changes and stops.
+
+Output `readback.json` records editor version, asset types, persistent GUID/localId, queried owner/field/reference state and optional capture metadata. `native/capture.png` is hashed in the outer report. Fully transparent and uniform-frame diagnostics describe pixels only; visible pixels establish neither visual correctness nor gameplay. There is no PlayMode execution, physical input or business assertion. Scene queries use exact paths including the root name in an owned preview scene; persistent scene IDs use the native GlobalObjectId only when its asset GUID matches that saved scene.
+
+The same `run_collector` supports the build-filter companion and retains exact source/meta input hashes plus a read-only guard receipt. Previously collected or caller-provided snapshots are evidence data, not independent authentication. The formal released package is unchanged; these commands are local development additions until separately released.
+
+`Integer` and `ArraySize` properties expose `hasIntegerValue: true` and an exact JSON `integerValue`; their compatible `value` string also contains the integer. An array-length query such as `bindings.Array.size` reads the scalar itself, rather than reporting a structured marker as a value. Other property types must not interpret the default `integerValue` when `hasIntegerValue` is false.
+
+## Strict persistent owner selection
+
+A field query may add `ownerIdentity: {"guid":"<selected asset GUID>","localId":123}`. All original asset/nodePath/componentType/propertyPath fields remain required. The local ID is the component's actual persistent local ID when componentType is nonempty, or the GameObject/object ID for an object query. No ID is guessed from a node name or sibling order. Valid IDs are nonzero signed 64-bit integers, including negative values.
+
+The GUID must identify the selected file. The native reader first limits candidates by the declared asset, exact name path and concrete component type, then filters those candidates by the actual persistent GUID/localID. It requires exactly one match. A stale ID, foreign GUID, wrong path/type, unavailable identity or remaining ambiguity produces an unknown field with a reason. It never falls back to a same-named node. Nested/variant owners that cannot establish an identity belonging to the selected file remain unknown. Queries without ownerIdentity preserve the previous unique-path behavior. This selector does not add sibling-index traversal.
+
+The collector derives an explicit runtime hasOwnerIdentity boolean; callers must not supply it. This avoids JsonUtility default nested objects being mistaken for requested selectors. An observed response is independently checked in Python against the exact requested owner identity; native unknown rows remain partial evidence.
+
+Preserve localId as an exact 64-bit JSON integer when writing request files; a floating-point or JavaScript Number round-trip can lose large prefab IDs. A rounded/stale ID must remain unknown, not be repaired by name.
+
+The owner GUID identifies the selected serialized asset file, not the MonoScript GUID or an original-engine UUID. Component queries require the component local ID, not its GameObject local ID. Any unknown query keeps the report partial/CLI exit 1; a positive-only observed request returns exit 0.

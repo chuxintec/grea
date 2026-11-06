@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "unity-retirement-spec-1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "operation": {
+      "const": "assets.retire"
+    },
+    "retire": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^Assets/"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceEvidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "identityPolicy": {
+            "enum": [
+              "native-object",
+              "source-evidence-only",
+              "empty-folder"
+            ],
+            "default": "native-object"
+          },
+          "sourceIdentityEvidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "snapshotPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "snapshotSha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "assetPath": {
+                "type": "string",
+                "pattern": "^Assets/"
+              }
+            },
+            "required": [
+              "snapshotPath",
+              "snapshotSha256",
+              "assetPath"
+            ]
+          },
+          "callerReview": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reference": { "type": "string", "minLength": 1, "maxLength": 4096 },
+              "sourceSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "directorySetSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "dynamicPathReview": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": { "const": "reviewed-no-use" },
+                  "reason": { "type": "string", "minLength": 1, "maxLength": 4096 },
+                  "evidence": { "type": "string", "minLength": 1, "maxLength": 4096 }
+                },
+                "required": ["status", "reason", "evidence"]
+              }
+            },
+            "required": ["reference", "sourceSha256", "directorySetSha256", "dynamicPathReview"]
+          }
+        },
+        "required": [
+          "path",
+          "role",
+          "reason",
+          "sourceEvidence"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "identityPolicy"
+              ],
+              "properties": {
+                "identityPolicy": {
+                  "const": "source-evidence-only"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "sourceIdentityEvidence"
+              ]
+            },
+            "else": {
+              "not": {
+                "required": [
+                  "sourceIdentityEvidence"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "required": ["identityPolicy"],
+              "properties": { "identityPolicy": { "const": "empty-folder" } }
+            },
+            "then": { "required": ["callerReview"] },
+            "else": { "not": { "required": ["callerReview"] } }
+          }
+        ]
+      }
+    },
+    "protectedRoots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^Assets/"
+      }
+    },
+    "resources": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^Assets/"
+          },
+          "guid": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceEvidence": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "key",
+          "path",
+          "guid",
+          "reason",
+          "sourceEvidence"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "operation",
+    "retire",
+    "protectedRoots"
+  ]
+}

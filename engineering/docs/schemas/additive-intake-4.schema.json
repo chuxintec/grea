@@ -1,0 +1,835 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:beaver:additive-intake:4",
+  "title": "Beaver additive Unity intake specification v4",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "candidateManifestSha256",
+    "additions",
+    "externalScripts",
+    "omittedCompilerInputs",
+    "verifications",
+    "protectedAssets",
+    "evidence",
+    "externalAssets",
+    "packageScripts",
+    "newScripts",
+    "engineObjects"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 4
+    },
+    "operation": {
+      "enum": [
+        "additive-intake",
+        "script-only-intake"
+      ]
+    },
+    "candidateManifestSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "additions": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/addition"
+      }
+    },
+    "externalScripts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/externalScript"
+      }
+    },
+    "omittedCompilerInputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/omittedCompilerInput"
+      }
+    },
+    "verifications": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/verification"
+      }
+    },
+    "protectedAssets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/protectedAsset"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "externalAssets": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/externalAsset"
+      },
+      "description": "The combined externalAssets object count is capped at 4096 by runtime validation."
+    },
+    "packageScripts": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/packageScript"
+      }
+    },
+    "newScripts": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/newScript"
+      }
+    },
+    "engineObjects": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/engineObject"
+      },
+      "description": "Explicit references to the two supported Unity built-in object GUID domains."
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "guid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "assetPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^Assets/.+$"
+    },
+    "assembly": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "int64": {
+      "type": "integer",
+      "minimum": -9223372036854775808,
+      "maximum": 9223372036854775807
+    },
+    "nonzeroInt64": {
+      "$ref": "#/$defs/int64",
+      "not": {
+        "const": 0
+      }
+    },
+    "addition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "target"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/assetPath"
+        },
+        "target": {
+          "$ref": "#/$defs/assetPath"
+        }
+      }
+    },
+    "externalScript": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "sourceGuid",
+        "sourceType",
+        "sourceAssembly",
+        "target",
+        "targetGuid",
+        "targetType",
+        "targetAssembly",
+        "targetLocalId",
+        "targetSha256",
+        "targetMetaSha256",
+        "reason"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/assetPath"
+        },
+        "sourceGuid": {
+          "$ref": "#/$defs/guid"
+        },
+        "sourceType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceAssembly": {
+          "$ref": "#/$defs/assembly"
+        },
+        "target": {
+          "$ref": "#/$defs/assetPath"
+        },
+        "targetGuid": {
+          "$ref": "#/$defs/guid"
+        },
+        "targetType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetAssembly": {
+          "$ref": "#/$defs/assembly"
+        },
+        "targetLocalId": {
+          "$ref": "#/$defs/nonzeroInt64"
+        },
+        "targetSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "targetMetaSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "omittedCompilerInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "reason",
+        "coveredByExternalScript"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/assetPath"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coveredByExternalScript": {
+          "$ref": "#/$defs/assetPath"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset",
+        "objects"
+      ],
+      "properties": {
+        "asset": {
+          "$ref": "#/$defs/assetPath"
+        },
+        "objects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/owner"
+          }
+        }
+      }
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "localId",
+        "type",
+        "assembly",
+        "name",
+        "fields"
+      ],
+      "properties": {
+        "localId": {
+          "$ref": "#/$defs/nonzeroInt64"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assembly": {
+          "$ref": "#/$defs/assembly"
+        },
+        "name": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      }
+    },
+    "objectReference": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "guid",
+            "localId",
+            "type",
+            "assembly"
+          ],
+          "properties": {
+            "guid": {
+              "const": ""
+            },
+            "localId": {
+              "const": 0
+            },
+            "type": {
+              "const": ""
+            },
+            "assembly": {
+              "const": ""
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "guid",
+            "localId",
+            "type",
+            "assembly"
+          ],
+          "properties": {
+            "guid": {
+              "$ref": "#/$defs/guid"
+            },
+            "localId": {
+              "$ref": "#/$defs/nonzeroInt64"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "assembly": {
+              "$ref": "#/$defs/assembly"
+            }
+          }
+        }
+      ]
+    },
+    "field": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "propertyPath",
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "propertyPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "integer"
+            },
+            "value": {
+              "$ref": "#/$defs/int64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "propertyPath",
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "propertyPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "float"
+            },
+            "value": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "propertyPath",
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "propertyPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "boolean"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "propertyPath",
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "propertyPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "string"
+            },
+            "value": {
+              "type": "string",
+              "maxLength": 16384
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "propertyPath",
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "propertyPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "object"
+            },
+            "value": {
+              "$ref": "#/$defs/objectReference"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "propertyPath",
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "propertyPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "character"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            }
+          }
+        }
+      ]
+    },
+    "protectedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "metaSha256"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/assetPath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "metaSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 2,
+          "pattern": "^/.*$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "externalAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "target",
+        "guid",
+        "sha256",
+        "metaSha256",
+        "objects",
+        "reason"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/externalAssetPath"
+        },
+        "target": {
+          "$ref": "#/$defs/externalAssetPath"
+        },
+        "guid": {
+          "$ref": "#/$defs/guid"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "metaSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "objects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/owner"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "Per-entry object limit is 4096; runtime validation also caps combined objects at 4096 and combined fields with verifications at 250000."
+    },
+    "packageScript": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "guid",
+        "type",
+        "assembly",
+        "localId",
+        "name",
+        "packageName",
+        "packageVersion",
+        "packageSource",
+        "packageJsonSha256",
+        "sha256",
+        "metaSha256",
+        "reason"
+      ],
+      "properties": {
+        "target": {
+          "type": "string",
+          "pattern": "^Packages/com\\.unity\\.ugui/Runtime/.+\\.[cC][sS]$"
+        },
+        "guid": {
+          "$ref": "#/$defs/guid"
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^UnityEngine\\.UI\\..+$"
+        },
+        "assembly": {
+          "const": "UnityEngine.UI"
+        },
+        "localId": {
+          "$ref": "#/$defs/nonzeroInt64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "packageName": {
+          "const": "com.unity.ugui"
+        },
+        "packageVersion": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+        },
+        "packageSource": {
+          "enum": [
+            "registry",
+            "builtin"
+          ]
+        },
+        "packageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "metaSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "Runtime validation also checks path canonicality and cross-record path/GUID uniqueness."
+    },
+    "externalAssetPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^Assets/.+\\.(?:[aA][sS][sS][eE][tT]|[mM][aA][tT]|[pP][nN][gG]|[tT][tT][fF]|[oO][tT][fF]|[sS][hH][aA][dD][eE][rR]|[tT][xX][tT]|[jJ][sS][oO][nN])$",
+      "description": "Asset suffix is restricted by this schema; canonical path and alias checks are enforced by runtime validation."
+    },
+    "newScript": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "target",
+        "guid",
+        "sha256",
+        "metaSha256",
+        "sourceType",
+        "sourceAssembly",
+        "targetType",
+        "targetAssembly",
+        "baseType",
+        "baseAssembly",
+        "localId",
+        "fields",
+        "reason"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/newScriptPath"
+        },
+        "target": {
+          "$ref": "#/$defs/newScriptPath"
+        },
+        "guid": {
+          "$ref": "#/$defs/guid"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "metaSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sourceType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceAssembly": {
+          "$ref": "#/$defs/assembly"
+        },
+        "targetType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetAssembly": {
+          "const": "Assembly-CSharp"
+        },
+        "baseType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "baseAssembly": {
+          "$ref": "#/$defs/assembly"
+        },
+        "localId": {
+          "$ref": "#/$defs/nonzeroInt64"
+        },
+        "fields": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "type",
+              "assembly"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "assembly": {
+                "$ref": "#/$defs/assembly"
+              }
+            }
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "newScriptPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^Assets/.+\\.[cC][sS]$"
+    },
+    "engineObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guid",
+        "localId",
+        "type",
+        "assembly",
+        "name",
+        "assetPath"
+      ],
+      "properties": {
+        "guid": {
+          "enum": [
+            "0000000000000000e000000000000000",
+            "0000000000000000f000000000000000"
+          ]
+        },
+        "localId": {
+          "$ref": "#/$defs/nonzeroInt64"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^UnityEngine\\..+$"
+        },
+        "assembly": {
+          "$ref": "#/$defs/assembly"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assetPath": {
+          "enum": [
+            "Library/unity default resources",
+            "Resources/unity_builtin_extra"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "guid": {
+                "const": "0000000000000000e000000000000000"
+              }
+            },
+            "required": [
+              "guid"
+            ]
+          },
+          "then": {
+            "properties": {
+              "assetPath": {
+                "const": "Library/unity default resources"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "guid": {
+                "const": "0000000000000000f000000000000000"
+              }
+            },
+            "required": [
+              "guid"
+            ]
+          },
+          "then": {
+            "properties": {
+              "assetPath": {
+                "const": "Resources/unity_builtin_extra"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "description": "Closed structural schema for v3. Runtime validation enforces NFC/Windows path rules, C# identifiers, target class/path agreement, and cross-table uniqueness/reference constraints.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "script-only-intake"
+          }
+        },
+        "required": [
+          "operation"
+        ]
+      },
+      "then": {
+        "properties": {
+          "additions": {
+            "maxItems": 0
+          },
+          "newScripts": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "additions": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}
