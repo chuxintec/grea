@@ -21,7 +21,7 @@ class DevelopmentEntryTests(unittest.TestCase):
     def test_invalid_engineering_command_preserves_structured_failure(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            self.assertEqual(main(["develop", "intake", "not-an-operation"]), 2)
+            self.assertEqual(main(["develop", "intake", "not-an-operation"]), 3)
         result = json.loads(output.getvalue())
         self.assertEqual(result["diagnostics"][0]["code"], "CLI_USAGE")
         self.assertEqual(result["actualChanges"], [])
