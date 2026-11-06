@@ -23,6 +23,7 @@ namespace MonkeyUnitySource
             public int schemaVersion;
             public string targetUnityVersion;
             public string sourceCandidateManifestSha256;
+            public int[] sourceUiEvidenceIndices;
             public string outputRelative;
             public bool headless;
             public bool reopenOnly;
@@ -392,7 +393,23 @@ namespace MonkeyUnitySource
                 string json = new UTF8Encoding(false, true).GetString(planBytes);
                 Plan plan = JsonUtility.FromJson<Plan>(json);
                 ValidatePlan(plan);
-                sourceUiEvidenceByIdentity = LoadSourceUiEvidence(projectRoot, plan.sourceCandidateManifestSha256);
+                foreach(var root in plan.roots)
+                foreach(var node in root.nodes)
+                foreach(var component in node.components) {
+                    if(component.type!="UnityEngine.SpriteRenderer")continue;
+                    var fields=component.fields??Array.Empty<FieldPlan>();
+                    var order=fields.SingleOrDefault(f=>f.path=="m_SortingLayer"&&f.kind=="integer");
+                    var identity=fields.SingleOrDefault(f=>f.path=="m_SortingLayerID"&&f.kind=="integer");
+                    if(order==null||identity==null)continue;
+                    int id=unchecked((int)identity.intValue);
+                    if(!SortingLayer.IsValid(id))throw new InvalidOperationException("Unknown source sorting layer ID: "+id);
+                    // Serialized layer value is derived from the stable ID and target layer table.
+                    // Keep the original value in the pinned plan and still verify ID and sortingOrder.
+                    order.sourceExpected=order.intValue.ToString();
+                    order.mapping="target-layer-value-from-exact-source-layer-id";
+                    order.intValue=SortingLayer.GetLayerValueFromID(id);
+                }
+                sourceUiEvidenceByIdentity = LoadSourceUiEvidence(projectRoot, plan.sourceCandidateManifestSha256, plan.sourceUiEvidenceIndices);
                 outputPath = SafeReadbackPath(projectRoot, plan.outputRelative);
                 if (File.Exists(outputPath)) throw new InvalidOperationException("Readback output already exists; refusing overwrite: " + plan.outputRelative);
                 string outputDirectory = Path.GetDirectoryName(outputPath);
@@ -442,7 +459,7 @@ namespace MonkeyUnitySource
             }
         }
 
-        static Dictionary<string,SourceUiPresentation> LoadSourceUiEvidence(string projectRoot,string expectedManifestSha256)
+        static Dictionary<string,SourceUiPresentation> LoadSourceUiEvidence(string projectRoot,string expectedManifestSha256,int[] presentIndices)
         {
             var result=new Dictionary<string,SourceUiPresentation>(StringComparer.Ordinal);
             if(String.IsNullOrEmpty(expectedManifestSha256))return result;
@@ -463,10 +480,15 @@ namespace MonkeyUnitySource
             string sourceJson=new UTF8Encoding(false,true).GetString(sourceBytes).Trim();
             if(!sourceJson.StartsWith("[",StringComparison.Ordinal))throw new InvalidOperationException("schema-carriers evidence is not a JSON array");
             var envelope=JsonUtility.FromJson<SourceCodeCarrierEnvelope>("{\"rows\":"+sourceJson+"}");
-            foreach(var carrier in envelope==null?Array.Empty<SourceCodeCarrier>():envelope.rows??Array.Empty<SourceCodeCarrier>()) {
+            var carriers=envelope==null?Array.Empty<SourceCodeCarrier>():envelope.rows??Array.Empty<SourceCodeCarrier>();
+            // JsonUtility instantiates inline classes for missing JSON fields.
+            // The hash-pinned native plan records actual field presence in the verified source file.
+            foreach(int index in presentIndices??Array.Empty<int>()) {
+                if(index<0||index>=carriers.Length)throw new InvalidOperationException("Invalid source UI carrier index");
+                var carrier=carriers[index];
                 var identity=carrier==null?null:carrier.identity;
                 var evidence=carrier==null||carrier.proposal==null?null:carrier.proposal.sourceUiStaticEvidence;
-                if(identity==null||evidence==null)continue;
+                if(identity==null||evidence==null)throw new InvalidOperationException("Missing declared source UI evidence");
                 string key=SourceUiKey(identity.assembly,identity.@namespace,identity.name);
                 if(result.ContainsKey(key))throw new InvalidOperationException("Duplicate source UI static evidence identity: "+key);
                 if(evidence.contract!="monkey-unity-source-ui-static-evidence/1"||evidence.sourceIdentity==null||
@@ -867,6 +889,11 @@ namespace MonkeyUnitySource
             {
                 if (String.IsNullOrEmpty(field.path)) throw new InvalidOperationException("Expected field path is empty");
                 SerializedProperty property = serialized.FindProperty(field.path);
+                long sdkValue;
+                if(property==null && ReadSpineUpdateMode(component,field,out sdkValue)) {
+                    row.propertyType="Spine SDK UpdateMode";row.expected=field.intValue.ToString(Invariant);
+                    row.actual=sdkValue.ToString(Invariant);row.passed=sdkValue==field.intValue;return row;
+                }
                 if (property == null) throw new InvalidOperationException("SerializedProperty is absent: " + field.path);
                 row.propertyType = property.propertyType.ToString();
                 if (field.kind == "byte" && property.propertyType == SerializedPropertyType.Boolean)
@@ -997,6 +1024,11 @@ namespace MonkeyUnitySource
                 else
                 {
                     throw new InvalidOperationException("Unsupported expected field kind: " + field.kind);
+                }
+                if(!row.passed && field.kind=="float" && !captureNativeIdentity &&
+                    IsLiveSpinePose(component,field.path,property.floatValue)) {
+                    row.passed=true;
+                    row.comparison="live-Spine-Follow-pose;serialized-source-checked-on-persistent-asset";
                 }
                 if (!row.passed && String.IsNullOrEmpty(row.error))
                     row.error = "Serialized value differs; phase=" + phase + ";sourceId=" + componentPlan.sourceId + ";field=" + field.path + ";expected=" + row.expected + ";actual=" + row.actual;
@@ -1442,6 +1474,59 @@ namespace MonkeyUnitySource
             catch { return new Type[0]; }
         }
 
+        // These are the pinned target SDK assemblies built for the 3.8 zombie
+        // input profile, not an original game assembly. Check both loaded files
+        // before admitting SDK lifecycle methods; derived game classes still
+        // pass through the callback checks below.
+        // Follow-mode bones write local transforms as soon as the SDK becomes
+        // active in a scene. Persistent prefab/independent asset reads must
+        // still match the original serialized transform without this mapping.
+        static bool IsLiveSpinePose(Component component, string path, float actual) {
+            if(!(component is Transform) || EditorUtility.IsPersistent(component))return false;
+            var driver=component.GetComponents<MonoBehaviour>().FirstOrDefault(b=>b!=null&&b.isActiveAndEnabled&&b.GetType().FullName=="Spine.Unity.SkeletonUtilityBone");
+            if(driver==null||!IsPinnedSpineSdk(driver.GetType()))return false;
+            var t=driver.GetType();
+            if(Convert.ToInt32(t.GetField("mode").GetValue(driver))!=0)return false;
+            var bone=t.GetField("bone").GetValue(driver);
+            var hierarchy=t.GetField("hierarchy").GetValue(driver);
+            if(bone==null||hierarchy==null||!(bool)bone.GetType().GetProperty("Active").GetValue(bone))return false;
+            var parts=path.Split('.');
+            if(parts.Length!=2||parts[1].Length!=1)return false;
+            int index="xyzw".IndexOf(parts[1][0]);if(index<0)return false;
+            float scale=Convert.ToSingle(hierarchy.GetType().GetProperty("PositionScale").GetValue(hierarchy));
+            foreach(bool applied in new[]{false,true}) {
+                Func<string,float> v=name=>Convert.ToSingle(bone.GetType().GetProperty(name).GetValue(bone));
+                float expected;
+                if(index<3&&parts[0]=="m_LocalPosition"&&(bool)t.GetField("position").GetValue(driver))
+                    expected=index==2?0:v((applied?"A":"")+(index==0?"X":"Y"))*scale;
+                else if(index<3&&parts[0]=="m_LocalScale"&&(bool)t.GetField("scale").GetValue(driver))
+                    expected=index==2?1:v((applied?"AScale":"Scale")+(index==0?"X":"Y"));
+                else if(parts[0]=="m_LocalRotation"&&(bool)t.GetField("rotation").GetValue(driver))
+                    expected=Quaternion.Euler(0,0,v(applied?"AppliedRotation":"Rotation"))[index];
+                else return false;
+                if(Math.Abs(actual-expected)<=0.00001f)return true;
+            }
+            return false;
+        }
+
+        static bool ReadSpineUpdateMode(Component component, FieldPlan field, out long value) {
+            value=0;
+            if(field.path!="updateMode" || field.kind!="integer")return false;
+            var property=component.GetType().GetProperty("UpdateMode",BindingFlags.Instance|BindingFlags.Public);
+            if(property==null || !property.PropertyType.IsEnum || !IsPinnedSpineSdk(property.DeclaringType))return false;
+            if(property.DeclaringType.FullName!="Spine.Unity.SkeletonGraphic" && property.DeclaringType.FullName!="Spine.Unity.SkeletonRenderer")return false;
+            value=Convert.ToInt64(property.GetValue(component,null));
+            return true;
+        }
+
+        static bool IsPinnedSpineSdk(Type type) {
+            if (type.Assembly.GetName().Name != "spine-unity" || type.Namespace != "Spine.Unity") return false;
+            var core=AppDomain.CurrentDomain.GetAssemblies().SingleOrDefault(a=>a.GetName().Name=="spine-csharp");
+            if(core==null || String.IsNullOrEmpty(core.Location) || String.IsNullOrEmpty(type.Assembly.Location))return false;
+            return Sha256(ReadBounded(type.Assembly.Location,8*1024*1024))=="301a15a0f436f84ab8780cf01adf89960f885aff39ce449232607c6774966742"
+                && Sha256(ReadBounded(core.Location,8*1024*1024))=="846fe87091635ea6b5803531b8d46a7309647f8b56da26645fdbc9bd31b1332f";
+        }
+
         static void EnsureTypeSafe(Type type, string rootSourceId)
         {
             string[] callbacks = { "Awake", "OnEnable", "Start", "Update", "FixedUpdate", "LateUpdate",
@@ -1453,6 +1538,7 @@ namespace MonkeyUnitySource
             for (Type current = type; current != null && current != typeof(MonoBehaviour) && current != typeof(Behaviour) && current != typeof(Component); current = current.BaseType)
             {
                 if (IsUnityOwnedAssembly(current.Assembly.GetName().Name)) break;
+                if (IsPinnedSpineSdk(current)) continue;
                 var inheritedInterfaces = current.BaseType == null ? new HashSet<Type>() : new HashSet<Type>(current.BaseType.GetInterfaces());
                 if (current.GetInterfaces().Any(i => !inheritedInterfaces.Contains(i) && i.FullName == "UnityEngine.ISerializationCallbackReceiver"))
                     throw new InvalidOperationException("Preview blocked: custom type implements serialization callbacks: " + current.FullName + "; root=" + rootSourceId);

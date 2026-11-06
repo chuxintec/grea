@@ -73,3 +73,19 @@ def test_serialized_guid_representation_is_not_a_builtin_name_lookup():
     assert unity_guid_text_from_serialized_hex('1032547698badcfe1032547698badcfe') == '0123456789abcdef0123456789abcdef'
     with pytest.raises(ParseError, match='UNITY_PREFAB_GUID_ENCODING'):
         unity_guid_text_from_serialized_hex('000')
+
+
+def test_schema_receipt_parts_reject_changed_bytes(tmp_path):
+    from monkey.unity_prefab_native import _builtin_schema_receipts
+
+    receipt = {"objects": [{"pathId": "7"}]}
+    part = tmp_path / "part.json"
+    part.write_bytes(encoded(receipt))
+    index = tmp_path / "builtin-schemas.json"
+    index.write_bytes(encoded({"format": "receipt-parts/1", "parts": [
+        {"path": part.name, "sha256": sha(part.read_bytes())}
+    ]}))
+    assert list(_builtin_schema_receipts(index)) == [receipt]
+    part.write_bytes(encoded({"objects": []}))
+    with pytest.raises(ParseError, match="UNITY_PREFAB_SCHEMA_PART"):
+        list(_builtin_schema_receipts(index))

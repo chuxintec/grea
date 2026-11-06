@@ -58,3 +58,52 @@ Windows 使用环境目录下的 `Scripts/python.exe` 和 `Scripts/monkey.exe`�
 monkey 自有代码采用 [MIT License](LICENSE)。第三方代码与必要版权声明见 [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES.md)。游戏原包、素材、引擎及第三方工具不属于本项目的开源授权范围，不随源码发行或安装包提供。
 
 旧原生事务的独立回执与只读复验入口见 [Native execution recovery](docs/NATIVE-EXECUTION-RECOVERY.md)。恢复回执不改写原日志，也不代表候选验收通过。
+
+### Restore visual references in a Unity export
+
+Install the source checkout with the `unity-visuals` extra. Run
+`monkey repair-unity-visuals --project CANDIDATE --sources manifest.json --pool ASTC_DIR`
+against an independent exported project. The manifest supplies local `bundles` paths
+and `roots` entries with `asset`, `cab` and `pathId`. The pool holds ASTC payloads
+named for their full source texture token with the `.txt` extension. The tool
+writes source image identities and SHA-256 hashes to `visual-repair.json`.
+Run the Editor methods `UnitySourceVisualRepair.Apply` and
+`UnitySourceVisualRepair.Verify` in separate Editor processes to save and verify
+the resulting references.
+
+Optional `states` entries select a reviewed static display state using `root`,
+indexed child `path` (e.g. `0/1/0`), `node`, `active` and `reason`. Include
+`outlineFallback` when the candidate uses the recovered `DodGame.DodTextOutline`
+mesh adapter. Supply the project path of a material using the matching
+`Monkey/UnitySource/TextOutline` shader. Optional `objects` entries identify
+previously exported particle shape meshes by `cab`, `pathId`, `name` and native
+mesh `asset` path. Ambiguous material slots are recorded in the plan for review.
+
+To apply one reviewed tab selection to several roots, add an `exclusiveViews`
+entry with sibling names `keep` and `hide` and a `reason`. Both must be active,
+uniquely named siblings in the same anchored frame whose rectangles substantially
+overlap. Explicit per-node states take precedence.
+
+The command works offline by default. Where the source origin is authorized,
+`--fetch-base https://HOST/PATH` fetches only the manifest's `textureRequests`
+entries (full source `token`, `width`, `height`, optional `sha256`). It checks the
+ASTC payload before writing it. `outsideSuppliedPool` lists referenced tokens
+outside this repair pool. Spine texture assets retain their original file names
+so the runtime atlas loader can resolve its pages. To audit possible residual
+label collisions in a preview, call `UnitySourceOverlapReview.Begin()`,
+`Observe(instance, prefabPath)` after each canvas layout rebuild, then `Finish()`.
+It records sibling glyph overlaps for visual review. Supply its `findings` in
+`overlapFindings` and reviewed `overlapRules` with `keep`, `hide`, `reason` and
+optional `parent` to select a static label only for measured active siblings.
+For repeated material names, `materialObjects` maps an exported material path
+to source `[CAB, pathID]` pairs established by corresponding renderer slots.
+
+For a selected-root batch, run `python -m monkey.unity_object_dependencies --sources manifest.json --output objects.json` against the original bundles. The result separates serialized-file/path-ID pairs found in the pool, external files (including Unity builtins), and missing objects. Material texture maps and other key/value arrays participate in traversal. The visual repair command also retains source-proven zero-sized dynamic font atlases when a bitmap exporter skipped them.
+
+For a HLSLcc GLES3 shader with a parsed `form.json` and numbered `<blobIndex>.glsl` source programs, run `python -m monkey.unity_gles_shader SOURCE_DIRECTORY OUTPUT.shader`. This profile reconstructs non-instanced passes. Check the required material keywords and graphics backend in the target Editor.
+
+
+For reviewed layouts use `layouts` entries with the same `root`, `path`, `node`
+and `reason`. `includeInLayout` enables an existing excluded LayoutElement
+under its LayoutGroup. `fitPreferredHeight` lets an existing layout group use
+the preferred height of its children. Both are checked again after reopening.

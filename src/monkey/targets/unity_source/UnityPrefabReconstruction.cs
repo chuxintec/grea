@@ -362,6 +362,7 @@ namespace MonkeyUnitySource
                  current != typeof(Behaviour) && current != typeof(Component); current = current.BaseType)
             {
                 if (IsUnityOwnedAssembly(current.Assembly.GetName().Name)) break;
+                if (IsPinnedSpineSdk(current)) continue;
                 bool reset = current.GetMethods(BindingFlags.Instance | BindingFlags.Public |
                     BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                     .Any(method => method.Name == "Reset" && method.GetParameters().Length == 0);
@@ -376,6 +377,7 @@ namespace MonkeyUnitySource
                  current != typeof(Behaviour) && current != typeof(Component); current = current.BaseType)
             {
                 if (IsUnityOwnedAssembly(current.Assembly.GetName().Name)) break;
+                if (IsPinnedSpineSdk(current)) continue;
                 ConstructorInfo[] constructors = current.GetConstructors(BindingFlags.Instance | BindingFlags.Public |
                     BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
                 foreach (ConstructorInfo constructor in constructors)
@@ -420,6 +422,8 @@ namespace MonkeyUnitySource
             {
                 if ((field.kind == "reference") != referencesOnly) continue;
                 SerializedProperty property = serialized.FindProperty(field.path);
+                long sdkValue;
+                if(property==null && ReadSpineUpdateMode(component,field,out sdkValue) && sdkValue==field.intValue)continue;
                 if (property == null)
                     throw new InvalidOperationException("SerializedProperty is absent: " + plan.sourceId + "." + field.path);
 

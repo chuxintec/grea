@@ -154,6 +154,8 @@ def main(argv=None):
     p.add_argument('--provider-python',required=True)
     p.add_argument('--out',required=True)
     p.add_argument('--budget-seconds',type=int,default=120)
+    from .unity_visual_repair import add_arguments as visual_arguments
+    visual_arguments(sub.add_parser('repair-unity-visuals', help='Prepare source-identified UI and effect repairs for an exported Unity project'))
     p = sub.add_parser('export-unity-textures',help='Export exact selected hydrated Texture2D pixels as PNG candidates without whole-container AssetRipper export')
     for name in ('source','derivative','hydration-report','expected-hydration-sha256','selection-manifest','provider-python','out'):p.add_argument('--'+name,required=True)
     p.add_argument('--budget-seconds',type=int,default=120)
@@ -530,6 +532,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     unity_parse_limits={k:v for k,v in [('objectValues',getattr(args,'unity_object_value_limit',None)),('containerValues',getattr(args,'unity_container_value_limit',None))] if v is not None} or None
     try:
+        if args.command=='repair-unity-visuals':
+            from .unity_visual_repair import run as repair_visuals
+            print(json.dumps(repair_visuals(args),ensure_ascii=False))
+            return 0
         if args.command=='resource-probe':
             from .resource_probe import prepare,prepare_shader
             result=prepare_shader(args.candidate,args.expected_manifest,args.shader,args.out) if args.shader else prepare(args.candidate,args.expected_manifest,args.spine,args.out)

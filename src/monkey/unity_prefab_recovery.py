@@ -19,6 +19,7 @@ from .unity_code_model import identifier
 
 
 CONTRACT = "monkey-unity-prefab-recovery-request/1"
+_SCHEMA_PART_THRESHOLD = 32 * 1024 * 1024
 _GUID = re.compile(rb"\bguid: ([0-9a-f]{32})\b")
 _ENGINE_GUID = re.compile(r"(?:0{32}|0{16}[ef]0{15})")
 
@@ -257,6 +258,7 @@ def recover(request_path, expected_request, output):
     inputs, source_evidence = source_inputs(request["inputIndex"], roots)
     graph = build(inputs, roots)
     builtin_receipts = []
+    receipt_bytes = 0
     for pin in request.get("builtinSchemaReceipts", []):
         _, data = pinned(pin, 16 * 1024 * 1024)
         receipt = load(data)
@@ -266,7 +268,11 @@ def recover(request_path, expected_request, output):
         wanted = [dict(serializedFile=o["identity"]["serializedFile"], serializedFileSha256=o["identity"]["serializedFileSha256"],
                        pathId=o["identity"]["pathId"], type=o["identity"]["type"], rawSha256=o["identity"]["rawSha256"]) for o in receipt["objects"]]
         _validate_report(receipt, wanted, receipt["source"]["sha256"])
-        builtin_receipts.append(receipt)
+        receipt_bytes += len(data)
+        if receipt_bytes <= _SCHEMA_PART_THRESHOLD:
+            builtin_receipts.append(receipt)
+        else:
+            builtin_receipts.clear()
     if graph["sourceUnityVersions"] != ["2021.3.30f1"]:
         fail("UNITY_PREFAB_SOURCE_VERSION", "$", "This fixed profile requires exact source Unity 2021.3.30f1")
     selected_scripts = {(o["data"]["m_AssemblyName"], o["data"].get("m_Namespace") or "", o["data"]["m_ClassName"])
@@ -375,6 +381,15 @@ def recover(request_path, expected_request, output):
         for binding in sdk_plan["bindings"]:
             identity = binding["identity"]
             binding["sourceObjectIds"] = native_scripts[(identity["namespace"], identity["class"])]["sourceObjectIds"]
+    sdk_tuples = {}
+    if request.get("bindSdkScriptTuples") is True:
+        if not sdk_plan:
+            fail("UNITY_PREFAB_SDK_SOURCE_GUID", "bindSdkScriptTuples", "Pinned SDK evidence required")
+        from .unity_prefab_script_tuples import rebind
+        for binding in sdk_plan["bindings"]:
+            original, target = binding["sourceTuple"], binding["expectedTuple"]
+            key = (original["guid"], original["fileID"], original["type"])
+            sdk_tuples[key] = (target["guid"], target["fileID"], target["type"])
     for path, data in sorted(selected.items()):
         relative = path.removeprefix("ExportedProject/")
         if relative.endswith(".cs.meta") and path[:-5] in selected:
@@ -419,6 +434,8 @@ def recover(request_path, expected_request, output):
                 enums[enum_key] = enum
         elif Path(relative).suffix.lower() in (".dll", ".js", ".wasm", ".asmdef", ".asmref"):
             fail("UNITY_PREFAB_UNVERIFIED_CODE", relative, "No original executable/provider assembly is admitted")
+        if sdk_tuples and Path(relative).suffix.lower() in (".prefab", ".asset", ".controller", ".mat", ".anim"):
+            data = rebind(data, sdk_tuples)
         dest = inside(project, relative)
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(data)
@@ -441,6 +458,9 @@ def recover(request_path, expected_request, output):
             fail("UNITY_PREFAB_ENUM_ASSEMBLY", assembly, "A named assembly cannot reference the default script assembly")
         write_json(path, dict(name=assembly.removesuffix(".dll"), references=["UnityEngine.UI", *sorted(d.removesuffix(".dll") for d in dependencies)], autoReferenced=True))
     (project / "ProjectSettings").mkdir()
+    tags = "ExportedProject/ProjectSettings/TagManager.asset"
+    if tags in rows:
+        (project / "ProjectSettings/TagManager.asset").write_bytes(payload(tags))
     (project / "ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: 6000.6.2f1\n")
     write_json(project / "Packages/manifest.json", dict(dependencies={"com.unity.ugui": "2.6.0"}))
     write_json(project / "Analysis/Evidence/source-graph.json", graph)
@@ -496,8 +516,21 @@ def recover(request_path, expected_request, output):
                     fail("UNITY_PREFAB_ASSET_GUID_COLLISION", guid, "Native supplement collides with an owned candidate GUID")
                 existing_guids[guid] = str(meta)
         write_json(project / "Analysis/Mappings/native-source-assets.json", native_asset_mappings)
-    if builtin_receipts:
-        write_json(project / "Analysis/Evidence/builtin-schemas.json", builtin_receipts)
+    if receipt_bytes:
+        evidence = project / "Analysis/Evidence"
+        if receipt_bytes > _SCHEMA_PART_THRESHOLD:
+            # Keep large native batches within the per-document reader limits.
+            parts = []
+            for pin in request["builtinSchemaReceipts"]:
+                _, data = pinned(pin, 16 * 1024 * 1024)
+                relative = "builtin-schema-parts/" + pin["sha256"] + ".json"
+                part = inside(evidence, relative)
+                part.parent.mkdir(parents=True, exist_ok=True)
+                part.write_bytes(data)
+                parts.append(dict(path=relative, sha256=pin["sha256"]))
+            write_json(evidence / "builtin-schemas.json", dict(format="receipt-parts/1", parts=parts))
+        else:
+            write_json(evidence / "builtin-schemas.json", builtin_receipts)
     if sdk_plan is not None:
         write_json(project / "Analysis/Mappings/native-sdk-scripts.json", sdk_plan)
     write_json(project / "Analysis/Code/schema-carriers.json", code_records)

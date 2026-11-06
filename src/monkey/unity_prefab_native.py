@@ -20,7 +20,23 @@ _ASSEMBLIES = {
     **{n: "UnityEngine.UIModule" for n in ("CanvasRenderer", "Canvas", "CanvasGroup")},
     "ParticleSystem": "UnityEngine.ParticleSystemModule", "ParticleSystemRenderer": "UnityEngine.ParticleSystemModule",
     "Animator": "UnityEngine.AnimationModule",
+    "AudioSource": "UnityEngine.AudioModule",
 }
+
+
+def _builtin_schema_receipts(path):
+    path = safe(path)
+    document = load(read(path, max_bytes=128 * 1024 * 1024), max_nodes=8_000_000)
+    if isinstance(document, list):
+        yield from document
+        return
+    if not isinstance(document, dict) or document.get("format") != "receipt-parts/1":
+        fail("UNITY_PREFAB_SCHEMA_INDEX", str(path), "Unknown schema receipt index")
+    for part in document["parts"]:
+        raw = read(inside(path.parent, part["path"]), max_bytes=16 * 1024 * 1024)
+        if sha(raw) != part["sha256"]:
+            fail("UNITY_PREFAB_SCHEMA_PART", part["path"], "Schema receipt hash changed")
+        yield load(raw)
 
 
 def unity_guid_text_from_serialized_hex(raw):
@@ -243,7 +259,7 @@ def prepare(project, expected_manifest):
                     continue
                 source_type = objects[target_sid]["type"]
                 suffixes = {"Sprite": {".asset"}, "Font": {".ttf", ".otf", ".fontsettings"},
-                            "Material": {".mat"}, "Shader": {".asset", ".shader"},
+                            "MonoBehaviour": {".asset"}, "Material": {".mat"}, "Shader": {".asset", ".shader"},
                             "Texture2D": {".png", ".jpg", ".jpeg", ".asset"}, "GameObject": {".prefab"},
                             "AnimatorController": {".controller"}, "AnimationClip": {".anim"}}.get(source_type, set())
                 # Only exact original container directory/stem plus a bounded
@@ -255,6 +271,31 @@ def prepare(project, expected_manifest):
                     target = moved[matches[0]]
                     resource_bindings[target_sid] = dict(path=target, guid=_guid_meta(project / (target + ".meta")),
                                                         sourceLogicalPath=logical, sourceType=source_type)
+                    if source_type == "MonoBehaviour":
+                        script_edge = edges.get((target_sid, "$/m_Script"), {})
+                        script = objects.get(script_edge.get("targetSourceObjectId"), {}).get("data", {})
+                        if not script.get("m_ClassName"):
+                            del resource_bindings[target_sid]
+                            continue
+                        namespace = script.get("m_Namespace") or ""
+                        resource_bindings[target_sid]["nativeType"] = (namespace + "." if namespace else "") + script["m_ClassName"]
+
+
+    # Unity 2021 serializes a local copy of this builtin in some bundles.
+    # Only the byte-identical default material and exact engine shader pointer
+    # qualify. Never bind an arbitrary namesake to the builtin.
+    for sid, obj in objects.items():
+        if (obj.get("type") != "Material" or obj.get("name") != "Sprites-Default"
+                or obj.get("rawSha256") != "a17619bc7e26bb939371e1fd7b770f126da262cc7eec88247eb9a06f098584ab"):
+            continue
+        shader = edges.get((sid, "$/m_Shader"), {})
+        external = shader.get("externalIdentity", {})
+        if (shader.get("status") == "engine-provided-unverified" and shader.get("pathId") == "10753"
+                and external.get("path") == "Resources/unity_builtin_extra"
+                and external.get("guid") == "00000000000000000f00000000000000"):
+            resource_bindings.setdefault(sid, dict(guid=unity_guid_text_from_serialized_hex(external["guid"]),
+                                                   localId="10754", sourceType="Material",
+                                                   path="Resources/unity_builtin_extra"))
 
     native_asset_path = project / "Analysis/Mappings/native-source-assets.json"
     native_asset_bindings = load(read(native_asset_path)) if native_asset_path.is_file() else []
@@ -275,7 +316,8 @@ def prepare(project, expected_manifest):
     code = load(read(project / "Analysis/Code/schema-carriers.json"))
     builtin_path = project / "Analysis/Evidence/builtin-schemas.json"
     if builtin_path.is_file():
-        for receipt in load(read(builtin_path, max_bytes=32 * 1024 * 1024)):
+        # The candidate aggregates several individually pinned schema receipts.
+        for receipt in _builtin_schema_receipts(builtin_path):
             for obj in receipt["objects"]:
                 identity = obj["identity"]
                 matches = [sid for sid, source in objects.items() if source["identity"]["containerSha256"] == identity["sourceSha256"]
@@ -364,6 +406,8 @@ def prepare(project, expected_manifest):
                     fail("UNITY_PREFAB_NATIVE_REFERENCE_GUID", target["path"], "Missing native resource metadata")
                 row.update(refGuid=target["guid"], refType="UnityEditor.Animations.AnimatorController"
                            if target_obj["type"] == "AnimatorController" else "UnityEngine." + target_obj["type"])
+                if target.get("nativeType"):
+                    row["refType"] = target["nativeType"]
                 if target.get("localId"):
                     row["refLocalId"] = target["localId"]
             else:
@@ -405,6 +449,8 @@ def prepare(project, expected_manifest):
     root_plans = []
     particle_mappings = []
     root_rows = bind_source_root_rows(graph["roots"], report["roots"], source_file_names)
+    from .unity_prefab_owner_materials import bind as bind_owner_materials
+    bind_owner_materials(project, report, root_rows, nodes, objects, edges, moves, resource_bindings)
     for index, root in enumerate(graph["roots"]):
         source_id = root["sourceObjectId"]
         row = root_rows[source_id]
@@ -469,6 +515,7 @@ def prepare(project, expected_manifest):
         root_plans.append(dict(path=path, sourceId=source_id, isRepresentative=index == 0, nodes=node_plans))
     result = dict(schemaVersion=1, targetUnityVersion="6000.6.2f1", outputRelative="Analysis/Readback/unity-prefab-static.json",
                 sourceCandidateManifestSha256=expected_manifest, roots=root_plans,
+                sourceUiEvidenceIndices=[i for i, carrier in enumerate(code) if "sourceUiStaticEvidence" in carrier["proposal"]],
                 reconstructRoots=bool(sdk_bindings or native_asset_bindings or particle_mappings),
                 particleRepresentationMappings=particle_mappings,
                 fieldMappingExclusions=exclusions, resourceBindings=resource_bindings, sourceDrivenSliderPlan=slider_plan,

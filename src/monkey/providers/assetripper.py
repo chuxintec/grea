@@ -136,7 +136,12 @@ def export(source,executable,output,budget_seconds=600,dependencies=None,bulk=Fa
             if any(parsed.values.get(k)!=v for k,v in required.items()) or 'SaveSettingsToDisk'in parsed.values:
                 raise RuntimeError('Provider did not retain exact settings')
             receipt['settings']=required;receipt['settingsReadbackSha256']=sha(after);save('load')
-            request('/LoadFile',{'Path':[str(p)for p in copied]})
+            # ASP.NET accepts at most 1024 form values. The private inputs
+            # directory contains exactly the validated snapshots for this run.
+            if len(copied) > 1024:
+                request('/LoadFolder', {'Path': str(inputs)})
+            else:
+                request('/LoadFile', {'Path': [str(p) for p in copied]})
             export_root=out/'exported'
             if export_root.exists():raise RuntimeError('Fresh provider export root already exists')
             save('export');request('/Export/UnityProject',{'Path':str(export_root),'CreateSubfolder':'false'})
