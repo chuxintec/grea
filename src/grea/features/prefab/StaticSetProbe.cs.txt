@@ -135,8 +135,28 @@ namespace Grea.StaticVerification
                             if (!asset || PrefabUtility.GetPrefabAssetType(asset)==PrefabAssetType.NotAPrefab)
                                 throw new InvalidDataException("not an imported Prefab");
                             o.Read(asset,guid);
-                            if (o.nodes!=int.Parse(r[2],Invariant) || string.Join(",",o.ids.OrderBy(n=>n))!=r[3])
-                                throw new InvalidDataException("local IDs or source node count differ");
+                            if (r[5].Length == 0)
+                            {
+                                if (o.nodes!=int.Parse(r[2],Invariant) || string.Join(",",o.ids.OrderBy(n=>n))!=r[3])
+                                    throw new InvalidDataException("local IDs or source node count differ");
+                            }
+                            else
+                            {
+                                var observedIds = new HashSet<long>(o.ids);
+                                if (r[3].Split(',').Where(x=>x.Length>0).Any(x=>!observedIds.Contains(long.Parse(x,Invariant))))
+                                    throw new InvalidDataException("direct local IDs missing from expanded Prefab");
+                                var handles = new HashSet<string>();
+                                foreach (var tr in asset.GetComponentsInChildren<Transform>(true))
+                                {
+                                    if (!PrefabUtility.IsAnyPrefabInstanceRoot(tr.gameObject)) continue;
+                                    var handle = PrefabUtility.GetPrefabInstanceHandle(tr.gameObject);
+                                    if (!handle || Identity(handle,out long id)!=guid) continue;
+                                    var sourcePath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(tr.gameObject);
+                                    handles.Add(id+":"+AssetDatabase.AssetPathToGUID(sourcePath));
+                                }
+                                if (r[5].Split(',').Except(handles).Any())
+                                    throw new InvalidDataException("nested instance handle or source GUID differs");
+                            }
                             if (expectedRefs.TryGetValue(guid,out var wanted))
                             {
                                 o.externalPins = wanted.Count;

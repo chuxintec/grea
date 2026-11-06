@@ -10,7 +10,19 @@ public sealed class NativeLinearLayoutGroup : NativeChildLayoutGroup
     public bool Reverse, IncludeScale, AlignCrossAxis, ResizeContainer, ResizeChildren;
     public float Spacing;
     public override int layoutPriority { get { return 1; } }
-    float Extent(RectTransform child) { return child.rect.size[Axis] * (IncludeScale ? Mathf.Abs(child.localScale[Axis]) : 1); }
+    float Extent(RectTransform child)
+    {
+        float size = child.rect.size[Axis];
+        if (!ResizeChildren && child.TryGetComponent<ContentSizeFitter>(out var fitter) && fitter.isActiveAndEnabled)
+        {
+            var mode = Axis == 0 ? fitter.horizontalFit : fitter.verticalFit;
+            if (mode == ContentSizeFitter.FitMode.PreferredSize)
+                size = LayoutUtility.GetPreferredSize(child, Axis);
+            else if (mode == ContentSizeFitter.FitMode.MinSize)
+                size = LayoutUtility.GetMinSize(child, Axis);
+        }
+        return size * (IncludeScale ? Mathf.Abs(child.localScale[Axis]) : 1);
+    }
     float Preferred() {
         float result=Axis==0?padding.horizontal:padding.vertical;
         foreach(var child in rectChildren)result+=Extent(child);

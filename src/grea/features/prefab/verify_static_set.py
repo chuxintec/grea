@@ -90,10 +90,24 @@ def freeze_expectations(project, rows, output):
             ids = [int(h[2]) for h in heads]
             if len(set(ids))!=len(ids) or sum(h[1]==b"1" for h in heads)!=row["sourceNodes"]:
                 raise ValueError(f"Source node count or local IDs differ: {path}")
+            owned, instances = [], []
+            for index, head in enumerate(heads):
+                if head[1] == b"1001":
+                    block = raw[head.end():heads[index+1].start() if index+1<len(heads) else len(raw)]
+                    origin = re.search(rb"(?m)^  m_SourcePrefab: \{fileID: 100100000, guid: ([a-f0-9]{32}), type: 3\}", block)
+                    if not origin:
+                        raise ValueError(f"Unidentified nested Prefab instance in {path}")
+                    instances.append(f"{int(head[2])}:{origin[1].decode()}")
+                elif not head[0].rstrip().endswith(b"stripped"):
+                    owned.append(int(head[2]))
             roots.write("\t".join((row["guid"],row["assetPath"],str(row["sourceNodes"]),
-                                  ",".join(map(str,sorted(ids))),row.get("capture") or ""))+"\n")
+                                  ",".join(map(str,sorted(owned))),row.get("capture") or "",",".join(instances)))+"\n")
             for index, head in enumerate(heads):
                 data = raw[head.end():heads[index+1].start() if index+1<len(heads) else len(raw)]
+                if head[1] == b"1001" or head[0].rstrip().endswith(b"stripped"):
+                    # Instance modifications are serialized on the handle. Check their
+                    # source link natively and preserve the entire override block byte-for-byte.
+                    continue
                 tokens = sorted({f"{int(head[2])}:{guid.decode().lower()}:{int(local)}"
                                  for local,guid in REFERENCE.findall(data) if int(local)!=0})
                 for token in tokens:
