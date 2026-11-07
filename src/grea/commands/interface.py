@@ -1,4 +1,5 @@
 """The domain-oriented CLI. Compatibility commands keep their own receipt formats."""
+
 import argparse
 import contextlib
 import json
@@ -8,8 +9,9 @@ import tempfile
 from pathlib import Path
 
 from grea import __version__
-from .catalog import commands, nonfinite, parameters
-from .groups import MODULES
+from .catalog import commands
+from .model import nonfinite, parameters
+from grea.features.catalog import MODULES
 
 
 def inventory(module=None, action=None):
@@ -17,16 +19,22 @@ def inventory(module=None, action=None):
         raise ValueError("Select a module before an action")
     if module and module not in MODULES:
         raise ValueError(f"Unknown module: {module}")
-    selected = [v for (m, a), v in sorted(commands().items())
-                if (not module or m == module) and (not action or a == action)]
+    selected = [
+        v for (m, a), v in sorted(commands().items()) if (not module or m == module) and (not action or a == action)
+    ]
     if action and not selected:
         raise ValueError(f"Unknown command: {module} {action}")
-    return dict(version=__version__, modules={k: v for k, v in MODULES.items() if not module or k == module},
-                commands=[c.describe() for c in selected])
+    return dict(
+        version=__version__,
+        modules={k: v for k, v in MODULES.items() if not module or k == module},
+        commands=[c.describe() for c in selected],
+    )
 
 
 def show_commands(argv):
-    parser = argparse.ArgumentParser(prog="grea commands", description="List commands, or inspect one command and its parameters.")
+    parser = argparse.ArgumentParser(
+        prog="grea commands", description="List commands, or inspect one command and its parameters."
+    )
     parser.add_argument("module", choices=sorted(MODULES), nargs="?")
     parser.add_argument("action", nargs="?")
     parser.add_argument("--json", action="store_true", help="Print machine-readable parameter descriptions")
@@ -58,6 +66,7 @@ def read_request(path):
                 raise ValueError(f"Duplicate request field: {key}")
             result[key] = value
         return result
+
     text = sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
     request = json.loads(text, object_pairs_hook=unique, parse_constant=nonfinite)
     if not isinstance(request, dict):
@@ -100,10 +109,10 @@ def request_args(command, request):
         if flags and field["type"] == "boolean":
             if not isinstance(value, bool):
                 raise ValueError(f"{key}: expected a boolean")
-            if key == field["dest"] or "--"+key not in flags:
+            if key == field["dest"] or "--" + key not in flags:
                 flag = flags[0]
             else:
-                flag = "--"+key
+                flag = "--" + key
             if value:
                 options.append(flag)
             elif len(flags) == 2 and flags[1].startswith("--no-"):
@@ -120,8 +129,8 @@ def request_args(command, request):
             else:
                 values = [as_text(group, field)]
             if flag:
-                if len(values)==1 and field["nargs"] is None:
-                    options.append(flag+"="+values[0])
+                if len(values) == 1 and field["nargs"] is None:
+                    options.append(flag + "=" + values[0])
                 else:
                     options.extend([flag, *values])
             else:
@@ -152,49 +161,29 @@ def core_request(command, request):
     return argparse.Namespace(**result)
 
 
-def invoke(command, args, raw):
-    if command.backend == "core":
-        from grea.application import dispatch
-        result = dispatch(command.path[0], vars(args))
-        print(json.dumps(result, ensure_ascii=False))
-        return {"ok": 0, "partial": 1, "error": 2}[result["status"]]
-    if command.backend == "development":
-        return command.handler([], arguments=args)
-    if command.backend == "helper":
-        # A helper may use its parser for contextual errors after parsing, so
-        # retain its own execution path rather than trying to emulate it.
-        out_alias = "--out" in command.parser._option_string_actions and (
-            command.parser._option_string_actions["--out"] is command.parser._option_string_actions.get("--output"))
-        translated = []
-        options = True
-        for word in raw:
-            if word == "--":
-                options = False
-            if options and out_alias and (word == "--output" or word.startswith("--output=")):
-                word = "--out" + word[len("--output"):]
-            translated.append(word)
-        return command.handler([*command.path[1:], *translated])
-    if command.backend == "recovery":
-        return command.handler(args, usage_parser=command.parser)
-    result = command.handler(args)
-    if command.backend == "bindings":
-        return int(any(result.get("counts", {}).get(k, 0) for k in ("partial", "blocked", "not_executed")))
-    return result
-
-
 def run_command(module, action, raw, request_file=None):
     command = commands().get((module, action))
     if command is None:
         message = f"Unknown command: {module} {action}. Use grea commands {module}."
-        print(json.dumps(dict(product="grea",version=__version__,command=f"{module} {action}",
-                              status="error",exit_code=2,result=None,diagnostics=message)))
+        print(
+            json.dumps(
+                dict(
+                    product="grea",
+                    version=__version__,
+                    command=f"{module} {action}",
+                    status="error",
+                    exit_code=2,
+                    result=None,
+                    diagnostics=message,
+                )
+            )
+        )
         return 2
-    option_tokens = raw[:raw.index("--")] if "--" in raw else raw
+    option_tokens = raw[: raw.index("--")] if "--" in raw else raw
     if "-h" in option_tokens or "--help" in option_tokens:
         print(command.parser.format_help(), end="")
         return 0
-    with tempfile.SpooledTemporaryFile(max_size=1024*1024, mode="w+", encoding="utf-8") as output, \
-         tempfile.SpooledTemporaryFile(max_size=1024*1024, mode="w+", encoding="utf-8") as errors:
+    with tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+", encoding="utf-8") as errors:
         result = None
         try:
             with contextlib.redirect_stderr(errors):
@@ -202,7 +191,7 @@ def run_command(module, action, raw, request_file=None):
                     if raw:
                         raise ValueError("Use either --request FILE or inline parameters")
                     request = read_request(request_file)
-                    if command.backend == "core":
+                    if command.schema is not None:
                         args = core_request(command, request)
                     else:
                         raw = request_args(command, request)
@@ -211,11 +200,10 @@ def run_command(module, action, raw, request_file=None):
                     args = command.parser.parse_args(raw)
                 for key, value in command.defaults.items():
                     setattr(args, key, value)
-                if command.backend == "structured":
-                    result, code = command.handler(args)
-                else:
-                    with contextlib.redirect_stdout(output):
-                        code = invoke(command, args, raw) or 0
+                outcome = command.handler(args, raw, command.parser)
+                result, code = outcome.value, outcome.exit_code
+                if outcome.diagnostics:
+                    errors.write(outcome.diagnostics)
         except SystemExit as error:
             code = error.code if isinstance(error.code, int) else int(error.code is not None)
             if isinstance(error.code, str):
@@ -223,18 +211,18 @@ def run_command(module, action, raw, request_file=None):
         except (OSError, ValueError, RuntimeError) as error:
             errors.write(str(error))
             code = 2
-        output.seek(0)
-        body = output.read()
-        if body.strip():
-            try:
-                result = json.loads(body)
-            except ValueError:
-                result = body
         errors.seek(0)
         diagnostics = errors.read().strip()
-    status = {0:"ok", 1:"partial", 2:"error", 3:"blocked"}.get(code,"error")
-    receipt = dict(product="grea", version=__version__, command=f"{module} {action}", status=status,
-                   exit_code=code, result=result, diagnostics=diagnostics)
+    status = {0: "ok", 1: "partial", 2: "error", 3: "blocked"}.get(code, "error")
+    receipt = dict(
+        product="grea",
+        version=__version__,
+        command=f"{module} {action}",
+        status=status,
+        exit_code=code,
+        result=result,
+        diagnostics=diagnostics,
+    )
     print(json.dumps(receipt, ensure_ascii=False, allow_nan=False))
     return code
 

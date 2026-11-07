@@ -10,11 +10,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'src'))
 from grea.features.system.check_skill import heading_ids, without_fences
 from grea.contracts import catalog
-from grea.commands.groups import CORE_MODULE
+from grea.features.catalog import core_owners
 from check_skill_closure import check as check_skill_closure
 
 
 def operation_table():
+    CORE_MODULE = core_owners()
     rows = ["<!-- operations:start -->", "| CLI / MCP 操作 | 契约描述 |", "| --- | --- |"]
     rows += ["| `" + "grea " + CORE_MODULE[item["name"]] + " " + item["name"].replace("_", "-") + "` / `" + item["name"] + "` | " + item["description"].replace("|", "\\|") + " |" for item in catalog()]
     return "\n".join(rows + ["<!-- operations:end -->"])

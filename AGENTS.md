@@ -16,7 +16,7 @@
 
 ## 当前维护边界
 
-GREA 为唯一维护仓库。恢复实现位于 `src/grea/recovery/`，工程事务位于 `src/grea/development/`，跨阶段工具归入 `src/grea/features/<模块>/`。公共 CLI 与 MCP 由 `src/grea/commands/` 从真实解析器生成。修改操作时同步验证参数文档、技能闭包、实际执行与旧调用。
+GREA 为唯一维护仓库。恢复实现位于 `src/grea/recovery/`，工程事务位于 `src/grea/development/`，功能模块声明与调用编排归入 `src/grea/features/<模块>/`。每个模块的 `commands.py` 拥有动作声明，`recovery.py` / `development.py` 共享公开与旧入口的参数及实现。`src/grea/commands/` 只做中立目录、输入校验和结构化回执，不新增阶段/后端分派。修改操作时同步验证参数文档、技能闭包、实际执行与旧调用；架构约束见 `tests/test_command_architecture.py`。
 本地完整 Git 历史含非公开源代码，不向公开远端推送。公开插件排除内部实现，编译分发继续后置。正式游戏与原始资源留在项目内。B02 的既有计划、消费者身份及先肥鹅后僵尸的正式采用顺序按原记录执行。
 
 ## 五技能阶段架构

@@ -10,13 +10,13 @@
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-07T13:05:56+08:00",
+  "updatedAt": "2026-11-07T13:43:20+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "僵尸 B03 已按批次退出条件验收：636 模型根、13,564 个新增视觉资产及1,810项既有修复正式采用；100,981视觉源对象已对账，100,978有目标、3项明确来源限制。15,374项候选/正式冷读指纹一致，11个源UI及8项Play Mode复验通过。",
+  "currentStage": "GREA 命令与执行边界架构重构已完成验收：14 模块、300 公开动作保持兼容，完整回归 3471 passed / 71 skipped。僵尸 B03 已完成记录与工程采用身份保留。",
   "commandArchitecturePilot": {
     "scope": "prefab intake-plan；B02 的采用、回滚和静态验证保持各自的入口",
-    "status": "试点已实施并对照，其他动作继续沿原路由；以后按动作验收后迁移",
+    "status": "历史试点已完成；全模块推广与当前验收见 grea:T-command-architecture，原试点证据保持。",
     "design": "proposals/design/command-architecture.md",
     "evidence": ".private/cmd-pilot/comparison.json",
     "verification": "292 个公开动作目录一致；公共参数、请求文件、旧阶段 CLI、真实 stdio MCP 产出同一 SHA，候选与目标内容哈希保持；切换前后计划仅 implementationSha256 不同。工程与命令回归 719 passed、10 skipped、300 subtests passed。"
@@ -895,6 +895,34 @@
         "receipt": "accepted.json",
         "nextAction": "B03 已完成，不重复导出/采用。完整结果见 RESULT.md、accepted.json 与 final-project-audit.json。B04（场景、声音和数据）为后续批次，本轮未启动；编译分发与发布仍后置。"
       }
+    },
+    {
+      "id": "grea:T-command-architecture",
+      "title": "按功能模块归属命令与执行，收口公共命令架构",
+      "primaryReleaseId": "grea:R1.1.0",
+      "workflowStatus": "done",
+      "description": "14 个功能模块拥有公开动作、参数和执行编排；300 个公开动作与 217 个旧动作合同保持。中立目录不再依赖阶段 CLI，恢复/工程操作直接返回结构化回执。新旧生产者盘点共用版本化范围规则，固定事务继续精确校验。",
+      "acceptanceCriteria": [
+        "300 个现有公开动作的名称、参数、默认值、互斥关系和输出语义保持",
+        "模块独立声明和执行；公共入口不依赖恢复/开发 CLI 分发；参数不重复声明",
+        "旧阶段入口、请求文件、真实 stdio MCP 与结构化回执回归通过",
+        "来源算法、原生事务和进程执行边界清楚；实现身份覆盖迁出的代码",
+        "文档和技能契约一致，架构约束与全量回归通过"
+      ],
+      "blockerIds": [],
+      "sourceRefs": [
+        "proposals/design/command-architecture.md",
+        "docs/维护与发布.md",
+        "tests/test_command_architecture.py",
+        "tests/test_command_modules.py",
+        ".private/architecture-refactor/RESULT.md",
+        ".private/architecture-refactor/contract-comparison.json",
+        ".private/architecture-refactor/execution-comparison.json",
+        ".private/architecture-refactor/pytest-final.log"
+      ],
+      "resume": "本轮验收已通过。后续动作在所属 features 模块扩展并运行架构/合同测试；固定旧计划继续使用原生产者。僵尸 B03 的完成及采用记录仍见 grea:T-zombie-b03-visual。",
+      "completedAt": "2026-11-07T13:43:20+08:00",
+      "verification": "全量 3471 passed、71 skipped、1378 subtests passed；命令/Schema 生成、242 文档、154 调用示例、五技能闭包及语义检查通过。冻结 8a790be 与当前源码运行同一输入：查询产物字节一致，采用计划仅 implementationSha256 不同；当前公共/旧 CLI/请求文件 SHA 相同，真实 stdio MCP 成功及拒绝测试通过。"
     }
   ],
   "blockers": [
@@ -1176,7 +1204,7 @@
       "beaver": 0
     }
   },
-  "lastCompletedImplementationTask": "grea:T-zombie-b03-visual"
+  "lastCompletedImplementationTask": "grea:T-command-architecture"
 }
 ```
 

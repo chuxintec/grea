@@ -19,7 +19,7 @@ def main():
             if hasattr(stream,'reconfigure'):stream.reconfigure(encoding='utf-8')
     from .commands.interface import route
     if not sys.argv[1:] or sys.argv[1:] in (["--help"], ["-h"]):
-        from .commands.groups import MODULES
+        from .features.catalog import MODULES
         print("GREA — game research, recovery and development")
         print("usage: grea [--request FILE|-] MODULE ACTION [parameters]")
         print("       grea commands [MODULE [ACTION]] [--json]")
@@ -40,7 +40,7 @@ def main():
     p=argparse.ArgumentParser(prog='grea',description='Game Reverse Engineering and Assembly: game research, explicit Unity/Cocos targets, Go templates and MCP.')
     p.add_argument('--version',action='version',version=__version__)
     sub=p.add_subparsers(dest='operation',required=True)
-    from .commands.groups import MODULES
+    from .features.catalog import MODULES
     sub.add_parser('commands', help='List functional modules and command parameters')
     for module, label in MODULES.items():
         sub.add_parser(module, help=label)

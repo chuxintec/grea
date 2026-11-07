@@ -96,7 +96,7 @@ def development_result(arguments, *, operation, parse=None):
         if a.command=='payload' and a.action=='apply':
             base['actualChanges']=[dict(operation='payload.materialize',targetRoot=data['targetRoot'],files=data['files'],overrides=len(data['overrides']))]
         if getattr(a,'summary',False):
-            from .cli import _p0_summary
+            from .reporting import _p0_summary
             base['data']=_p0_summary(data)
             if isinstance(base['verification']['native'],dict):
                 native=base['verification']['native']

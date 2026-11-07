@@ -12,7 +12,7 @@ from mcp import Client
 from mcp.client.stdio import StdioServerParameters
 
 from grea.commands.catalog import commands
-from grea.commands.groups import MODULES
+from grea.features.catalog import MODULES
 from grea.commands.interface import route
 from grea.common import package_root
 
@@ -62,14 +62,11 @@ class ModuleCliTests(unittest.TestCase):
             self.assertFalse(dest.exists())
 
     def test_flags_after_separator_remain_literal(self):
-        from types import SimpleNamespace
-        from grea.commands.interface import invoke
+        from grea.features.adapters import helper_arguments
         import argparse
         parser = argparse.ArgumentParser()
         parser.add_argument("--output","--out")
-        handler = lambda argv: argv
-        cmd = SimpleNamespace(backend="helper",parser=parser,path=("example",),handler=handler)
-        self.assertEqual(invoke(cmd,None,["--output=a","--","--output=b"]),["--out=a","--","--output=b"])
+        self.assertEqual(helper_arguments(parser,["--output=a","--","--output=b"]),["--out=a","--","--output=b"])
 
 
 class ModuleMcpTests(unittest.IsolatedAsyncioTestCase):

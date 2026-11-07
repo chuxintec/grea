@@ -1,9 +1,9 @@
 """Public prefab actions with module-owned parameter declarations."""
-import argparse
 
-from grea.commands.catalog import Command
+import argparse
+from grea.commands.model import Command
+from grea.commands.result import structured
 from grea.development.result import development_result
-from grea.development.intake import plan_from_args
 
 
 class OutputDirectory(argparse.Action):
@@ -23,11 +23,40 @@ def intake_plan_parameters(parser, *, public=False):
 
 
 def plan_result(args):
+    from grea.development.intake import plan_from_args
+
     return development_result(args, operation=plan_from_args)
 
 
-def declared_commands():
+def direct_commands():
     parser = argparse.ArgumentParser()
     intake_plan_parameters(parser, public=True)
-    return (Command("prefab", "intake-plan", "structured", ("intake", "plan"), parser,
-                    {"command": "intake", "action": "plan"}, "", plan_result),)
+    return (
+        Command(
+            "prefab",
+            "intake-plan",
+            ("intake", "plan"),
+            parser,
+            {"command": "intake", "action": "plan"},
+            "",
+            structured(plan_result),
+        ),
+    )
+
+
+HELPERS = ("verify_static_set",)
+OPERATIONS = ()
+RECOVERY = "grea.features.prefab.recovery"
+DEVELOPMENT = "grea.features.prefab.development"
+
+
+def declared_commands():
+    from grea.features.adapters import core_commands, helper_commands, stage_commands
+
+    yield from core_commands("prefab", OPERATIONS)
+    yield from helper_commands("prefab", HELPERS)
+    if RECOVERY:
+        yield from stage_commands("prefab", RECOVERY, "recovery")
+    if DEVELOPMENT:
+        yield from stage_commands("prefab", DEVELOPMENT, "development")
+    yield from direct_commands()

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from grea.commands.catalog import commands
-from grea.commands.groups import MODULES
+from grea.features.catalog import MODULES
 from grea.contracts import CONTRACTS
 from jsonschema import Draft202012Validator, ValidationError
 

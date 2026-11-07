@@ -241,18 +241,12 @@ def export_existing(preparation, expected_plan, native_runtime, expected_native_
     plan = load(read(plan_file))
     if plan.get('contract') != CONTRACT or plan.get('implementationSha256') != expected_native_producer:
         fail('INTAKE_BINDING_IMPLEMENTATION', str(plan_file), 'Explicit original native producer required')
-    inventory = {}; total = 0
-    for path in sorted(runtime.rglob('*')):
-        if path.is_symlink(): fail('SYMLINK_PATH', str(path), 'Original runtime inventory cannot contain links')
-        if not path.is_file() or '__pycache__' in path.parts or path.suffix in ('.pyc','.pyo'): continue
-        total += path.stat().st_size
-        if len(inventory) >= 1024 or total > 64*1024*1024:
-            fail('INTAKE_BINDING_RUNTIME_BUDGET', str(runtime), 'Original runtime exceeds1024 files/64MiB')
-        inventory[path.relative_to(runtime).as_posix()] = digest_file(path)
+    from .implementation import inventory as runtime_inventory
+    inventory = runtime_inventory(runtime)
     if sha(encoded(inventory)) != expected_native_producer:
         fail('INTAKE_BINDING_IMPLEMENTATION', str(runtime), 'Original native runtime bytes differ from pinned producer')
     helper = 'targets/BeaverIntakeBindings.cs'
-    if inventory.get(helper) != digest_file(Path(__file__).parent/helper):
+    if inventory.get('development/'+helper, inventory.get(helper)) != digest_file(Path(__file__).parent/helper):
         fail('INTAKE_BINDING_NATIVE_CHANGED', str(runtime), 'Native helper changed; fresh Editor gates are required')
     fresh = build_plan(plan['sourceRoot'], plan['targetRoot'], plan['specPath'])
     if dict(plan, implementationSha256=identity()) != fresh:

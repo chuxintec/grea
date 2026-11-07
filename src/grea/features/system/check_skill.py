@@ -62,9 +62,10 @@ def dispatcher_contract(workspace):
             if command:
                 if '{grea}/launch_tool.py' in command:
                     index = command.index('{grea}/launch_tool.py')
-                    from grea.commands.groups import HELPER_MODULE
+                    from grea.features.catalog import helper_owners
+                    owners = helper_owners()
                     name = command[index + 1]
-                    folder = 'features/' + HELPER_MODULE[name] if name in HELPER_MODULE else 'tools'
+                    folder = 'features/' + owners[name] if name in owners else 'tools'
                     path = tool_root / 'src/grea' / folder / (name + '.py')
                     if tool_root.name == '_data' and not path.is_file():
                         path = tool_root.parent / folder / (name + '.py')
