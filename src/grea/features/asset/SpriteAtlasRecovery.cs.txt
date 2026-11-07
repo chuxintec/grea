@@ -1,0 +1,124 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
+using Unity.Collections;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.U2D;
+using UnityEditor;
+using UnityEditor.U2D;
+using UnityEditor.U2D.Sprites;
+
+namespace Grea.VisualRecovery {
+// Unity 6 native authoring adapter. Existing source Sprite GUIDs are untouched.
+public static class SpriteAtlasRecovery {
+ static void Require(bool ok,string message){if(!ok)throw new InvalidDataException(message);}
+ static string Digest(string s){using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(Encoding.UTF8.GetBytes(s))).Replace("-","").ToLowerInvariant();}
+ static Texture2D SourceTexture(Sprite s){using(var so=new SerializedObject(s)){var p=so.FindProperty("m_RD.texture");Require(p!=null&&p.objectReferenceValue is Texture2D,"Source pixel reference absent "+s.name);return (Texture2D)p.objectReferenceValue;}}
+ static int Rotation(Sprite s){using(var so=new SerializedObject(s)){int value=(so.FindProperty("m_RD.settingsRaw").intValue>>2)&15;Require(value<=3,"Unsupported source packing rotation "+value);return value;}}
+ static Rect RectFor(Sprite s){var r=s.rect;var t=SourceTexture(s);int rotation=Rotation(s);if(rotation==1||rotation==3)r.x=t.width-r.x-r.width;if(rotation==2||rotation==3)r.y=t.height-r.y-r.height;return r;}
+ static void VerifySourceUv(Sprite s){
+  var t=SourceTexture(s);int rotation=Rotation(s);var vertices=s.vertices;var uv=s.uv;Require(vertices.Length==uv.Length&&vertices.Length>0,"Source UV vertices absent "+s.name);
+  for(int i=0;i<vertices.Length;i++){var p=vertices[i]*s.pixelsPerUnit+s.pivot;if(rotation==1||rotation==3)p.x=s.rect.width-p.x;if(rotation==2||rotation==3)p.y=s.rect.height-p.y;p+=s.rect.position;Require(Vector2.Distance(p,new Vector2(uv[i].x*t.width,uv[i].y*t.height))<.02f,"Unsupported source UV transform "+s.name);}
+ }
+ static byte[] Pixels(string path,int rotation){var raw=File.ReadAllBytes(path);if(rotation==0)return raw;Require(Path.GetExtension(path).Equals(".png",StringComparison.OrdinalIgnoreCase),"Rotated source requires original PNG pixels");var t=new Texture2D(2,2,TextureFormat.RGBA32,false,true);try{Require(ImageConversion.LoadImage(t,raw,false),"Original PNG decode failed");var source=t.GetPixels32();var target=new Color32[source.Length];for(int y=0;y<t.height;y++)for(int x=0;x<t.width;x++){int u=(rotation==1||rotation==3)?t.width-1-x:x;int v=(rotation==2||rotation==3)?t.height-1-y:y;target[y*t.width+x]=source[v*t.width+u];}t.SetPixels32(target);t.Apply();return t.EncodeToPNG();}finally{UnityEngine.Object.DestroyImmediate(t);}}
+ static string Identity(UnityEngine.Object o){Require(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(o,out string g,out long id),"Nonpersistent source");return g+":"+id;}
+ static Sprite Resolve(AssetReadback.Member m){var s=AssetDatabase.LoadAllAssetsAtPath(m.path).OfType<Sprite>().SingleOrDefault(o=>Identity(o)==m.guid+":"+m.local);Require(s,"Missing source sprite "+m.path);VerifySourceUv(s);return s;}
+ static void Folder(string p){if(AssetDatabase.IsValidFolder(p))return;Folder(Path.GetDirectoryName(p).Replace('\\','/'));AssetDatabase.CreateFolder(Path.GetDirectoryName(p).Replace('\\','/'),Path.GetFileName(p));}
+ static List<Vector2[]> Outlines(Sprite s){
+  var triangles=s.triangles;var vertices=s.vertices;Require(triangles.Length>0&&triangles.Length%3==0,"Missing source triangles");var loops=new List<Vector2[]>();
+  for(int i=0;i<triangles.Length;i+=3){var a=vertices[triangles[i]];var b=vertices[triangles[i+1]];var c=vertices[triangles[i+2]];var d=b-a;var e=c-a;if(d.x*e.y-d.y*e.x<0){var swap=b;b=c;c=swap;}loops.Add(new[]{a,b,c}.Select(v=>v*s.pixelsPerUnit+s.pivot-s.rect.size/2).ToArray());}
+  var result=Union(loops,"pftPositive");Require(result.Count>0,"Empty source polygon union "+s.name);return result;
+ }
+ static List<Vector2[]> Union(List<Vector2[]> loops,string fill){
+  // Same native polygon union as Sprite Editor; exact signature is capability-checked.
+  var type=typeof(Sprite).Assembly.GetType("UnityEngine.U2D.Clipper2D");Require(type!=null,"This Editor has no native Sprite polygon union");
+  var method=type.GetMethod("Execute",BindingFlags.Public|BindingFlags.Static);Require(method!=null&&method.GetParameters().Length==8,"Unsupported native polygon union signature");
+  var pt=type.GetNestedType("PathArguments");var et=type.GetNestedType("ExecuteArguments");var st=type.GetNestedType("Solution");Require(pt!=null&&et!=null&&st!=null,"Unsupported native polygon structures");
+  var points=new NativeArray<Vector2>(loops.Sum(x=>x.Length),Allocator.Temp);var sizes=new NativeArray<int>(loops.Count,Allocator.Temp);try{
+   var arrayType=typeof(NativeArray<>).MakeGenericType(pt);object paths=Activator.CreateInstance(arrayType,new object[]{sizes.Length,Allocator.Temp,NativeArrayOptions.ClearMemory});object solution=null;
+   try{
+    var item=arrayType.GetProperty("Item");var pathArg=Activator.CreateInstance(pt);pt.GetField("closed").SetValue(pathArg,true);pt.GetField("polyType").SetValue(pathArg,Enum.Parse(pt.GetField("polyType").FieldType,"ptSubject"));
+    int cursor=0;for(int i=0;i<loops.Count;i++){sizes[i]=loops[i].Length;foreach(var point in loops[i])points[cursor++]=point;item.SetValue(paths,pathArg,new object[]{i});}
+    object options=Activator.CreateInstance(et);foreach(var pair in new[]{new[]{"initOption","ioStrictlySimple"},new[]{"clipType","ctUnion"},new[]{"subjFillType",fill},new[]{"clipFillType",fill}}){var field=et.GetField(pair[0]);Require(field!=null,"Native polygon union field absent");field.SetValue(options,Enum.Parse(field.FieldType,pair[1]));}
+    var arguments=new object[]{Activator.CreateInstance(st),points,sizes,paths,options,Allocator.Temp,65536,false};method.Invoke(null,arguments);solution=arguments[0];
+    var output=(NativeArray<Vector2>)st.GetField("points").GetValue(solution);var lengths=(NativeArray<int>)st.GetField("pathSizes").GetValue(solution);var result=new List<Vector2[]>();int offset=0;
+    foreach(int n in lengths){Require(n>=3,"Degenerate native polygon result");var loop=new Vector2[n];for(int i=0;i<n;i++)loop[i]=output[offset++];result.Add(loop);}return result;
+   }finally{if(solution is IDisposable owned)owned.Dispose();((IDisposable)paths).Dispose();}
+  }finally{points.Dispose();sizes.Dispose();}
+ }
+ static double Area(List<Vector2[]> loops){double area=0;foreach(var loop in loops)for(int i=0;i<loop.Length;i++){var a=loop[i];var b=loop[(i+1)%loop.Length];area+=(double)a.x*b.y-(double)b.x*a.y;}return Math.Abs(area)/2;}
+ static float Distance(Vector2 point,List<Vector2[]> loops){float result=float.PositiveInfinity;foreach(var loop in loops)for(int i=0;i<loop.Length;i++){var a=loop[i];var d=loop[(i+1)%loop.Length]-a;float t=d.sqrMagnitude==0?0:Mathf.Clamp01(Vector2.Dot(point-a,d)/d.sqrMagnitude);result=Mathf.Min(result,Vector2.Distance(point,a+t*d));}return result;}
+ static string Same(Sprite source,Sprite target){
+  Require(Vector4.Distance(new Vector4(RectFor(source).x,RectFor(source).y,source.rect.width,source.rect.height),new Vector4(target.rect.x,target.rect.y,target.rect.width,target.rect.height))<.001f,"Sprite rectangle changed "+source.name);
+  Require(Vector2.Distance(source.pivot,target.pivot)<.001f&&Vector4.Distance(source.border,target.border)<.001f&&Mathf.Abs(source.pixelsPerUnit-target.pixelsPerUnit)<.0001f,"Sprite pivot/border/PPU changed "+source.name);
+  var a=Outlines(source);var b=Outlines(target);
+  // Native texture import tessellation quantizes outline coordinates to the pixel grid.
+  // Keep original standalone geometry; report the measured authoring-alias drift.
+  float drift=Mathf.Max(a.SelectMany(x=>x).Max(x=>Distance(x,b)),b.SelectMany(x=>x).Max(x=>Distance(x,a)));
+  double difference=0;
+  if(drift>.71f){difference=Area(Union(a.Concat(b).ToList(),"pftEvenOdd"));double perimeter=a.Sum(loop=>Enumerable.Range(0,loop.Length).Sum(i=>(double)Vector2.Distance(loop[i],loop[(i+1)%loop.Length])));Require(difference<=.71*perimeter+Math.PI*.71*.71,"Native tessellation exceeds pixel-grid area bound "+source.name+" delta="+difference+" original="+Area(a));}
+  return drift.ToString("R",System.Globalization.CultureInfo.InvariantCulture)+"\t"+difference.ToString("R",System.Globalization.CultureInfo.InvariantCulture);
+ }
+ static void Capability(ISpriteEditorDataProvider dp){
+  Require(dp!=null,"Importer does not expose Sprite Editor data");dp.InitSpriteEditorDataProvider();
+  var cap=dp.GetDataProvider<ISpriteFrameEditCapability>();Require(cap!=null,"Importer has no edit capability");
+  foreach(var c in new[]{EEditCapability.EditSpriteName,EEditCapability.EditSpriteRect,EEditCapability.EditPivot,EEditCapability.EditBorder,EEditCapability.CreateAndDeleteSprite})Require(cap.GetEditCapability().HasCapability(c),"Importer capability absent: "+c);
+ }
+ public static void Run(string planPath,string reportDirectory,string previousReportDirectory=null){
+  var plan=JsonUtility.FromJson<AssetReadback.AtlasPlan>(File.ReadAllText(planPath));
+  Directory.CreateDirectory(reportDirectory);
+  var sources=plan.atlases.SelectMany(x=>x.members).GroupBy(x=>x.guid+":"+x.local).Select(x=>Resolve(x.First())).OrderBy(Identity,StringComparer.Ordinal).ToArray();
+  var prior=new Dictionary<string,string>();
+  if(previousReportDirectory!=null){Require(Path.GetFullPath(previousReportDirectory)!=Path.GetFullPath(reportDirectory),"Previous Sprite proof must be independent");var expected=new HashSet<string>(sources.Select(Identity));foreach(var line in File.ReadLines(Path.Combine(previousReportDirectory,"sprite-authoring.tsv"))){var row=line.Split('\t');Require(row.Length>=7&&expected.Contains(row[0])&&row[3].StartsWith("Assets/Game/Content/Sprites/Sheets/",StringComparison.Ordinal),"Invalid previous source Sprite proof");Require(!prior.ContainsKey(row[0]),"Duplicate previous source identity");prior.Add(row[0],row[2]);}}
+  var remap=new Dictionary<string,Sprite>();var factories=new SpriteDataProviderFactories();factories.Init();
+  using(var proof=new StreamWriter(Path.Combine(reportDirectory,"sprite-authoring.tsv")))
+  using(var files=new StreamWriter(Path.Combine(reportDirectory,"sprite-sheet-paths.txt"))){
+   foreach(var group in sources.GroupBy(s=>Identity(SourceTexture(s))+":"+s.pixelsPerUnit.ToString("R",System.Globalization.CultureInfo.InvariantCulture)+":"+Rotation(s))){
+    // TextureImporters require unique sprite names. Split only conflicting names.
+    var buckets=new List<List<Sprite>>();foreach(var s in group){var bucket=buckets.FirstOrDefault(x=>x.All(v=>v.name!=s.name));if(bucket==null){bucket=new List<Sprite>();buckets.Add(bucket);}bucket.Add(s);}
+    foreach(var batch in buckets){
+     var first=batch[0];string sourcePath=AssetDatabase.GetAssetPath(SourceTexture(first));Require(AssetImporter.GetAtPath(sourcePath) is TextureImporter,"Source texture is not a pixel importer");
+     int rotation=Rotation(first);string key=string.Join("\n",batch.Select(Identity))+(rotation==0?"":"|unpack-rotation:"+rotation);string path="Assets/Game/Content/Sprites/Sheets/sheet_"+Digest(key).Substring(0,20)+Path.GetExtension(sourcePath).ToLowerInvariant();
+     Folder(Path.GetDirectoryName(path).Replace('\\','/'));
+     bool exists=File.Exists(path);if(!exists)Require(AssetDatabase.CopyAsset(sourcePath,path),"Sheet copy failed "+sourcePath);
+     var pixels=Pixels(sourcePath,rotation);if(!exists&&rotation!=0){File.WriteAllBytes(path,pixels);AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport);}
+     Require(pixels.SequenceEqual(File.ReadAllBytes(path)),"Existing sheet pixels differ "+path);
+     var importer=AssetImporter.GetAtPath(path) as TextureImporter;Require(importer!=null,"No native texture importer");
+     string owner="grea.sprite-sheet:"+Digest(key);Require(!exists||importer.userData==owner,"Unowned sheet path "+path);
+     if(exists){var cached=AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().ToDictionary(s=>s.name);if(cached.Count==batch.Count&&batch.All(s=>cached.ContainsKey(s.name))){
+      var checkedRows=new List<string>();bool verified=true;foreach(var s in batch){try{string drift=Same(s,cached[s.name]);checkedRows.Add(Identity(s)+"\t"+AssetDatabase.GetAssetPath(s)+"\t"+Identity(cached[s.name])+"\t"+path+"\t"+s.name+"\t"+drift+"\t"+Rotation(s));}catch(InvalidDataException){verified=false;break;}}
+      if(verified){foreach(var s in batch)remap.Add(Identity(s),cached[s.name]);foreach(var row in checkedRows)proof.WriteLine(row);proof.Flush();files.WriteLine(path);files.Flush();continue;}
+     }}
+     importer.userData=owner;importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Multiple;importer.spritePixelsPerUnit=first.pixelsPerUnit;
+     importer.textureCompression=TextureImporterCompression.Uncompressed;importer.maxTextureSize=8192;importer.npotScale=TextureImporterNPOTScale.None;
+     var settings=new TextureImporterSettings();importer.ReadTextureSettings(settings);settings.spriteMeshType=SpriteMeshType.Tight;importer.SetTextureSettings(settings);importer.SaveAndReimport();
+     Require(AssetDatabase.LoadAssetAtPath<Texture2D>(path).width==SourceTexture(first).width&&AssetDatabase.LoadAssetAtPath<Texture2D>(path).height==SourceTexture(first).height,"Source texture dimensions mismatch");
+     var dp=factories.GetSpriteEditorDataProviderFromObject(importer);Capability(dp);
+     var rects=batch.Select(s=>new SpriteRect{name=s.name,rect=RectFor(s),pivot=new Vector2(s.pivot.x/s.rect.width,s.pivot.y/s.rect.height),border=s.border,alignment=SpriteAlignment.Custom,spriteID=new GUID(Digest(Identity(s)).Substring(0,32))}).ToArray();
+     dp.SetSpriteRects(rects);var names=dp.GetDataProvider<ISpriteNameFileIdDataProvider>();Require(names!=null,"No name/local ID provider");names.SetNameFileIdPairs(rects.Select(r=>new SpriteNameFileIdPair(r.name,r.spriteID)));
+     var outline=dp.GetDataProvider<ISpriteOutlineDataProvider>();Require(outline!=null,"No outline provider");
+     for(int i=0;i<batch.Count;i++){outline.SetOutlines(rects[i].spriteID,Outlines(batch[i]));outline.SetTessellationDetail(rects[i].spriteID,1);}
+     dp.Apply();importer.SaveAndReimport();
+     var imported=AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().ToDictionary(s=>s.name);Require(imported.Count==batch.Count,"Imported sprite count mismatch");
+     foreach(var s in batch){var target=imported[s.name];string drift=Same(s,target);remap.Add(Identity(s),target);proof.WriteLine(Identity(s)+"\t"+AssetDatabase.GetAssetPath(s)+"\t"+Identity(target)+"\t"+path+"\t"+s.name+"\t"+drift+"\t"+Rotation(s));}
+     proof.Flush();files.WriteLine(path);files.Flush();
+    }
+   }
+  }
+  using(var proof=new StreamWriter(Path.Combine(reportDirectory,"atlas-authoring.tsv"))){
+   foreach(var r in plan.atlases){
+    var atlas=AssetDatabase.LoadAssetAtPath<SpriteAtlas>(r.target);Require(atlas,"Missing target atlas "+r.target);
+    var desired=r.members.Select(m=>remap[m.guid+":"+m.local]).Distinct().Cast<UnityEngine.Object>().ToArray();var old=SpriteAtlasExtensions.GetPackables(atlas);
+    var keys=r.members.Select(m=>m.guid+":"+m.local).ToArray();var allowed=new HashSet<string>(keys.Concat(desired.Select(Identity)).Concat(keys.Where(prior.ContainsKey).Select(k=>prior[k])));
+    Require(old.All(x=>allowed.Contains(Identity(x))),"Unexpected existing atlas member "+r.target);
+    SpriteAtlasExtensions.Remove(atlas,old);SpriteAtlasExtensions.Add(atlas,desired);AssetReadback.ConfigureAtlas(atlas,r.target,r.tag);EditorUtility.SetDirty(atlas);
+    proof.WriteLine(r.target+"\t"+desired.Length+"\t"+Identity(atlas));
+   }
+  }
+  AssetDatabase.SaveAssets();
+ }
+}}

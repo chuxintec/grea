@@ -1,0 +1,130 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using UnityEngine;
+using UnityEditor;
+using UnityEngine.U2D;
+
+namespace Grea.VisualRecovery {
+public static class AssetReadback {
+ [Serializable] public class TextureRow {public string path;public bool preserveImport;public int wrapU,wrapV,wrapW,aniso,filter,colorSpace,mips,w,h;}
+ [Serializable] public class TexturePlan {public TextureRow[] textures;}
+ [Serializable] public class Member {public string guid,path;public long local;}
+ [Serializable] public class Atlas {public string target,guid,tag;public Member[] members;}
+ [Serializable] public class AtlasPlan {public Atlas[] atlases;}
+ static void Require(bool good,string msg){if(!good)throw new InvalidDataException(msg);}
+ static UnityEngine.Object Resolve(Member m){
+  var asset=AssetDatabase.LoadAllAssetsAtPath(m.path).SingleOrDefault(o=>AssetDatabase.TryGetGUIDAndLocalFileIdentifier(o,out string g,out long id)&&g==m.guid&&id==m.local);
+  Require(asset,"Atlas member missing "+m.path+" "+m.local);return asset;
+ }
+ static void Folder(string file){
+  string p=Path.GetDirectoryName(file).Replace('\\','/');
+  if(AssetDatabase.IsValidFolder(p))return;
+  Folder(p);AssetDatabase.CreateFolder(Path.GetDirectoryName(p).Replace('\\','/'),Path.GetFileName(p));
+ }
+ public static void EnsureAtlasIdentity(SpriteAtlas atlas,string path){
+  using(var serialized=new SerializedObject(atlas)){
+   var id=serialized.FindProperty("m_Guid");Require(id!=null&&id.propertyType==SerializedPropertyType.GUID,"Unsupported native SpriteAtlas identity");
+   var expected=new UnityEngine.GUID(AssetDatabase.AssetPathToGUID(path));
+   if(!id.guidValue.Equals(expected)){id.guidValue=expected;serialized.ApplyModifiedPropertiesWithoutUndo();EditorUtility.SetDirty(atlas);}
+  }
+ }
+ public static void ConfigureAtlas(SpriteAtlas atlas,string path,string sourceTag){
+  EnsureAtlasIdentity(atlas,path);
+  // Packing regenerates m_Tag from the native object name, not the file path.
+  atlas.name=sourceTag;
+  using(var serialized=new SerializedObject(atlas)){
+   var tag=serialized.FindProperty("m_Tag");Require(tag!=null&&tag.propertyType==SerializedPropertyType.String,"Unsupported native atlas tag");
+   tag.stringValue=sourceTag;serialized.ApplyModifiedPropertiesWithoutUndo();
+  }
+  // Both the default and desktop format must be explicit for image-based packing.
+  foreach(string platformName in new[]{"DefaultTexturePlatform","Standalone"}){
+   var platform=UnityEditor.U2D.SpriteAtlasExtensions.GetPlatformSettings(atlas,platformName);
+   platform.name=platformName;platform.overridden=platformName=="Standalone";
+   platform.format=TextureImporterFormat.RGBA32;platform.textureCompression=TextureImporterCompression.Uncompressed;platform.maxTextureSize=8192;
+   UnityEditor.U2D.SpriteAtlasExtensions.SetPlatformSettings(atlas,platform);
+  }
+  EditorUtility.SetDirty(atlas);
+ }
+ public static void Prepare(){
+  string dir=Environment.GetEnvironmentVariable("GREA_VISUAL_RUN");
+  var t=JsonUtility.FromJson<TexturePlan>(File.ReadAllText(Path.Combine(dir,"texture-import-plan.json")));
+  AssetDatabase.StartAssetEditing();
+  try{
+   foreach(var r in t.textures){
+    var importer=(TextureImporter)AssetImporter.GetAtPath(r.path);Require(importer!=null,"Missing TextureImporter "+r.path);
+    importer.sRGBTexture=r.colorSpace==1;
+    if(!r.preserveImport){importer.isReadable=true;importer.textureCompression=TextureImporterCompression.Uncompressed;importer.npotScale=TextureImporterNPOTScale.None;
+    importer.maxTextureSize=8192;importer.alphaIsTransparency=false;}importer.mipmapEnabled=r.mips>1;
+    importer.wrapModeU=(TextureWrapMode)r.wrapU;importer.wrapModeV=(TextureWrapMode)r.wrapV;importer.wrapModeW=(TextureWrapMode)r.wrapW;
+    importer.filterMode=(FilterMode)r.filter;importer.anisoLevel=Mathf.Clamp(r.aniso,0,16);importer.SaveAndReimport();
+   }
+  }finally{AssetDatabase.StopAssetEditing();}
+  var plan=JsonUtility.FromJson<AtlasPlan>(File.ReadAllText(Path.Combine(dir,"atlas-plan.json")));
+  foreach(var r in plan.atlases){
+   Folder(r.target);
+   var atlas=AssetDatabase.LoadAssetAtPath<SpriteAtlas>(r.target);
+   var members=r.members.Select(Resolve).Distinct().ToArray();
+   Require(members.All(v=>v is Sprite),"Atlas packables must be source sprites");
+   if(!atlas){atlas=new SpriteAtlas();atlas.name=r.tag;UnityEditor.U2D.SpriteAtlasExtensions.Add(atlas,members);AssetDatabase.CreateAsset(atlas,r.target);}
+   var actual=UnityEditor.U2D.SpriteAtlasExtensions.GetPackables(atlas);
+   Require(actual.Length==members.Length&&actual.All(members.Contains),"Existing atlas differs from source member set "+r.target);
+   ConfigureAtlas(atlas,r.target,r.tag);
+  }
+  AssetDatabase.SaveAssets();
+ }
+ public static void Inspect(){
+  string dir=Environment.GetEnvironmentVariable("GREA_VISUAL_RUN");bool save=Environment.GetEnvironmentVariable("GREA_VISUAL_PHASE")=="save";
+  using(var cache=new StreamWriter(Path.Combine(dir,"editor-cache.tsv")))
+  using(var details=new StreamWriter(Path.Combine(dir,"object-fingerprints.tsv")))
+  using(var identities=new StreamWriter(Path.Combine(dir,"object-identities.tsv")))
+  using(var w=new StreamWriter(Path.Combine(dir,Environment.GetEnvironmentVariable("GREA_VISUAL_REPORT")))){
+   foreach(string p in File.ReadLines(Path.Combine(dir,"new-paths.txt"))){
+    string error="";int refs=0,objects=0;var identity=new List<string>();
+    try{
+     var all=AssetDatabase.LoadAllAssetsAtPath(p);Require(all.Length>0,"No imported objects");
+     foreach(var obj in all){
+      Require(obj,"Missing imported object");objects++;
+      Require(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj,out string ownGuid,out long ownId),"Nonpersistent imported object");
+      identities.WriteLine(p+"\t"+ownGuid+"\t"+ownId+"\t"+obj.GetType().FullName+"\t"+(obj==AssetDatabase.LoadMainAssetAtPath(p)));
+      identity.Add("object:"+ownGuid+":"+ownId+":"+obj.GetType().FullName);
+      using(var so=new SerializedObject(obj)) using(var v=so.GetIterator()){
+       bool enter=true;
+       while(v.Next(enter)){
+        enter=v.propertyType==SerializedPropertyType.Generic||v.propertyType==SerializedPropertyType.ManagedReference;
+        if(v.propertyType!=SerializedPropertyType.ObjectReference)continue;
+        // SpriteAtlas packing populates this derived Editor cache. It is not the
+        // persistent source texture binding (m_RD) and can use transient GUID 0.
+        if(obj is Sprite && v.propertyPath.StartsWith("m_AtlasRD.",StringComparison.Ordinal)){
+         if(v.objectReferenceValue){AssetDatabase.TryGetGUIDAndLocalFileIdentifier(v.objectReferenceValue,out string cachedGuid,out long cachedId);cache.WriteLine(p+"\t"+ownGuid+":"+ownId+"\t"+v.propertyPath+"\t"+cachedGuid+":"+cachedId);}continue;
+        }
+        if(!v.objectReferenceValue){Require(v.objectReferenceEntityIdValue==EntityId.None,"Unresolved object reference "+v.propertyPath);continue;}
+        Require(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(v.objectReferenceValue,out string guid,out long id),"Nonpersistent reference "+v.propertyPath);refs++;string slot=v.propertyPath;
+        // Unity enumerates this native shader-keyed map by transient instance ID.
+        if(obj is ShaderVariantCollection)slot=System.Text.RegularExpressions.Regex.Replace(slot,@"^m_Shaders\.Array\.data\[[0-9]+\]","m_Shaders[]");
+        identity.Add(ownGuid+":"+ownId+":"+obj.GetType().FullName+":"+slot+":"+guid+":"+id);
+       }
+      }
+      if(obj is Mesh mesh && save){MeshUtility.SetMeshCompression(mesh,ModelImporterMeshCompression.Off);EditorUtility.SetDirty(mesh);}
+      if(obj is Shader shader)Require(!ShaderUtil.ShaderHasError(shader),"Shader compile error");
+      if(obj is Sprite sprite)identity.Add(ownGuid+":"+ownId+":sprite:"+sprite.rect+":"+sprite.pivot+":"+sprite.border+":"+sprite.pixelsPerUnit);
+      if(obj is Texture2D texture)identity.Add(ownGuid+":"+ownId+":texture:"+texture.width+":"+texture.height+":"+texture.mipmapCount+":"+texture.wrapModeU+":"+texture.wrapModeV+":"+texture.wrapModeW+":"+texture.filterMode+":"+texture.anisoLevel);
+      if(obj is SpriteAtlas atlas)identity.Add(ownGuid+":"+ownId+":atlas:"+UnityEditor.U2D.SpriteAtlasExtensions.GetPackables(atlas).Length+":"+atlas.tag);
+      if(obj is AnimationClip clip){
+       foreach(var bind in AnimationUtility.GetCurveBindings(clip))
+        Require(bind.type!=null && !bind.propertyName.StartsWith("script_0x"),"Unresolved animation property");
+      }
+     }
+    }catch(Exception e){error=e.Message.Replace("\t"," ").Replace("\n"," ");}
+    var main=AssetDatabase.LoadMainAssetAtPath(p);
+    identity.Sort(StringComparer.Ordinal);
+    foreach(var part in identity)details.WriteLine(p+"\t"+part);
+    string fingerprint;using(var sha=SHA256.Create())fingerprint=BitConverter.ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(string.Join("\n",identity)))).Replace("-","").ToLowerInvariant();
+    w.WriteLine(string.Join("\t",p,AssetDatabase.AssetPathToGUID(p),main?main.GetType().FullName:"",objects,refs,fingerprint,error));w.Flush();
+   }
+  }
+  if(save)AssetDatabase.SaveAssets();
+ }
+}}

@@ -276,7 +276,7 @@ public static class BeaverAdoption {
         return result;
         } finally {root=savedRoot;}
     }
-    static void WritePayload(int index,string side,string target,string fileHash,string metaHash,bool import=true) {
+    static void WritePayload(int index,string side,string target,string fileHash,string metaHash,bool import=true,bool persist=true) {
         var file=FileFor(index,side,"file");var meta=FileFor(index,side,"meta");
         if(Hash(file)!=fileHash || Hash(meta)!=metaHash)throw new Exception("Staged payload changed");
         Folder(target);File.Copy(file,Full(target),true);
@@ -285,10 +285,53 @@ public static class BeaverAdoption {
         if(side=="after") {
             report.observedAfter.RemoveAll(row=>row.index==index);
             report.observedAfter.Add(new Observed{index=index,path=target,fileHash=Hash(Full(target)),metaHash=Hash(Full(target+".meta"))});
-            Save();
+            if(persist)Save();
         }
         Expected(target,fileHash);
         if(metaHash!=null)Expected(target+".meta",metaHash);
+    }
+    static bool CanBatchResources() {
+        // Compiler boundaries, moves and SDK reference rewrites retain their existing path.
+        return job.mode=="apply" && !SdkEnabled() && job.operations.Length>=128
+            && job.operations.All(op=>!op.compileStage && (op.action=="add" || op.action=="update"));
+    }
+    static void ApplyResourceBatches() {
+        const int batchSize=128;
+        for(int start=0;start<job.operations.Length;start+=batchSize) {
+            int end=Math.Min(start+batchSize,job.operations.Length);
+            for(int i=start;i<end;i++) {
+                Checkpoint();var op=job.operations[i];
+                if(op.source!=null){Expected(op.source,op.beforeFileHash);Expected(op.source+".meta",op.beforeMetaHash);}
+                else {Expected(op.target,null);Expected(op.target+".meta",null);}
+                Folder(op.target);
+            }
+            // Record intent before any writes. Rollback already accepts untouched
+            // before-images and absent adds, including a partially written batch.
+            for(int i=start;i<end;i++)report.written.Add(i);
+            Save();var attempted=new List<int>();
+            AssetDatabase.StartAssetEditing();
+            try {
+                for(int i=start;i<end;i++) {
+                    Checkpoint();var op=job.operations[i];attempted.Add(i);
+                    WritePayload(i,"after",op.target,op.afterFileHash,op.afterMetaHash,false,false);
+                    AssetDatabase.ImportAsset(op.target,ImportAssetOptions.ForceUpdate);
+                }
+            } finally {
+                try {AssetDatabase.StopAssetEditing();}
+                finally {
+                    // Capture importer rewrites before identity checks, so a failed
+                    // import can still be rolled back using the observed bytes.
+                    foreach(int i in attempted) {
+                        var path=job.operations[i].target;
+                        report.observedAfter.RemoveAll(row=>row.index==i);
+                        report.observedAfter.Add(new Observed{index=i,path=path,fileHash=Hash(Full(path)),metaHash=Hash(Full(path+".meta"))});
+                    }
+                    Save();
+                }
+            }
+            for(int i=start;i<end;i++){Checkpoint();VerifyAsset(i,job.operations[i]);}
+            Save();
+        }
     }
     static void VerifyAsset(int index,Op op) {
         string mappedHash;
@@ -815,7 +858,8 @@ public static class BeaverAdoption {
                         foreach(var op in job.operations.Where(op=>op.compileStage))Folder(op.target);
                         EditorApplication.LockReloadAssemblies();AssetDatabase.DisallowAutoRefresh();
                     }
-                    for(int i=0;i<job.operations.Length;i++) {
+                    if(CanBatchResources())ApplyResourceBatches();
+                    else for(int i=0;i<job.operations.Length;i++) {
                         Checkpoint();var op=job.operations[i];
                         if(staged && op.compileStage){VerifyAsset(i,op);Save();continue;}
                         if(job.mode=="code" && !op.compileStage)continue;

@@ -71,6 +71,7 @@ def capabilities():
         dict(id="project.inspect", state="implemented", effects="read", verification="python"),
         dict(id="adoption.plan", state="implemented", effects="plan-output", engines=["unity-6000.6.2f1", "creator-3.8.8"], verification="python; large isolated Unity manifest preview"),
         dict(id="adoption.apply", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native add/move/save/reopen and interrupted-import fixture"),
+        dict(id="adoption.finalize", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="same-helper independent reopen and frozen payload/state checks"),
         dict(id="adoption.rollback", state="requires_provider", provider="Unity 6000.6.2f1", effects="project-write", verification="native normal/failed transaction restore; later-edit rejection"),
         dict(id='intake.plan/apply/rollback',state='requires_provider',provider='Unity 6000.6.2f1 for native phases',effects='create-only-reviewed-assets-and-guarded-owned-removal',verification='independent contract; exact before-state, explicit retained scripts, declared native fields; no existing adoption baseline override'),
         dict(id='intake.package-requirements/spec-bindings-classify',state='requires_provider',provider='explicit installed Editor files, local .NET SDK and reused immutable readback only',effects='new local specs/owned exact-byte selections; formal target read-only',verification='requested/resolved pins, script-only semantic batches, complete native resource evidence and six-binding continuation; native/source/product gates retained'),
@@ -150,6 +151,11 @@ def parser(prog="grea develop", *, include_intake_plan=True):
     recover.add_argument("--transaction", required=True)
     recover.add_argument("--editor-path", required=True)
     recover.add_argument("--timeout", type=int, default=600)
+    finalize = adopt.add_parser("finalize")
+    finalize.add_argument("--transaction", required=True)
+    finalize.add_argument("--editor-path", required=True)
+    finalize.add_argument("--timeout", type=int, default=600)
+    finalize.add_argument("--canonicalize-parent-case", action="store_true")
     intake = sub.add_parser('intake').add_subparsers(dest='action',required=True)
     requirements = intake.add_parser('package-requirements')
     for option in ('candidate','target','source-project','editor-path','evidence','expected-evidence','out'):requirements.add_argument('--'+option,required=True)
@@ -449,6 +455,9 @@ def dispatch(a):
         if a.action == "apply":
             from .adoption_native import execute
             return execute(a.plan, a.out, a.editor_path, a.timeout, a.expected_plan)
+        if a.action == "finalize":
+            from .adoption_native import finalize
+            return finalize(a.transaction,a.editor_path,a.timeout,a.canonicalize_parent_case)
         from .adoption_native import recover
         return recover(a.transaction, a.editor_path, a.timeout)
     if a.command=='intake':

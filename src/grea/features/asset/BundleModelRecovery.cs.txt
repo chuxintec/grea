@@ -1,0 +1,149 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Object = UnityEngine.Object;
+
+namespace Grea.VisualRecovery {
+public static class BundleModels {
+    [Serializable] public class Ref { public string identity,raw,name,target; }
+    [Serializable] public class Node {
+        public string name, meshId; public int parent; public bool active;
+        public Vector3 position,scale; public Quaternion rotation;
+        public Ref mesh; public Ref[] materials;
+    }
+    [Serializable] public class Model { public string address,identity,file,target; public Node[] nodes; }
+    [Serializable] public class Bundle { public string path,sha256; public Model[] models; }
+    [Serializable] public class Job { public Bundle[] bundles; }
+    static readonly Dictionary<string,string> meshPaths = new Dictionary<string,string>();
+    static readonly Dictionary<string,string> materialPaths = new Dictionary<string,string>();
+    static string Hex(byte[] hash) => BitConverter.ToString(hash).Replace("-","").ToLowerInvariant();
+    static string FileHash(string p) { using(var h=SHA256.Create()) using(var f=File.OpenRead(p)) return Hex(h.ComputeHash(f)); }
+    static void Require(bool condition,string text) { if(!condition)throw new InvalidDataException(text); }
+    static void WriteBounds(BinaryWriter w,Bounds b) {
+        foreach(float v in new[]{b.center.x,b.center.y,b.center.z,b.extents.x,b.extents.y,b.extents.z})w.Write(v);
+    }
+    public static string Geometry(Mesh m) {
+        Require(m.blendShapeCount==0 && m.bindposes.Length==0, "Skinned mesh requires separate recovery: "+m.name);
+        using(var data=MeshUtility.AcquireReadOnlyMeshData(m)) using(var memory=new MemoryStream()) using(var w=new BinaryWriter(memory)) {
+            var buf=data[0];
+            w.Write(m.vertexCount);w.Write((int)m.indexFormat);WriteBounds(w,m.bounds);
+            foreach(var a in m.GetVertexAttributes()){w.Write((int)a.attribute);w.Write((int)a.format);w.Write(a.dimension);w.Write(a.stream);}
+            for(int i=0;i<m.vertexBufferCount;i++){var bytes=buf.GetVertexData<byte>(i);w.Write(bytes.Length);w.Write(bytes.ToArray());}
+            var indices=buf.GetIndexData<byte>();w.Write(indices.Length);w.Write(indices.ToArray());
+            for(int i=0;i<m.subMeshCount;i++){
+                var sub=m.GetSubMesh(i);w.Write((int)sub.topology);w.Write(sub.indexStart);w.Write(sub.indexCount);
+                w.Write(sub.baseVertex);w.Write(sub.firstVertex);w.Write(sub.vertexCount);WriteBounds(w,sub.bounds);
+            }
+            w.Flush();using(var h=SHA256.Create())return Hex(h.ComputeHash(memory.ToArray()));
+        }
+    }
+    static void Folder(string path) {
+        string parent=Path.GetDirectoryName(path).Replace('\\','/');
+        if(AssetDatabase.IsValidFolder(parent))return;
+        Folder(parent);AssetDatabase.CreateFolder(Path.GetDirectoryName(parent).Replace('\\','/'), Path.GetFileName(parent));
+    }
+    static void NewAsset(Object obj,string target) {
+        Require(!File.Exists(target) && !File.Exists(target+".meta"),"Occupied target "+target);
+        Folder(target);AssetDatabase.CreateAsset(obj,target);
+    }
+    static Mesh ResolveMesh(Mesh mesh, Ref id, bool write, StreamWriter report) {
+        Require(mesh && mesh.name == id.name && mesh.vertexCount>0 && mesh.subMeshCount>0, "Source mesh identity "+id.identity);
+        string hash=Geometry(mesh);string key=mesh.name+"|"+hash;
+        if(!meshPaths.TryGetValue(key,out string target)) {
+            target=id.target;
+            if(write){
+                var clone=Object.Instantiate(mesh);clone.name=id.name;
+                // The source mesh is already decompressed. A second lossy encode on save
+                // changes vertex streams even though the initial in-memory clone agrees.
+                MeshUtility.SetMeshCompression(clone,ModelImporterMeshCompression.Off);
+                NewAsset(clone,target);
+            }
+            meshPaths.Add(key,target);
+        }
+        var saved=AssetDatabase.LoadAssetAtPath<Mesh>(target);
+        Require(saved && Geometry(saved)==hash,"Stored mesh differs: "+target);
+        report.WriteLine(string.Join("\t","mesh",id.identity,id.raw,AssetDatabase.AssetPathToGUID(target),target,hash,mesh.vertexCount,mesh.subMeshCount));
+        return saved;
+    }
+    static Material ResolveMaterial(Material source, Ref id, bool write, StreamWriter report) {
+        Require(source && source.name==id.name && source.shader,"Invalid model material "+id.identity);
+        foreach(string property in source.GetTexturePropertyNames()) {
+            var tex=source.GetTexture(property);
+            Require(!tex || !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(tex)),"Unmapped source texture "+id.identity);
+        }
+        string key=id.raw+"|"+source.shader.name;
+        if(!materialPaths.TryGetValue(key,out string target)){
+            target=id.target;
+            if(write){var m=new Material(source);m.name=source.name;NewAsset(m,target);}
+            materialPaths.Add(key,target);
+        }
+        var saved=AssetDatabase.LoadAssetAtPath<Material>(target);
+        Require(saved && saved.shader==source.shader,"Stored material shader differs: "+target);
+        report.WriteLine(string.Join("\t","material",id.identity,id.raw,AssetDatabase.AssetPathToGUID(target),target,source.shader.name));
+        return saved;
+    }
+    static Transform[] Nodes(GameObject go,Model model,bool saved) {
+        var nodes=go.GetComponentsInChildren<Transform>(true);
+        Require(nodes.Length==model.nodes.Length,"Hierarchy size: "+model.address);
+        for(int i=0;i<nodes.Length;i++){
+            var tr=nodes[i];var n=model.nodes[i];string expected=saved && i==0 ? Path.GetFileNameWithoutExtension(model.target) : n.name;
+            Require(tr.name==expected && tr.gameObject.activeSelf==n.active && (!tr.parent ? n.parent==-1 : Array.IndexOf(nodes,tr.parent)==n.parent)
+                && (tr.localPosition-n.position).sqrMagnitude<1e-10f && (tr.localScale-n.scale).sqrMagnitude<1e-10f
+                && Mathf.Abs(Quaternion.Dot(tr.localRotation,n.rotation))>.99999f,"Source transform differs: "+model.address+" "+n.name);
+        }
+        return nodes;
+    }
+    static void Recover(AssetBundle ab,Model model,bool write,StreamWriter report){
+        var source=ab.LoadAsset<GameObject>(model.address);Require(source,"Missing model "+model.address);
+        var clone=Object.Instantiate(source);clone.name=source.name;
+        try {
+            var transforms=Nodes(clone,model,false);
+            for(int i=0;i<transforms.Length;i++){
+                var n=model.nodes[i];var mesh=transforms[i].GetComponent<MeshFilter>();
+                if(!string.IsNullOrEmpty(n.meshId)){Require(mesh,"Missing MeshFilter");mesh.sharedMesh=ResolveMesh(mesh.sharedMesh,n.mesh,write,report);}
+                var renderer=transforms[i].GetComponent<MeshRenderer>();
+                if(renderer){var slots=renderer.sharedMaterials;Require(slots.Length==n.materials.Length,"Material slot count");
+                    for(int j=0;j<slots.Length;j++)slots[j]=ResolveMaterial(slots[j],n.materials[j],write,report);
+                    renderer.sharedMaterials=slots;}
+            }
+            if(write){
+                Require(!File.Exists(model.target),"Occupied model "+model.target);Folder(model.target);
+                clone.name=Path.GetFileNameWithoutExtension(model.target);
+                PrefabUtility.SaveAsPrefabAsset(clone,model.target,out bool ok);Require(ok,"Prefab save failure");
+            }
+            var actual=AssetDatabase.LoadAssetAtPath<GameObject>(model.target);Require(actual,"Missing saved Prefab");
+            var after=Nodes(actual,model,true);
+            for(int i=0;i<after.Length;i++){
+                var f=after[i].GetComponent<MeshFilter>();if(f)Require(f.sharedMesh==transforms[i].GetComponent<MeshFilter>().sharedMesh,"Saved mesh reference differs");
+                var r=after[i].GetComponent<MeshRenderer>();if(r)Require(r.sharedMaterials.SequenceEqual(transforms[i].GetComponent<MeshRenderer>().sharedMaterials),"Saved material references differ");
+            }
+            report.WriteLine(string.Join("\t","model", model.identity,model.address,AssetDatabase.AssetPathToGUID(model.target),model.target,after.Length));
+        }finally {Object.DestroyImmediate(clone);}
+    }
+    public static void Run(){
+        var job=JsonUtility.FromJson<Job>(File.ReadAllText(Environment.GetEnvironmentVariable("GREA_MODEL_JOB")));
+        bool write=Environment.GetEnvironmentVariable("GREA_MODEL_PHASE")=="create";
+        // Previously adopted, byte-identical geometry has priority in both a candidate and a formal readback.
+        string seeds=Environment.GetEnvironmentVariable("GREA_MODEL_SEEDS");
+        foreach(string p in File.ReadAllLines(seeds).OrderBy(v=>v,StringComparer.Ordinal)){
+            var mesh=AssetDatabase.LoadAssetAtPath<Mesh>(p);Require(mesh,"Missing seed "+p);
+            if(mesh.blendShapeCount!=0 || mesh.bindposes.Length!=0)continue;
+            meshPaths.TryAdd(mesh.name+"|"+Geometry(mesh),p);
+        }
+        using(var report=new StreamWriter(Environment.GetEnvironmentVariable("GREA_MODEL_REPORT"))) {
+            foreach(var bundle in job.bundles){
+                Require(FileHash(bundle.path)==bundle.sha256,"Bundle input changed");
+                var ab=AssetBundle.LoadFromFile(bundle.path);Require(ab,"Source bundle load failed "+bundle.path);
+                try {foreach(var model in bundle.models)Recover(ab,model,write,report);}
+                finally{ab.Unload(true);}
+                report.Flush();
+            }
+        }
+        if(write)AssetDatabase.SaveAssets();
+    }
+}}

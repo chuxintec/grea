@@ -1723,6 +1723,52 @@
     },
     {
       "module": "asset",
+      "action": "prepare-bundle-models",
+      "usage": "usage: grea asset prepare-bundle-models [-h] --inspections INSPECTIONS --occupied OCCUPIED --output OUTPUT",
+      "description": "Prepare pinned static models for native Unity recovery.",
+      "parameters": [
+        {
+          "name": "inspections",
+          "flags": [
+            "--inspections"
+          ],
+          "dest": "inspections",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "occupied",
+          "flags": [
+            "--occupied"
+          ],
+          "dest": "occupied",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "UTF-8 text, one existing Unity asset path per line"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "asset",
       "action": "prepare-button-material-retry",
       "usage": "usage: grea asset prepare-button-material-retry [-h] --candidate CANDIDATE --expected-manifest EXPECTED_MANIFEST --plan PLAN --ir IR --output OUT",
       "description": "Prepare a pinned Unity adapter for source-backed tiled Button target Images",
@@ -1828,6 +1874,123 @@
             "--out"
           ],
           "dest": "out",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "asset",
+      "action": "prepare-visual-assets",
+      "usage": "usage: grea asset prepare-visual-assets [-h] --texture-plan TEXTURE_PLAN --atlas-plan ATLAS_PLAN [--font-plan FONT_PLAN] [--binding-plan BINDING_PLAN] [--packable-sprites] --output OUTPUT",
+      "description": "Pin source-derived texture, atlas and dynamic font plans for Unity.",
+      "parameters": [
+        {
+          "name": "texture-plan",
+          "flags": [
+            "--texture-plan"
+          ],
+          "dest": "texture_plan",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "atlas-plan",
+          "flags": [
+            "--atlas-plan"
+          ],
+          "dest": "atlas_plan",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "font-plan",
+          "flags": [
+            "--font-plan"
+          ],
+          "dest": "font_plan",
+          "type": "str",
+          "required": false,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "binding-plan",
+          "flags": [
+            "--binding-plan"
+          ],
+          "dest": "binding_plan",
+          "type": "str",
+          "required": false,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Source-proven material texture slots and permitted current pixel identities"
+        },
+        {
+          "name": "packable-sprites",
+          "flags": [
+            "--packable-sprites"
+          ],
+          "dest": "packable_sprites",
+          "type": "boolean",
+          "required": false,
+          "nargs": 0,
+          "repeatable": false,
+          "default": false,
+          "help": "Include native Sprite Editor atlas authoring helper; requires com.unity.2d.sprite"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "asset",
+      "action": "reconstruct-gles-shader",
+      "usage": "usage: grea asset reconstruct-gles-shader [-h] --source SOURCE --output OUTPUT",
+      "description": "Reconstruct editable ShaderLab from serialized GLES source.",
+      "parameters": [
+        {
+          "name": "source",
+          "flags": [
+            "--source"
+          ],
+          "dest": "source",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "Pinned form.json and numbered GLSL subprogram directory"
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
           "type": "str",
           "required": true,
           "nargs": null,
@@ -2944,6 +3107,76 @@
           "repeatable": false,
           "default": null,
           "help": "Staged layout.jsonl"
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "asset",
+      "action": "verify-visual-assets",
+      "usage": "usage: grea asset verify-visual-assets [-h] --project PROJECT --paths PATHS --unity-editor UNITY_EDITOR --output OUTPUT [--budget-seconds BUDGET_SECONDS]",
+      "description": "Read native visual objects and their persistent references.",
+      "parameters": [
+        {
+          "name": "project",
+          "flags": [
+            "--project"
+          ],
+          "dest": "project",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "paths",
+          "flags": [
+            "--paths"
+          ],
+          "dest": "paths",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null,
+          "help": "UTF-8 file, one existing Unity asset path per line"
+        },
+        {
+          "name": "unity-editor",
+          "flags": [
+            "--unity-editor"
+          ],
+          "dest": "unity_editor",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "output",
+          "flags": [
+            "--output"
+          ],
+          "dest": "output",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "budget-seconds",
+          "flags": [
+            "--budget-seconds"
+          ],
+          "dest": "budget_seconds",
+          "type": "int",
+          "required": false,
+          "nargs": null,
+          "repeatable": false,
+          "default": 1800
         }
       ],
       "exclusiveGroups": []
@@ -10565,6 +10798,63 @@
           "nargs": null,
           "repeatable": false,
           "default": 600
+        }
+      ],
+      "exclusiveGroups": []
+    },
+    {
+      "module": "project",
+      "action": "adopt-finalize",
+      "usage": "usage: grea project adopt-finalize [-h] --transaction TRANSACTION --editor-path EDITOR_PATH [--timeout TIMEOUT] [--canonicalize-parent-case]",
+      "description": "",
+      "parameters": [
+        {
+          "name": "transaction",
+          "flags": [
+            "--transaction"
+          ],
+          "dest": "transaction",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "editor-path",
+          "flags": [
+            "--editor-path"
+          ],
+          "dest": "editor_path",
+          "type": "str",
+          "required": true,
+          "nargs": null,
+          "repeatable": false,
+          "default": null
+        },
+        {
+          "name": "timeout",
+          "flags": [
+            "--timeout"
+          ],
+          "dest": "timeout",
+          "type": "int",
+          "required": false,
+          "nargs": null,
+          "repeatable": false,
+          "default": 600
+        },
+        {
+          "name": "canonicalize-parent-case",
+          "flags": [
+            "--canonicalize-parent-case"
+          ],
+          "dest": "canonicalize_parent_case",
+          "type": "boolean",
+          "required": false,
+          "nargs": 0,
+          "repeatable": false,
+          "default": false
         }
       ],
       "exclusiveGroups": []

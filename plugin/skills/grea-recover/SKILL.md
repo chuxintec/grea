@@ -18,6 +18,7 @@ Cocos 转 Unity 时，先用原 Prefab 的一个代表节点验证目标框架�
 | 包体、资源与引用提取 | [提取与引用恢复](references/提取与引用恢复.md)；补原版体验时读[原版运行与内容取证](../grea-research/references/原版运行与内容取证.md) |
 | 从原包完整恢复Prefab、追查源组件/字段/事件遗漏 | [独立对照与源分母](references/全量初版工程与协作.md#prefab完整恢复的独立对照)；普通已维护Prefab迭代仍转开发阶段 |
 | 一组完整页面/Prefab批量恢复、布局组件图片整改及采用 | [成组Prefab恢复与采用](references/成组Prefab恢复与采用.md)；使用 GREA 的 prefab 模块，先静态完整再接既有业务 |
+| 模型、纹理、图集、Shader、动态字体和动画可编辑恢复 | [Unity可编辑视觉资产恢复](references/Unity可编辑视觉资产恢复.md) |
 | Unity 原包 → Unity 候选 | [Unity工程重建与恢复](references/Unity工程重建与恢复.md)；IL2CPP/DummyDLL/真实源码的可信度分别记录 |
 | 非 Unity 来源 → 原生 Unity | [Unity原生转换规范](references/Unity原生转换规范.md)、[跨引擎行为一致性](references/Unity跨引擎移植与行为一致性.md)；Cocos来源按[映射](references/Unity源引擎映射-Cocos.md) |
 | 查询既有 Cocos 目标兼容契约 | [恢复阶段执行与交接的Cocos目标](references/恢复阶段执行与交接.md#cocos目标)；源版本、目标版本和固定provider能力分别核对 |

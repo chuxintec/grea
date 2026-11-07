@@ -1,0 +1,28 @@
+using System;using System.IO;using System.Linq;using UnityEngine;using UnityEditor;
+namespace Grea.VisualRecovery {
+public static class SourceTextureBindings {
+ [Serializable]public class Binding{public string material,property,texture,textureGuid,source;public string[] allowed;}
+ [Serializable]public class SpriteBinding{public string sprite,guid,property,texture,textureGuid,source;public long local;public string[] allowed;}
+ [Serializable]public class Plan{public Binding[] materials;public SpriteBinding[] sprites;}
+ public static void Run(){string dir=Environment.GetEnvironmentVariable("GREA_BINDING_RUN");bool apply=Environment.GetEnvironmentVariable("GREA_BINDING_PHASE")=="apply";
+ var plan=JsonUtility.FromJson<Plan>(File.ReadAllText(Path.Combine(dir,"sampler-source-materials.json")));
+ using(var w=new StreamWriter(Path.Combine(dir,Environment.GetEnvironmentVariable("GREA_BINDING_REPORT")))){
+ foreach(var r in plan.materials??new Binding[0]){var mat=AssetDatabase.LoadAssetAtPath<Material>(r.material);var target=AssetDatabase.LoadAssetAtPath<Texture2D>(r.texture);if(!mat||!target||AssetDatabase.AssetPathToGUID(r.texture)!=r.textureGuid)throw new InvalidDataException("Source texture binding target missing");
+ using(var so=new SerializedObject(mat)){var env=so.FindProperty("m_SavedProperties.m_TexEnvs");SerializedProperty pointer=null;
+ for(int i=0;i<env.arraySize;i++){var item=env.GetArrayElementAtIndex(i);if(item.FindPropertyRelative("first").stringValue==r.property){pointer=item.FindPropertyRelative("second.m_Texture");break;}}
+ if(pointer==null)throw new InvalidDataException("Source material slot missing "+r.material+" "+r.property);
+ if(pointer.objectReferenceValue!=target){if(!apply)throw new InvalidDataException("Source sampler binding differs "+r.material);if(!pointer.objectReferenceValue||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(pointer.objectReferenceValue,out string old,out long local)||!r.allowed.Contains(old))throw new InvalidDataException("Existing texture is not an authorized pixel identity "+r.material);pointer.objectReferenceValue=target;so.ApplyModifiedPropertiesWithoutUndo();EditorUtility.SetDirty(mat);}
+ w.WriteLine(r.source+"\t"+r.material+"\t"+r.property+"\t"+r.textureGuid+"\t"+r.texture);
+ }}
+ foreach(var r in plan.sprites??new SpriteBinding[0]){
+  var sprite=AssetDatabase.LoadAllAssetsAtPath(r.sprite).OfType<Sprite>().SingleOrDefault(o=>AssetDatabase.TryGetGUIDAndLocalFileIdentifier(o,out string guid,out long local)&&guid==r.guid&&local==r.local);
+  var target=AssetDatabase.LoadAssetAtPath<Texture2D>(r.texture);if(!sprite||!target||AssetDatabase.AssetPathToGUID(r.texture)!=r.textureGuid||r.property!="m_RD.texture")throw new InvalidDataException("Source Sprite texture identity missing");
+  using(var so=new SerializedObject(sprite)){
+   var pointer=so.FindProperty(r.property);if(pointer==null||pointer.propertyType!=SerializedPropertyType.ObjectReference)throw new InvalidDataException("Source Sprite texture slot missing");
+   if(pointer.objectReferenceValue!=target){if(!apply)throw new InvalidDataException("Source Sprite texture binding differs");if(!pointer.objectReferenceValue||!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(pointer.objectReferenceValue,out string old,out long id)||!r.allowed.Contains(old))throw new InvalidDataException("Existing Sprite texture is not a permitted pixel identity");pointer.objectReferenceValue=target;so.ApplyModifiedPropertiesWithoutUndo();EditorUtility.SetDirty(sprite);}
+   w.WriteLine(r.source+"\t"+r.sprite+"\t"+r.property+"\t"+r.textureGuid+"\t"+r.texture);
+  }
+ }
+ }if(apply)AssetDatabase.SaveAssets();
+ }
+}}

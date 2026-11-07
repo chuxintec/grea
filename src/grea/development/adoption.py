@@ -76,9 +76,30 @@ def project_files(root,profile):
             folded[key]=relative
             digest,size=view.digest(relative)
             files[relative]=dict(path=relative,sha256=digest,bytes=size)
-    from .output_limits import check_inventory
-    check_inventory(list(files.values()),dict(scopeMode='whole-input'),str(root))
+    from .output_limits import check_project_inventory
+    check_project_inventory(list(files.values()),str(root))
     return files
+
+
+def existing_parent_spellings(files):
+    """Keep the exact spelling of directories already owned by the target."""
+    result={}
+    for path in files:
+        parts=path.split('/')[:-1]
+        for i in range(1,len(parts)+1):
+            parent='/'.join(parts[:i]);key=unicodedata.normalize('NFC',parent).casefold()
+            if key in result and result[key]!=parent:
+                fail('ADOPT_PARENT_COLLISION',parent,'Existing directories differ only by case or Unicode spelling')
+            result[key]=parent
+    return result
+
+
+def canonical_existing_parent(path,parents):
+    parts=path.split('/')
+    for i in range(len(parts)-1,0,-1):
+        parent=parents.get(unicodedata.normalize('NFC','/'.join(parts[:i])).casefold())
+        if parent is not None:return parent+'/'+ '/'.join(parts[i:])
+    return path
 
 
 def same_payload(left,right):
@@ -211,10 +232,13 @@ def build_plan(candidate,target,baseline=None,lineage=None,sdk_migration=None,ex
     sdk_variants={v['path']:v for pair in (sdk_spec or {}).get('assemblies',[]) for v in pair['variants']}
     if len(sdk_variants)!=sum(len(pair['variants']) for pair in (sdk_spec or {}).get('assemblies',[])):
         fail('ADOPT_SDK_SPEC','assemblies','A DLL path is assigned to multiple canonical roles')
-    operations=[];preserved=[];removed=[];used=set()
+    operations=[];preserved=[];removed=[];used=set();parents=existing_parent_spellings(actual)
     def conflict(key,reason,left,right):conflicts.append(dict(identity=key,reason=reason,current=left.get('path') if left else None,desired=right.get('path') if right else None))
     for key,unit in sorted(desired.items()):
         base=before.get(key);live=current.get(key);dest=unit['path']
+        canonical=canonical_existing_parent(dest,parents)
+        if canonical!=dest:
+            conflict(key,'existing-parent-path-spelling',dict(path=canonical),unit);continue
         sdk_variant=sdk_variants.get(dest)
         if live:used.add(live['path'])
         # A missing source meta has no proven identity. Its existing path may not
@@ -345,8 +369,16 @@ def prepare(plan_path,output,expected=None):
     return out,plan,journal
 
 
-def commit_state(stage,plan,journal,readback):
+def commit_state(stage,plan,journal,readback,*,canonicalize_existing_parents=False):
     target=safe(plan['targetRoot']);after=project_files(target,plan['targetProfile']);changed=set()
+    aliases={};parents=existing_parent_spellings(plan['targetFiles'])
+    if canonicalize_existing_parents:
+        for op in plan['operations']:
+            canonical=canonical_existing_parent(op['target'],parents)
+            if canonical!=op['target']:
+                if op['action']!='add' or op['source'] is not None:
+                    fail('ADOPT_PATH_RECONCILIATION',op['target'],'Only added files under a preexisting parent can be reconciled')
+                aliases[op['target']]=canonical
     sdk_mutations={r['assetPath'] for r in (plan.get('managedAssemblyMigration') or {}).get('references',[]) if r['root']=='candidate' and r['action']=='map'}
     native_apply=None
     if sdk_mutations:
@@ -364,7 +396,7 @@ def commit_state(stage,plan,journal,readback):
         for kind,suffix in (('file',''),('meta','.meta')):
             expected=op['after'].get(kind)
             if expected:
-                path=op['target']+suffix;changed.add(path)
+                path=aliases.get(op['target'],op['target'])+suffix;changed.add(path)
                 if path not in after or after[path]['sha256']!=expected['sha256']:
                     if not (kind=='file' and op['target'] in sdk_mutations and native_apply):
                         fail('ADOPT_READBACK',path,'Applied file differs from staged candidate')
@@ -373,17 +405,18 @@ def commit_state(stage,plan,journal,readback):
         if path not in changed and after.get(path)!=before:fail('ADOPT_MANUAL_DRIFT',path,'Untouched target file changed during adoption')
     generation={key:dict(value) for key,value in plan['generation'].items()}
     for op in plan['operations']:
-        if op['target'] in sdk_mutations:
+        if op['target'] in sdk_mutations or op['target'] in aliases:
             item=generation.get(op['identity'])
             if item is None:fail('ADOPT_SDK_READBACK',op['target'],'Mapped reference asset is absent from the adoption generation')
-            item['file']=dict(after[op['target']])
-            meta=after.get(op['target']+'.meta')
+            path=aliases.get(op['target'],op['target']);item['path']=path
+            item['file']=dict(after[path],owner=item['file']['owner'])
+            meta=after.get(path+'.meta')
             item['meta']=dict(meta) if meta else None
     state=dict(schemaVersion=1,targetRoot=str(target),namespace=plan['namespace'],lineageOverride=plan.get('lineageOverride'),targetProfile=plan['targetProfile'],
                incomingManifestSha256=plan['incomingManifestSha256'],generation=generation,planSha256=journal['planSha256'],
-               retainedRemoved=plan['retainedRemoved'],transaction=str(stage),nativeReadback=readback)
+               retainedRemoved=plan['retainedRemoved'],transaction=str(stage),nativeReadback=readback,resolvedTargetPaths=aliases)
     from .transaction_fs import atomic
     atomic(inside(target,STATE),encoded(state))
-    journal.update(state='complete',afterStateSha256=sha(encoded(state)),targetFilesAfter=after,readback=readback)
+    journal.update(state='complete',resolvedTargetPaths=aliases,afterStateSha256=sha(encoded(state)),targetFilesAfter=after,readback=readback)
     write_json(stage/'journal.json',journal)
     return dict(status='adopted',counts=plan['counts'],transaction=str(stage),planSha256=journal['planSha256'],nativeReadback=readback,report=str(stage/'journal.json'))

@@ -66,6 +66,8 @@ def development_result(arguments, *, operation, parse=None):
         if a.command=='server':
             output_path=data.get('composePath') or (a.out if a.action=='migration-plan' else None)
             if output_path and Path(output_path).is_file():base['artifacts'].append(dict(path=str(Path(output_path).resolve()),sha256=sha(Path(output_path).read_bytes())))
+        if a.command=='adopt' and a.action=='finalize':
+            base['actualChanges']=[dict(operation='adoption.finalize',transaction=a.transaction,report=data.get('report'))]
         if a.command=='adopt' and a.action=='rollback':
             base['verification']['native']='rolled_back'
             base['actualChanges']=[dict(operation='adoption.rollback',restored=data.get('restored'),report=data.get('report'))]

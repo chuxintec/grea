@@ -12,6 +12,7 @@ FILE_BYTES = 512 * 1024**2
 BUILD_FILE_BYTES = 4 * 1024**3
 WHOLE_BYTES = 8 * 1024**3
 WHOLE_FILES = 500_000
+PROJECT_BYTES = 64 * 1024**3
 SELECTION_BYTES = 256 * 1024**2
 SELECTION_FILES = 20_000
 CHUNK_BYTES = 1024**2
@@ -25,7 +26,21 @@ def policy(manifest):
 
 
 def check_inventory(files, manifest, location):
-    limits = policy(manifest)
+    return _check_inventory(files, policy(manifest), location)
+
+
+def check_project_inventory(files, location):
+    """Bound an existing project's read-only inventory separately from a new export.
+
+    A succession of small accepted generations can legitimately exceed one
+    generation's output byte budget. File and count limits remain unchanged.
+    This policy is not selectable by an incoming candidate manifest.
+    """
+    limits = dict(policy({'scopeMode': 'whole-input'}), maxOwnedOutputBytes=PROJECT_BYTES)
+    return _check_inventory(files, limits, location)
+
+
+def _check_inventory(files, limits, location):
     total = 0
     for row in files:
         size = row.get('bytes')

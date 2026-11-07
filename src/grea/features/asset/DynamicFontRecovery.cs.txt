@@ -1,0 +1,62 @@
+using System;using System.IO;using UnityEngine;using UnityEditor;using TMPro;using UnityEngine.TextCore.LowLevel;
+namespace Grea.VisualRecovery {
+public static class DynamicFonts {
+ [Serializable] public class FloatValue{public string name;public float value;}
+ [Serializable] public class ColorValue{public string name;public Color value;}
+ [Serializable] public class TextureValue{public string name;public Vector2 scale,offset;}
+ [Serializable] public class FontRow{public string key,target,name,fontPath,shaderPath,probe;public int point,padding,width,height,mode,queue;public bool multi,clear;public FloatValue[] floats;public ColorValue[] colors;public TextureValue[] textures;public string[] keywords;}
+ [Serializable] public class Plan{public FontRow[] fonts;}
+ static void Must(bool v,string m){if(!v)throw new InvalidDataException(m);}
+ static void SourceMaterial(Material material,Texture2D atlas,FontRow r){
+  using(var so=new SerializedObject(material)){
+   var floats=so.FindProperty("m_SavedProperties.m_Floats");floats.arraySize=r.floats.Length;
+   for(int i=0;i<r.floats.Length;i++){var item=floats.GetArrayElementAtIndex(i);item.FindPropertyRelative("first").stringValue=r.floats[i].name;item.FindPropertyRelative("second").floatValue=r.floats[i].value;}
+   var colors=so.FindProperty("m_SavedProperties.m_Colors");colors.arraySize=r.colors.Length;
+   for(int i=0;i<r.colors.Length;i++){var item=colors.GetArrayElementAtIndex(i);item.FindPropertyRelative("first").stringValue=r.colors[i].name;item.FindPropertyRelative("second").colorValue=r.colors[i].value;}
+   var textures=so.FindProperty("m_SavedProperties.m_TexEnvs");textures.arraySize=r.textures.Length;
+   for(int i=0;i<r.textures.Length;i++){var item=textures.GetArrayElementAtIndex(i);item.FindPropertyRelative("first").stringValue=r.textures[i].name;var value=item.FindPropertyRelative("second");value.FindPropertyRelative("m_Texture").objectReferenceValue=r.textures[i].name=="_MainTex"?atlas:null;value.FindPropertyRelative("m_Scale").vector2Value=r.textures[i].scale;value.FindPropertyRelative("m_Offset").vector2Value=r.textures[i].offset;}
+   so.ApplyModifiedPropertiesWithoutUndo();
+  }
+ }
+ static void VerifyMaterial(Material m,FontRow r){
+  using(var so=new SerializedObject(m)){
+   var floats=so.FindProperty("m_SavedProperties.m_Floats");Must(floats.arraySize==r.floats.Length,"Stored float count drift");
+   for(int i=0;i<r.floats.Length;i++){var item=floats.GetArrayElementAtIndex(i);Must(item.FindPropertyRelative("first").stringValue==r.floats[i].name&&Mathf.Abs(item.FindPropertyRelative("second").floatValue-r.floats[i].value)<1e-5,"Stored float drift");}
+   var colors=so.FindProperty("m_SavedProperties.m_Colors");Must(colors.arraySize==r.colors.Length,"Stored color count drift");
+   for(int i=0;i<r.colors.Length;i++){var item=colors.GetArrayElementAtIndex(i);Must(item.FindPropertyRelative("first").stringValue==r.colors[i].name&&item.FindPropertyRelative("second").colorValue==r.colors[i].value,"Stored color drift");}
+  }
+ }
+ public static void Run(){
+  string dir=Environment.GetEnvironmentVariable("GREA_FONT_RUN");bool create=Environment.GetEnvironmentVariable("GREA_FONT_PHASE")=="create";
+  var plan=JsonUtility.FromJson<Plan>(File.ReadAllText(Path.Combine(dir,"dynamic-font-plan.json")));
+  // TMP's Editor factory reads a singleton even for explicit-source font creation.
+  // Supply only a temporary factory context when the asset-only project has none;
+  // source font policy is applied below, and no synthetic game settings are saved.
+  var slot=typeof(TMP_Settings).GetField("s_Instance",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static);
+  Must(slot!=null,"Unsupported TMP settings singleton");var previous=slot.GetValue(null);TMP_Settings temporary=null;
+  if(previous==null){temporary=ScriptableObject.CreateInstance<TMP_Settings>();slot.SetValue(null,temporary);}
+  try{
+  using(var w=new StreamWriter(Path.Combine(dir,Environment.GetEnvironmentVariable("GREA_FONT_REPORT")))){
+   foreach(var r in plan.fonts){
+    var font=AssetDatabase.LoadAssetAtPath<Font>(r.fontPath);var shader=AssetDatabase.LoadAssetAtPath<Shader>(r.shaderPath);Must(font&&shader,"Missing verified font/shader input "+r.key);
+    if(create && !File.Exists(r.target)){
+     Must(!File.Exists(r.target)&&!File.Exists(r.target+".meta"),"Occupied font output "+r.target);
+     var a=TMP_FontAsset.CreateFontAsset(font,r.point,r.padding,(GlyphRenderMode)r.mode,r.width,r.height,AtlasPopulationMode.Dynamic,r.multi);Must(a,"Source font face failed "+r.key);
+     a.name=r.name;using(var serialized=new SerializedObject(a)){var clear=serialized.FindProperty("m_ClearDynamicDataOnBuild");Must(clear!=null,"TMP dynamic build policy is unavailable");clear.boolValue=r.clear;serialized.ApplyModifiedPropertiesWithoutUndo();}a.material.shader=shader;a.material.shaderKeywords=r.keywords;a.material.renderQueue=r.queue;
+     SourceMaterial(a.material,a.atlasTextures[0],r);
+     Directory.CreateDirectory(Path.GetDirectoryName(r.target));AssetDatabase.Refresh();AssetDatabase.CreateAsset(a,r.target);AssetDatabase.AddObjectToAsset(a.material,a);AssetDatabase.AddObjectToAsset(a.atlasTextures[0],a);EditorUtility.SetDirty(a);AssetDatabase.SaveAssets();
+    }
+    var saved=AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(r.target);Must(saved&&saved.name==Path.GetFileNameWithoutExtension(r.target)&&saved.sourceFontFile==font&&saved.atlasPopulationMode==AtlasPopulationMode.Dynamic&&saved.atlasWidth==r.width&&saved.atlasHeight==r.height,"Saved font identity differs");
+    Must(saved.characterTable.Count==0&&saved.glyphTable.Count==0,"Source dynamic font must remain unpopulated");
+    VerifyMaterial(saved.material,r);
+    Must(saved.material.shader==shader&&saved.material.mainTexture==saved.atlasTextures[0],"Font atlas binding drift");
+    foreach(var obj in new UnityEngine.Object[]{saved,saved.material,saved.atlasTextures[0]}){Must(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj,out string guid,out long local),"Persistent font child required");w.WriteLine(r.key+"\t"+obj.GetType().Name+"\t"+guid+"\t"+local+"\t"+r.target);}
+    // Generate only in an independent scratch font, keeping the adopted dynamic atlas empty.
+    var test=TMP_FontAsset.CreateFontAsset(font,r.point,r.padding,(GlyphRenderMode)r.mode,r.width,r.height,AtlasPopulationMode.Dynamic,r.multi);
+    try{Must(test.TryAddCharacters(r.probe,out string missing),"Source font cannot generate test glyph: "+missing);Must(test.glyphTable.Count>0&&test.atlasTextures[0].width==r.width,"Dynamic atlas did not populate");w.WriteLine(r.key+"\tglyph\t"+r.probe+"\t"+test.glyphTable.Count+"\t"+r.width+"x"+r.height);}
+    finally{foreach(var tex in test.atlasTextures)UnityEngine.Object.DestroyImmediate(tex);UnityEngine.Object.DestroyImmediate(test.material);UnityEngine.Object.DestroyImmediate(test);}
+   }
+  }
+  }finally{if(temporary){slot.SetValue(null,previous);UnityEngine.Object.DestroyImmediate(temporary);}}
+ }
+}}

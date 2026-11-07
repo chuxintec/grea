@@ -4,16 +4,16 @@
 
 ## 压缩后从这里接续
 
-先读下方 `activeImplementationTask` 指向的僵尸批次及其 `resume`，核对同批交付清单和项目采用回执。GREA 单仓维护 source、prefab、asset、code、project 等执行模块。下文既有任务 ID、生产者及项目采用回执按原身份复用。按最新用户范围，B02 正式采用只验僵尸；肥鹅四页视觉结论独立保留。
+先读下方 `activeImplementationTask`；为空时读取 `lastCompletedImplementationTask` 指向的批次及其 `resume`，核对同批交付清单和项目采用回执。GREA 单仓维护 source、prefab、asset、code、project 等执行模块。下文既有任务 ID、生产者及项目采用回执按原身份复用。按最新用户范围，B02 正式采用只验僵尸；肥鹅四页视觉结论独立保留。
 
 ```manager-task-view
 {
   "schemaVersion": 1,
   "projectId": "grea",
-  "updatedAt": "2026-11-07T01:17:26+08:00",
+  "updatedAt": "2026-11-07T13:05:56+08:00",
   "authority": "canonical-plan-owner; module unfinished tasks consolidated into this GREA source",
   "currentVersion": "1.1.0.dev2",
-  "currentStage": "僵尸 B02 静态采用已在唯一正式工程验收。133,368 项资产、13,426 个 Prefab、117 组脚本挂点通过核对。13 张迁移前后图逐像素一致；ActorHp 在 Play Mode 实例化并读回绿色血条。B03 跟踪 636 个 FBX 根与 18 个待核纹理标识。",
+  "currentStage": "僵尸 B03 已按批次退出条件验收：636 模型根、13,564 个新增视觉资产及1,810项既有修复正式采用；100,981视觉源对象已对账，100,978有目标、3项明确来源限制。15,374项候选/正式冷读指纹一致，11个源UI及8项Play Mode复验通过。",
   "commandArchitecturePilot": {
     "scope": "prefab intake-plan；B02 的采用、回滚和静态验证保持各自的入口",
     "status": "试点已实施并对照，其他动作继续沿原路由；以后按动作验收后迁移",
@@ -21,7 +21,7 @@
     "evidence": ".private/cmd-pilot/comparison.json",
     "verification": "292 个公开动作目录一致；公共参数、请求文件、旧阶段 CLI、真实 stdio MCP 产出同一 SHA，候选与目标内容哈希保持；切换前后计划仅 implementationSha256 不同。工程与命令回归 719 passed、10 skipped、300 subtests passed。"
   },
-  "activeImplementationTask": "grea:T-zombie-b03-visual",
+  "activeImplementationTask": null,
   "releases": [
     {
       "id": "grea:R2026.10.27-maintenance",
@@ -874,11 +874,11 @@
       "id": "grea:T-zombie-b03-visual",
       "title": "僵尸 B03 可编辑视觉资源与源对象对账",
       "primaryReleaseId": "grea:R1.1.0",
-      "workflowStatus": "in_progress",
-      "executionStatus": "source_model_mesh_bindings_inspected",
+      "workflowStatus": "done",
+      "executionStatus": "verified_and_adopted",
       "ownerSessionId": "01a1aee8-38cc-7502-9b82-021df0eda50a",
       "blockerIds": [],
-      "description": "逐项核对 636 个 FBX 地址、18 个待核纹理标识及视觉组件，新增采用沿用 GREA 工程目录与命名规则。 已实读 106 个包；636 个 FBX 地址中有 636 个由层级和 MeshFilter/Renderer 引用证明本地网格。",
+      "description": "B03 已正式采用并完成源对象、稳定原生指纹、编辑保存冷读、图集、动画/特效及11个源UI检查；保留坏源Shader、缺日文字库与4Clip的3个未知路径CRC。",
       "acceptanceCriteria": [
         "分类核对模型、网格、纹理、切片、字体、材质、Shader、动画和特效的来源与正式目标。",
         "编辑代表素材并实际保存冷读；骨骼、动画过渡、着色器与特效时序另作运行验证。"
@@ -887,12 +887,13 @@
         "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/start.json",
         "../monkey/.private/zombie-export-audit-300411/十批开发工程规划.md",
         "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/model-mesh-summary.json",
-        "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/model-bundles-inspection/inspection-set.json"
+        "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/model-bundles-inspection/inspection-set.json",
+        "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411/RESULT.md"
       ],
       "resume": {
         "runDirectory": "../../Games/projects/21-zombie-cannon/Analysis/b03-visual-300411",
-        "receipt": "model-mesh-summary.json",
-        "nextAction": "依据逐地址网格台账关联正式工程的编辑副本；确证局部几何、材质与 Unity 冷读后再采用。"
+        "receipt": "accepted.json",
+        "nextAction": "B03 已完成，不重复导出/采用。完整结果见 RESULT.md、accepted.json 与 final-project-audit.json。B04（场景、声音和数据）为后续批次，本轮未启动；编译分发与发布仍后置。"
       }
     }
   ],
@@ -1174,7 +1175,8 @@
       "monkey": 0,
       "beaver": 0
     }
-  }
+  },
+  "lastCompletedImplementationTask": "grea:T-zombie-b03-visual"
 }
 ```
 

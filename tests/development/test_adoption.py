@@ -150,3 +150,76 @@ class AdoptionTests(unittest.TestCase):
                 m=load(read(root/'manifest.json'));m.pop('namespace');m['source']={'sha256':digest};m['targetVersion']='6000.6.2f1';m['sourceProfile']='unityfs-unitypy-1.25.3-assetripper-2.0.0';write_json(root/'recovery-manifest.json',m);(root/'manifest.json').unlink()
             with self.assertRaises(ParseError):build_plan(a,t,b)
             p=build_plan(a,t,b,lineage='stable-game');self.assertEqual(p['namespace'],'stable-game');self.assertFalse(p['conflicts'])
+
+
+class ParentSpellingTests(unittest.TestCase):
+    def fixture(self,root):
+        base=candidate(root/'base');incoming=candidate(root/'incoming','B.txt',guid=GUID2)
+        target=root/'target';shutil.copytree(base,target)
+        directory=incoming/'Assets/Game/Content/Data/Test'
+        directory.rename(directory.with_name('temporary'))
+        directory.with_name('temporary').rename(directory.with_name('test'))
+        manifest=load(read(incoming/'manifest.json'))
+        for row in manifest['files']:row['path']=row['path'].replace('/Test/','/test/')
+        write_json(incoming/'manifest.json',manifest)
+        return base,incoming,target
+
+    def test_plan_rejects_an_alias_of_an_existing_parent_before_writes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base,incoming,target=self.fixture(Path(temp).resolve())
+            plan=build_plan(incoming,target,base)
+            self.assertEqual(plan['conflicts'][0]['reason'],'existing-parent-path-spelling')
+            self.assertFalse(plan['operations'])
+            self.assertFalse((target/(PREFIX+'B.txt')).exists())
+
+    def test_legacy_finalization_keeps_actual_parent_and_requires_exact_bytes(self):
+        for tamper in (False,True):
+            with self.subTest(tamper=tamper),tempfile.TemporaryDirectory() as temp:
+                root=Path(temp).resolve();base,incoming,target=self.fixture(root)
+                # Reproduce an immutable plan made before the parent spelling guard.
+                with patch('grea.development.adoption.canonical_existing_parent',side_effect=lambda path,parents:path):
+                    preview(incoming,target,root/'plan',base)
+                stage,plan,journal=prepare(root/'plan/adoption-plan.json',root/'transaction')
+                for suffix in ('','.meta'):
+                    shutil.copy2(incoming/(PREFIX.replace('/Test/','/test/')+'B.txt'+suffix),target/(PREFIX+'B.txt'+suffix))
+                with self.assertRaises(ParseError):commit_state(stage,plan,journal,{'status':'verified'})
+                if tamper:
+                    (target/(PREFIX+'B.txt')).write_bytes(b'later human edit')
+                    with self.assertRaises(ParseError):commit_state(stage,plan,journal,{'status':'verified'},canonicalize_existing_parents=True)
+                    self.assertFalse((target/STATE).exists())
+                else:
+                    commit_state(stage,plan,journal,{'status':'verified'},canonicalize_existing_parents=True)
+                    state=load(read(target/STATE));item=state['generation']['guid:'+GUID2]
+                    self.assertEqual(item['path'],PREFIX+'B.txt')
+                    self.assertEqual(item['file']['path'],PREFIX+'B.txt')
+                    self.assertEqual(item['file']['owner'],'generated')
+                    self.assertEqual(state['resolvedTargetPaths'],{PREFIX.replace('/Test/','/test/')+'B.txt':PREFIX+'B.txt'})
+
+    def test_parent_resolution_never_changes_the_filename_or_new_directories(self):
+        from grea.development.adoption import existing_parent_spellings,canonical_existing_parent
+        parents=existing_parent_spellings({'Assets/Existing/old.txt':{}})
+        self.assertEqual(canonical_existing_parent('Assets/existing/New/B.TXT',parents),'Assets/Existing/New/B.TXT')
+        with self.assertRaises(ParseError):existing_parent_spellings({'Assets/Existing/a':{},'Assets/existing/b':{}})
+
+
+class FinalizeGuardTests(unittest.TestCase):
+    def test_incomplete_rewritten_or_superseded_receipts_never_start_editor(self):
+        from grea.development import adoption_native
+        from grea.development.output_limits import digest_file
+        for fault in ('partial','wrong-helper','candidate-drift','later-state'):
+            with self.subTest(fault=fault),tempfile.TemporaryDirectory() as temp:
+                root=Path(temp).resolve();base=candidate(root/'base');incoming=candidate(root/'incoming',content=b'new');target=root/'target';shutil.copytree(base,target)
+                preview(incoming,target,root/'plan',base);stage,plan,journal=prepare(root/'plan/adoption-plan.json',root/'transaction')
+                journal.update(state='recovery-required',processExited=True,helperSha256=digest_file(Path(adoption_native.__file__).parent/'targets/BeaverAdoption.cs'))
+                report=dict(status='verified',planSha256=journal['planSha256'],assets=[dict(index=0)])
+                write_json(stage/'native-apply.json',dict(report,status='running') if fault=='partial' else report)
+                write_json(stage/'native-verify.json',report)
+                if fault=='wrong-helper':journal['helperSha256']='0'*64
+                write_json(stage/'journal.json',journal)
+                if fault=='candidate-drift':(incoming/(PREFIX+'A.txt')).write_bytes(b'changed')
+                if fault=='later-state':write_json(target/STATE,dict(later=True))
+                editor=root/'Unity';editor.touch()
+                with patch.object(adoption_native,'run_child') as run:
+                    with self.assertRaises(ParseError):adoption_native.finalize(stage,editor)
+                    run.assert_not_called()
+                self.assertFalse((target/adoption_native.HELPER_ROOT).exists())

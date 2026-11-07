@@ -109,15 +109,62 @@ def execute(plan_path,output,editor,budget=1200,expected=None):
             applied=run_child(stage,plan,journal,editor,'apply',budget)
             reopened=run_child(stage,plan,journal,editor,'verify',budget)
             cleanup(target,fingerprint)
-            sdk_after=reopened.get('sdkAfterMonoScripts',[])
-            sdk_inactive_configured=bool((plan.get('managedAssemblyMigration') or {}).get('retainedInactiveAssemblies'))
-            return commit_state(stage,plan,journal,dict(status='verified',saveReopen=True,assets=len(reopened['assets']),referencesPreserved=reopened['referencesPreserved'],compilerInputs=sum(compile_operation(op) for op in plan['operations']),compilationBoundary='separate-editor-start' if (stage/'native-code.json').exists() else 'no-compiler-input-changes',sdkAssembliesVerified=reopened.get('sdkAssembliesVerified',False),sdkReferencesVerified=reopened.get('sdkReferencesVerified',False),sdkBeforeMonoScripts=len(reopened.get('sdkBeforeMonoScripts',[])),sdkAfterMonoScripts=len(sdk_after),sdkAssemblyModuleBindingsVerified=sum(x.get('moduleLoadStatus')=='verified' for x in sdk_after),sdkAssemblyModuleBindingsNotObserved=sum(x.get('moduleLoadStatus')=='notObserved' for x in sdk_after),sdkInactiveAssembliesConfigured=sdk_inactive_configured,sdkInactiveAssembliesVerified=reopened.get('sdkInactiveAssembliesVerified',False) if sdk_inactive_configured else None,sdkBeforeInactiveAssemblies=len(reopened.get('sdkBeforeInactiveAssemblies',[])),sdkAfterInactiveAssemblies=len(reopened.get('sdkAfterInactiveAssemblies',[])),sdkReferenceMappingsApplied=len(applied.get('sdkReferenceMappingsApplied',[])),scope='changed assets and up to 128 untouched prefab/scene direct dependencies'))
+            return commit_state(stage,plan,journal,native_summary(stage,plan,applied,reopened))
         except BaseException:
             journal['state']='recovery-required';write_json(stage/'journal.json',journal)
             if journal.get('processExited'):
                 try:cleanup(target,fingerprint)
                 except Exception as error:
                     journal['cleanupError']=str(error);write_json(stage/'journal.json',journal)
+            raise
+
+
+def native_summary(stage,plan,applied,reopened):
+    sdk_after=reopened.get('sdkAfterMonoScripts',[])
+    sdk_inactive_configured=bool((plan.get('managedAssemblyMigration') or {}).get('retainedInactiveAssemblies'))
+    return dict(status='verified',saveReopen=True,assets=len(reopened['assets']),referencesPreserved=reopened['referencesPreserved'],compilerInputs=sum(compile_operation(op) for op in plan['operations']),compilationBoundary='separate-editor-start' if (stage/'native-code.json').exists() else 'no-compiler-input-changes',sdkAssembliesVerified=reopened.get('sdkAssembliesVerified',False),sdkReferencesVerified=reopened.get('sdkReferencesVerified',False),sdkBeforeMonoScripts=len(reopened.get('sdkBeforeMonoScripts',[])),sdkAfterMonoScripts=len(sdk_after),sdkAssemblyModuleBindingsVerified=sum(x.get('moduleLoadStatus')=='verified' for x in sdk_after),sdkAssemblyModuleBindingsNotObserved=sum(x.get('moduleLoadStatus')=='notObserved' for x in sdk_after),sdkInactiveAssembliesConfigured=sdk_inactive_configured,sdkInactiveAssembliesVerified=reopened.get('sdkInactiveAssembliesVerified',False) if sdk_inactive_configured else None,sdkBeforeInactiveAssemblies=len(reopened.get('sdkBeforeInactiveAssemblies',[])),sdkAfterInactiveAssemblies=len(reopened.get('sdkAfterInactiveAssemblies',[])),sdkReferenceMappingsApplied=len(applied.get('sdkReferenceMappingsApplied',[])),scope='changed assets and up to 128 untouched prefab/scene direct dependencies')
+
+
+def finalize(transaction,editor,budget=1200,canonicalize_parent_case=False):
+    """Reopen a fully applied transaction whose final state commit failed."""
+    from .native_environment import editor_environment
+    from .candidate_snapshot import snapshot,verify
+    from .transaction_fs import lock
+    editor_environment('BEAVER_ADOPT_JOB',transaction)
+    stage=safe(transaction);plan,digest=checked_plan(stage/'adoption-plan.json')
+    journal=load(read(stage/'journal.json',max_bytes=128*1024**2),max_nodes=8_000_000)
+    if journal.get('state')!='recovery-required' or not journal.get('processExited') or journal.get('planSha256')!=digest:
+        fail('ADOPT_FINALIZE_STATE',str(stage),'Expected an exited transaction awaiting final state commit')
+    if type(budget)is not int or not 1<=budget<=1200:fail('ADOPT_BUDGET',str(budget),'Expected 1..1200 seconds')
+    target=safe(plan['targetRoot']);native_lock(target);editor=safe(editor)
+    if editor.name not in ('Unity','Unity.exe') or not editor.is_file():fail('ADOPT_EDITOR',str(editor),'Expected an existing Unity Editor executable')
+    if not plan['targetProfile'].startswith('unity-'):fail('ADOPT_NATIVE_UNSUPPORTED',plan['targetProfile'],'Unity target required')
+    if os.name=='posix' and editor.parent.name=='MacOS':
+        metadata=editor.parent.parent/'Info.plist'
+        if not metadata.is_file() or plistlib.loads(metadata.read_bytes()).get('CFBundleVersion')!='6000.6.2f1':
+            fail('ADOPT_EDITOR_VERSION',str(editor),'Expected installed Unity 6000.6.2f1')
+    applied=load(read(stage/'native-apply.json',max_bytes=128*1024**2),max_nodes=8_000_000)
+    previous=load(read(stage/'native-verify.json',max_bytes=128*1024**2),max_nodes=8_000_000)
+    if any(r.get('status')!='verified' or r.get('planSha256')!=digest or len(r.get('assets',[]))!=len(plan['operations']) for r in (applied,previous)):
+        fail('ADOPT_FINALIZE_STATE',str(stage),'Both apply and independent reopen must have verified every operation')
+    source=Path(__file__).parent/'targets/BeaverAdoption.cs'
+    if digest_file(source)!=journal.get('helperSha256'):
+        fail('ADOPT_FINALIZE_HELPER',str(stage),'Native helper differs from the executed transaction')
+    incoming,manifest,files,identity=snapshot(plan['candidateRoot'])
+    if identity!=plan['incomingManifestSha256']:fail('ADOPT_SOURCE_CHANGED',str(incoming),'Frozen candidate manifest changed')
+    verify(incoming,files)
+    state=inside(target,STATE)
+    if (digest_file(state) if state.exists() else None)!=plan['targetStateSha256']:
+        fail('ADOPT_BASELINE_STALE',str(target),'A different adoption state exists')
+    with lock(target):
+        fingerprint=helper(target)
+        try:
+            reopened=run_child(stage,plan,journal,editor,'verify',budget)
+            cleanup(target,fingerprint)
+            return commit_state(stage,plan,journal,native_summary(stage,plan,applied,reopened),canonicalize_existing_parents=canonicalize_parent_case)
+        except BaseException:
+            journal['state']='recovery-required';write_json(stage/'journal.json',journal)
+            if journal.get('processExited'):cleanup(target,fingerprint)
             raise
 
 
